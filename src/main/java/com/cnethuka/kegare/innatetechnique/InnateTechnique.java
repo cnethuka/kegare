@@ -25,6 +25,7 @@ public class InnateTechnique {
     private final Ability ultimate;
     private final boolean testContent;
     private final ItemLike tabIcon;
+    private final boolean ultimateLocked;
 
     protected InnateTechnique(Builder builder) {
         if (builder.abilities.isEmpty()) throw new IllegalArgumentException("An innate technique needs at least one ability");
@@ -33,6 +34,7 @@ public class InnateTechnique {
         this.ultimate = builder.ultimate;
         this.testContent = builder.testContent;
         this.tabIcon = builder.tabIcon;
+        this.ultimateLocked = builder.ultimate == null && builder.ultimateLocked;
     }
 
     public static Builder builder(InnateTechniqueRarity rarity) {
@@ -55,6 +57,19 @@ public class InnateTechnique {
 
     public final Optional<Ability> ultimate() {
         return Optional.ofNullable(ultimate);
+    }
+
+    /** No ultimate yet, but one is planned (its Dominion comes later): the ultimate slot shows as locked. */
+    public final boolean ultimateLocked() {
+        return ultimateLocked;
+    }
+
+    /**
+     * Hook: how the player's surroundings change this innate technique's Malice costs. Abilities apply the multiplier
+     * in their own {@code cost}/{@code upkeepPerSecond}; this also feeds the HUD icon and tooltips. Default: none.
+     */
+    public CostEnvironment environment(ServerPlayer player) {
+        return CostEnvironment.NEUTRAL;
     }
 
     /** Finds an ability (cycle slots or ultimate) by ID. */
@@ -100,6 +115,7 @@ public class InnateTechnique {
         private Ability ultimate;
         private boolean testContent;
         private ItemLike tabIcon = Items.ENCHANTED_BOOK;
+        private boolean ultimateLocked;
 
         private Builder(InnateTechniqueRarity rarity) {
             this.rarity = rarity;
@@ -118,6 +134,12 @@ public class InnateTechnique {
         /** Icon of this innate technique's own advancement tab (see KegareAdvancements#innateTechniqueRoot). */
         public Builder tabIcon(ItemLike icon) {
             this.tabIcon = icon;
+            return this;
+        }
+
+        /** No ultimate yet; the ultimate slot shows as locked until one is added. */
+        public Builder lockedUltimate() {
+            this.ultimateLocked = true;
             return this;
         }
 

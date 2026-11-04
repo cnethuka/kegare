@@ -17,6 +17,12 @@ Every player **and** the server need these in their `mods` folder, for Minecraft
 KilaGraph, which Photon needs, is bundled inside Photon. Don't install it separately. Pick the NeoForge 1.21.1
 file of each one. Minecraft refuses to start and names the missing mod if one is absent.
 
+## Content
+
+- **Rime** (Rare): Frost Shard, Glacial Lance, Frost Field and Rime Shell; Freeze stacks; cheaper in the cold. See
+  DESIGN.md §3.14.
+- Test innate techniques (`[Test] …`) stay available while `roll.includeTestInnateTechniques = true`.
+
 ## Dev commands
 
 | Command | What it does |
@@ -28,6 +34,7 @@ file of each one. Minecraft refuses to start and names the missing mod if one is
 | `./gradlew runClient -PquickPlayWorld=<world>` | Dev client, straight into an existing singleplayer world |
 | `./gradlew runClient -PquickPlay=localhost` | Dev client, straight onto a server |
 | `./gradlew runServer` | Dev dedicated server (`run/eula.txt` must say `eula=true`) |
+| `/kegarefx export` (dev client only) | Rebuild Rime's Photon effects into `assets/kegare/fx/rime/` from `RimeFxAuthoring`; `/kegarefx play <name>` previews one |
 | `python3 tools/gen_art.py [--preview sheet.png]` | Regenerate all GUI and item art (needs Pillow); see DESIGN.md §3.10 |
 
 Requires JDK 21 (e.g. Temurin). Point `JAVA_HOME` at it if it isn't your default Java.

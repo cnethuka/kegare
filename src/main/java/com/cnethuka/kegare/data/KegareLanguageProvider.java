@@ -84,6 +84,32 @@ public final class KegareLanguageProvider extends LanguageProvider {
         add(CastType.CHANNELED.translationKey(), "Channeled");
         add(CastType.TOGGLE.translationKey(), "Toggle");
 
+        // Rime
+        add("innate_technique.kegare.rime", "Rime");
+        add("innate_technique.kegare.rime.desc", MALICE + " made into ice: shards, a lance, a freezing gale and a shell of frost. "
+                + "Five Freeze stacks freeze a target solid. Cheaper in the cold, dearer in the heat.");
+        add("ability.kegare.frost_shard", "Frost Shard");
+        add("ability.kegare.frost_shard.desc", "A fast ice shard: light damage, a short Slowness and 1 Freeze stack.");
+        add("ability.kegare.glacial_lance", "Glacial Lance");
+        add("ability.kegare.glacial_lance.desc", "Hold to charge (up to 2s), release to hurl a heavy lance. More charge, more damage; "
+                + "2 Freeze stacks. A quick tap fizzles.");
+        add("ability.kegare.frost_field", "Frost Field");
+        add("ability.kegare.frost_field.desc", "While held, a freezing cone in front of you slows and adds 1 Freeze stack per second.");
+        add("ability.kegare.rime_shell", "Rime Shell");
+        add("ability.kegare.rime_shell.desc", "Toggle a shell of ice: take less damage, and anyone who hits you up close is slowed.");
+        add("entity.kegare.frost_shard", "Frost Shard");
+        add("entity.kegare.glacial_lance", "Glacial Lance");
+        add("item.kegare.frost_shard", "Frost Shard");
+        add("item.kegare.glacial_lance", "Glacial Lance");
+        add("death.attack.kegare.rime", "%1$s was frozen solid by %2$s");
+        add("death.attack.kegare.rime.item", "%1$s was frozen solid by %2$s using %3$s");
+        add("death.attack.kegare.rime.player", "%1$s froze while fighting %2$s");
+        add("environment.kegare.rime.precipitation", "Rain or snow");
+        add("environment.kegare.rime.water", "Near water");
+        add("environment.kegare.rime.cold_biome", "Cold biome");
+        add("environment.kegare.rime.hot_biome", "Hot biome");
+        add("environment.kegare.rime.nether", "The Nether");
+
         // TEST CONTENT names
         add("innate_technique.kegare.test_kinetic", "[Test] Kinetic");
         add("innate_technique.kegare.test_flux", "[Test] Flux");
@@ -116,11 +142,24 @@ public final class KegareLanguageProvider extends LanguageProvider {
         add("hud.kegare.malice", MALICE + " %s/%s");
         add("hud.kegare.selected", "» %s (%s)");
         add("hud.kegare.cooldown", "%ss");
+        add("hud.kegare.cost_multiplier", "×%s");
+        add("hud.kegare.freeze", "Freeze");
+        add("hud.kegare.frozen", "Frozen!");
+        add("gui.kegare.cost.current", "Cost here: %s " + MALICE);
+        add("gui.kegare.cost.upkeep", "Upkeep here: %s " + MALICE + "/s");
+        add("gui.kegare.cost.no_modifier", "No surroundings modifier");
+        add("gui.kegare.cost.factor", "×%s %s");
+        add("gui.kegare.cost.total", "Total ×%s");
+        add("gui.kegare.cost.short", "Cost %s");
+        add("gui.kegare.cost.short_upkeep", "Cost %s + %s/s");
+        add("gui.kegare.sorcerer.ability.ultimate_locked", "Ultimate: Locked");
+        add("gui.kegare.sorcerer.ability.ultimate_locked.desc", "Its " + DOMINION + " comes later.");
 
         // Cast feedback (action bar)
         add("message.kegare.cast.severed", "You are " + SEVERED + ". No " + MALICE + " flows through you.");
         add("message.kegare.cast.no_innate_technique", "You have no " + INNATE_TECHNIQUE + ".");
         add("message.kegare.cast.no_ultimate", "Your " + INNATE_TECHNIQUE + " has no ultimate.");
+        add("message.kegare.cast.ultimate_locked", "Locked. Your " + DOMINION + " comes later.");
         add("message.kegare.cast.busy", "Already casting.");
         add("message.kegare.cast.stunned", "Stunned! (%ss)");
         add("message.kegare.cast.on_cooldown", "%s is on cooldown (%ss)");
@@ -155,6 +194,16 @@ public final class KegareLanguageProvider extends LanguageProvider {
         advancement("running_on_empty", "Running on Empty", "Run out of " + MALICE + " in the middle of a fight.");
         add("advancements.kegare.innate_technique_root.description", "Roll this " + INNATE_TECHNIQUE + " for the first time.");
         advancement("clear_sight", "Clear Sight", "Be born with " + LENSING_EYES + ".");
+        // Rime tab (kegare:innate_technique/rime/...)
+        advancement("rime.shatter", "Shatter", "Freeze a player solid");
+        advancement("rime.cold_open", "Cold Open", "Hit a player with Frost Shard");
+        advancement("rime.brain_freeze", "Brain Freeze", "Freeze a player while they're charging or channeling");
+        advancement("rime.full_charge", "Full Charge", "Hit a player with a fully charged Glacial Lance");
+        advancement("rime.thin_ice", "Thin Ice", "Block 100 total damage with Rime Shell");
+        advancement("rime.cold_blooded", "Cold Blooded", "Kill a player who is frozen solid");
+        advancement("rime.deep_freeze", "Deep Freeze", "Freeze the same player 3 times within 60 seconds");
+        advancement("rime.long_way_from_home", "Long Way From Home", "Freeze a player in the Nether");
+        advancement("rime.home_field", "Home Field", "Cast a Rime ability during snowfall in a cold biome");
         advancement("the_cycle_continues", "The Cycle Continues", "Inherit " + LENSING_EYES + " from a fallen bearer.");
         advancement("eyes_closed", "Eyes Closed", "Lose your " + LENSING_EYES + ".");
         advancement("blinded", "Blinded", "Kill the bearer of " + LENSING_EYES + ".");

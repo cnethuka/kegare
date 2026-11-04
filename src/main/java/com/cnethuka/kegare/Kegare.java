@@ -8,6 +8,7 @@ import com.cnethuka.kegare.network.KegareNetwork;
 import com.cnethuka.kegare.registry.KegareAttachments;
 import com.cnethuka.kegare.registry.KegareItems;
 import com.cnethuka.kegare.registry.KegareRegistries;
+import com.cnethuka.kegare.innate_technique.rime.Rime;
 import com.cnethuka.kegare.innatetechnique.test.TestInnateTechniques;
 import com.cnethuka.kegare.trait.KegareTraits;
 import net.minecraft.resources.ResourceLocation;
@@ -35,6 +36,7 @@ public final class Kegare {
         KegareAttachments.ATTACHMENT_TYPES.register(modBus);
         KegareItems.ITEMS.register(modBus);
         KegareTraits.TRAITS.register(modBus);
+        Rime.register(modBus);
         TestInnateTechniques.INNATE_TECHNIQUES.register(modBus); // TEST CONTENT
 
         modBus.addListener(KegareItems::addToCreativeTabs);

@@ -52,12 +52,16 @@ public final class MaliceHudLayer implements LayeredDraw.Layer {
         if (!KegareClientConfig.HUD_ENABLED.get() || mc.options.hideGui || mc.player == null || mc.level == null) return;
         if (mc.player.isSpectator() || mc.getDebugOverlay().showDebugScreen()) return;
         SyncPayload data = ClientData.get();
-        if (data == null || !data.born() || data.severed()) return; // Severed: no HUD
+        if (data == null || !data.born()) return;
 
         Font font = mc.font;
         long now = mc.level.getGameTime();
         int x = KegareClientConfig.HUD_X.get();
         int y = KegareClientConfig.HUD_Y.get();
+        if (data.severed()) { // Severed: no HUD, but anyone can be frozen
+            drawFreeze(g, font, data, x, y, now);
+            return;
+        }
 
         InnateTechnique innateTechnique = data.innateTechnique().map(KegareRegistries.INNATE_TECHNIQUE::get).orElse(null);
         Component title = innateTechnique != null
@@ -67,7 +71,8 @@ public final class MaliceHudLayer implements LayeredDraw.Layer {
         y += font.lineHeight + 2;
 
         GuiDraw.maliceBar(g, x, y, BAR_WIDTH, data.capacity() <= 0 ? 0f : data.current() / data.capacity());
-        g.drawString(font, Component.translatable("hud.kegare.malice", Mth.floor(data.current()), data.capacity()), x + BAR_WIDTH + 4, y + 1, COLOR_MALICE_TEXT);
+        int textEnd = g.drawString(font, Component.translatable("hud.kegare.malice", Mth.floor(data.current()), data.capacity()), x + BAR_WIDTH + 4, y + 1, COLOR_MALICE_TEXT);
+        drawEnvironment(g, font, data, textEnd + 4, y);
         y += BAR_HEIGHT + 4;
 
         if (innateTechnique == null) return;
@@ -84,6 +89,9 @@ public final class MaliceHudLayer implements LayeredDraw.Layer {
         if (ultimate.isPresent()) {
             sx += 4;
             drawSlot(g, font, data, ultimate.get(), sx, y, false, KegareKeys.ULTIMATE.getTranslatedKeyMessage(), castingId, now);
+        } else if (innateTechnique.ultimateLocked()) {
+            sx += 4;
+            GuiDraw.lockedSlot(g, font, sx, y, KegareKeys.ULTIMATE.getTranslatedKeyMessage());
         }
         y += SLOT_SIZE + 3;
 
@@ -99,6 +107,7 @@ public final class MaliceHudLayer implements LayeredDraw.Layer {
             }
             y += font.lineHeight + 2;
         }
+        drawFreeze(g, font, data, x, y, now);
 
         // Charge / channel progress.
         data.casting().ifPresent(casting -> {
@@ -116,6 +125,30 @@ public final class MaliceHudLayer implements LayeredDraw.Layer {
             }
             drawProgress(g, x, KegareClientConfig.HUD_Y.get() + font.lineHeight + 2 + BAR_HEIGHT, progress, color);
         });
+    }
+
+    /** Snowflake (cheaper) or flame (dearer) next to the Malice bar, with the current cost multiplier. */
+    private static void drawEnvironment(GuiGraphics g, Font font, SyncPayload data, int x, int y) {
+        if (data.environment().icon() == com.cnethuka.kegare.innatetechnique.CostEnvironment.Icon.NONE) return;
+        boolean cold = data.environment().icon() == com.cnethuka.kegare.innatetechnique.CostEnvironment.Icon.COLD;
+        GuiDraw.sprite(g, cold ? GuiDraw.ENV_COLD : GuiDraw.ENV_HOT, x, y - 1, 11, 11);
+        float multiplier = data.environment().multiplier();
+        int color = multiplier < 1f ? 0x7FE6FF : multiplier > 1f ? 0xFF8A5C : 0xAAAAAA;
+        g.drawString(font, Component.translatable("hud.kegare.cost_multiplier", GuiDraw.multiplier(multiplier)), x + 13, y + 1, color);
+    }
+
+    /** Your freeze stacks as pips (only when you have some), or "Frozen!" while frozen solid. */
+    private static void drawFreeze(GuiGraphics g, Font font, SyncPayload data, int x, int y, long now) {
+        boolean frozen = data.frozenUntil() > now;
+        if (data.freezeStacks() <= 0 && !frozen) return;
+        int labelWidth = g.drawString(font, Component.translatable(frozen ? "hud.kegare.frozen" : "hud.kegare.freeze"), x, y + 1,
+                frozen ? 0x7FE6FF : 0xC2EEFA) - x;
+        int px = x + labelWidth + 3;
+        for (int i = 0; i < data.maxFreezeStacks(); i++) {
+            boolean full = frozen || i < data.freezeStacks();
+            GuiDraw.sprite(g, full ? GuiDraw.FREEZE_PIP : GuiDraw.FREEZE_PIP_EMPTY, px, y + 1, 7, 7);
+            px += 8;
+        }
     }
 
     private static void drawSlot(GuiGraphics g, Font font, SyncPayload data, Ability ability, int x, int y, boolean selected,

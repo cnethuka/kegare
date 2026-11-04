@@ -31,6 +31,14 @@ public final class SorcererScreen extends Screen {
     private int contentHeight;
 
     private int panelX, panelY, panelW, panelH;
+    /** Ability rows drawn this frame (screen coordinates), for hover tooltips. */
+    private final java.util.List<HoverRow> hoverRows = new java.util.ArrayList<>();
+
+    private record HoverRow(int x, int y, int w, int h, ResourceLocation ability) {
+        boolean contains(double mx, double my) {
+            return mx >= x && mx < x + w && my >= y && my < y + h;
+        }
+    }
     private int contentX, contentY, contentW, contentH;
     private int tabY, tabH, tabW;
 
@@ -72,6 +80,7 @@ public final class SorcererScreen extends Screen {
         GuiDraw.text(g, font, title, panelX + 8, panelY + 6, 1f, GuiDraw.GOLD);
         renderTabs(g, mouseX, mouseY);
 
+        hoverRows.clear();
         g.enableScissor(contentX, contentY, contentX + contentW + 6, contentY + contentH);
         int top = contentY - (int) scroll;
         int bottom = switch (page) {
@@ -83,6 +92,14 @@ public final class SorcererScreen extends Screen {
         g.disableScissor();
         contentHeight = bottom - top;
         renderScrollbar(g);
+        if (mouseY >= contentY && mouseY < contentY + contentH) {
+            for (HoverRow row : hoverRows) {
+                if (row.contains(mouseX, mouseY)) {
+                    g.renderComponentTooltip(font, CostTooltip.lines(row.ability()), mouseX, mouseY);
+                    break;
+                }
+            }
+        }
     }
 
     private Component tabLabel(Page p) {
@@ -153,6 +170,7 @@ public final class SorcererScreen extends Screen {
                     ? Component.translatable("gui.kegare.sorcerer.ability.ultimate", abilityName, Component.translatable(castType.translationKey()))
                     : Component.translatable("gui.kegare.sorcerer.ability.slot", slot++, abilityName, Component.translatable(castType.translationKey()));
 
+            int rowTop = y;
             if (ability != null && !GuiDraw.abilitySlot(g, ability, contentX, y, a.ultimate())) {
                 GuiDraw.centered(g, font, slotLabel, contentX + GuiDraw.ICON_SLOT_SIZE / 2, y + 6, 1f, GuiDraw.GRAY);
             }
@@ -166,6 +184,14 @@ public final class SorcererScreen extends Screen {
             if (ability != null) {
                 rowY += GuiDraw.wrapped(g, font, GuiDraw.description(ability.descriptionId()), textX, rowY, textW, GuiDraw.DARK_GRAY);
             }
+            y = Math.max(y + GuiDraw.ICON_SLOT_SIZE + 2, rowY) + 5;
+            hoverRows.add(new HoverRow(contentX, rowTop, contentW, y - rowTop, a.id()));
+        }
+        if (innateTechnique.ultimateLocked()) {
+            GuiDraw.lockedSlot(g, font, contentX, y, KegareKeys.ULTIMATE.getTranslatedKeyMessage());
+            int rowY = y;
+            rowY += GuiDraw.wrapped(g, font, Component.translatable("gui.kegare.sorcerer.ability.ultimate_locked"), textX, rowY, textW, GuiDraw.DARK_GRAY);
+            rowY += GuiDraw.wrapped(g, font, Component.translatable("gui.kegare.sorcerer.ability.ultimate_locked.desc"), textX, rowY, textW, GuiDraw.DARK_GRAY);
             y = Math.max(y + GuiDraw.ICON_SLOT_SIZE + 2, rowY) + 5;
         }
         return y;

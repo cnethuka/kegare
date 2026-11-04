@@ -47,6 +47,7 @@ SILVER = ramp("#141416", "#24242a", "#36363e", "#4d4d57", "#6c6c78", "#9a9aa6", 
 JADE = ramp("#06160f", "#0d2a1d", "#16442f", "#226646", "#3a9468", "#72c99a", "#cff5df")
 PAPER = ramp("#b8a77c", "#cdbd93", "#ddd0ad", "#ebe1c4", "#f6efdb")
 SEAL = ramp("#5c0f0c", "#8c1a14", "#b3261e", "#d94a3a", "#f08a76")
+ICE = ramp("#081428", "#0f2d55", "#1a5590", "#3a8fcc", "#79c8ec", "#c2eefa", "#f2fdff")  # Rime: deep blue to white
 
 
 def pick(r: list, t: float):
@@ -763,6 +764,172 @@ def emblem_apex() -> Image.Image:
     return img
 
 
+# ---------------------------------------------------------------------------------------------------- Rime
+
+ICON_FROST_SHARD = [
+    "................",
+    "............KK..",
+    "..........KK66K.",
+    ".........K6665K.",
+    "........K66654K.",
+    ".......K66654K..",
+    "......K66543K...",
+    ".....K6654K.....",
+    "....K6543K......",
+    "...K5432K.......",
+    "..K5433K........",
+    "..K433K.........",
+    ".K33KK..........",
+    ".KKK............",
+    "................",
+    "................",
+]
+ICON_GLACIAL_LANCE = [
+    "................",
+    "...........KKKK.",
+    "..........K6666K",
+    ".........K66665K",
+    "........K666654K",
+    "........K66654K.",
+    ".......K6654KK..",
+    "......K654K.....",
+    ".....K543K......",
+    "....K543K.......",
+    "...K432K........",
+    "..K432K.........",
+    ".K32KK..........",
+    ".K2K............",
+    "..K.............",
+    "................",
+]
+ICON_FROST_FIELD = [
+    "................",
+    "..........3..5..",
+    "......4.....6...",
+    "...K....5.4...6.",
+    "..K6K.6...5..3..",
+    ".K665K..4...6...",
+    ".K6665K...6...5.",
+    ".K66665K5.4.6...",
+    ".K6665K...6...5.",
+    ".K665K..4...6...",
+    "..K6K.6...5..3..",
+    "...K....5.4...6.",
+    "......4.....6...",
+    "..........3..5..",
+    "................",
+    "................",
+]
+ICON_RIME_SHELL = [
+    "................",
+    "......KKKK......",
+    "....KK6666KK....",
+    "...K66555566K...",
+    "..K6554444556K..",
+    "..K6544444456K..",
+    ".K654443344456K.",
+    ".K654433334456K.",
+    ".K654433334456K.",
+    ".K654443344456K.",
+    "..K6544444456K..",
+    "..K6554444556K..",
+    "...K66555566K...",
+    "....KK6666KK....",
+    "......KKKK......",
+    "................",
+]
+
+
+def emblem_rime() -> Image.Image:
+    """A six-armed snowflake of brush strokes with crystal branches over a deep-blue vignette."""
+    img = vignette(48, ICE, seed=301)
+    fg = new(48, 48)
+    cx, cy = 23.5, 23.5
+    for k in range(6):
+        a = k * math.pi / 3 - math.pi / 2
+        tip = (cx + math.cos(a) * 19, cy + math.sin(a) * 19)
+        brush(fg, [(cx, cy), tip], 1.7, ICE[3:], seed=303 + k, taper=(0.1, 0.55), wobble=0.25)
+        for side in (-1, 1):
+            for at, length in ((10.5, 6.0), (15.0, 3.5)):
+                b0 = (cx + math.cos(a) * at, cy + math.sin(a) * at)
+                ab = a + side * 0.8
+                brush(fg, [b0, (b0[0] + math.cos(ab) * length, b0[1] + math.sin(ab) * length)], 0.95, ICE[3:],
+                      seed=311 + k * 4 + (side > 0) * 2 + int(at), taper=(0.2, 0.6))
+    ring(fg, cx, cy, 4.0, 1.25, ICE[4:], seed=331, wobble=0.1)
+    paste(img, rim_light(outline(fg), ICE[-1]))
+    for (x, y) in ((8, 7), (38, 34), (37, 8)):
+        paste(img, sparkle().resize((5, 5), Image.NEAREST), x, y)
+    return img
+
+
+def env_cold() -> Image.Image:
+    grid = [
+        "....K.K....",
+        "...KWKWK...",
+        ".KK.KWK.KK.",
+        "KWWKKWKKWWK",
+        ".KKWKWKWKK.",
+        "KWWWWCWWWWK",
+        ".KKWKWKWKK.",
+        "KWWKKWKKWWK",
+        ".KK.KWK.KK.",
+        "...KWKWK...",
+        "....K.K....",
+    ]
+    return from_grid(grid, {"K": INK, "W": ICE[5], "C": ICE[6]})
+
+
+def env_hot() -> Image.Image:
+    grid = [
+        ".....K.....",
+        "....KRK....",
+        "...KROK....",
+        "...KROOK...",
+        "..KROOYOK..",
+        "..KROYYOK..",
+        ".KROYYYYOK.",
+        ".KROYWWYOK.",
+        ".KROYWWYOK.",
+        "..KROOOOK..",
+        "...KKKKK...",
+    ]
+    return from_grid(grid, {"K": INK, "R": hexc("#9c2a12"), "O": hexc("#f07a22"), "Y": hexc("#ffd04a"), "W": hexc("#fff4c8")})
+
+
+def lock_icon() -> Image.Image:
+    grid = [
+        "...KKKKK...",
+        "..K55555K..",
+        "..K5K.K5K..",
+        "..K5K.K5K..",
+        ".KKKKKKKKK.",
+        ".K6666666K.",
+        ".K6665666K.",
+        ".K665K566K.",
+        ".K6665666K.",
+        ".K4444444K.",
+        ".KKKKKKKKK.",
+    ]
+    return from_grid(grid, {"K": INK, "4": IRON[4], "5": IRON[5], "6": IRON[6]})
+
+
+def freeze_pip(full: bool) -> Image.Image:
+    grid = [
+        "...K...",
+        "..KaK..",
+        ".KabcK.",
+        "KabbcdK",
+        ".KcdeK.",
+        "..KeK..",
+        "...K...",
+    ]
+    if full:
+        pal = {"K": INK, "a": ICE[6], "b": ICE[5], "c": ICE[4], "d": ICE[3], "e": ICE[2]}
+    else:
+        pal = {"K": INK, "a": PLUM[4], "b": PLUM[3], "c": PLUM[2], "d": PLUM[1], "e": PLUM[1]}
+    return from_grid(grid, pal)
+
+
 # ---------------------------------------------------------------------------------------------------- output
 
 def save(img: Image.Image, relative: str) -> Path:
@@ -810,6 +977,11 @@ def build() -> dict[str, Image.Image]:
     out["button"] = button("normal")
     out["button_highlighted"] = button("highlighted")
     out["button_disabled"] = button("disabled")
+    out["env_cold"] = env_cold()
+    out["env_hot"] = env_hot()
+    out["lock"] = lock_icon()
+    out["freeze_pip"] = freeze_pip(True)
+    out["freeze_pip_empty"] = freeze_pip(False)
     return out
 
 
@@ -831,16 +1003,21 @@ def main() -> None:
     save(hud_slot(False), "gui/ability_slot.png")
     save(hud_slot(True), "gui/ability_slot_selected.png")
     save(talisman_item(), "item/purification_talisman.png")
+    # Rime's projectiles render as these items in flight
+    save(icon(ICON_FROST_SHARD, ICE), "item/frost_shard.png")
+    save(icon(ICON_GLACIAL_LANCE, ICE), "item/glacial_lance.png")
 
     icons = {"test_dash": icon(ICON_DASH, MALICE), "test_burst": icon(ICON_BURST, MALICE),
              "test_hover": icon(ICON_HOVER, MALICE), "test_aura": icon(ICON_AURA, MALICE),
-             "test_shockwave": icon(ICON_SHOCKWAVE, MALICE)}
+             "test_shockwave": icon(ICON_SHOCKWAVE, MALICE),
+             "frost_shard": icon(ICON_FROST_SHARD, ICE), "glacial_lance": icon(ICON_GLACIAL_LANCE, ICE),
+             "frost_field": icon(ICON_FROST_FIELD, ICE), "rime_shell": icon(ICON_RIME_SHELL, ICE)}
     for name, img in icons.items():
         save(img, f"gui/ability/{name}.png")
     emblems = {"test_kinetic": emblem_kinetic(), "test_flux": emblem_flux(),
-               "test_prism": emblem_prism(), "test_apex": emblem_apex()}
+               "test_prism": emblem_prism(), "test_apex": emblem_apex(), "rime": emblem_rime()}
     for name, img in emblems.items():
-        save(img, f"gui/innate_technique/{name}.png")
+        save(img, f"gui/emblem/{name}.png")
 
     if "--preview" in sys.argv:
         out = Path(sys.argv[sys.argv.index("--preview") + 1])

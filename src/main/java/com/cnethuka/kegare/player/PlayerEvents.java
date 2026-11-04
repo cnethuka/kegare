@@ -126,6 +126,7 @@ public final class PlayerEvents {
             CastManager.tick(player);
             MaliceService.tickRegen(player);
         }
+        PlayerSync.watchEnvironment(player);
         PlayerSync.flush(player);
     }
 

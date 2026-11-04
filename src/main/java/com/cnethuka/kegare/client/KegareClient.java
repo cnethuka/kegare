@@ -24,6 +24,7 @@ public final class KegareClient {
         modBus.addListener(KegareClient::registerGuiLayers);
         modBus.addListener(KegareClient::registerReloadListeners);
         VisualClientEvents.init(modBus);
+        com.cnethuka.kegare.innate_technique.rime.client.RimeClient.init(modBus);
     }
 
     /** Emblem/icon art is looked up once per texture; forget the answers when resource packs change. */

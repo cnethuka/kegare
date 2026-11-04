@@ -129,6 +129,8 @@ public final class KegareServerConfig {
                 .defineInRange("combatTagSeconds", 10.0, 0.0, 600.0);
         b.pop();
 
+        com.cnethuka.kegare.innate_technique.rime.RimeConfig.define(b);
+
         b.comment("TEST CONTENT: numbers for the placeholder test abilities. Delete with the test innate techniques.").push("test_abilities");
         b.push("dash");
         DASH_COST = b.defineInRange("cost", 10.0, 0.0, 100_000.0);

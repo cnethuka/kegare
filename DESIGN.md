@@ -300,7 +300,7 @@ Malice is always shown as whole numbers (floored, like the HUD); the stored valu
     - `malice_bar.png` is 32×20: rows 0–9 empty, rows 10–19 full, 5px caps, a 22px middle that tiles.
       `GuiDraw.maliceBar` draws it for both the HUD and the Sorcerer screen.
 - **Art for content (optional, with fallbacks).** New content should ship with:
-  - an **emblem** per innate technique: `<namespace>:textures/gui/innate_technique/<path>.png`, 48×48. It is shown
+  - an **emblem** per innate technique: `<namespace>:textures/gui/emblem/<path>.png`, 48×48. It is shown
     on reveal cards, the Sorcerer screen and the talisman prompt. Without one, the tab icon item is drawn instead.
   - an **icon** per ability: `<namespace>:textures/gui/ability/<path>.png`, 16×16. It is shown in the HUD slots,
     the radial menu and the Sorcerer screen. Without one, the slot number is drawn instead.
@@ -398,7 +398,8 @@ Each tab has its own root.
 - Every roll (birth, talisman, admin, replacement) awards it; later rolls are no-ops. `/kegare setinnatetechnique`
   is not a roll and doesn't award it.
 - Give that innate technique's own advancements this root as their parent.
-- The root is **silent in chat**. Announcing it would tell every opponent which innate technique a player rolled.
+- The root is **silent in chat**. Announcing it would tell every opponent which innate technique a player rolled. The
+  same goes for everything in the tab: datagen fails if any advancement under `innate_technique/` announces.
 - Test innate techniques get no tab.
 
 **Who sees which tab:** vanilla only shows a tab once the player has earned something in it.
@@ -449,6 +450,72 @@ Each tab has its own root.
     (vanilla particles only).
 - Network version `3`.
 
+### 3.14 Rime
+Package `com.cnethuka.kegare.innate_technique.rime`. **Rarity: RARE.** All numbers are in `[rime]` of
+`kegare-server.toml`; the defaults are below. Test innate techniques stay behind `includeTestInnateTechniques`.
+
+| Ability | Type | What it does (defaults) |
+|---|---|---|
+| **Frost Shard** | INSTANT | A fast ice projectile (2.2 blocks/tick, 1.5 s flight). 3 damage, Slowness I for 1.5 s, 1 Freeze stack. Cost 10, cooldown 1 s. |
+| **Glacial Lance** | CHARGED | Hold up to 2 s; a tap shorter than 0.4 s fizzles (no cost, no cooldown). A bigger, slower lance (1.4 blocks/tick) for 4 to 12 damage by charge, Slowness II for 3 s, 2 Freeze stacks. Cost 25, cooldown 6 s. |
+| **Frost Field** | CHANNELED | A cone in front of you while held (6 blocks, 35° half-angle, line of sight). Slowness II on everyone in it, +1 Freeze stack per second. Cost 8, then 12 Malice/s; max 5 s; cooldown 5 s after it ends. |
+| **Rime Shell** | TOGGLE | 30% damage reduction; anyone who hits you in melee gets Slowness II for 2 s. Cost 10, then 4 Malice/s; cooldown 8 s after switching off. Like every toggle it keeps running while you are stunned or frozen. |
+
+- **No ultimate yet.** The V slot shows a padlock in the HUD and the Sorcerer screen, and pressing V says it is locked
+  (`InnateTechnique.Builder.lockedUltimate()`). Rime's Dominion comes later.
+- **Projectiles** are real entities with velocity (`FrostShardEntity`, `GlacialLanceEntity`, vanilla throwables
+  rendered as their item sprite). Damage type `kegare:rime` (`data/kegare/damage_type/rime.json`, freezing hurt
+  sound): the caster is the source entity, the projectile the direct entity, so kills are credited to the caster.
+- **Freeze stacks** (any living target, runtime attachment `kegare:freeze`):
+  - One stack melts 3 s after the last change, then every 3 s.
+  - At **5 stacks** the target is **frozen solid for 1 s** through the **existing stun system**, so it interrupts
+    charges and channels and blocks casting. Walking and jumping are locked with transient attribute modifiers, the
+    vanilla frost overlay shows, and the `frozen` animation plays. Then the stacks reset.
+  - Breaking free plays `freeze_shatter` and a glass sound, and gives **2 s of immunity** to new stacks, so nobody
+    can be freeze-locked.
+  - The HUD shows **your** stacks as pips (also for Severed players), and "Frozen!" while frozen.
+- **Environment** (`RimeEnvironment`, applied to Rime's cost **and** upkeep). Cold factors multiply together:
+  - rain or snow falling on you ×0.85
+  - in or next to water ×0.85
+  - a cold biome (base temperature < 0.15) ×0.85
+  - a hot biome (≥ 1.0) ×1.25
+  - the Nether, or any ultra-warm dimension, ×1.5 (replaces the hot-biome factor)
+
+  The total is clamped to [0.5, 2]. The innate technique reports it through `InnateTechnique.environment(player)`;
+  it is synced (re-checked every 10 ticks) for the HUD's snowflake or flame icon next to the Malice bar, with the
+  multiplier. Hovering an ability on the Sorcerer screen shows its current cost, upkeep and every active factor; the
+  radial menu shows the current cost.
+- **Visuals:** PAL animations `frost_shard_cast`, `glacial_lance_charge` (loop), `glacial_lance_release`,
+  `frost_field_channel` (loop), `rime_shell_toggle` and `frozen` (loop), in
+  `assets/kegare/player_animations/rime.json`. Photon effects in `assets/kegare/fx/rime/`: `frost_shard_trail`,
+  `frost_shard_impact`, `glacial_lance_charge` (grows with charge), `glacial_lance_trail`, `glacial_lance_impact`,
+  `frost_field_cone`, `rime_shell_aura` (an ice bubble, invisible from the inside) and `freeze_shatter`. Each has a
+  vanilla-particle lookalike for the fallback.
+- **Effect authoring:** the effects are built from Photon's own objects in `RimeFxAuthoring` and written with
+  Photon's serializer, the same `.fx` format the editor exports. In a dev client, `/kegarefx export` rewrites them
+  (and the running game's copy), and `/kegarefx play <name> [front|self|loop]` previews one. The command exists
+  only in the dev environment.
+- **Advancements** (Rime tab, root `kegare:innate_technique/rime`, which unlocks on first rolling Rime). All are
+  hidden, use `minecraft:impossible`, are awarded from code, and are never announced in chat: they would reveal who
+  has Rime. Datagen enforces this for every advancement under `innate_technique/`. Only a player who currently holds
+  Rime earns them, and the PvP ones count player targets only.
+
+  | ID (`kegare:innate_technique/rime/…`) | Title | Description | Frame |
+  |---|---|---|---|
+  | `shatter` | Shatter | Freeze a player solid | goal |
+  | `cold_open` | Cold Open | Hit a player with Frost Shard | task |
+  | `brain_freeze` | Brain Freeze | Freeze a player while they're charging or channeling | goal |
+  | `full_charge` | Full Charge | Hit a player with a fully charged Glacial Lance | task |
+  | `thin_ice` | Thin Ice | Block 100 total damage with Rime Shell (saved per player across sessions: attachment `kegare:rime_stats`) | goal |
+  | `cold_blooded` | Cold Blooded | Kill a player who is frozen solid | goal |
+  | `deep_freeze` | Deep Freeze | Freeze the same player 3 times within 60 seconds | challenge |
+  | `long_way_from_home` | Long Way From Home | Freeze a player in the Nether | challenge |
+  | `home_field` | Home Field | Cast a Rime ability during snowfall in a cold biome | task |
+- **Art:** emblem `textures/gui/emblem/rime.png` and ability icons `textures/gui/ability/<ability>.png` (from
+  `gen_art.py`, ice palette), plus HUD sprites `env_cold`, `env_hot`, `lock`, `freeze_pip` and `freeze_pip_empty`.
+- **Tests:** `RimeFreezeTest` (in-game JUnit) covers stacks, the freeze at max (stun, channel interrupted, visual
+  loops), immunity, decay, and the shell's reduction and Thin Ice count.
+
 ---
 
 ## 4. Extension points (how later content plugs in)
@@ -466,7 +533,9 @@ Each tab has its own root.
 
 ## 5. Future (TBD, not in Step 1)
 
-- **Innate techniques:** real ones, with their abilities, balance and visuals. Remove the test content.
+- **Innate techniques:** more real ones after Rime (§3.14), with their abilities, balance and visuals. Remove the test
+  content.
+- **Rime's Dominion** (its ultimate; the slot is locked until then).
 - **Dominions:** expansion, guaranteed-hit rules, clashes, counters, burnout.
 - **Malice-neutralizing tools:** weapons and items that bypass, drain or cancel Malice. Possibly Severed-focused
   gear.

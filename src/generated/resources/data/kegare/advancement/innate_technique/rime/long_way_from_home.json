@@ -1,0 +1,29 @@
+{
+  "parent": "kegare:innate_technique/rime",
+  "criteria": {
+    "granted": {
+      "trigger": "minecraft:impossible"
+    }
+  },
+  "display": {
+    "announce_to_chat": false,
+    "description": {
+      "translate": "advancements.kegare.rime.long_way_from_home.description"
+    },
+    "frame": "challenge",
+    "hidden": true,
+    "icon": {
+      "count": 1,
+      "id": "minecraft:magma_block"
+    },
+    "title": {
+      "translate": "advancements.kegare.rime.long_way_from_home.title"
+    }
+  },
+  "requirements": [
+    [
+      "granted"
+    ]
+  ],
+  "sends_telemetry_event": true
+}

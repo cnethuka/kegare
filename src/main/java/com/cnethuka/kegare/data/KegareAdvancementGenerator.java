@@ -2,6 +2,7 @@ package com.cnethuka.kegare.data;
 
 import com.cnethuka.kegare.Kegare;
 import com.cnethuka.kegare.advancement.KegareAdvancements;
+import com.cnethuka.kegare.innate_technique.rime.RimeAdvancements;
 import com.cnethuka.kegare.innatetechnique.InnateTechnique;
 import com.cnethuka.kegare.registry.KegareItems;
 import com.cnethuka.kegare.registry.KegareRegistries;
@@ -65,15 +66,30 @@ public final class KegareAdvancementGenerator implements AdvancementProvider.Adv
 
         // ---- One tab per innate technique: root unlocks on the first roll. Test content gets no tab. ----
         // Silent in chat: announcing it would tell every opponent which innate technique a player rolled.
+        java.util.Map<ResourceLocation, AdvancementHolder> techniqueRoots = new java.util.HashMap<>();
         for (InnateTechnique innateTechnique : KegareRegistries.INNATE_TECHNIQUE) {
             if (innateTechnique.isTestContent() || !innateTechnique.id().getNamespace().equals(Kegare.MODID)) continue;
-            Advancement.Builder.advancement()
+            AdvancementHolder techniqueRoot = Advancement.Builder.advancement()
                     .display(innateTechnique.tabIcon(), innateTechnique.displayName(),
                             Component.translatable("advancements.kegare.innate_technique_root.description"),
                             INNATE_TECHNIQUE_BACKGROUND, AdvancementType.TASK, true, false, false)
                     .addCriterion("rolled", impossible())
                     .save(saver, KegareAdvancements.innateTechniqueRoot(innateTechnique.id()).toString());
+            techniqueRoots.put(innateTechnique.id(), techniqueRoot);
         }
+
+        // ---- Rime tab: all hidden and silent (they would reveal who has Rime); PvP ones count player targets only ----
+        AdvancementHolder rime = techniqueRoots.get(Kegare.id("rime"));
+        if (rime == null) throw new IllegalStateException("Rime's tab root was not generated");
+        techniqueChild(saver, rime, RimeAdvancements.COLD_OPEN, "rime.cold_open", Items.SNOWBALL, AdvancementType.TASK);
+        techniqueChild(saver, rime, RimeAdvancements.FULL_CHARGE, "rime.full_charge", Items.TRIDENT, AdvancementType.TASK);
+        techniqueChild(saver, rime, RimeAdvancements.HOME_FIELD, "rime.home_field", Items.SNOW_BLOCK, AdvancementType.TASK);
+        techniqueChild(saver, rime, RimeAdvancements.SHATTER, "rime.shatter", Items.ICE, AdvancementType.GOAL);
+        techniqueChild(saver, rime, RimeAdvancements.BRAIN_FREEZE, "rime.brain_freeze", Items.POWDER_SNOW_BUCKET, AdvancementType.GOAL);
+        techniqueChild(saver, rime, RimeAdvancements.THIN_ICE, "rime.thin_ice", Items.PACKED_ICE, AdvancementType.GOAL);
+        techniqueChild(saver, rime, RimeAdvancements.COLD_BLOODED, "rime.cold_blooded", Items.WITHER_SKELETON_SKULL, AdvancementType.GOAL);
+        techniqueChild(saver, rime, RimeAdvancements.DEEP_FREEZE, "rime.deep_freeze", Items.BLUE_ICE, AdvancementType.CHALLENGE);
+        techniqueChild(saver, rime, RimeAdvancements.LONG_WAY_FROM_HOME, "rime.long_way_from_home", Items.MAGMA_BLOCK, AdvancementType.CHALLENGE);
     }
 
     /**
@@ -101,6 +117,16 @@ public final class KegareAdvancementGenerator implements AdvancementProvider.Adv
                 .save(saver, id.toString());
     }
 
+    /** An innate technique tab's advancement: hidden until earned and never announced (it would reveal the technique). */
+    private static AdvancementHolder techniqueChild(Consumer<AdvancementHolder> saver, AdvancementHolder parent, ResourceLocation id,
+                                                    String key, ItemLike icon, AdvancementType type) {
+        return Advancement.Builder.advancement()
+                .parent(parent)
+                .display(icon, title(key), description(key), null, type, true, false, true)
+                .addCriterion("granted", impossible())
+                .save(saver, id.toString());
+    }
+
     private static boolean announces(ResourceLocation id) {
         return !KegareAdvancements.SECRET_IDENTITY.contains(id) && !KegareAdvancements.SILENT.contains(id);
     }
@@ -111,6 +137,10 @@ public final class KegareAdvancementGenerator implements AdvancementProvider.Adv
      */
     private static void enforceSecretIdentityRule(AdvancementHolder holder) {
         ResourceLocation id = holder.id();
+        // Innate technique tabs: nothing in them is ever announced (it would reveal who rolled what).
+        if (id.getPath().startsWith("innate_technique/") && holder.value().display().map(d -> d.shouldAnnounceChat()).orElse(false)) {
+            throw new IllegalStateException("Advancement " + id + " is in an innate technique tab and must never be announced to chat");
+        }
         boolean secret = KegareAdvancements.SECRET_IDENTITY.contains(id);
         if (!secret && !KegareAdvancements.SILENT.contains(id)) return;
         var display = holder.value().display().orElseThrow(() -> new IllegalStateException(id + " needs a display"));

@@ -59,7 +59,9 @@ public final class CastManager {
                 ? innateTechnique.get().ability(InnateTechniqueService.get(player).selectedSlot())
                 : innateTechnique.get().ultimate().orElse(null);
         if (ability == null) {
-            feedback(player, slot == CastSlot.ULTIMATE ? CastResult.NO_ULTIMATE : CastResult.NO_INNATE_TECHNIQUE, null);
+            CastResult why = slot != CastSlot.ULTIMATE ? CastResult.NO_INNATE_TECHNIQUE
+                    : innateTechnique.get().ultimateLocked() ? CastResult.ULTIMATE_LOCKED : CastResult.NO_ULTIMATE;
+            feedback(player, why, null);
             return null;
         }
         return new Resolved(innateTechnique.get(), ability);

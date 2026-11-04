@@ -137,7 +137,8 @@ public final class ClientVisuals {
     }
 
     private static void end(@Nullable Entity entity, Loop loop) {
-        PhotonEffects.stop(loop.executor);
+        // A growing (charge) effect vanishes at once: it just turned into the attack. Others fade out.
+        PhotonEffects.stop(loop.executor, loop.growTicks > 0);
         if (loop.animation && entity instanceof AbstractClientPlayer player) {
             loop.visual.animation().ifPresent(animation -> PlayerAnimations.stop(player, animation));
         }

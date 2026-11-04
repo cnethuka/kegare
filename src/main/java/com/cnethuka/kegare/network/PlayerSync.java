@@ -16,6 +16,19 @@ public final class PlayerSync {
         player.getData(KegareAttachments.SYNC_STATE).dirty = true;
     }
 
+    /** Every 10 ticks: resend if the innate technique's cost environment changed (rain, water, biome). */
+    public static void watchEnvironment(ServerPlayer player) {
+        if (player.tickCount % 10 != 0) return;
+        var environment = com.cnethuka.kegare.innatetechnique.InnateTechniqueService.current(player)
+                .map(t -> t.environment(player))
+                .orElse(com.cnethuka.kegare.innatetechnique.CostEnvironment.NEUTRAL);
+        SyncState state = player.getData(KegareAttachments.SYNC_STATE);
+        if (!environment.equals(state.lastEnvironment)) {
+            state.lastEnvironment = environment;
+            state.dirty = true;
+        }
+    }
+
     public static void flush(ServerPlayer player) {
         if (player.getData(KegareAttachments.SYNC_STATE).dirty) syncNow(player);
     }

@@ -98,10 +98,15 @@ final class PhotonEffects {
 
     /** Stops future emission; particles already in the air fade out naturally. */
     static void stop(@Nullable FXEffectExecutor executor) {
+        stop(executor, false);
+    }
+
+    /** @param immediately also remove what is already visible (a charge that just became a projectile) */
+    static void stop(@Nullable FXEffectExecutor executor, boolean immediately) {
         if (executor == null) return;
         try {
             FXRuntime runtime = executor.getRuntime();
-            if (runtime != null) runtime.destroy(false);
+            if (runtime != null) runtime.destroy(immediately);
         } catch (Throwable t) {
             Kegare.LOGGER.debug("Couldn't stop a Photon effect", t);
         }

@@ -1,6 +1,11 @@
 package com.cnethuka.kegare.network;
 
 import com.cnethuka.kegare.Kegare;
+import com.cnethuka.kegare.innate_technique.rime.FreezeService;
+import com.cnethuka.kegare.innate_technique.rime.RimeConfig;
+import com.cnethuka.kegare.innatetechnique.Ability;
+import com.cnethuka.kegare.innatetechnique.CostEnvironment;
+import com.cnethuka.kegare.innatetechnique.InnateTechnique;
 import com.cnethuka.kegare.malice.MaliceData;
 import com.cnethuka.kegare.malice.MaliceService;
 import com.cnethuka.kegare.client.ClientData;
@@ -35,9 +40,17 @@ public record SyncPayload(
         List<CooldownEntry> cooldowns,
         List<ResourceLocation> activeToggles,
         Optional<CastingEntry> casting,
-        List<ResourceLocation> traits
+        List<ResourceLocation> traits,
+        CostEnvironment environment,
+        List<AbilityCost> costs,
+        int freezeStacks,
+        int maxFreezeStacks,
+        long frozenUntil
 ) implements CustomPacketPayload {
     public record CooldownEntry(ResourceLocation ability, long endTick, int duration) {}
+
+    /** Current Malice cost and upkeep of an ability where the player stands (environment included). */
+    public record AbilityCost(ResourceLocation ability, float cost, float upkeepPerSecond) {}
 
     /** @param maxTicks CHARGED: ticks to full charge; CHANNELED: max duration (0 = unlimited) */
     public record CastingEntry(ResourceLocation ability, long startTick, int maxTicks) {}
@@ -64,11 +77,22 @@ public record SyncPayload(
                         ? active.ability().maxChargeTicks(player)
                         : active.ability().maxChannelTicks(player)));
 
+        Optional<InnateTechnique> technique = InnateTechniqueService.current(player);
+        CostEnvironment environment = technique.map(t -> t.environment(player)).orElse(CostEnvironment.NEUTRAL);
+        List<AbilityCost> costs = new ArrayList<>();
+        technique.ifPresent(t -> {
+            List<Ability> all = new ArrayList<>(t.abilities());
+            t.ultimate().ifPresent(all::add);
+            for (Ability a : all) costs.add(new AbilityCost(a.id(), (float) a.cost(player), (float) a.upkeepPerSecond(player)));
+        });
+
         return new SyncPayload(
                 malice.isBorn(), malice.isSevered(), malice.tier().ordinal(), malice.capacity(), (float) malice.current(),
                 innateTechnique.innateTechniqueId(), innateTechnique.selectedSlot(),
                 cooldowns, toggles, casting,
-                new ArrayList<>(TraitService.get(player).view()));
+                new ArrayList<>(TraitService.get(player).view()),
+                environment, costs,
+                FreezeService.stacks(player), RimeConfig.FREEZE_MAX_STACKS.get(), FreezeService.frozenUntil(player));
     }
 
     private void write(FriendlyByteBuf buf) {
@@ -91,6 +115,20 @@ public record SyncPayload(
             b.writeVarInt(c.maxTicks());
         });
         buf.writeCollection(traits, FriendlyByteBuf::writeResourceLocation);
+        buf.writeFloat(environment.multiplier());
+        buf.writeEnum(environment.icon());
+        buf.writeCollection(environment.factors(), (b, f) -> {
+            b.writeUtf(f.translationKey(), 128);
+            b.writeFloat(f.multiplier());
+        });
+        buf.writeCollection(costs, (b, c) -> {
+            b.writeResourceLocation(c.ability());
+            b.writeFloat(c.cost());
+            b.writeFloat(c.upkeepPerSecond());
+        });
+        buf.writeVarInt(freezeStacks);
+        buf.writeVarInt(maxFreezeStacks);
+        buf.writeVarLong(frozenUntil);
     }
 
     private static SyncPayload read(FriendlyByteBuf buf) {
@@ -105,7 +143,11 @@ public record SyncPayload(
                 buf.readList(b -> new CooldownEntry(b.readResourceLocation(), b.readVarLong(), b.readVarInt())),
                 buf.readList(FriendlyByteBuf::readResourceLocation),
                 buf.readOptional(b -> new CastingEntry(b.readResourceLocation(), b.readVarLong(), b.readVarInt())),
-                buf.readList(FriendlyByteBuf::readResourceLocation));
+                buf.readList(FriendlyByteBuf::readResourceLocation),
+                new CostEnvironment(buf.readFloat(), buf.readEnum(CostEnvironment.Icon.class),
+                        buf.readList(b -> new CostEnvironment.Factor(b.readUtf(128), b.readFloat()))),
+                buf.readList(b -> new AbilityCost(b.readResourceLocation(), b.readFloat(), b.readFloat())),
+                buf.readVarInt(), buf.readVarInt(), buf.readVarLong());
     }
 
     @Override

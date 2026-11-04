@@ -1,0 +1,28 @@
+{
+  "parent": "kegare:innate_technique/rime",
+  "criteria": {
+    "granted": {
+      "trigger": "minecraft:impossible"
+    }
+  },
+  "display": {
+    "announce_to_chat": false,
+    "description": {
+      "translate": "advancements.kegare.rime.home_field.description"
+    },
+    "hidden": true,
+    "icon": {
+      "count": 1,
+      "id": "minecraft:snow_block"
+    },
+    "title": {
+      "translate": "advancements.kegare.rime.home_field.title"
+    }
+  },
+  "requirements": [
+    [
+      "granted"
+    ]
+  ],
+  "sends_telemetry_event": true
+}

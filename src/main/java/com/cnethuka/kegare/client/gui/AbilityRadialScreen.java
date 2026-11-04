@@ -111,6 +111,7 @@ public final class AbilityRadialScreen extends Screen {
         Ability ability = abilities.get(shown);
         GuiDraw.centered(g, font, ability.displayName(), cx, cy - font.lineHeight, 1f, hovered >= 0 ? GuiDraw.WHITE : GuiDraw.GRAY);
         GuiDraw.centered(g, font, Component.translatable(ability.castType().translationKey()), cx, cy + 2, 1f, GuiDraw.DARK_GRAY);
+        CostTooltip.shortLine(ability.id()).ifPresent(line -> GuiDraw.centered(g, font, line, cx, cy + 2 + font.lineHeight + 1, 1f, GuiDraw.MALICE));
         GuiDraw.centered(g, font, Component.translatable("gui.kegare.radial.hint"), cx, Math.min(height - 12, cy + r + SLOT), 1f, GuiDraw.GRAY);
     }
 
