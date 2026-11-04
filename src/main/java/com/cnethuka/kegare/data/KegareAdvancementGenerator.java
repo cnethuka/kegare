@@ -54,9 +54,9 @@ public final class KegareAdvancementGenerator implements AdvancementProvider.Adv
         child(saver, awakening, KegareAdvancements.OVERFLOWING, "overflowing", Items.EXPERIENCE_BOTTLE, AdvancementType.GOAL, true);
         child(saver, awakening, KegareAdvancements.RUNNING_ON_EMPTY, "running_on_empty", Items.GLASS_BOTTLE, AdvancementType.TASK, false);
 
-        // ---- Lensing Eyes tab: secret identity (KegareAdvancements.SECRET_IDENTITY), so hidden and silent ----
+        // ---- Lensing Eyes tab: secret identity, so silent; children hidden, root visible (documented exception) ----
         AdvancementHolder clearSight = root(saver, KegareAdvancements.CLEAR_SIGHT, "clear_sight", "granted", Items.SPYGLASS,
-                LENSING_EYES_BACKGROUND, AdvancementType.CHALLENGE, true);
+                LENSING_EYES_BACKGROUND, AdvancementType.CHALLENGE, false); // visible root: SECRET_VISIBLE_ROOTS
         child(saver, clearSight, KegareAdvancements.THE_CYCLE_CONTINUES, "the_cycle_continues", Items.CLOCK, AdvancementType.CHALLENGE, true);
         child(saver, clearSight, KegareAdvancements.EYES_CLOSED, "eyes_closed", Items.INK_SAC, AdvancementType.TASK, true);
         child(saver, clearSight, KegareAdvancements.BLINDED, "blinded", Items.FERMENTED_SPIDER_EYE, AdvancementType.GOAL, true);
@@ -76,12 +76,16 @@ public final class KegareAdvancementGenerator implements AdvancementProvider.Adv
         }
     }
 
-    /** A tab root. Secret-identity IDs are always hidden and never announced to chat. */
+    /**
+     * A tab root. Secret-identity IDs are never announced and are hidden, except roots listed in
+     * {@link KegareAdvancements#SECRET_VISIBLE_ROOTS}.
+     */
     private static AdvancementHolder root(Consumer<AdvancementHolder> saver, ResourceLocation id, String key, String criterion, ItemLike icon,
                                           ResourceLocation background, AdvancementType type, boolean hidden) {
         boolean secret = KegareAdvancements.SECRET_IDENTITY.contains(id);
+        boolean forceHidden = secret && !KegareAdvancements.SECRET_VISIBLE_ROOTS.contains(id);
         return Advancement.Builder.advancement()
-                .display(icon, title(key), description(key), background, type, true, !secret, hidden || secret)
+                .display(icon, title(key), description(key), background, type, true, announces(id), hidden || forceHidden)
                 .addCriterion(criterion, impossible())
                 .save(saver, id.toString());
     }
@@ -92,17 +96,32 @@ public final class KegareAdvancementGenerator implements AdvancementProvider.Adv
         boolean secret = KegareAdvancements.SECRET_IDENTITY.contains(id);
         return Advancement.Builder.advancement()
                 .parent(parent)
-                .display(icon, title(key), description(key), null, type, true, !secret, hidden || secret)
+                .display(icon, title(key), description(key), null, type, true, announces(id), hidden || secret)
                 .addCriterion("granted", impossible())
                 .save(saver, id.toString());
     }
 
+    private static boolean announces(ResourceLocation id) {
+        return !KegareAdvancements.SECRET_IDENTITY.contains(id) && !KegareAdvancements.SILENT.contains(id);
+    }
+
+    /**
+     * Fails datagen if a secret-identity or SILENT advancement would be announced, or if a secret one is visible
+     * without being an explicitly listed tab root (KegareAdvancements.SECRET_VISIBLE_ROOTS, no parent).
+     */
     private static void enforceSecretIdentityRule(AdvancementHolder holder) {
-        if (!KegareAdvancements.SECRET_IDENTITY.contains(holder.id())) return;
-        boolean ok = holder.value().display().map(d -> d.isHidden() && !d.shouldAnnounceChat()).orElse(false);
-        if (!ok) {
-            throw new IllegalStateException("Advancement " + holder.id() + " reveals a secret identity: it must be hidden"
-                    + " and never announced to chat (KegareAdvancements.SECRET_IDENTITY)");
+        ResourceLocation id = holder.id();
+        boolean secret = KegareAdvancements.SECRET_IDENTITY.contains(id);
+        if (!secret && !KegareAdvancements.SILENT.contains(id)) return;
+        var display = holder.value().display().orElseThrow(() -> new IllegalStateException(id + " needs a display"));
+        if (display.shouldAnnounceChat()) {
+            throw new IllegalStateException("Advancement " + id + " must never be announced to chat"
+                    + " (KegareAdvancements.SECRET_IDENTITY / SILENT)");
+        }
+        boolean visibleRootException = KegareAdvancements.SECRET_VISIBLE_ROOTS.contains(id) && holder.value().parent().isEmpty();
+        if (secret && !display.isHidden() && !visibleRootException) {
+            throw new IllegalStateException("Advancement " + id + " reveals a secret identity: it must be hidden"
+                    + " (only tab roots listed in KegareAdvancements.SECRET_VISIBLE_ROOTS may be visible)");
         }
     }
 

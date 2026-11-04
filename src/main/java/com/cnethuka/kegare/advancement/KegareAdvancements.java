@@ -39,6 +39,16 @@ public final class KegareAdvancements {
             CLEAR_SIGHT, THE_CYCLE_CONTINUES, EYES_CLOSED, BLINDED,
             VESSEL_OF_THE_KING, UNWORTHY_HEIR, UNSEALED);
 
+    /**
+     * Documented exception to the secret-identity rule: these secret TAB ROOTS may be visible (still silent).
+     * A tab only appears to players who earned something in it, so a visible root reveals nothing to anyone else,
+     * and a hidden root would render as a dangling connector line for everyone who hasn't earned it.
+     */
+    public static final Set<ResourceLocation> SECRET_VISIBLE_ROOTS = Set.of(CLEAR_SIGHT);
+
+    /** Not secret, but never announced to chat: they reveal PvP information (e.g. Malice capacity). */
+    public static final Set<ResourceLocation> SILENT = Set.of(OVERFLOWING);
+
     private KegareAdvancements() {}
 
     /**

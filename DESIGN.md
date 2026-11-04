@@ -45,6 +45,17 @@ game never names a bearer, heir or killer of a secret holder.
 - **Reserved for later content:** a few more IDs are already in the set, so they're covered automatically once they're
   generated.
 - **Adding a new secret advancement:** add its ID to the set first.
+- **Exception: a secret tab root may be visible (never announced).** A tab only appears to players who have earned
+  something in it, so a visible root reveals nothing to uninvolved players. A hidden root is never drawn until
+  earned, so everyone else would see a connector line pointing at nothing.
+  - The exception applies only to roots listed in `KegareAdvancements.SECRET_VISIBLE_ROOTS`.
+  - Datagen fails if a listed ID has a parent, or if any other secret advancement is visible.
+  - Current: `clear_sight` (Lensing Eyes tab).
+- **Related rule: PvP information is silent.** Advancements that would leak combat-relevant information get no chat
+  announcement, even though they aren't secret identities. They live in `KegareAdvancements.SILENT`, and datagen
+  enforces it.
+  - Current: `overflowing` (reveals Malice capacity).
+  - Innate technique tab roots are silent for the same reason (§3.11).
 
 ---
 
@@ -275,14 +286,15 @@ Each tab has its own root.
 | *Chosen by Fate* | challenge | yes | rolled a Legendary |
 | *Bitter Luck* (under Reawakening) | goal | hidden | hit hard pity |
 | *Severed* | goal | hidden | born with 0 Malice |
-| *Overflowing* | goal | hidden | born (or reborn) in the Vast tier |
+| *Overflowing* | goal | hidden, **silent** (reveals Malice capacity) | born (or reborn) in the Vast tier |
 | *Running on Empty* | task | yes | visible Malice (floored, like the HUD) drops to 0 while in combat |
 
-**Lensing Eyes tab** (root `clear_sight`). Every advancement here is **hidden and silent** (secret-identity rule, §1):
+**Lensing Eyes tab** (root `clear_sight`). Everything here is **silent**, and every advancement except the root is
+**hidden** (secret-identity rule and its visible-root exception, §1):
 
 | Advancement | Frame | When |
 |---|---|---|
-| *Clear Sight* (root) | challenge | born with it |
+| *Clear Sight* (root, **visible**) | challenge | born with it |
 | *The Cycle Continues* | challenge | inherited it |
 | *Eyes Closed* | task | lost it |
 | *Blinded* | goal | killed a bearer |
@@ -304,9 +316,8 @@ Each tab has its own root.
 - The Lensing Eyes tab appears for whoever has earned one of its advancements: a born or inheriting holder, a
   former holder (*Eyes Closed*), or a killer (*Blinded*). Uninvolved players never see it. An admin-granted holder
   has earned nothing there, so it stays hidden for them until something happens.
-- Vanilla never draws a hidden advancement until it's earned, and that includes a tab root. Everyone except a
-  player born with the eyes therefore sees the Lensing Eyes tab (spyglass icon, "Clear Sight" title) with its root
-  icon missing and a connector line pointing to it. This is a consequence of the hidden root.
+- Because *Clear Sight* is visible, involved players who weren't born with the eyes see it as an unearned (grey)
+  root, with their own advancement linked to it. (A hidden root would not be drawn at all.)
 
 ---
 
