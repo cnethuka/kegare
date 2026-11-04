@@ -10,6 +10,7 @@ import com.cnethuka.kegare.roll.RollService;
 import com.cnethuka.kegare.innatetechnique.CastManager;
 import com.cnethuka.kegare.innatetechnique.EndReason;
 import com.cnethuka.kegare.innatetechnique.InnateTechniqueService;
+import com.cnethuka.kegare.innatetechnique.visual.VisualService;
 import com.cnethuka.kegare.trait.TraitService;
 import com.cnethuka.kegare.trait.TraitSuccession;
 import javax.annotation.Nullable;
@@ -63,13 +64,36 @@ public final class PlayerEvents {
     static void onLogout(PlayerEvent.PlayerLoggedOutEvent event) {
         if (!(event.getEntity() instanceof ServerPlayer player) || player instanceof FakePlayer) return;
         CastManager.stopAll(player, EndReason.LOGOUT);
+        VisualService.stopAll(player);
         TraitSuccession.markSeen(player);
+    }
+
+    /** A charge, channel or toggle never carries through a portal, and neither do its visuals. */
+    @SubscribeEvent
+    static void onChangedDimension(PlayerEvent.PlayerChangedDimensionEvent event) {
+        if (!(event.getEntity() instanceof ServerPlayer player) || player instanceof FakePlayer) return;
+        CastManager.stopAll(player, EndReason.DIMENSION_CHANGE);
+        VisualService.stopAll(player);
+    }
+
+    /** Someone came into view of an entity: show them the loops already playing on it. */
+    @SubscribeEvent
+    static void onStartTracking(PlayerEvent.StartTracking event) {
+        if (event.getEntity() instanceof ServerPlayer tracker) VisualService.onStartTracking(tracker, event.getTarget());
+    }
+
+    /** Any living entity's visuals stop when it dies (status loops on mobs, too). */
+    @SubscribeEvent(priority = EventPriority.LOWEST)
+    static void onAnyDeath(LivingDeathEvent event) {
+        if (event.isCanceled() || event.getEntity().level().isClientSide) return;
+        if (!(event.getEntity() instanceof ServerPlayer)) VisualService.stopAll(event.getEntity());
     }
 
     @SubscribeEvent(priority = EventPriority.LOWEST)
     static void onDeath(LivingDeathEvent event) {
         if (!(event.getEntity() instanceof ServerPlayer victim) || victim instanceof FakePlayer) return;
         CastManager.stopAll(victim, EndReason.DEATH);
+        VisualService.stopAll(victim);
         // Runs on the dying entity, before its data is copied to the respawned player.
         ServerPlayer killer = playerKiller(victim, event.getSource());
         if (killer != null) TraitSuccession.onPlayerKilled(victim, killer);

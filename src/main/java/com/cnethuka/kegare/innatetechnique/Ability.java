@@ -70,6 +70,14 @@ public interface Ability {
     /** A charge, channel or toggle ended (not called for INSTANT). */
     default void onEnd(AbilityContext ctx, EndReason reason) {}
 
+    /**
+     * Cosmetics per phase (player animations and VFX). Sent to clients when the server acts; never waited on.
+     * See {@link com.cnethuka.kegare.innatetechnique.visual.VisualPhase} for when each phase plays.
+     */
+    default com.cnethuka.kegare.innatetechnique.visual.AbilityVisuals visuals() {
+        return com.cnethuka.kegare.innatetechnique.visual.AbilityVisuals.NONE;
+    }
+
     default String descriptionId() {
         return Util.makeDescriptionId("ability", id());
     }

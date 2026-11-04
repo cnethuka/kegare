@@ -9,6 +9,8 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Optional;
 import javax.annotation.Nullable;
+import com.cnethuka.kegare.innatetechnique.visual.VisualPhase;
+import com.cnethuka.kegare.innatetechnique.visual.VisualService;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
 
@@ -106,18 +108,26 @@ public final class CastManager {
                 if (!MaliceService.trySpend(player, ability.cost(player))) return;
                 ability.execute(ctx);
                 InnateTechniqueService.startCooldown(player, ability);
+                VisualService.ability(player, ability, VisualPhase.CAST);
             }
             // Cost is checked now but paid on release.
-            case CHARGED -> state.casting = new CastState.Active(ability, slot, now);
+            case CHARGED -> {
+                state.casting = new CastState.Active(ability, slot, now);
+                VisualService.ability(player, ability, VisualPhase.CHARGE_LOOP, ability.maxChargeTicks(player));
+            }
             case CHANNELED -> {
                 if (!MaliceService.trySpend(player, ability.cost(player))) return;
                 state.casting = new CastState.Active(ability, slot, now);
                 ability.execute(ctx);
+                VisualService.ability(player, ability, VisualPhase.CAST);
+                VisualService.ability(player, ability, VisualPhase.CHANNEL_LOOP);
             }
             case TOGGLE -> {
                 if (!MaliceService.trySpend(player, ability.cost(player))) return;
                 state.toggles.put(ability.id(), new CastState.Active(ability, slot, now));
                 ability.execute(ctx);
+                VisualService.ability(player, ability, VisualPhase.TOGGLE_ON);
+                VisualService.ability(player, ability, VisualPhase.TOGGLE_LOOP);
                 player.displayClientMessage(Component.translatable("message.kegare.toggle.on", ability.displayName()), true);
             }
         }
@@ -203,6 +213,7 @@ public final class CastManager {
             endChannel(player, innateTechnique.get(), cast, EndReason.INTERRUPTED);
         } else {
             state.casting = null;
+            VisualService.stopAbility(player, cast.ability, VisualPhase.CHARGE_LOOP);
             cast.ability.onEnd(new AbilityContext(player, innateTechnique.get(), cast.ability, cast.slot, chargeFraction(player, cast), cast.activeTicks), EndReason.INTERRUPTED);
             PlayerSync.markDirty(player);
         }
@@ -226,6 +237,7 @@ public final class CastManager {
                 endChannel(player, innateTechnique.get(), cast, reason);
             } else {
                 state.casting = null;
+                VisualService.stopAbility(player, cast.ability, VisualPhase.CHARGE_LOOP);
                 cast.ability.onEnd(new AbilityContext(player, innateTechnique.get(), cast.ability, cast.slot, chargeFraction(player, cast), cast.activeTicks), reason);
             }
         }
@@ -240,6 +252,7 @@ public final class CastManager {
         state.casting = null;
         PlayerSync.markDirty(player);
         Ability ability = cast.ability;
+        VisualService.stopAbility(player, ability, VisualPhase.CHARGE_LOOP);
         int charged = chargedTicks(player, cast);
         AbilityContext ctx = new AbilityContext(player, innateTechnique, ability, cast.slot, chargeFraction(player, cast), charged);
 
@@ -262,10 +275,12 @@ public final class CastManager {
         ability.execute(ctx);
         ability.onEnd(ctx, EndReason.RELEASED);
         InnateTechniqueService.startCooldown(player, ability);
+        VisualService.ability(player, ability, VisualPhase.RELEASE);
     }
 
     private static void endChannel(ServerPlayer player, InnateTechnique innateTechnique, CastState.Active cast, EndReason reason) {
         state(player).casting = null;
+        VisualService.stopAbility(player, cast.ability, VisualPhase.CHANNEL_LOOP);
         cast.ability.onEnd(new AbilityContext(player, innateTechnique, cast.ability, cast.slot, 1f, cast.activeTicks), reason);
         InnateTechniqueService.startCooldown(player, cast.ability);
         if (reason == EndReason.OUT_OF_MALICE) {
@@ -276,6 +291,10 @@ public final class CastManager {
 
     private static void endToggle(ServerPlayer player, InnateTechnique innateTechnique, CastState.Active toggle, EndReason reason) {
         state(player).toggles.remove(toggle.ability.id());
+        VisualService.stopAbility(player, toggle.ability, VisualPhase.TOGGLE_LOOP);
+        if (reason != EndReason.DEATH && reason != EndReason.LOGOUT && reason != EndReason.DIMENSION_CHANGE) {
+            VisualService.ability(player, toggle.ability, VisualPhase.TOGGLE_OFF);
+        }
         toggle.ability.onEnd(new AbilityContext(player, innateTechnique, toggle.ability, toggle.slot, 1f, toggle.activeTicks), reason);
         InnateTechniqueService.startCooldown(player, toggle.ability);
         if (reason == EndReason.RELEASED) {

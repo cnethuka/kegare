@@ -224,7 +224,8 @@ All timestamps use **level game time**. They persist across restarts and are ide
   - It is sent at most once per tick, and only when something visible changed (Malice syncs when its whole number
     changes).
   - The client counts down cooldowns locally from game time.
-- Network version `2`. Bump it when payload formats change; mismatched clients are refused.
+- Network version `3` (since the visuals payload, §3.13). Bump it when payload formats change; mismatched clients are
+  refused.
 
 ### 3.6 HUD
 - A registered GUI layer (`kegare:malice_hud`, top-left, offset in client config) shows:
@@ -407,6 +408,46 @@ Each tab has its own root.
   has earned nothing there, so it stays hidden for them until something happens.
 - Because *Clear Sight* is visible, involved players who weren't born with the eyes see it as an unearned (grey)
   root, with their own advancement linked to it. (A hidden root would not be drawn at all.)
+
+### 3.13 Animations and VFX (visual only)
+**Rule: visuals are cosmetic. The server acts first and never waits on an animation or an effect.**
+
+- **Libraries:** player animations use Player Animation Library (PAL, by ZigyTheBird). VFX use Photon (by
+  KilaBash), which needs LDLib2. All three are required mods; see README.
+- **Declaring:** `Ability.visuals()` returns `AbilityVisuals`, which can set a PAL animation ID and/or a Photon effect
+  ID for each `VisualPhase`:
+
+  | Phase | When | Plays |
+  |---|---|---|
+  | `CAST` | INSTANT fired, CHANNELED started | once |
+  | `CHARGE_LOOP` | while charging | loop; the effect grows from 30% to full size over the full charge time |
+  | `RELEASE` | CHARGED fired (a too-short tap fizzles and shows nothing) | once |
+  | `CHANNEL_LOOP` | while channeling | loop |
+  | `TOGGLE_ON` / `TOGGLE_OFF` | toggle switched on / off | once |
+  | `TOGGLE_LOOP` | while toggled on | loop |
+  | `PROJECTILE_TRAIL` | on the ability's projectile entity | loop, started by the projectile on the client |
+  | `IMPACT` | where it hits | once, at a position |
+
+  Each effect has an anchor on its entity: `EYES` (turns with the look), `BODY`, `FEET`, or `MOTION`
+  (projectiles). Photon turns the effect so its local +X axis points forward, so effects are authored facing +X.
+- **Files:** animations go in `assets/<ns>/player_animations/*.json` (Blockbench/GeckoLib format). The animation's
+  ID is the namespace plus the name inside the file. Effects go in `assets/<ns>/fx/<path>.fx`, with ID `<ns>:<path>`.
+- **Networking:** `CastManager` calls `VisualService` at each start and end point. The service sends one
+  `VisualPayload` (play once, start or stop a keyed loop, stop all, play at a position) to the caster and everyone
+  tracking them. Impacts go to players within 64 blocks.
+- **Late viewers:** loops are remembered per entity (runtime attachment `kegare:visual_state`) and sent to players who
+  start tracking it later. So a visible loop always means the thing it shows is active.
+- **Stopping:** a charge or channel ending for any reason (release, out of Malice, max duration, stun or freeze,
+  death, logout) stops its loop. Toggles keep running while stunned, so their loop stays too. A toggle switched off
+  stops its loop and plays `TOGGLE_OFF`. Death, logout and a dimension change stop everything on the entity. **A
+  dimension change ends charges, channels and toggles** (`EndReason.DIMENSION_CHANGE`).
+- **Failures never crash:** a missing or broken `.fx` falls back to vanilla particles (`VanillaFallback`, per-effect
+  lookalikes), and a missing animation is skipped. Each one is logged once. Effects are preloaded at client setup.
+- **Client config (`visuals`):**
+  - `firstPersonAnimations` (default on): your own arms animate in first person (PAL `THIRD_PERSON_MODEL` mode).
+  - `vfxQuality`: `FULL` (Photon), `REDUCED` (Photon, emitters at half rate and half particle cap) or `VANILLA`
+    (vanilla particles only).
+- Network version `3`.
 
 ---
 

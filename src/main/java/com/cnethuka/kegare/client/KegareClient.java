@@ -2,6 +2,7 @@ package com.cnethuka.kegare.client;
 
 import com.cnethuka.kegare.Kegare;
 import com.cnethuka.kegare.client.gui.GuiDraw;
+import com.cnethuka.kegare.client.visual.VisualClientEvents;
 import net.minecraft.server.packs.resources.ResourceManagerReloadListener;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.bus.api.IEventBus;
@@ -22,6 +23,7 @@ public final class KegareClient {
         modBus.addListener(KegareKeys::register);
         modBus.addListener(KegareClient::registerGuiLayers);
         modBus.addListener(KegareClient::registerReloadListeners);
+        VisualClientEvents.init(modBus);
     }
 
     /** Emblem/icon art is looked up once per texture; forget the answers when resource packs change. */

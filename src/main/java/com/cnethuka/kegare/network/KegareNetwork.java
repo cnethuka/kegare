@@ -12,7 +12,7 @@ import net.neoforged.neoforge.network.registration.PayloadRegistrar;
  * decided and saved; screens are cosmetic.
  */
 public final class KegareNetwork {
-    public static final String VERSION = "2";
+    public static final String VERSION = "3";
 
     private KegareNetwork() {}
 
@@ -28,5 +28,7 @@ public final class KegareNetwork {
         registrar.playToClient(RevealPayload.TYPE, RevealPayload.STREAM_CODEC, RevealPayload::handle);
         registrar.playToClient(SorcererInfoPayload.TYPE, SorcererInfoPayload.STREAM_CODEC, SorcererInfoPayload::handle);
         registrar.playToClient(TalismanPromptPayload.TYPE, TalismanPromptPayload.STREAM_CODEC, TalismanPromptPayload::handle);
+        // server -> clients tracking an entity (cosmetic only: animations and VFX)
+        registrar.playToClient(VisualPayload.TYPE, VisualPayload.STREAM_CODEC, VisualPayload::handle);
     }
 }

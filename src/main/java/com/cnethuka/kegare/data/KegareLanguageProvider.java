@@ -272,6 +272,7 @@ public final class KegareLanguageProvider extends LanguageProvider {
         add("kegare.configuration.malice", MALICE);
         add("kegare.configuration.hud", "HUD");
         add("kegare.configuration.test_abilities", "Test Abilities (test content)");
+        add("kegare.configuration.vfxQuality", "VFX Quality");
         configLabels(KegareServerConfig.SPEC.getValues());
         configLabels(KegareClientConfig.SPEC.getValues());
 

@@ -15,5 +15,7 @@ public enum EndReason {
     /** Innate technique was changed (reroll, admin, rebirth). */
     INNATE_TECHNIQUE_CHANGED,
     DEATH,
-    LOGOUT
+    LOGOUT,
+    /** Changed dimension (a charge, channel or toggle never carries through a portal). */
+    DIMENSION_CHANGE
 }

@@ -9,6 +9,7 @@ import com.cnethuka.kegare.innatetechnique.CastState;
 import com.cnethuka.kegare.innatetechnique.InnateTechniqueData;
 import com.cnethuka.kegare.trait.TraitData;
 import java.util.function.Supplier;
+import com.cnethuka.kegare.innatetechnique.visual.VisualState;
 import net.neoforged.neoforge.attachment.AttachmentType;
 import net.neoforged.neoforge.registries.DeferredRegister;
 import net.neoforged.neoforge.registries.NeoForgeRegistries;
@@ -23,6 +24,7 @@ import net.neoforged.neoforge.registries.NeoForgeRegistries;
  *   combat      saved, reset on death  combat tag + stun timestamps
  *   cast_state  runtime only           active charge/channel/toggles
  *   sync_state  runtime only           client sync dirty flag
+ *   visual_state runtime only          cosmetic loops playing on an entity (re-sent to late trackers)
  * </pre>
  */
 public final class KegareAttachments {
@@ -49,6 +51,9 @@ public final class KegareAttachments {
 
     public static final Supplier<AttachmentType<SyncState>> SYNC_STATE = ATTACHMENT_TYPES.register("sync_state",
             () -> AttachmentType.builder(() -> new SyncState()).build());
+
+    public static final Supplier<AttachmentType<VisualState>> VISUAL_STATE = ATTACHMENT_TYPES.register("visual_state",
+            () -> AttachmentType.builder(() -> new VisualState()).build());
 
     private KegareAttachments() {}
 }
