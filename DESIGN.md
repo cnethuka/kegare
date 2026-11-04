@@ -230,8 +230,9 @@ All timestamps use **level game time**. They persist across restarts and are ide
 - A registered GUI layer (`kegare:malice_hud`, top-left, offset in client config) shows:
   - the innate technique name, in rarity color
   - the Malice bar with current/capacity
-  - ability slots: every slot on cooldown dims, shows a sweep for the remaining time and its seconds left;
-    the selected slot is highlighted, and active toggles and casts get outlines
+  - ability slots (20×20) with each ability's icon and its slot number in the corner: every slot on cooldown dims,
+    shows a sweep for the remaining time and its seconds left; the selected slot has a gold frame, and active
+    toggles and casts get outlines
   - the ultimate slot, labelled with its bound key
   - the selected ability with its cast type and cooldown
   - a charge or channel progress bar
@@ -279,10 +280,31 @@ Malice is always shown as whole numbers (floored, like the HUD); the stored valu
 ### 3.10 Data generation and art
 - `./gradlew runData` generates lang, the item model, tags (`kegare:talismans`), the talisman recipe
   (gold + amethyst + paper; overridable by datapack) and the advancements.
-- `python3 tools/gen_placeholders.py` regenerates the placeholder art:
-  - the talisman, Malice bar and HUD ability slots
-  - the GUI sprites in `textures/gui/sprites/`: nine-slice `panel`, `card`, `tab`/`tab_selected` and
-    `radial_slot`/`radial_slot_selected` (each with a `.mcmeta`), plus `sparkle` and `severed_emblem`
+- `python3 tools/gen_art.py [--preview sheet.png]` regenerates all GUI and item art (needs Pillow). The art is
+  procedural but drawn to look hand-pixelled. `--preview` also writes a contact sheet of every asset at 4×.
+  - **Direction ("defiled ink"):** blackened cursed-iron frames lit from the top-left with a violet rim, smoky
+    plum-black ink surfaces, Malice violet, ofuda paper and a red seal as accents. Techniques used: a 1px near-black
+    ink outline on everything, ordered (Bayer) dithering between hand-picked color ramps, mottled metal, rim light,
+    and tapered brush strokes with wobble and dry-brush gaps.
+  - **Every asset is original,** and no third-party file is in this repo.
+  - **Nine-slice sprites** (`textures/gui/sprites/`, each with a `.mcmeta`): `panel`, `card_common`, `card_rare`,
+    `card_epic`, `card_legendary` (iron, blue steel, amethyst, gold leaf; corner ornaments grow with rarity),
+    `tab`/`tab_selected`, `radial_slot`/`radial_slot_selected`, `button`/`button_highlighted`/`button_disabled`
+    (drawn by `InkButton`, a vanilla button with Kegare's sprites), and `divider` (a brush stroke, 3-slice).
+    In 1.21.1 the edges and centre **tile**, they do not stretch, so the generator makes them seamless along the
+    tile period and keeps every ornament inside the corners.
+  - **Plain sprites:** `sparkle`, `severed_emblem`.
+  - **Textures:** the talisman item, `gui/malice_bar.png`, the HUD `gui/ability_slot(_selected).png`, and
+    `gui/reveal_bg.png` (128×128 seamless smoke, tiled behind the reveal by `GuiDraw.inkBackground`).
+    - `malice_bar.png` is 32×20: rows 0–9 empty, rows 10–19 full, 5px caps, a 22px middle that tiles.
+      `GuiDraw.maliceBar` draws it for both the HUD and the Sorcerer screen.
+- **Art for content (optional, with fallbacks).** New content should ship with:
+  - an **emblem** per innate technique: `<namespace>:textures/gui/innate_technique/<path>.png`, 48×48. It is shown
+    on reveal cards, the Sorcerer screen and the talisman prompt. Without one, the tab icon item is drawn instead.
+  - an **icon** per ability: `<namespace>:textures/gui/ability/<path>.png`, 16×16. It is shown in the HUD slots,
+    the radial menu and the Sorcerer screen. Without one, the slot number is drawn instead.
+  - Whether the art exists is looked up once per texture, and the answer is forgotten on resource reload, so
+    resource packs can add or replace it.
 
 ### 3.12 GUIs (`client.gui`)
 **Rule: results are decided and saved on the SERVER before any screen opens.** Screens are cosmetic and never send
@@ -298,9 +320,10 @@ a result back; they only send requests the server re-validates. All text comes f
 **Roll reveal**
 - The spin is gacha-style: cards (weighted like real rolls) scroll past, ease out over about 4s, and land on the
   result the server already picked.
-- Cards are tinted and glow by rarity: Common grey, Rare blue, Epic purple, Legendary gold. Legendary adds sparkle
-  particles and a challenge + totem sound.
-- Each card shows name, rarity and its one-line `.desc`.
+- Each rarity has its own card frame and glow: Common iron, Rare blue steel, Epic amethyst, Legendary gold leaf.
+  Legendary adds sparkle particles and a challenge + totem sound.
+- Each card shows the emblem, name and rarity. The result also shows its one-line `.desc`.
+- Background: tiled smoky ink, darkening in steps toward the edges, with a darker track for the cards.
 - **Skip** (button, Esc, Enter or Space) jumps to the result; pressing again closes.
 - `reveal.animation=false` shows the result instantly.
 - Disconnecting mid-spin changes nothing: the result was saved before the payload was sent.
@@ -313,8 +336,8 @@ a result back; they only send requests the server re-validates. All text comes f
 **Sorcerer screen**
 - Four tabs: **Malice**, **Innate Technique** (or **Severed** for Severed players), **Traits**, **Pity**.
 - Malice: capacity and tier, reserve bar, regen per second (and % of capacity), and whether regen is paused.
-- Innate Technique: name, rarity and description, then every ability (and the ultimate) with its cast type, Malice
-  cost, upkeep, cooldown and description.
+- Innate Technique: emblem, name, rarity and description, then every ability (and the ultimate) with its icon, cast
+  type, Malice cost, upkeep, cooldown and description.
 - Traits: name, a unique tag, description.
 - Pity:
   - the count, with a progress bar toward hard pity
@@ -323,15 +346,16 @@ a result back; they only send requests the server re-validates. All text comes f
   - total rolls
 - Keys: 1–4 or Tab switch pages, arrows or the mouse wheel scroll, K or Esc close.
 
-**Talisman confirm:** *"Reroll your Innate Technique? Current: X. Pity: Y/50."*
+**Talisman confirm:** *"Reroll your Innate Technique? Current: X. Pity: Y/50."*, with the current emblem.
 - **Reroll** sends a request. The server re-checks that the talisman is still in that hand, combat and Severed
   status, then rolls, consumes one talisman and sends the reveal.
 - **Cancel** or Esc consumes nothing.
 - Using the talisman while Severed or in combat is refused before the screen even opens.
 
 **Radial menu**
-- The current innate technique's abilities sit around a circle, with cooldown sweeps and seconds left. The selected
-  slot is outlined gold and active toggles green.
+- The current innate technique's abilities sit around a dotted ring, each with its icon and slot number, plus
+  cooldown sweeps and seconds left. The hovered slot is gold, the current one is outlined white, and active toggles
+  green.
 - Release (or click) over a slot to select it. Releasing in the center or pressing Esc keeps the current one.
 
 **Layout and testing**

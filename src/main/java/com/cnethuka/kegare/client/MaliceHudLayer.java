@@ -1,6 +1,7 @@
 package com.cnethuka.kegare.client;
 
 import com.cnethuka.kegare.Kegare;
+import com.cnethuka.kegare.client.gui.GuiDraw;
 import com.cnethuka.kegare.config.KegareClientConfig;
 import com.cnethuka.kegare.network.SyncPayload;
 import com.cnethuka.kegare.registry.KegareRegistries;
@@ -30,21 +31,17 @@ import net.minecraft.util.Mth;
 public final class MaliceHudLayer implements LayeredDraw.Layer {
     public static final ResourceLocation ID = Kegare.id("malice_hud");
 
-    private static final ResourceLocation BAR = Kegare.id("textures/gui/malice_bar.png");
-    private static final ResourceLocation SLOT = Kegare.id("textures/gui/ability_slot.png");
-    private static final ResourceLocation SLOT_SELECTED = Kegare.id("textures/gui/ability_slot_selected.png");
-
     private static final int BAR_WIDTH = 100;
-    private static final int BAR_HEIGHT = 8;
-    private static final int SLOT_SIZE = 16;
+    private static final int BAR_HEIGHT = GuiDraw.BAR_HEIGHT;
+    private static final int SLOT_SIZE = GuiDraw.ICON_SLOT_SIZE;
     private static final int SLOT_GAP = 2;
 
     private static final int COLOR_TEXT = 0xFFFFFF;
     private static final int COLOR_MALICE_TEXT = 0xD9B3FF;
     private static final int COLOR_COOLDOWN_TEXT = 0xFF6B6B;
     /** Cooldown overlay: dim the whole box, then a translucent white sweep for the remaining fraction. */
-    private static final int COLOR_COOLDOWN_DIM = 0x99000000;
-    private static final int COLOR_COOLDOWN_SWEEP = 0x70FFFFFF;
+    private static final int COLOR_COOLDOWN_DIM = GuiDraw.COOLDOWN_DIM;
+    private static final int COLOR_COOLDOWN_SWEEP = GuiDraw.COOLDOWN_SWEEP;
     private static final int COLOR_TOGGLE_ON = 0xFF5CFF7A;
     private static final int COLOR_CASTING = 0xFFFFD24A;
     private static final int COLOR_CHANNEL = 0xFF7FD4FF;
@@ -69,8 +66,8 @@ public final class MaliceHudLayer implements LayeredDraw.Layer {
         g.drawString(font, title, x, y, COLOR_TEXT);
         y += font.lineHeight + 2;
 
-        drawMaliceBar(g, x, y, data.current(), data.capacity());
-        g.drawString(font, Component.translatable("hud.kegare.malice", Mth.floor(data.current()), data.capacity()), x + BAR_WIDTH + 4, y, COLOR_MALICE_TEXT);
+        GuiDraw.maliceBar(g, x, y, BAR_WIDTH, data.capacity() <= 0 ? 0f : data.current() / data.capacity());
+        g.drawString(font, Component.translatable("hud.kegare.malice", Mth.floor(data.current()), data.capacity()), x + BAR_WIDTH + 4, y + 1, COLOR_MALICE_TEXT);
         y += BAR_HEIGHT + 4;
 
         if (innateTechnique == null) return;
@@ -117,52 +114,38 @@ public final class MaliceHudLayer implements LayeredDraw.Layer {
                 progress = casting.maxTicks() <= 0 ? 1f : Math.max(0f, 1f - elapsed / (float) casting.maxTicks());
                 color = COLOR_CHANNEL;
             }
-            drawProgress(g, x, KegareClientConfig.HUD_Y.get() + font.lineHeight + 2 + BAR_HEIGHT + 1, progress, color);
+            drawProgress(g, x, KegareClientConfig.HUD_Y.get() + font.lineHeight + 2 + BAR_HEIGHT, progress, color);
         });
     }
 
     private static void drawSlot(GuiGraphics g, Font font, SyncPayload data, Ability ability, int x, int y, boolean selected,
                                  Component label, @Nullable ResourceLocation castingId, long now) {
-        g.blit(selected ? SLOT_SELECTED : SLOT, x, y, 0f, 0f, SLOT_SIZE, SLOT_SIZE, SLOT_SIZE, SLOT_SIZE);
+        boolean hasIcon = GuiDraw.abilitySlot(g, ability, x, y, selected);
 
-        // Every slot on cooldown (not just the selected one): dim the box, sweep the remaining fraction,
-        // and show whole seconds left instead of the slot label.
+        // Every slot on cooldown (not just the selected one): dim the well, sweep the remaining fraction,
+        // and show whole seconds left in the middle.
         int remaining = cooldownRemaining(data, ability, now);
         int duration = cooldownDuration(data, ability);
         boolean onCooldown = remaining > 0 && duration > 0;
+        int inner = SLOT_SIZE - 4;
         if (onCooldown) {
-            int inner = SLOT_SIZE - 2;
             int sweep = Mth.ceil(inner * Math.min(1f, remaining / (float) duration));
-            g.fill(x + 1, y + 1, x + 1 + inner, y + 1 + inner, COLOR_COOLDOWN_DIM);
-            g.fill(x + 1, y + 1 + inner - sweep, x + 1 + inner, y + 1 + inner, COLOR_COOLDOWN_SWEEP);
+            g.fill(x + 2, y + 2, x + 2 + inner, y + 2 + inner, COLOR_COOLDOWN_DIM);
+            g.fill(x + 2, y + 2 + inner - sweep, x + 2 + inner, y + 2 + inner, COLOR_COOLDOWN_SWEEP);
         }
         if (data.activeToggles().contains(ability.id())) g.renderOutline(x, y, SLOT_SIZE, SLOT_SIZE, COLOR_TOGGLE_ON);
         if (ability.id().equals(castingId)) g.renderOutline(x, y, SLOT_SIZE, SLOT_SIZE, COLOR_CASTING);
         g.flush(); // overlays first, so the text below always draws on top
 
+        int labelColor = selected ? 0xFFFFFF : 0xA0A0A0;
         if (onCooldown) {
             String seconds = Integer.toString(Mth.ceil(remaining / 20f));
             g.drawCenteredString(font, seconds, x + SLOT_SIZE / 2, y + (SLOT_SIZE - 8) / 2, COLOR_COOLDOWN_TEXT);
+        } else if (hasIcon) {
+            GuiDraw.cornerLabel(g, font, label, x, y, SLOT_SIZE, 0xFF000000 | labelColor);
         } else {
-            g.drawCenteredString(font, label, x + SLOT_SIZE / 2, y + (SLOT_SIZE - 8) / 2, selected ? 0xFFFFFF : 0xA0A0A0);
+            g.drawCenteredString(font, label, x + SLOT_SIZE / 2, y + (SLOT_SIZE - 8) / 2, labelColor);
         }
-    }
-
-    /** 3-slice bar: 2px caps, stretched middle. Texture rows 0-7 empty, 8-15 full. */
-    private static void drawMaliceBar(GuiGraphics g, int x, int y, float current, int capacity) {
-        drawSliced(g, x, y, 0);
-        int fill = capacity <= 0 ? 0 : Mth.clamp(Math.round(BAR_WIDTH * current / capacity), 0, BAR_WIDTH);
-        if (fill > 0) {
-            g.enableScissor(x, y, x + fill, y + BAR_HEIGHT);
-            drawSliced(g, x, y, 8);
-            g.disableScissor();
-        }
-    }
-
-    private static void drawSliced(GuiGraphics g, int x, int y, int v) {
-        g.blit(BAR, x, y, 0f, (float) v, 2, BAR_HEIGHT, 16, 16);
-        g.blit(BAR, x + 2, y, BAR_WIDTH - 4, BAR_HEIGHT, 2f, (float) v, 12, BAR_HEIGHT, 16, 16);
-        g.blit(BAR, x + BAR_WIDTH - 2, y, 14f, (float) v, 2, BAR_HEIGHT, 16, 16);
     }
 
     private static void drawProgress(GuiGraphics g, int x, int y, float progress, int color) {

@@ -1,10 +1,13 @@
 package com.cnethuka.kegare.client;
 
 import com.cnethuka.kegare.Kegare;
+import com.cnethuka.kegare.client.gui.GuiDraw;
+import net.minecraft.server.packs.resources.ResourceManagerReloadListener;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.fml.ModContainer;
 import net.neoforged.fml.common.Mod;
+import net.neoforged.neoforge.client.event.RegisterClientReloadListenersEvent;
 import net.neoforged.neoforge.client.event.RegisterGuiLayersEvent;
 import net.neoforged.neoforge.client.gui.ConfigurationScreen;
 import net.neoforged.neoforge.client.gui.IConfigScreenFactory;
@@ -18,6 +21,12 @@ public final class KegareClient {
         container.registerExtensionPoint(IConfigScreenFactory.class, ConfigurationScreen::new);
         modBus.addListener(KegareKeys::register);
         modBus.addListener(KegareClient::registerGuiLayers);
+        modBus.addListener(KegareClient::registerReloadListeners);
+    }
+
+    /** Emblem/icon art is looked up once per texture; forget the answers when resource packs change. */
+    private static void registerReloadListeners(RegisterClientReloadListenersEvent event) {
+        event.registerReloadListener((ResourceManagerReloadListener) manager -> GuiDraw.clearArtCache());
     }
 
     private static void registerGuiLayers(RegisterGuiLayersEvent event) {

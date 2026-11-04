@@ -1,6 +1,5 @@
 package com.cnethuka.kegare.client.gui;
 
-import com.cnethuka.kegare.Kegare;
 import com.cnethuka.kegare.client.KegareKeys;
 import com.cnethuka.kegare.innatetechnique.Ability;
 import com.cnethuka.kegare.innatetechnique.CastType;
@@ -22,8 +21,6 @@ import org.lwjgl.glfw.GLFW;
  * Keys: 1-4 or Tab switch pages, arrows / mouse wheel scroll, K or Esc close.
  */
 public final class SorcererScreen extends Screen {
-    private static final ResourceLocation BAR = Kegare.id("textures/gui/malice_bar.png");
-
     private enum Page { MALICE, INNATE_TECHNIQUE, TRAITS, PITY }
 
     private static Page lastPage = Page.MALICE;
@@ -114,10 +111,11 @@ public final class SorcererScreen extends Screen {
 
     private int renderMalice(GuiGraphics g, int y) {
         Component tier = Component.translatable(tierKey(info.tier()));
-        y += GuiDraw.text(g, font, Component.translatable("gui.kegare.sorcerer.malice.heading"), contentX, y, 1.5f, GuiDraw.MALICE) + 4;
+        y += GuiDraw.heading(g, font, Component.translatable("gui.kegare.sorcerer.malice.heading"), contentX, y, 1.5f, contentW, GuiDraw.MALICE) + 2;
         y += line(g, Component.translatable("gui.kegare.sorcerer.malice.capacity", info.capacity(), tier), y, GuiDraw.WHITE);
         y += line(g, Component.translatable("gui.kegare.sorcerer.malice.reserve", (int) Math.floor(info.current()), info.capacity()), y, GuiDraw.WHITE);
-        y += drawBar(g, contentX, y, Math.min(contentW, 200), info.capacity() <= 0 ? 0f : info.current() / info.capacity()) + 4;
+        GuiDraw.maliceBar(g, contentX, y + 1, Math.min(contentW, 200), info.capacity() <= 0 ? 0f : info.current() / info.capacity());
+        y += GuiDraw.BAR_HEIGHT + 5;
         y += line(g, Component.translatable("gui.kegare.sorcerer.malice.regen", GuiDraw.amount(Math.round(info.regenPerSecond() * 10f) / 10f),
                 GuiDraw.amount(info.regenPercent())), y, GuiDraw.WHITE);
         if (info.regenPaused()) y += line(g, Component.translatable("gui.kegare.sorcerer.malice.regen_paused"), y, GuiDraw.RED);
@@ -128,31 +126,47 @@ public final class SorcererScreen extends Screen {
     private int renderInnateTechnique(GuiGraphics g, int y) {
         InnateTechnique innateTechnique = info.innateTechnique().map(KegareRegistries.INNATE_TECHNIQUE::get).orElse(null);
         if (innateTechnique == null) return y + line(g, Component.translatable("gui.kegare.sorcerer.innate_technique.none"), y, GuiDraw.GRAY);
-        int color = innateTechnique.rarity().color();
-        y += GuiDraw.text(g, font, innateTechnique.displayName(), contentX, y, 1.5f, 0xFF000000 | color) + 2;
-        y += line(g, Component.translatable(innateTechnique.rarity().translationKey()), y, 0xFF000000 | color);
-        y += GuiDraw.wrapped(g, font, GuiDraw.description(innateTechnique.descriptionId()), contentX, y, contentW, GuiDraw.GRAY) + 6;
-        y += line(g, Component.translatable("gui.kegare.sorcerer.abilities"), y, GuiDraw.GOLD);
+        int color = 0xFF000000 | innateTechnique.rarity().color();
 
+        // Header: emblem on the left; name, rarity and description beside it.
+        int emblem = 48;
+        GuiDraw.framedEmblem(g, innateTechnique, contentX + 2, y + 2, emblem);
+        int tx = contentX + emblem + 10;
+        int tw = contentW - emblem - 10;
+        int ty = y + 2;
+        Component name = innateTechnique.displayName();
+        ty += GuiDraw.text(g, font, name, tx, ty, font.width(name) * 1.5f <= tw ? 1.5f : 1f, color) + 2;
+        ty += GuiDraw.wrapped(g, font, Component.translatable(innateTechnique.rarity().translationKey()), tx, ty, tw, color) + 2;
+        ty += GuiDraw.wrapped(g, font, GuiDraw.description(innateTechnique.descriptionId()), tx, ty, tw, GuiDraw.GRAY);
+        y = Math.max(y + emblem + 4, ty) + 8;
+
+        y += GuiDraw.heading(g, font, Component.translatable("gui.kegare.sorcerer.abilities"), contentX, y, 1f, contentW, GuiDraw.GOLD) + 2;
         int slot = 1;
+        int textX = contentX + GuiDraw.ICON_SLOT_SIZE + 6;
+        int textW = contentW - GuiDraw.ICON_SLOT_SIZE - 6;
         for (SorcererInfoPayload.AbilityInfo a : info.abilities()) {
             Ability ability = innateTechnique.findAbility(a.id()).orElse(null);
-            Component name = ability != null ? ability.displayName() : Component.literal(a.id().toString());
+            Component abilityName = ability != null ? ability.displayName() : Component.literal(a.id().toString());
             CastType castType = CastType.values()[Mth.clamp(a.castType(), 0, CastType.values().length - 1)];
+            Component slotLabel = a.ultimate() ? KegareKeys.ULTIMATE.getTranslatedKeyMessage() : Component.literal(Integer.toString(slot));
             Component header = a.ultimate()
-                    ? Component.translatable("gui.kegare.sorcerer.ability.ultimate", name, Component.translatable(castType.translationKey()))
-                    : Component.translatable("gui.kegare.sorcerer.ability.slot", slot++, name, Component.translatable(castType.translationKey()));
-            y += line(g, header, y, a.ultimate() ? GuiDraw.GOLD : GuiDraw.WHITE);
+                    ? Component.translatable("gui.kegare.sorcerer.ability.ultimate", abilityName, Component.translatable(castType.translationKey()))
+                    : Component.translatable("gui.kegare.sorcerer.ability.slot", slot++, abilityName, Component.translatable(castType.translationKey()));
 
+            if (ability != null && !GuiDraw.abilitySlot(g, ability, contentX, y, a.ultimate())) {
+                GuiDraw.centered(g, font, slotLabel, contentX + GuiDraw.ICON_SLOT_SIZE / 2, y + 6, 1f, GuiDraw.GRAY);
+            }
+            int rowY = y;
+            rowY += GuiDraw.wrapped(g, font, header, textX, rowY, textW, a.ultimate() ? GuiDraw.GOLD : GuiDraw.WHITE);
             Component stats = (castType == CastType.CHANNELED || castType == CastType.TOGGLE)
                     ? Component.translatable("gui.kegare.sorcerer.ability.stats_upkeep", GuiDraw.amount(a.cost()),
                             GuiDraw.amount(a.upkeepPerSecond()), GuiDraw.seconds(a.cooldownTicks()))
                     : Component.translatable("gui.kegare.sorcerer.ability.stats", GuiDraw.amount(a.cost()), GuiDraw.seconds(a.cooldownTicks()));
-            y += GuiDraw.wrapped(g, font, stats, contentX + 8, y, contentW - 8, GuiDraw.MALICE);
+            rowY += GuiDraw.wrapped(g, font, stats, textX, rowY, textW, GuiDraw.MALICE);
             if (ability != null) {
-                y += GuiDraw.wrapped(g, font, GuiDraw.description(ability.descriptionId()), contentX + 8, y, contentW - 8, GuiDraw.DARK_GRAY);
+                rowY += GuiDraw.wrapped(g, font, GuiDraw.description(ability.descriptionId()), textX, rowY, textW, GuiDraw.DARK_GRAY);
             }
-            y += 4;
+            y = Math.max(y + GuiDraw.ICON_SLOT_SIZE + 2, rowY) + 5;
         }
         return y;
     }
@@ -168,7 +182,7 @@ public final class SorcererScreen extends Screen {
     }
 
     private int renderTraits(GuiGraphics g, int y) {
-        y += GuiDraw.text(g, font, Component.translatable("gui.kegare.sorcerer.traits.heading"), contentX, y, 1.5f, GuiDraw.AQUA) + 4;
+        y += GuiDraw.heading(g, font, Component.translatable("gui.kegare.sorcerer.traits.heading"), contentX, y, 1.5f, contentW, GuiDraw.AQUA) + 2;
         if (info.traits().isEmpty()) return y + line(g, Component.translatable("gui.kegare.sorcerer.traits.none"), y, GuiDraw.GRAY);
         for (ResourceLocation id : info.traits()) {
             Trait trait = KegareRegistries.TRAIT.get(id);
@@ -183,10 +197,11 @@ public final class SorcererScreen extends Screen {
     }
 
     private int renderPity(GuiGraphics g, int y) {
-        y += GuiDraw.text(g, font, Component.translatable("gui.kegare.sorcerer.pity.heading"), contentX, y, 1.5f, GuiDraw.GOLD) + 4;
+        y += GuiDraw.heading(g, font, Component.translatable("gui.kegare.sorcerer.pity.heading"), contentX, y, 1.5f, contentW, GuiDraw.GOLD) + 2;
         y += line(g, Component.translatable("gui.kegare.sorcerer.pity.count", info.rollsSinceLegendary()), y, GuiDraw.WHITE);
         if (info.hardPity() > 0) {
-            y += drawProgress(g, contentX, y, Math.min(contentW, 200), info.rollsSinceLegendary() / (float) info.hardPity(), GuiDraw.GOLD) + 4;
+            GuiDraw.progress(g, contentX, y + 1, Math.min(contentW, 200), 6, info.rollsSinceLegendary() / (float) info.hardPity(), GuiDraw.GOLD);
+            y += 6 + 5;
         }
         Component soft = info.rollsUntilSoftPity() <= 0
                 ? Component.translatable("gui.kegare.sorcerer.pity.soft_active", info.legendaryWeight(), info.baseLegendaryWeight())
@@ -207,38 +222,14 @@ public final class SorcererScreen extends Screen {
         return GuiDraw.wrapped(g, font, text, contentX, y, contentW, color);
     }
 
-    /** Malice bar (same art as the HUD): rows 0-7 empty, 8-15 full, 2px caps. */
-    private int drawBar(GuiGraphics g, int x, int y, int w, float fraction) {
-        sliced(g, x, y, w, 0);
-        int fill = Mth.clamp(Math.round(w * fraction), 0, w);
-        if (fill > 0) {
-            g.enableScissor(x, y, x + fill, y + 8);
-            sliced(g, x, y, w, 8);
-            g.disableScissor();
-            // Restore the content scissor (enableScissor pushes, disableScissor pops).
-        }
-        return 8;
-    }
-
-    private void sliced(GuiGraphics g, int x, int y, int w, int v) {
-        g.blit(BAR, x, y, 0f, (float) v, 2, 8, 16, 16);
-        g.blit(BAR, x + 2, y, w - 4, 8, 2f, (float) v, 12, 8, 16, 16);
-        g.blit(BAR, x + w - 2, y, 14f, (float) v, 2, 8, 16, 16);
-    }
-
-    private int drawProgress(GuiGraphics g, int x, int y, int w, float fraction, int color) {
-        g.fill(x, y, x + w, y + 4, 0xFF221A2A);
-        g.fill(x, y, x + Math.round(w * Mth.clamp(fraction, 0f, 1f)), y + 4, color);
-        return 4;
-    }
-
     private void renderScrollbar(GuiGraphics g) {
         if (contentHeight <= contentH) return;
         int trackX = contentX + contentW + 2;
-        g.fill(trackX, contentY, trackX + 3, contentY + contentH, 0x40FFFFFF);
+        g.fill(trackX, contentY, trackX + 3, contentY + contentH, GuiDraw.INK);
         int thumbH = Math.max(12, contentH * contentH / contentHeight);
         int thumbY = contentY + (int) ((contentH - thumbH) * (scroll / Math.max(1, contentHeight - contentH)));
-        g.fill(trackX, thumbY, trackX + 3, thumbY + thumbH, 0xC0FFFFFF);
+        g.fill(trackX, thumbY, trackX + 3, thumbY + thumbH, 0xFF7D6A94);
+        g.fill(trackX, thumbY, trackX + 1, thumbY + thumbH, 0xFFAB98C4);
     }
 
     private static String tierKey(int ordinal) {

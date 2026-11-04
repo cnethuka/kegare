@@ -68,8 +68,14 @@ public final class AbilityRadialScreen extends Screen {
         hovered = hoveredSlot(mouseX, mouseY, abilities.size());
         long now = minecraft != null && minecraft.level != null ? minecraft.level.getGameTime() : 0L;
 
-        g.fill(cx - r - SLOT, cy - 1, cx + r + SLOT, cy, 0x22FFFFFF); // faint cross-hair guides
-        g.fill(cx - 1, cy - r - SLOT, cx, cy + r + SLOT, 0x22FFFFFF);
+        // A faint dotted ink ring through the slots.
+        int dots = Math.max(24, (int) (Mth.TWO_PI * r / 6));
+        for (int i = 0; i < dots; i++) {
+            double a = i * Mth.TWO_PI / dots;
+            int dx = cx + (int) Math.round(Math.cos(a) * r);
+            int dy = cy + (int) Math.round(Math.sin(a) * r);
+            g.fill(dx - 1, dy - 1, dx + 1, dy + 1, 0x55D9B3FF);
+        }
 
         for (int i = 0; i < abilities.size(); i++) {
             double angle = angleOf(i, abilities.size());
@@ -81,19 +87,23 @@ public final class AbilityRadialScreen extends Screen {
             if (i == data.selectedSlot()) g.renderOutline(x - 2, y - 2, SLOT + 4, SLOT + 4, GuiDraw.WHITE); // current (hover is gold)
             if (data.activeToggles().contains(ability.id())) g.renderOutline(x, y, SLOT, SLOT, 0xFF5CFF7A);
 
+            boolean hasIcon = GuiDraw.abilityIcon(g, ability, x + (SLOT - 16) / 2, y + (SLOT - 16) / 2);
+
             int remaining = cooldownRemaining(data, ability, now);
             int duration = cooldownDuration(data, ability);
-            String label = Integer.toString(i + 1);
+            Component label = Component.literal(Integer.toString(i + 1));
             int labelColor = isHovered ? GuiDraw.WHITE : GuiDraw.GRAY;
             if (remaining > 0 && duration > 0) {
-                int inner = SLOT - 4;
+                int inner = SLOT - 8;
                 int sweep = Mth.ceil(inner * Math.min(1f, remaining / (float) duration));
-                g.fill(x + 2, y + 2, x + 2 + inner, y + 2 + inner, 0x99000000);
-                g.fill(x + 2, y + 2 + inner - sweep, x + 2 + inner, y + 2 + inner, 0x70FFFFFF);
-                label = Integer.toString(Mth.ceil(remaining / 20f));
-                labelColor = 0xFFFF6B6B;
+                g.fill(x + 4, y + 4, x + 4 + inner, y + 4 + inner, GuiDraw.COOLDOWN_DIM);
+                g.fill(x + 4, y + 4 + inner - sweep, x + 4 + inner, y + 4 + inner, GuiDraw.COOLDOWN_SWEEP);
+                g.drawCenteredString(font, Integer.toString(Mth.ceil(remaining / 20f)), x + SLOT / 2, y + (SLOT - 8) / 2, GuiDraw.RED);
+            } else if (hasIcon) {
+                GuiDraw.cornerLabel(g, font, label, x - 1, y, SLOT, labelColor);
+            } else {
+                g.drawCenteredString(font, label, x + SLOT / 2, y + (SLOT - 8) / 2, labelColor);
             }
-            g.drawCenteredString(font, label, x + SLOT / 2, y + (SLOT - 8) / 2, labelColor);
         }
 
         // Center: the hovered ability (or the current one).

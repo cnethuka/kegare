@@ -42,6 +42,8 @@ public final class RevealScreen extends Screen {
     private static final int STRIP_LENGTH = 36;
     private static final int CARDS_AFTER_RESULT = 5;
     private static final int[] FALLBACK_WEIGHTS = {50, 30, 15, 5};
+    /** The card track extends this far above and below the cards (the gold centre markers sit inside it). */
+    private static final int TRACK_MARGIN = 10;
 
     private final RevealPayload reveal;
     @Nullable
@@ -115,14 +117,13 @@ public final class RevealScreen extends Screen {
         titleScale = width >= 420 ? 2f : 1.5f;
         nameScale = width >= 420 ? 1.5f : 1.25f;
         titleY = Math.max(6, (int) (height * 0.05f));
-        subtitleY = titleY + (int) (font.lineHeight * titleScale) + 4;
-        stripY = subtitleY + 16;
-        cardH = Mth.clamp((int) (height * 0.34f), 64, 130);
+        subtitleY = titleY + (int) (font.lineHeight * titleScale) + 10; // room for the divider
+        stripY = subtitleY + 20;
+        cardH = Mth.clamp((int) (height * (height < 300 ? 0.30f : 0.34f)), 64, 130);
         cardW = (int) (cardH * 0.72f);
         spacing = cardW + Math.max(4, cardW / 8);
-        resultY = stripY + cardH + 10;
-        button = addRenderableWidget(Button.builder(buttonLabel(), b -> advance())
-                .bounds(width / 2 - 50, height - 26, 100, 20).build());
+        resultY = stripY + cardH + 12;
+        button = addRenderableWidget(new InkButton(width / 2 - 50, height - 26, 100, 20, buttonLabel(), b -> advance()));
     }
 
     private Component buttonLabel() {
@@ -140,8 +141,8 @@ public final class RevealScreen extends Screen {
 
     @Override
     public void renderBackground(GuiGraphics g, int mouseX, int mouseY, float partialTick) {
-        // Opaque: nothing behind (chat, HUD) can spoil the result.
-        g.fillGradient(0, 0, width, height, 0xFF150B22, 0xFF05030A); // fully opaque: the HUD already shows the result
+        // Opaque: nothing behind (chat, HUD) can spoil the result, since the HUD already shows it.
+        GuiDraw.inkBackground(g, width, height);
     }
 
     @Override
@@ -153,6 +154,8 @@ public final class RevealScreen extends Screen {
         lastFrameMillis = now;
 
         GuiDraw.centered(g, font, title, width / 2, titleY, titleScale, GuiDraw.WHITE);
+        GuiDraw.divider(g, width / 2, titleY + (int) (font.lineHeight * titleScale) + 1,
+                Math.min(width - 40, (int) (font.width(title) * titleScale) + 64));
         if (reveal.severed()) {
             renderSevered(g);
         } else {
@@ -199,6 +202,10 @@ public final class RevealScreen extends Screen {
             }
         }
         int center = width / 2;
+        // The track the cards run along: a darker band with faint violet edges.
+        g.fill(0, stripY - TRACK_MARGIN, width, stripY + cardH + TRACK_MARGIN, 0x70000000);
+        g.fill(0, stripY - TRACK_MARGIN, width, stripY - TRACK_MARGIN + 1, 0x50D9B3FF);
+        g.fill(0, stripY + cardH + TRACK_MARGIN - 1, width, stripY + cardH + TRACK_MARGIN, 0x50D9B3FF);
         for (int i = 0; i < strip.size(); i++) {
             if (landed && i == landingIndex) continue; // drawn last, on top
             int x = Math.round(center + i * spacing - offset) - cardW / 2;

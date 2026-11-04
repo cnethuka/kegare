@@ -15,7 +15,7 @@ for the future hostile spirit mobs. See [DESIGN.md](DESIGN.md).
 | `./gradlew runClient -PquickPlayWorld=<world>` | Dev client, straight into an existing singleplayer world |
 | `./gradlew runClient -PquickPlay=localhost` | Dev client, straight onto a server |
 | `./gradlew runServer` | Dev dedicated server (`run/eula.txt` must say `eula=true`) |
-| `python3 tools/gen_placeholders.py` | Regenerate the placeholder textures (needs Pillow) |
+| `python3 tools/gen_art.py [--preview sheet.png]` | Regenerate all GUI and item art (needs Pillow); see DESIGN.md §3.10 |
 
 Requires JDK 21 (e.g. Temurin). Point `JAVA_HOME` at it if it isn't your default Java.
 
