@@ -103,6 +103,112 @@ def ability_slot(selected: bool) -> Image.Image:
     return img
 
 
+# ---------------------------------------------------------------- GUI sprites (textures/gui/sprites/)
+# Nine-slice sprites get a .mcmeta so Minecraft stretches only their middle. Greyscale ones are tinted in code
+# (cards and radial slots take the rarity / state color).
+
+
+def frame(w: int, h: int, border: str, inner_top: str, inner_bottom: str, highlight: str | None = None,
+          border_px: int = 1, inner_alpha: int = 255) -> Image.Image:
+    """Rectangle with a 1px rounded border, a vertical gradient fill and an optional top-left bevel."""
+    img = Image.new("RGBA", (w, h), (0, 0, 0, 0))
+    top, bottom = rgba(inner_top, inner_alpha), rgba(inner_bottom, inner_alpha)
+    for y in range(h):
+        t = y / max(1, h - 1)
+        row = tuple(int(top[i] + (bottom[i] - top[i]) * t) for i in range(4))
+        for x in range(w):
+            corner = (x in (0, w - 1)) and (y in (0, h - 1))
+            if corner:
+                continue
+            if x < border_px or y < border_px or x >= w - border_px or y >= h - border_px:
+                img.putpixel((x, y), rgba(border))
+            else:
+                img.putpixel((x, y), row)
+    if highlight:
+        for i in range(border_px, w - border_px):
+            img.putpixel((i, border_px), rgba(highlight))
+        for i in range(border_px, h - border_px):
+            img.putpixel((border_px, i), rgba(highlight))
+    return img
+
+
+def card() -> Image.Image:
+    # Greyscale: tinted by rarity color in code. Bright border, darker body, inner line.
+    img = frame(24, 32, "#FFFFFF", "#6A6A6A", "#2E2E2E", border_px=2)
+    for x in range(3, 21):
+        img.putpixel((x, 3), rgba("#B0B0B0"))
+    return img
+
+
+def panel() -> Image.Image:
+    return frame(16, 16, "#2A1838", "#1B1024", "#0E0814", highlight="#3E2752", border_px=1, inner_alpha=240)
+
+
+def tab(selected: bool) -> Image.Image:
+    if selected:
+        return frame(16, 16, "#B07CE0", "#4A2C66", "#2C1A3C", highlight="#D9B3FF")
+    return frame(16, 16, "#3A2650", "#22152E", "#170E20", highlight="#2E1E40")
+
+
+def radial_slot(selected: bool) -> Image.Image:
+    if selected:
+        return frame(24, 24, "#F2D27A", "#4A3A18", "#2A200C", highlight="#FFF1C2", border_px=2, inner_alpha=230)
+    return frame(24, 24, "#5A4A6A", "#24182E", "#140C1A", highlight="#3A2A48", border_px=2, inner_alpha=220)
+
+
+def sparkle() -> Image.Image:
+    # A small four-point star, white so it can be tinted.
+    grid = [
+        "...W...",
+        "...W...",
+        "..WWW..",
+        "WWWWWWW",
+        "..WWW..",
+        "...W...",
+        "...W...",
+    ]
+    img = Image.new("RGBA", (7, 7), (0, 0, 0, 0))
+    for y, row in enumerate(grid):
+        for x, ch in enumerate(row):
+            if ch == "W":
+                img.putpixel((x, y), (255, 255, 255, 255 if (x == 3 or y == 3) else 200))
+    return img
+
+
+def severed_emblem() -> Image.Image:
+    # A broken ring: Malice that never flowed.
+    import math
+    img = Image.new("RGBA", (32, 32), (0, 0, 0, 0))
+    for y in range(32):
+        for x in range(32):
+            dx, dy = x - 15.5, y - 15.5
+            d = math.hypot(dx, dy)
+            angle = math.degrees(math.atan2(dy, dx)) % 360
+            in_gap = 30 <= angle <= 60 or 210 <= angle <= 240
+            if 10.5 <= d <= 14.5 and not in_gap:
+                shade = 200 - int((d - 10.5) * 20)
+                img.putpixel((x, y), (shade, shade, shade + 10, 255))
+            elif d < 3.5:
+                img.putpixel((x, y), (110, 30, 30, 255))
+    return img
+
+
+def nine_slice_meta(width: int, height: int, border: int) -> str:
+    return ('{\n  "gui": {\n    "scaling": {\n      "type": "nine_slice",\n'
+            f'      "width": {width},\n      "height": {height},\n      "border": {border}\n'
+            '    }\n  }\n}\n')
+
+
+def save_sprite(img: Image.Image, name: str, nine_slice_border: int | None = None) -> None:
+    save(img, f"gui/sprites/{name}.png")
+    meta = TEXTURES / "gui" / "sprites" / f"{name}.png.mcmeta"
+    if nine_slice_border is not None:
+        meta.write_text(nine_slice_meta(img.width, img.height, nine_slice_border))
+        print(f"wrote {meta.relative_to(ROOT)}")
+    elif meta.exists():
+        meta.unlink()
+
+
 def save(img: Image.Image, relative: str) -> None:
     path = TEXTURES / relative
     path.parent.mkdir(parents=True, exist_ok=True)
@@ -115,6 +221,15 @@ def main() -> None:
     save(malice_bar(), "gui/malice_bar.png")
     save(ability_slot(False), "gui/ability_slot.png")
     save(ability_slot(True), "gui/ability_slot_selected.png")
+    # GUI sprites
+    save_sprite(panel(), "panel", nine_slice_border=4)
+    save_sprite(card(), "card", nine_slice_border=6)
+    save_sprite(tab(False), "tab", nine_slice_border=3)
+    save_sprite(tab(True), "tab_selected", nine_slice_border=3)
+    save_sprite(radial_slot(False), "radial_slot", nine_slice_border=4)
+    save_sprite(radial_slot(True), "radial_slot_selected", nine_slice_border=4)
+    save_sprite(sparkle(), "sparkle")
+    save_sprite(severed_emblem(), "severed_emblem")
 
 
 if __name__ == "__main__":

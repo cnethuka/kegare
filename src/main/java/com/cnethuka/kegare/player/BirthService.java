@@ -6,6 +6,7 @@ import com.cnethuka.kegare.malice.MaliceRules;
 import com.cnethuka.kegare.malice.MaliceService;
 import com.cnethuka.kegare.combat.CombatData;
 import com.cnethuka.kegare.network.PlayerSync;
+import com.cnethuka.kegare.network.RevealPayload;
 import com.cnethuka.kegare.registry.KegareAttachments;
 import com.cnethuka.kegare.roll.RollData;
 import com.cnethuka.kegare.roll.RollReason;
@@ -18,6 +19,7 @@ import com.cnethuka.kegare.trait.Trait;
 import com.cnethuka.kegare.trait.TraitService;
 import java.util.List;
 import java.util.Optional;
+import java.util.OptionalInt;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
 
@@ -39,9 +41,16 @@ public final class BirthService {
      * remaining traits (unique ones released), innate technique, pity and combat state, and finish a fresh birth.
      */
     public static void rebirth(ServerPlayer player) {
+        rebirth(player, OptionalInt.empty());
+    }
+
+    /** Admin debug: as {@link #rebirth(ServerPlayer)}, optionally forcing the Malice capacity (0 = Severed). */
+    public static void rebirth(ServerPlayer player, OptionalInt forcedCapacity) {
         CastManager.stopAll(player, EndReason.INNATE_TECHNIQUE_CHANGED);
         InnateTechniqueService.setInnateTechnique(player, null);
-        MaliceRoller.Result malice = MaliceService.rollBirth(player);
+        MaliceRoller.Result malice = forcedCapacity.isPresent()
+                ? MaliceService.adminBirth(player, forcedCapacity.getAsInt())
+                : MaliceService.rollBirth(player);
         TraitService.removeAll(player, Trait.RemoveReason.REBIRTH);
         player.setData(KegareAttachments.INNATE_TECHNIQUE, new InnateTechniqueData());
         player.setData(KegareAttachments.ROLL, new RollData());
@@ -73,5 +82,7 @@ public final class BirthService {
         outcome.ifPresent(o -> RollService.announce(player, o));
         outcome.ifPresent(o -> RollService.awardOutcomeAdvancements(player, o));
         PlayerSync.syncNow(player);
+        // Everything above is decided and saved; the reveal only shows it (birth traits go to this player only).
+        RevealPayload.sendBirth(player, malice, outcome, traits);
     }
 }

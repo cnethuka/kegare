@@ -4,6 +4,7 @@ import com.cnethuka.kegare.Kegare;
 import com.cnethuka.kegare.malice.MaliceService;
 import com.cnethuka.kegare.combat.CombatHelper;
 import com.cnethuka.kegare.network.PlayerSync;
+import com.cnethuka.kegare.network.RevealPayload;
 import com.cnethuka.kegare.roll.RollReason;
 import com.cnethuka.kegare.roll.RollService;
 import com.cnethuka.kegare.innatetechnique.CastManager;
@@ -46,6 +47,7 @@ public final class PlayerEvents {
             RollService.rollInnateTechnique(player, RollReason.REPLACEMENT).ifPresent(o -> {
                 RollService.announce(player, o);
                 RollService.awardOutcomeAdvancements(player, o);
+                RevealPayload.sendRoll(player, o);
             });
         }
         TraitSuccession.onLogin(player);

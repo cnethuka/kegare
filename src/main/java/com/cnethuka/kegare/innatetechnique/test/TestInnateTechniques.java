@@ -8,8 +8,8 @@ import net.neoforged.neoforge.registries.DeferredHolder;
 import net.neoforged.neoforge.registries.DeferredRegister;
 
 /**
- * TEST CONTENT. Three placeholder innate techniques that prove the registry, roll and cast pipeline.
- * Epic is intentionally empty, so rolls also exercise "skip rarities with no innate technique".
+ * TEST CONTENT. Four placeholder innate techniques that prove the registry, roll, cast and reveal pipeline.
+ * One per rarity, so every reveal can be shown.
  * Delete this package (and the {@code [test_abilities]} config) when real innate techniques land.
  */
 public final class TestInnateTechniques {
@@ -28,6 +28,15 @@ public final class TestInnateTechniques {
             () -> InnateTechnique.builder(InnateTechniqueRarity.RARE)
                     .ability(TestAbilities.HOVER)
                     .ability(TestAbilities.AURA)
+                    .testContent()
+                    .build());
+
+    /** EPIC: burst (charged) + hover (channeled), shockwave ultimate. Exists so every rarity can be revealed. */
+    public static final DeferredHolder<InnateTechnique, InnateTechnique> PRISM = INNATE_TECHNIQUES.register("test_prism",
+            () -> InnateTechnique.builder(InnateTechniqueRarity.EPIC)
+                    .ability(TestAbilities.BURST)
+                    .ability(TestAbilities.HOVER)
+                    .ultimate(TestAbilities.SHOCKWAVE)
                     .testContent()
                     .build());
 

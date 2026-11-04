@@ -6,6 +6,7 @@ import com.cnethuka.kegare.malice.MaliceService;
 import com.cnethuka.kegare.combat.CombatHelper;
 import com.cnethuka.kegare.config.KegareServerConfig;
 import com.cnethuka.kegare.network.PlayerSync;
+import com.cnethuka.kegare.network.RevealPayload;
 import com.cnethuka.kegare.registry.KegareAttachments;
 import com.cnethuka.kegare.registry.KegareRegistries;
 import com.cnethuka.kegare.innatetechnique.InnateTechnique;
@@ -16,10 +17,9 @@ import java.util.EnumMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import javax.annotation.Nullable;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
-import net.minecraft.sounds.SoundEvents;
-import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.entity.player.Player;
 
 /** Innate technique rolls with pity. Never touches Malice or traits. */
@@ -53,7 +53,24 @@ public final class RollService {
      * (see {@link RollReason}, {@link PityState}). Empty if nothing is eligible (nothing changes then).
      */
     public static Optional<Outcome> rollInnateTechnique(ServerPlayer player, RollReason reason) {
+        return rollInnateTechnique(player, reason, null);
+    }
+
+    /**
+     * Same as {@link #rollInnateTechnique(ServerPlayer, RollReason)}, but {@code forced} (admin debug) skips the random
+     * pick and lands on that innate technique. Pity still updates for the forced rarity.
+     */
+    public static Optional<Outcome> rollInnateTechnique(ServerPlayer player, RollReason reason, @Nullable InnateTechnique forced) {
         InnateTechnique current = InnateTechniqueService.current(player).orElse(null);
+        if (forced != null) {
+            if (forced == current) return Optional.empty();
+            RollData roll = get(player);
+            int counter = roll.state().effectiveCounter(reason);
+            roll.set(roll.state().after(forced.rarity(), reason));
+            InnateTechniqueService.setInnateTechnique(player, forced);
+            KegareAdvancements.awardIfPresent(player, KegareAdvancements.innateTechniqueRoot(forced.id()));
+            return Optional.of(new Outcome(forced, counter + 1, false, reason));
+        }
         boolean includeTest = KegareServerConfig.INCLUDE_TEST_INNATE_TECHNIQUES.get();
         Map<InnateTechniqueRarity, List<InnateTechnique>> pool = new EnumMap<>(InnateTechniqueRarity.class);
         for (InnateTechnique innateTechnique : KegareRegistries.INNATE_TECHNIQUE) {
@@ -86,6 +103,11 @@ public final class RollService {
      * is also blocked in combat. Awards Reawakening (talisman only) before the outcome advancements.
      */
     public static RerollResult reroll(ServerPlayer player, RollReason reason) {
+        return reroll(player, reason, null);
+    }
+
+    /** {@code forced}: admin debug result (see {@link #rollInnateTechnique(ServerPlayer, RollReason, InnateTechnique)}). */
+    public static RerollResult reroll(ServerPlayer player, RollReason reason, @Nullable InnateTechnique forced) {
         if (MaliceService.isSevered(player)) {
             player.sendSystemMessage(Component.translatable("message.kegare.reroll.severed"));
             return RerollResult.SEVERED;
@@ -94,12 +116,13 @@ public final class RollService {
             player.sendSystemMessage(Component.translatable("message.kegare.reroll.in_combat"));
             return RerollResult.IN_COMBAT;
         }
-        Optional<Outcome> outcome = rollInnateTechnique(player, reason);
+        Optional<Outcome> outcome = rollInnateTechnique(player, reason, forced);
         if (outcome.isEmpty()) {
             player.sendSystemMessage(Component.translatable("message.kegare.reroll.no_candidates"));
             return RerollResult.NO_CANDIDATES;
         }
         announce(player, outcome.get());
+        RevealPayload.sendRoll(player, outcome.get()); // the result is already saved; the screen only shows it
         if (reason.grantsReawakening()) KegareAdvancements.award(player, KegareAdvancements.REAWAKENING); // parent first
         awardOutcomeAdvancements(player, outcome.get());
         PlayerSync.markDirty(player);
@@ -111,7 +134,7 @@ public final class RollService {
         if (outcome.byHardPity()) KegareAdvancements.award(player, KegareAdvancements.BITTER_LUCK);
     }
 
-    /** Chat message for the new innate technique; LEGENDARY gets a fanfare. */
+    /** Chat record of the new innate technique. Sounds and visuals are the client's reveal screen. */
     public static void announce(ServerPlayer player, Outcome outcome) {
         InnateTechnique innateTechnique = outcome.innateTechnique();
         Component rarity = Component.translatable(innateTechnique.rarity().translationKey()).withColor(innateTechnique.rarity().color());
@@ -125,9 +148,6 @@ public final class RollService {
         }
         if (outcome.byHardPity()) {
             player.sendSystemMessage(Component.translatable("message.kegare.roll.hard_pity", outcome.rollNumber()));
-        }
-        if (innateTechnique.rarity() == InnateTechniqueRarity.LEGENDARY) {
-            player.playNotifySound(SoundEvents.UI_TOAST_CHALLENGE_COMPLETE, SoundSource.PLAYERS, 1.0f, 1.0f);
         }
     }
 

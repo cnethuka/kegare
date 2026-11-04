@@ -23,7 +23,7 @@ import net.neoforged.neoforge.common.data.LanguageProvider;
 /**
  * Generates {@code assets/kegare/lang/en_us.json}. This is the ONLY place player-facing names live.
  * Rename a display term by changing the constant below and rerunning {@code ./gradlew runData}.
- * Fails datagen if a registered innate technique, ability or trait has no name.
+ * Fails datagen if a registered innate technique, ability or trait has no name or one-line description ({@code .desc}).
  */
 public final class KegareLanguageProvider extends LanguageProvider {
     // ---- Display terms. Code IDs match them: malice / innate_technique / dominion / severed. ----
@@ -65,6 +65,7 @@ public final class KegareLanguageProvider extends LanguageProvider {
         add("key.kegare.next_ability", "Next Ability");
         add("key.kegare.previous_ability", "Previous Ability");
         add("key.kegare.ultimate", "Ultimate");
+        add("key.kegare.sorcerer", "Sorcerer Screen");
 
         // Malice tiers
         add(MaliceTier.ZERO.translationKey(), "Zero");
@@ -87,14 +88,25 @@ public final class KegareLanguageProvider extends LanguageProvider {
         add("innate_technique.kegare.test_kinetic", "[Test] Kinetic");
         add("innate_technique.kegare.test_flux", "[Test] Flux");
         add("innate_technique.kegare.test_apex", "[Test] Apex");
+        add("innate_technique.kegare.test_prism", "[Test] Prism");
+        add("innate_technique.kegare.test_kinetic.desc", "Placeholder: raw motion. A dash and a charged knockback burst.");
+        add("innate_technique.kegare.test_flux.desc", "Placeholder: lift and flow. Hover in place or run with a speed aura.");
+        add("innate_technique.kegare.test_prism.desc", "Placeholder: an Epic test card. Burst, hover and a shockwave ultimate.");
+        add("innate_technique.kegare.test_apex.desc", "Placeholder: every cast type in one, plus a shockwave ultimate.");
         add("ability.kegare.test_dash", "[Test] Dash");
         add("ability.kegare.test_burst", "[Test] Burst");
         add("ability.kegare.test_hover", "[Test] Hover");
         add("ability.kegare.test_aura", "[Test] Aura");
         add("ability.kegare.test_shockwave", "[Test] Shockwave");
+        add("ability.kegare.test_dash.desc", "Launch forward in the direction you face.");
+        add("ability.kegare.test_burst.desc", "Hold to charge, release to knock nearby creatures away.");
+        add("ability.kegare.test_hover.desc", "Hold to levitate. Drains " + MALICE + " while held.");
+        add("ability.kegare.test_aura.desc", "Toggle a speed aura that drains " + MALICE + " every second.");
+        add("ability.kegare.test_shockwave.desc", "A huge knockback wave around you.");
 
         // Traits
         add("trait.kegare.lensing_eyes", LENSING_EYES);
+        add("trait.kegare.lensing_eyes.desc", "Eyes that see through everything. Only one bearer at a time. (No effects yet.)");
         add("message.kegare.trait.lost", "You have lost %s.");
         add("message.kegare.trait.inherited", "You have inherited %s.");
         add("message.kegare.trait.lensing_eyes.succession", "The eyes have closed... and opened elsewhere.");
@@ -129,6 +141,7 @@ public final class KegareLanguageProvider extends LanguageProvider {
         add("message.kegare.reroll.severed", "There is nothing to purify. A " + SEVERED + " body holds no " + INNATE_TECHNIQUE + ".");
         add("message.kegare.reroll.no_candidates", "No other " + INNATE_TECHNIQUE + " is available.");
         add("message.kegare.reroll.in_combat", "You can't purify mid-fight.");
+        add("message.kegare.reroll.no_talisman", "The talisman is no longer in your hand.");
         add("message.kegare.roll.hard_pity", "Fate relented on roll %s.");
         add("message.kegare.roll.replaced", "Your " + INNATE_TECHNIQUE + " was removed by an update and has been re-rolled.");
 
@@ -145,6 +158,72 @@ public final class KegareLanguageProvider extends LanguageProvider {
         advancement("the_cycle_continues", "The Cycle Continues", "Inherit " + LENSING_EYES + " from a fallen bearer.");
         advancement("eyes_closed", "Eyes Closed", "Lose your " + LENSING_EYES + ".");
         advancement("blinded", "Blinded", "Kill the bearer of " + LENSING_EYES + ".");
+
+        // ---- GUI: roll reveal ----
+        add("gui.kegare.reveal.title.birth", "Awakening");
+        add("gui.kegare.reveal.title.talisman", "Reawakening");
+        add("gui.kegare.reveal.title.admin", "Reroll");
+        add("gui.kegare.reveal.title.replacement", "Re-rolled");
+        add("gui.kegare.reveal.subtitle.talisman", "The talisman burns away. A new " + INNATE_TECHNIQUE + " answers.");
+        add("gui.kegare.reveal.subtitle.admin", "An operator rerolled your " + INNATE_TECHNIQUE + ".");
+        add("gui.kegare.reveal.subtitle.replacement", "Your " + INNATE_TECHNIQUE + " was removed by an update.");
+        add("gui.kegare.reveal.malice", "%s " + MALICE + " · %s");
+        add("gui.kegare.reveal.hard_pity", "%s · Fate relented on roll %s");
+        add("gui.kegare.reveal.trait", "Rare trait: %s");
+        add("gui.kegare.reveal.trait_private", "Only you know this.");
+        add("gui.kegare.reveal.no_innate_technique", "No " + INNATE_TECHNIQUE + " answered your call.");
+        add("gui.kegare.reveal.severed.title", "Born without " + MALICE);
+        add("gui.kegare.reveal.severed.subtitle", SEVERED);
+        add("gui.kegare.reveal.severed.desc", "Not a drop of " + MALICE + " flows through you. No " + INNATE_TECHNIQUE + " will ever answer.");
+        add("gui.kegare.reveal.skip", "Skip");
+        add("gui.kegare.reveal.continue", "Continue");
+
+        // ---- GUI: Sorcerer screen ----
+        add("gui.kegare.sorcerer.title", "Sorcerer");
+        add("gui.kegare.sorcerer.tab.malice", MALICE);
+        add("gui.kegare.sorcerer.tab.innate_technique", INNATE_TECHNIQUE);
+        add("gui.kegare.sorcerer.tab.severed", SEVERED);
+        add("gui.kegare.sorcerer.tab.traits", "Traits");
+        add("gui.kegare.sorcerer.tab.pity", "Pity");
+        add("gui.kegare.sorcerer.malice.heading", MALICE);
+        add("gui.kegare.sorcerer.malice.capacity", "Capacity: %s (%s)");
+        add("gui.kegare.sorcerer.malice.reserve", "Reserve: %s / %s");
+        add("gui.kegare.sorcerer.malice.regen", "Regeneration: %s per second (%s%% of capacity)");
+        add("gui.kegare.sorcerer.malice.regen_paused", "Regeneration paused: in combat");
+        add("gui.kegare.sorcerer.malice.severed", SEVERED + ": you have no " + MALICE + ".");
+        add("gui.kegare.sorcerer.innate_technique.none", "No " + INNATE_TECHNIQUE + ".");
+        add("gui.kegare.sorcerer.abilities", "Abilities");
+        add("gui.kegare.sorcerer.ability.slot", "%s. %s (%s)");
+        add("gui.kegare.sorcerer.ability.ultimate", "Ultimate: %s (%s)");
+        add("gui.kegare.sorcerer.ability.stats", "Cost: %s " + MALICE + " · Cooldown: %ss");
+        add("gui.kegare.sorcerer.ability.stats_upkeep", "Cost: %s " + MALICE + " · Upkeep: %s/s · Cooldown: %ss");
+        add("gui.kegare.sorcerer.severed.heading", SEVERED);
+        add("gui.kegare.sorcerer.severed.desc", "Born without " + MALICE + ". You hold no " + INNATE_TECHNIQUE + ", cannot cast and cannot reroll.");
+        add("gui.kegare.sorcerer.traits.heading", "Traits");
+        add("gui.kegare.sorcerer.traits.none", "No traits.");
+        add("gui.kegare.sorcerer.traits.unique", "%s (unique)");
+        add("gui.kegare.sorcerer.pity.heading", "Pity");
+        add("gui.kegare.sorcerer.pity.count", "Rolls since Legendary: %s");
+        add("gui.kegare.sorcerer.pity.soft_in", "Soft pity starts in %s rolls");
+        add("gui.kegare.sorcerer.pity.soft_active", "Soft pity active: Legendary weight %s (base %s)");
+        add("gui.kegare.sorcerer.pity.hard_in", "Legendary guaranteed in %s rolls");
+        add("gui.kegare.sorcerer.pity.hard_next", "Legendary guaranteed on your next roll");
+        add("gui.kegare.sorcerer.pity.hard_disabled", "Hard pity is disabled");
+        add("gui.kegare.sorcerer.pity.total", "Total rolls: %s");
+
+        // ---- GUI: Purification Talisman confirmation ----
+        add("gui.kegare.talisman.title", REROLL_ITEM);
+        add("gui.kegare.talisman.question", "Reroll your " + INNATE_TECHNIQUE + "?");
+        add("gui.kegare.talisman.current", "Current: %s");
+        add("gui.kegare.talisman.none", "none");
+        add("gui.kegare.talisman.pity", "Pity: %s/%s");
+        add("gui.kegare.talisman.note", "Consumes one talisman. " + MALICE + " and traits are untouched.");
+        add("gui.kegare.talisman.confirm", "Reroll");
+        add("gui.kegare.talisman.cancel", "Cancel");
+
+        // ---- GUI: radial ability menu ----
+        add("gui.kegare.radial.title", "Select Ability");
+        add("gui.kegare.radial.hint", "Release over an ability to select it");
 
         // Commands
         add("commands.kegare.unknown_innate_technique", "Unknown " + INNATE_TECHNIQUE + ": %s");
@@ -229,14 +308,17 @@ public final class KegareLanguageProvider extends LanguageProvider {
         List<String> missing = new ArrayList<>();
         for (InnateTechnique innateTechnique : KegareRegistries.INNATE_TECHNIQUE) {
             if (!written.contains(innateTechnique.descriptionId())) missing.add(innateTechnique.descriptionId());
+            if (!written.contains(innateTechnique.descriptionId() + ".desc")) missing.add(innateTechnique.descriptionId() + ".desc");
             List<Ability> abilities = new ArrayList<>(innateTechnique.abilities());
             innateTechnique.ultimate().ifPresent(abilities::add);
             for (Ability ability : abilities) {
                 if (!written.contains(ability.descriptionId())) missing.add(ability.descriptionId());
+                if (!written.contains(ability.descriptionId() + ".desc")) missing.add(ability.descriptionId() + ".desc");
             }
         }
         for (Trait trait : KegareRegistries.TRAIT) {
             if (!written.contains(trait.descriptionId())) missing.add(trait.descriptionId());
+            if (!written.contains(trait.descriptionId() + ".desc")) missing.add(trait.descriptionId() + ".desc");
         }
         if (!missing.isEmpty()) throw new IllegalStateException("Missing lang entries: " + missing.stream().distinct().toList());
     }

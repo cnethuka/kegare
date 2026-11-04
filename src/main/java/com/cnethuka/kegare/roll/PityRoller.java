@@ -77,6 +77,24 @@ public final class PityRoller {
         return Optional.empty();
     }
 
+    /**
+     * How many rolls from now until the first soft-pity-boosted roll, counting that roll (1 = the next roll).
+     * 0 means the next roll is already boosted.
+     */
+    public static int rollsUntilSoftPity(Settings settings, int rollsSinceLegendary) {
+        if (rollsSinceLegendary + 1 > settings.softPityStart()) return 0;
+        return settings.softPityStart() + 1 - rollsSinceLegendary;
+    }
+
+    /**
+     * How many rolls from now until the guaranteed LEGENDARY, counting that roll (1 = the next roll).
+     * -1 if hard pity is disabled.
+     */
+    public static int rollsUntilHardPity(Settings settings, int rollsSinceLegendary) {
+        if (settings.hardPity() <= 0) return -1;
+        return Math.max(1, settings.hardPity() - rollsSinceLegendary);
+    }
+
     /** Pity counter after a roll: resets on any LEGENDARY. */
     public static int nextCounter(int rollsSinceLegendary, InnateTechniqueRarity result) {
         return result == InnateTechniqueRarity.LEGENDARY ? 0 : rollsSinceLegendary + 1;

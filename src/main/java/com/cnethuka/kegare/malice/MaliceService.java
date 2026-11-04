@@ -73,6 +73,14 @@ public final class MaliceService {
         return result;
     }
 
+    /** Admin debug: a "birth" with a forced capacity (tier labelled by the closest base). 0 = Severed. */
+    public static MaliceRoller.Result adminBirth(ServerPlayer player, int capacity) {
+        int clamped = Math.max(0, capacity);
+        MaliceTier tier = MaliceRoller.closestTier(clamped, KegareServerConfig.tierBases());
+        applyCapacity(player, tier, clamped);
+        return new MaliceRoller.Result(tier, clamped);
+    }
+
     /**
      * Admin debug override (the only exception to "capacity never changes"). Re-labels the tier,
      * updates the Severed flag (capacity 0 = Severed) and refills the reserve.

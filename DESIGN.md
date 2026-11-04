@@ -175,9 +175,10 @@ All timestamps use **level game time**. They persist across restarts and are ide
   |---|---|---|
   | `test_kinetic` | Common | Dash (instant), Burst (charged) |
   | `test_flux` | Rare | Hover (channeled), Aura (toggle) |
+  | `test_prism` | Epic | Burst (charged), Hover (channeled), plus Shockwave (instant ultimate) |
   | `test_apex` | Legendary | all four, plus Shockwave (instant ultimate) |
 
-  Epic is deliberately empty, which exercises "skip rarities with no innate technique".
+  There is one per rarity, so every reveal can be shown.
   Set `includeTestInnateTechniques=false` once real innate techniques exist.
 
 ### 3.4 Rolls and pity
@@ -211,13 +212,19 @@ All timestamps use **level game time**. They persist across restarts and are ide
 
 ### 3.5 Input and networking
 - Keys: cast **R**, next **Z**, previous **X**, ultimate **V** (rebindable).
-- C→S `IntentPayload`: only *which key went down or up* (`CastIntent`). The server resolves everything else.
+- C→S payloads are **requests only**, and the server validates each one:
+  - `IntentPayload`: which key went down or up (`CastIntent`)
+  - `SelectAbilityPayload`: radial menu slot
+  - `SorcererRequestPayload`: open the Sorcerer screen
+  - `TalismanConfirmPayload`: confirm a reroll
+- S→C GUI payloads carry results that are already decided and saved: `RevealPayload`, `SorcererInfoPayload`,
+  `TalismanPromptPayload` (§3.12).
 - S→C `SyncPayload` (owner only) carries: Malice, capacity, tier, severed, innate technique, selected slot,
   cooldowns, active toggles, current charge/channel, traits.
   - It is sent at most once per tick, and only when something visible changed (Malice syncs when its whole number
     changes).
   - The client counts down cooldowns locally from game time.
-- Network version `1`. Bump it when payload formats change; mismatched clients are refused.
+- Network version `2`. Bump it when payload formats change; mismatched clients are refused.
 
 ### 3.6 HUD
 - A registered GUI layer (`kegare:malice_hud`, top-left, offset in client config) shows:
@@ -245,12 +252,12 @@ All timestamps use **level game time**. They persist across restarts and are ide
 | `setmalice <player> <amount>` | Set the current Malice reserve |
 | `setcapacity <player> <n>` | Admin override of Malice capacity |
 | `setinnatetechnique <player> <innate_technique>` | Set the innate technique |
-| `reroll <player>` | Reroll the innate technique |
+| `reroll <player> [innate_technique]` | Reroll the innate technique (optionally forcing the result, for testing reveals) |
 | `setpity <player> <n>` | Set the pity counter |
 | `trait add\|remove <player> <id>` | Grant or remove a trait |
 | `trait release <id>` | Free a unique trait from an online or offline holder |
 | `trait status <id>` | Show holder / passing on / waiting |
-| `rebirth <player>` | Wipe and re-roll everything |
+| `rebirth <player> [capacity]` | Wipe and re-roll everything (optionally forcing Malice capacity; 0 = Severed) |
 | `stun <player> <seconds>` | Extra, for testing stun; 0 clears |
 
 Malice is always shown as whole numbers (floored, like the HUD); the stored value keeps its fraction.
@@ -265,13 +272,71 @@ Malice is always shown as whole numbers (floored, like the HUD); the stored valu
     - `lensingEyesTransferMode` (RANDOM | KILLER)
     - `lensingEyesTransferDelaySeconds` (30)
     - `uniqueTraitInactiveDays` (0 = off; fractions allowed)
-- **Client TOML:** HUD on/off and offset only.
+- **Client TOML:** HUD on/off and offset, `reveal.animation` (spin on/off), `radial.holdTicks` (hold time that opens
+  the radial menu).
 - Both are editable in-game via Mods → Kegare → Config. Labels are generated into the lang file.
 
 ### 3.10 Data generation and art
 - `./gradlew runData` generates lang, the item model, tags (`kegare:talismans`), the talisman recipe
   (gold + amethyst + paper; overridable by datapack) and the advancements.
-- `python3 tools/gen_placeholders.py` regenerates the 16×16 placeholder PNGs (talisman, Malice bar, ability slots).
+- `python3 tools/gen_placeholders.py` regenerates the placeholder art:
+  - the talisman, Malice bar and HUD ability slots
+  - the GUI sprites in `textures/gui/sprites/`: nine-slice `panel`, `card`, `tab`/`tab_selected` and
+    `radial_slot`/`radial_slot_selected` (each with a `.mcmeta`), plus `sparkle` and `severed_emblem`
+
+### 3.12 GUIs (`client.gui`)
+**Rule: results are decided and saved on the SERVER before any screen opens.** Screens are cosmetic and never send
+a result back; they only send requests the server re-validates. All text comes from the lang file.
+
+| Screen | Opens when | Data | Sends |
+|---|---|---|---|
+| Roll reveal (`RevealScreen`) | the server finished a roll: Awakening, Reawakening, admin reroll, replacement | `RevealPayload`, sent only to that player | nothing |
+| Sorcerer (`SorcererScreen`) | key **K** | `SorcererInfoPayload`, computed by the server | the open request |
+| Talisman confirm (`TalismanConfirmScreen`) | using a Purification Talisman (nothing consumed yet) | `TalismanPromptPayload` | a confirm request |
+| Ability radial (`AbilityRadialScreen`) | **holding** the next-ability key (Z); a tap still cycles | synced state | a select-slot request |
+
+**Roll reveal**
+- The spin is gacha-style: cards (weighted like real rolls) scroll past, ease out over about 4s, and land on the
+  result the server already picked.
+- Cards are tinted and glow by rarity: Common grey, Rare blue, Epic purple, Legendary gold. Legendary adds sparkle
+  particles and a challenge + totem sound.
+- Each card shows name, rarity and its one-line `.desc`.
+- **Skip** (button, Esc, Enter or Space) jumps to the result; pressing again closes.
+- `reveal.animation=false` shows the result instantly.
+- Disconnecting mid-spin changes nothing: the result was saved before the payload was sent.
+- The **birth** reveal adds Malice capacity and tier, or a separate **Severed** reveal ("Born without Malice"), plus
+  birth traits. Those are shown only to that player (e.g. Lensing Eyes, "Only you know this") and never broadcast.
+- **No spoilers:** the background is opaque, so chat and HUD stay hidden. Toasts such as *Chosen by Fate* are held
+  until the reveal closes. The server no longer plays the Legendary sound; the client plays it when the card lands.
+- Reveals queue up and open only when no other screen is open, e.g. after the world finishes loading on first join.
+
+**Sorcerer screen**
+- Four tabs: **Malice**, **Innate Technique** (or **Severed** for Severed players), **Traits**, **Pity**.
+- Malice: capacity and tier, reserve bar, regen per second (and % of capacity), and whether regen is paused.
+- Innate Technique: name, rarity and description, then every ability (and the ultimate) with its cast type, Malice
+  cost, upkeep, cooldown and description.
+- Traits: name, a unique tag, description.
+- Pity:
+  - the count, with a progress bar toward hard pity
+  - "Soft pity starts in N rolls", or the active Legendary weight
+  - "Legendary guaranteed in N rolls" (`PityRoller.rollsUntilSoftPity` / `rollsUntilHardPity`, unit-tested)
+  - total rolls
+- Keys: 1–4 or Tab switch pages, arrows or the mouse wheel scroll, K or Esc close.
+
+**Talisman confirm:** *"Reroll your Innate Technique? Current: X. Pity: Y/50."*
+- **Reroll** sends a request. The server re-checks that the talisman is still in that hand, combat and Severed
+  status, then rolls, consumes one talisman and sends the reveal.
+- **Cancel** or Esc consumes nothing.
+- Using the talisman while Severed or in combat is refused before the screen even opens.
+
+**Radial menu**
+- The current innate technique's abilities sit around a circle, with cooldown sweeps and seconds left. The selected
+  slot is outlined gold and active toggles green.
+- Release (or click) over a slot to select it. Releasing in the center or pressing Esc keeps the current one.
+
+**Layout and testing**
+- Layouts are computed from the screen size and support GUI sizes down to Minecraft's minimum of 320×240.
+- Every screen fits at GUI scales 1–4 on a 1920×1080 window, and in a 640×480 window (auto scale, which gives a 320×240 GUI).
 
 ### 3.11 Advancements and tabs
 All advancements use `minecraft:impossible` and are granted from code (`KegareAdvancements.award`).

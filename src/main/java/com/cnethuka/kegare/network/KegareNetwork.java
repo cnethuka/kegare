@@ -6,15 +6,27 @@ import net.neoforged.neoforge.network.registration.PayloadRegistrar;
 /**
  * Payload registration. Bump the version when payload formats change: mismatched clients are refused.
  * Handlers run on the main thread (NeoForge default).
+ * <p>
+ * Client to server payloads are requests only (key intents, "open my Sorcerer screen", "confirm reroll",
+ * "select slot N"); the server validates every one. Server to client payloads carry results that are already
+ * decided and saved; screens are cosmetic.
  */
 public final class KegareNetwork {
-    public static final String VERSION = "1";
+    public static final String VERSION = "2";
 
     private KegareNetwork() {}
 
     public static void register(RegisterPayloadHandlersEvent event) {
         PayloadRegistrar registrar = event.registrar(VERSION);
+        // client -> server (requests)
         registrar.playToServer(IntentPayload.TYPE, IntentPayload.STREAM_CODEC, IntentPayload::handle);
+        registrar.playToServer(SelectAbilityPayload.TYPE, SelectAbilityPayload.STREAM_CODEC, SelectAbilityPayload::handle);
+        registrar.playToServer(SorcererRequestPayload.TYPE, SorcererRequestPayload.STREAM_CODEC, SorcererRequestPayload::handle);
+        registrar.playToServer(TalismanConfirmPayload.TYPE, TalismanConfirmPayload.STREAM_CODEC, TalismanConfirmPayload::handle);
+        // server -> client (state and decided results)
         registrar.playToClient(SyncPayload.TYPE, SyncPayload.STREAM_CODEC, SyncPayload::handle);
+        registrar.playToClient(RevealPayload.TYPE, RevealPayload.STREAM_CODEC, RevealPayload::handle);
+        registrar.playToClient(SorcererInfoPayload.TYPE, SorcererInfoPayload.STREAM_CODEC, SorcererInfoPayload::handle);
+        registrar.playToClient(TalismanPromptPayload.TYPE, TalismanPromptPayload.STREAM_CODEC, TalismanPromptPayload::handle);
     }
 }

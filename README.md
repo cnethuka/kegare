@@ -19,5 +19,9 @@ for the future hostile spirit mobs. See [DESIGN.md](DESIGN.md).
 
 Requires JDK 21 (e.g. Temurin). Point `JAVA_HOME` at it if it isn't your default Java.
 
-Admin/debug commands (op): `/kegare info`, `setmalice`, `setcapacity`, `setinnatetechnique`, `reroll`, `setpity`,
-`trait add|remove|release|status`, `rebirth`, `stun`. See DESIGN.md §3.8.
+Keys: cast **R**, ultimate **V**, next ability **Z** (tap to cycle, hold for the radial menu), previous **X**,
+Sorcerer screen **K**.
+
+Admin/debug commands (op): `/kegare info`, `setmalice`, `setcapacity`, `setinnatetechnique`,
+`reroll [innate_technique]`, `setpity`, `trait add|remove|release|status`, `rebirth [capacity]`, `stun`.
+The optional arguments force a result, which is handy for testing the reveal screens. See DESIGN.md §3.8.

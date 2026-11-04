@@ -29,6 +29,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 import java.util.Optional;
+import java.util.OptionalInt;
+import javax.annotation.Nullable;
 import net.minecraft.ChatFormatting;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
@@ -86,7 +88,11 @@ public final class KegareCommand {
                                                 ResourceLocationArgument.getId(c, "innate_technique"))))))
                 .then(Commands.literal("reroll")
                         .then(Commands.argument("player", EntityArgument.player())
-                                .executes(c -> reroll(c.getSource(), EntityArgument.getPlayer(c, "player")))))
+                                .executes(c -> reroll(c.getSource(), EntityArgument.getPlayer(c, "player"), null))
+                                // Debug: force the result (still goes through the roll pipeline: pity, advancements, reveal).
+                                .then(Commands.argument("innate_technique", ResourceLocationArgument.id()).suggests(INNATE_TECHNIQUES)
+                                        .executes(c -> reroll(c.getSource(), EntityArgument.getPlayer(c, "player"),
+                                                ResourceLocationArgument.getId(c, "innate_technique"))))))
                 .then(Commands.literal("setpity")
                         .then(Commands.argument("player", EntityArgument.player())
                                 .then(Commands.argument("rolls", IntegerArgumentType.integer(0, 1_000_000))
@@ -113,7 +119,11 @@ public final class KegareCommand {
                                         .executes(c -> traitStatus(c.getSource(), ResourceLocationArgument.getId(c, "trait"))))))
                 .then(Commands.literal("rebirth")
                         .then(Commands.argument("player", EntityArgument.player())
-                                .executes(c -> rebirth(c.getSource(), EntityArgument.getPlayer(c, "player")))))
+                                .executes(c -> rebirth(c.getSource(), EntityArgument.getPlayer(c, "player"), OptionalInt.empty()))
+                                // Debug: force the Malice capacity of the new birth (0 = Severed).
+                                .then(Commands.argument("capacity", IntegerArgumentType.integer(0, 1_000_000))
+                                        .executes(c -> rebirth(c.getSource(), EntityArgument.getPlayer(c, "player"),
+                                                OptionalInt.of(IntegerArgumentType.getInteger(c, "capacity")))))))
                 .then(Commands.literal("stun")
                         .then(Commands.argument("player", EntityArgument.player())
                                 .then(Commands.argument("seconds", DoubleArgumentType.doubleArg(0, 3600))
@@ -212,8 +222,13 @@ public final class KegareCommand {
         return 1;
     }
 
-    private static int reroll(CommandSourceStack source, ServerPlayer player) {
-        RollService.RerollResult result = RollService.reroll(player, RollReason.ADMIN);
+    private static int reroll(CommandSourceStack source, ServerPlayer player, @Nullable ResourceLocation forcedId) throws CommandSyntaxException {
+        InnateTechnique forced = null;
+        if (forcedId != null) {
+            forced = KegareRegistries.INNATE_TECHNIQUE.get(forcedId);
+            if (forced == null) throw UNKNOWN_INNATE_TECHNIQUE.create(forcedId);
+        }
+        RollService.RerollResult result = RollService.reroll(player, RollReason.ADMIN, forced);
         if (result == RollService.RerollResult.SEVERED) {
             source.sendFailure(Component.translatable("commands.kegare.severed", player.getDisplayName()));
             return 0;
@@ -315,8 +330,8 @@ public final class KegareCommand {
         return 1;
     }
 
-    private static int rebirth(CommandSourceStack source, ServerPlayer player) {
-        BirthService.rebirth(player);
+    private static int rebirth(CommandSourceStack source, ServerPlayer player, OptionalInt capacity) {
+        BirthService.rebirth(player, capacity);
         source.sendSuccess(() -> Component.translatable("commands.kegare.rebirth.success", player.getDisplayName()), true);
         return 1;
     }

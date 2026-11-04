@@ -14,6 +14,7 @@ public final class KegareKeys {
     public static final KeyMapping NEXT_ABILITY = key("key.kegare.next_ability", GLFW.GLFW_KEY_Z);
     public static final KeyMapping PREVIOUS_ABILITY = key("key.kegare.previous_ability", GLFW.GLFW_KEY_X);
     public static final KeyMapping ULTIMATE = key("key.kegare.ultimate", GLFW.GLFW_KEY_V);
+    public static final KeyMapping SORCERER = key("key.kegare.sorcerer", GLFW.GLFW_KEY_K);
 
     private KegareKeys() {}
 
@@ -21,10 +22,11 @@ public final class KegareKeys {
         return new KeyMapping(name, KeyConflictContext.IN_GAME, InputConstants.Type.KEYSYM, glfwKey, CATEGORY);
     }
 
-    static void register(RegisterKeyMappingsEvent event) {
+    public static void register(RegisterKeyMappingsEvent event) {
         event.register(CAST);
         event.register(NEXT_ABILITY);
         event.register(PREVIOUS_ABILITY);
         event.register(ULTIMATE);
+        event.register(SORCERER);
     }
 }

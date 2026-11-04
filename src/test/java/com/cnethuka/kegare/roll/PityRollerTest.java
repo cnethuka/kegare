@@ -48,6 +48,22 @@ class PityRollerTest {
     }
 
     @Test
+    void rollsUntilSoftPityCountsTheBoostedRoll() {
+        assertEquals(31, PityRoller.rollsUntilSoftPity(DEFAULTS, 0));  // roll 31 is the first boosted one
+        assertEquals(2, PityRoller.rollsUntilSoftPity(DEFAULTS, 29));  // next is roll 30 (normal), then 31 (boosted)
+        assertEquals(0, PityRoller.rollsUntilSoftPity(DEFAULTS, 30)); // next roll (31) is boosted: active
+        assertEquals(0, PityRoller.rollsUntilSoftPity(DEFAULTS, 45));
+    }
+
+    @Test
+    void rollsUntilHardPityCountsTheGuaranteedRoll() {
+        assertEquals(50, PityRoller.rollsUntilHardPity(DEFAULTS, 0));  // "Legendary guaranteed in 50 rolls"
+        assertEquals(1, PityRoller.rollsUntilHardPity(DEFAULTS, 49));  // next roll
+        assertEquals(1, PityRoller.rollsUntilHardPity(DEFAULTS, 70));  // overdue (no Legendary was eligible)
+        assertEquals(-1, PityRoller.rollsUntilHardPity(new PityRoller.Settings(new int[]{50, 30, 15, 5}, 30, 5, 0), 10));
+    }
+
+    @Test
     void counterResetsOnAnyLegendary() {
         assertEquals(0, PityRoller.nextCounter(12, InnateTechniqueRarity.LEGENDARY));
         assertEquals(0, PityRoller.nextCounter(49, InnateTechniqueRarity.LEGENDARY));

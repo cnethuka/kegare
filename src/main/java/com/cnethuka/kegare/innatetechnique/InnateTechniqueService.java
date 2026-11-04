@@ -46,6 +46,14 @@ public final class InnateTechniqueService {
         PlayerSync.markDirty(player);
     }
 
+    /** Selects a specific slot (radial menu). Out-of-range requests are ignored. */
+    public static void select(ServerPlayer player, int slot) {
+        Optional<InnateTechnique> innateTechnique = current(player);
+        if (innateTechnique.isEmpty() || slot < 0 || slot >= innateTechnique.get().abilities().size()) return;
+        get(player).setSelectedSlot(slot);
+        PlayerSync.markDirty(player);
+    }
+
     public static int cooldownRemaining(ServerPlayer player, Ability ability) {
         InnateTechniqueData.Cooldown cooldown = get(player).cooldowns().get(ability.id());
         if (cooldown == null) return 0;

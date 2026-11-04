@@ -22,7 +22,7 @@ class LangKeysTest {
     private static final Path SOURCES = Path.of("src/main/java");
     private static final Path LANG = Path.of("src/generated/resources/assets/kegare/lang/en_us.json");
     private static final Pattern KEY_LITERAL =
-            Pattern.compile("\"((?:message|commands|hud|key)\\.kegare\\.[a-z0-9_.]*[a-z0-9_]|key\\.categories\\.kegare)\"");
+            Pattern.compile("\"((?:message|commands|hud|key|gui)\\.kegare\\.[a-z0-9_.]*[a-z0-9_]|key\\.categories\\.kegare)\"");
     private static final Pattern JSON_KEY = Pattern.compile("^\\s*\"([^\"]+)\"\\s*:", Pattern.MULTILINE);
 
     @Test
