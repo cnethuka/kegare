@@ -74,6 +74,14 @@ All timestamps use **level game time**. They persist across restarts and are ide
 - **Respawn** refills the reserve to capacity.
 - **Severed** = born with 0 capacity. The player gets no innate technique, can't reroll, and the HUD is hidden.
   Only the flag is stored; their superhuman body comes from it (§3.27).
+- **Becoming Severed** (birth or rebirth roll of 0, `/kegare setcapacity <player> 0`, or any future path):
+  - Every `requiresMalice` trait is stripped (*"You have lost …"*).
+  - Unique inheritable ones (lensing_eyes) go through the **normal transfer** (30s, then an eligible heir).
+  - Other Malice-based traits are removed; a unique non-inheritable one is released.
+  - This is enforced in one place: `MaliceService.applyCapacity` is the only code that can change capacity or the
+    Severed flag, because `MaliceData`'s setters are package-private. Any new path therefore triggers the strip.
+  - Login re-checks it as a safety net.
+  - Rebirth re-rolls Malice *before* wiping traits, so rebirthing into Severed also transfers the eyes.
 
 ### 3.2 Traits
 - A registry (`kegare:trait`) plus a per-player ID set (saved, synced, kept on death unless noted below).
@@ -84,7 +92,7 @@ All timestamps use **level game time**. They persist across restarts and are ide
   - `lostOnPvpDeath`: removed when the bearer is killed by another player.
   - `birthChance`: read from config.
 - Hooks: `onAdded(reason)` (BIRTH / ADMIN / INHERITED), `onRemoved(reason)` (ADMIN / REBIRTH / LOST_IN_PVP /
-  RELEASED / REVOKED / CONFLICT), `onBearerKilledByPlayer`, `canRollFor`.
+  RELEASED / REVOKED / CONFLICT / SEVERED), `onBearerKilledByPlayer`, `canRollFor`.
 - **World record** (`UniqueTraitSavedData`) holds:
   - bearers
   - pending successions
@@ -115,7 +123,7 @@ All timestamps use **level game time**. They persist across restarts and are ide
     |---|---|---|
     | *Clear Sight* | challenge | born with it |
     | *The Cycle Continues* | challenge | inherited it |
-    | *Eyes Closed* | task | lost it (PvP, release or revocation) |
+    | *Eyes Closed* | task | lost it (PvP, release, revocation or becoming Severed) |
     | *Blinded* | goal | killed a bearer |
 | *Something's Missing* | goal | a full-detail Read of a Severed player (§3.32) |
 
@@ -274,4 +282,3 @@ Malice is always shown as whole numbers (floored, like the HUD); the stored valu
   - Physical buffs for Severed.
   - Gameplay effects for `lensing_eyes`.
   - Talisman recipe cost.
-  - Whether `/kegare setcapacity <player> 0` should also strip Malice-based traits (it currently leaves them).

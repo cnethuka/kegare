@@ -37,6 +37,8 @@ public final class PlayerEvents {
         TraitSuccession.markSeen(player);
         // Reconcile first: applies offline revocations and releases stale unique claims before any re-roll.
         TraitService.reconcile(player);
+        // Safety net: a Severed player can never keep a Malice-based trait (e.g. data from before this rule).
+        if (MaliceService.get(player).isBorn() && MaliceService.isSevered(player)) TraitSuccession.stripMaliceTraits(player);
         if (!MaliceService.get(player).isBorn()) {
             BirthService.birth(player);
         } else if (InnateTechniqueService.validateOnLogin(player) && !MaliceService.isSevered(player)) {

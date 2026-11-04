@@ -45,7 +45,7 @@ public final class LensingEyesTrait extends Trait {
     @Override
     public void onRemoved(ServerPlayer player, RemoveReason reason) {
         switch (reason) {
-            case LOST_IN_PVP, RELEASED, REVOKED -> KegareAdvancements.award(player, KegareAdvancements.EYES_CLOSED);
+            case LOST_IN_PVP, RELEASED, REVOKED, SEVERED -> KegareAdvancements.award(player, KegareAdvancements.EYES_CLOSED);
             default -> { }
         }
     }

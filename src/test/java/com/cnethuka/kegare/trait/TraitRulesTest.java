@@ -1,11 +1,12 @@
 package com.cnethuka.kegare.trait;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import org.junit.jupiter.api.Test;
 
-/** Fix 1: Severed players never roll (or hold) Malice-based traits such as lensing_eyes. */
+/** Severed players never roll, hold or keep Malice-based traits such as lensing_eyes. */
 class TraitRulesTest {
     @Test
     void severedNeverRollsMaliceTraits() {
@@ -28,6 +29,24 @@ class TraitRulesTest {
     @Test
     void zeroChanceIsNeverRolled() {
         assertFalse(TraitRules.canRollAtBirth(0.0, false, false));
+    }
+
+    @Test
+    void becomingSeveredTransfersUniqueInheritableMaliceTraits() {
+        // lensing_eyes: requiresMalice + unique + inheritable -> normal 30s transfer
+        assertEquals(TraitRules.SeveredAction.TRANSFER, TraitRules.whenSevered(true, true, true));
+    }
+
+    @Test
+    void becomingSeveredRemovesOtherMaliceTraits() {
+        assertEquals(TraitRules.SeveredAction.REMOVE, TraitRules.whenSevered(true, false, false)); // plain trait
+        assertEquals(TraitRules.SeveredAction.REMOVE, TraitRules.whenSevered(true, true, false));  // unique, not inheritable: released
+    }
+
+    @Test
+    void becomingSeveredKeepsTraitsThatDontNeedMalice() {
+        assertEquals(TraitRules.SeveredAction.KEEP, TraitRules.whenSevered(false, false, false));
+        assertEquals(TraitRules.SeveredAction.KEEP, TraitRules.whenSevered(false, true, true));
     }
 
     @Test

@@ -4,6 +4,7 @@ import com.cnethuka.kegare.combat.CombatHelper;
 import com.cnethuka.kegare.config.KegareServerConfig;
 import com.cnethuka.kegare.network.PlayerSync;
 import com.cnethuka.kegare.registry.KegareAttachments;
+import com.cnethuka.kegare.trait.TraitSuccession;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.util.Mth;
 import net.minecraft.world.entity.player.Player;
@@ -65,8 +66,7 @@ public final class MaliceService {
                 KegareServerConfig.tierBases(),
                 KegareServerConfig.CAPACITY_VARIATION.get(),
                 player.getRandom()::nextInt);
-        get(player).setBirth(result.tier(), result.capacity());
-        PlayerSync.markDirty(player);
+        applyCapacity(player, result.tier(), result.capacity());
         return result;
     }
 
@@ -76,7 +76,19 @@ public final class MaliceService {
      */
     public static void adminSetCapacity(ServerPlayer player, int capacity) {
         MaliceTier tier = MaliceRoller.closestTier(capacity, KegareServerConfig.tierBases());
-        get(player).setBirth(tier, Math.max(0, capacity));
+        applyCapacity(player, tier, Math.max(0, capacity));
+    }
+
+    /**
+     * The single place capacity and the Severed flag change ({@link MaliceData}'s setters are package-private).
+     * Any path that makes a player Severed (birth or rebirth roll, admin, or anything added later) ends up here,
+     * so becoming Severed always strips Malice-based traits.
+     */
+    private static void applyCapacity(ServerPlayer player, MaliceTier tier, int capacity) {
+        MaliceData data = get(player);
+        boolean wasSevered = data.isBorn() && data.isSevered();
+        data.setBirth(tier, capacity);
         PlayerSync.markDirty(player);
+        if (!wasSevered && data.isSevered()) TraitSuccession.stripMaliceTraits(player);
     }
 }

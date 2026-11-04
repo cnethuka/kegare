@@ -21,6 +21,7 @@ import net.neoforged.neoforge.common.util.FakePlayer;
  * Losing and passing on unique traits.
  * <ul>
  *   <li>PvP death: lostOnPvpDeath traits are stripped from the victim (non-PvP deaths keep them).</li>
+ *   <li>Becoming Severed: every Malice-based trait is stripped.</li>
  *   <li>Release: admin command or inactivity frees a unique trait from its holder, online or offline
  *       (offline holders lose it on their next login).</li>
  *   <li>Inheritable traits then wait {@link Trait#successionDelayTicks()} and pass to an heir picked by
@@ -45,6 +46,24 @@ public final class TraitSuccession {
             trait.onBearerKilledByPlayer(victim, killer);
             Kegare.LOGGER.info("{} lost {} to {}", victim.getGameProfile().getName(), id, killer.getGameProfile().getName());
             if (trait.isInheritable()) begin(victim.server, trait, victim.getUUID(), killer.getUUID());
+        }
+    }
+
+    /**
+     * The player is Severed: strip every trait that needs Malice ({@link TraitRules#whenSevered}). Unique inheritable
+     * ones go through the normal succession (their usual delay, then an eligible heir); others are just removed.
+     * Called by {@code MaliceService} whenever a player becomes Severed, and on login as a safety net.
+     */
+    public static void stripMaliceTraits(ServerPlayer player) {
+        for (ResourceLocation id : List.copyOf(TraitService.get(player).view())) {
+            Trait trait = KegareRegistries.TRAIT.get(id);
+            if (trait == null) continue;
+            TraitRules.SeveredAction action = TraitRules.whenSevered(trait.requiresMalice(), trait.isUnique(), trait.isInheritable());
+            if (action == TraitRules.SeveredAction.KEEP) continue;
+            TraitService.remove(player, trait, Trait.RemoveReason.SEVERED);
+            player.sendSystemMessage(Component.translatable("message.kegare.trait.lost", trait.displayName()).withStyle(ChatFormatting.DARK_GRAY));
+            Kegare.LOGGER.info("{} became Severed and lost {}", player.getGameProfile().getName(), id);
+            if (action == TraitRules.SeveredAction.TRANSFER) begin(player.server, trait, player.getUUID(), null);
         }
     }
 

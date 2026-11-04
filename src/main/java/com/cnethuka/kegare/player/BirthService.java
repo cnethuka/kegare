@@ -1,7 +1,6 @@
 package com.cnethuka.kegare.player;
 
 import com.cnethuka.kegare.advancement.KegareAdvancements;
-import com.cnethuka.kegare.malice.MaliceData;
 import com.cnethuka.kegare.malice.MaliceRoller;
 import com.cnethuka.kegare.malice.MaliceService;
 import com.cnethuka.kegare.combat.CombatData;
@@ -30,7 +29,26 @@ public final class BirthService {
      * Grants Awakening first so trait/outcome advancements land under it.
      */
     public static void birth(ServerPlayer player) {
+        completeBirth(player, MaliceService.rollBirth(player));
+    }
+
+    /**
+     * Admin debug: re-roll Malice FIRST, while the player still holds their traits. If that makes them Severed,
+     * their Malice-based traits are stripped and unique ones pass on through the normal transfer. Then wipe the
+     * remaining traits (unique ones released), innate technique, pity and combat state, and finish a fresh birth.
+     */
+    public static void rebirth(ServerPlayer player) {
+        CastManager.stopAll(player, EndReason.INNATE_TECHNIQUE_CHANGED);
+        InnateTechniqueService.setInnateTechnique(player, null);
         MaliceRoller.Result malice = MaliceService.rollBirth(player);
+        TraitService.removeAll(player, Trait.RemoveReason.REBIRTH);
+        player.setData(KegareAttachments.INNATE_TECHNIQUE, new InnateTechniqueData());
+        player.setData(KegareAttachments.ROLL, new RollData());
+        player.setData(KegareAttachments.COMBAT, new CombatData());
+        completeBirth(player, malice);
+    }
+
+    private static void completeBirth(ServerPlayer player, MaliceRoller.Result malice) {
         KegareAdvancements.award(player, KegareAdvancements.AWAKENING);
         if (malice.capacity() <= 0) KegareAdvancements.award(player, KegareAdvancements.SEVERED);
         List<Trait> traits = TraitService.rollBirthTraits(player);
@@ -53,17 +71,5 @@ public final class BirthService {
         outcome.ifPresent(o -> RollService.announce(player, o));
         outcome.ifPresent(o -> RollService.awardOutcomeAdvancements(player, o));
         PlayerSync.syncNow(player);
-    }
-
-    /** Admin debug: wipe Malice, traits (releasing unique ones), innate technique, pity and combat state, then birth again. */
-    public static void rebirth(ServerPlayer player) {
-        CastManager.stopAll(player, EndReason.INNATE_TECHNIQUE_CHANGED);
-        InnateTechniqueService.setInnateTechnique(player, null);
-        TraitService.removeAll(player, Trait.RemoveReason.REBIRTH);
-        player.setData(KegareAttachments.MALICE, new MaliceData());
-        player.setData(KegareAttachments.INNATE_TECHNIQUE, new InnateTechniqueData());
-        player.setData(KegareAttachments.ROLL, new RollData());
-        player.setData(KegareAttachments.COMBAT, new CombatData());
-        birth(player);
     }
 }

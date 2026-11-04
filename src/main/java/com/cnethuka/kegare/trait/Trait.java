@@ -29,7 +29,9 @@ public class Trait {
         /** Released while offline (admin or inactivity); applied on their next login. */
         REVOKED,
         /** World record says someone else holds this unique trait. */
-        CONFLICT
+        CONFLICT,
+        /** The bearer became Severed and this trait needs Malice. */
+        SEVERED
     }
 
     /** Builder-style trait flags. */
