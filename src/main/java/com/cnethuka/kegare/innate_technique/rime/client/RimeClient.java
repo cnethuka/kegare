@@ -4,10 +4,7 @@ import com.cnethuka.kegare.client.visual.VanillaFallback;
 import com.cnethuka.kegare.innate_technique.rime.RimeIds;
 import com.cnethuka.kegare.innate_technique.rime.RimeRegistry;
 import net.minecraft.client.renderer.entity.ThrownItemRenderer;
-import net.minecraft.core.particles.ItemParticleOption;
 import net.minecraft.core.particles.ParticleTypes;
-import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.item.Items;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.neoforge.client.event.EntityRenderersEvent;
 
@@ -22,12 +19,11 @@ public final class RimeClient {
         VanillaFallback.register(RimeIds.FX_FROST_SHARD_IMPACT, new VanillaFallback.Spec(ParticleTypes.SNOWFLAKE, 1, 14, 0.25, 0.12));
         VanillaFallback.register(RimeIds.FX_GLACIAL_LANCE_CHARGE, new VanillaFallback.Spec(ParticleTypes.SNOWFLAKE, 2, 6, 0.25, 0.02));
         VanillaFallback.register(RimeIds.FX_GLACIAL_LANCE_TRAIL, new VanillaFallback.Spec(ParticleTypes.SNOWFLAKE, 4, 8, 0.15, 0.02));
-        VanillaFallback.register(RimeIds.FX_GLACIAL_LANCE_IMPACT, new VanillaFallback.Spec(
-                new ItemParticleOption(ParticleTypes.ITEM, new ItemStack(Items.PACKED_ICE)), 1, 28, 0.5, 0.25));
+        VanillaFallback.register(RimeIds.FX_GLACIAL_LANCE_IMPACT, new VanillaFallback.Spec(ParticleTypes.SNOWFLAKE, 1, 28, 0.45, 0.2));
         VanillaFallback.register(RimeIds.FX_FROST_FIELD_CONE, new VanillaFallback.Spec(ParticleTypes.SNOWFLAKE, 6, 10, 0.2, 0.45, true));
         VanillaFallback.register(RimeIds.FX_RIME_SHELL_AURA, new VanillaFallback.Spec(ParticleTypes.SNOWFLAKE, 1, 6, 0.55, 0.0));
-        VanillaFallback.register(RimeIds.FX_FREEZE_SHATTER, new VanillaFallback.Spec(
-                new ItemParticleOption(ParticleTypes.ITEM, new ItemStack(Items.ICE)), 1, 24, 0.45, 0.2));
+        // Small flakes, not ice-block item particles: those look huge and blocky right next to your own camera.
+        VanillaFallback.register(RimeIds.FX_FREEZE_SHATTER, new VanillaFallback.Spec(ParticleTypes.SNOWFLAKE, 1, 24, 0.45, 0.18));
     }
 
     private static void registerRenderers(EntityRenderersEvent.RegisterRenderers event) {

@@ -31,13 +31,16 @@ public final class ClientVisuals {
         final int growTicks;
         final long startTick;
         final boolean animation;
+        /** Projectile trails fade out; every other loop shows a state and must vanish the moment it ends. */
+        final boolean trail;
 
-        Loop(Visual visual, @Nullable FXEffectExecutor executor, int growTicks, long startTick, boolean animation) {
+        Loop(Visual visual, @Nullable FXEffectExecutor executor, int growTicks, long startTick, boolean animation, boolean trail) {
             this.visual = visual;
             this.executor = executor;
             this.growTicks = growTicks;
             this.startTick = startTick;
             this.animation = animation;
+            this.trail = trail;
         }
 
         /** Vanilla particles stand in while there is an effect but no Photon runtime. */
@@ -47,6 +50,7 @@ public final class ClientVisuals {
     }
 
     private static final Map<Integer, Map<String, Loop>> LOOPS = new HashMap<>();
+    private static final String TRAIL_KEY = "trail";
 
     private ClientVisuals() {}
 
@@ -77,7 +81,7 @@ public final class ClientVisuals {
         visual.effect().ifPresent(effect -> {
             VfxQuality quality = KegareClientConfig.VFX_QUALITY.get();
             FXEffectExecutor executor = quality == VfxQuality.VANILLA ? null
-                    : PhotonEffects.onEntity(effect, entity, visual.anchor(), quality == VfxQuality.REDUCED);
+                    : PhotonEffects.onEntity(effect, entity, visual.anchor(), quality == VfxQuality.REDUCED, false);
             if (executor == null) {
                 VanillaFallback.Spec spec = VanillaFallback.spec(effect);
                 VanillaFallback.spawn(entity.level(), anchorPos(entity, visual.anchor()), entity.getLookAngle(), spec, spec.burst());
@@ -92,16 +96,17 @@ public final class ClientVisuals {
             PlayerAnimations.play(player, visual.animation().get(), true);
             animation = true;
         }
+        boolean trail = TRAIL_KEY.equals(key);
         FXEffectExecutor executor = null;
         if (visual.effect().isPresent()) {
             VfxQuality quality = KegareClientConfig.VFX_QUALITY.get();
             if (quality != VfxQuality.VANILLA) {
-                executor = PhotonEffects.onEntity(visual.effect().get(), entity, visual.anchor(), quality == VfxQuality.REDUCED);
+                executor = PhotonEffects.onEntity(visual.effect().get(), entity, visual.anchor(), quality == VfxQuality.REDUCED, !trail);
                 if (growTicks > 0) PhotonEffects.scale(executor, GROW_FROM);
             }
         }
         LOOPS.computeIfAbsent(entity.getId(), id -> new HashMap<>())
-                .put(key, new Loop(visual, executor, growTicks, entity.level().getGameTime(), animation));
+                .put(key, new Loop(visual, executor, growTicks, entity.level().getGameTime(), animation, trail));
     }
 
     public static void stopLoop(net.minecraft.world.level.Level level, int entityId, String key) {
@@ -119,9 +124,15 @@ public final class ClientVisuals {
         if (entity instanceof AbstractClientPlayer player) PlayerAnimations.stopAll(player);
     }
 
+    /** Positional effects closer than this to a first-person camera are skipped (they would block the view). */
+    private static final double NEAR_CAMERA = 2.0;
+
     public static void playAt(ClientLevel level, Vec3 pos, Visual visual) {
         visual.effect().ifPresent(effect -> {
             VfxQuality quality = KegareClientConfig.VFX_QUALITY.get();
+            // On your own body in first person (you got hit, you broke free): anything there, even small particles,
+            // would sit right in front of your eyes. Skip it; you still get the hurt flash, overlays, HUD and sound.
+            if (nearFirstPersonCamera(pos)) return;
             FXEffectExecutor executor = quality == VfxQuality.VANILLA ? null
                     : PhotonEffects.at(effect, level, pos, quality == VfxQuality.REDUCED);
             if (executor == null) {
@@ -133,12 +144,13 @@ public final class ClientVisuals {
 
     /** A projectile's trail, started by the projectile itself on the client; ends when the projectile is gone. */
     public static void startTrail(Entity projectile, ResourceLocation effect) {
-        startLoop(projectile, "trail", Visual.effect(effect, Visual.Anchor.MOTION), 0);
+        startLoop(projectile, TRAIL_KEY, Visual.effect(effect, Visual.Anchor.MOTION), 0);
     }
 
     private static void end(@Nullable Entity entity, Loop loop) {
-        // A growing (charge) effect vanishes at once: it just turned into the attack. Others fade out.
-        PhotonEffects.stop(loop.executor, loop.growTicks > 0);
+        // A state loop (shell, cone, charge, frozen) vanishes at once: a lingering shell would lie to opponents.
+        // Only a trail fades out behind its projectile.
+        PhotonEffects.stop(loop.executor, !loop.trail);
         if (loop.animation && entity instanceof AbstractClientPlayer player) {
             loop.visual.animation().ifPresent(animation -> PlayerAnimations.stop(player, animation));
         }
@@ -159,7 +171,7 @@ public final class ClientVisuals {
             Map.Entry<Integer, Map<String, Loop>> entry = entities.next();
             Entity entity = level.getEntity(entry.getKey());
             if (entity == null || entity.isRemoved()) {
-                entry.getValue().values().forEach(loop -> PhotonEffects.stop(loop.executor));
+                entry.getValue().values().forEach(loop -> PhotonEffects.stop(loop.executor, !loop.trail));
                 entities.remove();
                 continue;
             }
@@ -181,6 +193,12 @@ public final class ClientVisuals {
         LOOPS.values().forEach(loops -> loops.values().forEach(loop -> PhotonEffects.stop(loop.executor)));
         LOOPS.clear();
         PlayerAnimations.clear();
+    }
+
+    private static boolean nearFirstPersonCamera(Vec3 pos) {
+        Minecraft mc = Minecraft.getInstance();
+        if (!mc.options.getCameraType().isFirstPerson()) return false;
+        return mc.gameRenderer.getMainCamera().getPosition().distanceToSqr(pos) < NEAR_CAMERA * NEAR_CAMERA;
     }
 
     private static Vec3 anchorPos(Entity entity, Visual.Anchor anchor) {

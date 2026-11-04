@@ -442,6 +442,13 @@ Each tab has its own root.
   death, logout) stops its loop. Toggles keep running while stunned, so their loop stays too. A toggle switched off
   stops its loop and plays `TOGGLE_OFF`. Death, logout and a dimension change stop everything on the entity. **A
   dimension change ends charges, channels and toggles** (`EndReason.DIMENSION_CHANGE`).
+- **What ends, vanishes:** when a loop stops, or its entity is gone, its effect is removed at once. A shell, cone or
+  charge must never linger after it ends (a lingering shell would mislead opponents). Only projectile trails fade
+  out behind their projectile.
+- **Nothing in front of your own eyes:** an effect at a position closer than 2 blocks to a first-person camera
+  (you got hit, you broke free) is skipped. Even small particles there would cover the screen; you still get the
+  hurt flash, overlays, HUD and sound. Your own entity-attached loops are authored away from the camera: Rime's
+  charge sits a block ahead, the cone starts in front of you, and the shell is invisible from inside.
 - **Failures never crash:** a missing or broken `.fx` falls back to vanilla particles (`VanillaFallback`, per-effect
   lookalikes), and a missing animation is skipped. Each one is logged once. Effects are preloaded at client setup.
 - **Client config (`visuals`):**

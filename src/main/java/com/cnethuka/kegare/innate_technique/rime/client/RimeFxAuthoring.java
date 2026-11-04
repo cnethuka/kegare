@@ -172,7 +172,24 @@ public final class RimeFxAuthoring {
         fadeIn(m, PALE, WHITE);
         material(motes, glow(0.55f, 0.88f, 1f, 1.4f));
         motes.transform().localPosition(new Vector3f(hand));
-        return fx(core, motes);
+
+        // A spinning ice crystal in the glow: a glow alone washes out against a bright sky, so opponents could miss it.
+        ParticleEmitter crystal = emitter("crystal", true, 40);
+        ParticleConfig k = crystal.config;
+        k.setMaxParticles(2);
+        k.setStartLifetime(NumberFunction.constant(40));
+        k.setStartSpeed(NumberFunction.constant(0));
+        k.setStartSize(new NumberFunction3(0.16f, 0.34f, 0.16f));
+        k.shape.setScale(new NumberFunction3(0, 0, 0));
+        k.emission.setEmissionRate(NumberFunction.constant(0));
+        k.emission.getBursts().add(burst(0, 1));
+        k.rotationOverLifetime.setEnable(true);
+        k.rotationOverLifetime.setYaw(NumberFunction.constant(270));
+        k.renderer.setRenderMode(ParticleRendererSetting.Mode.Model);
+        k.renderer.setModel(new MeshData(new ObjModelSource(Photon.id("models/cube.obj"))));
+        material(crystal, KilaPresets.CRYSTAL.create());
+        crystal.transform().localPosition(new Vector3f(hand));
+        return fx(core, motes, crystal);
     }
 
     /** Glacial Lance in flight: a wide ribbon, glints and a little frost mist. */
@@ -198,11 +215,11 @@ public final class RimeFxAuthoring {
         mc.setMaxParticles(40);
         mc.setStartLifetime(range(14, 22));
         mc.setStartSpeed(range(0.0f, 0.2f));
-        mc.setStartSize(uniform(range(0.25f, 0.4f)));
-        mc.emission.setEmissionRate(NumberFunction.constant(1f));
+        mc.setStartSize(uniform(range(0.18f, 0.3f)));
+        mc.emission.setEmissionRate(NumberFunction.constant(0.6f));
         mc.shape.setShape(sphere(0.1f));
         mc.colorOverLifetime.setEnable(true);
-        mc.colorOverLifetime.setColor(gradient(0x00C2EEFA, 0x88C2EEFA, 0x0079C8EC));
+        mc.colorOverLifetime.setColor(gradient(0x00C2EEFA, 0x55C2EEFA, 0x0079C8EC));
         grow(mc, 0.6f);
         material(mist, mist());
         return fx(ribbon, glints, mist);
@@ -236,14 +253,14 @@ public final class RimeFxAuthoring {
         shrink(c);
         material(shards, recolor(KilaPresets.SPARKS.create(), 0.55f, 0.88f, 1f, 1.6f));
 
-        ParticleEmitter mist = burstEmitter("mist", 8, 10);
+        ParticleEmitter mist = burstEmitter("mist", 5, 6);
         ParticleConfig mc = mist.config;
-        mc.setStartLifetime(range(18, 28));
-        mc.setStartSpeed(range(0.5f, 1.5f));
-        mc.setStartSize(uniform(range(0.6f, 1.1f)));
-        mc.shape.setShape(sphere(0.3f));
+        mc.setStartLifetime(range(12, 20));
+        mc.setStartSpeed(range(0.4f, 1.0f));
+        mc.setStartSize(uniform(range(0.35f, 0.6f)));
+        mc.shape.setShape(sphere(0.25f));
         mc.colorOverLifetime.setEnable(true);
-        mc.colorOverLifetime.setColor(gradient(0x00C2EEFA, 0x99C2EEFA, 0x0079C8EC));
+        mc.colorOverLifetime.setColor(gradient(0x00C2EEFA, 0x55C2EEFA, 0x0079C8EC));
         grow(mc, 0.5f);
         material(mist, mist());
         return fx(flash, ring, innerRing, shards, mist);
@@ -314,8 +331,8 @@ public final class RimeFxAuthoring {
         f.setMaxParticles(50);
         f.setStartLifetime(range(24, 34));
         f.setStartSpeed(NumberFunction.constant(0));
-        f.setStartSize(uniform(range(0.04f, 0.08f)));
-        Sphere around = sphere(1.0f);
+        f.setStartSize(uniform(range(0.03f, 0.06f)));
+        Sphere around = sphere(1.2f);
         around.setRadiusThickness(0f);
         f.shape.setShape(around);
         f.emission.setEmissionRate(NumberFunction.constant(1.2f));

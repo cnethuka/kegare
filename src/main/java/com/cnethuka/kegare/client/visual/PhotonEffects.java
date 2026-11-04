@@ -47,9 +47,14 @@ final class PhotonEffects {
         }
     }
 
-    /** An effect attached to an entity, or null (then use the vanilla fallback). */
+    /**
+     * An effect attached to an entity, or null (then use the vanilla fallback).
+     *
+     * @param vanishWithEntity remove everything at once if the entity goes away (state loops); otherwise what is
+     *                         already in the air fades out (trails, one-shots)
+     */
     @Nullable
-    static EntityEffectExecutor onEntity(ResourceLocation id, Entity entity, Visual.Anchor anchor, boolean reduced) {
+    static EntityEffectExecutor onEntity(ResourceLocation id, Entity entity, Visual.Anchor anchor, boolean reduced, boolean vanishWithEntity) {
         FX fx = load(id);
         if (fx == null) return null;
         try {
@@ -61,7 +66,7 @@ final class PhotonEffects {
             EntityEffectExecutor executor = new EntityEffectExecutor(fx, entity.level(), entity, rotate);
             executor.setOffset(offset(entity, anchor));
             executor.setAllowMulti(true);
-            executor.setForcedDeath(false);
+            executor.setForcedDeath(vanishWithEntity);
             executor.start();
             if (executor.getRuntime() == null) return null;
             if (reduced) reduce(executor.getRuntime());
