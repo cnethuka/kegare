@@ -304,6 +304,9 @@ Each tab has its own root.
 - The Lensing Eyes tab appears for whoever has earned one of its advancements: a born or inheriting holder, a
   former holder (*Eyes Closed*), or a killer (*Blinded*). Uninvolved players never see it. An admin-granted holder
   has earned nothing there, so it stays hidden for them until something happens.
+- Vanilla never draws a hidden advancement until it's earned, and that includes a tab root. Everyone except a
+  player born with the eyes therefore sees the Lensing Eyes tab (spyglass icon, "Clear Sight" title) with its root
+  icon missing and a connector line pointing to it. This is a consequence of the hidden root.
 
 ---
 
