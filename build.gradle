@@ -115,6 +115,13 @@ neoForge {
             sourceSet(sourceSets.main)
         }
     }
+
+    // JUnit runs inside a loaded game (FML), so tests can also boot a throwaway server
+    // (testframework's EphemeralTestServerProvider) and drive real server code. Pure tests are unaffected.
+    unitTest {
+        enable()
+        testedMod = mods."${mod_id}"
+    }
 }
 
 // Sets up a dependency configuration called 'localRuntime'.
@@ -126,10 +133,12 @@ configurations {
 }
 
 dependencies {
-    // Plain JUnit for the pure-Java roll math (MaliceRoller, PityRoller). No game boot needed.
+    // JUnit: pure-Java tests (roll math, rules) plus in-game tests on a throwaway server.
     testImplementation platform('org.junit:junit-bom:5.11.4')
     testImplementation 'org.junit.jupiter:junit-jupiter'
     testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+    // In-game tests: EphemeralTestServerProvider gives a test a running MinecraftServer.
+    testImplementation "net.neoforged:testframework:${neo_version}"
 
     // Example optional mod dependency with JEI
     // The JEI API is declared for compile time use, while the full JEI artifact is used at runtime
@@ -207,4 +216,6 @@ idea {
 
 tasks.named('test', Test).configure {
     useJUnitPlatform()
+    // In-game tests run from their own game directory; tests that read project files resolve them from here.
+    systemProperty 'kegare.projectDir', project.projectDir.absolutePath
 }

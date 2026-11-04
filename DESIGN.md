@@ -54,7 +54,7 @@ game never names a bearer, heir or killer of a secret holder.
 - **Related rule: PvP information is silent.** Advancements that would leak combat-relevant information get no chat
   announcement, even though they aren't secret identities. They live in `KegareAdvancements.SILENT`, and datagen
   enforces it.
-  - Current: `overflowing` (reveals Malice capacity).
+  - Current: `overflowing` (reveals Malice capacity) and `chosen_by_fate` (reveals a Legendary roll).
   - Innate technique tab roots are silent for the same reason (§3.11).
 
 ---
@@ -372,7 +372,7 @@ Each tab has its own root.
 |---|---|---|---|
 | *Awakening* (root) | task | yes | born |
 | *Reawakening* | task | yes | used a Purification Talisman |
-| *Chosen by Fate* | challenge | yes | rolled a Legendary |
+| *Chosen by Fate* | challenge | yes, **silent** (reveals a Legendary roll) | rolled a Legendary |
 | *Bitter Luck* (under Reawakening) | goal | hidden | hit hard pity |
 | *Severed* | goal | hidden | born with 0 Malice |
 | *Overflowing* | goal | hidden, **silent** (reveals Malice capacity) | born (or reborn) in the Vast tier |

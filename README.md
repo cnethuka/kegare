@@ -9,7 +9,7 @@ for the future hostile spirit mobs. See [DESIGN.md](DESIGN.md).
 | Command | What it does |
 |---|---|
 | `./gradlew build` | Compile, run unit tests, build `build/libs/kegare-<version>.jar` |
-| `./gradlew test` | Unit tests (roll/pity math, trait rules, lang keys) |
+| `./gradlew test` | Unit tests (roll/pity math, trait rules, lang keys) plus in-game tests on a throwaway server (e.g. no reroll path changes Malice capacity) |
 | `./gradlew runData` | Regenerate lang, models, tags, recipes, advancements into `src/generated/resources` |
 | `./gradlew runClient` | Dev client |
 | `./gradlew runClient -PquickPlayWorld=<world>` | Dev client, straight into an existing singleplayer world |

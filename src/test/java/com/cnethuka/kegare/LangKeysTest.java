@@ -19,8 +19,10 @@ import org.junit.jupiter.api.Test;
  * Run {@code ./gradlew runData} first if this fails after adding a key.
  */
 class LangKeysTest {
-    private static final Path SOURCES = Path.of("src/main/java");
-    private static final Path LANG = Path.of("src/generated/resources/assets/kegare/lang/en_us.json");
+    /** Set by Gradle (tests run from a game directory, not the project); falls back to the working directory. */
+    private static final Path PROJECT = Path.of(System.getProperty("kegare.projectDir", "."));
+    private static final Path SOURCES = PROJECT.resolve("src/main/java");
+    private static final Path LANG = PROJECT.resolve("src/generated/resources/assets/kegare/lang/en_us.json");
     private static final Pattern KEY_LITERAL =
             Pattern.compile("\"((?:message|commands|hud|key|gui)\\.kegare\\.[a-z0-9_.]*[a-z0-9_]|key\\.categories\\.kegare)\"");
     private static final Pattern JSON_KEY = Pattern.compile("^\\s*\"([^\"]+)\"\\s*:", Pattern.MULTILINE);

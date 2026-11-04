@@ -46,8 +46,11 @@ public final class KegareAdvancements {
      */
     public static final Set<ResourceLocation> SECRET_VISIBLE_ROOTS = Set.of(CLEAR_SIGHT);
 
-    /** Not secret, but never announced to chat: they reveal PvP information (e.g. Malice capacity). */
-    public static final Set<ResourceLocation> SILENT = Set.of(OVERFLOWING);
+    /**
+     * Not secret, but never announced to chat: they reveal PvP information. overflowing reveals Malice capacity;
+     * chosen_by_fate reveals a Legendary innate technique.
+     */
+    public static final Set<ResourceLocation> SILENT = Set.of(OVERFLOWING, CHOSEN_BY_FATE);
 
     private KegareAdvancements() {}
 

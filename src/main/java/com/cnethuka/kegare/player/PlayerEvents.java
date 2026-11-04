@@ -35,6 +35,11 @@ public final class PlayerEvents {
     @SubscribeEvent
     static void onLogin(PlayerEvent.PlayerLoggedInEvent event) {
         if (!(event.getEntity() instanceof ServerPlayer player) || player instanceof FakePlayer) return;
+        handleLogin(player);
+    }
+
+    /** Login handling, callable directly by in-game tests (which use fake players the event skips). */
+    static void handleLogin(ServerPlayer player) {
         TraitSuccession.markSeen(player);
         // Reconcile first: applies offline revocations and releases stale unique claims before any re-roll.
         TraitService.reconcile(player);
@@ -112,6 +117,7 @@ public final class PlayerEvents {
 
     @SubscribeEvent
     static void onServerTick(ServerTickEvent.Post event) {
+        if (event.getServer().overworld() == null) return; // no worlds loaded (e.g. the in-game JUnit test server)
         int tick = event.getServer().getTickCount();
         if (tick % 20 == 0) TraitSuccession.tick(event.getServer());
         if (tick % 1200 == 0) TraitSuccession.checkInactive(event.getServer());
@@ -119,6 +125,7 @@ public final class PlayerEvents {
 
     @SubscribeEvent
     static void onServerStarted(ServerStartedEvent event) {
+        if (event.getServer().overworld() == null) return;
         TraitSuccession.checkInactive(event.getServer());
     }
 }
