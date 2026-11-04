@@ -1,6 +1,6 @@
 package com.cnethuka.kegare.roll;
 
-import com.cnethuka.kegare.technique.TechniqueRarity;
+import com.cnethuka.kegare.innatetechnique.InnateTechniqueRarity;
 import java.util.Optional;
 import java.util.function.IntUnaryOperator;
 
@@ -13,7 +13,7 @@ import java.util.function.IntUnaryOperator;
  *   <li>Soft pity: roll number {@code n > softPityStart} adds {@code (n - softPityStart) * softPityIncrement}
  *       to the LEGENDARY weight (defaults: roll 31 is +5, roll 32 is +10, ...).</li>
  *   <li>Hard pity: roll number {@code n >= hardPity} is a guaranteed LEGENDARY (default: roll 50).</li>
- *   <li>Rarities with no eligible technique ({@code available[i] == false}) get weight 0. If LEGENDARY is
+ *   <li>Rarities with no eligible innate technique ({@code available[i] == false}) get weight 0. If LEGENDARY is
  *       unavailable, pity can't trigger and the counter keeps climbing until it is.</li>
  * </ul>
  * {@code random.applyAsInt(bound)} must return a uniform int in {@code [0, bound)}.
@@ -22,9 +22,9 @@ public final class PityRoller {
     public record Settings(int[] baseWeights, int softPityStart, int softPityIncrement, int hardPity) {}
 
     /** @param byHardPity true when the LEGENDARY came from the hard-pity guarantee */
-    public record Result(TechniqueRarity rarity, boolean byHardPity) {}
+    public record Result(InnateTechniqueRarity rarity, boolean byHardPity) {}
 
-    private static final int LEGENDARY = TechniqueRarity.LEGENDARY.ordinal();
+    private static final int LEGENDARY = InnateTechniqueRarity.LEGENDARY.ordinal();
 
     private PityRoller() {}
 
@@ -34,7 +34,7 @@ public final class PityRoller {
 
     /** Weights for the next roll (index = rarity ordinal), including soft pity. */
     public static int[] effectiveWeights(Settings settings, int rollsSinceLegendary, boolean[] available) {
-        TechniqueRarity[] rarities = TechniqueRarity.values();
+        InnateTechniqueRarity[] rarities = InnateTechniqueRarity.values();
         int[] weights = new int[rarities.length];
         for (int i = 0; i < rarities.length; i++) {
             weights[i] = available[i] ? Math.max(0, settings.baseWeights()[i]) : 0;
@@ -47,12 +47,12 @@ public final class PityRoller {
         return weights;
     }
 
-    /** Picks a rarity, or empty if no rarity has any eligible technique. */
+    /** Picks a rarity, or empty if no rarity has any eligible innate technique. */
     public static Optional<Result> pick(Settings settings, int rollsSinceLegendary, boolean[] available, IntUnaryOperator random) {
         if (available[LEGENDARY] && isHardPity(settings, rollsSinceLegendary)) {
-            return Optional.of(new Result(TechniqueRarity.LEGENDARY, true));
+            return Optional.of(new Result(InnateTechniqueRarity.LEGENDARY, true));
         }
-        TechniqueRarity[] rarities = TechniqueRarity.values();
+        InnateTechniqueRarity[] rarities = InnateTechniqueRarity.values();
         int[] weights = effectiveWeights(settings, rollsSinceLegendary, available);
         long total = 0;
         for (int w : weights) total += w;
@@ -78,7 +78,7 @@ public final class PityRoller {
     }
 
     /** Pity counter after a roll: resets on any LEGENDARY. */
-    public static int nextCounter(int rollsSinceLegendary, TechniqueRarity result) {
-        return result == TechniqueRarity.LEGENDARY ? 0 : rollsSinceLegendary + 1;
+    public static int nextCounter(int rollsSinceLegendary, InnateTechniqueRarity result) {
+        return result == InnateTechniqueRarity.LEGENDARY ? 0 : rollsSinceLegendary + 1;
     }
 }

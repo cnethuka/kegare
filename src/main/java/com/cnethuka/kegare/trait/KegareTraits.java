@@ -8,7 +8,7 @@ import net.neoforged.neoforge.registries.DeferredRegister;
 public final class KegareTraits {
     public static final DeferredRegister<Trait> TRAITS = DeferredRegister.create(KegareRegistries.TRAIT_KEY, Kegare.MODID);
 
-    /** Unique, needs ce, passes on when its bearer is killed by a player. NO gameplay effects yet. */
+    /** Unique, needs Malice, passes on when its bearer is killed by a player. NO gameplay effects yet. */
     public static final DeferredHolder<Trait, Trait> LENSING_EYES = TRAITS.register("lensing_eyes", LensingEyesTrait::new);
 
     private KegareTraits() {}

@@ -1,7 +1,7 @@
 package com.cnethuka.kegare.trait;
 
 import com.cnethuka.kegare.Kegare;
-import com.cnethuka.kegare.ce.CeService;
+import com.cnethuka.kegare.malice.MaliceService;
 import com.cnethuka.kegare.config.KegareServerConfig;
 import com.cnethuka.kegare.registry.KegareRegistries;
 import java.util.ArrayList;
@@ -24,7 +24,7 @@ import net.neoforged.neoforge.common.util.FakePlayer;
  *   <li>Release: admin command or inactivity frees a unique trait from its holder, online or offline
  *       (offline holders lose it on their next login).</li>
  *   <li>Inheritable traits then wait {@link Trait#successionDelayTicks()} and pass to an heir picked by
- *       {@link TransferRules}: online, not Severed (if the trait needs ce), not the previous bearer.
+ *       {@link TransferRules}: online, not Severed (if the trait needs Malice), not the previous bearer.
  *       If nobody is eligible, the first eligible player to log in receives it.</li>
  * </ul>
  */
@@ -111,7 +111,7 @@ public final class TraitSuccession {
     }
 
     private static TransferRules.Candidate candidate(ServerPlayer player, Trait trait) {
-        return new TransferRules.Candidate(player.getUUID(), trait.requiresCe() && CeService.isSevered(player));
+        return new TransferRules.Candidate(player.getUUID(), trait.requiresMalice() && MaliceService.isSevered(player));
     }
 
     private static void assign(MinecraftServer server, Trait trait, ServerPlayer heir) {

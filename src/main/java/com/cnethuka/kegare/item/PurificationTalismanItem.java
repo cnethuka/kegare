@@ -17,7 +17,7 @@ import net.minecraft.world.item.TooltipFlag;
 import net.minecraft.world.level.Level;
 
 /**
- * Rerolls the user's technique ONLY (never ce or traits). Blocked for Severed players.
+ * Rerolls the user's innate technique ONLY (never Malice or traits). Blocked for Severed players.
  * Consumed on success (not in creative).
  */
 public class PurificationTalismanItem extends Item {

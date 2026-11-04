@@ -1,7 +1,7 @@
-package com.cnethuka.kegare.technique;
+package com.cnethuka.kegare.innatetechnique;
 
-import com.cnethuka.kegare.ce.CeData;
-import com.cnethuka.kegare.ce.CeService;
+import com.cnethuka.kegare.malice.MaliceData;
+import com.cnethuka.kegare.malice.MaliceService;
 import com.cnethuka.kegare.combat.CombatHelper;
 import com.cnethuka.kegare.network.PlayerSync;
 import com.cnethuka.kegare.registry.KegareAttachments;
@@ -31,45 +31,45 @@ public final class CastManager {
             case CAST_RELEASE -> release(player, CastSlot.SELECTED);
             case ULTIMATE_PRESS -> tryCast(player, CastSlot.ULTIMATE);
             case ULTIMATE_RELEASE -> release(player, CastSlot.ULTIMATE);
-            case NEXT_ABILITY -> TechniqueService.cycle(player, 1);
-            case PREVIOUS_ABILITY -> TechniqueService.cycle(player, -1);
+            case NEXT_ABILITY -> InnateTechniqueService.cycle(player, 1);
+            case PREVIOUS_ABILITY -> InnateTechniqueService.cycle(player, -1);
         }
     }
 
-    private record Resolved(Technique technique, Ability ability) {}
+    private record Resolved(InnateTechnique innateTechnique, Ability ability) {}
 
     /** Finds the ability behind a key, or reports why there is none. */
     @Nullable
     private static Resolved resolve(ServerPlayer player, CastSlot slot) {
         if (!player.isAlive() || player.isSpectator()) return null;
-        CeData ce = CeService.get(player);
-        if (!ce.isBorn()) return null;
-        if (ce.isSevered()) {
+        MaliceData malice = MaliceService.get(player);
+        if (!malice.isBorn()) return null;
+        if (malice.isSevered()) {
             feedback(player, CastResult.SEVERED, null);
             return null;
         }
-        Optional<Technique> technique = TechniqueService.current(player);
-        if (technique.isEmpty()) {
-            feedback(player, CastResult.NO_TECHNIQUE, null);
+        Optional<InnateTechnique> innateTechnique = InnateTechniqueService.current(player);
+        if (innateTechnique.isEmpty()) {
+            feedback(player, CastResult.NO_INNATE_TECHNIQUE, null);
             return null;
         }
         Ability ability = slot == CastSlot.SELECTED
-                ? technique.get().ability(TechniqueService.get(player).selectedSlot())
-                : technique.get().ultimate().orElse(null);
+                ? innateTechnique.get().ability(InnateTechniqueService.get(player).selectedSlot())
+                : innateTechnique.get().ultimate().orElse(null);
         if (ability == null) {
-            feedback(player, slot == CastSlot.ULTIMATE ? CastResult.NO_ULTIMATE : CastResult.NO_TECHNIQUE, null);
+            feedback(player, slot == CastSlot.ULTIMATE ? CastResult.NO_ULTIMATE : CastResult.NO_INNATE_TECHNIQUE, null);
             return null;
         }
-        return new Resolved(technique.get(), ability);
+        return new Resolved(innateTechnique.get(), ability);
     }
 
-    /** Shared checks. Every future technique goes through these. */
+    /** Shared checks. Every future innate technique goes through these. */
     public static CastResult validate(ServerPlayer player, AbilityContext ctx) {
         Ability ability = ctx.ability();
         if (state(player).casting != null) return CastResult.BUSY;
         if (CombatHelper.isStunned(player)) return CastResult.STUNNED;
-        if (TechniqueService.cooldownRemaining(player, ability) > 0) return CastResult.ON_COOLDOWN;
-        if (!CeService.canAfford(player, ability.cost(player))) return CastResult.NOT_ENOUGH_CE;
+        if (InnateTechniqueService.cooldownRemaining(player, ability) > 0) return CastResult.ON_COOLDOWN;
+        if (!MaliceService.canAfford(player, ability.cost(player))) return CastResult.NOT_ENOUGH_MALICE;
         if (!ability.canCast(ctx)) return CastResult.BLOCKED;
         return CastResult.OK;
     }
@@ -88,12 +88,12 @@ public final class CastManager {
         // Pressing an active toggle switches it off (always allowed, even while stunned).
         CastState.Active activeToggle = state.toggles.get(ability.id());
         if (ability.castType() == CastType.TOGGLE && activeToggle != null) {
-            endToggle(player, resolved.technique(), activeToggle, EndReason.RELEASED);
+            endToggle(player, resolved.innateTechnique(), activeToggle, EndReason.RELEASED);
             return;
         }
 
         float startCharge = ability.castType() == CastType.CHARGED ? 0f : 1f;
-        AbilityContext ctx = new AbilityContext(player, resolved.technique(), ability, slot, startCharge, 0);
+        AbilityContext ctx = new AbilityContext(player, resolved.innateTechnique(), ability, slot, startCharge, 0);
         CastResult result = validate(player, ctx);
         if (result != CastResult.OK) {
             feedback(player, result, ability);
@@ -103,19 +103,19 @@ public final class CastManager {
         long now = player.level().getGameTime();
         switch (ability.castType()) {
             case INSTANT -> {
-                if (!CeService.trySpend(player, ability.cost(player))) return;
+                if (!MaliceService.trySpend(player, ability.cost(player))) return;
                 ability.execute(ctx);
-                TechniqueService.startCooldown(player, ability);
+                InnateTechniqueService.startCooldown(player, ability);
             }
             // Cost is checked now but paid on release.
             case CHARGED -> state.casting = new CastState.Active(ability, slot, now);
             case CHANNELED -> {
-                if (!CeService.trySpend(player, ability.cost(player))) return;
+                if (!MaliceService.trySpend(player, ability.cost(player))) return;
                 state.casting = new CastState.Active(ability, slot, now);
                 ability.execute(ctx);
             }
             case TOGGLE -> {
-                if (!CeService.trySpend(player, ability.cost(player))) return;
+                if (!MaliceService.trySpend(player, ability.cost(player))) return;
                 state.toggles.put(ability.id(), new CastState.Active(ability, slot, now));
                 ability.execute(ctx);
                 player.displayClientMessage(Component.translatable("message.kegare.toggle.on", ability.displayName()), true);
@@ -128,15 +128,15 @@ public final class CastManager {
         CastState state = state(player);
         CastState.Active active = state.casting;
         if (active == null || active.slot != slot) return;
-        Optional<Technique> technique = TechniqueService.current(player);
-        if (technique.isEmpty()) {
+        Optional<InnateTechnique> innateTechnique = InnateTechniqueService.current(player);
+        if (innateTechnique.isEmpty()) {
             state.casting = null;
             PlayerSync.markDirty(player);
             return;
         }
         switch (active.ability.castType()) {
-            case CHARGED -> releaseCharge(player, technique.get(), active);
-            case CHANNELED -> endChannel(player, technique.get(), active, EndReason.RELEASED);
+            case CHARGED -> releaseCharge(player, innateTechnique.get(), active);
+            case CHANNELED -> endChannel(player, innateTechnique.get(), active, EndReason.RELEASED);
             default -> { }
         }
     }
@@ -147,12 +147,12 @@ public final class CastManager {
     public static void tick(ServerPlayer player) {
         CastState state = state(player);
         if (state.isIdle()) return;
-        Optional<Technique> technique = TechniqueService.current(player);
-        if (technique.isEmpty()) {
+        Optional<InnateTechnique> current = InnateTechniqueService.current(player);
+        if (current.isEmpty()) {
             stopAll(player, EndReason.CANCELLED);
             return;
         }
-        Technique tech = technique.get();
+        InnateTechnique innateTechnique = current.get();
 
         CastState.Active cast = state.casting;
         if (cast != null) {
@@ -162,14 +162,14 @@ public final class CastManager {
                 cast.activeTicks++;
                 Ability ability = cast.ability;
                 if (ability.castType() == CastType.CHARGED) {
-                    ability.tick(new AbilityContext(player, tech, ability, cast.slot, chargeFraction(player, cast), cast.activeTicks));
+                    ability.tick(new AbilityContext(player, innateTechnique, ability, cast.slot, chargeFraction(player, cast), cast.activeTicks));
                 } else if (ability.castType() == CastType.CHANNELED) {
-                    if (!CeService.trySpend(player, ability.upkeepPerSecond(player) / 20.0)) {
-                        endChannel(player, tech, cast, EndReason.OUT_OF_CE);
+                    if (!MaliceService.trySpend(player, ability.upkeepPerSecond(player) / 20.0)) {
+                        endChannel(player, innateTechnique, cast, EndReason.OUT_OF_MALICE);
                     } else {
-                        ability.tick(new AbilityContext(player, tech, ability, cast.slot, 1f, cast.activeTicks));
+                        ability.tick(new AbilityContext(player, innateTechnique, ability, cast.slot, 1f, cast.activeTicks));
                         int max = ability.maxChannelTicks(player);
-                        if (max > 0 && cast.activeTicks >= max) endChannel(player, tech, cast, EndReason.EXPIRED);
+                        if (max > 0 && cast.activeTicks >= max) endChannel(player, innateTechnique, cast, EndReason.EXPIRED);
                     }
                 }
             }
@@ -178,10 +178,10 @@ public final class CastManager {
         for (CastState.Active toggle : List.copyOf(state.toggles.values())) {
             toggle.activeTicks++;
             Ability ability = toggle.ability;
-            if (!CeService.trySpend(player, ability.upkeepPerSecond(player) / 20.0)) {
-                endToggle(player, tech, toggle, EndReason.OUT_OF_CE);
+            if (!MaliceService.trySpend(player, ability.upkeepPerSecond(player) / 20.0)) {
+                endToggle(player, innateTechnique, toggle, EndReason.OUT_OF_MALICE);
             } else {
-                ability.tick(new AbilityContext(player, tech, ability, toggle.slot, 1f, toggle.activeTicks));
+                ability.tick(new AbilityContext(player, innateTechnique, ability, toggle.slot, 1f, toggle.activeTicks));
             }
         }
     }
@@ -193,28 +193,28 @@ public final class CastManager {
         CastState state = state(player);
         CastState.Active cast = state.casting;
         if (cast == null) return;
-        Optional<Technique> technique = TechniqueService.current(player);
-        if (technique.isEmpty()) {
+        Optional<InnateTechnique> innateTechnique = InnateTechniqueService.current(player);
+        if (innateTechnique.isEmpty()) {
             state.casting = null;
             PlayerSync.markDirty(player);
             return;
         }
         if (cast.ability.castType() == CastType.CHANNELED) {
-            endChannel(player, technique.get(), cast, EndReason.INTERRUPTED);
+            endChannel(player, innateTechnique.get(), cast, EndReason.INTERRUPTED);
         } else {
             state.casting = null;
-            cast.ability.onEnd(new AbilityContext(player, technique.get(), cast.ability, cast.slot, chargeFraction(player, cast), cast.activeTicks), EndReason.INTERRUPTED);
+            cast.ability.onEnd(new AbilityContext(player, innateTechnique.get(), cast.ability, cast.slot, chargeFraction(player, cast), cast.activeTicks), EndReason.INTERRUPTED);
             PlayerSync.markDirty(player);
         }
         player.displayClientMessage(Component.translatable("message.kegare.cast.interrupted", cast.ability.displayName()), true);
     }
 
-    /** Ends everything (death, logout, technique change). Channels and toggles still start their cooldowns. */
+    /** Ends everything (death, logout, innate technique change). Channels and toggles still start their cooldowns. */
     public static void stopAll(ServerPlayer player, EndReason reason) {
         CastState state = state(player);
         if (state.isIdle()) return;
-        Optional<Technique> technique = TechniqueService.current(player);
-        if (technique.isEmpty()) {
+        Optional<InnateTechnique> innateTechnique = InnateTechniqueService.current(player);
+        if (innateTechnique.isEmpty()) {
             state.casting = null;
             state.toggles.clear();
             PlayerSync.markDirty(player);
@@ -223,25 +223,25 @@ public final class CastManager {
         CastState.Active cast = state.casting;
         if (cast != null) {
             if (cast.ability.castType() == CastType.CHANNELED) {
-                endChannel(player, technique.get(), cast, reason);
+                endChannel(player, innateTechnique.get(), cast, reason);
             } else {
                 state.casting = null;
-                cast.ability.onEnd(new AbilityContext(player, technique.get(), cast.ability, cast.slot, chargeFraction(player, cast), cast.activeTicks), reason);
+                cast.ability.onEnd(new AbilityContext(player, innateTechnique.get(), cast.ability, cast.slot, chargeFraction(player, cast), cast.activeTicks), reason);
             }
         }
         for (CastState.Active toggle : List.copyOf(state.toggles.values())) {
-            endToggle(player, technique.get(), toggle, reason);
+            endToggle(player, innateTechnique.get(), toggle, reason);
         }
         PlayerSync.markDirty(player);
     }
 
-    private static void releaseCharge(ServerPlayer player, Technique technique, CastState.Active cast) {
+    private static void releaseCharge(ServerPlayer player, InnateTechnique innateTechnique, CastState.Active cast) {
         CastState state = state(player);
         state.casting = null;
         PlayerSync.markDirty(player);
         Ability ability = cast.ability;
         int charged = chargedTicks(player, cast);
-        AbilityContext ctx = new AbilityContext(player, technique, ability, cast.slot, chargeFraction(player, cast), charged);
+        AbilityContext ctx = new AbilityContext(player, innateTechnique, ability, cast.slot, chargeFraction(player, cast), charged);
 
         if (charged < ability.minChargeTicks(player)) {
             ability.onEnd(ctx, EndReason.CANCELLED);
@@ -254,34 +254,34 @@ public final class CastManager {
             return;
         }
         // Toggle upkeep may have drained the reserve while charging: re-check at release.
-        if (!CeService.trySpend(player, ability.cost(player))) {
-            ability.onEnd(ctx, EndReason.OUT_OF_CE);
-            feedback(player, CastResult.NOT_ENOUGH_CE, ability);
+        if (!MaliceService.trySpend(player, ability.cost(player))) {
+            ability.onEnd(ctx, EndReason.OUT_OF_MALICE);
+            feedback(player, CastResult.NOT_ENOUGH_MALICE, ability);
             return;
         }
         ability.execute(ctx);
         ability.onEnd(ctx, EndReason.RELEASED);
-        TechniqueService.startCooldown(player, ability);
+        InnateTechniqueService.startCooldown(player, ability);
     }
 
-    private static void endChannel(ServerPlayer player, Technique technique, CastState.Active cast, EndReason reason) {
+    private static void endChannel(ServerPlayer player, InnateTechnique innateTechnique, CastState.Active cast, EndReason reason) {
         state(player).casting = null;
-        cast.ability.onEnd(new AbilityContext(player, technique, cast.ability, cast.slot, 1f, cast.activeTicks), reason);
-        TechniqueService.startCooldown(player, cast.ability);
-        if (reason == EndReason.OUT_OF_CE) {
-            player.displayClientMessage(Component.translatable("message.kegare.cast.out_of_ce", cast.ability.displayName()), true);
+        cast.ability.onEnd(new AbilityContext(player, innateTechnique, cast.ability, cast.slot, 1f, cast.activeTicks), reason);
+        InnateTechniqueService.startCooldown(player, cast.ability);
+        if (reason == EndReason.OUT_OF_MALICE) {
+            player.displayClientMessage(Component.translatable("message.kegare.cast.out_of_malice", cast.ability.displayName()), true);
         }
         PlayerSync.markDirty(player);
     }
 
-    private static void endToggle(ServerPlayer player, Technique technique, CastState.Active toggle, EndReason reason) {
+    private static void endToggle(ServerPlayer player, InnateTechnique innateTechnique, CastState.Active toggle, EndReason reason) {
         state(player).toggles.remove(toggle.ability.id());
-        toggle.ability.onEnd(new AbilityContext(player, technique, toggle.ability, toggle.slot, 1f, toggle.activeTicks), reason);
-        TechniqueService.startCooldown(player, toggle.ability);
+        toggle.ability.onEnd(new AbilityContext(player, innateTechnique, toggle.ability, toggle.slot, 1f, toggle.activeTicks), reason);
+        InnateTechniqueService.startCooldown(player, toggle.ability);
         if (reason == EndReason.RELEASED) {
             player.displayClientMessage(Component.translatable("message.kegare.toggle.off", toggle.ability.displayName()), true);
-        } else if (reason == EndReason.OUT_OF_CE) {
-            player.displayClientMessage(Component.translatable("message.kegare.cast.out_of_ce", toggle.ability.displayName()), true);
+        } else if (reason == EndReason.OUT_OF_MALICE) {
+            player.displayClientMessage(Component.translatable("message.kegare.cast.out_of_malice", toggle.ability.displayName()), true);
         }
         PlayerSync.markDirty(player);
     }
@@ -302,10 +302,10 @@ public final class CastManager {
         Component name = ability != null ? ability.displayName() : Component.empty();
         Component message = switch (result) {
             case ON_COOLDOWN -> Component.translatable(result.translationKey(), name,
-                    seconds(ability == null ? 0 : TechniqueService.cooldownRemaining(player, ability)));
-            case NOT_ENOUGH_CE -> Component.translatable(result.translationKey(),
+                    seconds(ability == null ? 0 : InnateTechniqueService.cooldownRemaining(player, ability)));
+            case NOT_ENOUGH_MALICE -> Component.translatable(result.translationKey(),
                     Integer.toString((int) Math.ceil((ability == null ? 0 : ability.cost(player)) - 1.0e-6)),
-                    Integer.toString((int) Math.floor(CeService.get(player).current())));
+                    Integer.toString((int) Math.floor(MaliceService.get(player).current())));
             case STUNNED -> Component.translatable(result.translationKey(), seconds(CombatHelper.stunTicksRemaining(player)));
             default -> Component.translatable(result.translationKey(), name);
         };

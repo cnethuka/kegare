@@ -5,14 +5,14 @@ import com.cnethuka.kegare.config.KegareServerConfig;
 import net.minecraft.server.level.ServerPlayer;
 
 /**
- * Lensing Eyes: unique, needs ce, inheritable, lost when the bearer is killed by another player.
+ * Lensing Eyes: unique, needs Malice, inheritable, lost when the bearer is killed by another player.
  * No gameplay effects yet. This class only wires succession settings and its advancements.
  */
 public final class LensingEyesTrait extends Trait {
     public LensingEyesTrait() {
         super(new Properties()
                 .unique()
-                .requiresCe()
+                .requiresMalice()
                 .inheritable()
                 .lostOnPvpDeath()
                 .birthChance(KegareServerConfig.LENSING_EYES_BIRTH_CHANCE::get));

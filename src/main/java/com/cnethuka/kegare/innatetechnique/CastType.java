@@ -1,4 +1,4 @@
-package com.cnethuka.kegare.technique;
+package com.cnethuka.kegare.innatetechnique;
 
 /**
  * How an ability is cast. See {@link CastManager} for the exact lifecycle.

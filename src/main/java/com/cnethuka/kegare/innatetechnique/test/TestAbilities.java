@@ -1,11 +1,11 @@
-package com.cnethuka.kegare.technique.test;
+package com.cnethuka.kegare.innatetechnique.test;
 
 import com.cnethuka.kegare.Kegare;
 import com.cnethuka.kegare.config.KegareServerConfig;
-import com.cnethuka.kegare.technique.AbilityContext;
-import com.cnethuka.kegare.technique.BaseAbility;
-import com.cnethuka.kegare.technique.CastType;
-import com.cnethuka.kegare.technique.EndReason;
+import com.cnethuka.kegare.innatetechnique.AbilityContext;
+import com.cnethuka.kegare.innatetechnique.BaseAbility;
+import com.cnethuka.kegare.innatetechnique.CastType;
+import com.cnethuka.kegare.innatetechnique.EndReason;
 import net.minecraft.core.Holder;
 import net.minecraft.core.particles.ParticleOptions;
 import net.minecraft.core.particles.ParticleTypes;
@@ -22,7 +22,7 @@ import net.minecraft.world.entity.LivingEntity;
 
 /**
  * TEST CONTENT. Placeholder abilities that only exist to prove the cast pipeline
- * (one per cast type, plus an ultimate). Not balanced, not lore. Delete when real techniques exist.
+ * (one per cast type, plus an ultimate). Not balanced, not lore. Delete when real innate techniques exist.
  * All numbers come from the {@code [test_abilities]} server config section.
  */
 public final class TestAbilities {
@@ -130,7 +130,7 @@ public final class TestAbilities {
         }
     };
 
-    /** INSTANT ultimate: big knockback shockwave. Stands in for future domains on the ultimate key. */
+    /** INSTANT ultimate: big knockback shockwave. Stands in for future dominions on the ultimate key. */
     public static final BaseAbility SHOCKWAVE = new BaseAbility(Kegare.id("test_shockwave"), CastType.INSTANT) {
         @Override public double cost(ServerPlayer p) { return KegareServerConfig.SHOCKWAVE_COST.get(); }
         @Override public int cooldownTicks(ServerPlayer p) { return KegareServerConfig.ticks(KegareServerConfig.SHOCKWAVE_COOLDOWN); }

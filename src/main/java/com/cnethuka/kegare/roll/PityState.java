@@ -1,6 +1,6 @@
 package com.cnethuka.kegare.roll;
 
-import com.cnethuka.kegare.technique.TechniqueRarity;
+import com.cnethuka.kegare.innatetechnique.InnateTechniqueRarity;
 
 /** Immutable pity snapshot and its transition rules. Pure Java (unit-tested). */
 public record PityState(int rollsSinceLegendary, int totalRolls) {
@@ -10,7 +10,7 @@ public record PityState(int rollsSinceLegendary, int totalRolls) {
     }
 
     /** State after a roll: non-counting rolls change nothing; counting rolls advance or reset pity. */
-    public PityState after(TechniqueRarity result, RollReason reason) {
+    public PityState after(InnateTechniqueRarity result, RollReason reason) {
         if (!reason.countsTowardPity()) return this;
         return new PityState(PityRoller.nextCounter(rollsSinceLegendary, result), totalRolls + 1);
     }

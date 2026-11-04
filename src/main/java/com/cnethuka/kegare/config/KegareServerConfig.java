@@ -1,7 +1,7 @@
 package com.cnethuka.kegare.config;
 
-import com.cnethuka.kegare.ce.CeTier;
-import com.cnethuka.kegare.technique.TechniqueRarity;
+import com.cnethuka.kegare.malice.MaliceTier;
+import com.cnethuka.kegare.innatetechnique.InnateTechniqueRarity;
 import com.cnethuka.kegare.trait.TransferMode;
 import net.neoforged.neoforge.common.ModConfigSpec;
 
@@ -12,13 +12,13 @@ import net.neoforged.neoforge.common.ModConfigSpec;
 public final class KegareServerConfig {
     public static final ModConfigSpec SPEC;
 
-    // ---- ce ----
+    // ---- Malice ----
     public static final ModConfigSpec.DoubleValue REGEN_PERCENT_PER_SECOND;
     public static final ModConfigSpec.DoubleValue REGEN_PAUSE_SECONDS;
     public static final ModConfigSpec.IntValue CAPACITY_VARIATION;
-    private static final ModConfigSpec.IntValue[] TIER_WEIGHTS = new ModConfigSpec.IntValue[CeTier.values().length];
-    /** Index by tier ordinal. {@code null} for {@link CeTier#ZERO} (always 0). */
-    private static final ModConfigSpec.IntValue[] TIER_BASES = new ModConfigSpec.IntValue[CeTier.values().length];
+    private static final ModConfigSpec.IntValue[] TIER_WEIGHTS = new ModConfigSpec.IntValue[MaliceTier.values().length];
+    /** Index by tier ordinal. {@code null} for {@link MaliceTier#ZERO} (always 0). */
+    private static final ModConfigSpec.IntValue[] TIER_BASES = new ModConfigSpec.IntValue[MaliceTier.values().length];
 
     // ---- traits ----
     public static final ModConfigSpec.DoubleValue LENSING_EYES_BIRTH_CHANCE;
@@ -27,11 +27,11 @@ public final class KegareServerConfig {
     public static final ModConfigSpec.DoubleValue UNIQUE_TRAIT_INACTIVE_DAYS;
 
     // ---- roll ----
-    private static final ModConfigSpec.IntValue[] RARITY_WEIGHTS = new ModConfigSpec.IntValue[TechniqueRarity.values().length];
+    private static final ModConfigSpec.IntValue[] RARITY_WEIGHTS = new ModConfigSpec.IntValue[InnateTechniqueRarity.values().length];
     public static final ModConfigSpec.IntValue SOFT_PITY_START;
     public static final ModConfigSpec.IntValue SOFT_PITY_INCREMENT;
     public static final ModConfigSpec.IntValue HARD_PITY;
-    public static final ModConfigSpec.BooleanValue INCLUDE_TEST_TECHNIQUES;
+    public static final ModConfigSpec.BooleanValue INCLUDE_TEST_INNATE_TECHNIQUES;
 
     // ---- combat ----
     public static final ModConfigSpec.DoubleValue COMBAT_TAG_SECONDS;
@@ -71,7 +71,7 @@ public final class KegareServerConfig {
     static {
         ModConfigSpec.Builder b = new ModConfigSpec.Builder();
 
-        b.comment("Cursed energy (ce). Capacity is rolled once at birth and never changes.").push("ce");
+        b.comment("Malice (cursed energy). Capacity is rolled once at birth and never changes.").push("malice");
         REGEN_PERCENT_PER_SECOND = b.comment("Reserve regenerated per second, as a percent of capacity.")
                 .defineInRange("regenPercentPerSecond", 2.0, 0.0, 100.0);
         REGEN_PAUSE_SECONDS = b.comment("Regen pauses for this many seconds after the player deals or takes damage.")
@@ -81,10 +81,10 @@ public final class KegareServerConfig {
         b.comment("Birth tiers. weight = relative roll chance, base = capacity before variation.").push("tiers");
         int[] defaultWeights = {2, 25, 45, 20, 8};
         int[] defaultBases = {0, 60, 100, 150, 250};
-        for (CeTier tier : CeTier.values()) {
+        for (MaliceTier tier : MaliceTier.values()) {
             b.push(tier.serializedName());
             TIER_WEIGHTS[tier.ordinal()] = b.defineInRange("weight", defaultWeights[tier.ordinal()], 0, 1_000_000);
-            if (tier != CeTier.ZERO) {
+            if (tier != MaliceTier.ZERO) {
                 TIER_BASES[tier.ordinal()] = b.defineInRange("base", defaultBases[tier.ordinal()], 1, 1_000_000);
             }
             b.pop();
@@ -92,7 +92,7 @@ public final class KegareServerConfig {
         b.pop(2);
 
         b.comment("Traits rolled at birth. Unique traits have at most one bearer per world.").push("traits");
-        LENSING_EYES_BIRTH_CHANCE = b.comment("Chance (0-1) to be born with lensing_eyes (unique, needs ce; no effects yet).")
+        LENSING_EYES_BIRTH_CHANCE = b.comment("Chance (0-1) to be born with lensing_eyes (unique, needs Malice; no effects yet).")
                 .defineInRange("lensingEyesBirthChance", 0.01, 0.0, 1.0);
         LENSING_EYES_TRANSFER_MODE = b.comment(
                         "Who inherits lensing_eyes when its bearer loses it (killed by a player, released, inactive).",
@@ -107,10 +107,10 @@ public final class KegareServerConfig {
                 .defineInRange("uniqueTraitInactiveDays", 0.0, 0.0, 3650.0);
         b.pop();
 
-        b.comment("Technique rolls (birth and rerolls).").push("roll");
-        b.comment("Relative rarity weights. Rarities with no eligible technique are skipped.").push("weights");
+        b.comment("Innate technique rolls (birth and rerolls).").push("roll");
+        b.comment("Relative rarity weights. Rarities with no eligible innate technique are skipped.").push("weights");
         int[] defaultRarity = {50, 30, 15, 5};
-        for (TechniqueRarity rarity : TechniqueRarity.values()) {
+        for (InnateTechniqueRarity rarity : InnateTechniqueRarity.values()) {
             RARITY_WEIGHTS[rarity.ordinal()] = b.defineInRange(rarity.serializedName(), defaultRarity[rarity.ordinal()], 0, 1_000_000);
         }
         b.pop();
@@ -120,8 +120,8 @@ public final class KegareServerConfig {
                 .defineInRange("softPityIncrement", 5, 0, 1_000_000);
         HARD_PITY = b.comment("This roll number (counting since the last LEGENDARY) is a guaranteed LEGENDARY. 0 disables hard pity.")
                 .defineInRange("hardPity", 50, 0, 100_000);
-        INCLUDE_TEST_TECHNIQUES = b.comment("Whether TEST techniques can be rolled. Turn off once real techniques exist.")
-                .define("includeTestTechniques", true);
+        INCLUDE_TEST_INNATE_TECHNIQUES = b.comment("Whether TEST innate techniques can be rolled. Turn off once real ones exist.")
+                .define("includeTestInnateTechniques", true);
         b.pop();
 
         b.comment("Shared combat state used by abilities and future systems.").push("combat");
@@ -129,7 +129,7 @@ public final class KegareServerConfig {
                 .defineInRange("combatTagSeconds", 10.0, 0.0, 600.0);
         b.pop();
 
-        b.comment("TEST CONTENT: numbers for the placeholder test abilities. Delete with the test techniques.").push("test_abilities");
+        b.comment("TEST CONTENT: numbers for the placeholder test abilities. Delete with the test innate techniques.").push("test_abilities");
         b.push("dash");
         DASH_COST = b.defineInRange("cost", 10.0, 0.0, 100_000.0);
         DASH_COOLDOWN = b.comment("Seconds.").defineInRange("cooldown", 3.0, 0.0, 3600.0);
@@ -183,7 +183,7 @@ public final class KegareServerConfig {
         return out;
     }
 
-    /** Capacity base per tier ordinal; {@link CeTier#ZERO} is always 0. */
+    /** Capacity base per tier ordinal; {@link MaliceTier#ZERO} is always 0. */
     public static int[] tierBases() {
         int[] out = new int[TIER_BASES.length];
         for (int i = 0; i < out.length; i++) out[i] = TIER_BASES[i] == null ? 0 : TIER_BASES[i].get();

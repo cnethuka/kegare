@@ -35,7 +35,7 @@ public class Trait {
     /** Builder-style trait flags. */
     public static final class Properties {
         private boolean unique;
-        private boolean requiresCe;
+        private boolean requiresMalice;
         private boolean inheritable;
         private boolean lostOnPvpDeath;
         private DoubleSupplier birthChance = () -> 0.0;
@@ -46,9 +46,9 @@ public class Trait {
             return this;
         }
 
-        /** Needs ce: never rolled for, inherited by or granted to a Severed player. */
-        public Properties requiresCe() {
-            this.requiresCe = true;
+        /** Needs Malice: never rolled for, inherited by or granted to a Severed player. */
+        public Properties requiresMalice() {
+            this.requiresMalice = true;
             return this;
         }
 
@@ -72,7 +72,7 @@ public class Trait {
     }
 
     private final boolean unique;
-    private final boolean requiresCe;
+    private final boolean requiresMalice;
     private final boolean inheritable;
     private final boolean lostOnPvpDeath;
     private final DoubleSupplier birthChance;
@@ -80,14 +80,14 @@ public class Trait {
     public Trait(Properties properties) {
         if (properties.inheritable && !properties.unique) throw new IllegalArgumentException("Only unique traits can be inheritable");
         this.unique = properties.unique;
-        this.requiresCe = properties.requiresCe;
+        this.requiresMalice = properties.requiresMalice;
         this.inheritable = properties.inheritable;
         this.lostOnPvpDeath = properties.lostOnPvpDeath;
         this.birthChance = properties.birthChance;
     }
 
     public final boolean isUnique() { return unique; }
-    public final boolean requiresCe() { return requiresCe; }
+    public final boolean requiresMalice() { return requiresMalice; }
     public final boolean isInheritable() { return inheritable; }
     public final boolean isLostOnPvpDeath() { return lostOnPvpDeath; }
 
@@ -95,7 +95,7 @@ public class Trait {
         return birthChance.getAsDouble();
     }
 
-    /** Extra eligibility for the birth roll, on top of {@link #requiresCe}. Default: anyone. */
+    /** Extra eligibility for the birth roll, on top of {@link #requiresMalice}. Default: anyone. */
     public boolean canRollFor(ServerPlayer player) {
         return true;
     }

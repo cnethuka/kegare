@@ -1,4 +1,4 @@
-package com.cnethuka.kegare.technique;
+package com.cnethuka.kegare.innatetechnique;
 
 import java.util.LinkedHashMap;
 import java.util.Map;

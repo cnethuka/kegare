@@ -1,4 +1,4 @@
-package com.cnethuka.kegare.technique;
+package com.cnethuka.kegare.innatetechnique;
 
 import com.cnethuka.kegare.registry.KegareRegistries;
 import java.util.ArrayList;
@@ -12,30 +12,30 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerPlayer;
 
 /**
- * A technique (registry {@code kegare:technique}): a rarity, an ordered list of abilities
- * (cycled with next/previous) and an optional ultimate (the ultimate key; future domains plug in here).
- * Register new ones with a {@code DeferredRegister} on {@link KegareRegistries#TECHNIQUE_KEY}.
+ * An innate technique (registry {@code kegare:innate_technique}): a rarity, an ordered list of abilities
+ * (cycled with next/previous) and an optional ultimate (the ultimate key; future dominions plug in here).
+ * Register new ones with a {@code DeferredRegister} on {@link KegareRegistries#INNATE_TECHNIQUE_KEY}.
  */
-public class Technique {
-    private final TechniqueRarity rarity;
+public class InnateTechnique {
+    private final InnateTechniqueRarity rarity;
     private final List<Ability> abilities;
     @Nullable
     private final Ability ultimate;
     private final boolean testContent;
 
-    protected Technique(Builder builder) {
-        if (builder.abilities.isEmpty()) throw new IllegalArgumentException("A technique needs at least one ability");
+    protected InnateTechnique(Builder builder) {
+        if (builder.abilities.isEmpty()) throw new IllegalArgumentException("An innate technique needs at least one ability");
         this.rarity = builder.rarity;
         this.abilities = List.copyOf(builder.abilities);
         this.ultimate = builder.ultimate;
         this.testContent = builder.testContent;
     }
 
-    public static Builder builder(TechniqueRarity rarity) {
+    public static Builder builder(InnateTechniqueRarity rarity) {
         return new Builder(rarity);
     }
 
-    public final TechniqueRarity rarity() {
+    public final InnateTechniqueRarity rarity() {
         return rarity;
     }
 
@@ -60,17 +60,17 @@ public class Technique {
         return Optional.empty();
     }
 
-    /** Test/placeholder content; excluded from rolls when {@code roll.includeTestTechniques=false}. */
+    /** Test/placeholder content; excluded from rolls when {@code roll.includeTestInnateTechniques=false}. */
     public final boolean isTestContent() {
         return testContent;
     }
 
     public final ResourceLocation id() {
-        return KegareRegistries.TECHNIQUE.getKey(this);
+        return KegareRegistries.INNATE_TECHNIQUE.getKey(this);
     }
 
     public final String descriptionId() {
-        return Util.makeDescriptionId("technique", id());
+        return Util.makeDescriptionId("innate_technique", id());
     }
 
     /** Name colored by rarity. */
@@ -78,20 +78,20 @@ public class Technique {
         return Component.translatable(descriptionId()).withColor(rarity.color());
     }
 
-    /** Hook: this technique was just assigned to the player. */
+    /** Hook: this innate technique was just assigned to the player. */
     public void onAssigned(ServerPlayer player) {}
 
-    /** Hook: this technique was just taken away (reroll, admin, rebirth). */
+    /** Hook: this innate technique was just taken away (reroll, admin, rebirth). */
     public void onRemoved(ServerPlayer player) {}
 
     public static final class Builder {
-        private final TechniqueRarity rarity;
+        private final InnateTechniqueRarity rarity;
         private final List<Ability> abilities = new ArrayList<>();
         @Nullable
         private Ability ultimate;
         private boolean testContent;
 
-        private Builder(TechniqueRarity rarity) {
+        private Builder(InnateTechniqueRarity rarity) {
             this.rarity = rarity;
         }
 
@@ -110,8 +110,8 @@ public class Technique {
             return this;
         }
 
-        public Technique build() {
-            return new Technique(this);
+        public InnateTechnique build() {
+            return new InnateTechnique(this);
         }
     }
 }

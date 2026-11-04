@@ -1,7 +1,7 @@
 package com.cnethuka.kegare.trait;
 
 import com.cnethuka.kegare.Kegare;
-import com.cnethuka.kegare.ce.CeService;
+import com.cnethuka.kegare.malice.MaliceService;
 import com.cnethuka.kegare.network.PlayerSync;
 import com.cnethuka.kegare.registry.KegareAttachments;
 import com.cnethuka.kegare.registry.KegareRegistries;
@@ -18,9 +18,9 @@ import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.server.players.GameProfileCache;
 import net.minecraft.world.entity.player.Player;
 
-/** Grants/removes traits and enforces unique traits (one bearer per world) and ce requirements. */
+/** Grants/removes traits and enforces unique traits (one bearer per world) and Malice requirements. */
 public final class TraitService {
-    public enum AddResult { ADDED, ALREADY_HAS, UNIQUE_TAKEN, PENDING_SUCCESSION, REQUIRES_CE }
+    public enum AddResult { ADDED, ALREADY_HAS, UNIQUE_TAKEN, PENDING_SUCCESSION, REQUIRES_MALICE }
 
     private TraitService() {}
 
@@ -33,7 +33,7 @@ public final class TraitService {
     }
 
     /**
-     * Grants a trait. Severed players can't hold ce-based traits. Unique traits: a birth roll can't take one that
+     * Grants a trait. Severed players can't hold Malice-based traits. Unique traits: a birth roll can't take one that
      * is held or pending succession; ADMIN and INHERITED grants override a pending succession but never steal
      * from a current bearer.
      */
@@ -41,7 +41,7 @@ public final class TraitService {
         TraitData data = get(player);
         ResourceLocation id = trait.id();
         if (data.has(id)) return AddResult.ALREADY_HAS;
-        if (!TraitRules.canHold(trait.requiresCe(), CeService.isSevered(player))) return AddResult.REQUIRES_CE;
+        if (!TraitRules.canHold(trait.requiresMalice(), MaliceService.isSevered(player))) return AddResult.REQUIRES_MALICE;
         if (trait.isUnique()) {
             UniqueTraitSavedData saved = UniqueTraitSavedData.get(player.server);
             boolean claimed = reason == Trait.AddReason.BIRTH
@@ -76,15 +76,15 @@ public final class TraitService {
     }
 
     /**
-     * Birth roll: each trait rolls its own chance. Severed players skip ce-based traits entirely; a unique trait
+     * Birth roll: each trait rolls its own chance. Severed players skip Malice-based traits entirely; a unique trait
      * that is held or pending succession can't be rolled.
      */
     public static List<Trait> rollBirthTraits(ServerPlayer player) {
-        boolean severed = CeService.isSevered(player);
+        boolean severed = MaliceService.isSevered(player);
         List<Trait> granted = new ArrayList<>();
         for (Trait trait : KegareRegistries.TRAIT) {
             double chance = trait.birthChance();
-            if (!TraitRules.canRollAtBirth(chance, trait.requiresCe(), severed) || !trait.canRollFor(player)) continue;
+            if (!TraitRules.canRollAtBirth(chance, trait.requiresMalice(), severed) || !trait.canRollFor(player)) continue;
             if (player.getRandom().nextDouble() >= chance) continue;
             if (add(player, trait, Trait.AddReason.BIRTH) == AddResult.ADDED) granted.add(trait);
         }

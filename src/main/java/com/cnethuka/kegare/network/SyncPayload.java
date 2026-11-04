@@ -1,14 +1,14 @@
 package com.cnethuka.kegare.network;
 
 import com.cnethuka.kegare.Kegare;
-import com.cnethuka.kegare.ce.CeData;
-import com.cnethuka.kegare.ce.CeService;
+import com.cnethuka.kegare.malice.MaliceData;
+import com.cnethuka.kegare.malice.MaliceService;
 import com.cnethuka.kegare.client.ClientData;
-import com.cnethuka.kegare.technique.CastState;
-import com.cnethuka.kegare.technique.CastManager;
-import com.cnethuka.kegare.technique.CastType;
-import com.cnethuka.kegare.technique.TechniqueData;
-import com.cnethuka.kegare.technique.TechniqueService;
+import com.cnethuka.kegare.innatetechnique.CastState;
+import com.cnethuka.kegare.innatetechnique.CastManager;
+import com.cnethuka.kegare.innatetechnique.CastType;
+import com.cnethuka.kegare.innatetechnique.InnateTechniqueData;
+import com.cnethuka.kegare.innatetechnique.InnateTechniqueService;
 import com.cnethuka.kegare.trait.TraitService;
 import java.util.ArrayList;
 import java.util.List;
@@ -30,7 +30,7 @@ public record SyncPayload(
         int tier,
         int capacity,
         float current,
-        Optional<ResourceLocation> technique,
+        Optional<ResourceLocation> innateTechnique,
         int selectedSlot,
         List<CooldownEntry> cooldowns,
         List<ResourceLocation> activeToggles,
@@ -46,12 +46,12 @@ public record SyncPayload(
     public static final StreamCodec<FriendlyByteBuf, SyncPayload> STREAM_CODEC = StreamCodec.ofMember(SyncPayload::write, SyncPayload::read);
 
     public static SyncPayload of(ServerPlayer player) {
-        CeData ce = CeService.get(player);
-        TechniqueData technique = TechniqueService.get(player);
+        MaliceData malice = MaliceService.get(player);
+        InnateTechniqueData innateTechnique = InnateTechniqueService.get(player);
         long now = player.level().getGameTime();
 
         List<CooldownEntry> cooldowns = new ArrayList<>();
-        technique.cooldowns().forEach((id, cd) -> {
+        innateTechnique.cooldowns().forEach((id, cd) -> {
             if (cd.endTick() > now) cooldowns.add(new CooldownEntry(id, cd.endTick(), cd.duration()));
         });
 
@@ -65,8 +65,8 @@ public record SyncPayload(
                         : active.ability().maxChannelTicks(player)));
 
         return new SyncPayload(
-                ce.isBorn(), ce.isSevered(), ce.tier().ordinal(), ce.capacity(), (float) ce.current(),
-                technique.techniqueId(), technique.selectedSlot(),
+                malice.isBorn(), malice.isSevered(), malice.tier().ordinal(), malice.capacity(), (float) malice.current(),
+                innateTechnique.innateTechniqueId(), innateTechnique.selectedSlot(),
                 cooldowns, toggles, casting,
                 new ArrayList<>(TraitService.get(player).view()));
     }
@@ -77,7 +77,7 @@ public record SyncPayload(
         buf.writeVarInt(tier);
         buf.writeVarInt(capacity);
         buf.writeFloat(current);
-        buf.writeOptional(technique, FriendlyByteBuf::writeResourceLocation);
+        buf.writeOptional(innateTechnique, FriendlyByteBuf::writeResourceLocation);
         buf.writeVarInt(selectedSlot);
         buf.writeCollection(cooldowns, (b, c) -> {
             b.writeResourceLocation(c.ability());

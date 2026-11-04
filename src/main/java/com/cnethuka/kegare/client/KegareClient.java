@@ -21,6 +21,6 @@ public final class KegareClient {
     }
 
     private static void registerGuiLayers(RegisterGuiLayersEvent event) {
-        event.registerAbove(VanillaGuiLayers.HOTBAR, CeHudLayer.ID, new CeHudLayer());
+        event.registerAbove(VanillaGuiLayers.HOTBAR, MaliceHudLayer.ID, new MaliceHudLayer());
     }
 }

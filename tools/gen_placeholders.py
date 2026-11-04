@@ -70,7 +70,7 @@ def talisman() -> Image.Image:
     return from_grid(grid, palette, noise={"P": 8}, seed=7)
 
 
-def ce_bar() -> Image.Image:
+def malice_bar() -> Image.Image:
     """Rows 0-7: empty bar. Rows 8-15: full bar. Cols 0-1 / 14-15 are caps; 2-13 stretch."""
     border = rgba("#140B18")
     empty_rows = ["#3A2647", "#2A1A33", "#2A1A33", "#24162C", "#24162C", "#1F1226"]
@@ -112,7 +112,7 @@ def save(img: Image.Image, relative: str) -> None:
 
 def main() -> None:
     save(talisman(), "item/purification_talisman.png")
-    save(ce_bar(), "gui/ce_bar.png")
+    save(malice_bar(), "gui/malice_bar.png")
     save(ability_slot(False), "gui/ability_slot.png")
     save(ability_slot(True), "gui/ability_slot_selected.png")
 

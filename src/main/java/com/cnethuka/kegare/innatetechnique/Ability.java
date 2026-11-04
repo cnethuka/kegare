@@ -1,4 +1,4 @@
-package com.cnethuka.kegare.technique;
+package com.cnethuka.kegare.innatetechnique;
 
 import net.minecraft.Util;
 import net.minecraft.network.chat.Component;
@@ -16,10 +16,10 @@ import net.minecraft.server.level.ServerPlayer;
  *       0..1, calls {@link #onEnd} (RELEASED), then starts the cooldown. Early release or a stun:
  *       {@link #onEnd} without cost or cooldown.</li>
  *   <li>CHANNELED: press, then validate, pay {@link #cost}, {@link #execute} (start), then each tick pays
- *       {@link #upkeepPerSecond}/20 and calls {@link #tick}. Release, out of ce, max duration or stun:
+ *       {@link #upkeepPerSecond}/20 and calls {@link #tick}. Release, out of Malice, max duration or stun:
  *       {@link #onEnd}, then cooldown.</li>
  *   <li>TOGGLE: press when off, then validate, pay {@link #cost}, {@link #execute} (on), then each tick pays
- *       upkeep and calls {@link #tick}. Press again or run out of ce: {@link #onEnd}, then cooldown.
+ *       upkeep and calls {@link #tick}. Press again or run out of Malice: {@link #onEnd}, then cooldown.
  *       Stuns do not switch toggles off.</li>
  * </ul>
  * Toggles and channels are runtime-only: they end on death and logout and never persist.
@@ -30,13 +30,13 @@ public interface Ability {
 
     CastType castType();
 
-    /** ce paid when the cast fires (INSTANT / CHARGED release) or starts (CHANNELED / TOGGLE). */
+    /** Malice paid when the cast fires (INSTANT / CHARGED release) or starts (CHANNELED / TOGGLE). */
     double cost(ServerPlayer player);
 
     /** Cooldown in ticks, started after firing (INSTANT / CHARGED) or after ending (CHANNELED / TOGGLE). */
     int cooldownTicks(ServerPlayer player);
 
-    /** ce drained per second while a CHANNELED or TOGGLE ability is running. */
+    /** Malice drained per second while a CHANNELED or TOGGLE ability is running. */
     default double upkeepPerSecond(ServerPlayer player) {
         return 0;
     }
@@ -51,7 +51,7 @@ public interface Ability {
         return 20;
     }
 
-    /** CHANNELED only: max duration in ticks; 0 = until released or out of ce. */
+    /** CHANNELED only: max duration in ticks; 0 = until released or out of Malice. */
     default int maxChannelTicks(ServerPlayer player) {
         return 0;
     }

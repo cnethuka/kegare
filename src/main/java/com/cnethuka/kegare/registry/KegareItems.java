@@ -12,7 +12,7 @@ import net.neoforged.neoforge.registries.DeferredRegister;
 public final class KegareItems {
     public static final DeferredRegister.Items ITEMS = DeferredRegister.createItems(Kegare.MODID);
 
-    /** Technique reroll item (display name in lang). */
+    /** Innate technique reroll item (display name in lang). */
     public static final DeferredItem<PurificationTalismanItem> PURIFICATION_TALISMAN = ITEMS.registerItem(
             "purification_talisman", PurificationTalismanItem::new, new Item.Properties().stacksTo(16).rarity(Rarity.UNCOMMON));
 

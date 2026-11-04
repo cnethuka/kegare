@@ -1,0 +1,90 @@
+package com.cnethuka.kegare.innatetechnique;
+
+import com.cnethuka.kegare.Kegare;
+import com.cnethuka.kegare.network.PlayerSync;
+import com.cnethuka.kegare.registry.KegareAttachments;
+import com.cnethuka.kegare.registry.KegareRegistries;
+import java.util.Optional;
+import javax.annotation.Nullable;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.util.Mth;
+import net.minecraft.world.entity.player.Player;
+
+/** Innate technique assignment, ability selection and cooldowns (server-authoritative). */
+public final class InnateTechniqueService {
+    private InnateTechniqueService() {}
+
+    public static InnateTechniqueData get(Player player) {
+        return player.getData(KegareAttachments.INNATE_TECHNIQUE);
+    }
+
+    public static Optional<InnateTechnique> current(Player player) {
+        return get(player).innateTechniqueId().map(KegareRegistries.INNATE_TECHNIQUE::get);
+    }
+
+    /**
+     * Assigns an innate technique ({@code null} clears it). Ends running casts, clears cooldowns,
+     * resets the selected slot and fires the innate technique hooks.
+     */
+    public static void setInnateTechnique(ServerPlayer player, @Nullable InnateTechnique innateTechnique) {
+        Optional<InnateTechnique> old = current(player);
+        CastManager.stopAll(player, EndReason.INNATE_TECHNIQUE_CHANGED);
+        get(player).setInnateTechnique(innateTechnique == null ? null : innateTechnique.id());
+        old.ifPresent(t -> t.onRemoved(player));
+        if (innateTechnique != null) innateTechnique.onAssigned(player);
+        PlayerSync.markDirty(player);
+    }
+
+    /** Moves the selected slot by {@code delta}, wrapping around. */
+    public static void cycle(ServerPlayer player, int delta) {
+        Optional<InnateTechnique> innateTechnique = current(player);
+        if (innateTechnique.isEmpty()) return;
+        int size = innateTechnique.get().abilities().size();
+        InnateTechniqueData data = get(player);
+        data.setSelectedSlot(Mth.positiveModulo(data.selectedSlot() + delta, size));
+        PlayerSync.markDirty(player);
+    }
+
+    public static int cooldownRemaining(ServerPlayer player, Ability ability) {
+        InnateTechniqueData.Cooldown cooldown = get(player).cooldowns().get(ability.id());
+        if (cooldown == null) return 0;
+        return (int) Math.max(0, cooldown.endTick() - player.level().getGameTime());
+    }
+
+    public static void startCooldown(ServerPlayer player, Ability ability) {
+        int ticks = ability.cooldownTicks(player);
+        if (ticks <= 0) return;
+        long now = player.level().getGameTime();
+        InnateTechniqueData data = get(player);
+        data.pruneCooldowns(now);
+        data.putCooldown(ability.id(), new InnateTechniqueData.Cooldown(now + ticks, ticks));
+        PlayerSync.markDirty(player);
+    }
+
+    /** Admin/debug: wipe cooldowns. */
+    public static void clearCooldowns(ServerPlayer player) {
+        get(player).pruneCooldowns(Long.MAX_VALUE);
+        PlayerSync.markDirty(player);
+    }
+
+    /**
+     * Login check. Clamps the selected slot and prunes expired cooldowns.
+     * Returns true if the stored innate technique ID no longer exists (it is cleared; the caller re-rolls).
+     */
+    public static boolean validateOnLogin(ServerPlayer player) {
+        InnateTechniqueData data = get(player);
+        data.pruneCooldowns(player.level().getGameTime());
+        Optional<ResourceLocation> id = data.innateTechniqueId();
+        if (id.isPresent() && !KegareRegistries.INNATE_TECHNIQUE.containsKey(id.get())) {
+            Kegare.LOGGER.warn("{} had unknown innate technique {}; clearing it", player.getGameProfile().getName(), id.get());
+            data.setInnateTechnique(null);
+            PlayerSync.markDirty(player);
+            return true;
+        }
+        current(player).ifPresent(t -> {
+            if (data.selectedSlot() < 0 || data.selectedSlot() >= t.abilities().size()) data.setSelectedSlot(0);
+        });
+        return false;
+    }
+}

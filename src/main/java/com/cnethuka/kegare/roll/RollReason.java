@@ -1,6 +1,6 @@
 package com.cnethuka.kegare.roll;
 
-/** Why a technique roll happens. Decides pity and advancement side effects. Pure Java (unit-tested). */
+/** Why an innate technique roll happens. Decides pity and advancement side effects. Pure Java (unit-tested). */
 public enum RollReason {
     /** First join. */
     BIRTH(true, false),
@@ -9,7 +9,7 @@ public enum RollReason {
     /** {@code /kegare reroll}. */
     ADMIN(true, false),
     /**
-     * The stored technique no longer exists (removed by an update). A free replacement: rolls on base weights
+     * The stored innate technique no longer exists (removed by an update). A free replacement: rolls on base weights
      * (no soft/hard pity), leaves the pity counter and roll total untouched, grants no Reawakening.
      */
     REPLACEMENT(false, false);

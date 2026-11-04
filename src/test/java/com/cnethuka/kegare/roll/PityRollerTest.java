@@ -4,7 +4,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import com.cnethuka.kegare.technique.TechniqueRarity;
+import com.cnethuka.kegare.innatetechnique.InnateTechniqueRarity;
 import java.util.EnumMap;
 import java.util.Map;
 import java.util.Optional;
@@ -15,7 +15,7 @@ class PityRollerTest {
     /** Spec defaults: Common 50, Rare 30, Epic 15, Legendary 5; soft pity after 30 (+5/roll); hard pity on roll 50. */
     private static final PityRoller.Settings DEFAULTS = new PityRoller.Settings(new int[]{50, 30, 15, 5}, 30, 5, 50);
     private static final boolean[] ALL = {true, true, true, true};
-    private static final int LEG = TechniqueRarity.LEGENDARY.ordinal();
+    private static final int LEG = InnateTechniqueRarity.LEGENDARY.ordinal();
 
     @Test
     void noSoftPityUpToRoll30() {
@@ -43,15 +43,15 @@ class PityRollerTest {
         // Even a random source that would always pick the first (Common) bucket must yield Legendary.
         Optional<PityRoller.Result> result = PityRoller.pick(DEFAULTS, 49, ALL, bound -> 0);
         assertTrue(result.isPresent());
-        assertEquals(TechniqueRarity.LEGENDARY, result.get().rarity());
+        assertEquals(InnateTechniqueRarity.LEGENDARY, result.get().rarity());
         assertTrue(result.get().byHardPity());
     }
 
     @Test
     void counterResetsOnAnyLegendary() {
-        assertEquals(0, PityRoller.nextCounter(12, TechniqueRarity.LEGENDARY));
-        assertEquals(0, PityRoller.nextCounter(49, TechniqueRarity.LEGENDARY));
-        assertEquals(13, PityRoller.nextCounter(12, TechniqueRarity.EPIC));
+        assertEquals(0, PityRoller.nextCounter(12, InnateTechniqueRarity.LEGENDARY));
+        assertEquals(0, PityRoller.nextCounter(49, InnateTechniqueRarity.LEGENDARY));
+        assertEquals(13, PityRoller.nextCounter(12, InnateTechniqueRarity.EPIC));
     }
 
     @Test
@@ -60,26 +60,26 @@ class PityRollerTest {
         int[] weights = PityRoller.effectiveWeights(DEFAULTS, 0, ALL);
         int total = 0;
         for (int w : weights) total += w;
-        Map<TechniqueRarity, Integer> counts = new EnumMap<>(TechniqueRarity.class);
+        Map<InnateTechniqueRarity, Integer> counts = new EnumMap<>(InnateTechniqueRarity.class);
         for (int value = 0; value < total; value++) {
             final int v = value;
-            TechniqueRarity r = PityRoller.pick(DEFAULTS, 0, ALL, bound -> v).orElseThrow().rarity();
+            InnateTechniqueRarity r = PityRoller.pick(DEFAULTS, 0, ALL, bound -> v).orElseThrow().rarity();
             counts.merge(r, 1, Integer::sum);
         }
-        assertEquals(50, counts.get(TechniqueRarity.COMMON));
-        assertEquals(30, counts.get(TechniqueRarity.RARE));
-        assertEquals(15, counts.get(TechniqueRarity.EPIC));
-        assertEquals(5, counts.get(TechniqueRarity.LEGENDARY));
+        assertEquals(50, counts.get(InnateTechniqueRarity.COMMON));
+        assertEquals(30, counts.get(InnateTechniqueRarity.RARE));
+        assertEquals(15, counts.get(InnateTechniqueRarity.EPIC));
+        assertEquals(5, counts.get(InnateTechniqueRarity.LEGENDARY));
     }
 
     @Test
     void unavailableRaritiesAreSkipped() {
         boolean[] noEpic = {true, true, false, true};
         int[] w = PityRoller.effectiveWeights(DEFAULTS, 0, noEpic);
-        assertEquals(0, w[TechniqueRarity.EPIC.ordinal()]);
+        assertEquals(0, w[InnateTechniqueRarity.EPIC.ordinal()]);
         for (int value = 0; value < 85; value++) {
             final int v = value;
-            assertTrue(PityRoller.pick(DEFAULTS, 0, noEpic, bound -> v).orElseThrow().rarity() != TechniqueRarity.EPIC);
+            assertTrue(PityRoller.pick(DEFAULTS, 0, noEpic, bound -> v).orElseThrow().rarity() != InnateTechniqueRarity.EPIC);
         }
     }
 
@@ -87,7 +87,7 @@ class PityRollerTest {
     void noLegendaryAvailableMeansNoPity() {
         boolean[] noLegendary = {true, true, true, false};
         PityRoller.Result r = PityRoller.pick(DEFAULTS, 49, noLegendary, bound -> 0).orElseThrow();
-        assertEquals(TechniqueRarity.COMMON, r.rarity());
+        assertEquals(InnateTechniqueRarity.COMMON, r.rarity());
         assertFalse(r.byHardPity());
         assertEquals(0, PityRoller.effectiveWeights(DEFAULTS, 60, noLegendary)[LEG]);
     }
@@ -100,7 +100,7 @@ class PityRollerTest {
     @Test
     void allZeroWeightsFallBackToUniform() {
         PityRoller.Settings zero = new PityRoller.Settings(new int[]{0, 0, 0, 0}, 1000, 0, 0);
-        assertEquals(TechniqueRarity.RARE, PityRoller.pick(zero, 0, ALL, bound -> 1).orElseThrow().rarity());
+        assertEquals(InnateTechniqueRarity.RARE, PityRoller.pick(zero, 0, ALL, bound -> 1).orElseThrow().rarity());
     }
 
     @Test
@@ -112,9 +112,9 @@ class PityRollerTest {
             int rolls = 0;
             while (true) {
                 rolls++;
-                TechniqueRarity r = PityRoller.pick(DEFAULTS, counter, ALL, random::nextInt).orElseThrow().rarity();
+                InnateTechniqueRarity r = PityRoller.pick(DEFAULTS, counter, ALL, random::nextInt).orElseThrow().rarity();
                 counter = PityRoller.nextCounter(counter, r);
-                if (r == TechniqueRarity.LEGENDARY) break;
+                if (r == InnateTechniqueRarity.LEGENDARY) break;
             }
             worst = Math.max(worst, rolls);
         }

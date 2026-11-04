@@ -4,10 +4,10 @@ import com.cnethuka.kegare.Kegare;
 import com.cnethuka.kegare.config.KegareClientConfig;
 import com.cnethuka.kegare.network.SyncPayload;
 import com.cnethuka.kegare.registry.KegareRegistries;
-import com.cnethuka.kegare.technique.Ability;
-import com.cnethuka.kegare.technique.CastManager;
-import com.cnethuka.kegare.technique.CastType;
-import com.cnethuka.kegare.technique.Technique;
+import com.cnethuka.kegare.innatetechnique.Ability;
+import com.cnethuka.kegare.innatetechnique.CastManager;
+import com.cnethuka.kegare.innatetechnique.CastType;
+import com.cnethuka.kegare.innatetechnique.InnateTechnique;
 import java.util.List;
 import java.util.Optional;
 import javax.annotation.Nullable;
@@ -23,14 +23,14 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.Mth;
 
 /**
- * Top-left HUD: technique name, ce bar (current/capacity), ability slots with cooldowns,
+ * Top-left HUD: innate technique name, Malice bar (current/capacity), ability slots with cooldowns,
  * selected ability, and a charge/channel bar. Hidden for Severed players.
  * Purely visual: reads {@link ClientData}, never decides anything.
  */
-public final class CeHudLayer implements LayeredDraw.Layer {
-    public static final ResourceLocation ID = Kegare.id("ce_hud");
+public final class MaliceHudLayer implements LayeredDraw.Layer {
+    public static final ResourceLocation ID = Kegare.id("malice_hud");
 
-    private static final ResourceLocation BAR = Kegare.id("textures/gui/ce_bar.png");
+    private static final ResourceLocation BAR = Kegare.id("textures/gui/malice_bar.png");
     private static final ResourceLocation SLOT = Kegare.id("textures/gui/ability_slot.png");
     private static final ResourceLocation SLOT_SELECTED = Kegare.id("textures/gui/ability_slot_selected.png");
 
@@ -40,7 +40,7 @@ public final class CeHudLayer implements LayeredDraw.Layer {
     private static final int SLOT_GAP = 2;
 
     private static final int COLOR_TEXT = 0xFFFFFF;
-    private static final int COLOR_CE_TEXT = 0xD9B3FF;
+    private static final int COLOR_MALICE_TEXT = 0xD9B3FF;
     private static final int COLOR_COOLDOWN_TEXT = 0xFF6B6B;
     /** Cooldown overlay: dim the whole box, then a translucent white sweep for the remaining fraction. */
     private static final int COLOR_COOLDOWN_DIM = 0x99000000;
@@ -62,28 +62,28 @@ public final class CeHudLayer implements LayeredDraw.Layer {
         int x = KegareClientConfig.HUD_X.get();
         int y = KegareClientConfig.HUD_Y.get();
 
-        Technique technique = data.technique().map(KegareRegistries.TECHNIQUE::get).orElse(null);
-        Component title = technique != null
-                ? technique.displayName()
-                : Component.translatable("hud.kegare.no_technique").withStyle(ChatFormatting.GRAY);
+        InnateTechnique innateTechnique = data.innateTechnique().map(KegareRegistries.INNATE_TECHNIQUE::get).orElse(null);
+        Component title = innateTechnique != null
+                ? innateTechnique.displayName()
+                : Component.translatable("hud.kegare.no_innate_technique").withStyle(ChatFormatting.GRAY);
         g.drawString(font, title, x, y, COLOR_TEXT);
         y += font.lineHeight + 2;
 
-        drawCeBar(g, x, y, data.current(), data.capacity());
-        g.drawString(font, Component.translatable("hud.kegare.ce", Mth.floor(data.current()), data.capacity()), x + BAR_WIDTH + 4, y, COLOR_CE_TEXT);
+        drawMaliceBar(g, x, y, data.current(), data.capacity());
+        g.drawString(font, Component.translatable("hud.kegare.malice", Mth.floor(data.current()), data.capacity()), x + BAR_WIDTH + 4, y, COLOR_MALICE_TEXT);
         y += BAR_HEIGHT + 4;
 
-        if (technique == null) return;
+        if (innateTechnique == null) return;
 
         // Ability slots, then the ultimate slot.
-        List<Ability> abilities = technique.abilities();
+        List<Ability> abilities = innateTechnique.abilities();
         ResourceLocation castingId = data.casting().map(SyncPayload.CastingEntry::ability).orElse(null);
         int sx = x;
         for (int i = 0; i < abilities.size(); i++) {
             drawSlot(g, font, data, abilities.get(i), sx, y, i == data.selectedSlot(), Component.literal(Integer.toString(i + 1)), castingId, now);
             sx += SLOT_SIZE + SLOT_GAP;
         }
-        Optional<Ability> ultimate = technique.ultimate();
+        Optional<Ability> ultimate = innateTechnique.ultimate();
         if (ultimate.isPresent()) {
             sx += 4;
             drawSlot(g, font, data, ultimate.get(), sx, y, false, KegareKeys.ULTIMATE.getTranslatedKeyMessage(), castingId, now);
@@ -91,7 +91,7 @@ public final class CeHudLayer implements LayeredDraw.Layer {
         y += SLOT_SIZE + 3;
 
         // Selected ability name + cast type + cooldown.
-        Ability selected = technique.ability(data.selectedSlot());
+        Ability selected = innateTechnique.ability(data.selectedSlot());
         if (selected != null) {
             MutableComponent line = Component.translatable("hud.kegare.selected", selected.displayName(),
                     Component.translatable(selected.castType().translationKey()).withStyle(ChatFormatting.DARK_GRAY));
@@ -105,7 +105,7 @@ public final class CeHudLayer implements LayeredDraw.Layer {
 
         // Charge / channel progress.
         data.casting().ifPresent(casting -> {
-            Ability ability = technique.findAbility(casting.ability()).orElse(null);
+            Ability ability = innateTechnique.findAbility(casting.ability()).orElse(null);
             if (ability == null) return;
             long elapsed = Math.max(0, now - casting.startTick());
             float progress;
@@ -149,7 +149,7 @@ public final class CeHudLayer implements LayeredDraw.Layer {
     }
 
     /** 3-slice bar: 2px caps, stretched middle. Texture rows 0-7 empty, 8-15 full. */
-    private static void drawCeBar(GuiGraphics g, int x, int y, float current, int capacity) {
+    private static void drawMaliceBar(GuiGraphics g, int x, int y, float current, int capacity) {
         drawSliced(g, x, y, 0);
         int fill = capacity <= 0 ? 0 : Mth.clamp(Math.round(BAR_WIDTH * current / capacity), 0, BAR_WIDTH);
         if (fill > 0) {

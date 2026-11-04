@@ -7,8 +7,8 @@ import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import com.mojang.brigadier.exceptions.DynamicCommandExceptionType;
 import com.mojang.brigadier.suggestion.SuggestionProvider;
 import com.cnethuka.kegare.Kegare;
-import com.cnethuka.kegare.ce.CeData;
-import com.cnethuka.kegare.ce.CeService;
+import com.cnethuka.kegare.malice.MaliceData;
+import com.cnethuka.kegare.malice.MaliceService;
 import com.cnethuka.kegare.combat.CombatHelper;
 import com.cnethuka.kegare.config.KegareServerConfig;
 import com.cnethuka.kegare.player.BirthService;
@@ -16,11 +16,11 @@ import com.cnethuka.kegare.registry.KegareRegistries;
 import com.cnethuka.kegare.roll.RollData;
 import com.cnethuka.kegare.roll.RollReason;
 import com.cnethuka.kegare.roll.RollService;
-import com.cnethuka.kegare.technique.Ability;
-import com.cnethuka.kegare.technique.CastManager;
-import com.cnethuka.kegare.technique.Technique;
-import com.cnethuka.kegare.technique.TechniqueData;
-import com.cnethuka.kegare.technique.TechniqueService;
+import com.cnethuka.kegare.innatetechnique.Ability;
+import com.cnethuka.kegare.innatetechnique.CastManager;
+import com.cnethuka.kegare.innatetechnique.InnateTechnique;
+import com.cnethuka.kegare.innatetechnique.InnateTechniqueData;
+import com.cnethuka.kegare.innatetechnique.InnateTechniqueService;
 import com.cnethuka.kegare.trait.Trait;
 import com.cnethuka.kegare.trait.TraitService;
 import com.cnethuka.kegare.trait.TraitSuccession;
@@ -46,12 +46,12 @@ import net.neoforged.neoforge.event.RegisterCommandsEvent;
 /** {@code /kegare ...} admin/debug commands (permission level 2). */
 @EventBusSubscriber(modid = Kegare.MODID)
 public final class KegareCommand {
-    private static final SuggestionProvider<CommandSourceStack> TECHNIQUES =
-            (ctx, builder) -> SharedSuggestionProvider.suggestResource(KegareRegistries.TECHNIQUE.keySet(), builder);
+    private static final SuggestionProvider<CommandSourceStack> INNATE_TECHNIQUES =
+            (ctx, builder) -> SharedSuggestionProvider.suggestResource(KegareRegistries.INNATE_TECHNIQUE.keySet(), builder);
     private static final SuggestionProvider<CommandSourceStack> TRAITS =
             (ctx, builder) -> SharedSuggestionProvider.suggestResource(KegareRegistries.TRAIT.keySet(), builder);
-    private static final DynamicCommandExceptionType UNKNOWN_TECHNIQUE =
-            new DynamicCommandExceptionType(id -> Component.translatable("commands.kegare.unknown_technique", String.valueOf(id)));
+    private static final DynamicCommandExceptionType UNKNOWN_INNATE_TECHNIQUE =
+            new DynamicCommandExceptionType(id -> Component.translatable("commands.kegare.unknown_innate_technique", String.valueOf(id)));
     private static final DynamicCommandExceptionType UNKNOWN_TRAIT =
             new DynamicCommandExceptionType(id -> Component.translatable("commands.kegare.unknown_trait", String.valueOf(id)));
 
@@ -69,21 +69,21 @@ public final class KegareCommand {
                         .executes(c -> info(c.getSource(), c.getSource().getPlayerOrException()))
                         .then(Commands.argument("player", EntityArgument.player())
                                 .executes(c -> info(c.getSource(), EntityArgument.getPlayer(c, "player")))))
-                .then(Commands.literal("setce")
+                .then(Commands.literal("setmalice")
                         .then(Commands.argument("player", EntityArgument.player())
                                 .then(Commands.argument("amount", DoubleArgumentType.doubleArg(0))
-                                        .executes(c -> setCe(c.getSource(), EntityArgument.getPlayer(c, "player"),
+                                        .executes(c -> setMalice(c.getSource(), EntityArgument.getPlayer(c, "player"),
                                                 DoubleArgumentType.getDouble(c, "amount"))))))
                 .then(Commands.literal("setcapacity")
                         .then(Commands.argument("player", EntityArgument.player())
                                 .then(Commands.argument("capacity", IntegerArgumentType.integer(0, 1_000_000))
                                         .executes(c -> setCapacity(c.getSource(), EntityArgument.getPlayer(c, "player"),
                                                 IntegerArgumentType.getInteger(c, "capacity"))))))
-                .then(Commands.literal("settechnique")
+                .then(Commands.literal("setinnatetechnique")
                         .then(Commands.argument("player", EntityArgument.player())
-                                .then(Commands.argument("technique", ResourceLocationArgument.id()).suggests(TECHNIQUES)
-                                        .executes(c -> setTechnique(c.getSource(), EntityArgument.getPlayer(c, "player"),
-                                                ResourceLocationArgument.getId(c, "technique"))))))
+                                .then(Commands.argument("innate_technique", ResourceLocationArgument.id()).suggests(INNATE_TECHNIQUES)
+                                        .executes(c -> setInnateTechnique(c.getSource(), EntityArgument.getPlayer(c, "player"),
+                                                ResourceLocationArgument.getId(c, "innate_technique"))))))
                 .then(Commands.literal("reroll")
                         .then(Commands.argument("player", EntityArgument.player())
                                 .executes(c -> reroll(c.getSource(), EntityArgument.getPlayer(c, "player")))))
@@ -124,30 +124,30 @@ public final class KegareCommand {
     // ------------------------------------------------------------------ info
 
     private static int info(CommandSourceStack source, ServerPlayer player) {
-        CeData ce = CeService.get(player);
-        TechniqueData techData = TechniqueService.get(player);
+        MaliceData malice = MaliceService.get(player);
+        InnateTechniqueData innateTechniqueData = InnateTechniqueService.get(player);
         RollData roll = RollService.get(player);
         List<Component> lines = new ArrayList<>();
 
         lines.add(Component.translatable("commands.kegare.info.header", player.getDisplayName()).withStyle(ChatFormatting.GOLD));
-        lines.add(Component.translatable("commands.kegare.info.ce",
-                whole(ce.current()), ce.capacity(), Component.translatable(ce.tier().translationKey())));
-        if (ce.isSevered()) lines.add(Component.translatable("commands.kegare.info.severed").withStyle(ChatFormatting.RED));
+        lines.add(Component.translatable("commands.kegare.info.malice",
+                whole(malice.current()), malice.capacity(), Component.translatable(malice.tier().translationKey())));
+        if (malice.isSevered()) lines.add(Component.translatable("commands.kegare.info.severed").withStyle(ChatFormatting.RED));
 
-        Optional<Technique> technique = TechniqueService.current(player);
-        if (technique.isPresent()) {
-            Technique t = technique.get();
-            Ability selected = t.ability(techData.selectedSlot());
-            lines.add(Component.translatable("commands.kegare.info.technique", t.displayName(),
-                    Component.translatable(t.rarity().translationKey()), techData.selectedSlot() + 1, t.abilities().size(),
-                    selected == null ? Component.literal("-") : selected.displayName()));
+        Optional<InnateTechnique> innateTechnique = InnateTechniqueService.current(player);
+        if (innateTechnique.isPresent()) {
+            InnateTechnique t = innateTechnique.get();
+            Ability selected = t.ability(innateTechniqueData.selectedSlot());
+            lines.add(Component.translatable("commands.kegare.info.innate_technique", t.displayName(),
+                    Component.translatable(t.rarity().translationKey()), innateTechniqueData.selectedSlot() + 1, t.abilities().size(),
+                    selected == null ? Component.translatable("commands.kegare.info.none") : selected.displayName()));
         } else {
-            lines.add(Component.translatable("commands.kegare.info.no_technique"));
+            lines.add(Component.translatable("commands.kegare.info.no_innate_technique"));
         }
 
         List<Component> cooldowns = new ArrayList<>();
-        technique.ifPresent(t -> techData.cooldowns().keySet().forEach(id -> t.findAbility(id).ifPresent(a -> {
-            int remaining = TechniqueService.cooldownRemaining(player, a);
+        innateTechnique.ifPresent(t -> innateTechniqueData.cooldowns().keySet().forEach(id -> t.findAbility(id).ifPresent(a -> {
+            int remaining = InnateTechniqueService.cooldownRemaining(player, a);
             if (remaining > 0) cooldowns.add(Component.translatable("commands.kegare.info.cooldown_entry", a.displayName(), CastManager.seconds(remaining)));
         })));
         lines.add(Component.translatable("commands.kegare.info.cooldowns", join(cooldowns)));
@@ -181,34 +181,34 @@ public final class KegareCommand {
 
     // ------------------------------------------------------------------ mutations
 
-    private static int setCe(CommandSourceStack source, ServerPlayer player, double amount) {
-        CeService.setCurrent(player, amount);
-        CeData ce = CeService.get(player);
-        source.sendSuccess(() -> Component.translatable("commands.kegare.setce.success", player.getDisplayName(), whole(ce.current()), ce.capacity()), true);
+    private static int setMalice(CommandSourceStack source, ServerPlayer player, double amount) {
+        MaliceService.setCurrent(player, amount);
+        MaliceData malice = MaliceService.get(player);
+        source.sendSuccess(() -> Component.translatable("commands.kegare.setmalice.success", player.getDisplayName(), whole(malice.current()), malice.capacity()), true);
         return 1;
     }
 
     private static int setCapacity(CommandSourceStack source, ServerPlayer player, int capacity) {
-        CeService.adminSetCapacity(player, capacity);
-        CeData ce = CeService.get(player);
-        if (ce.isSevered()) TechniqueService.setTechnique(player, null); // Severed have no technique
-        source.sendSuccess(() -> Component.translatable("commands.kegare.setcapacity.success", player.getDisplayName(), ce.capacity(),
-                Component.translatable(ce.tier().translationKey())), true);
-        if (!ce.isSevered() && TechniqueService.current(player).isEmpty()) {
+        MaliceService.adminSetCapacity(player, capacity);
+        MaliceData malice = MaliceService.get(player);
+        if (malice.isSevered()) InnateTechniqueService.setInnateTechnique(player, null); // Severed have no innate technique
+        source.sendSuccess(() -> Component.translatable("commands.kegare.setcapacity.success", player.getDisplayName(), malice.capacity(),
+                Component.translatable(malice.tier().translationKey())), true);
+        if (!malice.isSevered() && InnateTechniqueService.current(player).isEmpty()) {
             source.sendSuccess(() -> Component.translatable("commands.kegare.setcapacity.hint_reroll"), false);
         }
         return 1;
     }
 
-    private static int setTechnique(CommandSourceStack source, ServerPlayer player, ResourceLocation id) throws CommandSyntaxException {
-        Technique technique = KegareRegistries.TECHNIQUE.get(id);
-        if (technique == null) throw UNKNOWN_TECHNIQUE.create(id);
-        if (CeService.isSevered(player)) {
+    private static int setInnateTechnique(CommandSourceStack source, ServerPlayer player, ResourceLocation id) throws CommandSyntaxException {
+        InnateTechnique innateTechnique = KegareRegistries.INNATE_TECHNIQUE.get(id);
+        if (innateTechnique == null) throw UNKNOWN_INNATE_TECHNIQUE.create(id);
+        if (MaliceService.isSevered(player)) {
             source.sendFailure(Component.translatable("commands.kegare.severed", player.getDisplayName()));
             return 0;
         }
-        TechniqueService.setTechnique(player, technique);
-        source.sendSuccess(() -> Component.translatable("commands.kegare.settechnique.success", player.getDisplayName(), technique.displayName()), true);
+        InnateTechniqueService.setInnateTechnique(player, innateTechnique);
+        source.sendSuccess(() -> Component.translatable("commands.kegare.setinnatetechnique.success", player.getDisplayName(), innateTechnique.displayName()), true);
         return 1;
     }
 
@@ -222,7 +222,7 @@ public final class KegareCommand {
             source.sendFailure(Component.translatable("message.kegare.reroll.no_candidates"));
             return 0;
         }
-        Component name = TechniqueService.current(player).map(Technique::displayName).map(c -> (Component) c).orElse(Component.literal("-"));
+        Component name = InnateTechniqueService.current(player).map(InnateTechnique::displayName).map(c -> (Component) c).orElse(Component.translatable("commands.kegare.info.none"));
         source.sendSuccess(() -> Component.translatable("commands.kegare.reroll.success", player.getDisplayName(), name,
                 RollService.get(player).rollsSinceLegendary()), true);
         return 1;
@@ -252,8 +252,8 @@ public final class KegareCommand {
                 source.sendFailure(Component.translatable("commands.kegare.trait.unique_taken", trait.displayName(), holder));
                 return 0;
             }
-            case REQUIRES_CE -> {
-                source.sendFailure(Component.translatable("commands.kegare.trait.requires_ce", trait.displayName(), player.getDisplayName()));
+            case REQUIRES_MALICE -> {
+                source.sendFailure(Component.translatable("commands.kegare.trait.requires_malice", trait.displayName(), player.getDisplayName()));
                 return 0;
             }
         }
@@ -335,9 +335,9 @@ public final class KegareCommand {
         return String.format(Locale.ROOT, "%.1f", value);
     }
 
-    /** ce is shown as whole numbers everywhere (floored, like the HUD); the stored value keeps its fraction. */
-    private static int whole(double ce) {
-        return (int) Math.floor(ce);
+    /** Malice is shown as whole numbers everywhere (floored, like the HUD); the stored value keeps its fraction. */
+    private static int whole(double malice) {
+        return (int) Math.floor(malice);
     }
 
     private static Component join(List<Component> parts) {

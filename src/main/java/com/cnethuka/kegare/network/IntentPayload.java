@@ -1,8 +1,8 @@
 package com.cnethuka.kegare.network;
 
 import com.cnethuka.kegare.Kegare;
-import com.cnethuka.kegare.technique.CastIntent;
-import com.cnethuka.kegare.technique.CastManager;
+import com.cnethuka.kegare.innatetechnique.CastIntent;
+import com.cnethuka.kegare.innatetechnique.CastManager;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;

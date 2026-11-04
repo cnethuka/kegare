@@ -47,7 +47,7 @@ authors="cnethuka"
 # The description text for the mod (multi line!) (#mandatory)
 description='''
 Kegare: a cursed-energy combat framework for PvP with friends.
-Base systems only (energy, traits, technique framework, rolls).
+Base systems only (Malice, traits, innate technique framework, rolls).
 '''
 
 # The [[mixins]] block allows you to declare your mixin config to FML so that it gets loaded.

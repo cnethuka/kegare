@@ -1,7 +1,7 @@
-package com.cnethuka.kegare.technique;
+package com.cnethuka.kegare.innatetechnique;
 
-/** Technique rarity. Plain Java (no Minecraft types) so the pity math is unit-testable. */
-public enum TechniqueRarity {
+/** Innate technique rarity. Plain Java (no Minecraft types) so the pity math is unit-testable. */
+public enum InnateTechniqueRarity {
     COMMON("common", 0xB8B8B8),
     RARE("rare", 0x55AAFF),
     EPIC("epic", 0xC77DFF),
@@ -10,7 +10,7 @@ public enum TechniqueRarity {
     private final String name;
     private final int color;
 
-    TechniqueRarity(String name, int color) {
+    InnateTechniqueRarity(String name, int color) {
         this.name = name;
         this.color = color;
     }
@@ -19,12 +19,12 @@ public enum TechniqueRarity {
         return name;
     }
 
-    /** RGB text color used for technique names. */
+    /** RGB text color used for innate technique names. */
     public int color() {
         return color;
     }
 
     public String translationKey() {
-        return "technique.kegare.rarity." + name;
+        return "innate_technique.kegare.rarity." + name;
     }
 }

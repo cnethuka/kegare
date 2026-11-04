@@ -2,12 +2,12 @@ package com.cnethuka.kegare.combat;
 
 import com.cnethuka.kegare.config.KegareServerConfig;
 import com.cnethuka.kegare.registry.KegareAttachments;
-import com.cnethuka.kegare.technique.CastManager;
+import com.cnethuka.kegare.innatetechnique.CastManager;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.LivingEntity;
 
 /**
- * Shared combat state for abilities, domains and anything else that needs it.
+ * Shared combat state for abilities, dominions and anything else that needs it.
  * Works on any {@link LivingEntity}; damage-based tagging is wired for players in {@code PlayerEvents}.
  * Reads never create the attachment, so querying mobs is free.
  */
@@ -18,7 +18,7 @@ public final class CombatHelper {
         return entity.level().getGameTime();
     }
 
-    /** Marks the entity as in combat right now (also pauses ce regen). */
+    /** Marks the entity as in combat right now (also pauses Malice regen). */
     public static void markCombat(LivingEntity entity) {
         entity.getData(KegareAttachments.COMBAT).lastCombatTick = now(entity);
     }

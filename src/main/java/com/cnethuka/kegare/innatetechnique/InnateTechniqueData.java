@@ -1,4 +1,4 @@
-package com.cnethuka.kegare.technique;
+package com.cnethuka.kegare.innatetechnique;
 
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
@@ -10,10 +10,10 @@ import javax.annotation.Nullable;
 import net.minecraft.resources.ResourceLocation;
 
 /**
- * Per-player technique state (attachment {@code kegare:technique}, kept on death):
- * current technique, selected ability slot and cooldowns (keyed by ability ID, in level game time).
+ * Per-player innate technique state (attachment {@code kegare:innate_technique}, kept on death):
+ * current innate technique, selected ability slot and cooldowns (keyed by ability ID, in level game time).
  */
-public final class TechniqueData {
+public final class InnateTechniqueData {
     public record Cooldown(long endTick, int duration) {
         public static final Codec<Cooldown> CODEC = RecordCodecBuilder.create(i -> i.group(
                 Codec.LONG.fieldOf("end").forGetter(Cooldown::endTick),
@@ -21,29 +21,29 @@ public final class TechniqueData {
         ).apply(i, Cooldown::new));
     }
 
-    public static final Codec<TechniqueData> CODEC = RecordCodecBuilder.create(i -> i.group(
-            ResourceLocation.CODEC.optionalFieldOf("technique").forGetter(d -> Optional.ofNullable(d.techniqueId)),
+    public static final Codec<InnateTechniqueData> CODEC = RecordCodecBuilder.create(i -> i.group(
+            ResourceLocation.CODEC.optionalFieldOf("innate_technique").forGetter(d -> Optional.ofNullable(d.innateTechniqueId)),
             Codec.INT.optionalFieldOf("selected", 0).forGetter(d -> d.selectedSlot),
             Codec.unboundedMap(ResourceLocation.CODEC, Cooldown.CODEC).optionalFieldOf("cooldowns", Map.of()).forGetter(d -> d.cooldowns)
-    ).apply(i, (technique, selected, cooldowns) -> new TechniqueData(technique.orElse(null), selected, new HashMap<>(cooldowns))));
+    ).apply(i, (innateTechnique, selected, cooldowns) -> new InnateTechniqueData(innateTechnique.orElse(null), selected, new HashMap<>(cooldowns))));
 
     @Nullable
-    private ResourceLocation techniqueId;
+    private ResourceLocation innateTechniqueId;
     private int selectedSlot;
     private final Map<ResourceLocation, Cooldown> cooldowns;
 
-    public TechniqueData() {
+    public InnateTechniqueData() {
         this(null, 0, new HashMap<>());
     }
 
-    private TechniqueData(@Nullable ResourceLocation techniqueId, int selectedSlot, Map<ResourceLocation, Cooldown> cooldowns) {
-        this.techniqueId = techniqueId;
+    private InnateTechniqueData(@Nullable ResourceLocation innateTechniqueId, int selectedSlot, Map<ResourceLocation, Cooldown> cooldowns) {
+        this.innateTechniqueId = innateTechniqueId;
         this.selectedSlot = selectedSlot;
         this.cooldowns = cooldowns;
     }
 
-    public Optional<ResourceLocation> techniqueId() {
-        return Optional.ofNullable(techniqueId);
+    public Optional<ResourceLocation> innateTechniqueId() {
+        return Optional.ofNullable(innateTechniqueId);
     }
 
     public int selectedSlot() {
@@ -54,9 +54,9 @@ public final class TechniqueData {
         return Collections.unmodifiableMap(cooldowns);
     }
 
-    // Mutators are package-private: go through TechniqueService / CastManager.
-    void setTechnique(@Nullable ResourceLocation id) {
-        this.techniqueId = id;
+    // Mutators are package-private: go through InnateTechniqueService / CastManager.
+    void setInnateTechnique(@Nullable ResourceLocation id) {
+        this.innateTechniqueId = id;
         this.selectedSlot = 0;
         this.cooldowns.clear();
     }

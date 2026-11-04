@@ -1,14 +1,14 @@
 package com.cnethuka.kegare.player;
 
 import com.cnethuka.kegare.Kegare;
-import com.cnethuka.kegare.ce.CeService;
+import com.cnethuka.kegare.malice.MaliceService;
 import com.cnethuka.kegare.combat.CombatHelper;
 import com.cnethuka.kegare.network.PlayerSync;
 import com.cnethuka.kegare.roll.RollReason;
 import com.cnethuka.kegare.roll.RollService;
-import com.cnethuka.kegare.technique.CastManager;
-import com.cnethuka.kegare.technique.EndReason;
-import com.cnethuka.kegare.technique.TechniqueService;
+import com.cnethuka.kegare.innatetechnique.CastManager;
+import com.cnethuka.kegare.innatetechnique.EndReason;
+import com.cnethuka.kegare.innatetechnique.InnateTechniqueService;
 import com.cnethuka.kegare.trait.TraitService;
 import com.cnethuka.kegare.trait.TraitSuccession;
 import javax.annotation.Nullable;
@@ -37,11 +37,11 @@ public final class PlayerEvents {
         TraitSuccession.markSeen(player);
         // Reconcile first: applies offline revocations and releases stale unique claims before any re-roll.
         TraitService.reconcile(player);
-        if (!CeService.get(player).isBorn()) {
+        if (!MaliceService.get(player).isBorn()) {
             BirthService.birth(player);
-        } else if (TechniqueService.validateOnLogin(player) && !CeService.isSevered(player)) {
-            // Their technique was removed by an update: free replacement (no pity change, no Reawakening).
-            RollService.rollTechnique(player, RollReason.REPLACEMENT).ifPresent(o -> {
+        } else if (InnateTechniqueService.validateOnLogin(player) && !MaliceService.isSevered(player)) {
+            // Their innate technique was removed by an update: free replacement (no pity change, no Reawakening).
+            RollService.rollInnateTechnique(player, RollReason.REPLACEMENT).ifPresent(o -> {
                 RollService.announce(player, o);
                 RollService.awardOutcomeAdvancements(player, o);
             });
@@ -82,7 +82,7 @@ public final class PlayerEvents {
     static void onRespawn(PlayerEvent.PlayerRespawnEvent event) {
         if (!(event.getEntity() instanceof ServerPlayer player)) return;
         // Capacity is copied unchanged (copyOnDeath); only the reserve refills.
-        if (!event.isEndConquered()) CeService.refill(player);
+        if (!event.isEndConquered()) MaliceService.refill(player);
         PlayerSync.syncNow(player);
     }
 
@@ -91,7 +91,7 @@ public final class PlayerEvents {
         if (!(event.getEntity() instanceof ServerPlayer player) || player instanceof FakePlayer) return;
         if (player.isAlive()) {
             CastManager.tick(player);
-            CeService.tickRegen(player);
+            MaliceService.tickRegen(player);
         }
         PlayerSync.flush(player);
     }

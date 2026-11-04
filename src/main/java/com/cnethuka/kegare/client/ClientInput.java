@@ -2,7 +2,7 @@ package com.cnethuka.kegare.client;
 
 import com.cnethuka.kegare.Kegare;
 import com.cnethuka.kegare.network.IntentPayload;
-import com.cnethuka.kegare.technique.CastIntent;
+import com.cnethuka.kegare.innatetechnique.CastIntent;
 import net.minecraft.client.KeyMapping;
 import net.minecraft.client.Minecraft;
 import net.neoforged.api.distmarker.Dist;
