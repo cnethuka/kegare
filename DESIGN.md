@@ -33,6 +33,19 @@ config keys, lang keys and command names.
 - **Known exception:** config comments (`kegare-server.toml`, and the config screen tooltips that fall back to them)
   are written in code.
 
+### Design rule: secret identities
+
+**Any advancement that would reveal a secret identity is hidden and never announced to chat.** That means anything
+showing who holds a unique trait (e.g. lensing_eyes). Only the earner sees the toast, so the
+game never names a bearer, heir or killer of a secret holder.
+
+- **Enforced in code:** `KegareAdvancements.SECRET_IDENTITY` lists every such ID. The advancement generator forces
+  them hidden and silent, and datagen fails if one ever isn't.
+- **Current:** `clear_sight`, `the_cycle_continues`, `eyes_closed`, `blinded`.
+- **Reserved for later content:** a few more IDs are already in the set, so they're covered automatically once they're
+  generated.
+- **Adding a new secret advancement:** add its ID to the set first.
+
 ---
 
 ## 2. Data model (NeoForge data attachments)
@@ -116,8 +129,7 @@ All timestamps use **level game time**. They persist across restarts and are ide
     respawn, and after `lensingEyesTransferDelaySeconds` (30) it opens in an heir per `lensingEyesTransferMode`.
     Everyone sees the anonymous broadcast *"The eyes have closed... and opened elsewhere."*
   - **Any other death:** the bearer keeps it.
-  - Hidden advancements. They are **not announced in chat**, because an announcement would name the bearer or heir
-    and break the anonymous broadcast. The earner still gets the toast.
+  - Hidden advancements, **never announced in chat** (secret-identity rule, §1). The earner still gets the toast.
 
     | Advancement | Frame | When |
     |---|---|---|

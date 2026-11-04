@@ -16,12 +16,20 @@ import net.minecraft.world.level.ItemLike;
 import net.neoforged.neoforge.common.data.AdvancementProvider;
 import net.neoforged.neoforge.common.data.ExistingFileHelper;
 
-/** All Kegare advancements use {@code minecraft:impossible} and are granted from code. */
+/**
+ * All Kegare advancements use {@code minecraft:impossible} and are granted from code.
+ * Secret-identity rule: any ID in {@link KegareAdvancements#SECRET_IDENTITY} is forced hidden and never announced
+ * to chat, and generation fails if one slips through.
+ */
 public final class KegareAdvancementGenerator implements AdvancementProvider.AdvancementGenerator {
     private static final ResourceLocation BACKGROUND = ResourceLocation.withDefaultNamespace("textures/block/obsidian.png");
 
     @Override
-    public void generate(HolderLookup.Provider registries, Consumer<AdvancementHolder> saver, ExistingFileHelper files) {
+    public void generate(HolderLookup.Provider registries, Consumer<AdvancementHolder> output, ExistingFileHelper files) {
+        Consumer<AdvancementHolder> saver = holder -> {
+            enforceSecretIdentityRule(holder);
+            output.accept(holder);
+        };
         AdvancementHolder awakening = Advancement.Builder.advancement()
                 .display(Items.ENDER_EYE, title("awakening"), description("awakening"), BACKGROUND, AdvancementType.TASK, true, true, false)
                 .addCriterion("awakened", impossible())
@@ -33,26 +41,32 @@ public final class KegareAdvancementGenerator implements AdvancementProvider.Adv
         child(saver, reawakening, KegareAdvancements.BITTER_LUCK, "bitter_luck", Items.POISONOUS_POTATO, AdvancementType.GOAL, true);
         child(saver, awakening, KegareAdvancements.SEVERED, "severed", Items.SHEARS, AdvancementType.GOAL, true);
 
-        // Lensing Eyes: hidden until earned, and NOT announced in chat. Announcing them would name the
-        // bearer/heir and defeat the anonymous succession broadcast. The earner still gets the toast.
-        child(saver, awakening, KegareAdvancements.CLEAR_SIGHT, "clear_sight", Items.SPYGLASS, AdvancementType.CHALLENGE, true, false);
-        child(saver, awakening, KegareAdvancements.THE_CYCLE_CONTINUES, "the_cycle_continues", Items.CLOCK, AdvancementType.CHALLENGE, true, false);
-        child(saver, awakening, KegareAdvancements.EYES_CLOSED, "eyes_closed", Items.INK_SAC, AdvancementType.TASK, true, false);
-        child(saver, awakening, KegareAdvancements.BLINDED, "blinded", Items.FERMENTED_SPIDER_EYE, AdvancementType.GOAL, true, false);
+        // Lensing Eyes: secret identity (see KegareAdvancements.SECRET_IDENTITY), so hidden and silent.
+        child(saver, awakening, KegareAdvancements.CLEAR_SIGHT, "clear_sight", Items.SPYGLASS, AdvancementType.CHALLENGE, true);
+        child(saver, awakening, KegareAdvancements.THE_CYCLE_CONTINUES, "the_cycle_continues", Items.CLOCK, AdvancementType.CHALLENGE, true);
+        child(saver, awakening, KegareAdvancements.EYES_CLOSED, "eyes_closed", Items.INK_SAC, AdvancementType.TASK, true);
+        child(saver, awakening, KegareAdvancements.BLINDED, "blinded", Items.FERMENTED_SPIDER_EYE, AdvancementType.GOAL, true);
+        // Shrine (vessel_of_the_king, unworthy_heir, unsealed): reserved in SECRET_IDENTITY, added with the Shrine.
     }
 
+    /** Secret-identity IDs are always hidden and never announced to chat, whatever the caller passes. */
     private static AdvancementHolder child(Consumer<AdvancementHolder> saver, AdvancementHolder parent, ResourceLocation id, String key,
                                            ItemLike icon, AdvancementType type, boolean hidden) {
-        return child(saver, parent, id, key, icon, type, hidden, true);
-    }
-
-    private static AdvancementHolder child(Consumer<AdvancementHolder> saver, AdvancementHolder parent, ResourceLocation id, String key,
-                                           ItemLike icon, AdvancementType type, boolean hidden, boolean announceChat) {
+        boolean secret = KegareAdvancements.SECRET_IDENTITY.contains(id);
         return Advancement.Builder.advancement()
                 .parent(parent)
-                .display(icon, title(key), description(key), null, type, true, announceChat, hidden)
+                .display(icon, title(key), description(key), null, type, true, !secret, hidden || secret)
                 .addCriterion("granted", impossible())
                 .save(saver, id.toString());
+    }
+
+    private static void enforceSecretIdentityRule(AdvancementHolder holder) {
+        if (!KegareAdvancements.SECRET_IDENTITY.contains(holder.id())) return;
+        boolean ok = holder.value().display().map(d -> d.isHidden() && !d.shouldAnnounceChat()).orElse(false);
+        if (!ok) {
+            throw new IllegalStateException("Advancement " + holder.id() + " reveals a secret identity: it must be hidden"
+                    + " and never announced to chat (KegareAdvancements.SECRET_IDENTITY)");
+        }
     }
 
     private static net.minecraft.advancements.Criterion<ImpossibleTrigger.TriggerInstance> impossible() {
