@@ -1,0 +1,202 @@
+package com.cnethuka.kegare.config;
+
+import com.cnethuka.kegare.ce.CeTier;
+import com.cnethuka.kegare.technique.TechniqueRarity;
+import com.cnethuka.kegare.trait.TransferMode;
+import net.neoforged.neoforge.common.ModConfigSpec;
+
+/**
+ * Server config ({@code <world>/serverconfig/kegare-server.toml}). Every balance number lives here;
+ * nothing is tuned in code. Server configs are synced to clients on join.
+ */
+public final class KegareServerConfig {
+    public static final ModConfigSpec SPEC;
+
+    // ---- ce ----
+    public static final ModConfigSpec.DoubleValue REGEN_PERCENT_PER_SECOND;
+    public static final ModConfigSpec.DoubleValue REGEN_PAUSE_SECONDS;
+    public static final ModConfigSpec.IntValue CAPACITY_VARIATION;
+    private static final ModConfigSpec.IntValue[] TIER_WEIGHTS = new ModConfigSpec.IntValue[CeTier.values().length];
+    /** Index by tier ordinal. {@code null} for {@link CeTier#ZERO} (always 0). */
+    private static final ModConfigSpec.IntValue[] TIER_BASES = new ModConfigSpec.IntValue[CeTier.values().length];
+
+    // ---- traits ----
+    public static final ModConfigSpec.DoubleValue LENSING_EYES_BIRTH_CHANCE;
+    public static final ModConfigSpec.EnumValue<TransferMode> LENSING_EYES_TRANSFER_MODE;
+    public static final ModConfigSpec.DoubleValue LENSING_EYES_TRANSFER_DELAY;
+    public static final ModConfigSpec.DoubleValue UNIQUE_TRAIT_INACTIVE_DAYS;
+
+    // ---- roll ----
+    private static final ModConfigSpec.IntValue[] RARITY_WEIGHTS = new ModConfigSpec.IntValue[TechniqueRarity.values().length];
+    public static final ModConfigSpec.IntValue SOFT_PITY_START;
+    public static final ModConfigSpec.IntValue SOFT_PITY_INCREMENT;
+    public static final ModConfigSpec.IntValue HARD_PITY;
+    public static final ModConfigSpec.BooleanValue INCLUDE_TEST_TECHNIQUES;
+
+    // ---- combat ----
+    public static final ModConfigSpec.DoubleValue COMBAT_TAG_SECONDS;
+
+    // ---- test abilities (TEST CONTENT) ----
+    public static final ModConfigSpec.DoubleValue DASH_COST;
+    public static final ModConfigSpec.DoubleValue DASH_COOLDOWN;
+    public static final ModConfigSpec.DoubleValue DASH_STRENGTH;
+    public static final ModConfigSpec.DoubleValue DASH_LIFT;
+
+    public static final ModConfigSpec.DoubleValue BURST_COST;
+    public static final ModConfigSpec.DoubleValue BURST_COOLDOWN;
+    public static final ModConfigSpec.DoubleValue BURST_MIN_CHARGE;
+    public static final ModConfigSpec.DoubleValue BURST_MAX_CHARGE;
+    public static final ModConfigSpec.DoubleValue BURST_MIN_RADIUS;
+    public static final ModConfigSpec.DoubleValue BURST_MAX_RADIUS;
+    public static final ModConfigSpec.DoubleValue BURST_MIN_KNOCKBACK;
+    public static final ModConfigSpec.DoubleValue BURST_MAX_KNOCKBACK;
+
+    public static final ModConfigSpec.DoubleValue HOVER_COST;
+    public static final ModConfigSpec.DoubleValue HOVER_UPKEEP;
+    public static final ModConfigSpec.DoubleValue HOVER_MAX_DURATION;
+    public static final ModConfigSpec.DoubleValue HOVER_COOLDOWN;
+    public static final ModConfigSpec.IntValue HOVER_LEVITATION_LEVEL;
+    public static final ModConfigSpec.DoubleValue HOVER_LANDING_SLOW_FALL;
+
+    public static final ModConfigSpec.DoubleValue AURA_COST;
+    public static final ModConfigSpec.DoubleValue AURA_UPKEEP;
+    public static final ModConfigSpec.DoubleValue AURA_COOLDOWN;
+    public static final ModConfigSpec.IntValue AURA_SPEED_LEVEL;
+
+    public static final ModConfigSpec.DoubleValue SHOCKWAVE_COST;
+    public static final ModConfigSpec.DoubleValue SHOCKWAVE_COOLDOWN;
+    public static final ModConfigSpec.DoubleValue SHOCKWAVE_RADIUS;
+    public static final ModConfigSpec.DoubleValue SHOCKWAVE_KNOCKBACK;
+
+    static {
+        ModConfigSpec.Builder b = new ModConfigSpec.Builder();
+
+        b.comment("Cursed energy (ce). Capacity is rolled once at birth and never changes.").push("ce");
+        REGEN_PERCENT_PER_SECOND = b.comment("Reserve regenerated per second, as a percent of capacity.")
+                .defineInRange("regenPercentPerSecond", 2.0, 0.0, 100.0);
+        REGEN_PAUSE_SECONDS = b.comment("Regen pauses for this many seconds after the player deals or takes damage.")
+                .defineInRange("regenPauseSeconds", 5.0, 0.0, 600.0);
+        CAPACITY_VARIATION = b.comment("Random +/- variation applied to non-zero tier capacities at birth.")
+                .defineInRange("capacityVariation", 10, 0, 10_000);
+        b.comment("Birth tiers. weight = relative roll chance, base = capacity before variation.").push("tiers");
+        int[] defaultWeights = {2, 25, 45, 20, 8};
+        int[] defaultBases = {0, 60, 100, 150, 250};
+        for (CeTier tier : CeTier.values()) {
+            b.push(tier.serializedName());
+            TIER_WEIGHTS[tier.ordinal()] = b.defineInRange("weight", defaultWeights[tier.ordinal()], 0, 1_000_000);
+            if (tier != CeTier.ZERO) {
+                TIER_BASES[tier.ordinal()] = b.defineInRange("base", defaultBases[tier.ordinal()], 1, 1_000_000);
+            }
+            b.pop();
+        }
+        b.pop(2);
+
+        b.comment("Traits rolled at birth. Unique traits have at most one bearer per world.").push("traits");
+        LENSING_EYES_BIRTH_CHANCE = b.comment("Chance (0-1) to be born with lensing_eyes (unique, needs ce; no effects yet).")
+                .defineInRange("lensingEyesBirthChance", 0.01, 0.0, 1.0);
+        LENSING_EYES_TRANSFER_MODE = b.comment(
+                        "Who inherits lensing_eyes when its bearer loses it (killed by a player, released, inactive).",
+                        "RANDOM = a random eligible online player. KILLER = the killer if eligible and online, else RANDOM.",
+                        "Eligible = online, not Severed, not the previous bearer. If nobody is eligible it waits for the next eligible login.")
+                .defineEnum("lensingEyesTransferMode", TransferMode.RANDOM);
+        LENSING_EYES_TRANSFER_DELAY = b.comment("Seconds between losing lensing_eyes and it opening in someone else.")
+                .defineInRange("lensingEyesTransferDelaySeconds", 30.0, 0.0, 86_400.0);
+        UNIQUE_TRAIT_INACTIVE_DAYS = b.comment(
+                        "Release a unique trait if its holder hasn't logged in for this many days (fractions allowed).",
+                        "0 = disabled. Inheritable traits (lensing_eyes) then pass on as if their bearer had lost them.")
+                .defineInRange("uniqueTraitInactiveDays", 0.0, 0.0, 3650.0);
+        b.pop();
+
+        b.comment("Technique rolls (birth and rerolls).").push("roll");
+        b.comment("Relative rarity weights. Rarities with no eligible technique are skipped.").push("weights");
+        int[] defaultRarity = {50, 30, 15, 5};
+        for (TechniqueRarity rarity : TechniqueRarity.values()) {
+            RARITY_WEIGHTS[rarity.ordinal()] = b.defineInRange(rarity.serializedName(), defaultRarity[rarity.ordinal()], 0, 1_000_000);
+        }
+        b.pop();
+        SOFT_PITY_START = b.comment("After this many rolls without a LEGENDARY, each further roll adds softPityIncrement to the LEGENDARY weight.")
+                .defineInRange("softPityStart", 30, 0, 100_000);
+        SOFT_PITY_INCREMENT = b.comment("LEGENDARY weight added per roll once soft pity is active.")
+                .defineInRange("softPityIncrement", 5, 0, 1_000_000);
+        HARD_PITY = b.comment("This roll number (counting since the last LEGENDARY) is a guaranteed LEGENDARY. 0 disables hard pity.")
+                .defineInRange("hardPity", 50, 0, 100_000);
+        INCLUDE_TEST_TECHNIQUES = b.comment("Whether TEST techniques can be rolled. Turn off once real techniques exist.")
+                .define("includeTestTechniques", true);
+        b.pop();
+
+        b.comment("Shared combat state used by abilities and future systems.").push("combat");
+        COMBAT_TAG_SECONDS = b.comment("A player counts as 'in combat' for this many seconds after dealing or taking damage.")
+                .defineInRange("combatTagSeconds", 10.0, 0.0, 600.0);
+        b.pop();
+
+        b.comment("TEST CONTENT: numbers for the placeholder test abilities. Delete with the test techniques.").push("test_abilities");
+        b.push("dash");
+        DASH_COST = b.defineInRange("cost", 10.0, 0.0, 100_000.0);
+        DASH_COOLDOWN = b.comment("Seconds.").defineInRange("cooldown", 3.0, 0.0, 3600.0);
+        DASH_STRENGTH = b.comment("Horizontal launch speed (blocks/tick).").defineInRange("strength", 1.4, 0.0, 10.0);
+        DASH_LIFT = b.comment("Vertical launch speed (blocks/tick).").defineInRange("lift", 0.25, 0.0, 10.0);
+        b.pop();
+
+        b.push("burst");
+        BURST_COST = b.defineInRange("cost", 15.0, 0.0, 100_000.0);
+        BURST_COOLDOWN = b.comment("Seconds.").defineInRange("cooldown", 6.0, 0.0, 3600.0);
+        BURST_MIN_CHARGE = b.comment("Seconds of charge needed before release fires.").defineInRange("minCharge", 0.25, 0.0, 60.0);
+        BURST_MAX_CHARGE = b.comment("Seconds to reach full charge.").defineInRange("maxCharge", 1.5, 0.05, 60.0);
+        BURST_MIN_RADIUS = b.defineInRange("minRadius", 3.0, 0.0, 64.0);
+        BURST_MAX_RADIUS = b.defineInRange("maxRadius", 6.0, 0.0, 64.0);
+        BURST_MIN_KNOCKBACK = b.defineInRange("minKnockback", 0.5, 0.0, 10.0);
+        BURST_MAX_KNOCKBACK = b.defineInRange("maxKnockback", 1.5, 0.0, 10.0);
+        b.pop();
+
+        b.push("hover");
+        HOVER_COST = b.comment("Cost to start the channel.").defineInRange("cost", 5.0, 0.0, 100_000.0);
+        HOVER_UPKEEP = b.comment("Drain per second while channeling.").defineInRange("upkeepPerSecond", 8.0, 0.0, 100_000.0);
+        HOVER_MAX_DURATION = b.comment("Seconds.").defineInRange("maxDuration", 5.0, 0.05, 3600.0);
+        HOVER_COOLDOWN = b.comment("Seconds, starts when the channel ends.").defineInRange("cooldown", 4.0, 0.0, 3600.0);
+        HOVER_LEVITATION_LEVEL = b.comment("Levitation amplifier (0 = Levitation I).").defineInRange("levitationAmplifier", 0, 0, 10);
+        HOVER_LANDING_SLOW_FALL = b.comment("Seconds of Slow Falling after the channel ends (0 = none).").defineInRange("landingSlowFall", 3.0, 0.0, 60.0);
+        b.pop();
+
+        b.push("aura");
+        AURA_COST = b.comment("Cost to switch on.").defineInRange("cost", 5.0, 0.0, 100_000.0);
+        AURA_UPKEEP = b.comment("Drain per second while active.").defineInRange("upkeepPerSecond", 3.0, 0.0, 100_000.0);
+        AURA_COOLDOWN = b.comment("Seconds, starts when switched off.").defineInRange("cooldown", 2.0, 0.0, 3600.0);
+        AURA_SPEED_LEVEL = b.comment("Speed amplifier while active (0 = Speed I).").defineInRange("speedAmplifier", 0, 0, 10);
+        b.pop();
+
+        b.push("shockwave");
+        SHOCKWAVE_COST = b.defineInRange("cost", 60.0, 0.0, 100_000.0);
+        SHOCKWAVE_COOLDOWN = b.comment("Seconds.").defineInRange("cooldown", 30.0, 0.0, 3600.0);
+        SHOCKWAVE_RADIUS = b.defineInRange("radius", 8.0, 0.0, 64.0);
+        SHOCKWAVE_KNOCKBACK = b.defineInRange("knockback", 2.0, 0.0, 10.0);
+        b.pop();
+        b.pop();
+
+        SPEC = b.build();
+    }
+
+    private KegareServerConfig() {}
+
+    public static int[] tierWeights() {
+        int[] out = new int[TIER_WEIGHTS.length];
+        for (int i = 0; i < out.length; i++) out[i] = TIER_WEIGHTS[i].get();
+        return out;
+    }
+
+    /** Capacity base per tier ordinal; {@link CeTier#ZERO} is always 0. */
+    public static int[] tierBases() {
+        int[] out = new int[TIER_BASES.length];
+        for (int i = 0; i < out.length; i++) out[i] = TIER_BASES[i] == null ? 0 : TIER_BASES[i].get();
+        return out;
+    }
+
+    public static int[] rarityWeights() {
+        int[] out = new int[RARITY_WEIGHTS.length];
+        for (int i = 0; i < out.length; i++) out[i] = RARITY_WEIGHTS[i].get();
+        return out;
+    }
+
+    public static int ticks(ModConfigSpec.DoubleValue seconds) {
+        return (int) Math.round(seconds.get() * 20.0);
+    }
+}

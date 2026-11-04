@@ -1,0 +1,26 @@
+{
+  "criteria": {
+    "awakened": {
+      "trigger": "minecraft:impossible"
+    }
+  },
+  "display": {
+    "background": "minecraft:textures/block/obsidian.png",
+    "description": {
+      "translate": "advancements.kegare.awakening.description"
+    },
+    "icon": {
+      "count": 1,
+      "id": "minecraft:ender_eye"
+    },
+    "title": {
+      "translate": "advancements.kegare.awakening.title"
+    }
+  },
+  "requirements": [
+    [
+      "awakened"
+    ]
+  ],
+  "sends_telemetry_event": true
+}

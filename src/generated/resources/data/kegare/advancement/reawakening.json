@@ -1,0 +1,26 @@
+{
+  "parent": "kegare:awakening",
+  "criteria": {
+    "granted": {
+      "trigger": "minecraft:impossible"
+    }
+  },
+  "display": {
+    "description": {
+      "translate": "advancements.kegare.reawakening.description"
+    },
+    "icon": {
+      "count": 1,
+      "id": "kegare:purification_talisman"
+    },
+    "title": {
+      "translate": "advancements.kegare.reawakening.title"
+    }
+  },
+  "requirements": [
+    [
+      "granted"
+    ]
+  ],
+  "sends_telemetry_event": true
+}
