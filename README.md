@@ -4,6 +4,19 @@ Cursed-energy PvP framework for NeoForge 21.1.x (Minecraft 1.21.1, Java 21). Pla
 (cursed energy) and an **Innate Technique**, or are born **Severed**. "Kegare" is the mod name, and is reserved
 for the future hostile spirit mobs. See [DESIGN.md](DESIGN.md).
 
+## Required mods (everyone installs these)
+
+Every player **and** the server need these in their `mods` folder, for Minecraft 1.21.1 / NeoForge 21.1:
+
+| Mod | Version | Download | Why |
+|---|---|---|---|
+| Player Animation Library (by ZigyTheBird, *not* KosmX's playerAnimator) | 1.1.6 or newer | [Modrinth](https://modrinth.com/mod/player-animation-library) | player animations |
+| Photon (by KilaBash) | 2.2.10 or newer | [Modrinth](https://modrinth.com/mod/photon-editor) | ability visual effects |
+| LDLib2 (by KilaBash) | 2.2.45 or newer | [Modrinth](https://modrinth.com/mod/ldlib) | required by Photon |
+
+KilaGraph, which Photon needs, is bundled inside Photon. Don't install it separately. Pick the NeoForge 1.21.1
+file of each one. Minecraft refuses to start and names the missing mod if one is absent.
+
 ## Dev commands
 
 | Command | What it does |

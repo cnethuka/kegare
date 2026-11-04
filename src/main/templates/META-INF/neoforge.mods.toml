@@ -92,3 +92,26 @@ Base systems only (Malice, traits, innate technique framework, rolls).
 # stop your mod loading on the server for example.
 #[features.${mod_id}]
 #openGLVersion="[3.2,)"
+
+# Required mods: everyone (each player AND the server) installs these. See README.md.
+[[dependencies.${mod_id}]]
+    modId="player_animation_library" # Player Animation Library by ZigyTheBird
+    type="required"
+    reason="Kegare's player animations (casting, charging, channeling, frozen)."
+    versionRange="${pal_version_range}"
+    ordering="NONE"
+    side="BOTH"
+[[dependencies.${mod_id}]]
+    modId="photon" # Photon VFX by KilaBash
+    type="required"
+    reason="Kegare's ability visual effects."
+    versionRange="${photon_version_range}"
+    ordering="AFTER"
+    side="BOTH"
+[[dependencies.${mod_id}]]
+    modId="ldlib2" # LDLib2, required by Photon
+    type="required"
+    reason="Required by Photon."
+    versionRange="${ldlib2_version_range}"
+    ordering="AFTER"
+    side="BOTH"
