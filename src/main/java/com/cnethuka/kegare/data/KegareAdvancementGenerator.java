@@ -1,12 +1,16 @@
 package com.cnethuka.kegare.data;
 
+import com.cnethuka.kegare.Kegare;
 import com.cnethuka.kegare.advancement.KegareAdvancements;
+import com.cnethuka.kegare.innatetechnique.InnateTechnique;
 import com.cnethuka.kegare.registry.KegareItems;
+import com.cnethuka.kegare.registry.KegareRegistries;
 import java.util.function.Consumer;
 import net.minecraft.advancements.Advancement;
 import net.minecraft.advancements.AdvancementHolder;
 import net.minecraft.advancements.AdvancementType;
 import net.minecraft.advancements.CriteriaTriggers;
+import net.minecraft.advancements.Criterion;
 import net.minecraft.advancements.critereon.ImpossibleTrigger;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.network.chat.Component;
@@ -17,12 +21,19 @@ import net.neoforged.neoforge.common.data.AdvancementProvider;
 import net.neoforged.neoforge.common.data.ExistingFileHelper;
 
 /**
- * All Kegare advancements use {@code minecraft:impossible} and are granted from code.
+ * All Kegare advancements use {@code minecraft:impossible} and are granted from code. Every tab has its own root:
+ * <ul>
+ *   <li>Base tab (root {@code awakening})</li>
+ *   <li>Lensing Eyes tab (root {@code clear_sight}, secret identity: hidden and silent)</li>
+ *   <li>one tab per non-test innate technique (root {@code innate_technique/<id>}, unlocked on the first roll)</li>
+ * </ul>
  * Secret-identity rule: any ID in {@link KegareAdvancements#SECRET_IDENTITY} is forced hidden and never announced
  * to chat, and generation fails if one slips through.
  */
 public final class KegareAdvancementGenerator implements AdvancementProvider.AdvancementGenerator {
-    private static final ResourceLocation BACKGROUND = ResourceLocation.withDefaultNamespace("textures/block/obsidian.png");
+    private static final ResourceLocation BASE_BACKGROUND = ResourceLocation.withDefaultNamespace("textures/block/obsidian.png");
+    private static final ResourceLocation LENSING_EYES_BACKGROUND = ResourceLocation.withDefaultNamespace("textures/block/amethyst_block.png");
+    private static final ResourceLocation INNATE_TECHNIQUE_BACKGROUND = ResourceLocation.withDefaultNamespace("textures/block/black_concrete.png");
 
     @Override
     public void generate(HolderLookup.Provider registries, Consumer<AdvancementHolder> output, ExistingFileHelper files) {
@@ -30,23 +41,49 @@ public final class KegareAdvancementGenerator implements AdvancementProvider.Adv
             enforceSecretIdentityRule(holder);
             output.accept(holder);
         };
-        AdvancementHolder awakening = Advancement.Builder.advancement()
-                .display(Items.ENDER_EYE, title("awakening"), description("awakening"), BACKGROUND, AdvancementType.TASK, true, true, false)
-                .addCriterion("awakened", impossible())
-                .save(saver, KegareAdvancements.AWAKENING.toString());
 
+        // ---- Base tab ----
+        // Criterion names are part of saved progress: never rename them (awakening keeps its original "awakened").
+        AdvancementHolder awakening = root(saver, KegareAdvancements.AWAKENING, "awakening", "awakened", Items.ENDER_EYE,
+                BASE_BACKGROUND, AdvancementType.TASK, false);
         AdvancementHolder reawakening = child(saver, awakening, KegareAdvancements.REAWAKENING, "reawakening",
                 KegareItems.PURIFICATION_TALISMAN.get(), AdvancementType.TASK, false);
         child(saver, awakening, KegareAdvancements.CHOSEN_BY_FATE, "chosen_by_fate", Items.NETHER_STAR, AdvancementType.CHALLENGE, false);
         child(saver, reawakening, KegareAdvancements.BITTER_LUCK, "bitter_luck", Items.POISONOUS_POTATO, AdvancementType.GOAL, true);
         child(saver, awakening, KegareAdvancements.SEVERED, "severed", Items.SHEARS, AdvancementType.GOAL, true);
+        child(saver, awakening, KegareAdvancements.OVERFLOWING, "overflowing", Items.EXPERIENCE_BOTTLE, AdvancementType.GOAL, true);
+        child(saver, awakening, KegareAdvancements.RUNNING_ON_EMPTY, "running_on_empty", Items.GLASS_BOTTLE, AdvancementType.TASK, false);
 
-        // Lensing Eyes: secret identity (see KegareAdvancements.SECRET_IDENTITY), so hidden and silent.
-        child(saver, awakening, KegareAdvancements.CLEAR_SIGHT, "clear_sight", Items.SPYGLASS, AdvancementType.CHALLENGE, true);
-        child(saver, awakening, KegareAdvancements.THE_CYCLE_CONTINUES, "the_cycle_continues", Items.CLOCK, AdvancementType.CHALLENGE, true);
-        child(saver, awakening, KegareAdvancements.EYES_CLOSED, "eyes_closed", Items.INK_SAC, AdvancementType.TASK, true);
-        child(saver, awakening, KegareAdvancements.BLINDED, "blinded", Items.FERMENTED_SPIDER_EYE, AdvancementType.GOAL, true);
+        // ---- Lensing Eyes tab: secret identity (KegareAdvancements.SECRET_IDENTITY), so hidden and silent ----
+        AdvancementHolder clearSight = root(saver, KegareAdvancements.CLEAR_SIGHT, "clear_sight", "granted", Items.SPYGLASS,
+                LENSING_EYES_BACKGROUND, AdvancementType.CHALLENGE, true);
+        child(saver, clearSight, KegareAdvancements.THE_CYCLE_CONTINUES, "the_cycle_continues", Items.CLOCK, AdvancementType.CHALLENGE, true);
+        child(saver, clearSight, KegareAdvancements.EYES_CLOSED, "eyes_closed", Items.INK_SAC, AdvancementType.TASK, true);
+        child(saver, clearSight, KegareAdvancements.BLINDED, "blinded", Items.FERMENTED_SPIDER_EYE, AdvancementType.GOAL, true);
+
         // Shrine (vessel_of_the_king, unworthy_heir, unsealed): reserved in SECRET_IDENTITY, added with the Shrine.
+
+        // ---- One tab per innate technique: root unlocks on the first roll. Test content gets no tab. ----
+        // Silent in chat: announcing it would tell every opponent which innate technique a player rolled.
+        for (InnateTechnique innateTechnique : KegareRegistries.INNATE_TECHNIQUE) {
+            if (innateTechnique.isTestContent() || !innateTechnique.id().getNamespace().equals(Kegare.MODID)) continue;
+            Advancement.Builder.advancement()
+                    .display(innateTechnique.tabIcon(), innateTechnique.displayName(),
+                            Component.translatable("advancements.kegare.innate_technique_root.description"),
+                            INNATE_TECHNIQUE_BACKGROUND, AdvancementType.TASK, true, false, false)
+                    .addCriterion("rolled", impossible())
+                    .save(saver, KegareAdvancements.innateTechniqueRoot(innateTechnique.id()).toString());
+        }
+    }
+
+    /** A tab root. Secret-identity IDs are always hidden and never announced to chat. */
+    private static AdvancementHolder root(Consumer<AdvancementHolder> saver, ResourceLocation id, String key, String criterion, ItemLike icon,
+                                          ResourceLocation background, AdvancementType type, boolean hidden) {
+        boolean secret = KegareAdvancements.SECRET_IDENTITY.contains(id);
+        return Advancement.Builder.advancement()
+                .display(icon, title(key), description(key), background, type, true, !secret, hidden || secret)
+                .addCriterion(criterion, impossible())
+                .save(saver, id.toString());
     }
 
     /** Secret-identity IDs are always hidden and never announced to chat, whatever the caller passes. */
@@ -69,7 +106,7 @@ public final class KegareAdvancementGenerator implements AdvancementProvider.Adv
         }
     }
 
-    private static net.minecraft.advancements.Criterion<ImpossibleTrigger.TriggerInstance> impossible() {
+    private static Criterion<ImpossibleTrigger.TriggerInstance> impossible() {
         return CriteriaTriggers.IMPOSSIBLE.createCriterion(new ImpossibleTrigger.TriggerInstance());
     }
 

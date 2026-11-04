@@ -2,6 +2,7 @@ package com.cnethuka.kegare.player;
 
 import com.cnethuka.kegare.advancement.KegareAdvancements;
 import com.cnethuka.kegare.malice.MaliceRoller;
+import com.cnethuka.kegare.malice.MaliceRules;
 import com.cnethuka.kegare.malice.MaliceService;
 import com.cnethuka.kegare.combat.CombatData;
 import com.cnethuka.kegare.network.PlayerSync;
@@ -51,6 +52,7 @@ public final class BirthService {
     private static void completeBirth(ServerPlayer player, MaliceRoller.Result malice) {
         KegareAdvancements.award(player, KegareAdvancements.AWAKENING);
         if (malice.capacity() <= 0) KegareAdvancements.award(player, KegareAdvancements.SEVERED);
+        if (MaliceRules.isOverflowing(malice.tier())) KegareAdvancements.award(player, KegareAdvancements.OVERFLOWING);
         List<Trait> traits = TraitService.rollBirthTraits(player);
         Optional<RollService.Outcome> outcome = malice.capacity() > 0
                 ? RollService.rollInnateTechnique(player, RollReason.BIRTH)

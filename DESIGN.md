@@ -129,15 +129,9 @@ All timestamps use **level game time**. They persist across restarts and are ide
     respawn, and after `lensingEyesTransferDelaySeconds` (30) it opens in an heir per `lensingEyesTransferMode`.
     Everyone sees the anonymous broadcast *"The eyes have closed... and opened elsewhere."*
   - **Any other death:** the bearer keeps it.
-  - Hidden advancements, **never announced in chat** (secret-identity rule, §1). The earner still gets the toast.
-
-    | Advancement | Frame | When |
-    |---|---|---|
-    | *Clear Sight* | challenge | born with it |
-    | *The Cycle Continues* | challenge | inherited it |
-    | *Eyes Closed* | task | lost it (PvP, release, revocation or becoming Severed) |
-    | *Blinded* | goal | killed a bearer |
-| *Something's Missing* | goal | a full-detail Read of a Severed player (§3.32) |
+  - Advancements live in their own **Lensing Eyes tab** (§3.11). They are hidden and never announced in chat
+    (secret-identity rule, §1); the earner still gets the toast. *Eyes Closed* covers every loss: PvP, release,
+    revocation, or becoming Severed.
 
 ### 3.3 Innate technique framework
 - Registry `kegare:innate_technique`, synced to clients so the HUD can resolve names and ability lists by ID.
@@ -201,7 +195,7 @@ All timestamps use **level game time**. They persist across restarts and are ide
   update). It rolls on base weights (no soft or hard pity), leaves the pity counter and roll total untouched, and
   tells the player *"Your Innate Technique was removed by an update and has been re-rolled."*
 - Any Legendary awards *Chosen by Fate* (challenge frame); a hard-pity Legendary also awards *Bitter Luck*.
-- All advancements use `minecraft:impossible` and are granted from code (`KegareAdvancements.award`).
+- Advancements and tabs: see §3.11.
 - The pity math is plain Java (`PityRoller`, `MaliceRoller`) and unit-tested (`./gradlew test`).
 
 ### 3.5 Input and networking
@@ -267,6 +261,49 @@ Malice is always shown as whole numbers (floored, like the HUD); the stored valu
 - `./gradlew runData` generates lang, the item model, tags (`kegare:talismans`), the talisman recipe
   (gold + amethyst + paper; overridable by datapack) and the advancements.
 - `python3 tools/gen_placeholders.py` regenerates the 16×16 placeholder PNGs (talisman, Malice bar, ability slots).
+
+### 3.11 Advancements and tabs
+All advancements use `minecraft:impossible` and are granted from code (`KegareAdvancements.award`).
+Each tab has its own root.
+
+**Base tab** (root `awakening`):
+
+| Advancement | Frame | Visible before earned? | When |
+|---|---|---|---|
+| *Awakening* (root) | task | yes | born |
+| *Reawakening* | task | yes | used a Purification Talisman |
+| *Chosen by Fate* | challenge | yes | rolled a Legendary |
+| *Bitter Luck* (under Reawakening) | goal | hidden | hit hard pity |
+| *Severed* | goal | hidden | born with 0 Malice |
+| *Overflowing* | goal | hidden | born (or reborn) in the Vast tier |
+| *Running on Empty* | task | yes | visible Malice (floored, like the HUD) drops to 0 while in combat |
+
+**Lensing Eyes tab** (root `clear_sight`). Every advancement here is **hidden and silent** (secret-identity rule, §1):
+
+| Advancement | Frame | When |
+|---|---|---|
+| *Clear Sight* (root) | challenge | born with it |
+| *The Cycle Continues* | challenge | inherited it |
+| *Eyes Closed* | task | lost it |
+| *Blinded* | goal | killed a bearer |
+| *Something's Missing* | goal | a full-detail Read of a Severed player (§3.32) |
+
+**Rule: every innate technique gets its own tab, whose root unlocks the first time the player rolls it.**
+- It's automatic. Datagen generates the root `kegare:innate_technique/<path>` for every non-test innate technique:
+  - title: its name, in rarity color
+  - icon: `InnateTechnique.Builder.tabIcon(...)`, default an enchanted book
+  - background: black concrete
+- Every roll (birth, talisman, admin, replacement) awards it; later rolls are no-ops. `/kegare setinnatetechnique`
+  is not a roll and doesn't award it.
+- Give that innate technique's own advancements this root as their parent.
+- The root is **silent in chat**. Announcing it would tell every opponent which innate technique a player rolled.
+- Test innate techniques get no tab.
+
+**Who sees which tab:** vanilla only shows a tab once the player has earned something in it.
+- Everyone sees the Base tab (*Awakening* is granted at birth).
+- The Lensing Eyes tab appears for whoever has earned one of its advancements: a born or inheriting holder, a
+  former holder (*Eyes Closed*), or a killer (*Blinded*). Uninvolved players never see it. An admin-granted holder
+  has earned nothing there, so it stays hidden for them until something happens.
 
 ---
 

@@ -1,5 +1,6 @@
 package com.cnethuka.kegare.malice;
 
+import com.cnethuka.kegare.advancement.KegareAdvancements;
 import com.cnethuka.kegare.combat.CombatHelper;
 import com.cnethuka.kegare.config.KegareServerConfig;
 import com.cnethuka.kegare.network.PlayerSync;
@@ -42,8 +43,10 @@ public final class MaliceService {
         double clamped = Mth.clamp(value, 0.0, malice.capacity());
         // The client only displays whole numbers, so sync when the whole part changes.
         boolean visibleChange = Mth.floor(clamped) != Mth.floor(malice.current());
+        boolean hitEmpty = MaliceRules.hitsEmpty(malice.current(), clamped);
         malice.setCurrent(clamped);
         if (visibleChange) PlayerSync.markDirty(player);
+        if (hitEmpty && CombatHelper.isInCombat(player)) KegareAdvancements.award(player, KegareAdvancements.RUNNING_ON_EMPTY);
     }
 
     public static void refill(ServerPlayer player) {

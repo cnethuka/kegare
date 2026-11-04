@@ -10,6 +10,8 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.item.Items;
+import net.minecraft.world.level.ItemLike;
 
 /**
  * An innate technique (registry {@code kegare:innate_technique}): a rarity, an ordered list of abilities
@@ -22,6 +24,7 @@ public class InnateTechnique {
     @Nullable
     private final Ability ultimate;
     private final boolean testContent;
+    private final ItemLike tabIcon;
 
     protected InnateTechnique(Builder builder) {
         if (builder.abilities.isEmpty()) throw new IllegalArgumentException("An innate technique needs at least one ability");
@@ -29,6 +32,7 @@ public class InnateTechnique {
         this.abilities = List.copyOf(builder.abilities);
         this.ultimate = builder.ultimate;
         this.testContent = builder.testContent;
+        this.tabIcon = builder.tabIcon;
     }
 
     public static Builder builder(InnateTechniqueRarity rarity) {
@@ -65,6 +69,11 @@ public class InnateTechnique {
         return testContent;
     }
 
+    /** Icon of this innate technique's own advancement tab. */
+    public final ItemLike tabIcon() {
+        return tabIcon;
+    }
+
     public final ResourceLocation id() {
         return KegareRegistries.INNATE_TECHNIQUE.getKey(this);
     }
@@ -90,6 +99,7 @@ public class InnateTechnique {
         @Nullable
         private Ability ultimate;
         private boolean testContent;
+        private ItemLike tabIcon = Items.ENCHANTED_BOOK;
 
         private Builder(InnateTechniqueRarity rarity) {
             this.rarity = rarity;
@@ -102,6 +112,12 @@ public class InnateTechnique {
 
         public Builder ultimate(Ability ability) {
             this.ultimate = ability;
+            return this;
+        }
+
+        /** Icon of this innate technique's own advancement tab (see KegareAdvancements#innateTechniqueRoot). */
+        public Builder tabIcon(ItemLike icon) {
+            this.tabIcon = icon;
             return this;
         }
 

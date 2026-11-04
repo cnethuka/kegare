@@ -1,0 +1,26 @@
+{
+  "parent": "kegare:awakening",
+  "criteria": {
+    "granted": {
+      "trigger": "minecraft:impossible"
+    }
+  },
+  "display": {
+    "description": {
+      "translate": "advancements.kegare.running_on_empty.description"
+    },
+    "icon": {
+      "count": 1,
+      "id": "minecraft:glass_bottle"
+    },
+    "title": {
+      "translate": "advancements.kegare.running_on_empty.title"
+    }
+  },
+  "requirements": [
+    [
+      "granted"
+    ]
+  ],
+  "sends_telemetry_event": true
+}

@@ -138,6 +138,9 @@ public final class KegareLanguageProvider extends LanguageProvider {
         advancement("chosen_by_fate", "Chosen by Fate", "Roll a Legendary " + INNATE_TECHNIQUE + ".");
         advancement("bitter_luck", "Bitter Luck", "Hit hard pity. That Legendary was guaranteed, not lucky.");
         advancement("severed", SEVERED, "Be born with zero " + MALICE + ".");
+        advancement("overflowing", "Overflowing", "Be born in the Vast " + MALICE + " tier.");
+        advancement("running_on_empty", "Running on Empty", "Run out of " + MALICE + " in the middle of a fight.");
+        add("advancements.kegare.innate_technique_root.description", "Roll this " + INNATE_TECHNIQUE + " for the first time.");
         advancement("clear_sight", "Clear Sight", "Be born with " + LENSING_EYES + ".");
         advancement("the_cycle_continues", "The Cycle Continues", "Inherit " + LENSING_EYES + " from a fallen bearer.");
         advancement("eyes_closed", "Eyes Closed", "Lose your " + LENSING_EYES + ".");

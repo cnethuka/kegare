@@ -1,5 +1,4 @@
 {
-  "parent": "kegare:awakening",
   "criteria": {
     "granted": {
       "trigger": "minecraft:impossible"
@@ -7,6 +6,7 @@
   },
   "display": {
     "announce_to_chat": false,
+    "background": "minecraft:textures/block/amethyst_block.png",
     "description": {
       "translate": "advancements.kegare.clear_sight.description"
     },

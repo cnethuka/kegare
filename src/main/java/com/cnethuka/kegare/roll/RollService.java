@@ -76,6 +76,8 @@ public final class RollService {
 
         roll.set(roll.state().after(chosen.rarity(), reason));
         InnateTechniqueService.setInnateTechnique(player, chosen);
+        // Its own advancement tab unlocks on the first roll (test innate techniques have no tab).
+        KegareAdvancements.awardIfPresent(player, KegareAdvancements.innateTechniqueRoot(chosen.id()));
         return Optional.of(new Outcome(chosen, counter + 1, result.get().byHardPity(), reason));
     }
 
