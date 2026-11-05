@@ -6,7 +6,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import org.junit.jupiter.api.Test;
 
-/** Severed players never roll, hold or keep Malice-based traits such as lensing_eyes. */
+/** Severed players never roll, hold or keep Malice-based traits such as six_eyes. */
 class TraitRulesTest {
     @Test
     void severedNeverRollsMaliceTraits() {
@@ -33,7 +33,7 @@ class TraitRulesTest {
 
     @Test
     void becomingSeveredTransfersUniqueInheritableMaliceTraits() {
-        // lensing_eyes: requiresMalice + unique + inheritable -> normal 30s transfer
+        // six_eyes: requiresMalice + unique + inheritable -> normal 30s transfer
         assertEquals(TraitRules.SeveredAction.TRANSFER, TraitRules.whenSevered(true, true, true));
     }
 

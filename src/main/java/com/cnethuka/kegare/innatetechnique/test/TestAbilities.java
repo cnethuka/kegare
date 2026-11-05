@@ -166,7 +166,7 @@ public final class TestAbilities {
 
     /** Special of Hover (CHARGED): launch straight up, higher with more charge. Requires a trait. */
     public static final SpecialAbility UPDRAFT = new SpecialAbility(Kegare.id("test_updraft"), CastType.CHARGED, () -> HOVER,
-            Requirement.trait(KegareTraits.LENSING_EYES)) {
+            Requirement.trait(KegareTraits.SIX_EYES)) {
         @Override public double cost(ServerPlayer p) { return KegareServerConfig.UPDRAFT_COST.get(); }
         @Override public int minChargeTicks(ServerPlayer p) { return KegareServerConfig.ticks(KegareServerConfig.UPDRAFT_MIN_CHARGE); }
         @Override public int maxChargeTicks(ServerPlayer p) { return Math.max(1, KegareServerConfig.ticks(KegareServerConfig.UPDRAFT_MAX_CHARGE)); }

@@ -36,7 +36,7 @@ config keys, lang keys and command names.
 ### Design rule: secret identities
 
 **Any advancement that would reveal a secret identity is hidden and never announced to chat.** That means anything
-showing who holds a unique trait (e.g. lensing_eyes). Only the earner sees the toast, so the
+showing who holds a unique trait (e.g. six_eyes). Only the earner sees the toast, so the
 game never names a bearer, heir or killer of a secret holder.
 
 - **Enforced in code:** `KegareAdvancements.SECRET_IDENTITY` lists every such ID. The advancement generator forces
@@ -50,7 +50,7 @@ game never names a bearer, heir or killer of a secret holder.
   earned, so everyone else would see a connector line pointing at nothing.
   - The exception applies only to roots listed in `KegareAdvancements.SECRET_VISIBLE_ROOTS`.
   - Datagen fails if a listed ID has a parent, or if any other secret advancement is visible.
-  - Current: `clear_sight` (Lensing Eyes tab).
+  - Current: `clear_sight` (Six Eyes tab).
 - **Related rule: PvP information is silent.** Advancements that would leak combat-relevant information get no chat
   announcement, even though they aren't secret identities. They live in `KegareAdvancements.SILENT`, and datagen
   enforces it.
@@ -100,7 +100,7 @@ All timestamps use **level game time**. They persist across restarts and are ide
   Only the flag is stored; their superhuman body comes from it (§3.27).
 - **Becoming Severed** (birth or rebirth roll of 0, `/kegare setcapacity <player> 0`, or any future path):
   - Every `requiresMalice` trait is stripped (*"You have lost …"*).
-  - Unique inheritable ones (lensing_eyes) go through the **normal transfer** (30s, then an eligible heir).
+  - Unique inheritable ones (six_eyes) go through the **normal transfer** (30s, then an eligible heir).
   - Other Malice-based traits are removed; a unique non-inheritable one is released.
   - This is enforced in one place: `MaliceService.applyCapacity` is the only code that can change capacity or the
     Severed flag, because `MaliceData`'s setters are package-private. Any new path therefore triggers the strip.
@@ -135,12 +135,12 @@ All timestamps use **level game time**. They persist across restarts and are ide
   - RANDOM picks any eligible player. KILLER picks the killer if eligible, otherwise random.
   - If nobody is eligible, the next eligible player to log in gets it.
   - Admin `trait add` overrides a pending succession.
-- **`kegare:lensing_eyes`** (unique, requiresMalice, inheritable, lostOnPvpDeath, 1% birth, **no gameplay effects**):
+- **`kegare:six_eyes`** (unique, requiresMalice, inheritable, lostOnPvpDeath, 1% birth, **no gameplay effects**):
   - **Killed by another player** (direct hit, or kill credit, e.g. knocked into the void): it is stripped before
-    respawn, and after `lensingEyesTransferDelaySeconds` (30) it opens in an heir per `lensingEyesTransferMode`.
+    respawn, and after `sixEyesTransferDelaySeconds` (30) it opens in an heir per `sixEyesTransferMode`.
     Everyone sees the anonymous broadcast *"The eyes have closed... and opened elsewhere."*
   - **Any other death:** the bearer keeps it.
-  - Advancements live in their own **Lensing Eyes tab** (§3.11). They are hidden and never announced in chat
+  - Advancements live in their own **Six Eyes tab** (§3.11). They are hidden and never announced in chat
     (secret-identity rule, §1); the earner still gets the toast. *Eyes Closed* covers every loss: PvP, release,
     revocation, or becoming Severed.
 
@@ -189,7 +189,7 @@ All timestamps use **level game time**. They persist across restarts and are ide
 
   There is one per rarity, so every reveal can be shown. Two test specials exercise §3.15: **Blink** (special of
   Dash, instant short teleport, requires Aura to be active) and **Updraft** (special of Hover, charged upward launch,
-  requires the `lensing_eyes` trait). Burst, Aura and Shockwave have none, so R fizzles on them.
+  requires the `six_eyes` trait). Burst, Aura and Shockwave have none, so R fizzles on them.
   Set `includeTestInnateTechniques=false` once real innate techniques exist.
 
 ### 3.4 Rolls and pity
@@ -302,9 +302,9 @@ Malice is always shown as whole numbers (floored, like the HUD); the stored valu
   - Sections: `malice` (with `tiers`), `traits`, `roll` (with `weights`, and `includeTestInnateTechniques`),
     `combat`, `test_abilities`.
   - The `traits` section includes:
-    - `lensingEyesBirthChance`
-    - `lensingEyesTransferMode` (RANDOM | KILLER)
-    - `lensingEyesTransferDelaySeconds` (30)
+    - `sixEyesBirthChance`
+    - `sixEyesTransferMode` (RANDOM | KILLER)
+    - `sixEyesTransferDelaySeconds` (30)
     - `uniqueTraitInactiveDays` (0 = off; fractions allowed)
 - **Client TOML:** HUD on/off and offset, `reveal.animation` (spin on/off), `radial.holdTicks` (hold time that opens
   the radial menu).
@@ -363,7 +363,7 @@ a result back; they only send requests the server re-validates. All text comes f
 - `reveal.animation=false` shows the result instantly.
 - Disconnecting mid-spin changes nothing: the result was saved before the payload was sent.
 - The **birth** reveal adds Malice capacity and tier, or a separate **Severed** reveal ("Born without Malice"), plus
-  birth traits. Those are shown only to that player (e.g. Lensing Eyes, "Only you know this") and never broadcast.
+  birth traits. Those are shown only to that player (e.g. Six Eyes, "Only you know this") and never broadcast.
 - **No spoilers:** the background is opaque, so chat and HUD stay hidden. Toasts such as *Chosen by Fate* are held
   until the reveal closes. The server no longer plays the Legendary sound; the client plays it when the card lands.
 - Reveals queue up and open only when no other screen is open, e.g. after the world finishes loading on first join.
@@ -413,7 +413,7 @@ Each tab has its own root.
 | *Overflowing* | goal | hidden, **silent** (reveals Malice capacity) | born (or reborn) in the Vast tier |
 | *Running on Empty* | task | yes | visible Malice (floored, like the HUD) drops to 0 while in combat |
 
-**Lensing Eyes tab** (root `clear_sight`). Everything here is **silent**, and every advancement except the root is
+**Six Eyes tab** (root `clear_sight`). Everything here is **silent**, and every advancement except the root is
 **hidden** (secret-identity rule and its visible-root exception, §1):
 
 | Advancement | Frame | When |
@@ -438,7 +438,7 @@ Each tab has its own root.
 
 **Who sees which tab:** vanilla only shows a tab once the player has earned something in it.
 - Everyone sees the Base tab (*Awakening* is granted at birth).
-- The Lensing Eyes tab appears for whoever has earned one of its advancements: a born or inheriting holder, a
+- The Six Eyes tab appears for whoever has earned one of its advancements: a born or inheriting holder, a
   former holder (*Eyes Closed*), or a killer (*Blinded*). Uninvolved players never see it. An admin-granted holder
   has earned nothing there, so it stays hidden for them until something happens.
 - Because *Clear Sight* is visible, involved players who weren't born with the eyes see it as an unearned (grey)
@@ -642,5 +642,4 @@ Package `com.cnethuka.kegare.innate_technique.rime`. **Rarity: RARE.** All numbe
 - **PvE:** the **Kegare** (hostile spirit mobs), spawning, structures, progression.
 - **Open questions:**
   - Physical buffs for Severed.
-  - Gameplay effects for `lensing_eyes`.
   - Talisman recipe cost.

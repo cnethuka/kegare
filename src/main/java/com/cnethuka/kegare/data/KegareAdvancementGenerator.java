@@ -25,7 +25,7 @@ import net.neoforged.neoforge.common.data.ExistingFileHelper;
  * All Kegare advancements use {@code minecraft:impossible} and are granted from code. Every tab has its own root:
  * <ul>
  *   <li>Base tab (root {@code awakening})</li>
- *   <li>Lensing Eyes tab (root {@code clear_sight}, secret identity: hidden and silent)</li>
+ *   <li>Six Eyes tab (root {@code clear_sight}, secret identity: hidden and silent)</li>
  *   <li>one tab per non-test innate technique (root {@code innate_technique/<id>}, unlocked on the first roll)</li>
  * </ul>
  * Secret-identity rule: any ID in {@link KegareAdvancements#SECRET_IDENTITY} is forced hidden and never announced
@@ -33,7 +33,7 @@ import net.neoforged.neoforge.common.data.ExistingFileHelper;
  */
 public final class KegareAdvancementGenerator implements AdvancementProvider.AdvancementGenerator {
     private static final ResourceLocation BASE_BACKGROUND = ResourceLocation.withDefaultNamespace("textures/block/obsidian.png");
-    private static final ResourceLocation LENSING_EYES_BACKGROUND = ResourceLocation.withDefaultNamespace("textures/block/amethyst_block.png");
+    private static final ResourceLocation SIX_EYES_BACKGROUND = ResourceLocation.withDefaultNamespace("textures/block/amethyst_block.png");
     private static final ResourceLocation INNATE_TECHNIQUE_BACKGROUND = ResourceLocation.withDefaultNamespace("textures/block/black_concrete.png");
 
     @Override
@@ -55,9 +55,9 @@ public final class KegareAdvancementGenerator implements AdvancementProvider.Adv
         child(saver, awakening, KegareAdvancements.OVERFLOWING, "overflowing", Items.EXPERIENCE_BOTTLE, AdvancementType.GOAL, true);
         child(saver, awakening, KegareAdvancements.RUNNING_ON_EMPTY, "running_on_empty", Items.GLASS_BOTTLE, AdvancementType.TASK, false);
 
-        // ---- Lensing Eyes tab: secret identity, so silent; children hidden, root visible (documented exception) ----
+        // ---- Six Eyes tab: secret identity, so silent; children hidden, root visible (documented exception) ----
         AdvancementHolder clearSight = root(saver, KegareAdvancements.CLEAR_SIGHT, "clear_sight", "granted", Items.SPYGLASS,
-                LENSING_EYES_BACKGROUND, AdvancementType.CHALLENGE, false); // visible root: SECRET_VISIBLE_ROOTS
+                SIX_EYES_BACKGROUND, AdvancementType.CHALLENGE, false); // visible root: SECRET_VISIBLE_ROOTS
         child(saver, clearSight, KegareAdvancements.THE_CYCLE_CONTINUES, "the_cycle_continues", Items.CLOCK, AdvancementType.CHALLENGE, true);
         child(saver, clearSight, KegareAdvancements.EYES_CLOSED, "eyes_closed", Items.INK_SAC, AdvancementType.TASK, true);
         child(saver, clearSight, KegareAdvancements.BLINDED, "blinded", Items.FERMENTED_SPIDER_EYE, AdvancementType.GOAL, true);

@@ -11,7 +11,7 @@ import java.util.Set;
 import java.util.UUID;
 import org.junit.jupiter.api.Test;
 
-/** Fix 7: who may inherit lensing_eyes, and fix 3's inactivity rule. */
+/** Fix 7: who may inherit six_eyes, and fix 3's inactivity rule. */
 class TransferRulesTest {
     private static final UUID BEARER = UUID.fromString("00000000-0000-0000-0000-000000000001");
     private static final UUID KILLER = UUID.fromString("00000000-0000-0000-0000-000000000002");

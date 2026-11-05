@@ -9,7 +9,7 @@ public final class KegareTraits {
     public static final DeferredRegister<Trait> TRAITS = DeferredRegister.create(KegareRegistries.TRAIT_KEY, Kegare.MODID);
 
     /** Unique, needs Malice, passes on when its bearer is killed by a player. NO gameplay effects yet. */
-    public static final DeferredHolder<Trait, Trait> LENSING_EYES = TRAITS.register("lensing_eyes", LensingEyesTrait::new);
+    public static final DeferredHolder<Trait, Trait> SIX_EYES = TRAITS.register("six_eyes", SixEyesTrait::new);
 
     private KegareTraits() {}
 }

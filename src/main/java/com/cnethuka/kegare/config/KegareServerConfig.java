@@ -21,9 +21,9 @@ public final class KegareServerConfig {
     private static final ModConfigSpec.IntValue[] TIER_BASES = new ModConfigSpec.IntValue[MaliceTier.values().length];
 
     // ---- traits ----
-    public static final ModConfigSpec.DoubleValue LENSING_EYES_BIRTH_CHANCE;
-    public static final ModConfigSpec.EnumValue<TransferMode> LENSING_EYES_TRANSFER_MODE;
-    public static final ModConfigSpec.DoubleValue LENSING_EYES_TRANSFER_DELAY;
+    public static final ModConfigSpec.DoubleValue SIX_EYES_BIRTH_CHANCE;
+    public static final ModConfigSpec.EnumValue<TransferMode> SIX_EYES_TRANSFER_MODE;
+    public static final ModConfigSpec.DoubleValue SIX_EYES_TRANSFER_DELAY;
     public static final ModConfigSpec.DoubleValue UNIQUE_TRAIT_INACTIVE_DAYS;
 
     // ---- roll ----
@@ -99,18 +99,18 @@ public final class KegareServerConfig {
         b.pop(2);
 
         b.comment("Traits rolled at birth. Unique traits have at most one bearer per world.").push("traits");
-        LENSING_EYES_BIRTH_CHANCE = b.comment("Chance (0-1) to be born with lensing_eyes (unique, needs Malice; no effects yet).")
-                .defineInRange("lensingEyesBirthChance", 0.01, 0.0, 1.0);
-        LENSING_EYES_TRANSFER_MODE = b.comment(
-                        "Who inherits lensing_eyes when its bearer loses it (killed by a player, released, inactive).",
+        SIX_EYES_BIRTH_CHANCE = b.comment("Chance (0-1) to be born with six_eyes (unique, needs Malice; no effects yet).")
+                .defineInRange("sixEyesBirthChance", 0.01, 0.0, 1.0);
+        SIX_EYES_TRANSFER_MODE = b.comment(
+                        "Who inherits six_eyes when its bearer loses it (killed by a player, released, inactive).",
                         "RANDOM = a random eligible online player. KILLER = the killer if eligible and online, else RANDOM.",
                         "Eligible = online, not Severed, not the previous bearer. If nobody is eligible it waits for the next eligible login.")
-                .defineEnum("lensingEyesTransferMode", TransferMode.RANDOM);
-        LENSING_EYES_TRANSFER_DELAY = b.comment("Seconds between losing lensing_eyes and it opening in someone else.")
-                .defineInRange("lensingEyesTransferDelaySeconds", 30.0, 0.0, 86_400.0);
+                .defineEnum("sixEyesTransferMode", TransferMode.RANDOM);
+        SIX_EYES_TRANSFER_DELAY = b.comment("Seconds between losing six_eyes and it opening in someone else.")
+                .defineInRange("sixEyesTransferDelaySeconds", 30.0, 0.0, 86_400.0);
         UNIQUE_TRAIT_INACTIVE_DAYS = b.comment(
                         "Release a unique trait if its holder hasn't logged in for this many days (fractions allowed).",
-                        "0 = disabled. Inheritable traits (lensing_eyes) then pass on as if their bearer had lost them.")
+                        "0 = disabled. Inheritable traits (six_eyes) then pass on as if their bearer had lost them.")
                 .defineInRange("uniqueTraitInactiveDays", 0.0, 0.0, 3650.0);
         b.pop();
 

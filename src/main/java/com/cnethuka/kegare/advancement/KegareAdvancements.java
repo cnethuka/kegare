@@ -20,7 +20,7 @@ public final class KegareAdvancements {
     public static final ResourceLocation SEVERED = Kegare.id("severed");
     public static final ResourceLocation OVERFLOWING = Kegare.id("overflowing");
     public static final ResourceLocation RUNNING_ON_EMPTY = Kegare.id("running_on_empty");
-    // Lensing Eyes tab (root: clear_sight)
+    // Six Eyes tab (root: clear_sight)
     public static final ResourceLocation CLEAR_SIGHT = Kegare.id("clear_sight");
     public static final ResourceLocation THE_CYCLE_CONTINUES = Kegare.id("the_cycle_continues");
     public static final ResourceLocation EYES_CLOSED = Kegare.id("eyes_closed");

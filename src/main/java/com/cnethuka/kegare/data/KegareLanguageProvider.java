@@ -33,7 +33,7 @@ public final class KegareLanguageProvider extends LanguageProvider {
     private static final String DOMINION = "Dominion";
     private static final String SEVERED = "Severed";
     private static final String REROLL_ITEM = "Purification Talisman";
-    private static final String LENSING_EYES = "Lensing Eyes";
+    private static final String SIX_EYES = "Six Eyes";
 
     private final Set<String> written = new HashSet<>();
 
@@ -147,14 +147,14 @@ public final class KegareLanguageProvider extends LanguageProvider {
         add("ability.kegare.test_blink", "[Test] Blink");
         add("ability.kegare.test_blink.desc", "Special of Dash: teleport a short way forward. Needs Aura switched on.");
         add("ability.kegare.test_updraft", "[Test] Updraft");
-        add("ability.kegare.test_updraft.desc", "Special of Hover: hold to charge, release to shoot straight up. Needs the " + LENSING_EYES + " trait.");
+        add("ability.kegare.test_updraft.desc", "Special of Hover: hold to charge, release to shoot straight up. Needs the " + SIX_EYES + " trait.");
 
         // Traits
-        add("trait.kegare.lensing_eyes", LENSING_EYES);
-        add("trait.kegare.lensing_eyes.desc", "Eyes that see through everything. Only one bearer at a time. (No effects yet.)");
+        add("trait.kegare.six_eyes", SIX_EYES);
+        add("trait.kegare.six_eyes.desc", "Eyes that see through everything. Only one bearer at a time. (No effects yet.)");
         add("message.kegare.trait.lost", "You have lost %s.");
         add("message.kegare.trait.inherited", "You have inherited %s.");
-        add("message.kegare.trait.lensing_eyes.succession", "The eyes have closed... and opened elsewhere.");
+        add("message.kegare.trait.six_eyes.succession", "The eyes have closed... and opened elsewhere.");
 
         // HUD
         add("hud.kegare.no_innate_technique", "No " + INNATE_TECHNIQUE);
@@ -224,7 +224,7 @@ public final class KegareLanguageProvider extends LanguageProvider {
         advancement("overflowing", "Overflowing", "Be born in the Vast " + MALICE + " tier.");
         advancement("running_on_empty", "Running on Empty", "Run out of " + MALICE + " in the middle of a fight.");
         add("advancements.kegare.innate_technique_root.description", "Roll this " + INNATE_TECHNIQUE + " for the first time.");
-        advancement("clear_sight", "Clear Sight", "Be born with " + LENSING_EYES + ".");
+        advancement("clear_sight", "Clear Sight", "Be born with " + SIX_EYES + ".");
         // Rime tab (kegare:innate_technique/rime/...)
         advancement("rime.shatter", "Shatter", "Freeze a player solid");
         advancement("rime.cold_open", "Cold Open", "Hit a player with Frost Shard");
@@ -239,9 +239,9 @@ public final class KegareLanguageProvider extends LanguageProvider {
         advancement("rime.sky_high", "Sky High", "Launch a player with Glacial Spire and hit them with Frost Shard before they land");
         advancement("rime.slip_n_slide", "Slip 'n Slide", "Travel 100 blocks with Ice Path");
         advancement("rime.shattered_pressure", "Shattered Pressure", "Hit 3 players with one Shatter Shell");
-        advancement("the_cycle_continues", "The Cycle Continues", "Inherit " + LENSING_EYES + " from a fallen bearer.");
-        advancement("eyes_closed", "Eyes Closed", "Lose your " + LENSING_EYES + ".");
-        advancement("blinded", "Blinded", "Kill the bearer of " + LENSING_EYES + ".");
+        advancement("the_cycle_continues", "The Cycle Continues", "Inherit " + SIX_EYES + " from a fallen bearer.");
+        advancement("eyes_closed", "Eyes Closed", "Lose your " + SIX_EYES + ".");
+        advancement("blinded", "Blinded", "Kill the bearer of " + SIX_EYES + ".");
 
         // ---- GUI: roll reveal ----
         add("gui.kegare.reveal.title.birth", "Awakening");

@@ -19,7 +19,7 @@ import net.neoforged.neoforge.network.handling.IPayloadContext;
 
 /**
  * Server to ONE client: show the reveal for a roll that has ALREADY been decided and saved. Purely cosmetic: the
- * screen never sends anything back. Sent only to the rolling player, so birth traits (e.g. lensing_eyes) stay private.
+ * screen never sends anything back. Sent only to the rolling player, so birth traits (e.g. six_eyes) stay private.
  *
  * @param innateTechnique the result, empty for a Severed birth (or when nothing was eligible)
  * @param birth           Awakening: also shows Malice capacity/tier, the Severed reveal, and birth traits

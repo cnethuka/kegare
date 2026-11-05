@@ -5,32 +5,32 @@ import com.cnethuka.kegare.config.KegareServerConfig;
 import net.minecraft.server.level.ServerPlayer;
 
 /**
- * Lensing Eyes: unique, needs Malice, inheritable, lost when the bearer is killed by another player.
+ * Six Eyes: unique, needs Malice, inheritable, lost when the bearer is killed by another player.
  * No gameplay effects yet. This class only wires succession settings and its advancements.
  */
-public final class LensingEyesTrait extends Trait {
-    public LensingEyesTrait() {
+public final class SixEyesTrait extends Trait {
+    public SixEyesTrait() {
         super(new Properties()
                 .unique()
                 .requiresMalice()
                 .inheritable()
                 .lostOnPvpDeath()
-                .birthChance(KegareServerConfig.LENSING_EYES_BIRTH_CHANCE::get));
+                .birthChance(KegareServerConfig.SIX_EYES_BIRTH_CHANCE::get));
     }
 
     @Override
     public int successionDelayTicks() {
-        return KegareServerConfig.ticks(KegareServerConfig.LENSING_EYES_TRANSFER_DELAY);
+        return KegareServerConfig.ticks(KegareServerConfig.SIX_EYES_TRANSFER_DELAY);
     }
 
     @Override
     public TransferMode successionMode() {
-        return KegareServerConfig.LENSING_EYES_TRANSFER_MODE.get();
+        return KegareServerConfig.SIX_EYES_TRANSFER_MODE.get();
     }
 
     @Override
     public String successionBroadcastKey() {
-        return "message.kegare.trait.lensing_eyes.succession";
+        return "message.kegare.trait.six_eyes.succession";
     }
 
     @Override

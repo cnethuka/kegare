@@ -86,7 +86,7 @@ class SpecialsTest {
             assertNull(CastManager.state(p).casting(), "no trait: Updraft fizzles");
             assertEquals(before, malice(p), EPS);
 
-            assertEquals(TraitService.AddResult.ADDED, TraitService.add(p, KegareTraits.LENSING_EYES.get(), Trait.AddReason.ADMIN));
+            assertEquals(TraitService.AddResult.ADDED, TraitService.add(p, KegareTraits.SIX_EYES.get(), Trait.AddReason.ADMIN));
             CastManager.handleIntent(p, CastIntent.SPECIAL_PRESS);
             CastState.Active charging = CastManager.state(p).casting();
             assertNotNull(charging, "with the trait, Updraft charges");
@@ -97,14 +97,14 @@ class SpecialsTest {
 
             // The requirement is re-checked at release: losing the trait mid-charge fizzles for free.
             TestServer.advanceGameTime(server, TestAbilities.UPDRAFT.maxChargeTicks(p));
-            TraitService.remove(p, KegareTraits.LENSING_EYES.get(), Trait.RemoveReason.ADMIN);
+            TraitService.remove(p, KegareTraits.SIX_EYES.get(), Trait.RemoveReason.ADMIN);
             CastManager.handleIntent(p, CastIntent.SPECIAL_RELEASE);
             assertNull(CastManager.state(p).casting());
             assertEquals(before, malice(p), EPS, "lapsed requirement at release: nothing paid");
             assertEquals(0, InnateTechniqueService.cooldownRemaining(p, TestAbilities.HOVER), "and no cooldown");
 
             // With the trait kept, the release pays and starts Hover's cooldown.
-            TraitService.add(p, KegareTraits.LENSING_EYES.get(), Trait.AddReason.ADMIN);
+            TraitService.add(p, KegareTraits.SIX_EYES.get(), Trait.AddReason.ADMIN);
             CastManager.handleIntent(p, CastIntent.SPECIAL_PRESS);
             TestServer.advanceGameTime(server, TestAbilities.UPDRAFT.maxChargeTicks(p));
             CastManager.handleIntent(p, CastIntent.SPECIAL_RELEASE);
