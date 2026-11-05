@@ -147,6 +147,38 @@ public final class ClientVisuals {
         });
     }
 
+    /**
+     * A client-only effect at a position that keeps playing until stopped (things only this client should see, such
+     * as the green orb). Returns null if Photon can't play it or {@code vfxQuality = VANILLA}: then the caller draws
+     * its own vanilla stand-in.
+     */
+    @Nullable
+    public static PositionalEffect startAt(ResourceLocation effect, Vec3 pos) {
+        ClientLevel level = Minecraft.getInstance().level;
+        VfxQuality quality = KegareClientConfig.VFX_QUALITY.get();
+        if (level == null || quality == VfxQuality.VANILLA) return null;
+        FXEffectExecutor executor = PhotonEffects.at(effect, level, pos, quality == VfxQuality.REDUCED);
+        return executor == null ? null : new PositionalEffect(executor);
+    }
+
+    /** Handle to a {@link #startAt} effect. */
+    public static final class PositionalEffect {
+        private final FXEffectExecutor executor;
+
+        private PositionalEffect(FXEffectExecutor executor) {
+            this.executor = executor;
+        }
+
+        public void scale(float scale) {
+            PhotonEffects.scale(executor, scale);
+        }
+
+        /** @param immediately remove what is visible now; otherwise it fades out over its particles' lifetimes */
+        public void stop(boolean immediately) {
+            PhotonEffects.stop(executor, immediately);
+        }
+    }
+
     /** A projectile's trail, started by the projectile itself on the client; ends when the projectile is gone. */
     public static void startTrail(Entity projectile, ResourceLocation effect) {
         startLoop(projectile, TRAIL_KEY, Visual.effect(effect, Visual.Anchor.MOTION), 0);

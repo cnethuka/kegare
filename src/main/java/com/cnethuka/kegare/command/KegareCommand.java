@@ -18,6 +18,8 @@ import com.cnethuka.kegare.roll.RollReason;
 import com.cnethuka.kegare.roll.RollService;
 import com.cnethuka.kegare.innatetechnique.Ability;
 import com.cnethuka.kegare.loadout.AbilityLookup;
+import com.cnethuka.kegare.rmt.GreenOrbService;
+import com.cnethuka.kegare.rmt.RmtIds;
 import com.cnethuka.kegare.loadout.LoadoutService;
 import com.cnethuka.kegare.loadout.SharedAbilities;
 import com.cnethuka.kegare.loadout.SharedAbilityService;
@@ -144,6 +146,14 @@ public final class KegareCommand {
                                         .then(Commands.argument("ability", ResourceLocationArgument.id()).suggests(SHARED_ABILITIES)
                                                 .executes(c -> sharedUnlock(c.getSource(), EntityArgument.getPlayer(c, "player"),
                                                         ResourceLocationArgument.getId(c, "ability"), false))))))
+                // The green orb (finds Reverse Malice Technique): force one now, or see the roll cooldown.
+                .then(Commands.literal("orb")
+                        .then(Commands.literal("spawn")
+                                .then(Commands.argument("player", EntityArgument.player())
+                                        .executes(c -> orbSpawn(c.getSource(), EntityArgument.getPlayer(c, "player")))))
+                        .then(Commands.literal("status")
+                                .then(Commands.argument("player", EntityArgument.player())
+                                        .executes(c -> orbStatus(c.getSource(), EntityArgument.getPlayer(c, "player"))))))
                 // Loadout back to the innate technique's default layout.
                 .then(Commands.literal("loadout")
                         .then(Commands.literal("reset")
@@ -295,6 +305,26 @@ public final class KegareCommand {
         }
         source.sendSuccess(() -> Component.translatable(unlock ? "commands.kegare.shared.unlocked" : "commands.kegare.shared.locked",
                 ability.displayName(), player.getDisplayName()), true);
+        return 1;
+    }
+
+    private static int orbSpawn(CommandSourceStack source, ServerPlayer player) {
+        GreenOrbService.ForceResult result = GreenOrbService.force(player);
+        if (result != GreenOrbService.ForceResult.SPAWNED) {
+            source.sendFailure(Component.translatable("commands.kegare.orb." + result.name().toLowerCase(java.util.Locale.ROOT), player.getDisplayName()));
+            return 0;
+        }
+        source.sendSuccess(() -> Component.translatable("commands.kegare.orb.spawned", player.getDisplayName()), true);
+        return 1;
+    }
+
+    private static int orbStatus(CommandSourceStack source, ServerPlayer player) {
+        Component unlocked = Component.translatable(SharedAbilityService.isUnlocked(player, RmtIds.ABILITY)
+                ? "commands.kegare.orb.status.unlocked" : "commands.kegare.orb.status.locked");
+        Component waiting = Component.translatable(GreenOrbService.state(player).hasOrb() ? "commands.kegare.orb.status.yes" : "commands.kegare.orb.status.no");
+        source.sendSuccess(() -> Component.translatable("commands.kegare.orb.status", player.getDisplayName(),
+                CastManager.seconds(GreenOrbService.rollCooldownRemaining(player)), waiting, unlocked,
+                Component.translatable(GreenOrbService.eligible(player) ? "commands.kegare.orb.status.yes" : "commands.kegare.orb.status.no")), false);
         return 1;
     }
 

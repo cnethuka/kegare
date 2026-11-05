@@ -195,6 +195,16 @@ public final class KegareLanguageProvider extends LanguageProvider {
                 + "release to stop. It drains " + MALICE + " fast. Interrupted by stuns and freezing like any channel.");
         add("message.kegare.rmt.not_hurt", "You aren't hurt.");
         add("message.kegare.rmt.healed", "Fully healed.");
+        add("message.kegare.rmt.unlocked", "Your body remembers how to heal.");
+        add("commands.kegare.orb.spawned", "A green orb appeared for %s (only they can see it)");
+        add("commands.kegare.orb.already_unlocked", "%s has already unlocked Reverse Malice Technique: the orb never comes again");
+        add("commands.kegare.orb.severed", "%s is " + SEVERED + ": the orb never comes to them");
+        add("commands.kegare.orb.not_born", "%s hasn't been born yet");
+        add("commands.kegare.orb.status", "Green orb for %s: next chance roll in %ss; orb waiting: %s; Reverse Malice Technique %s; eligible: %s");
+        add("commands.kegare.orb.status.yes", "yes");
+        add("commands.kegare.orb.status.no", "no");
+        add("commands.kegare.orb.status.unlocked", "unlocked");
+        add("commands.kegare.orb.status.locked", "locked");
 
         // Loadout
         add("ability_category.kegare.innate_technique", INNATE_TECHNIQUE);

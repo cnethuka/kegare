@@ -1,6 +1,7 @@
 package com.cnethuka.kegare.rmt;
 
 import com.cnethuka.kegare.innatetechnique.visual.VisualHooks;
+import net.neoforged.bus.api.IEventBus;
 import com.cnethuka.kegare.loadout.SharedAbilities;
 
 /**
@@ -12,7 +13,8 @@ public final class Rmt {
 
     private Rmt() {}
 
-    public static void init() {
+    public static void init(IEventBus modBus) {
+        GreenOrbService.register(modBus);
         VisualHooks.registerEffect(RmtIds.FX_HEAL_PULSE);
         VisualHooks.registerEffect(RmtIds.FX_ORB);
         VisualHooks.registerEffect(RmtIds.FX_UNLOCK_BURST);

@@ -691,6 +691,33 @@ Package `rmt`. The first **shared** ability (§3.16), ID `kegare:reverse_malice_
   health; R fizzles; start cost, heal after each full second, upkeep; cooldown on release; a freeze interrupts it;
   ends when fully healed; a reroll resets the loadout but keeps the unlock; locking takes it off the bar.
 
+### 3.18 The green orb (unlocking RMT)
+`rmt.GreenOrbService` (server) and `rmt.client.GreenOrbClient`. Numbers in `[reverse_malice_technique.orb]`.
+- **When:** a real hit **from another player** that leaves someone at **10 HP (5 hearts) or less**
+  (`healthThreshold`) rolls a **15%** chance (`chance`). At most **one roll per 60 s** per player (`rollCooldown`; the
+  roll counts whether or not the orb comes; last roll saved in `kegare:shared_abilities`). Only for players who
+  are born, **not Severed**, haven't unlocked RMT, and have no orb waiting.
+- **Where:** the server picks the position: **3 blocks** in front of the eyes (`distance`), at half the look's pitch so
+  it stays near eye level, and short of any wall in the way. It sends it **to that player only** (`OrbPayload`);
+  no other player is told anything. The orb is client-side: a glowing green core that breathes and drifts a little,
+  a soft halo and circling motes (`rmt/rmt_orb`; vanilla stand-in: green dust and happy-villager sparkles), with a
+  soft chime. It **fades after 5 s** (`lifetime`); server and client run the same timer.
+- **Taking it in:** each tick the server checks the player's look vector against the position it picked (within
+  `lookAngle`, 10°). **1 s** of looking without looking away (`lookSeconds`) takes it in; looking away resets the
+  count. The client only swells the orb while it's looked at, as feedback. On success:
+  - RMT is unlocked (kept for good, through rerolls);
+  - **real healing** of **8 HP** (`unlockHeal`), never above max health;
+  - a green burst (`rmt/rmt_unlock_burst`), a heal pulse and a chime, **played locally**: only the player sees and
+    hears them;
+  - a private chat line, "Your body remembers how to heal." (sent to that player only).
+- **Never again** after unlocking. Dying, or becoming Severed, removes a waiting orb.
+- **Commands:** `/kegare orb spawn <player>` forces an orb now, ignoring chance and the roll cooldown, but never for
+  Severed or already-unlocked players. `/kegare orb status <player>` shows the time to the next roll, whether an orb
+  is waiting, RMT locked/unlocked, and eligibility.
+- **Tests:** `GreenOrbTest`: no roll above the threshold, one roll per cooldown, then again after it; the orb's
+  distance; looking away resets; a full second unlocks and heals; capped at max health; fades on time; never for
+  Severed players (forced or rolled) or after unlocking.
+
 ---
 
 ## 4. Extension points (how later content plugs in)

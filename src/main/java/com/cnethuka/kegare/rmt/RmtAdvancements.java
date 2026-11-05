@@ -8,4 +8,7 @@ public final class RmtAdvancements {
 
     /** An RMT channel just started. */
     static void onCastStart(ServerPlayer player) {}
+
+    /** The green orb was taken in: RMT unlocked. */
+    static void onUnlock(ServerPlayer player) {}
 }
