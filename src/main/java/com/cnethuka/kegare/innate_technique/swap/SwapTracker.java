@@ -30,10 +30,18 @@ public final class SwapTracker {
         MOMENTUM.put(target.getUUID(), new Mark(caster.getUUID(), caster.serverLevel().getGameTime()));
     }
 
-    /** A player or mob died from falling: whoever swapped it (5 s) or traded momentum with it (10 s) may earn something. */
+    /**
+     * Something died from falling. If it was a player, whoever swapped them (5 s) or traded momentum with them (10 s)
+     * earns Fall Guy / Newton's Third. Mobs are tracked (a swap can move them) but never count.
+     */
     static void fellToDeath(LivingEntity victim) {
         MinecraftServer server = victim.getServer();
         if (server == null) return;
+        if (!(victim instanceof ServerPlayer)) { // mastery advancements: player victims only (DESIGN §4)
+            SWAPPED.remove(victim.getUUID());
+            MOMENTUM.remove(victim.getUUID());
+            return;
+        }
         long now = victim.level().getGameTime();
         Mark swap = SWAPPED.remove(victim.getUUID());
         if (swap != null && now - swap.tick() <= SwapAdvancements.FALL_GUY_WINDOW_TICKS) {

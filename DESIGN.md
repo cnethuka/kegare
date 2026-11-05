@@ -1,8 +1,9 @@
-# Kegare: Design (Step 1: Base Systems)
+# Kegare: Design
 
 A cursed-energy combat framework for **NeoForge 21.1.x / Minecraft 1.21.1 / Java 21**, built mainly for **PvP with friends**.
-Step 1 is the foundation only. There are no real innate techniques, mobs, dominions or lore yet. Those get designed
-once this base is proven.
+It covers the base systems (§3.1–3.13) and the content built on them: specials (§3.15), the loadout (§3.16), Reverse
+Malice Technique (§3.17–3.18), and the innate techniques Rime (§3.14) and Swap (§3.19). Mobs (the Kegare), dominions
+and lore come later (§5).
 
 - Mod ID: `kegare` · Package: `com.cnethuka.kegare` · Build: ModDevGradle MDK
 - Everything is server-authoritative. Clients send key intents and render what the server syncs.
@@ -365,6 +366,56 @@ Malice is always shown as whole numbers (floored, like the HUD); the stored valu
   - Whether the art exists is looked up once per texture, and the answer is forgotten on resource reload, so
     resource packs can add or replace it.
 
+### 3.11 Advancements and tabs
+All advancements use `minecraft:impossible` and are granted from code (`KegareAdvancements.award`).
+Each tab has its own root.
+
+**Base tab** (root `awakening`):
+
+| Advancement | Frame | Visible before earned? | When |
+|---|---|---|---|
+| *Awakening* (root) | task | yes | born |
+| *Reawakening* | task | yes | used a Purification Talisman |
+| *Chosen by Fate* | challenge | yes, **silent** (reveals a Legendary roll) | rolled a Legendary |
+| *Bitter Luck* (under Reawakening) | goal | hidden | hit hard pity |
+| *Severed* | goal | hidden | born with 0 Malice |
+| *Overflowing* | goal | hidden, **silent** (reveals Malice capacity) | born (or reborn) in the Vast tier |
+| *Running on Empty* | task | yes | visible Malice (floored, like the HUD) drops to 0 while in combat |
+| *A Green Light* | goal | hidden, **silent** (reveals a player can heal) | unlocked Reverse Malice Technique (took in the green orb, §3.18) |
+| *It's been a while, huh?* (under A Green Light) | challenge | hidden, **silent** | started a Reverse Malice Technique cast at 6 HP or less, within 10 s of being hit by a player |
+
+**Six Eyes tab** (root `clear_sight`). Everything here is **silent**, and every advancement except the root is
+**hidden** (secret-identity rule and its visible-root exception, §1):
+
+| Advancement | Frame | When |
+|---|---|---|
+| *Clear Sight* (root, **visible**) | challenge | born with it |
+| *The Cycle Continues* | challenge | inherited it |
+| *Eyes Closed* | task | lost it |
+| *Blinded* | goal | killed a bearer |
+| *Something's Missing* | goal | a full-detail Read of a Severed player (§3.32) |
+
+**Rule: every innate technique gets its own tab, whose root unlocks the first time the player rolls it.**
+- It's automatic. Datagen generates the root `kegare:innate_technique/<path>` for every non-test innate technique:
+  - title: its name, in rarity color
+  - icon: `InnateTechnique.Builder.tabIcon(...)`, default an enchanted book
+  - background: black concrete
+- Every roll (birth, talisman, admin, replacement) awards it; later rolls are no-ops. `/kegare setinnatetechnique`
+  is not a roll and doesn't award it.
+- Give that innate technique's own advancements this root as their parent.
+- The root is **silent in chat**. Announcing it would tell every opponent which innate technique a player rolled. The
+  same goes for everything in the tab: datagen fails if any advancement under `innate_technique/` announces.
+- Test innate techniques get no tab.
+- Tabs so far: Rime (§3.14), Swap (§3.19).
+
+**Who sees which tab:** vanilla only shows a tab once the player has earned something in it.
+- Everyone sees the Base tab (*Awakening* is granted at birth).
+- The Six Eyes tab appears for whoever has earned one of its advancements: a born or inheriting holder, a
+  former holder (*Eyes Closed*), or a killer (*Blinded*). Uninvolved players never see it. An admin-granted holder
+  has earned nothing there, so it stays hidden for them until something happens.
+- Because *Clear Sight* is visible, involved players who weren't born with the eyes see it as an unearned (grey)
+  root, with their own advancement linked to it. (A hidden root would not be drawn at all.)
+
 ### 3.12 GUIs (`client.gui`)
 **Rule: results are decided and saved on the SERVER before any screen opens.** Screens are cosmetic and never send
 a result back; they only send requests the server re-validates. All text comes from the lang file.
@@ -434,56 +485,6 @@ a result back; they only send requests the server re-validates. All text comes f
 - Layouts are computed from the screen size and support GUI sizes down to Minecraft's minimum of 320×240.
 - Every screen fits at GUI scales 1–4 on a 1920×1080 window, and in a 640×480 window (auto scale, which gives a 320×240 GUI).
 
-### 3.11 Advancements and tabs
-All advancements use `minecraft:impossible` and are granted from code (`KegareAdvancements.award`).
-Each tab has its own root.
-
-**Base tab** (root `awakening`):
-
-| Advancement | Frame | Visible before earned? | When |
-|---|---|---|---|
-| *Awakening* (root) | task | yes | born |
-| *Reawakening* | task | yes | used a Purification Talisman |
-| *Chosen by Fate* | challenge | yes, **silent** (reveals a Legendary roll) | rolled a Legendary |
-| *Bitter Luck* (under Reawakening) | goal | hidden | hit hard pity |
-| *Severed* | goal | hidden | born with 0 Malice |
-| *Overflowing* | goal | hidden, **silent** (reveals Malice capacity) | born (or reborn) in the Vast tier |
-| *Running on Empty* | task | yes | visible Malice (floored, like the HUD) drops to 0 while in combat |
-| *A Green Light* | goal | hidden, **silent** (reveals a player can heal) | unlocked Reverse Malice Technique (took in the green orb, §3.18) |
-| *It's been a while, huh?* (under A Green Light) | challenge | hidden, **silent** | started a Reverse Malice Technique cast at 6 HP or less, within 10 s of being hit by a player |
-
-**Six Eyes tab** (root `clear_sight`). Everything here is **silent**, and every advancement except the root is
-**hidden** (secret-identity rule and its visible-root exception, §1):
-
-| Advancement | Frame | When |
-|---|---|---|
-| *Clear Sight* (root, **visible**) | challenge | born with it |
-| *The Cycle Continues* | challenge | inherited it |
-| *Eyes Closed* | task | lost it |
-| *Blinded* | goal | killed a bearer |
-| *Something's Missing* | goal | a full-detail Read of a Severed player (§3.32) |
-
-**Rule: every innate technique gets its own tab, whose root unlocks the first time the player rolls it.**
-- It's automatic. Datagen generates the root `kegare:innate_technique/<path>` for every non-test innate technique:
-  - title: its name, in rarity color
-  - icon: `InnateTechnique.Builder.tabIcon(...)`, default an enchanted book
-  - background: black concrete
-- Every roll (birth, talisman, admin, replacement) awards it; later rolls are no-ops. `/kegare setinnatetechnique`
-  is not a roll and doesn't award it.
-- Give that innate technique's own advancements this root as their parent.
-- The root is **silent in chat**. Announcing it would tell every opponent which innate technique a player rolled. The
-  same goes for everything in the tab: datagen fails if any advancement under `innate_technique/` announces.
-- Test innate techniques get no tab.
-- Tabs so far: Rime (§3.14), Swap (§3.19).
-
-**Who sees which tab:** vanilla only shows a tab once the player has earned something in it.
-- Everyone sees the Base tab (*Awakening* is granted at birth).
-- The Six Eyes tab appears for whoever has earned one of its advancements: a born or inheriting holder, a
-  former holder (*Eyes Closed*), or a killer (*Blinded*). Uninvolved players never see it. An admin-granted holder
-  has earned nothing there, so it stays hidden for them until something happens.
-- Because *Clear Sight* is visible, involved players who weren't born with the eyes see it as an unearned (grey)
-  root, with their own advancement linked to it. (A hidden root would not be drawn at all.)
-
 ### 3.13 Animations and VFX (visual only)
 **Rule: visuals are cosmetic. The server acts first and never waits on an animation or an effect.**
 
@@ -529,7 +530,7 @@ Each tab has its own root.
   - `firstPersonAnimations` (default on): your own arms animate in first person (PAL `THIRD_PERSON_MODEL` mode).
   - `vfxQuality`: `FULL` (Photon), `REDUCED` (Photon, emitters at half rate and half particle cap) or `VANILLA`
     (vanilla particles only).
-- Network version `3`.
+- Network version: see §3.5 (the one place it is kept).
 
 ### 3.14 Rime
 Package `com.cnethuka.kegare.innate_technique.rime`. **Rarity: RARE.** All numbers are in `[rime]` of
@@ -630,6 +631,21 @@ Package `com.cnethuka.kegare.innate_technique.rime`. **Rarity: RARE.** All numbe
     TOGGLE special off),
   - Malice cost and upkeep, effect (`execute`/`tick`/`onEnd`), and visuals (animation and VFX IDs per phase, §3.13),
   - lang name and description (`ability.kegare.<id>`, `.desc`).
+- **Rule: every special has a TELL.** A distinct, readable animation, VFX or sound that other players can see or
+  hear when it is cast, so opponents can learn to react. "Distinct" means telling it apart from its base ability (and
+  the technique's other abilities) at the moment it goes off, not only afterwards. Private cues (an effect only the
+  caster sees) don't count.
+
+  | Special (base) | Tell |
+  |---|---|
+  | Splinter (Frost Shard) | own cast animation and burst, three shards in a fan, a brighter crack (amethyst break) |
+  | Glacial Spire (Glacial Lance) | own charge animation and aura; a frost warning circle with rising glints on the ground for 0.75 s before the spike |
+  | Ice Path (Frost Field) | own sliding pose, an ice trail left behind, glass sounds |
+  | Shatter Shell (Rime Shell) | own cast animation, an icy burst, glass and amethyst shattering |
+  | Switchback (Positions) | **weak**: the same snap animation, effects and sound as Positions at the cast; only the faint countdown rings on both afterwards tell it apart |
+  | Mimic (Awareness) | **weak**: its own hand-across-the-face animation, but Awareness's sound at another pitch and no visible effect (the shimmer is private) |
+  | Send Off (Anchor) | own two-handed shove; the target vanishes onto the glowing anchor |
+  | Momentum Exchange (Exchange) | own arms-up sweep, a burst on both players, a lower teleport sound |
 - **Shared cooldown:** `cooldownKey()` is the base ability's ID, so casting either the base or the special starts the
   one cooldown and both show it on the base slot. The length defaults to the base's `cooldownTicks` (a special may
   override it).
@@ -842,28 +858,47 @@ Photon effects (`SwapFxAuthoring` → `fx/swap/`), teal with Malice violet, with
 (`item/swap_anchor.png`). The Sorcerer screen shows a special's icon in its details when it has one.
 
 **Advancements** (tab root `kegare:innate_technique/swap`, unlocked on first rolling Swap, silent). All hidden,
-silent in chat and awarded from code to Swap holders only. Targets count whether they are players or mobs.
+silent in chat and awarded from code to Swap holders only. Following §4: the learning (task) ones count mobs too; the
+mastery (goal, challenge) ones count players only.
 
 | Advancement | Frame | When |
 |---|---|---|
 | *Switcheroo* | task | swap positions with a player or a mob (Positions, Switchback, Total Swap) |
-| *Not Allowed* | task | a swap fails because `SwapTargetEvent` was cancelled |
+| *Not Allowed* | task | a swap fails because `SwapTargetEvent` was cancelled (any target, mobs included) |
 | *Return to Sender* (`special_delivery_swap`) | task | Send Off a player or mob onto your anchor |
-| *Wrong Target* | goal | while disguised with Awareness (or Total Swap), someone else (a player or a mob) damages whoever wears your face |
-| *There Are Two of You* | goal | while you Mimic someone, anyone else (a player or a mob) damages the real one |
-| *Fall Guy* | goal | a player or mob you moved with a swap (either Switchback leg and Send Off included) dies from falling within 5 s |
-| *Round Trip* | goal | you damage a player or mob while waiting on Switchback's swap back |
+| *Wrong Target* | goal | while disguised with Awareness (or Total Swap), a third player damages whoever wears your face (a mob's hit doesn't count) |
+| *There Are Two of You* | goal | while you Mimic someone, another player damages the real one (a mob's hit doesn't count) |
+| *Fall Guy* | goal | a player you moved with a swap (either Switchback leg and Send Off included) dies from falling within 5 s |
+| *Round Trip* | goal | you damage a player while waiting on Switchback's swap back |
 | *Identity Crisis* | challenge | cast Total Swap below 30% health and are alive 30 s later |
-| *Newton's Third* | challenge | a player or mob dies from fall damage within 10 s of your Momentum Exchange on them |
+| *Newton's Third* | challenge | a player dies from fall damage within 10 s of your Momentum Exchange on them |
 
 **Tests:** `SwapTest` (in-game JUnit): targeting and the free fizzle, the cancelled event (Malice spent, no
 cooldown), stunned targets and casters, Positions and Switchback (return and calling off), disguises (both kinds,
 the API, expiry, ending, refusal), Anchor (throw, recall, Send Off with and without an anchor, timing out), Exchange
 and Momentum Exchange, Total Swap's health math, every advancement, and mobs (Positions, Switchback, Exchange,
-Momentum Exchange, Send Off and their advancements on a pig; Awareness and Total Swap ignoring it; bosses and armor
-stands never targets). `LoadoutTest` covers the nine slots and padding an old bar.
+Momentum Exchange and Send Off on a pig; Switcheroo, Not Allowed and Return to Sender earned on it, Fall Guy, Round
+Trip and Newton's Third not; a mob's hit not counting for Wrong Target or There Are Two of You; Awareness and Total
+Swap ignoring it; bosses and armor stands never targets). `LoadoutTest` covers the nine slots and padding an old bar.
 
 ## 4. Extension points (how later content plugs in)
+
+**Rule (every innate technique): the MOB vs PLAYER boundary.**
+- **Physical effects** (damage, movement, freeze, knockback, status effects) work on mobs too, so every technique is
+  useful outside PvP.
+- **Identity effects** (disguises, health % swaps, and any future effect that reads or copies a player) are players
+  only.
+- **Bosses** (`c:bosses`) can be damaged but are never moved, swapped or disabled.
+- **Advancements:** "learning" ones (first use; task frame) may count mobs. "Mastery" ones (goal or challenge frame,
+  proving PvP skill) count PLAYER targets only (and player attackers, where someone else's hit is the condition).
+- Where things stand:
+  - Swap follows it (§3.19): Positions, Switchback, Send Off, Exchange and Momentum Exchange take mobs; Awareness,
+    Mimic and Total Swap are players only; bosses are never targets; its advancements split as the rule says.
+  - Rime's advancements follow it: every goal and challenge that names a target counts players only, and its task
+    ones (Cold Open, Full Charge, Splinter) count players too, which the rule allows. Thin Ice (goal) counts damage
+    blocked from any source, since it has no target.
+  - **Known gap:** Rime's abilities don't skip bosses yet. Freeze stacks can freeze a boss solid (disabled), Glacial
+    Spire launches it and Shatter Shell knocks it back (moved).
 
 - **New innate technique:** create a `DeferredRegister<InnateTechnique>` on
   `KegareRegistries.INNATE_TECHNIQUE_KEY`, build abilities with `BaseAbility`, add the lang names, and put the
@@ -881,7 +916,7 @@ stands never targets). `LoadoutTest` covers the nine slots and padding an old ba
 
 ---
 
-## 5. Future (TBD, not in Step 1)
+## 5. Future (TBD)
 
 - **Innate techniques:** more real ones after Rime (§3.14) and Swap (§3.19), with their abilities, balance and visuals.
   Remove the test content.

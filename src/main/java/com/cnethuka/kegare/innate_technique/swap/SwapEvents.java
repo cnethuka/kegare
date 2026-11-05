@@ -34,29 +34,25 @@ public final class SwapEvents {
     }
 
     /**
-     * Damage-based advancements. Round Trip: the caster hits anyone (player or mob) while a Switchback swap back is
-     * pending. Wrong Target: anyone but the caster (player or mob) hits whoever wears the caster's face. There Are Two
-     * of You: anyone but the mimic hits the player being Mimicked.
+     * Damage-based advancements. All three are mastery ones, so only players count (DESIGN §4): Round Trip, the caster
+     * hits a player while a Switchback swap back is pending; Wrong Target, a third player hits whoever wears the
+     * caster's face; There Are Two of You, a player other than the mimic hits the player being Mimicked.
      */
     @SubscribeEvent
     static void onDamage(LivingDamageEvent.Post event) {
-        LivingEntity victim = event.getEntity();
-        if (victim.level().isClientSide || event.getNewDamage() <= 0) return;
-        if (!(event.getSource().getEntity() instanceof LivingEntity attacker) || attacker == victim) return;
-        if (attacker instanceof ServerPlayer caster && Switchback.isPending(caster)) {
-            SwapAdvancements.award(caster, SwapAdvancements.ROUND_TRIP);
-        }
-        if (!(victim instanceof ServerPlayer wearer)) return; // only players wear (or lend) faces
-        Disguises.get(wearer).ifPresent(d -> {
+        if (!(event.getEntity() instanceof ServerPlayer victim) || event.getNewDamage() <= 0) return;
+        if (!(event.getSource().getEntity() instanceof ServerPlayer attacker) || attacker == victim) return;
+        if (Switchback.isPending(attacker)) SwapAdvancements.award(attacker, SwapAdvancements.ROUND_TRIP);
+        Disguises.get(victim).ifPresent(d -> {
             if (d.kind() == Disguises.Kind.MIMIC || !d.as().equals(d.caster())) return;
-            ServerPlayer caster = Switchback.find(wearer.server, d.caster());
+            ServerPlayer caster = Switchback.find(victim.server, d.caster());
             if (caster != null && attacker != caster && Disguises.get(caster).isPresent()) {
                 SwapAdvancements.award(caster, SwapAdvancements.WRONG_TARGET);
             }
         });
-        for (Disguises.Disguise d : Disguises.wearing(wearer.getUUID())) {
+        for (Disguises.Disguise d : Disguises.wearing(victim.getUUID())) {
             if (d.kind() != Disguises.Kind.MIMIC) continue;
-            ServerPlayer mimic = Switchback.find(wearer.server, d.wearer());
+            ServerPlayer mimic = Switchback.find(victim.server, d.wearer());
             if (mimic != null && mimic != attacker) SwapAdvancements.award(mimic, SwapAdvancements.TWO_OF_YOU);
         }
     }

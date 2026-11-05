@@ -24,6 +24,7 @@ import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.animal.Pig;
 import net.minecraft.world.level.levelgen.Heightmap;
 import net.minecraft.world.phys.Vec3;
@@ -529,7 +530,7 @@ class SwapTest {
             ServerLevel level = server.overworld();
             loadArena(level);
             ServerPlayer caster = damageable(server, "swap_mob_caster");
-            ServerPlayer player = TestServer.player(server, "swap_mob_player");
+            ServerPlayer player = damageable(server, "swap_mob_player");
             level.addNewPlayer(caster);
             level.addNewPlayer(player);
             Pig pig = EntityType.PIG.create(level);
@@ -553,10 +554,18 @@ class SwapTest {
             assertEquals(new Vec3(0.5, Y, 0.5), pig.position(), "the pig took the caster's place");
             assertEquals(-90f, pig.getYRot(), EPS, "facing traded");
             assertEquals(0f, pig.fallDistance, EPS);
-            assertTrue(TestServer.hasAdvancement(server, caster, SwapAdvancements.SWITCHEROO), "switcheroo on a mob");
-            // Fall Guy: the swapped mob falls to its death.
+            assertTrue(TestServer.hasAdvancement(server, caster, SwapAdvancements.SWITCHEROO), "switcheroo (learning) counts a mob");
+            // Fall Guy is a mastery advancement: a mob falling to its death after the swap doesn't count.
             SwapTracker.fellToDeath(pig);
-            assertTrue(TestServer.hasAdvancement(server, caster, SwapAdvancements.FALL_GUY), "fall guy on a mob");
+            assertFalse(TestServer.hasAdvancement(server, caster, SwapAdvancements.FALL_GUY), "fall guy (mastery): players only");
+
+            // Not Allowed (learning) counts a mob the swap was refused for.
+            InnateTechniqueService.clearCooldowns(caster);
+            facePig(caster, pig);
+            SwapDebug.setUnswappable(pig.getUUID(), true);
+            CastManager.handleIntent(caster, CastIntent.CAST_PRESS);
+            SwapDebug.setUnswappable(pig.getUUID(), false);
+            assertTrue(TestServer.hasAdvancement(server, caster, SwapAdvancements.NOT_ALLOWED), "not allowed (learning) counts a mob");
 
             // Switchback with a mob: Round Trip by hitting the mob, then the swap back; called off if the mob dies.
             InnateTechniqueService.clearCooldowns(caster);
@@ -566,7 +575,7 @@ class SwapTest {
             assertTrue(Switchback.isPending(caster), "switchback on a mob");
             pig.invulnerableTime = 0;
             assertTrue(pig.hurt(caster.damageSources().playerAttack(caster), 1f), "setup: hit the pig");
-            assertTrue(TestServer.hasAdvancement(server, caster, SwapAdvancements.ROUND_TRIP), "round trip on a mob");
+            assertFalse(TestServer.hasAdvancement(server, caster, SwapAdvancements.ROUND_TRIP), "round trip (mastery): hitting a mob doesn't count");
             TestServer.advanceGameTime(server, SwapConfig.ticks(SwapConfig.SWITCHBACK_DELAY));
             Switchback.tick(server);
             assertEquals(casterAt, caster.position(), "swapped back with the pig");
@@ -603,7 +612,7 @@ class SwapTest {
             assertEquals(0f, pig.fallDistance, EPS);
             // Newton's Third: the pig falls to its death after the exchange.
             SwapTracker.fellToDeath(pig);
-            assertTrue(TestServer.hasAdvancement(server, caster, SwapAdvancements.NEWTONS_THIRD), "newton's third on a mob");
+            assertFalse(TestServer.hasAdvancement(server, caster, SwapAdvancements.NEWTONS_THIRD), "newton's third (mastery): players only");
 
             // Send Off a mob onto the anchor: Return to Sender.
             InnateTechniqueService.clearCooldowns(caster);
@@ -615,7 +624,7 @@ class SwapTest {
             facePig(caster, pig);
             CastManager.handleIntent(caster, CastIntent.SPECIAL_PRESS);
             assertEquals(new Vec3(3.5, Y, -6.5), pig.position(), "the pig was sent onto the anchor");
-            assertTrue(TestServer.hasAdvancement(server, caster, SwapAdvancements.RETURN_TO_SENDER), "return to sender with a mob");
+            assertTrue(TestServer.hasAdvancement(server, caster, SwapAdvancements.RETURN_TO_SENDER), "return to sender (learning) counts a mob");
 
             // Players only: Awareness and Total Swap fizzle on a mob (free).
             InnateTechniqueService.clearCooldowns(caster);
@@ -627,6 +636,25 @@ class SwapTest {
             assertEquals(before, malice(caster), EPS, "awareness and total swap: no mob targets");
             assertFalse(Disguises.isDisguised(caster));
 
+            // Wrong Target and There Are Two of You are mastery: a MOB hitting the disguised player doesn't count.
+            pig.moveTo(8.5, Y, 6.5, 0f, 0f); // out of the line of sight
+            player.moveTo(8.5, Y, 0.5, 90f, 0f);
+            caster.moveTo(0.5, Y, 0.5, -90f, 0f);
+            caster.setYHeadRot(-90f);
+            MaliceService.refill(caster);
+            CastManager.handleIntent(caster, CastIntent.CAST_PRESS); // Awareness with the player
+            assertTrue(Disguises.isDisguised(player), "setup: awareness pair");
+            mobHit(pig, player);
+            assertFalse(TestServer.hasAdvancement(server, caster, SwapAdvancements.WRONG_TARGET), "wrong target (mastery): a mob's hit doesn't count");
+            Disguises.endInvolving(caster);
+            InnateTechniqueService.clearCooldowns(caster);
+            MaliceService.refill(caster);
+            CastManager.handleIntent(caster, CastIntent.SPECIAL_PRESS); // Mimic the player
+            assertTrue(Disguises.isDisguised(caster), "setup: mimic");
+            mobHit(pig, player);
+            assertFalse(TestServer.hasAdvancement(server, caster, SwapAdvancements.TWO_OF_YOU), "two of you (mastery): a mob's hit doesn't count");
+            Disguises.endInvolving(caster);
+
             // Never targets: bosses and armor stands.
             assertFalse(SwapTargeting.swappableMob(EntityType.WITHER.create(level)), "bosses");
             assertFalse(SwapTargeting.swappableMob(EntityType.ARMOR_STAND.create(level)), "armor stands");
@@ -637,6 +665,14 @@ class SwapTest {
                 for (ServerPlayer p : new ServerPlayer[] {caster, player}) level.removePlayerImmediately(p, Entity.RemovalReason.DISCARDED);
             }
         });
+    }
+
+    /** A mob hits a test player (spawn protection cleared, like {@link #hit}). */
+    static void mobHit(LivingEntity attacker, ServerPlayer victim) {
+        clearSpawnProtection(victim);
+        victim.invulnerableTime = 0;
+        victim.setHealth(victim.getMaxHealth());
+        assertTrue(victim.hurt(attacker.damageSources().mobAttack(attacker), 1f), "setup: the mob's hit landed");
     }
 
     /** The caster 8 blocks from the pig, looking down at it (a level look from eye height passes over a pig). */
@@ -669,16 +705,21 @@ class SwapTest {
     }
 
     static void hit(ServerPlayer attacker, ServerPlayer victim) {
-        try { // a new player is spawn-protected for 3 s, and tests never tick it down
+        clearSpawnProtection(victim);
+        victim.invulnerableTime = 0;
+        victim.setHealth(victim.getMaxHealth());
+        assertTrue(victim.hurt(attacker.damageSources().playerAttack(attacker), 1f), "setup: the hit landed");
+    }
+
+    /** A new player is spawn-protected for 3 s, and tests never tick it down. */
+    static void clearSpawnProtection(ServerPlayer victim) {
+        try {
             java.lang.reflect.Field spawnProtection = ServerPlayer.class.getDeclaredField("spawnInvulnerableTime");
             spawnProtection.setAccessible(true);
             spawnProtection.setInt(victim, 0);
         } catch (ReflectiveOperationException e) {
             throw new IllegalStateException(e);
         }
-        victim.invulnerableTime = 0;
-        victim.setHealth(victim.getMaxHealth());
-        assertTrue(victim.hurt(attacker.damageSources().playerAttack(attacker), 1f), "setup: the hit landed");
     }
 
     /** Loads the test chunk: area queries only see entities in loaded chunks. */
