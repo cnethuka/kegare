@@ -62,6 +62,13 @@ public final class KegareServerConfig {
     public static final ModConfigSpec.DoubleValue AURA_UPKEEP;
     public static final ModConfigSpec.DoubleValue AURA_COOLDOWN;
     public static final ModConfigSpec.IntValue AURA_SPEED_LEVEL;
+    public static final ModConfigSpec.DoubleValue BLINK_COST;
+    public static final ModConfigSpec.DoubleValue BLINK_DISTANCE;
+    public static final ModConfigSpec.DoubleValue UPDRAFT_COST;
+    public static final ModConfigSpec.DoubleValue UPDRAFT_MIN_CHARGE;
+    public static final ModConfigSpec.DoubleValue UPDRAFT_MAX_CHARGE;
+    public static final ModConfigSpec.DoubleValue UPDRAFT_MIN_LAUNCH;
+    public static final ModConfigSpec.DoubleValue UPDRAFT_MAX_LAUNCH;
 
     public static final ModConfigSpec.DoubleValue SHOCKWAVE_COST;
     public static final ModConfigSpec.DoubleValue SHOCKWAVE_COOLDOWN;
@@ -164,6 +171,19 @@ public final class KegareServerConfig {
         AURA_UPKEEP = b.comment("Drain per second while active.").defineInRange("upkeepPerSecond", 3.0, 0.0, 100_000.0);
         AURA_COOLDOWN = b.comment("Seconds, starts when switched off.").defineInRange("cooldown", 2.0, 0.0, 3600.0);
         AURA_SPEED_LEVEL = b.comment("Speed amplifier while active (0 = Speed I).").defineInRange("speedAmplifier", 0, 0, 10);
+        b.pop();
+
+        b.comment("Special of Dash (R). Needs Aura switched on. Shares Dash's cooldown.").push("blink");
+        BLINK_COST = b.defineInRange("cost", 8.0, 0.0, 100_000.0);
+        BLINK_DISTANCE = b.comment("Max teleport distance in blocks (stops short of walls).").defineInRange("distance", 8.0, 0.5, 64.0);
+        b.pop();
+
+        b.comment("Special of Hover (R, hold to charge). Needs the trait in DESIGN.md. Shares Hover's cooldown.").push("updraft");
+        UPDRAFT_COST = b.defineInRange("cost", 12.0, 0.0, 100_000.0);
+        UPDRAFT_MIN_CHARGE = b.comment("Seconds of charge needed before release fires.").defineInRange("minCharge", 0.25, 0.0, 60.0);
+        UPDRAFT_MAX_CHARGE = b.comment("Seconds to reach full charge.").defineInRange("maxCharge", 1.0, 0.05, 60.0);
+        UPDRAFT_MIN_LAUNCH = b.comment("Upward speed at no charge (blocks/tick).").defineInRange("minLaunch", 0.6, 0.0, 10.0);
+        UPDRAFT_MAX_LAUNCH = b.comment("Upward speed at full charge (blocks/tick).").defineInRange("maxLaunch", 1.4, 0.0, 10.0);
         b.pop();
 
         b.push("shockwave");

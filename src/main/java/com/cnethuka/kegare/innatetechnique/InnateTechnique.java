@@ -15,7 +15,7 @@ import net.minecraft.world.level.ItemLike;
 
 /**
  * An innate technique (registry {@code kegare:innate_technique}): a rarity, an ordered list of abilities
- * (cycled with next/previous) and an optional ultimate (the ultimate key; future dominions plug in here).
+ * (picked with the scroll wheel, number keys or radial menu; each may have a special on R) and an optional ultimate (the ultimate key; future dominions plug in here).
  * Register new ones with a {@code DeferredRegister} on {@link KegareRegistries#INNATE_TECHNIQUE_KEY}.
  */
 public class InnateTechnique {
@@ -72,11 +72,24 @@ public class InnateTechnique {
         return CostEnvironment.NEUTRAL;
     }
 
-    /** Finds an ability (cycle slots or ultimate) by ID. */
+    /** Finds an ability (slots, ultimate or any of their specials) by ID. */
     public final Optional<Ability> findAbility(ResourceLocation abilityId) {
-        for (Ability a : abilities) if (a.id().equals(abilityId)) return Optional.of(a);
-        if (ultimate != null && ultimate.id().equals(abilityId)) return Optional.of(ultimate);
+        for (Ability a : everyAbility()) if (a.id().equals(abilityId)) return Optional.of(a);
         return Optional.empty();
+    }
+
+    /** Every castable thing: each slot ability then its special, then the ultimate and its special. */
+    public final List<Ability> everyAbility() {
+        List<Ability> out = new ArrayList<>();
+        for (Ability a : abilities) {
+            out.add(a);
+            a.special().ifPresent(out::add);
+        }
+        if (ultimate != null) {
+            out.add(ultimate);
+            ultimate.special().ifPresent(out::add);
+        }
+        return out;
     }
 
     /** Test/placeholder content; excluded from rolls when {@code roll.includeTestInnateTechniques=false}. */

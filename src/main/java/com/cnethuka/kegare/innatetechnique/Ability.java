@@ -1,5 +1,7 @@
 package com.cnethuka.kegare.innatetechnique;
 
+import java.util.List;
+import java.util.Optional;
 import net.minecraft.Util;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
@@ -23,6 +25,10 @@ import net.minecraft.server.level.ServerPlayer;
  *       Stuns do not switch toggles off.</li>
  * </ul>
  * Toggles and channels are runtime-only: they end on death and logout and never persist.
+ * <p>
+ * <b>Specials.</b> An ability may define a {@link #special()}: a second ability (see {@link SpecialAbility}) cast
+ * with R while this one is selected. It runs the same lifecycle and shared checks under its own cast type, plus its
+ * {@link #requirements()}, and shares this ability's cooldown through {@link #cooldownKey()}.
  * Costs and cooldowns take the caster so future traits can scale them.
  */
 public interface Ability {
@@ -72,10 +78,32 @@ public interface Ability {
 
     /**
      * This ability's special (cast with R), if it has one. A special is an ability in its own right (own cast type,
-     * cost, effect and visuals) that shares this ability's cooldown. Default: none.
+     * cost, effect and visuals) that shares this ability's cooldown. Build one on {@link SpecialAbility}. Default: none.
      */
-    default java.util.Optional<Ability> special() {
-        return java.util.Optional.empty();
+    default Optional<Ability> special() {
+        return Optional.empty();
+    }
+
+    /** Specials only: the ability this is the special of. */
+    default Optional<Ability> base() {
+        return Optional.empty();
+    }
+
+    default boolean isSpecial() {
+        return base().isPresent();
+    }
+
+    /**
+     * The cooldown this ability starts and checks. A special uses its base ability's, so casting either one puts both
+     * on cooldown.
+     */
+    default ResourceLocation cooldownKey() {
+        return base().map(Ability::cooldownKey).orElse(id());
+    }
+
+    /** Conditions checked with the shared cast checks (see {@link Requirement}). Unmet: fizzle at no cost. */
+    default List<Requirement> requirements() {
+        return List.of();
     }
 
     /**

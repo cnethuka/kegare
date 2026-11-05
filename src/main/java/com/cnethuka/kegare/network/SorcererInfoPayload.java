@@ -5,6 +5,7 @@ import com.cnethuka.kegare.client.gui.ClientGuiHooks;
 import com.cnethuka.kegare.combat.CombatHelper;
 import com.cnethuka.kegare.config.KegareServerConfig;
 import com.cnethuka.kegare.innatetechnique.Ability;
+import com.cnethuka.kegare.innatetechnique.CastManager;
 import com.cnethuka.kegare.innatetechnique.InnateTechnique;
 import com.cnethuka.kegare.innatetechnique.InnateTechniqueRarity;
 import com.cnethuka.kegare.innatetechnique.InnateTechniqueService;
@@ -37,7 +38,11 @@ public record SorcererInfoPayload(
         int legendaryWeight, int baseLegendaryWeight
 ) implements CustomPacketPayload {
     /** @param castType ordinal of {@code CastType}; cooldown in ticks */
-    public record AbilityInfo(ResourceLocation id, int castType, float cost, float upkeepPerSecond, int cooldownTicks, boolean ultimate) {}
+    public record AbilityInfo(ResourceLocation id, int castType, float cost, float upkeepPerSecond, int cooldownTicks, boolean ultimate,
+                              Optional<SpecialInfo> special) {}
+
+    /** An ability's special (R). {@code available}: every requirement is met right now. */
+    public record SpecialInfo(ResourceLocation id, int castType, float cost, float upkeepPerSecond, boolean available) {}
 
     public static final Type<SorcererInfoPayload> TYPE = new Type<>(Kegare.id("sorcerer_info"));
     public static final StreamCodec<FriendlyByteBuf, SorcererInfoPayload> STREAM_CODEC = StreamCodec.ofMember(SorcererInfoPayload::write, SorcererInfoPayload::read);
@@ -70,8 +75,10 @@ public record SorcererInfoPayload(
     }
 
     private static AbilityInfo info(ServerPlayer player, Ability ability, boolean ultimate) {
+        Optional<SpecialInfo> special = ability.special().map(s -> new SpecialInfo(s.id(), s.castType().ordinal(),
+                (float) s.cost(player), (float) s.upkeepPerSecond(player), CastManager.unmetRequirement(player, s).isEmpty()));
         return new AbilityInfo(ability.id(), ability.castType().ordinal(), (float) ability.cost(player),
-                (float) ability.upkeepPerSecond(player), ability.cooldownTicks(player), ultimate);
+                (float) ability.upkeepPerSecond(player), ability.cooldownTicks(player), ultimate, special);
     }
 
     private void write(FriendlyByteBuf buf) {
@@ -90,6 +97,13 @@ public record SorcererInfoPayload(
             b.writeFloat(a.upkeepPerSecond());
             b.writeVarInt(a.cooldownTicks());
             b.writeBoolean(a.ultimate());
+            b.writeOptional(a.special(), (b2, sp) -> {
+                b2.writeResourceLocation(sp.id());
+                b2.writeVarInt(sp.castType());
+                b2.writeFloat(sp.cost());
+                b2.writeFloat(sp.upkeepPerSecond());
+                b2.writeBoolean(sp.available());
+            });
         });
         buf.writeCollection(traits, FriendlyByteBuf::writeResourceLocation);
         buf.writeVarInt(rollsSinceLegendary);
@@ -106,7 +120,8 @@ public record SorcererInfoPayload(
                 buf.readVarInt(), buf.readFloat(), buf.readVarInt(), buf.readBoolean(),
                 buf.readFloat(), buf.readFloat(), buf.readBoolean(),
                 buf.readOptional(FriendlyByteBuf::readResourceLocation),
-                buf.readList(b -> new AbilityInfo(b.readResourceLocation(), b.readVarInt(), b.readFloat(), b.readFloat(), b.readVarInt(), b.readBoolean())),
+                buf.readList(b -> new AbilityInfo(b.readResourceLocation(), b.readVarInt(), b.readFloat(), b.readFloat(), b.readVarInt(), b.readBoolean(),
+                        b.readOptional(b2 -> new SpecialInfo(b2.readResourceLocation(), b2.readVarInt(), b2.readFloat(), b2.readFloat(), b2.readBoolean())))),
                 buf.readList(FriendlyByteBuf::readResourceLocation),
                 buf.readVarInt(), buf.readVarInt(), buf.readVarInt(), buf.readVarInt(), buf.readInt(),
                 buf.readVarInt(), buf.readVarInt());

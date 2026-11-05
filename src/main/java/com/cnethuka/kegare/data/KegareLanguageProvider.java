@@ -130,6 +130,10 @@ public final class KegareLanguageProvider extends LanguageProvider {
         add("ability.kegare.test_hover.desc", "Hold to levitate. Drains " + MALICE + " while held.");
         add("ability.kegare.test_aura.desc", "Toggle a speed aura that drains " + MALICE + " every second.");
         add("ability.kegare.test_shockwave.desc", "A huge knockback wave around you.");
+        add("ability.kegare.test_blink", "[Test] Blink");
+        add("ability.kegare.test_blink.desc", "Special of Dash: teleport a short way forward. Needs Aura switched on.");
+        add("ability.kegare.test_updraft", "[Test] Updraft");
+        add("ability.kegare.test_updraft.desc", "Special of Hover: hold to charge, release to shoot straight up. Needs the " + LENSING_EYES + " trait.");
 
         // Traits
         add("trait.kegare.lensing_eyes", LENSING_EYES);
@@ -154,6 +158,13 @@ public final class KegareLanguageProvider extends LanguageProvider {
         add("gui.kegare.cost.total", "Total ×%s");
         add("gui.kegare.cost.short", "Cost %s");
         add("gui.kegare.cost.short_upkeep", "Cost %s + %s/s");
+        add("gui.kegare.sorcerer.special.line", "Special: %s (%s) · %s " + MALICE);
+        add("gui.kegare.sorcerer.special.line_upkeep", "Special: %s (%s) · %s + %s/s " + MALICE);
+        add("gui.kegare.sorcerer.special.none", "No special");
+        add("gui.kegare.special.kind", "Special (%s) · %s");
+        add("gui.kegare.special.requires", "Requires %s");
+        add("gui.kegare.special.shared_cooldown", "Shares %s's cooldown");
+        add("gui.kegare.radial.special", "%s: %s");
         add("gui.kegare.sorcerer.ability.ultimate_locked", "Ultimate: Locked");
         add("gui.kegare.sorcerer.ability.ultimate_locked.desc", "Its " + DOMINION + " comes later.");
 
@@ -163,6 +174,9 @@ public final class KegareLanguageProvider extends LanguageProvider {
         add("message.kegare.cast.no_ultimate", "Your " + INNATE_TECHNIQUE + " has no ultimate.");
         add("message.kegare.cast.ultimate_locked", "Locked. Your " + DOMINION + " comes later.");
         add("message.kegare.cast.no_special", "%s has no special.");
+        add("message.kegare.cast.requirement", "%s requires %s.");
+        add("requirement.kegare.trait", "the %s trait");
+        add("requirement.kegare.toggle_active", "%s to be active");
         add("message.kegare.cast.busy", "Already casting.");
         add("message.kegare.cast.stunned", "Stunned! (%ss)");
         add("message.kegare.cast.on_cooldown", "%s is on cooldown (%ss)");

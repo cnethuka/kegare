@@ -85,7 +85,7 @@ public final class AbilityRadialScreen extends Screen {
             boolean isHovered = i == hovered;
             GuiDraw.sprite(g, isHovered ? GuiDraw.SLOT_SELECTED : GuiDraw.SLOT, x, y, SLOT, SLOT);
             if (i == data.selectedSlot()) g.renderOutline(x - 2, y - 2, SLOT + 4, SLOT + 4, GuiDraw.WHITE); // current (hover is gold)
-            if (data.activeToggles().contains(ability.id())) g.renderOutline(x, y, SLOT, SLOT, 0xFF5CFF7A);
+            if (com.cnethuka.kegare.client.AbilityBarLayer.toggledOn(data, ability)) g.renderOutline(x, y, SLOT, SLOT, 0xFF5CFF7A);
 
             boolean hasIcon = GuiDraw.abilityIcon(g, ability, x + (SLOT - 16) / 2, y + (SLOT - 16) / 2);
 
@@ -112,6 +112,8 @@ public final class AbilityRadialScreen extends Screen {
         GuiDraw.centered(g, font, ability.displayName(), cx, cy - font.lineHeight, 1f, hovered >= 0 ? GuiDraw.WHITE : GuiDraw.GRAY);
         GuiDraw.centered(g, font, Component.translatable(ability.castType().translationKey()), cx, cy + 2, 1f, GuiDraw.DARK_GRAY);
         CostTooltip.shortLine(ability.id()).ifPresent(line -> GuiDraw.centered(g, font, line, cx, cy + 2 + font.lineHeight + 1, 1f, GuiDraw.MALICE));
+        ability.special().ifPresent(special -> GuiDraw.centered(g, font, Component.translatable("gui.kegare.radial.special",
+                KegareKeys.SPECIAL.getTranslatedKeyMessage(), special.displayName()), cx, cy + 2 + 2 * (font.lineHeight + 1), 1f, GuiDraw.GOLD));
         GuiDraw.centered(g, font, Component.translatable("gui.kegare.radial.hint"), cx, Math.min(height - 12, cy + r + SLOT), 1f, GuiDraw.GRAY);
     }
 

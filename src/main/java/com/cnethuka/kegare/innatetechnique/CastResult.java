@@ -17,6 +17,8 @@ public enum CastResult {
     ON_COOLDOWN("message.kegare.cast.on_cooldown"),
     NOT_ENOUGH_MALICE("message.kegare.cast.not_enough_malice"),
     BLOCKED("message.kegare.cast.blocked"),
+    /** A {@link Requirement} is unmet (e.g. a special needs a trait or an active toggle): fizzles, costs nothing. */
+    REQUIREMENT_UNMET("message.kegare.cast.requirement"),
     CHARGE_TOO_SHORT("message.kegare.cast.charge_too_short");
 
     private final String translationKey;

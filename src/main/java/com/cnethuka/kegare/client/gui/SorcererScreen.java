@@ -4,14 +4,18 @@ import com.cnethuka.kegare.client.KegareKeys;
 import com.cnethuka.kegare.innatetechnique.Ability;
 import com.cnethuka.kegare.innatetechnique.CastType;
 import com.cnethuka.kegare.innatetechnique.InnateTechnique;
+import com.cnethuka.kegare.innatetechnique.Requirement;
 import com.cnethuka.kegare.malice.MaliceTier;
 import com.cnethuka.kegare.network.SorcererInfoPayload;
 import com.cnethuka.kegare.registry.KegareRegistries;
 import com.cnethuka.kegare.trait.Trait;
+import javax.annotation.Nullable;
+import net.minecraft.ChatFormatting;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.util.FormattedCharSequence;
 import net.minecraft.util.Mth;
 import org.lwjgl.glfw.GLFW;
 
@@ -24,6 +28,7 @@ public final class SorcererScreen extends Screen {
     private enum Page { MALICE, INNATE_TECHNIQUE, TRAITS, PITY }
 
     private static Page lastPage = Page.MALICE;
+    private static final int TOOLTIP_WIDTH = 220;
 
     private SorcererInfoPayload info;
     private Page page = lastPage;
@@ -34,7 +39,7 @@ public final class SorcererScreen extends Screen {
     /** Ability rows drawn this frame (screen coordinates), for hover tooltips. */
     private final java.util.List<HoverRow> hoverRows = new java.util.ArrayList<>();
 
-    private record HoverRow(int x, int y, int w, int h, ResourceLocation ability) {
+    private record HoverRow(int x, int y, int w, int h, java.util.List<FormattedCharSequence> lines) {
         boolean contains(double mx, double my) {
             return mx >= x && mx < x + w && my >= y && my < y + h;
         }
@@ -93,9 +98,9 @@ public final class SorcererScreen extends Screen {
         contentHeight = bottom - top;
         renderScrollbar(g);
         if (mouseY >= contentY && mouseY < contentY + contentH) {
-            for (HoverRow row : hoverRows) {
+            for (HoverRow row : hoverRows) { // first match wins: special lines are added before their whole card
                 if (row.contains(mouseX, mouseY)) {
-                    g.renderComponentTooltip(font, CostTooltip.lines(row.ability()), mouseX, mouseY);
+                    if (!row.lines().isEmpty()) g.renderTooltip(font, row.lines(), mouseX, mouseY);
                     break;
                 }
             }
@@ -164,7 +169,7 @@ public final class SorcererScreen extends Screen {
         for (SorcererInfoPayload.AbilityInfo a : info.abilities()) {
             Ability ability = innateTechnique.findAbility(a.id()).orElse(null);
             Component abilityName = ability != null ? ability.displayName() : Component.literal(a.id().toString());
-            CastType castType = CastType.values()[Mth.clamp(a.castType(), 0, CastType.values().length - 1)];
+            CastType castType = castType(a.castType());
             Component slotLabel = a.ultimate() ? KegareKeys.ULTIMATE.getTranslatedKeyMessage() : Component.literal(Integer.toString(slot));
             Component header = a.ultimate()
                     ? Component.translatable("gui.kegare.sorcerer.ability.ultimate", abilityName, Component.translatable(castType.translationKey()))
@@ -184,8 +189,9 @@ public final class SorcererScreen extends Screen {
             if (ability != null) {
                 rowY += GuiDraw.wrapped(g, font, GuiDraw.description(ability.descriptionId()), textX, rowY, textW, GuiDraw.DARK_GRAY);
             }
+            if (!a.ultimate()) rowY += renderSpecialLine(g, ability, a, textX, rowY + 1, textW) + 1;
             y = Math.max(y + GuiDraw.ICON_SLOT_SIZE + 2, rowY) + 5;
-            hoverRows.add(new HoverRow(contentX, rowTop, contentW, y - rowTop, a.id()));
+            hoverRows.add(new HoverRow(contentX, rowTop, contentW, y - rowTop, visual(CostTooltip.lines(a.id()))));
         }
         if (innateTechnique.ultimateLocked()) {
             GuiDraw.lockedSlot(g, font, contentX, y, KegareKeys.ULTIMATE.getTranslatedKeyMessage());
@@ -195,6 +201,50 @@ public final class SorcererScreen extends Screen {
             y = Math.max(y + GuiDraw.ICON_SLOT_SIZE + 2, rowY) + 5;
         }
         return y;
+    }
+
+    /** The R line under an ability: its special (hover for details) or "No special". Returns the height used. */
+    private int renderSpecialLine(GuiGraphics g, @Nullable Ability ability, SorcererInfoPayload.AbilityInfo a, int x, int y, int w) {
+        Ability special = ability == null ? null : ability.special().orElse(null);
+        SorcererInfoPayload.SpecialInfo sp = a.special().orElse(null);
+        GuiDraw.specialBadge(g, x, y, sp != null);
+        if (sp == null || special == null) {
+            int h = GuiDraw.wrapped(g, font, Component.translatable("gui.kegare.sorcerer.special.none"), x + 12, y + 1, w - 12, GuiDraw.DARK_GRAY);
+            return Math.max(10, h + 1);
+        }
+        CastType castType = castType(sp.castType());
+        Component typeName = Component.translatable(castType.translationKey());
+        Component line = sp.upkeepPerSecond() > 0
+                ? Component.translatable("gui.kegare.sorcerer.special.line_upkeep", special.displayName(), typeName,
+                        GuiDraw.amount(sp.cost()), GuiDraw.amount(sp.upkeepPerSecond()))
+                : Component.translatable("gui.kegare.sorcerer.special.line", special.displayName(), typeName, GuiDraw.amount(sp.cost()));
+        int h = Math.max(10, GuiDraw.wrapped(g, font, line, x + 12, y + 1, w - 12, sp.available() ? GuiDraw.GOLD : GuiDraw.GRAY) + 1);
+        hoverRows.add(new HoverRow(x, y, w, h, specialTooltip(ability, special, sp, castType)));
+        return h;
+    }
+
+    private java.util.List<FormattedCharSequence> specialTooltip(Ability base, Ability special, SorcererInfoPayload.SpecialInfo sp, CastType castType) {
+        java.util.List<FormattedCharSequence> out = new java.util.ArrayList<>();
+        out.add(special.displayName().copy().withStyle(ChatFormatting.GOLD).getVisualOrderText());
+        out.add(Component.translatable("gui.kegare.special.kind", KegareKeys.SPECIAL.getTranslatedKeyMessage(),
+                Component.translatable(castType.translationKey())).withStyle(ChatFormatting.GRAY).getVisualOrderText());
+        out.addAll(font.split(GuiDraw.description(special.descriptionId()).copy().withStyle(ChatFormatting.WHITE), TOOLTIP_WIDTH));
+        out.addAll(visual(CostTooltip.lines(special.id())));
+        for (Requirement requirement : special.requirements()) {
+            out.addAll(font.split(Component.translatable("gui.kegare.special.requires", requirement.description())
+                    .withStyle(sp.available() ? ChatFormatting.GREEN : ChatFormatting.RED), TOOLTIP_WIDTH));
+        }
+        out.addAll(font.split(Component.translatable("gui.kegare.special.shared_cooldown", base.displayName())
+                .withStyle(ChatFormatting.DARK_GRAY), TOOLTIP_WIDTH));
+        return out;
+    }
+
+    private static java.util.List<FormattedCharSequence> visual(java.util.List<Component> lines) {
+        return lines.stream().map(Component::getVisualOrderText).toList();
+    }
+
+    private static CastType castType(int ordinal) {
+        return CastType.values()[Mth.clamp(ordinal, 0, CastType.values().length - 1)];
     }
 
     private int renderSevered(GuiGraphics g, int y) {

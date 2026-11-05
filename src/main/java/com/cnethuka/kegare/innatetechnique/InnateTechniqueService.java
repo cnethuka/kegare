@@ -55,7 +55,7 @@ public final class InnateTechniqueService {
     }
 
     public static int cooldownRemaining(ServerPlayer player, Ability ability) {
-        InnateTechniqueData.Cooldown cooldown = get(player).cooldowns().get(ability.id());
+        InnateTechniqueData.Cooldown cooldown = get(player).cooldowns().get(ability.cooldownKey());
         if (cooldown == null) return 0;
         return (int) Math.max(0, cooldown.endTick() - player.level().getGameTime());
     }
@@ -66,7 +66,7 @@ public final class InnateTechniqueService {
         long now = player.level().getGameTime();
         InnateTechniqueData data = get(player);
         data.pruneCooldowns(now);
-        data.putCooldown(ability.id(), new InnateTechniqueData.Cooldown(now + ticks, ticks));
+        data.putCooldown(ability.cooldownKey(), new InnateTechniqueData.Cooldown(now + ticks, ticks));
         PlayerSync.markDirty(player);
     }
 

@@ -148,11 +148,13 @@ All timestamps use **level game time**. They persist across restarts and are ide
 - Registry `kegare:innate_technique`, synced to clients so the HUD can resolve names and ability lists by ID.
 - `InnateTechnique` is made of:
   - a rarity (COMMON / RARE / EPIC / LEGENDARY)
-  - an ordered **ability list**, cycled with next/previous
+  - an ordered **ability list**, picked with the scroll wheel, number keys or radial menu (§3.5); each ability may
+    have a **special** on R (§3.15)
   - an optional **ultimate** (the ultimate key, where dominions will plug in)
   - the hooks `onAssigned` / `onRemoved`
 - `Ability` interface: `cost`, `cooldownTicks`, `castType`, `upkeepPerSecond`, min/max charge, max channel,
-  `canCast`, `execute`, `tick`, `onEnd`. Costs take the caster so traits can scale them later.
+  `canCast`, `execute`, `tick`, `onEnd`, plus `special`, `cooldownKey` and `requirements` (§3.15). Costs take the
+  caster so traits can scale them later.
 
   | Cast type | Lifecycle (server, `CastManager`) |
   |---|---|
@@ -166,7 +168,9 @@ All timestamps use **level game time**. They persist across restarts and are ide
   - has an innate technique
   - not busy (one charge/channel at a time)
   - **not stunned**
-  - off cooldown and can afford the cost
+  - off cooldown (by `cooldownKey`, so a special and its base share one)
+  - every `Requirement` met (unmet: fizzle with a message, nothing paid)
+  - can afford the cost
   - `ability.canCast`
 - Charges, channels and toggles are runtime-only and end on death, logout and innate technique change.
 - **TEST CONTENT** (`innatetechnique/test/`, config `[test_abilities]`):
@@ -178,7 +182,9 @@ All timestamps use **level game time**. They persist across restarts and are ide
   | `test_prism` | Epic | Burst (charged), Hover (channeled), plus Shockwave (instant ultimate) |
   | `test_apex` | Legendary | all four, plus Shockwave (instant ultimate) |
 
-  There is one per rarity, so every reveal can be shown.
+  There is one per rarity, so every reveal can be shown. Two test specials exercise §3.15: **Blink** (special of
+  Dash, instant short teleport, requires Aura to be active) and **Updraft** (special of Hover, charged upward launch,
+  requires the `lensing_eyes` trait). Burst, Aura and Shockwave have none, so R fizzles on them.
   Set `includeTestInnateTechniques=false` once real innate techniques exist.
 
 ### 3.4 Rolls and pity
@@ -239,7 +245,7 @@ All timestamps use **level game time**. They persist across restarts and are ide
   - It is sent at most once per tick, and only when something visible changed (Malice syncs when its whole number
     changes).
   - The client counts down cooldowns locally from game time.
-- Network version `3` (since the visuals payload, §3.13). Bump it when payload formats change; mismatched clients are
+- Network version `4` (since specials in `SorcererInfoPayload`, §3.15). Bump it when payload formats change; mismatched clients are
   refused.
 
 ### 3.6 HUD
@@ -541,6 +547,33 @@ Package `com.cnethuka.kegare.innate_technique.rime`. **Rarity: RARE.** All numbe
 - **Tests:** `RimeFreezeTest` (in-game JUnit) covers stacks, the freeze at max (stun, channel interrupted, visual
   loops), immunity, decay, and the shell's reduction and Thin Ice count.
 
+### 3.15 Specials (R)
+- Any slot ability can define a **special** (`Ability.special()`): a second ability cast with **R** while the base is
+  selected. Build it on `SpecialAbility(id, castType, () -> base, requirements...)`. It has its own:
+  - cast type (INSTANT / CHARGED / CHANNELED / TOGGLE; hold R for CHARGED and CHANNELED, press R again to switch a
+    TOGGLE special off),
+  - Malice cost and upkeep, effect (`execute`/`tick`/`onEnd`), and visuals (animation and VFX IDs per phase, §3.13),
+  - lang name and description (`ability.kegare.<id>`, `.desc`).
+- **Shared cooldown:** `cooldownKey()` is the base ability's ID, so casting either the base or the special starts the
+  one cooldown and both show it on the base slot. The length defaults to the base's `cooldownTicks` (a special may
+  override it).
+- **Server pipeline** (`CastManager`): R sends `SPECIAL_PRESS`/`SPECIAL_RELEASE`. The server resolves the selected
+  ability, then its special:
+  - no special → `"<ability> has no special."`, nothing paid;
+  - otherwise the same shared checks as a base cast (busy, stun, cooldown, requirements, cost, `canCast`), and the
+    same lifecycle. Only R's release ends an R charge/channel (right-click/C releases don't).
+- **Requirements** (`Requirement`): `Requirement.trait(trait)`, `Requirement.toggleActive(ability)` or
+  `Requirement.of(test, description)`.
+  - Unmet at the press → `"<special> requires <description>."`, nothing paid, no cooldown.
+  - Re-checked at a charge's release (a lapse fizzles for free). A channel or toggle ends when one lapses.
+- **Sorcerer screen:** under each ability card, an **R** badge with "Special: name (type) · cost" (gold when
+  available now, grey when a requirement is unmet) or "No special". Hovering it shows the type, description,
+  current cost, requirements (green met / red unmet) and "Shares <base>'s cooldown".
+- **HUD:** the ability bar's R badge is lit for abilities with a special. A special's charge/channel outlines its
+  base slot, and a TOGGLE special lights the base slot green. The radial menu shows "R: <special>".
+- **Tests:** `SpecialsTest` (in-game JUnit) covers fizzles without cost, both requirement kinds, the release
+  re-check and the shared cooldown both ways.
+
 ---
 
 ## 4. Extension points (how later content plugs in)
@@ -548,6 +581,7 @@ Package `com.cnethuka.kegare.innate_technique.rime`. **Rarity: RARE.** All numbe
 - **New innate technique:** create a `DeferredRegister<InnateTechnique>` on
   `KegareRegistries.INNATE_TECHNIQUE_KEY`, build abilities with `BaseAbility`, add the lang names, and put the
   numbers in config. Nothing in the base changes.
+- **Specials:** override `special()` on the base ability and build the special on `SpecialAbility` (§3.15).
 - **New trait:** register a `Trait` subclass (unique or not) and override its hooks.
 - **Dominions:** an innate technique's `ultimate` ability. It uses `CombatHelper` (stun, combat) and the shared
   `CastManager.validate` checks. Dominion-specific state gets its own attachment.

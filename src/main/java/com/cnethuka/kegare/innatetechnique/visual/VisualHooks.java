@@ -37,8 +37,7 @@ public final class VisualHooks {
     public static Set<ResourceLocation> allEffects() {
         Set<ResourceLocation> out = new LinkedHashSet<>(EXTRA_EFFECTS);
         for (InnateTechnique innateTechnique : KegareRegistries.INNATE_TECHNIQUE) {
-            innateTechnique.abilities().forEach(a -> out.addAll(a.visuals().effects()));
-            innateTechnique.ultimate().ifPresent(a -> out.addAll(a.visuals().effects()));
+            innateTechnique.everyAbility().forEach(a -> out.addAll(a.visuals().effects()));
         }
         return out;
     }

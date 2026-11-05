@@ -125,7 +125,7 @@ public final class AbilityBarLayer implements LayeredDraw.Layer {
             int alpha = (int) (170 * (1f - (now - readyAt) / (float) READY_FLASH_TICKS));
             g.fill(x + 1, y + 1, x + size - 1, y + size - 1, (alpha << 24) | 0xFFFFFF);
         }
-        if (data.activeToggles().contains(ability.id())) g.renderOutline(x, y, size, size, COLOR_TOGGLE_ON);
+        if (toggledOn(data, ability)) g.renderOutline(x, y, size, size, COLOR_TOGGLE_ON);
         if (ability.id().equals(castingId) || ability.special().map(s -> s.id().equals(castingId)).orElse(false)) {
             g.renderOutline(x, y, size, size, COLOR_CASTING);
         }
@@ -177,6 +177,12 @@ public final class AbilityBarLayer implements LayeredDraw.Layer {
         int gr = Math.min(255, ((rgb >> 8) & 0xFF) + 90);
         int b = Math.min(255, (rgb & 0xFF) + 90);
         return (r << 16) | (gr << 8) | b;
+    }
+
+    /** The ability or its special is a TOGGLE that is switched on. */
+    public static boolean toggledOn(SyncPayload data, Ability ability) {
+        return data.activeToggles().contains(ability.id())
+                || ability.special().map(special -> data.activeToggles().contains(special.id())).orElse(false);
     }
 
     /** Specials share their base ability's cooldown, so the base slot shows it. */

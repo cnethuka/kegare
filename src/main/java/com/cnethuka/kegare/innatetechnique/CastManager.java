@@ -59,25 +59,31 @@ public final class CastManager {
             case SELECTED, SPECIAL -> innateTechnique.get().ability(InnateTechniqueService.get(player).selectedSlot());
             case ULTIMATE -> innateTechnique.get().ultimate().orElse(null);
         };
-        if (slot == CastSlot.SPECIAL && ability != null) {
-            feedback(player, CastResult.NO_SPECIAL, ability); // specials arrive with the specials framework
-            return null;
-        }
         if (ability == null) {
             CastResult why = slot != CastSlot.ULTIMATE ? CastResult.NO_INNATE_TECHNIQUE
                     : innateTechnique.get().ultimateLocked() ? CastResult.ULTIMATE_LOCKED : CastResult.NO_ULTIMATE;
             feedback(player, why, null);
             return null;
         }
+        // R: the selected ability's special. None defined: fizzle, nothing paid.
+        if (slot == CastSlot.SPECIAL) {
+            Optional<Ability> special = ability.special();
+            if (special.isEmpty()) {
+                feedback(player, CastResult.NO_SPECIAL, ability);
+                return null;
+            }
+            ability = special.get();
+        }
         return new Resolved(innateTechnique.get(), ability);
     }
 
-    /** Shared checks. Every future innate technique goes through these. */
+    /** Shared checks. Every innate technique (base casts and specials alike) goes through these. */
     public static CastResult validate(ServerPlayer player, AbilityContext ctx) {
         Ability ability = ctx.ability();
         if (state(player).casting != null) return CastResult.BUSY;
         if (CombatHelper.isStunned(player)) return CastResult.STUNNED;
         if (InnateTechniqueService.cooldownRemaining(player, ability) > 0) return CastResult.ON_COOLDOWN;
+        if (unmetRequirement(player, ability).isPresent()) return CastResult.REQUIREMENT_UNMET;
         if (!MaliceService.canAfford(player, ability.cost(player))) return CastResult.NOT_ENOUGH_MALICE;
         if (!ability.canCast(ctx)) return CastResult.BLOCKED;
         return CastResult.OK;
@@ -141,6 +147,18 @@ public final class CastManager {
         PlayerSync.markDirty(player);
     }
 
+    /** The first of the ability's {@link Requirement}s the player doesn't meet right now. */
+    public static Optional<Requirement> unmetRequirement(ServerPlayer player, Ability ability) {
+        for (Requirement requirement : ability.requirements()) {
+            if (!requirement.isMet(player)) return Optional.of(requirement);
+        }
+        return Optional.empty();
+    }
+
+    public static boolean isToggleActive(ServerPlayer player, Ability toggle) {
+        return state(player).toggles.containsKey(toggle.id());
+    }
+
     private static void release(ServerPlayer player, CastSlot slot) {
         CastState state = state(player);
         CastState.Active active = state.casting;
@@ -181,7 +199,10 @@ public final class CastManager {
                 if (ability.castType() == CastType.CHARGED) {
                     ability.tick(new AbilityContext(player, innateTechnique, ability, cast.slot, chargeFraction(player, cast), cast.activeTicks));
                 } else if (ability.castType() == CastType.CHANNELED) {
-                    if (!MaliceService.trySpend(player, ability.upkeepPerSecond(player) / 20.0)) {
+                    if (unmetRequirement(player, ability).isPresent()) {
+                        feedback(player, CastResult.REQUIREMENT_UNMET, ability);
+                        endChannel(player, innateTechnique, cast, EndReason.CANCELLED);
+                    } else if (!MaliceService.trySpend(player, ability.upkeepPerSecond(player) / 20.0)) {
                         endChannel(player, innateTechnique, cast, EndReason.OUT_OF_MALICE);
                     } else {
                         ability.tick(new AbilityContext(player, innateTechnique, ability, cast.slot, 1f, cast.activeTicks));
@@ -193,9 +214,13 @@ public final class CastManager {
         }
 
         for (CastState.Active toggle : List.copyOf(state.toggles.values())) {
+            if (!state.toggles.containsValue(toggle)) continue; // another toggle's tick switched this one off
             toggle.activeTicks++;
             Ability ability = toggle.ability;
-            if (!MaliceService.trySpend(player, ability.upkeepPerSecond(player) / 20.0)) {
+            if (unmetRequirement(player, ability).isPresent()) {
+                feedback(player, CastResult.REQUIREMENT_UNMET, ability);
+                endToggle(player, innateTechnique, toggle, EndReason.CANCELLED);
+            } else if (!MaliceService.trySpend(player, ability.upkeepPerSecond(player) / 20.0)) {
                 endToggle(player, innateTechnique, toggle, EndReason.OUT_OF_MALICE);
             } else {
                 ability.tick(new AbilityContext(player, innateTechnique, ability, toggle.slot, 1f, toggle.activeTicks));
@@ -273,6 +298,12 @@ public final class CastManager {
             feedback(player, CastResult.STUNNED, ability);
             return;
         }
+        // A requirement (e.g. a toggle the special needs) may have lapsed while charging.
+        if (unmetRequirement(player, ability).isPresent()) {
+            ability.onEnd(ctx, EndReason.CANCELLED);
+            feedback(player, CastResult.REQUIREMENT_UNMET, ability);
+            return;
+        }
         // Toggle upkeep may have drained the reserve while charging: re-check at release.
         if (!MaliceService.trySpend(player, ability.cost(player))) {
             ability.onEnd(ctx, EndReason.OUT_OF_MALICE);
@@ -333,6 +364,8 @@ public final class CastManager {
                     Integer.toString((int) Math.ceil((ability == null ? 0 : ability.cost(player)) - 1.0e-6)),
                     Integer.toString((int) Math.floor(MaliceService.get(player).current())));
             case STUNNED -> Component.translatable(result.translationKey(), seconds(CombatHelper.stunTicksRemaining(player)));
+            case REQUIREMENT_UNMET -> Component.translatable(result.translationKey(), name,
+                    ability == null ? Component.empty() : unmetRequirement(player, ability).map(Requirement::description).orElse(Component.empty()));
             default -> Component.translatable(result.translationKey(), name);
         };
         player.displayClientMessage(message, true);

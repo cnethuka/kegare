@@ -2,10 +2,15 @@ package com.cnethuka.kegare.innatetechnique.test;
 
 import com.cnethuka.kegare.Kegare;
 import com.cnethuka.kegare.config.KegareServerConfig;
+import com.cnethuka.kegare.innatetechnique.Ability;
 import com.cnethuka.kegare.innatetechnique.AbilityContext;
 import com.cnethuka.kegare.innatetechnique.BaseAbility;
 import com.cnethuka.kegare.innatetechnique.CastType;
 import com.cnethuka.kegare.innatetechnique.EndReason;
+import com.cnethuka.kegare.innatetechnique.Requirement;
+import com.cnethuka.kegare.innatetechnique.SpecialAbility;
+import com.cnethuka.kegare.trait.KegareTraits;
+import java.util.Optional;
 import net.minecraft.core.Holder;
 import net.minecraft.core.particles.ParticleOptions;
 import net.minecraft.core.particles.ParticleTypes;
@@ -19,17 +24,19 @@ import net.minecraft.world.effect.MobEffect;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.phys.Vec3;
 
 /**
  * TEST CONTENT. Placeholder abilities that only exist to prove the cast pipeline
- * (one per cast type, plus an ultimate). Not balanced, not lore. Delete when real innate techniques exist.
+ * (one per cast type, plus an ultimate, and two specials: one needing an active toggle, one needing a trait). Not balanced, not lore. Delete when real innate techniques exist.
  * All numbers come from the {@code [test_abilities]} server config section.
  */
 public final class TestAbilities {
     private TestAbilities() {}
 
-    /** INSTANT: launches the caster horizontally in the direction they face. */
+    /** INSTANT: launches the caster horizontally in the direction they face. Special: {@link #BLINK}. */
     public static final BaseAbility DASH = new BaseAbility(Kegare.id("test_dash"), CastType.INSTANT) {
+        @Override public Optional<Ability> special() { return Optional.of(BLINK); }
         @Override public double cost(ServerPlayer p) { return KegareServerConfig.DASH_COST.get(); }
         @Override public int cooldownTicks(ServerPlayer p) { return KegareServerConfig.ticks(KegareServerConfig.DASH_COOLDOWN); }
 
@@ -68,8 +75,9 @@ public final class TestAbilities {
         }
     };
 
-    /** CHANNELED: levitate while the key is held. Upkeep drains per second. */
+    /** CHANNELED: levitate while the key is held. Upkeep drains per second. Special: {@link #UPDRAFT}. */
     public static final BaseAbility HOVER = new BaseAbility(Kegare.id("test_hover"), CastType.CHANNELED) {
+        @Override public Optional<Ability> special() { return Optional.of(UPDRAFT); }
         @Override public double cost(ServerPlayer p) { return KegareServerConfig.HOVER_COST.get(); }
         @Override public int cooldownTicks(ServerPlayer p) { return KegareServerConfig.ticks(KegareServerConfig.HOVER_COOLDOWN); }
         @Override public double upkeepPerSecond(ServerPlayer p) { return KegareServerConfig.HOVER_UPKEEP.get(); }
@@ -127,6 +135,57 @@ public final class TestAbilities {
 
         private void applySpeed(ServerPlayer p) {
             p.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SPEED, EFFECT_TICKS, KegareServerConfig.AURA_SPEED_LEVEL.get(), true, false, true));
+        }
+    };
+
+    /** Special of Dash (INSTANT): a short teleport forward. Requires Aura to be switched on (a condition requirement). */
+    public static final SpecialAbility BLINK = new SpecialAbility(Kegare.id("test_blink"), CastType.INSTANT, () -> DASH,
+            Requirement.toggleActive(AURA)) {
+        @Override public double cost(ServerPlayer p) { return KegareServerConfig.BLINK_COST.get(); }
+
+        @Override
+        public void execute(AbilityContext ctx) {
+            ServerPlayer p = ctx.player();
+            Vec3 look = p.getLookAngle();
+            Vec3 step = new Vec3(look.x, 0, look.z).normalize().scale(0.25);
+            if (step.lengthSqr() < 1.0e-6) return;
+            Vec3 last = Vec3.ZERO;
+            int steps = (int) (KegareServerConfig.BLINK_DISTANCE.get() / 0.25);
+            for (int i = 1; i <= steps; i++) {
+                Vec3 offset = step.scale(i);
+                if (!ctx.level().noCollision(p, p.getBoundingBox().move(offset))) break;
+                last = offset;
+            }
+            particles(ctx.level(), ParticleTypes.REVERSE_PORTAL, p, 16, 0.3);
+            p.teleportTo(p.getX() + last.x, p.getY(), p.getZ() + last.z);
+            p.resetFallDistance();
+            particles(ctx.level(), ParticleTypes.REVERSE_PORTAL, p, 16, 0.3);
+            sound(ctx.level(), p, SoundEvents.ENDERMAN_TELEPORT, 1.4f);
+        }
+    };
+
+    /** Special of Hover (CHARGED): launch straight up, higher with more charge. Requires a trait. */
+    public static final SpecialAbility UPDRAFT = new SpecialAbility(Kegare.id("test_updraft"), CastType.CHARGED, () -> HOVER,
+            Requirement.trait(KegareTraits.LENSING_EYES)) {
+        @Override public double cost(ServerPlayer p) { return KegareServerConfig.UPDRAFT_COST.get(); }
+        @Override public int minChargeTicks(ServerPlayer p) { return KegareServerConfig.ticks(KegareServerConfig.UPDRAFT_MIN_CHARGE); }
+        @Override public int maxChargeTicks(ServerPlayer p) { return Math.max(1, KegareServerConfig.ticks(KegareServerConfig.UPDRAFT_MAX_CHARGE)); }
+
+        @Override
+        public void tick(AbilityContext ctx) {
+            if (ctx.activeTicks() % 3 == 0) particles(ctx.level(), ParticleTypes.CLOUD, ctx.player(), 2 + (int) (ctx.charge() * 4), 0.3);
+        }
+
+        @Override
+        public void execute(AbilityContext ctx) {
+            ServerPlayer p = ctx.player();
+            double lift = Mth.lerp(ctx.charge(), KegareServerConfig.UPDRAFT_MIN_LAUNCH.get(), KegareServerConfig.UPDRAFT_MAX_LAUNCH.get());
+            p.setDeltaMovement(p.getDeltaMovement().x, lift, p.getDeltaMovement().z);
+            p.hurtMarked = true;
+            p.resetFallDistance();
+            p.addEffect(new MobEffectInstance(MobEffects.SLOW_FALLING, 60, 0, false, false, true));
+            particles(ctx.level(), ParticleTypes.GUST, p, 3, 0.4);
+            sound(ctx.level(), p, SoundEvents.BREEZE_JUMP, 0.7f);
         }
     };
 

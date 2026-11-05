@@ -81,9 +81,7 @@ public record SyncPayload(
         CostEnvironment environment = technique.map(t -> t.environment(player)).orElse(CostEnvironment.NEUTRAL);
         List<AbilityCost> costs = new ArrayList<>();
         technique.ifPresent(t -> {
-            List<Ability> all = new ArrayList<>(t.abilities());
-            t.ultimate().ifPresent(all::add);
-            for (Ability a : all) costs.add(new AbilityCost(a.id(), (float) a.cost(player), (float) a.upkeepPerSecond(player)));
+            for (Ability a : t.everyAbility()) costs.add(new AbilityCost(a.id(), (float) a.cost(player), (float) a.upkeepPerSecond(player)));
         });
 
         return new SyncPayload(
