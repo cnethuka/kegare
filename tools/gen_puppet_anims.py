@@ -84,5 +84,23 @@ A["focus_point"] = anim(0.7, {
     "torso": [(0, (0, 0, 0), "easeOutQuad"), (0.1, (0, -16, 0), "easeOutQuad"), (0.45, (0, -16, 0), "linear"), (0.7, (0, 0, 0), "easeInOutSine")],
 })
 
+# Curio Burst: the hand reaches out, then clenches into a fist and yanks back (the string pulled, the curio pops).
+A["curio_burst_cast"] = anim(0.5, {
+    "right_arm": [(0, (0, 0, 0), "easeOutQuad"), (0.1, (-96, -8, 0), "easeOutQuad"), (0.18, (-100, -8, 0), "linear"),
+                  (0.26, (-56, 6, 10), "easeOutQuad"), (0.5, (0, 0, 0), "easeInOutSine")],
+    "torso": [(0, (0, 0, 0), "easeOutQuad"), (0.26, (0, 10, 0), "easeOutQuad"), (0.5, (0, 0, 0), "easeInOutSine")],
+    "head": [(0, (0, 0, 0), "easeOutQuad"), (0.26, (-6, 6, 0), "easeOutQuad"), (0.5, (0, 0, 0), "easeInOutSine")],
+})
+
+# Chain Burst: both hands thrown wide open overhead, fingers spread, then brought down (every string let go at once).
+A["chain_burst_cast"] = anim(0.7, {
+    "right_arm": [(0, (0, 0, 0), "easeOutQuad"), (0.14, (-170, -20, 40), "easeOutQuad"), (0.3, (-165, -20, 44), "linear"),
+                  (0.45, (-40, 0, 30), "easeInQuad"), (0.7, (0, 0, 0), "easeInOutSine")],
+    "left_arm": [(0, (0, 0, 0), "easeOutQuad"), (0.14, (-170, 20, -40), "easeOutQuad"), (0.3, (-165, 20, -44), "linear"),
+                 (0.45, (-40, 0, -30), "easeInQuad"), (0.7, (0, 0, 0), "easeInOutSine")],
+    "head": [(0, (0, 0, 0), "easeOutQuad"), (0.14, (-18, 0, 0), "easeOutQuad"), (0.45, (8, 0, 0), "easeInQuad"), (0.7, (0, 0, 0), "easeInOutSine")],
+    "torso": [(0, (0, 0, 0), "easeOutQuad"), (0.14, (-6, 0, 0), "easeOutQuad"), (0.45, (6, 0, 0), "easeInQuad"), (0.7, (0, 0, 0), "easeInOutSine")],
+})
+
 OUT.write_text(json.dumps({"format_version": "1.8.0", "animations": A}, indent=2) + "\n")
 print("wrote", OUT, "with", len(A), "animations")

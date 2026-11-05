@@ -17,6 +17,8 @@ public final class PuppetIds {
     public static final ResourceLocation ANIM_DIRECTIVE_CAST = Kegare.id("directive_cast");
     public static final ResourceLocation ANIM_FOCUS_POINT = Kegare.id("focus_point");
     public static final ResourceLocation ANIM_CURIO_BURST_CAST = Kegare.id("curio_burst_cast");
+    /** Chain Burst's own cast (a special needs its own tell): both hands thrown open, fingers spread. */
+    public static final ResourceLocation ANIM_CHAIN_BURST_CAST = Kegare.id("chain_burst_cast");
     public static final ResourceLocation ANIM_UNDERSTUDY_CAST = Kegare.id("understudy_cast");
     public static final ResourceLocation ANIM_STAND_IN_CAST = Kegare.id("stand_in_cast");
     /** On the puppet itself: PAL animates players only, so {@code PuppetPoses} samples this one for the puppet model. */
@@ -28,7 +30,10 @@ public final class PuppetIds {
     public static final ResourceLocation FX_POSSESS_LINK = fx("possess_link");
     public static final ResourceLocation FX_DIRECTIVE_PULSE = fx("directive_pulse");
     public static final ResourceLocation FX_FOCUS_MARK = fx("focus_mark");
-    public static final ResourceLocation FX_CURIO_BURST_EXPLOSION = fx("curio_burst_explosion");
+    /** curio_burst_explosion, in one size per charge tier. */
+    public static final ResourceLocation FX_CURIO_BURST_EXPLOSION_TAP = fx("curio_burst_explosion_tap");
+    public static final ResourceLocation FX_CURIO_BURST_EXPLOSION_HALF = fx("curio_burst_explosion_half");
+    public static final ResourceLocation FX_CURIO_BURST_EXPLOSION_FULL = fx("curio_burst_explosion_full");
     public static final ResourceLocation FX_STAND_IN_GROW = fx("stand_in_grow");
     public static final ResourceLocation FX_UNDERSTUDY_SWAP = fx("understudy_swap");
 

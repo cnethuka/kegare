@@ -165,6 +165,18 @@ public final class KegareLanguageProvider extends LanguageProvider {
         add("message.kegare.focus.no_target", "Nothing in sight to focus on.");
         add("message.kegare.focus.no_puppets", "No puppets of yours in range.");
         add("message.kegare.focus.swarm", "%s puppets swarm %s.");
+        add("ability.kegare.curio_burst", "Curio Burst");
+        add("ability.kegare.curio_burst.desc", "Detonate the puppet you're looking at. The more Malice it was made with, the bigger the "
+                + "blast: 4, 7 or 12 damage at the centre (half at the edge) and a push away. Never hurts you or your puppets.");
+        add("ability.kegare.chain_burst", "Chain Burst");
+        add("ability.kegare.chain_burst.desc", "Every puppet of yours within 8 blocks of what you're looking at detonates, "
+                + "nearest first, one after another.");
+        add("message.kegare.curio_burst.no_puppet", "No puppet of yours in sight.");
+        add("message.kegare.chain_burst.no_target", "Nothing in sight.");
+        add("message.kegare.chain_burst.no_puppets", "None of your puppets is within %s blocks of it.");
+        add("death.attack.kegare.curio_burst", "%1$s was blown apart by %2$s's puppet");
+        add("death.attack.kegare.curio_burst.item", "%1$s was blown apart by %2$s's puppet");
+        add("death.attack.kegare.curio_burst.player", "%1$s was blown apart by a puppet while fighting %2$s");
         add("entity.kegare.puppet", "Puppet");
         add("ability.kegare.possess", "Possess");
         add("ability.kegare.possess.desc", "Move into the puppet you're looking at (or your nearest one) and become it: its size, "

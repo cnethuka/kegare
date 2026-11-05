@@ -38,7 +38,9 @@ public final class PuppetClient {
         VanillaFallback.register(PuppetIds.FX_POSSESS_LINK, new VanillaFallback.Spec(LAVENDER_DUST, 1, 2, 0.04, 0.0));
         VanillaFallback.register(PuppetIds.FX_DIRECTIVE_PULSE, new VanillaFallback.Spec(LAVENDER_DUST, 1, 30, 1.2, 0.05));
         VanillaFallback.register(PuppetIds.FX_FOCUS_MARK, new VanillaFallback.Spec(ParticleTypes.CRIT, 1, 12, 0.4, 0.05));
-        VanillaFallback.register(PuppetIds.FX_CURIO_BURST_EXPLOSION, new VanillaFallback.Spec(ParticleTypes.EXPLOSION, 1, 3, 0.5, 0.0));
+        VanillaFallback.register(PuppetIds.FX_CURIO_BURST_EXPLOSION_TAP, new VanillaFallback.Spec(ParticleTypes.EXPLOSION, 1, 2, 0.4, 0.0));
+        VanillaFallback.register(PuppetIds.FX_CURIO_BURST_EXPLOSION_HALF, new VanillaFallback.Spec(ParticleTypes.EXPLOSION, 1, 4, 0.7, 0.0));
+        VanillaFallback.register(PuppetIds.FX_CURIO_BURST_EXPLOSION_FULL, new VanillaFallback.Spec(ParticleTypes.EXPLOSION, 1, 7, 1.1, 0.0));
         VanillaFallback.register(PuppetIds.FX_STAND_IN_GROW, new VanillaFallback.Spec(LAVENDER_DUST, 1, 30, 0.6, 0.08));
         VanillaFallback.register(PuppetIds.FX_UNDERSTUDY_SWAP, new VanillaFallback.Spec(ParticleTypes.PORTAL, 1, 24, 0.5, 0.5));
     }

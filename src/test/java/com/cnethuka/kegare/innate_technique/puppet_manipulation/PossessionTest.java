@@ -250,7 +250,7 @@ class PossessionTest {
         PuppetEntity puppet = PuppetTest.create(server, p, chargeTicks);
         InnateTechniqueService.clearCooldowns(p);
         MaliceService.refill(p);
-        puppet.moveTo(p.getX() + 4, Y, p.getZ(), 90f, 0f);
+        puppet.moveTo(p.getX() + 4, p.getY(), p.getZ(), 90f, 0f);
         aimAt(p, puppet);
         return puppet;
     }

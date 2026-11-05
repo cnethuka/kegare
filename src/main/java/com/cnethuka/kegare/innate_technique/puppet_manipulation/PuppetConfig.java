@@ -35,6 +35,17 @@ public final class PuppetConfig {
     public static ModConfigSpec.DoubleValue FOCUS_COST;
     public static ModConfigSpec.DoubleValue FOCUS_TARGET_RANGE;
 
+    // curio_burst (INSTANT) and chain_burst (special of curio_burst, INSTANT)
+    public static ModConfigSpec.DoubleValue CURIO_COST;
+    public static ModConfigSpec.DoubleValue CURIO_COOLDOWN;
+    public static ModConfigSpec.DoubleValue CURIO_RANGE;
+    public static final ModConfigSpec.DoubleValue[] CURIO_DAMAGE = new ModConfigSpec.DoubleValue[PuppetTier.values().length];
+    public static final ModConfigSpec.DoubleValue[] CURIO_RADIUS = new ModConfigSpec.DoubleValue[PuppetTier.values().length];
+    public static ModConfigSpec.DoubleValue CURIO_KNOCKBACK;
+    public static ModConfigSpec.DoubleValue CHAIN_COST;
+    public static ModConfigSpec.DoubleValue CHAIN_RADIUS;
+    public static ModConfigSpec.DoubleValue CHAIN_DELAY;
+
     private PuppetConfig() {}
 
     /** Called from KegareServerConfig while it builds the spec. */
@@ -99,6 +110,29 @@ public final class PuppetConfig {
         b.comment("Special of Directive: every puppet in range swarms the player or mob you're looking at.").push("focus");
         FOCUS_COST = b.defineInRange("cost", 10.0, 0.0, 100_000.0);
         FOCUS_TARGET_RANGE = b.comment("How far away (blocks) the target can be.").defineInRange("targetRange", 32.0, 1.0, 256.0);
+        b.pop();
+
+        b.comment("Detonate the puppet you're looking at. Damage and radius grow with its charge tier; full damage at the",
+                "centre, half at the edge. Never hurts you or your puppets; breaks no blocks.").push("curio_burst");
+        CURIO_COST = b.defineInRange("cost", 8.0, 0.0, 100_000.0);
+        CURIO_COOLDOWN = b.defineInRange("cooldown", 4.0, 0.0, 3600.0);
+        CURIO_RANGE = b.comment("How far away (blocks) the puppet can be.").defineInRange("range", 32.0, 1.0, 256.0);
+        double[] damage = {4.0, 7.0, 12.0};
+        double[] radius = {2.5, 3.0, 4.0};
+        for (PuppetTier tier : PuppetTier.values()) {
+            b.push(tier.serializedName());
+            CURIO_DAMAGE[tier.ordinal()] = b.defineInRange("damage", damage[tier.ordinal()], 0.0, 1000.0);
+            CURIO_RADIUS[tier.ordinal()] = b.defineInRange("radius", radius[tier.ordinal()], 0.5, 32.0);
+            b.pop();
+        }
+        CURIO_KNOCKBACK = b.comment("Push away from the blast (bosses are never pushed).").defineInRange("knockback", 0.6, 0.0, 10.0);
+        b.pop();
+
+        b.comment("Special of Curio Burst: every puppet of yours near what you're looking at detonates, one after another.")
+                .push("chain_burst");
+        CHAIN_COST = b.defineInRange("cost", 16.0, 0.0, 100_000.0);
+        CHAIN_RADIUS = b.comment("Puppets this close (blocks) to the target go off.").defineInRange("radius", 8.0, 1.0, 64.0);
+        CHAIN_DELAY = b.comment("Between one detonation and the next, seconds.").defineInRange("delay", 0.25, 0.0, 5.0);
         b.pop();
 
         b.pop();

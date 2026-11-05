@@ -96,7 +96,13 @@ public final class PuppetEvents {
     }
 
     @SubscribeEvent
+    static void onServerTick(net.neoforged.neoforge.event.tick.ServerTickEvent.Post event) {
+        CurioBursts.tick(event.getServer());
+    }
+
+    @SubscribeEvent
     static void onServerStopped(ServerStoppedEvent event) {
         Possession.clear();
+        CurioBursts.clear();
     }
 }
