@@ -129,6 +129,13 @@ public final class KegareLanguageProvider extends LanguageProvider {
         add("ability.kegare.send_off", "Send Off");
         add("ability.kegare.send_off.desc", "Needs your anchor out: swap the player you're looking at with the anchor instead of yourself. "
                 + "Uses the anchor up.");
+        add("ability.kegare.exchange", "Exchange");
+        add("ability.kegare.exchange.desc", "Give the player you're looking at your worst negative effect and take their strongest "
+                + "positive one, duration and level included. Effects that last forever never move.");
+        add("ability.kegare.momentum_exchange", "Momentum Exchange");
+        add("ability.kegare.momentum_exchange.desc", "Swap velocity and fall distance with the player you're looking at. "
+                + "Nobody moves; their momentum does.");
+        add("message.kegare.swap.nothing_to_exchange", "Nothing to exchange.");
         add("entity.kegare.swap_anchor", "Swap Anchor");
         add("item.kegare.swap_anchor", "Swap Anchor");
         add("message.kegare.swap.no_anchor", "You have no anchor out.");

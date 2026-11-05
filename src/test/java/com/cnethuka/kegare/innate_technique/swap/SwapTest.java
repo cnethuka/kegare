@@ -15,6 +15,8 @@ import java.util.OptionalInt;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.effect.MobEffectInstance;
+import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.level.levelgen.Heightmap;
 import net.minecraft.world.phys.Vec3;
@@ -278,6 +280,72 @@ class SwapTest {
             assertTrue(anchor.isRemoved(), "timed out");
             assertFalse(Anchors.has(caster));
 
+            } finally {
+                for (ServerPlayer p : new ServerPlayer[] {caster, target}) level.removePlayerImmediately(p, Entity.RemovalReason.DISCARDED);
+            }
+        });
+    }
+
+    @Test
+    void exchange(MinecraftServer server) throws Exception {
+        TestServer.onServerThread(server, () -> {
+            TestServer.ensureOverworld(server);
+            ServerLevel level = server.overworld();
+            loadArena(level);
+            ServerPlayer caster = TestServer.player(server, "exchange_caster");
+            ServerPlayer target = TestServer.player(server, "exchange_target");
+            level.addNewPlayer(caster);
+            level.addNewPlayer(target);
+            try {
+            BirthService.rebirth(caster, OptionalInt.of(1000));
+            InnateTechniqueService.setInnateTechnique(caster, Swap.SWAP.get());
+            InnateTechniqueService.select(caster, 3);
+            assertEquals(Swap.EXCHANGE, com.cnethuka.kegare.loadout.LoadoutService.abilityAt(caster, 3), "setup: Exchange in slot 4");
+            caster.removeAllEffects();
+            target.removeAllEffects();
+
+            // Nothing to swap: free fizzle. Infinite effects never count.
+            face(caster, target);
+            caster.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SLOWDOWN, MobEffectInstance.INFINITE_DURATION, 3));
+            double before = malice(caster);
+            CastManager.handleIntent(caster, CastIntent.CAST_PRESS);
+            assertEquals(before, malice(caster), EPS, "nothing to swap: free");
+            assertEquals(0, InnateTechniqueService.cooldownRemaining(caster, Swap.EXCHANGE));
+            caster.removeAllEffects();
+
+            // The caster's worst negative goes; the target's strongest positive comes back (level and time kept).
+            caster.addEffect(new MobEffectInstance(MobEffects.POISON, 200, 1));
+            caster.addEffect(new MobEffectInstance(MobEffects.WEAKNESS, 400, 0));
+            target.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SPEED, 300, 0));
+            target.addEffect(new MobEffectInstance(MobEffects.DAMAGE_BOOST, 100, 2));
+            CastManager.handleIntent(caster, CastIntent.CAST_PRESS);
+            assertEquals(before - SwapConfig.EXCHANGE_COST.get(), malice(caster), EPS, "cost");
+            assertFalse(caster.hasEffect(MobEffects.POISON), "gave Poison away");
+            assertTrue(caster.hasEffect(MobEffects.WEAKNESS), "kept the lesser negative");
+            assertEquals(1, target.getEffect(MobEffects.POISON).getAmplifier(), "Poison II carried over");
+            assertEquals(200, target.getEffect(MobEffects.POISON).getDuration(), "duration carried over");
+            assertFalse(target.hasEffect(MobEffects.DAMAGE_BOOST), "Strength taken");
+            assertTrue(target.hasEffect(MobEffects.MOVEMENT_SPEED), "the lesser positive stays");
+            assertEquals(2, caster.getEffect(MobEffects.DAMAGE_BOOST).getAmplifier(), "Strength III carried over");
+            assertEquals(100, caster.getEffect(MobEffects.DAMAGE_BOOST).getDuration());
+
+            // Momentum Exchange: velocities and fall distances trade; nobody moves.
+            InnateTechniqueService.clearCooldowns(caster);
+            face(caster, target);
+            caster.setKnownMovement(new Vec3(0, -1.5, 0));
+            target.setKnownMovement(new Vec3(0.4, 0, 0));
+            caster.fallDistance = 10f;
+            target.fallDistance = 0f;
+            Vec3 casterAt = caster.position();
+            before = malice(caster);
+            CastManager.handleIntent(caster, CastIntent.SPECIAL_PRESS);
+            assertEquals(before - SwapConfig.MOMENTUM_COST.get(), malice(caster), EPS, "momentum cost");
+            assertEquals(new Vec3(0.4, 0, 0), caster.getDeltaMovement(), "caster took the target's velocity");
+            assertEquals(new Vec3(0, -1.5, 0), target.getDeltaMovement(), "target took the caster's velocity");
+            assertEquals(0f, caster.fallDistance, EPS, "fall distance traded");
+            assertEquals(10f, target.fallDistance, EPS, "fall distance traded");
+            assertEquals(casterAt, caster.position(), "nobody moved");
+            assertTrue(InnateTechniqueService.cooldownRemaining(caster, Swap.EXCHANGE) > 0, "shared cooldown");
             } finally {
                 for (ServerPlayer p : new ServerPlayer[] {caster, target}) level.removePlayerImmediately(p, Entity.RemovalReason.DISCARDED);
             }
