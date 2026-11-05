@@ -1,5 +1,6 @@
 package com.cnethuka.kegare.innate_technique.swap;
 
+import com.cnethuka.kegare.combat.CombatHelper;
 import com.cnethuka.kegare.innatetechnique.Ability;
 import java.util.Optional;
 import java.util.function.Predicate;
@@ -16,7 +17,6 @@ import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
 import net.neoforged.neoforge.common.NeoForge;
-import net.neoforged.neoforge.common.Tags;
 
 /**
  * Shared targeting: the player (or, for the abilities that take them, the mob) under the crosshair within
@@ -42,7 +42,7 @@ public final class SwapTargeting {
 
     /** Any living non-player except armor stands and bosses (the wither, the ender dragon, anything in {@code c:bosses}). */
     public static boolean swappableMob(LivingEntity entity) {
-        return !(entity instanceof Player) && !(entity instanceof ArmorStand) && !entity.getType().is(Tags.EntityTypes.BOSSES);
+        return !(entity instanceof Player) && !(entity instanceof ArmorStand) && !CombatHelper.isBoss(entity);
     }
 
     private static <T extends LivingEntity> Optional<T> look(ServerPlayer caster, Class<T> type, Predicate<? super T> valid) {

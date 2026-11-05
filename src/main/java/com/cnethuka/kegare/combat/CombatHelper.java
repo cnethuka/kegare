@@ -4,7 +4,9 @@ import com.cnethuka.kegare.config.KegareServerConfig;
 import com.cnethuka.kegare.registry.KegareAttachments;
 import com.cnethuka.kegare.innatetechnique.CastManager;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
+import net.neoforged.neoforge.common.Tags;
 
 /**
  * Shared combat state for abilities, dominions and anything else that needs it.
@@ -16,6 +18,14 @@ public final class CombatHelper {
 
     private static long now(LivingEntity entity) {
         return entity.level().getGameTime();
+    }
+
+    /**
+     * A boss ({@code c:bosses}: the wither, the ender dragon, modded bosses). Per DESIGN §4, bosses take damage from
+     * innate techniques but are never moved, swapped or disabled (no freeze, launch, knockback or swap).
+     */
+    public static boolean isBoss(Entity entity) {
+        return entity.getType().is(Tags.EntityTypes.BOSSES);
     }
 
     /** Marks the entity as in combat right now (also pauses Malice regen). */

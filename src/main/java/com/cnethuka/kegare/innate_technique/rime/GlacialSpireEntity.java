@@ -1,5 +1,6 @@
 package com.cnethuka.kegare.innate_technique.rime;
 
+import com.cnethuka.kegare.combat.CombatHelper;
 import com.cnethuka.kegare.innatetechnique.visual.Visual;
 import com.cnethuka.kegare.innatetechnique.visual.VisualService;
 import java.util.UUID;
@@ -89,6 +90,7 @@ public class GlacialSpireEntity extends Entity {
         for (LivingEntity target : level.getEntitiesOfClass(LivingEntity.class, area, e -> e.isAlive() && !e.isSpectator()
                 && (owner == null || e != owner) && horizontalDistance(e) <= radius + e.getBbWidth() / 2)) {
             if (target.hurt(RimeDamage.source(level, this, owner), damage)) FreezeService.addStacks(target, stacks, owner);
+            if (CombatHelper.isBoss(target)) continue; // bosses take the damage but are never launched (DESIGN §4)
             Vec3 v = target.getDeltaMovement();
             target.setDeltaMovement(v.x * 0.2, launch, v.z * 0.2);
             target.hurtMarked = true;

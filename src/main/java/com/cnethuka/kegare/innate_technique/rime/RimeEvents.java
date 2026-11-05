@@ -25,7 +25,7 @@ import net.minecraft.server.level.ServerLevel;
 public final class RimeEvents {
     private RimeEvents() {}
 
-    /** Rime Shell: less damage taken, melee attackers slowed, blocked damage counted toward Thin Ice. */
+    /** Rime Shell: less damage taken, melee attackers slowed, damage blocked from players counted toward Thin Ice. */
     @SubscribeEvent(priority = EventPriority.LOW)
     static void onDamage(LivingDamageEvent.Pre event) {
         if (!(event.getEntity() instanceof ServerPlayer player) || !Rime.RIME_SHELL.isActive(player)) return;
@@ -34,9 +34,12 @@ public final class RimeEvents {
         float after = before * (float) (1.0 - RimeConfig.SHELL_DAMAGE_REDUCTION.get());
         event.setNewDamage(after);
 
-        RimeStats stats = player.getData(RimeRegistry.STATS);
-        stats.shellBlocked += before - after;
-        if (stats.shellBlocked >= RimeAdvancements.THIN_ICE_DAMAGE) RimeAdvancements.award(player, RimeAdvancements.THIN_ICE);
+        // Thin Ice is a mastery advancement (DESIGN §4): only damage from another player counts toward it.
+        if (event.getSource().getEntity() instanceof ServerPlayer attacker && attacker != player) {
+            RimeStats stats = player.getData(RimeRegistry.STATS);
+            stats.shellBlocked += before - after;
+            if (stats.shellBlocked >= RimeAdvancements.THIN_ICE_DAMAGE) RimeAdvancements.award(player, RimeAdvancements.THIN_ICE);
+        }
 
         DamageSource source = event.getSource();
         boolean melee = source.getEntity() instanceof LivingEntity attacker && source.getDirectEntity() == attacker

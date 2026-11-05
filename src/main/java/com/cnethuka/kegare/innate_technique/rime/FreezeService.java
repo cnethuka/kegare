@@ -48,6 +48,7 @@ public final class FreezeService {
     /** Adds stacks (ignored while frozen or briefly after breaking free). Freezes at the max. */
     public static void addStacks(LivingEntity target, int count, @Nullable ServerPlayer attacker) {
         if (count <= 0 || !target.isAlive() || target.level().isClientSide) return;
+        if (CombatHelper.isBoss(target)) return; // bosses are never disabled (DESIGN §4): no stacks, no freeze
         FreezeData data = get(target);
         long now = target.level().getGameTime();
         if (data.frozen || data.immuneUntil > now) return;

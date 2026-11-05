@@ -66,6 +66,7 @@ public final class SwapClient {
         VanillaFallback.register(SwapIds.FX_SWAP_LINK, new VanillaFallback.Spec(TEAL_DUST, 1, 2, 0.05, 0.0));
         VanillaFallback.register(SwapIds.FX_SWITCHBACK_TIMER, new VanillaFallback.Spec(TEAL_DUST, 1, 4, 0.6, 0.0));
         VanillaFallback.register(SwapIds.FX_AWARENESS_SHIMMER, new VanillaFallback.Spec(ParticleTypes.WITCH, 1, 4, 0.6, 0.0));
+        VanillaFallback.register(SwapIds.FX_MIMIC_FLICKER, new VanillaFallback.Spec(TEAL_DUST, 1, 24, 0.4, 0.0));
         VanillaFallback.register(SwapIds.FX_ANCHOR_MARKER, new VanillaFallback.Spec(TEAL_DUST, 1, 6, 0.2, 0.0));
         VanillaFallback.register(SwapIds.FX_ANCHOR_TRAIL, new VanillaFallback.Spec(TEAL_DUST, 2, 4, 0.05, 0.0));
         VanillaFallback.register(SwapIds.FX_EXCHANGE_TRANSFER, new VanillaFallback.Spec(ParticleTypes.WITCH, 1, 3, 0.08, 0.0));

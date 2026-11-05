@@ -558,7 +558,7 @@ Package `com.cnethuka.kegare.innate_technique.rime`. **Rarity: RARE.** All numbe
 - **Projectiles** are real entities with velocity (`FrostShardEntity`, `GlacialLanceEntity`, `SplinterShardEntity`, vanilla throwables
   rendered as their item sprite). Damage type `kegare:rime` (`data/kegare/damage_type/rime.json`, freezing hurt
   sound): the caster is the source entity, the projectile the direct entity, so kills are credited to the caster.
-- **Freeze stacks** (any living target, runtime attachment `kegare:freeze`):
+- **Freeze stacks** (any living target except bosses, runtime attachment `kegare:freeze`):
   - One stack melts 3 s after the last change, then every 3 s.
   - At **5 stacks** the target is **frozen solid for 1 s** through the **existing stun system**, so it interrupts
     charges and channels and blocks casting. Walking and jumping are locked with transient attribute modifiers, the
@@ -566,6 +566,8 @@ Package `com.cnethuka.kegare.innate_technique.rime`. **Rarity: RARE.** All numbe
   - Breaking free plays `freeze_shatter` and a glass sound, and gives **2 s of immunity** to new stacks, so nobody
     can be freeze-locked.
   - The HUD shows **your** stacks as pips (also for Severed players), and "Frozen!" while frozen.
+- **Bosses** (`c:bosses`, §4): Rime's damage lands on them, but they never get Freeze stacks (so never freeze),
+  Glacial Spire doesn't launch them and Shatter Shell doesn't knock them back (`CombatHelper.isBoss`).
 - **Environment** (`RimeEnvironment`, applied to Rime's cost **and** upkeep). Cold factors multiply together:
   - rain or snow falling on you ×0.85
   - in or next to water ×0.85
@@ -608,7 +610,7 @@ Package `com.cnethuka.kegare.innate_technique.rime`. **Rarity: RARE.** All numbe
   | `cold_open` | Cold Open | Hit a player with Frost Shard | task |
   | `brain_freeze` | Brain Freeze | Freeze a player while they're charging or channeling | goal |
   | `full_charge` | Full Charge | Hit a player with a fully charged Glacial Lance | task |
-  | `thin_ice` | Thin Ice | Block 100 total damage with Rime Shell (saved per player across sessions: attachment `kegare:rime_stats`) | goal |
+  | `thin_ice` | Thin Ice | Block 100 total damage from players with Rime Shell (only hits from another player count, though the shell softens every hit; saved per player across sessions: attachment `kegare:rime_stats`) | goal |
   | `cold_blooded` | Cold Blooded | Kill a player who is frozen solid | goal |
   | `deep_freeze` | Deep Freeze | Freeze the same player 3 times within 60 seconds | challenge |
   | `long_way_from_home` | Long Way From Home | Freeze a player in the Nether | challenge |
@@ -620,9 +622,11 @@ Package `com.cnethuka.kegare.innate_technique.rime`. **Rarity: RARE.** All numbe
 - **Art:** emblem `textures/gui/emblem/rime.png` and ability icons `textures/gui/ability/<ability>.png` (from
   `gen_art.py`, ice palette), plus HUD sprites `env_cold`, `env_hot`, `lock`, `freeze_pip` and `freeze_pip_empty`.
 - **Tests:** `RimeFreezeTest` (in-game JUnit) covers stacks, the freeze at max (stun, channel interrupted, visual
-  loops), immunity, decay, and the shell's reduction and Thin Ice count. `RimeSpecialsTest` covers Splinter's three
-  shards and shared cooldown, Glacial Spire's free fizzle with no ground and its eruption (stacks, launch, gone
-  afterwards), Ice Path's trail (laid, slows others, melts) and Shatter Shell's two costs and shell consumption.
+  loops), immunity, decay, and the shell's reduction (any hit) and Thin Ice count (player hits only, not mobs or
+  generic damage). `RimeSpecialsTest` covers Splinter's three shards and shared cooldown, Glacial Spire's free
+  fizzle with no ground and its eruption (stacks, launch, gone afterwards), Ice Path's trail (laid, slows others,
+  melts) and Shatter Shell's two costs and shell consumption. `RimeBossTest` covers the boss rule: a wither takes
+  Rime damage and the spike's, but gets no stacks, no freeze, no launch and no knockback, while a cow next to it does.
 
 ### 3.15 Specials (R)
 - Any slot ability can define a **special** (`Ability.special()`): a second ability cast with **R** while the base is
@@ -642,8 +646,8 @@ Package `com.cnethuka.kegare.innate_technique.rime`. **Rarity: RARE.** All numbe
   | Glacial Spire (Glacial Lance) | own charge animation and aura; a frost warning circle with rising glints on the ground for 0.75 s before the spike |
   | Ice Path (Frost Field) | own sliding pose, an ice trail left behind, glass sounds |
   | Shatter Shell (Rime Shell) | own cast animation, an icy burst, glass and amethyst shattering |
-  | Switchback (Positions) | **weak**: the same snap animation, effects and sound as Positions at the cast; only the faint countdown rings on both afterwards tell it apart |
-  | Mimic (Awareness) | **weak**: its own hand-across-the-face animation, but Awareness's sound at another pitch and no visible effect (the shimmer is private) |
+  | Switchback (Positions) | own wrist flick back toward the caster (`switchback_cast`, not Positions' snap), a respawn-anchor charge sound on both, and the countdown rings go up on both as it's cast |
+  | Mimic (Awareness) | own hand-across-the-face animation, its own evoker-spell sound, and a teal flicker on the caster (`mimic_flicker`) that everyone nearby sees; the trick is the disguise afterwards, not a hidden cast |
   | Send Off (Anchor) | own two-handed shove; the target vanishes onto the glowing anchor |
   | Momentum Exchange (Exchange) | own arms-up sweep, a burst on both players, a lower teleport sound |
 - **Shared cooldown:** `cooldownKey()` is the base ability's ID, so casting either the base or the special starts the
@@ -814,7 +818,7 @@ Both ends get `swap_depart`/`swap_arrive` and the enderman-teleport sound, plus 
 | Ability | Type | Cost | Cooldown | Effect |
 |---|---|---|---|---|
 | **Positions** | INSTANT | 12 | 8 s | Swap positions AND facing with the target. |
-| ↳ **Switchback** (R) | INSTANT | 22 | shared | The same swap, then a swap back after `returnDelay` (3 s). The swap back fires `SwapTargetEvent` again; it is called off if either dies, logs out (or the mob is gone) or changes dimension. Both wear the `switchback_timer` ring until then. |
+| ↳ **Switchback** (R) | INSTANT | 22 | shared | The same swap, then a swap back after `returnDelay` (3 s). The swap back fires `SwapTargetEvent` again; it is called off if either dies, logs out (or the mob is gone) or changes dimension. Both wear the `switchback_timer` ring from the cast until then. |
 | **Awareness** | INSTANT | 20 | 20 s | A 5 s disguise swap: everyone else sees the caster as the target and the target as the caster. |
 | ↳ **Mimic** (R) | INSTANT | 24 | shared | One way: the caster looks like the target for 8 s; the target stays as themselves. |
 | **Anchor** | INSTANT, two stages | throw 8 / recall 10 | throw 0.5 s / after use 12 s | First cast throws an anchor (pearl-like, passes through creatures, sticks to the first block it hits, times out after 20 s, never saved). Second cast swaps the caster onto it (out from walls, under ceilings, nudged out of blocks) and uses it up. |
@@ -842,17 +846,18 @@ The HUD and Sorcerer screen show Anchor's current stage cost (throw or recall).
 - **API** (either side): `Disguises.isDisguised(entity)`, `getRealIdentity(entity)`, `getDisguisedAs(entity)`; server:
   `get(player)`, `wearing(face)`. Anything that must see through disguises asks here.
 
-**Visuals.** PAL animations (`player_animations/swap.json`): `swap_snap` (Positions, Switchback, Total Swap),
-`awareness_cast`, `mimic_cast`, `anchor_throw`, `anchor_recall`, `send_off_cast`, `exchange_cast`, `momentum_cast`.
+**Visuals.** PAL animations (`player_animations/swap.json`): `swap_snap` (Positions, Total Swap),
+`switchback_cast` (a wrist flick back toward the caster), `awareness_cast`, `mimic_cast`, `anchor_throw`, `anchor_recall`, `send_off_cast`, `exchange_cast`, `momentum_cast`.
 Photon effects (`SwapFxAuthoring` → `fx/swap/`), teal with Malice violet, with vanilla particle fallbacks:
 - `swap_depart` and `swap_arrive`: both ends of every swap.
 - `swap_link`: beads along the line between the two players (`SwapLink` payload; the client places them).
-- `switchback_timer`: a ring at both players' feet closing in once a second.
+- `switchback_timer`: a ring at both players' feet closing in once a second, from the cast to the swap back.
 - `awareness_shimmer`: on disguised players, for them only.
+- `mimic_flicker`: Mimic's cast, a teal glow flickering twice over the caster with glitch motes, seen by everyone.
 - `anchor_marker` (loops while the anchor waits) and `anchor_trail` (in flight).
 - `exchange_transfer`: orbs travelling each way along the line, one per exchanged effect.
 - `momentum_burst` (both players) and `total_swap_burst` (both players).
-- Placeholder sound: enderman teleport.
+- Sounds: enderman teleport for every swap; Switchback adds a respawn-anchor charge on both, Mimic an evoker spell.
 
 **Art:** emblem `gui/emblem/swap.png`, icons for all nine abilities (`gui/ability/`), the anchor's item sprite
 (`item/swap_anchor.png`). The Sorcerer screen shows a special's icon in its details when it has one.
@@ -894,11 +899,11 @@ Swap ignoring it; bosses and armor stands never targets). `LoadoutTest` covers t
 - Where things stand:
   - Swap follows it (§3.19): Positions, Switchback, Send Off, Exchange and Momentum Exchange take mobs; Awareness,
     Mimic and Total Swap are players only; bosses are never targets; its advancements split as the rule says.
-  - Rime's advancements follow it: every goal and challenge that names a target counts players only, and its task
-    ones (Cold Open, Full Charge, Splinter) count players too, which the rule allows. Thin Ice (goal) counts damage
-    blocked from any source, since it has no target.
-  - **Known gap:** Rime's abilities don't skip bosses yet. Freeze stacks can freeze a boss solid (disabled), Glacial
-    Spire launches it and Shatter Shell knocks it back (moved).
+  - Rime follows it (§3.14): its abilities hit mobs; bosses take the damage but get no Freeze stacks, no launch and
+    no knockback. Every goal and challenge that names a target counts players only, and Thin Ice (goal) counts only
+    damage blocked from players. Its task ones (Cold Open, Full Charge, Splinter) count players too, which the rule
+    allows.
+  - The boss check is shared: `CombatHelper.isBoss` (`c:bosses`), used by Rime and by `SwapTargeting`.
 
 - **New innate technique:** create a `DeferredRegister<InnateTechnique>` on
   `KegareRegistries.INNATE_TECHNIQUE_KEY`, build abilities with `BaseAbility`, add the lang names, and put the

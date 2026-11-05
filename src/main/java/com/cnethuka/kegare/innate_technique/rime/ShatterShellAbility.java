@@ -1,5 +1,6 @@
 package com.cnethuka.kegare.innate_technique.rime;
 
+import com.cnethuka.kegare.combat.CombatHelper;
 import com.cnethuka.kegare.innatetechnique.AbilityContext;
 import com.cnethuka.kegare.innatetechnique.CastManager;
 import com.cnethuka.kegare.innatetechnique.CastType;
@@ -47,6 +48,7 @@ public final class ShatterShellAbility extends RimeSpecial {
         int players = 0;
         for (LivingEntity target : p.level().getEntitiesOfClass(LivingEntity.class, p.getBoundingBox().inflate(radius),
                 e -> e != p && e.isAlive() && !e.isSpectator() && e.distanceToSqr(p) <= radius * radius)) {
+            if (CombatHelper.isBoss(target)) continue; // never knocked back, never frozen (DESIGN §4)
             double dx = p.getX() - target.getX();
             double dz = p.getZ() - target.getZ();
             if (dx * dx + dz * dz < 1.0e-4) {

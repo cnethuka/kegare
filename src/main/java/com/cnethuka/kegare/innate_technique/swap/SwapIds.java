@@ -8,6 +8,7 @@ import net.minecraft.resources.ResourceLocation;
 public final class SwapIds {
     // Player Animation Library animations
     public static final ResourceLocation ANIM_SWAP_SNAP = Kegare.id("swap_snap");
+    public static final ResourceLocation ANIM_SWITCHBACK_CAST = Kegare.id("switchback_cast");
     public static final ResourceLocation ANIM_AWARENESS_CAST = Kegare.id("awareness_cast");
     public static final ResourceLocation ANIM_MIMIC_CAST = Kegare.id("mimic_cast");
     public static final ResourceLocation ANIM_ANCHOR_THROW = Kegare.id("anchor_throw");
@@ -22,6 +23,7 @@ public final class SwapIds {
     public static final ResourceLocation FX_SWAP_LINK = fx("swap_link");
     public static final ResourceLocation FX_SWITCHBACK_TIMER = fx("switchback_timer");
     public static final ResourceLocation FX_AWARENESS_SHIMMER = fx("awareness_shimmer");
+    public static final ResourceLocation FX_MIMIC_FLICKER = fx("mimic_flicker");
     public static final ResourceLocation FX_ANCHOR_MARKER = fx("anchor_marker");
     public static final ResourceLocation FX_ANCHOR_TRAIL = fx("anchor_trail");
     public static final ResourceLocation FX_EXCHANGE_TRANSFER = fx("exchange_transfer");
@@ -31,7 +33,7 @@ public final class SwapIds {
     /** Both ends of every swap, played at a position (where someone left, where they arrived). */
     public static final Visual DEPART = Visual.effect(FX_SWAP_DEPART, Visual.Anchor.BODY);
     public static final Visual ARRIVE = Visual.effect(FX_SWAP_ARRIVE, Visual.Anchor.BODY);
-    /** Switchback: a faint ring on both players until the swap back. */
+    /** Switchback: a faint ring on both, from the cast until the swap back. */
     public static final Visual SWITCHBACK_TIMER = Visual.effect(FX_SWITCHBACK_TIMER, Visual.Anchor.FEET);
     public static final String SWITCHBACK_TIMER_KEY = "kegare:swap/switchback_timer/";
     /** On a disguised player, sent to that player only (so they know it's on). */

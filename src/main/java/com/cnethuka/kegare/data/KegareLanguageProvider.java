@@ -306,7 +306,7 @@ public final class KegareLanguageProvider extends LanguageProvider {
         advancement("swap.newtons_third", "Newton's Third", "A player dies from fall damage after you used Momentum Exchange on them");
         advancement("rime.brain_freeze", "Brain Freeze", "Freeze a player while they're charging or channeling");
         advancement("rime.full_charge", "Full Charge", "Hit a player with a fully charged Glacial Lance");
-        advancement("rime.thin_ice", "Thin Ice", "Block 100 total damage with Rime Shell");
+        advancement("rime.thin_ice", "Thin Ice", "Block 100 total damage from players with Rime Shell");
         advancement("rime.cold_blooded", "Cold Blooded", "Kill a player who is frozen solid");
         advancement("rime.deep_freeze", "Deep Freeze", "Freeze the same player 3 times within 60 seconds");
         advancement("rime.long_way_from_home", "Long Way From Home", "Freeze a player in the Nether");

@@ -104,13 +104,28 @@ class RimeFreezeTest {
             assertTrue(shell.getData(KegareAttachments.VISUAL_STATE).loops()
                     .containsKey(VisualService.key(Rime.RIME_SHELL, VisualPhase.TOGGLE_LOOP)), "shell aura loop running");
             // Fake players are invulnerable, so post the real damage event through NeoForge's bus (runs RimeEvents).
-            var event = new net.neoforged.neoforge.event.entity.living.LivingDamageEvent.Pre(shell,
-                    new net.neoforged.neoforge.common.damagesource.DamageContainer(shell.damageSources().generic(), 10f));
-            net.neoforged.neoforge.common.NeoForge.EVENT_BUS.post(event);
+            // The shell reduces damage from any source...
+            var event = shellHit(shell, shell.damageSources().generic());
             assertEquals(10f * (1f - RimeConfig.SHELL_DAMAGE_REDUCTION.get().floatValue()), event.getNewDamage(), 0.01f, "shell reduced the damage");
+            var pig = net.minecraft.world.entity.EntityType.PIG.create(server.overworld());
+            assertEquals(10f * (1f - RimeConfig.SHELL_DAMAGE_REDUCTION.get().floatValue()),
+                    shellHit(shell, shell.damageSources().mobAttack(pig)).getNewDamage(), 0.01f, "a mob's hit is reduced too");
+            // ...but Thin Ice (mastery) only counts what it blocked from players.
+            assertEquals(0.0, shell.getData(RimeRegistry.STATS).shellBlocked(), 0.01, "environment and mob damage don't count toward Thin Ice");
+            ServerPlayer attacker = player(server, "rime_shell_attacker");
+            shellHit(shell, shell.damageSources().playerAttack(attacker));
             assertEquals(10.0 * RimeConfig.SHELL_DAMAGE_REDUCTION.get(), shell.getData(RimeRegistry.STATS).shellBlocked(), 0.01,
-                    "blocked damage counts toward Thin Ice");
+                    "damage blocked from a player counts toward Thin Ice");
         });
+    }
+
+    /** 10 damage from {@code source} to a Rime Shell holder, through the real event (runs RimeEvents). */
+    private static net.neoforged.neoforge.event.entity.living.LivingDamageEvent.Pre shellHit(ServerPlayer shell,
+                                                                                         net.minecraft.world.damagesource.DamageSource source) {
+        var event = new net.neoforged.neoforge.event.entity.living.LivingDamageEvent.Pre(shell,
+                new net.neoforged.neoforge.common.damagesource.DamageContainer(source, 10f));
+        net.neoforged.neoforge.common.NeoForge.EVENT_BUS.post(event);
+        return event;
     }
 
     private static ServerPlayer player(MinecraftServer server, String name) {

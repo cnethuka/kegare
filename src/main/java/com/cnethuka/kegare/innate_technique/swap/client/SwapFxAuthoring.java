@@ -40,6 +40,7 @@ public final class SwapFxAuthoring {
         out.put(SwapIds.FX_SWAP_LINK, SwapFxAuthoring::link);
         out.put(SwapIds.FX_SWITCHBACK_TIMER, SwapFxAuthoring::switchbackTimer);
         out.put(SwapIds.FX_AWARENESS_SHIMMER, SwapFxAuthoring::awarenessShimmer);
+        out.put(SwapIds.FX_MIMIC_FLICKER, SwapFxAuthoring::mimicFlicker);
         out.put(SwapIds.FX_ANCHOR_MARKER, SwapFxAuthoring::anchorMarker);
         out.put(SwapIds.FX_ANCHOR_TRAIL, SwapFxAuthoring::anchorTrail);
         out.put(SwapIds.FX_EXCHANGE_TRANSFER, SwapFxAuthoring::exchangeTransfer);
@@ -177,6 +178,37 @@ public final class SwapFxAuthoring {
         c.colorOverLifetime.setColor(gradient(0x00E9D5FF, 0x88A855F7, 0x665EEAD4, 0x0014B8A6));
         material(motes, glow(0.55f, 0.55f, 0.95f, 0.9f));
         return fx(motes);
+    }
+
+    /**
+     * Mimic's cast, seen by everyone: a teal glow that flickers on and off over the body (twice, then gone) and
+     * glitch motes winking across it, as the face is redrawn. Half a second; the disguise afterwards is the trick.
+     */
+    private static FX mimicFlicker() {
+        ParticleEmitter flicker = single("flicker", 11, 2.3f);
+        flicker.config.colorOverLifetime.setEnable(true);
+        flicker.config.colorOverLifetime.setColor(gradient(0x0014B8A6, 0xCC5EEAD4, 0x1114B8A6, 0xAA5EEAD4, 0x110F766E, 0x66CCFBF1, 0x0014B8A6));
+        material(flicker, glow(0.3f, 0.9f, 0.82f, 1.3f));
+
+        ParticleEmitter motes = burstEmitter("motes", 20, 24);
+        ParticleConfig c = motes.config;
+        c.setStartLifetime(range(4, 10));
+        c.setStartSpeed(NumberFunction.constant(0));
+        c.setStartSize(uniform(range(0.05f, 0.11f)));
+        Sphere body = sphere(0.55f);
+        body.setRadiusThickness(0f);
+        c.shape.setShape(body);
+        c.shape.setScale(new NumberFunction3(1f, 1.7f, 1f));
+        fadeOut(c, PALE, TEAL);
+        material(motes, glow(0.35f, 0.92f, 0.85f, 1.5f));
+
+        ParticleEmitter ring = single("ring", 8, 1.5f);
+        ring.config.renderer.setRenderMode(ParticleRendererSetting.Mode.Horizontal);
+        grow(ring.config, 0.4f);
+        fadeOut(ring.config, LIGHT, DEEP);
+        material(ring, recolor(KilaPresets.SHOCKWAVE.create(), 0.3f, 0.9f, 0.8f, 1.2f));
+        ring.transform().localPosition(new Vector3f(0, -0.85f, 0));
+        return fx(flicker, motes, ring);
     }
 
     /** The anchor waiting: a breathing teal core, a violet halo, motes orbiting it. */
