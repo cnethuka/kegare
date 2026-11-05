@@ -25,6 +25,23 @@ public final class TestServer {
         return FakePlayerFactory.get(server.overworld(), new GameProfile(uuid, name));
     }
 
+    /** A fake player that keeps REAL advancements (NeoForge gives fake players throwaway ones). */
+    public static ServerPlayer playerWithAdvancements(MinecraftServer server, String name) {
+        UUID uuid = UUID.nameUUIDFromBytes(("kegare-test:" + name).getBytes(StandardCharsets.UTF_8));
+        return new net.neoforged.neoforge.common.util.FakePlayer(server.overworld(), new GameProfile(uuid, name)) {
+            @Override
+            public boolean isFakePlayer() {
+                return false;
+            }
+        };
+    }
+
+    public static boolean hasAdvancement(MinecraftServer server, ServerPlayer player, net.minecraft.resources.ResourceLocation id) {
+        var holder = server.getAdvancements().get(id);
+        if (holder == null) throw new IllegalStateException("advancement " + id + " isn't loaded");
+        return player.getAdvancements().getOrStartProgress(holder).isDone();
+    }
+
     /** The testframework's server defines FLAT dimensions but never loads them; create them as startup does. */
     public static void ensureOverworld(MinecraftServer server) {
         if (server.overworld() != null) return;

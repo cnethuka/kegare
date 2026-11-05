@@ -1,0 +1,29 @@
+{
+  "parent": "kegare:a_green_light",
+  "criteria": {
+    "granted": {
+      "trigger": "minecraft:impossible"
+    }
+  },
+  "display": {
+    "announce_to_chat": false,
+    "description": {
+      "translate": "advancements.kegare.its_been_a_while.description"
+    },
+    "frame": "challenge",
+    "hidden": true,
+    "icon": {
+      "count": 1,
+      "id": "minecraft:totem_of_undying"
+    },
+    "title": {
+      "translate": "advancements.kegare.its_been_a_while.title"
+    }
+  },
+  "requirements": [
+    [
+      "granted"
+    ]
+  ],
+  "sends_telemetry_event": true
+}

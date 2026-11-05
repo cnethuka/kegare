@@ -283,6 +283,8 @@ public final class KegareLanguageProvider extends LanguageProvider {
         advancement("rime.deep_freeze", "Deep Freeze", "Freeze the same player 3 times within 60 seconds");
         advancement("rime.long_way_from_home", "Long Way From Home", "Freeze a player in the Nether");
         advancement("rime.home_field", "Home Field", "Cast a Rime ability during snowfall in a cold biome");
+        advancement("a_green_light", "A Green Light", "Unlock Reverse Malice Technique");
+        advancement("its_been_a_while", "It's been a while, huh?", "Use Reverse Malice Technique on the brink of death");
         advancement("rime.splinter", "Splinter", "Hit one player with all 3 Splinter shards");
         advancement("rime.sky_high", "Sky High", "Launch a player with Glacial Spire and hit them with Frost Shard before they land");
         advancement("rime.slip_n_slide", "Slip 'n Slide", "Travel 100 blocks with Ice Path");

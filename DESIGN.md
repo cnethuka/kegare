@@ -54,7 +54,9 @@ game never names a bearer, heir or killer of a secret holder.
 - **Related rule: PvP information is silent.** Advancements that would leak combat-relevant information get no chat
   announcement, even though they aren't secret identities. They live in `KegareAdvancements.SILENT`, and datagen
   enforces it.
-  - Current: `overflowing` (reveals Malice capacity) and `chosen_by_fate` (reveals a Legendary roll).
+  - Current: `overflowing` (reveals Malice capacity), `chosen_by_fate` (reveals a Legendary roll), and
+    `a_green_light` / `its_been_a_while` (reveal that a player can heal). The last two are also **hidden** until
+    earned (`KegareAdvancements.SILENT_HIDDEN`, enforced by datagen).
   - Innate technique tab roots are silent for the same reason (§3.11).
 
 ---
@@ -415,6 +417,8 @@ Each tab has its own root.
 | *Severed* | goal | hidden | born with 0 Malice |
 | *Overflowing* | goal | hidden, **silent** (reveals Malice capacity) | born (or reborn) in the Vast tier |
 | *Running on Empty* | task | yes | visible Malice (floored, like the HUD) drops to 0 while in combat |
+| *A Green Light* | goal | hidden, **silent** (reveals a player can heal) | unlocked Reverse Malice Technique (took in the green orb, §3.18) |
+| *It's been a while, huh?* (under A Green Light) | challenge | hidden, **silent** | started a Reverse Malice Technique cast at 6 HP or less, within 10 s of being hit by a player |
 
 **Six Eyes tab** (root `clear_sight`). Everything here is **silent**, and every advancement except the root is
 **hidden** (secret-identity rule and its visible-root exception, §1):
@@ -687,6 +691,10 @@ Package `rmt`. The first **shared** ability (§3.16), ID `kegare:reverse_malice_
 - **Icon** `textures/gui/ability/reverse_malice_technique.png`: a plus inside a ring that turns back on itself, in its
   own green ramp (`gen_art.py`), independent of any innate technique or Malice color. Own name, description and
   tooltip in the lang file.
+- **Advancements** (Base tab, hidden and silent, §3.11): `a_green_light` "A Green Light" (unlock it; goal) and
+  `its_been_a_while` "It's been a while, huh?" (start a cast at **6 HP or less** having been hit by a player in the
+  last **10 s**; challenge). Hits from players are remembered per player at runtime (`kegare:rmt_state`).
+  `RmtAdvancementsTest` covers both, including 8 HP and a hit more than 10 s ago (neither counts).
 - **Tests:** `RmtTest`: Severed can't unlock; locked can't be slotted; swap a Rime ability for it; refused at full
   health; R fizzles; start cost, heal after each full second, upkeep; cooldown on release; a freeze interrupts it;
   ends when fully healed; a reroll resets the loadout but keeps the unlock; locking takes it off the bar.

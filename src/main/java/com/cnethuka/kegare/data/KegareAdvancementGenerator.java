@@ -54,6 +54,10 @@ public final class KegareAdvancementGenerator implements AdvancementProvider.Adv
         child(saver, awakening, KegareAdvancements.SEVERED, "severed", Items.SHEARS, AdvancementType.GOAL, true);
         child(saver, awakening, KegareAdvancements.OVERFLOWING, "overflowing", Items.EXPERIENCE_BOTTLE, AdvancementType.GOAL, true);
         child(saver, awakening, KegareAdvancements.RUNNING_ON_EMPTY, "running_on_empty", Items.GLASS_BOTTLE, AdvancementType.TASK, false);
+        // Reverse Malice Technique: hidden and silent (they would tell everyone this player can heal).
+        AdvancementHolder greenLight = child(saver, awakening, KegareAdvancements.A_GREEN_LIGHT, "a_green_light",
+                Items.GLISTERING_MELON_SLICE, AdvancementType.GOAL, true);
+        child(saver, greenLight, KegareAdvancements.ITS_BEEN_A_WHILE, "its_been_a_while", Items.TOTEM_OF_UNDYING, AdvancementType.CHALLENGE, true);
 
         // ---- Six Eyes tab: secret identity, so silent; children hidden, root visible (documented exception) ----
         AdvancementHolder clearSight = root(saver, KegareAdvancements.CLEAR_SIGHT, "clear_sight", "granted", Items.SPYGLASS,
@@ -152,6 +156,9 @@ public final class KegareAdvancementGenerator implements AdvancementProvider.Adv
         if (display.shouldAnnounceChat()) {
             throw new IllegalStateException("Advancement " + id + " must never be announced to chat"
                     + " (KegareAdvancements.SECRET_IDENTITY / SILENT)");
+        }
+        if (KegareAdvancements.SILENT_HIDDEN.contains(id) && !display.isHidden()) {
+            throw new IllegalStateException("Advancement " + id + " must be hidden (KegareAdvancements.SILENT_HIDDEN)");
         }
         boolean visibleRootException = KegareAdvancements.SECRET_VISIBLE_ROOTS.contains(id) && holder.value().parent().isEmpty();
         if (secret && !display.isHidden() && !visibleRootException) {

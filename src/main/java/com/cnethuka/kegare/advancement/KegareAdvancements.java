@@ -20,6 +20,9 @@ public final class KegareAdvancements {
     public static final ResourceLocation SEVERED = Kegare.id("severed");
     public static final ResourceLocation OVERFLOWING = Kegare.id("overflowing");
     public static final ResourceLocation RUNNING_ON_EMPTY = Kegare.id("running_on_empty");
+    // Reverse Malice Technique (Base tab, hidden and silent: they reveal that a player can heal)
+    public static final ResourceLocation A_GREEN_LIGHT = Kegare.id("a_green_light");
+    public static final ResourceLocation ITS_BEEN_A_WHILE = Kegare.id("its_been_a_while");
     // Six Eyes tab (root: clear_sight)
     public static final ResourceLocation CLEAR_SIGHT = Kegare.id("clear_sight");
     public static final ResourceLocation THE_CYCLE_CONTINUES = Kegare.id("the_cycle_continues");
@@ -48,9 +51,13 @@ public final class KegareAdvancements {
 
     /**
      * Not secret, but never announced to chat: they reveal PvP information. overflowing reveals Malice capacity;
-     * chosen_by_fate reveals a Legendary innate technique.
+     * chosen_by_fate reveals a Legendary innate technique; a_green_light and its_been_a_while reveal that a player
+     * can heal (Reverse Malice Technique).
      */
-    public static final Set<ResourceLocation> SILENT = Set.of(OVERFLOWING, CHOSEN_BY_FATE);
+    public static final Set<ResourceLocation> SILENT = Set.of(OVERFLOWING, CHOSEN_BY_FATE, A_GREEN_LIGHT, ITS_BEEN_A_WHILE);
+
+    /** Silent AND hidden until earned (datagen enforces both): nobody should even learn they exist from the tab. */
+    public static final Set<ResourceLocation> SILENT_HIDDEN = Set.of(A_GREEN_LIGHT, ITS_BEEN_A_WHILE);
 
     private KegareAdvancements() {}
 
