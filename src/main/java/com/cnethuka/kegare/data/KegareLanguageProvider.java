@@ -63,7 +63,7 @@ public final class KegareLanguageProvider extends LanguageProvider {
         add("key.categories.kegare", "Kegare");
         add("key.kegare.special", "Special (of the selected ability)");
         add("key.kegare.technique_mode", "Technique Mode");
-        add("key.kegare.cast", "Cast Ability (Split scheme)");
+        add("key.kegare.cast", "Cast Ability");
         add("key.kegare.radial", "Ability Menu (hold)");
         add("key.kegare.ultimate", "Ultimate");
         add("key.kegare.sorcerer", "Sorcerer Screen");

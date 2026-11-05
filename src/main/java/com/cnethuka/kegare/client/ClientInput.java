@@ -29,9 +29,11 @@ import net.neoforged.neoforge.network.PacketDistributor;
  * <ul>
  *   <li>R: the selected ability's special (press / release). V: the ultimate. K: Sorcerer screen.</li>
  *   <li>Hold Z: the radial menu.</li>
+ *   <li>C (Cast, rebindable): base-casts the selected ability, in either scheme.</li>
  *   <li>{@link InputScheme#TOGGLE_MODE}: G toggles Technique Mode; in it, scroll and number keys pick abilities (the
- *       hotbar never changes) and right-click base-casts without using the held item.</li>
- *   <li>{@link InputScheme#SPLIT}: scroll always picks abilities, number keys stay on the hotbar, C base-casts.</li>
+ *       hotbar never changes) and right-click base-casts too, without using the held item.</li>
+ *   <li>{@link InputScheme#SPLIT}: scroll always picks abilities, number keys stay on the hotbar, right-click uses
+ *       items as usual.</li>
  * </ul>
  */
 @EventBusSubscriber(modid = Kegare.MODID, value = Dist.CLIENT)
@@ -71,14 +73,9 @@ public final class ClientInput {
         if (TechniqueMode.isActive() && !TechniqueMode.abilitiesAvailable()) TechniqueMode.exit();
         while (KegareKeys.TECHNIQUE_MODE.consumeClick()) TechniqueMode.toggle();
 
-        // Base cast: right-click in Technique Mode (TOGGLE_MODE) or the Cast key (SPLIT).
-        boolean castDown;
-        if (TechniqueMode.scheme() == InputScheme.SPLIT) {
-            castDown = consumeAndCheck(KegareKeys.CAST);
-        } else {
-            while (KegareKeys.CAST.consumeClick()) { } // unused in this scheme
-            castDown = TechniqueMode.isActive() && (mc.options.keyUse.isDown() || useClicked);
-        }
+        // Base cast: the Cast key (C) in either scheme; in Technique Mode right-click casts too.
+        boolean castDown = consumeAndCheck(KegareKeys.CAST)
+                || (TechniqueMode.isActive() && (mc.options.keyUse.isDown() || useClicked));
         useClicked = false;
         castHeld = edge(castDown, castHeld, CastIntent.CAST_PRESS, CastIntent.CAST_RELEASE);
         specialHeld = edge(consumeAndCheck(KegareKeys.SPECIAL), specialHeld, CastIntent.SPECIAL_PRESS, CastIntent.SPECIAL_RELEASE);

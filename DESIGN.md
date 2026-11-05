@@ -225,19 +225,21 @@ All timestamps use **level game time**. They persist across restarts and are ide
 
 ### 3.5 Input and networking
 - **Keys** (all rebindable): **R** special of the selected ability (hold for CHARGED/CHANNELED specials, §3.15),
-  **G** Technique Mode, **C** cast (SPLIT scheme only), hold **Z** radial menu, **V** ultimate, **K** Sorcerer
+  **G** Technique Mode, **C** cast (the selected ability's base cast, in either scheme; hold it for
+  CHARGED/CHANNELED), hold **Z** radial menu, **V** ultimate, **K** Sorcerer
   screen. There is no next/previous-ability key any more.
 - **Input schemes** (client config `input.inputScheme`):
   - `TOGGLE_MODE` (default): **G** toggles Technique Mode. While it is on:
     - scroll and number keys **1–N** pick abilities (N = abilities in the current technique; higher numbers do
       nothing), and the hotbar selection never changes (pick-block is blocked too);
-    - **right-click base-casts** the selected ability and never uses the held item (hold it for CHARGED/CHANNELED);
+    - **right-click base-casts** too (like C) and never uses the held item (hold it for CHARGED/CHANNELED);
     - the ability bar lights up and the hotbar dims.
 
     It ends when you press G again, open any screen (the radial menu excepted, as it is part of picking abilities),
     die, or become Severed (or lose your innate technique). G does nothing for Severed players.
   - `SPLIT`: no mode. Scroll always picks abilities (when you have some), number keys always pick hotbar slots,
     right-click uses items as normal, and **C** base-casts.
+  - The Cast key exists in both schemes (it was R before R became the special key).
   - Selecting an ability is a `SelectAbilityPayload` request the server validates; a sub-tick right-click tap still
     counts as a press.
 - C→S payloads are **requests only**, and the server validates each one:
