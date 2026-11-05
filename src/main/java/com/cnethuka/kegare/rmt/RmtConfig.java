@@ -18,6 +18,7 @@ public final class RmtConfig {
     public static ModConfigSpec.DoubleValue ORB_LOOK_SECONDS;
     public static ModConfigSpec.DoubleValue ORB_LOOK_ANGLE;
     public static ModConfigSpec.DoubleValue ORB_DISTANCE;
+    public static ModConfigSpec.DoubleValue ORB_SIDE_ANGLE;
     public static ModConfigSpec.DoubleValue ORB_UNLOCK_HEAL;
 
     private RmtConfig() {}
@@ -46,6 +47,9 @@ public final class RmtConfig {
         ORB_LOOK_ANGLE = b.comment("How far off-centre (degrees) still counts as looking at it.").defineInRange("lookAngle", 10.0, 1.0, 45.0);
         ORB_DISTANCE = b.comment("How far in front of the player it appears, in blocks (closer if a wall is in the way).")
                 .defineInRange("distance", 3.0, 1.0, 16.0);
+        ORB_SIDE_ANGLE = b.comment("Degrees to the left or right (random) of where the player looks: in view, but off the crosshair,",
+                        "so taking it in is a choice and not an accident mid-fight. Keep it above lookAngle.")
+                .defineInRange("sideAngle", 25.0, 0.0, 60.0);
         ORB_UNLOCK_HEAL = b.comment("Health restored when it is taken in (never above max).").defineInRange("unlockHeal", 8.0, 0.0, 1024.0);
         b.pop();
         b.pop();

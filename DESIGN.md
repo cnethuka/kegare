@@ -705,8 +705,9 @@ Package `rmt`. The first **shared** ability (§3.16), ID `kegare:reverse_malice_
   (`healthThreshold`) rolls a **15%** chance (`chance`). At most **one roll per 60 s** per player (`rollCooldown`; the
   roll counts whether or not the orb comes; last roll saved in `kegare:shared_abilities`). Only for players who
   are born, **not Severed**, haven't unlocked RMT, and have no orb waiting.
-- **Where:** the server picks the position: **3 blocks** in front of the eyes (`distance`), at half the look's pitch so
-  it stays near eye level, and short of any wall in the way. It sends it **to that player only** (`OrbPayload`);
+- **Where:** the server picks the position: **3 blocks** in front of the eyes (`distance`), **25° to the left or right**
+  of the crosshair (`sideAngle`, random side: clearly in view, but taking it in is a choice, never an accident while
+  staring at an opponent), at half the look's pitch so it stays near eye level, and short of any wall in the way. It sends it **to that player only** (`OrbPayload`);
   no other player is told anything. The orb is client-side: a glowing green core that breathes and drifts a little,
   a soft halo and circling motes (`rmt/rmt_orb`; vanilla stand-in: green dust and happy-villager sparkles), with a
   soft chime. It **fades after 5 s** (`lifetime`); server and client run the same timer.

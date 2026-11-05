@@ -84,10 +84,11 @@ public final class GreenOrbService {
     }
 
     private static void spawn(ServerPlayer player) {
-        // A few blocks ahead, kept near eye level (half the look's pitch), and short of any wall in the way.
+        // A few blocks ahead, off to one side of the crosshair, near eye level (half the look's pitch), and short of
+        // any wall in the way.
         Vec3 eye = player.getEyePosition();
-        Vec3 look = player.getLookAngle();
-        Vec3 dir = new Vec3(look.x, look.y * 0.5, look.z).normalize();
+        float side = RmtConfig.ORB_SIDE_ANGLE.get().floatValue() * (player.getRandom().nextBoolean() ? 1 : -1);
+        Vec3 dir = Vec3.directionFromRotation(player.getXRot() * 0.5f, player.getYRot() + side);
         Vec3 end = eye.add(dir.scale(RmtConfig.ORB_DISTANCE.get()));
         BlockHitResult hit = player.level().clip(new ClipContext(eye, end, ClipContext.Block.COLLIDER, ClipContext.Fluid.NONE, player));
         Vec3 pos = hit.getType() == HitResult.Type.MISS ? end : hit.getLocation().subtract(dir.scale(0.4));

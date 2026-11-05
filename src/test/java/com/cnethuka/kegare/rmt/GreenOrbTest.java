@@ -54,6 +54,10 @@ class GreenOrbTest {
             Vec3 orb = GreenOrbService.state(p).orb();
             assertNotNull(orb);
             assertEquals(RmtConfig.ORB_DISTANCE.get(), orb.distanceTo(p.getEyePosition()), 0.05, "at the configured distance");
+            double offCentre = Math.toDegrees(Math.acos(p.getLookAngle().dot(orb.subtract(p.getEyePosition()).normalize())));
+            assertEquals(RmtConfig.ORB_SIDE_ANGLE.get(), offCentre, 0.5, "off to the side of the crosshair");
+            for (int i = 0; i < lookTicks + 5; i++) GreenOrbService.tick(p);
+            assertFalse(SharedAbilityService.isUnlocked(p, RmtIds.ABILITY), "just looking ahead never takes it in");
 
             // Looking away resets the count; a full second looking at it takes it in.
             p.lookAt(EntityAnchorArgument.Anchor.EYES, orb);

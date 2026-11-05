@@ -64,6 +64,8 @@ final class LoadoutPage {
     private boolean dragging;
     @Nullable
     private Component status;
+    @Nullable
+    private LoadoutResult statusResult;
     private long statusUntil;
     private int slotCount;
 
@@ -172,7 +174,9 @@ final class LoadoutPage {
         if (data.inCombat()) {
             cy += GuiDraw.wrapped(g, font, Component.translatable("message.kegare.loadout.in_combat"), x, cy, w, GuiDraw.RED) + 2;
         }
-        if (status != null && Util.getMillis() < statusUntil) {
+        // The server's refusal, unless it just repeats the in-combat line above.
+        boolean repeatsCombat = statusResult == LoadoutResult.IN_COMBAT && data.inCombat();
+        if (status != null && Util.getMillis() < statusUntil && !repeatsCombat) {
             cy += GuiDraw.wrapped(g, font, status, x, cy, w, GuiDraw.RED) + 2;
         }
         cy += GuiDraw.wrapped(g, font, Component.translatable("gui.kegare.loadout.hint"), x, cy, w, GuiDraw.DARK_GRAY) + 4;
@@ -321,6 +325,7 @@ final class LoadoutPage {
     void onResult(LoadoutResult result) {
         if (result.translationKey() == null) return;
         status = Component.translatable(result.translationKey());
+        statusResult = result;
         statusUntil = Util.getMillis() + STATUS_MS;
     }
 
