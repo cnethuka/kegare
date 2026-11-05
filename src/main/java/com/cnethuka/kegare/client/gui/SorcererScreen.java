@@ -5,6 +5,9 @@ import com.cnethuka.kegare.client.ClientData;
 import com.cnethuka.kegare.client.ClientLoadout;
 import com.cnethuka.kegare.client.CombatPanelLayer;
 import com.cnethuka.kegare.client.KegareKeys;
+import com.cnethuka.kegare.config.KegareClientConfig;
+import com.cnethuka.kegare.config.KegareClientConfig.TechniqueSelect;
+import com.cnethuka.kegare.config.KegareClientConfig.VfxQuality;
 import com.cnethuka.kegare.innatetechnique.Ability;
 import com.cnethuka.kegare.innatetechnique.CastType;
 import com.cnethuka.kegare.innatetechnique.CostEnvironment;
@@ -32,8 +35,10 @@ import net.minecraft.Util;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.gui.screens.inventory.InventoryScreen;
+import net.minecraft.client.resources.sounds.SimpleSoundInstance;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.sounds.SoundEvents;
 import net.minecraft.util.Mth;
 import net.neoforged.neoforge.network.PacketDistributor;
 import org.lwjgl.glfw.GLFW;
@@ -45,7 +50,8 @@ import org.lwjgl.glfw.GLFW;
  *   <li>Header: the innate technique's emblem, name and rarity, and the selected category's abilities (padlocks for
  *       locked ones; a gold number marks the slot each is on).</li>
  *   <li>The large box: whatever ability is hovered (or clicked): category, cast type, current cost and cooldown,
- *       description, its special and its slot. The right-edge buttons switch the box to Traits or Pity.</li>
+ *       description, its special and its slot. The right-edge buttons switch the box to Traits, Pity or Settings
+ *       (client options, saved at once: which control picks abilities in Technique Mode, effects, animations).</li>
  *   <li>Right column: your player model, Malice capacity and tier, reserve, regen.</li>
  *   <li>Bottom: the combat panel itself, live, as the loadout bar. Drag an ability onto a slot (or click it, then a
  *       slot); drag slots to swap, off the bar or right-click to empty; the ultimate slot is fixed.</li>
@@ -54,7 +60,18 @@ import org.lwjgl.glfw.GLFW;
  * ({@link LoadoutEditPayload}) the server checks.
  */
 public final class SorcererScreen extends Screen {
-    private enum View { TECHNIQUE, TRAITS, PITY }
+    private enum View {
+        TECHNIQUE("gui.kegare.sorcerer.view.technique"),
+        TRAITS("gui.kegare.sorcerer.tab.traits"),
+        PITY("gui.kegare.sorcerer.tab.pity"),
+        SETTINGS("gui.kegare.sorcerer.view.settings");
+
+        final String key;
+
+        View(String key) {
+            this.key = key;
+        }
+    }
 
     private static final ResourceLocation FRAME = Kegare.id("menu_frame");
     private static final ResourceLocation WELL = Kegare.id("menu_well");
@@ -62,6 +79,11 @@ public final class SorcererScreen extends Screen {
     private static final ResourceLocation TAB_SELECTED = Kegare.id("menu_tab_selected");
     private static final ResourceLocation ICON_TRAITS = Kegare.id("view_traits");
     private static final ResourceLocation ICON_PITY = Kegare.id("view_pity");
+    private static final ResourceLocation ICON_SETTINGS = Kegare.id("view_settings");
+    /** Text buttons (option values, Reset): the ink button, gold-framed when selected or hovered. */
+    private static final ResourceLocation BUTTON = Kegare.id("button");
+    private static final ResourceLocation BUTTON_LIT = Kegare.id("button_highlighted");
+    private static final int BUTTON_H = 16;
     private static final ResourceLocation ICON_TECHNIQUE = Kegare.id("view_technique");
     private static final int TILE = 22;
     private static final int TAB_SIZE = 24;
@@ -102,7 +124,7 @@ public final class SorcererScreen extends Screen {
     private int px, py, pw, ph;
     private int lx0, lx1, rcx, rcw, wellY0, wellY1, trayX, trayY;
 
-    private enum Kind { CATEGORY, VIEW, TILE, RESET }
+    private enum Kind { CATEGORY, VIEW, TILE, RESET, OPTION }
 
     private record Hit(Kind kind, int x, int y, int w, int h, int index, @Nullable ResourceLocation ability, boolean unlocked) {
         boolean contains(double mx, double my) {
@@ -205,6 +227,7 @@ public final class SorcererScreen extends Screen {
             case TECHNIQUE -> renderDetails(g, technique, data, shown, bx, by, bw);
             case TRAITS -> renderTraits(g, bx, by, bw);
             case PITY -> renderPity(g, bx, by, bw);
+            case SETTINGS -> renderSettings(g, bx, by, bw, mouseX, mouseY);
         };
         g.disableScissor();
         scrollMax = Math.max(0, end + scroll - (wellY1 - 5));
@@ -254,6 +277,7 @@ public final class SorcererScreen extends Screen {
                 case TECHNIQUE -> GuiDraw.sprite(g, ICON_TECHNIQUE, x + 4, y + 4, 16, 16);
                 case TRAITS -> GuiDraw.sprite(g, ICON_TRAITS, x + 4, y + 4, 16, 16);
                 case PITY -> GuiDraw.sprite(g, ICON_PITY, x + 4, y + 4, 16, 16);
+                case SETTINGS -> GuiDraw.sprite(g, ICON_SETTINGS, x + 4, y + 4, 16, 16);
             }
             hits.add(new Hit(Kind.VIEW, x, y, TAB_SIZE, TAB_SIZE, i, null, true));
         }
@@ -278,7 +302,7 @@ public final class SorcererScreen extends Screen {
         Component sub = view == View.TECHNIQUE
                 ? Component.translatable("gui.kegare.sorcerer.header.category", Component.translatable(technique.rarity().translationKey()),
                         Component.translatable(category.translationKey()))
-                : Component.translatable(view == View.TRAITS ? "gui.kegare.sorcerer.tab.traits" : "gui.kegare.sorcerer.tab.pity");
+                : Component.translatable(view.key);
         GuiDraw.text(g, font, sub, tx, ey + 13, 1f, view == View.TECHNIQUE ? GuiDraw.GRAY : GuiDraw.GOLD);
         if (view != View.TECHNIQUE || data == null) return;
 
@@ -452,6 +476,58 @@ public final class SorcererScreen extends Screen {
         return y + GuiDraw.wrapped(g, font, Component.translatable("gui.kegare.sorcerer.pity.total", info.totalRolls()), x, y, w, GuiDraw.GRAY);
     }
 
+    // ---------------------------------------------------------------- settings (client config, saved at once)
+
+    private static final String[] SELECT_VALUES = {"gui.kegare.settings.number_keys", "gui.kegare.settings.scroll_wheel"};
+    private static final String[] VFX_VALUES = {"gui.kegare.settings.vfx.full", "gui.kegare.settings.vfx.reduced", "gui.kegare.settings.vfx.vanilla"};
+    private static final String[] ON_OFF = {"gui.kegare.settings.on", "gui.kegare.settings.off"};
+
+    private int renderSettings(GuiGraphics g, int x, int y, int w, int mouseX, int mouseY) {
+        TechniqueSelect select = KegareClientConfig.TECHNIQUE_SELECT.get();
+        y = optionRow(g, 0, "gui.kegare.settings.technique_select", SELECT_VALUES, select.ordinal(), x, y, w, mouseX, mouseY);
+        y += GuiDraw.wrapped(g, font, Component.translatable(select == TechniqueSelect.NUMBER_KEYS
+                ? "gui.kegare.settings.technique_select.number_keys" : "gui.kegare.settings.technique_select.scroll_wheel"), x, y, w, GuiDraw.DARK_GRAY) + 8;
+        y = optionRow(g, 1, "gui.kegare.settings.vfx", VFX_VALUES, KegareClientConfig.VFX_QUALITY.get().ordinal(), x, y, w, mouseX, mouseY) + 5;
+        y = optionRow(g, 2, "gui.kegare.settings.first_person", ON_OFF, KegareClientConfig.FIRST_PERSON_ANIMATIONS.get() ? 0 : 1, x, y, w, mouseX, mouseY) + 5;
+        return optionRow(g, 3, "gui.kegare.settings.reveal", ON_OFF, KegareClientConfig.REVEAL_ANIMATION.get() ? 0 : 1, x, y, w, mouseX, mouseY);
+    }
+
+    /** A label, then one button per value (the current one lit gold). Returns the y below the row. */
+    private int optionRow(GuiGraphics g, int setting, String labelKey, String[] values, int current, int x, int y, int w, int mouseX, int mouseY) {
+        y += GuiDraw.wrapped(g, font, Component.translatable(labelKey), x, y, w, 0xFFD8D2E0) + 2;
+        int bx = x;
+        for (int v = 0; v < values.length; v++) {
+            Component label = Component.translatable(values[v]);
+            int bw = font.width(label) + 12;
+            if (bx > x && bx + bw > x + w) { // wrap
+                bx = x;
+                y += BUTTON_H + 3;
+            }
+            int top = Math.max(y, wellY0 + 3), bottom = Math.min(y + BUTTON_H, wellY1 - 3); // the part not scrolled out of the box
+            boolean hover = bottom > top && mouseX >= bx && mouseX < bx + bw && mouseY >= top && mouseY < bottom;
+            boolean selected = v == current;
+            GuiDraw.sprite(g, selected ? BUTTON_LIT : BUTTON, bx, y, bw, BUTTON_H);
+            GuiDraw.centered(g, font, label, bx + bw / 2, y + 4, 1f, selected ? GuiDraw.GOLD : hover ? GuiDraw.WHITE : GuiDraw.GRAY);
+            if (bottom > top) hits.add(new Hit(Kind.OPTION, bx, top, bw, bottom - top, setting * 10 + v, null, true));
+            bx += bw + 3;
+        }
+        return y + BUTTON_H + 3;
+    }
+
+    private void applyOption(int setting, int value) {
+        switch (setting) {
+            case 0 -> KegareClientConfig.TECHNIQUE_SELECT.set(TechniqueSelect.values()[value]);
+            case 1 -> KegareClientConfig.VFX_QUALITY.set(VfxQuality.values()[value]);
+            case 2 -> KegareClientConfig.FIRST_PERSON_ANIMATIONS.set(value == 0);
+            case 3 -> KegareClientConfig.REVEAL_ANIMATION.set(value == 0);
+            default -> {
+                return;
+            }
+        }
+        KegareClientConfig.SPEC.save();
+        if (minecraft != null) minecraft.getSoundManager().play(SimpleSoundInstance.forUI(SoundEvents.UI_BUTTON_CLICK, 1f));
+    }
+
     // ---------------------------------------------------------------- loadout status, overlay
 
     private void renderLoadoutStatus(GuiGraphics g, SyncPayload data, int mouseX, int mouseY) {
@@ -476,11 +552,11 @@ public final class SorcererScreen extends Screen {
         Component reset = Component.translatable("gui.kegare.loadout.reset_short");
         int bw = font.width(reset) + 10;
         int bx = trayX + CombatPanelLayer.W + 4;
-        int by = trayY + 29;
-        boolean hover = mouseX >= bx && mouseX < bx + bw && mouseY >= by && mouseY < by + 14;
-        GuiDraw.sprite(g, hover ? GuiDraw.TAB_SELECTED : GuiDraw.TAB, bx, by, bw, 14);
-        GuiDraw.centered(g, font, reset, bx + bw / 2, by + 3, 1f, hover ? GuiDraw.WHITE : GuiDraw.GRAY);
-        hits.add(new Hit(Kind.RESET, bx, by, bw, 14, 0, null, true));
+        int by = trayY + 28;
+        boolean hover = mouseX >= bx && mouseX < bx + bw && mouseY >= by && mouseY < by + BUTTON_H;
+        GuiDraw.sprite(g, hover ? BUTTON_LIT : BUTTON, bx, by, bw, BUTTON_H);
+        GuiDraw.centered(g, font, reset, bx + bw / 2, by + 4, 1f, hover ? GuiDraw.WHITE : GuiDraw.GRAY);
+        hits.add(new Hit(Kind.RESET, bx, by, bw, BUTTON_H, 0, null, true));
     }
 
     private void renderOverlay(GuiGraphics g, @Nullable InnateTechnique technique, int mouseX, int mouseY) {
@@ -498,11 +574,7 @@ public final class SorcererScreen extends Screen {
         if (hit != null && (hit.kind == Kind.CATEGORY || hit.kind == Kind.VIEW || hit.kind == Kind.RESET)) {
             Component label = switch (hit.kind) {
                 case CATEGORY -> Component.translatable(AbilityCategory.values()[hit.index].translationKey());
-                case VIEW -> Component.translatable(switch (View.values()[hit.index]) {
-                    case TECHNIQUE -> "gui.kegare.sorcerer.view.technique";
-                    case TRAITS -> "gui.kegare.sorcerer.tab.traits";
-                    case PITY -> "gui.kegare.sorcerer.tab.pity";
-                });
+                case VIEW -> Component.translatable(View.values()[hit.index].key);
                 default -> Component.translatable("gui.kegare.loadout.reset.desc");
             };
             g.renderTooltip(font, label, mouseX, mouseY);
@@ -549,6 +621,7 @@ public final class SorcererScreen extends Screen {
                     else pinned = hit.ability; // its "locked" card
                 }
                 case RESET -> send(LoadoutService.Action.RESET, 0, 0, null);
+                case OPTION -> applyOption(hit.index / 10, hit.index % 10);
             }
             return true;
         }
@@ -617,7 +690,7 @@ public final class SorcererScreen extends Screen {
             onClose();
             return true;
         }
-        if (keyCode >= GLFW.GLFW_KEY_1 && keyCode < GLFW.GLFW_KEY_1 + View.values().length) {
+        if (keyCode >= GLFW.GLFW_KEY_1 && keyCode < GLFW.GLFW_KEY_1 + View.values().length) { // 1-4: the views
             setView(View.values()[keyCode - GLFW.GLFW_KEY_1]);
             return true;
         }

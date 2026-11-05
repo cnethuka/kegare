@@ -1,7 +1,7 @@
 package com.cnethuka.kegare.client;
 
 import com.cnethuka.kegare.config.KegareClientConfig;
-import com.cnethuka.kegare.config.KegareClientConfig.InputScheme;
+import com.cnethuka.kegare.config.KegareClientConfig.TechniqueSelect;
 import com.cnethuka.kegare.innatetechnique.InnateTechnique;
 import com.cnethuka.kegare.network.SyncPayload;
 import com.cnethuka.kegare.registry.KegareRegistries;
@@ -9,10 +9,10 @@ import javax.annotation.Nullable;
 import net.minecraft.client.Minecraft;
 
 /**
- * Client-only Technique Mode state (key G). While it is on the combat panel replaces the hotbar
- * ({@link CombatPanelLayer}); in {@link InputScheme#TOGGLE_MODE} scroll and number keys also pick abilities (the hotbar
- * never changes) and right-click base-casts instead of using the held item. In {@link InputScheme#SPLIT} G only shows
- * or hides the panel. Purely input and display: the server still validates every request.
+ * Client-only Technique Mode state (key G). While it is on the combat panel takes the hotbar's place
+ * ({@link CombatPanelLayer}; the hotbar becomes a column, {@link CombatHotbarLayer}), the control chosen by
+ * {@link TechniqueSelect} picks abilities while the other stays on the hotbar, and right-click base-casts instead of
+ * using the held item. Purely input and display: the server still validates every request.
  */
 public final class TechniqueMode {
     private static boolean active;
@@ -20,16 +20,16 @@ public final class TechniqueMode {
 
     private TechniqueMode() {}
 
-    public static InputScheme scheme() {
-        return KegareClientConfig.INPUT_SCHEME.get();
+    /** Which control picks abilities while the mode is on (client setting). */
+    public static TechniqueSelect select() {
+        return KegareClientConfig.TECHNIQUE_SELECT.get();
     }
 
-    /** On, and the scheme uses a mode at all. */
     public static boolean isActive() {
-        return active && scheme() == InputScheme.TOGGLE_MODE;
+        return active;
     }
 
-    /** The combat panel is up (either scheme). */
+    /** The combat panel is up. */
     public static boolean panelShown() {
         return active && abilitiesAvailable();
     }

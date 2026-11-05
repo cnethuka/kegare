@@ -31,8 +31,6 @@ public final class GuiDraw {
     public static final ResourceLocation PANEL = Kegare.id("panel");
     public static final ResourceLocation TAB = Kegare.id("tab");
     public static final ResourceLocation TAB_SELECTED = Kegare.id("tab_selected");
-    public static final ResourceLocation SLOT = Kegare.id("radial_slot");
-    public static final ResourceLocation SLOT_SELECTED = Kegare.id("radial_slot_selected");
     public static final ResourceLocation SPARKLE = Kegare.id("sparkle");
     public static final ResourceLocation SEVERED_EMBLEM = Kegare.id("severed_emblem");
     public static final ResourceLocation DIVIDER = Kegare.id("divider");
@@ -61,14 +59,7 @@ public final class GuiDraw {
     private static final int BAR_CAP = 5;
     private static final int BAR_MIDDLE = BAR_TEXTURE_W - 2 * BAR_CAP;
 
-    /** Ability slot: 20x20, a 2px frame around a 16x16 well for the icon. */
-    private static final ResourceLocation ICON_SLOT = Kegare.id("textures/gui/ability_slot.png");
-    private static final ResourceLocation ICON_SLOT_SELECTED = Kegare.id("textures/gui/ability_slot_selected.png");
-    public static final int ICON_SLOT_SIZE = 20;
-    /** The ultimate's slot on the ability bar: bigger, gold-framed. */
-    private static final ResourceLocation ULTIMATE_SLOT = Kegare.id("textures/gui/ultimate_slot.png");
-    public static final int ULTIMATE_SLOT_SIZE = 26;
-    /** The Shared category's tab icon on the Loadout page (16x16). */
+    /** The Shared category's tab icon on the Sorcerer screen (16x16). */
     public static final ResourceLocation CATEGORY_SHARED = Kegare.id("category_shared");
     public static final ResourceLocation BADGE_SPECIAL = Kegare.id("badge_special");
     public static final ResourceLocation BADGE_SPECIAL_NONE = Kegare.id("badge_special_none");
@@ -86,7 +77,7 @@ public final class GuiDraw {
     /** The near-black outline every piece of art uses. */
     public static final int INK = 0xFF0B0810;
     private static final int WELL = 0xFF1E1625;
-    /** Cooldown overlay (HUD and radial): darken the slot, then a violet sweep for the remaining fraction. */
+    /** Cooldown overlay (combat panel): darken the slot, then a violet sweep for the remaining fraction. */
     public static final int COOLDOWN_DIM = 0xA0000000;
     public static final int COOLDOWN_SWEEP = 0x559D4EDD;
 
@@ -235,32 +226,6 @@ public final class GuiDraw {
 
     // ---------------------------------------------------------------- abilities
 
-    /** Draws a 20x20 ability slot and the ability's icon in it. Returns false if the ability has no icon art. */
-    public static boolean abilitySlot(GuiGraphics g, Ability ability, int x, int y, boolean selected) {
-        return abilitySlot(g, ability, x, y, ICON_SLOT_SIZE, selected);
-    }
-
-    /** A 20x20 ability slot, or the 26x26 ultimate slot ({@code size} = {@link #ULTIMATE_SLOT_SIZE}), with the icon. */
-    public static boolean abilitySlot(GuiGraphics g, Ability ability, int x, int y, int size, boolean selected) {
-        RenderSystem.enableBlend();
-        slotFrame(g, x, y, size, selected);
-        return abilityIcon(g, ability, x + (size - 16) / 2, y + (size - 16) / 2);
-    }
-
-    /** A slot frame with nothing in it (an empty loadout slot). */
-    public static void emptySlot(GuiGraphics g, int x, int y, int size, boolean selected) {
-        RenderSystem.enableBlend();
-        slotFrame(g, x, y, size, selected);
-    }
-
-    private static void slotFrame(GuiGraphics g, int x, int y, int size, boolean selected) {
-        if (size == ULTIMATE_SLOT_SIZE) {
-            g.blit(ULTIMATE_SLOT, x, y, 0f, 0f, size, size, size, size);
-        } else {
-            g.blit(selected ? ICON_SLOT_SELECTED : ICON_SLOT, x, y, 0f, 0f, ICON_SLOT_SIZE, ICON_SLOT_SIZE, ICON_SLOT_SIZE, ICON_SLOT_SIZE);
-        }
-    }
-
     /** The small "R" badge on a slot: lit if the ability has a special, greyed out if not. 9x9. */
     public static void specialBadge(GuiGraphics g, int x, int y, boolean hasSpecial) {
         g.pose().pushPose();
@@ -278,31 +243,10 @@ public final class GuiDraw {
         return true;
     }
 
-    /** An empty ability slot with a padlock: the ultimate is planned but not unlocked yet (its Dominion comes later). */
-    public static void lockedSlot(GuiGraphics g, Font font, int x, int y, Component label) {
-        lockedSlot(g, font, x, y, ICON_SLOT_SIZE, label);
-    }
-
-    public static void lockedSlot(GuiGraphics g, Font font, int x, int y, int size, Component label) {
-        RenderSystem.enableBlend();
-        slotFrame(g, x, y, size, false);
-        g.fill(x + 2, y + 2, x + size - 2, y + size - 2, 0x66000000);
-        sprite(g, LOCK, x + (size - 11) / 2, y + (size - 11) / 2, 11, 11);
-        cornerLabel(g, font, label, x, y, size, 0xFF6B6276);
-    }
-
     /** "0.85", "1.5": a cost multiplier with at most two decimals. */
     public static String multiplier(float value) {
         String s = String.format(java.util.Locale.ROOT, "%.2f", value);
         return s.endsWith("0") ? s.substring(0, s.length() - 1) : s;
-    }
-
-    /** A small key/slot label in a slot's bottom-right corner, like an item count. */
-    public static void cornerLabel(GuiGraphics g, Font font, Component label, int slotX, int slotY, int slotSize, int color) {
-        g.pose().pushPose();
-        g.pose().translate(0, 0, 200);
-        g.drawString(font, label, slotX + slotSize - 1 - font.width(label), slotY + slotSize - 8, color, true);
-        g.pose().popPose();
     }
 
     // ---------------------------------------------------------------- innate techniques

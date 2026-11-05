@@ -1,12 +1,9 @@
 package com.cnethuka.kegare.client;
 
 import com.cnethuka.kegare.Kegare;
-import com.cnethuka.kegare.client.gui.AbilityRadialScreen;
 import com.cnethuka.kegare.client.gui.RevealQueue;
-import com.cnethuka.kegare.config.KegareClientConfig;
-import com.cnethuka.kegare.config.KegareClientConfig.InputScheme;
+import com.cnethuka.kegare.config.KegareClientConfig.TechniqueSelect;
 import com.cnethuka.kegare.innatetechnique.CastIntent;
-import com.cnethuka.kegare.innatetechnique.InnateTechnique;
 import com.cnethuka.kegare.network.IntentPayload;
 import com.cnethuka.kegare.network.SelectAbilityPayload;
 import com.cnethuka.kegare.network.SorcererRequestPayload;
@@ -28,12 +25,10 @@ import net.neoforged.neoforge.network.PacketDistributor;
  * Turns input into requests. Nothing here decides an outcome; the server validates every intent and selection.
  * <ul>
  *   <li>R: the selected ability's special (press / release). V: the ultimate. K: Sorcerer screen.</li>
- *   <li>Hold Z: the radial menu.</li>
- *   <li>C (Cast, rebindable): base-casts the selected ability, in either scheme.</li>
- *   <li>{@link InputScheme#TOGGLE_MODE}: G toggles Technique Mode; in it, scroll and number keys pick abilities (the
- *       hotbar never changes) and right-click base-casts too, without using the held item.</li>
- *   <li>{@link InputScheme#SPLIT}: scroll always picks abilities, number keys stay on the hotbar, right-click uses
- *       items as usual.</li>
+ *   <li>C (Cast, rebindable): base-casts the selected ability, in or out of Technique Mode.</li>
+ *   <li>G toggles Technique Mode. In it, ONE control picks abilities and the other stays on the hotbar
+ *       ({@link TechniqueSelect}: number keys by default, or the scroll wheel), and right-click base-casts too,
+ *       without using the held item. Out of it, number keys, scroll and right-click are all vanilla.</li>
  * </ul>
  */
 @EventBusSubscriber(modid = Kegare.MODID, value = Dist.CLIENT)
@@ -41,19 +36,21 @@ public final class ClientInput {
     private static boolean castHeld;
     private static boolean specialHeld;
     private static boolean ultimateHeld;
-    /** Ticks the radial key has been held; -1 = not held (or already consumed by the radial). */
-    private static int radialHeldTicks = -1;
     /** A right-click shorter than a tick, caught before vanilla consumes it (Technique Mode). */
     private static boolean useClicked;
 
     private ClientInput() {}
 
-    /** Before vanilla handles keys this tick: in Technique Mode the number keys pick abilities, not hotbar slots. */
+    /**
+     * Before vanilla handles keys this tick. In Technique Mode right-click is ours, and with {@link TechniqueSelect#NUMBER_KEYS}
+     * the number keys pick abilities instead of hotbar slots (numbers past the last ability do nothing).
+     */
     @SubscribeEvent
     static void onClientTickPre(ClientTickEvent.Pre event) {
         Minecraft mc = Minecraft.getInstance();
         if (mc.player == null || !TechniqueMode.isActive()) return;
         while (mc.options.keyUse.consumeClick()) useClicked = true; // ours, not the held item's
+        if (TechniqueMode.select() != TechniqueSelect.NUMBER_KEYS) return;
         KeyMapping[] hotbar = mc.options.keyHotbarSlots;
         for (int i = 0; i < hotbar.length; i++) {
             while (hotbar[i].consumeClick()) selectSlot(i);
@@ -80,27 +77,24 @@ public final class ClientInput {
         castHeld = edge(castDown, castHeld, CastIntent.CAST_PRESS, CastIntent.CAST_RELEASE);
         specialHeld = edge(consumeAndCheck(KegareKeys.SPECIAL), specialHeld, CastIntent.SPECIAL_PRESS, CastIntent.SPECIAL_RELEASE);
         ultimateHeld = edge(consumeAndCheck(KegareKeys.ULTIMATE), ultimateHeld, CastIntent.ULTIMATE_PRESS, CastIntent.ULTIMATE_RELEASE);
-        trackRadial(mc);
         while (KegareKeys.SORCERER.consumeClick()) PacketDistributor.sendToServer(SorcererRequestPayload.INSTANCE);
     }
 
-    /** In Technique Mode right-click (and pick block, which would change the hotbar) does nothing vanilla. */
+    /** In Technique Mode right-click casts; it never uses the held item. */
     @SubscribeEvent
     static void onInteraction(InputEvent.InteractionKeyMappingTriggered event) {
-        if (TechniqueMode.isActive() && (event.isUseItem() || event.isPickBlock())) {
+        if (TechniqueMode.isActive() && event.isUseItem()) {
             event.setCanceled(true);
             event.setSwingHand(false);
         }
     }
 
-    /** Scroll picks abilities in Technique Mode, and always in SPLIT (when the player has abilities). */
+    /** With {@link TechniqueSelect#SCROLL_WHEEL}, scroll picks abilities in Technique Mode (otherwise it stays on the hotbar). */
     @SubscribeEvent(priority = EventPriority.HIGH)
     static void onScroll(InputEvent.MouseScrollingEvent event) {
         Minecraft mc = Minecraft.getInstance();
         if (mc.screen != null || mc.player == null) return;
-        boolean picksAbilities = TechniqueMode.isActive()
-                || (TechniqueMode.scheme() == InputScheme.SPLIT && TechniqueMode.abilitiesAvailable());
-        if (!picksAbilities) return;
+        if (!TechniqueMode.isActive() || TechniqueMode.select() != TechniqueSelect.SCROLL_WHEEL) return;
         event.setCanceled(true);
         double delta = event.getScrollDeltaY();
         if (delta == 0) return;
@@ -111,24 +105,10 @@ public final class ClientInput {
         selectSlot(Mth.positiveModulo(data.selectedSlot() + (delta > 0 ? -1 : 1), size));
     }
 
-    /** Opening any screen leaves Technique Mode (except the radial menu, which is part of picking abilities). */
+    /** Opening any screen leaves Technique Mode. */
     @SubscribeEvent
     static void onScreenOpening(ScreenEvent.Opening event) {
-        if (!(event.getNewScreen() instanceof AbilityRadialScreen)) TechniqueMode.exit();
-    }
-
-    /** Hold the radial key: the radial menu opens after the configured hold time. A tap does nothing. */
-    private static void trackRadial(Minecraft mc) {
-        while (KegareKeys.RADIAL.consumeClick()) { }
-        if (KegareKeys.RADIAL.isDown()) {
-            radialHeldTicks = radialHeldTicks < 0 ? 0 : radialHeldTicks + 1;
-            if (radialHeldTicks >= KegareClientConfig.RADIAL_HOLD_TICKS.get() && AbilityRadialScreen.canOpen()) {
-                radialHeldTicks = -1; // opening a screen releases the key, so this restarts cleanly
-                mc.setScreen(new AbilityRadialScreen());
-            }
-        } else {
-            radialHeldTicks = -1;
-        }
+        TechniqueMode.exit();
     }
 
     private static void selectSlot(int slot) {
@@ -165,7 +145,6 @@ public final class ClientInput {
         specialHeld = false;
         ultimateHeld = false;
         useClicked = false;
-        radialHeldTicks = -1;
         TechniqueMode.exit();
     }
 

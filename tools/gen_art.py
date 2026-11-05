@@ -361,36 +361,6 @@ def tab(selected: bool) -> Image.Image:
     return img
 
 
-def radial_slot(selected: bool) -> Image.Image:
-    size = 24
-    metal = GOLD if selected else IRON
-    img = new(size, size)
-    gloss = noise_stack(31, size, size, (4,))
-    for y in range(size):
-        for x in range(size):
-            # octagon: cut the corners
-            cx, cy = min(x, size - 1 - x), min(y, size - 1 - y)
-            if cx + cy < 4:
-                continue
-            d = min(cx, cy, cx + cy - 4)
-            top_left = x + y < size
-            if d == 0:
-                c = INK
-            elif d <= 2:
-                c = metal[5] if (d == 1 and top_left) else metal[3] if top_left else metal[1]
-            elif d == 3:
-                c = INK
-            else:
-                # glossy dark interior: a soft highlight arc top-left
-                g = 1 - math.hypot(x - 8, y - 8) / 18
-                t = 0.25 + g * 0.35 + (fbm(gloss, x, y) - 0.5) * 0.15
-                c = dither(MALICE[:4] if selected else PLUM, t, x, y)
-            img.putpixel((x, y), c)
-    for (x, y) in ((6, 7), (7, 6), (8, 6)):  # specular glint
-        put(img, x, y, (255, 255, 255, 120))
-    return img
-
-
 def sparkle() -> Image.Image:
     grid = [
         "....W....",
@@ -537,34 +507,6 @@ def malice_bar() -> Image.Image:
             put(img, sx, dy, c)
     return img
 
-
-def hud_slot(selected: bool) -> Image.Image:
-    """20x20: ink outline + 1px metal bevel, then a glossy 16x16 well the ability icon is drawn into."""
-    size = 20
-    metal = GOLD if selected else IRON
-    img = new(size, size)
-    for y in range(size):
-        for x in range(size):
-            d = min(x, y, size - 1 - x, size - 1 - y)
-            if (x in (0, size - 1)) and (y in (0, size - 1)):
-                continue
-            top_left = x + y < size
-            if d == 0:
-                c = INK
-            elif d == 1:
-                c = metal[5] if top_left else metal[2]
-            elif d == 2:
-                c = metal[1] if selected else INK
-            else:
-                g = 1 - math.hypot(x - 6, y - 6) / 16
-                c = dither(MALICE[:3] if selected else PLUM, 0.15 + g * 0.5, x, y)
-            img.putpixel((x, y), c)
-    put(img, 4, 4, (255, 255, 255, 90))
-    put(img, 5, 4, (255, 255, 255, 60))
-    return img
-
-
-# ---------------------------------------------------------------------------------------------------- icons (hand-pixelled 16x16)
 
 def icon(grid: list[str], r: list) -> Image.Image:
     pal = {str(i): r[i] for i in range(len(r))}
@@ -894,31 +836,6 @@ def emblem_rime() -> Image.Image:
     return img
 
 
-def ultimate_slot() -> Image.Image:
-    """26x26 gold-framed slot for the ultimate on the ability bar (a 16x16 icon sits in the middle)."""
-    size = 26
-    img = new(size, size)
-    for y in range(size):
-        for x in range(size):
-            d = min(x, y, size - 1 - x, size - 1 - y)
-            if (x in (0, size - 1)) and (y in (0, size - 1)):
-                continue
-            top_left = x + y < size
-            if d == 0:
-                c = INK
-            elif d <= 2:
-                c = GOLD[5] if (d == 1 and top_left) else GOLD[3] if top_left else GOLD[1]
-            elif d == 3:
-                c = INK
-            else:
-                g = 1 - math.hypot(x - 8, y - 8) / 20
-                c = dither(MALICE[:3], 0.12 + g * 0.45, x, y)
-            img.putpixel((x, y), c)
-    for (x, y) in ((5, 5), (6, 5), (5, 6)):
-        put(img, x, y, (255, 255, 255, 90))
-    return img
-
-
 def special_badge(lit: bool) -> Image.Image:
     """9x9 "R" badge on an ability slot: lit gold when the ability has a special (R), grey when not."""
     grid = [
@@ -1157,26 +1074,6 @@ def combat_slot(kind: str) -> Image.Image:
     return img
 
 
-def hotbar_cell(selected: bool) -> Image.Image:
-    """20x20 cell of the vertical hotbar shown on the left edge while the combat panel is up."""
-    size = 20
-    img = new(size, size)
-    for y in range(size):
-        for x in range(size):
-            d = min(x, y, size - 1 - x, size - 1 - y)
-            if d == 0:
-                c = INK
-            elif d == 1:
-                if selected:
-                    c = hexc("#f2f2f2") if (x < 10 or y < 10) else hexc("#a8a8b4")
-                else:
-                    c = IRON[4] if (x == 1 or y == 1) else IRON[2]
-            else:
-                c = dither(PLUM, 0.25 + y / size * 0.3, x, y) if not selected else dither(IRON[1:4], 0.3 + y / size * 0.3, x, y)
-            put(img, x, y, c)
-    return img
-
-
 def env_mini(cold: bool) -> Image.Image:
     """5x5 glyph in the corner of the combat panel's number plate: a snowflake (cheaper here) or a flame (dearer)."""
     if cold:
@@ -1279,6 +1176,24 @@ ICON_VIEW_TRAITS = [  # an eye: traits
     ".....KKKKKK.....",
     "................",
     "................",
+    "................",
+]
+ICON_VIEW_SETTINGS = [  # a gear: settings
+    "................",
+    ".......KK.......",
+    "...KK.K66K.KK...",
+    "..K66K6556K66K..",
+    "..K6555555556K..",
+    "...K55KKKK55K...",
+    ".KK55K....K55KK.",
+    "K6655K....K5566K",
+    "K6655K....K5566K",
+    ".KK55K....K55KK.",
+    "...K55KKKK55K...",
+    "..K6555555556K..",
+    "..K66K5445K66K..",
+    "...KK.K44K.KK...",
+    ".......KK.......",
     "................",
 ]
 ICON_VIEW_PITY = [  # a four-pointed star: luck and pity
@@ -1431,8 +1346,6 @@ def build() -> dict[str, Image.Image]:
     out["card_legendary"] = card(GOLD, hexc("#ff5a4e"), 207, 3)
     out["tab"] = tab(False)
     out["tab_selected"] = tab(True)
-    out["radial_slot"] = radial_slot(False)
-    out["radial_slot_selected"] = radial_slot(True)
     out["sparkle"] = sparkle()
     out["severed_emblem"] = severed_emblem()
     out["divider"] = divider()
@@ -1454,6 +1367,7 @@ def build() -> dict[str, Image.Image]:
     out["view_technique"] = icon(ICON_VIEW_TECHNIQUE, MALICE)
     out["view_traits"] = icon(ICON_VIEW_TRAITS, ICE)
     out["view_pity"] = icon(ICON_VIEW_PITY, GOLD)
+    out["view_settings"] = icon(ICON_VIEW_SETTINGS, SILVER)
     out["env_cold_mini"] = env_mini(True)
     out["env_hot_mini"] = env_mini(False)
     return out
@@ -1462,7 +1376,7 @@ def build() -> dict[str, Image.Image]:
 def main() -> None:
     sprites = build()
     borders = {"panel": 12, "card_common": 12, "card_rare": 12, "card_epic": 12, "card_legendary": 12,
-               "tab": 5, "tab_selected": 5, "radial_slot": 7, "radial_slot_selected": 7, "divider": (10, 0, 10, 0),
+               "tab": 5, "tab_selected": 5, "divider": (10, 0, 10, 0),
                "button": 4, "button_highlighted": 4, "button_disabled": 4, "menu_frame": 10, "menu_well": 4}
     for name, img in sprites.items():
         sprite(img, name, borders.get(name))
@@ -1474,17 +1388,12 @@ def main() -> None:
 
     save(reveal_bg(), "gui/reveal_bg.png")
     save(malice_bar(), "gui/malice_bar.png")
-    save(hud_slot(False), "gui/ability_slot.png")
-    save(hud_slot(True), "gui/ability_slot_selected.png")
-    save(ultimate_slot(), "gui/ultimate_slot.png")
     save(combat_panel(), "gui/combat/panel.png")
     save(combat_panel_accent(), "gui/combat/panel_accent.png")
     save(meter_cells(), "gui/combat/meter_cells.png")
     save(combat_slot("normal"), "gui/combat/slot.png")
     save(combat_slot("selected"), "gui/combat/slot_selected.png")
     save(combat_slot("ultimate"), "gui/combat/slot_ultimate.png")
-    save(hotbar_cell(False), "gui/combat/hotbar_cell.png")
-    save(hotbar_cell(True), "gui/combat/hotbar_cell_selected.png")
     save(talisman_item(), "item/purification_talisman.png")
     # Rime's projectiles render as these items in flight
     save(icon(ICON_FROST_SHARD, ICE), "item/frost_shard.png")
@@ -1505,7 +1414,7 @@ def main() -> None:
 
     if "--preview" in sys.argv:
         out = Path(sys.argv[sys.argv.index("--preview") + 1])
-        items = list(sprites.values()) + [reveal_bg(), malice_bar(), hud_slot(False), hud_slot(True), talisman_item()] \
+        items = list(sprites.values()) + [reveal_bg(), malice_bar(), talisman_item()] \
             + list(icons.values()) + list(emblems.values())
         scale = 4
         cols = 8

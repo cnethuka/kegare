@@ -27,8 +27,8 @@ import net.minecraft.util.Mth;
 
 /**
  * The combat panel: Technique Mode's HUD. It does not exist until the player presses the Technique Mode key (G); then
- * it slides up and takes the hotbar's place (the hotbar moves to a column on the left edge, {@link CombatHotbarLayer};
- * hearts and food sit on top of the panel). The art is our own
+ * it slides up and takes the hotbar's place, drawn a bit bigger than its art ({@link #hudScale}; the hotbar moves to a
+ * column on the left edge, {@link CombatHotbarLayer}; hearts and food sit on top of the panel). The art is our own
  * ({@code tools/gen_art.py}, textures under {@code gui/combat/}).
  * <ul>
  *   <li>The crest: freeze pips.</li>
@@ -61,8 +61,6 @@ public final class CombatPanelLayer implements LayeredDraw.Layer {
     private static final int SLOT_SIZE = 22;
     private static final int ULT_SIZE = 26;
     private static final int SLOT_Y = 25;
-    /** Hearts and food sit this far above the bottom of the screen while the panel is up (vanilla: 39). */
-    public static final int STACK_BASE = H + 11;
 
     private static final int READY_FLASH_TICKS = 8;
     private static final long SLOT_SLIDE_MS = 180;
@@ -83,9 +81,31 @@ public final class CombatPanelLayer implements LayeredDraw.Layer {
                 && TechniqueMode.panelShown();
     }
 
+    /**
+     * The HUD draws the panel a bit bigger than its art (about 1.25-1.5x): a whole number of screen pixels per texel
+     * (one more than the GUI scale gives, at least), so it stays crisp at every GUI scale.
+     */
+    public static float hudScale() {
+        int gs = guiScale();
+        int texel = Math.max(gs + 1, Math.round(gs * 1.25f));
+        // On a very narrow screen, no bigger than leaves room for the hotbar column on either side.
+        int room = (Minecraft.getInstance().getWindow().getGuiScaledWidth() - 2 * (CombatHotbarLayer.WIDTH + 4)) * gs;
+        while (texel > gs && W * texel > room) texel--;
+        return texel / (float) gs;
+    }
+
+    private static int guiScale() {
+        return Math.max(1, (int) Math.round(Minecraft.getInstance().getWindow().getGuiScale()));
+    }
+
+    /** Hearts and food sit this far above the bottom of the screen while the panel is up (vanilla: 39). */
+    public static int stackBase() {
+        return Mth.ceil(H * hudScale()) + 11;
+    }
+
     /** How far the vanilla stack (hearts, food, armour, air, action bar) moves up while the panel is up. */
     public static int extraHeight() {
-        return shown() ? STACK_BASE - 39 : 0;
+        return shown() ? stackBase() - 39 : 0;
     }
 
     @Override
@@ -98,16 +118,22 @@ public final class CombatPanelLayer implements LayeredDraw.Layer {
         List<Ability> abilities = ClientLoadout.abilities();
 
         // Hearts, food, armour and air stack on top of the panel.
-        mc.gui.leftHeight = Math.max(mc.gui.leftHeight, STACK_BASE);
-        mc.gui.rightHeight = Math.max(mc.gui.rightHeight, STACK_BASE);
+        int stack = stackBase();
+        mc.gui.leftHeight = Math.max(mc.gui.leftHeight, stack);
+        mc.gui.rightHeight = Math.max(mc.gui.rightHeight, stack);
 
-        Font font = mc.font;
-        long now = mc.level.getGameTime();
-        int x0 = (g.guiWidth() - W) / 2;
-        int slide = Math.round((1f - easeOut(Math.min(1f, (Util.getMillis() - TechniqueMode.shownAtMs()) / (float) SLOT_SLIDE_MS))) * (H + 4));
-        int y0 = g.guiHeight() - H + slide;
-
-        drawPanel(g, font, data, technique, abilities, now, x0, y0, -1);
+        // Bottom centre, scaled up, its corner on a whole screen pixel.
+        int gs = guiScale();
+        float scale = hudScale();
+        int texel = Math.round(scale * gs);
+        float x0 = Math.round((g.guiWidth() * gs - W * texel) / 2f) / (float) gs;
+        float slide = (1f - easeOut(Math.min(1f, (Util.getMillis() - TechniqueMode.shownAtMs()) / (float) SLOT_SLIDE_MS))) * (H * scale + 4);
+        float y0 = g.guiHeight() - H * texel / (float) gs + slide;
+        g.pose().pushPose();
+        g.pose().translate(x0, y0, 0f);
+        g.pose().scale(scale, scale, 1f);
+        drawPanel(g, mc.font, data, technique, abilities, mc.level.getGameTime(), 0, 0, -1);
+        g.pose().popPose();
     }
 
     /** Where a slot of the tray was drawn ({@code index} = loadout slot, or the slot count for the ultimate). */

@@ -8,20 +8,16 @@ public final class KegareClientConfig {
 
     public static final ModConfigSpec.BooleanValue HUD_ENABLED;
     public static final ModConfigSpec.BooleanValue REVEAL_ANIMATION;
-    public static final ModConfigSpec.IntValue RADIAL_HOLD_TICKS;
     public static final ModConfigSpec.BooleanValue FIRST_PERSON_ANIMATIONS;
     public static final ModConfigSpec.EnumValue<VfxQuality> VFX_QUALITY;
-    public static final ModConfigSpec.EnumValue<InputScheme> INPUT_SCHEME;
+    public static final ModConfigSpec.EnumValue<TechniqueSelect> TECHNIQUE_SELECT;
 
-    /** How abilities are selected and base-cast. The special (R), ultimate (V) and radial (hold Z) keys work in both. */
-    public enum InputScheme {
-        /**
-         * G toggles Technique Mode. While on: scroll and number keys pick abilities (the hotbar never changes) and
-         * right-click casts the selected ability instead of using the held item.
-         */
-        TOGGLE_MODE,
-        /** No mode: scroll always picks abilities, number keys pick hotbar slots, the Cast key (C) base-casts. */
-        SPLIT
+    /** In Technique Mode (G), which control picks abilities. The other one stays on the hotbar. Out of the mode both are vanilla. */
+    public enum TechniqueSelect {
+        /** Number keys 1-N pick abilities; the scroll wheel moves through the hotbar. */
+        NUMBER_KEYS,
+        /** The scroll wheel picks abilities; number keys pick hotbar slots. */
+        SCROLL_WHEEL
     }
 
     /** How ability effects are drawn. Purely cosmetic: never changes what happens in the game. */
@@ -42,14 +38,10 @@ public final class KegareClientConfig {
         b.push("reveal");
         REVEAL_ANIMATION = b.comment("Play the roll reveal spin. Off = show the result instantly.").define("animation", true);
         b.pop();
-        b.push("radial");
-        RADIAL_HOLD_TICKS = b.comment("Hold the next-ability key this many ticks to open the radial menu (a shorter tap cycles).")
-                .defineInRange("holdTicks", 5, 1, 40);
-        b.pop();
         b.push("input");
-        INPUT_SCHEME = b.comment("TOGGLE_MODE: G toggles Technique Mode (scroll/number keys pick abilities, right-click casts). "
-                        + "SPLIT: scroll always picks abilities, number keys stay on the hotbar, C casts.")
-                .defineEnum("inputScheme", InputScheme.TOGGLE_MODE);
+        TECHNIQUE_SELECT = b.comment("In Technique Mode (G): NUMBER_KEYS = number keys pick abilities and the scroll wheel stays on "
+                        + "the hotbar; SCROLL_WHEEL = the other way round. Also on the Sorcerer screen's Settings page.")
+                .defineEnum("techniqueSelect", TechniqueSelect.NUMBER_KEYS);
         b.pop();
         b.push("visuals");
         FIRST_PERSON_ANIMATIONS = b.comment("Show your own ability animations (arms) in first person.")

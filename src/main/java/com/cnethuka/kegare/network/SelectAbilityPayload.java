@@ -9,7 +9,7 @@ import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 import net.minecraft.server.level.ServerPlayer;
 import net.neoforged.neoforge.network.handling.IPayloadContext;
 
-/** Client to server: select ability slot N (radial menu). The server validates the slot. */
+/** Client to server: select ability slot N (Technique Mode's number keys or scroll). The server validates the slot. */
 public record SelectAbilityPayload(int slot) implements CustomPacketPayload {
     public static final Type<SelectAbilityPayload> TYPE = new Type<>(Kegare.id("select_ability"));
     public static final StreamCodec<FriendlyByteBuf, SelectAbilityPayload> STREAM_CODEC =

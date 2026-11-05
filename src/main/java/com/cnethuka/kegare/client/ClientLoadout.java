@@ -11,8 +11,8 @@ import java.util.Optional;
 import net.minecraft.resources.ResourceLocation;
 
 /**
- * The local player's loadout as last synced: one entry per regular slot, {@code null} for an empty slot. The HUD
- * bar, the radial menu and Technique Mode's number keys all read this, never the innate technique's own list.
+ * The local player's loadout as last synced: one entry per regular slot, {@code null} for an empty slot. The combat
+ * panel, the Sorcerer screen and Technique Mode's ability picking all read this, never the innate technique's own list.
  */
 public final class ClientLoadout {
     private ClientLoadout() {}

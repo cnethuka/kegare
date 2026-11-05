@@ -64,7 +64,6 @@ public final class KegareLanguageProvider extends LanguageProvider {
         add("key.kegare.special", "Special (of the selected ability)");
         add("key.kegare.technique_mode", "Technique Mode");
         add("key.kegare.cast", "Cast Ability");
-        add("key.kegare.radial", "Ability Menu (hold)");
         add("key.kegare.ultimate", "Ultimate");
         add("key.kegare.sorcerer", "Sorcerer Screen");
 
@@ -159,20 +158,13 @@ public final class KegareLanguageProvider extends LanguageProvider {
         // HUD
         add("hud.kegare.empty_slot", "Empty slot");
         add("hud.kegare.frozen", "Frozen!");
-        add("gui.kegare.cost.current", "Cost here: %s " + MALICE);
-        add("gui.kegare.cost.upkeep", "Upkeep here: %s " + MALICE + "/s");
-        add("gui.kegare.cost.no_modifier", "No surroundings modifier");
         add("gui.kegare.cost.factor", "×%s %s");
-        add("gui.kegare.cost.total", "Total ×%s");
-        add("gui.kegare.cost.short", "Cost %s");
-        add("gui.kegare.cost.short_upkeep", "Cost %s + %s/s");
         add("gui.kegare.sorcerer.special.line", "Special: %s (%s) · %s " + MALICE);
         add("gui.kegare.sorcerer.special.line_upkeep", "Special: %s (%s) · %s + %s/s " + MALICE);
         add("gui.kegare.sorcerer.special.none", "No special");
         add("gui.kegare.special.kind", "Special (%s) · %s");
         add("gui.kegare.special.requires", "Requires %s");
         add("gui.kegare.special.shared_cooldown", "Shares %s's cooldown");
-        add("gui.kegare.radial.special", "%s: %s");
         add("gui.kegare.sorcerer.ability.ultimate_locked", "Ultimate: Locked");
         add("gui.kegare.sorcerer.ability.ultimate_locked.desc", "Its " + DOMINION + " comes later.");
 
@@ -303,6 +295,20 @@ public final class KegareLanguageProvider extends LanguageProvider {
         // ---- GUI: Sorcerer screen ----
         add("gui.kegare.sorcerer.title", "Sorcerer");
         add("gui.kegare.sorcerer.view.technique", INNATE_TECHNIQUE);
+        add("gui.kegare.sorcerer.view.settings", "Settings");
+        add("gui.kegare.settings.technique_select", "In Technique Mode, pick abilities with");
+        add("gui.kegare.settings.number_keys", "Number keys");
+        add("gui.kegare.settings.scroll_wheel", "Scroll wheel");
+        add("gui.kegare.settings.technique_select.number_keys", "Number keys pick abilities; the scroll wheel stays on your hotbar.");
+        add("gui.kegare.settings.technique_select.scroll_wheel", "The scroll wheel picks abilities; number keys stay on your hotbar.");
+        add("gui.kegare.settings.vfx", "Ability effects");
+        add("gui.kegare.settings.vfx.full", "Full");
+        add("gui.kegare.settings.vfx.reduced", "Reduced");
+        add("gui.kegare.settings.vfx.vanilla", "Vanilla");
+        add("gui.kegare.settings.first_person", "Your own animations in first person");
+        add("gui.kegare.settings.reveal", "Roll reveal spin");
+        add("gui.kegare.settings.on", "On");
+        add("gui.kegare.settings.off", "Off");
         add("gui.kegare.sorcerer.header.category", "%s · %s");
         add("gui.kegare.sorcerer.overview_hint", "Hover an ability to read about it; click one to keep it here. Drag abilities onto your bar, drag slots to swap them, right-click a slot to empty it.");
         add("gui.kegare.sorcerer.hint", "Drag abilities onto your bar");
@@ -341,9 +347,6 @@ public final class KegareLanguageProvider extends LanguageProvider {
         add("gui.kegare.talisman.confirm", "Reroll");
         add("gui.kegare.talisman.cancel", "Cancel");
 
-        // ---- GUI: radial ability menu ----
-        add("gui.kegare.radial.title", "Select Ability");
-        add("gui.kegare.radial.hint", "Release over an ability to select it");
 
         // Commands
         add("commands.kegare.unknown_innate_technique", "Unknown " + INNATE_TECHNIQUE + ": %s");

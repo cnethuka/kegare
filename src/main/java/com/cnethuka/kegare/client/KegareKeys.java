@@ -12,12 +12,10 @@ public final class KegareKeys {
 
     /** Casts the selected ability's special (hold for CHARGED/CHANNELED specials). */
     public static final KeyMapping SPECIAL = key("key.kegare.special", GLFW.GLFW_KEY_R);
-    /** Toggles Technique Mode (inputScheme = TOGGLE_MODE). */
+    /** Toggles Technique Mode (the combat panel; number keys or scroll pick abilities, right-click casts). */
     public static final KeyMapping TECHNIQUE_MODE = key("key.kegare.technique_mode", GLFW.GLFW_KEY_G);
-    /** Casts the selected ability's base version (inputScheme = SPLIT only; in TOGGLE_MODE that is right-click). */
+    /** Casts the selected ability's base version, in or out of Technique Mode (hold for CHARGED/CHANNELED). */
     public static final KeyMapping CAST = key("key.kegare.cast", GLFW.GLFW_KEY_C);
-    /** Hold to open the radial ability menu. */
-    public static final KeyMapping RADIAL = key("key.kegare.radial", GLFW.GLFW_KEY_Z);
     public static final KeyMapping ULTIMATE = key("key.kegare.ultimate", GLFW.GLFW_KEY_V);
     public static final KeyMapping SORCERER = key("key.kegare.sorcerer", GLFW.GLFW_KEY_K);
 
@@ -31,7 +29,6 @@ public final class KegareKeys {
         event.register(SPECIAL);
         event.register(TECHNIQUE_MODE);
         event.register(CAST);
-        event.register(RADIAL);
         event.register(ULTIMATE);
         event.register(SORCERER);
     }

@@ -150,7 +150,7 @@ All timestamps use **level game time**. They persist across restarts and are ide
 - Registry `kegare:innate_technique`, synced to clients so the HUD can resolve names and ability lists by ID.
 - `InnateTechnique` is made of:
   - a rarity (COMMON / RARE / EPIC / LEGENDARY)
-  - an ordered **ability list**, picked with the scroll wheel, number keys or radial menu (§3.5); each ability may
+  - an ordered **ability list**, picked with the number keys or scroll wheel in Technique Mode (§3.5); each ability may
     have a **special** on R (§3.15)
   - an optional **ultimate** (the ultimate key, where dominions will plug in)
   - a **Malice color** (`Builder.maliceColor(0xRRGGBB)`, read with `maliceColor()`; default Malice purple
@@ -225,26 +225,26 @@ All timestamps use **level game time**. They persist across restarts and are ide
 
 ### 3.5 Input and networking
 - **Keys** (all rebindable): **R** special of the selected ability (hold for CHARGED/CHANNELED specials, §3.15),
-  **G** Technique Mode, **C** cast (the selected ability's base cast, in either scheme; hold it for
-  CHARGED/CHANNELED), hold **Z** radial menu, **V** ultimate, **K** Sorcerer
-  screen. There is no next/previous-ability key any more.
-- **Input schemes** (client config `input.inputScheme`):
-  - `TOGGLE_MODE` (default): **G** toggles Technique Mode. While it is on:
-    - scroll and number keys **1–N** pick abilities (N = abilities in the current technique; higher numbers do
-      nothing), and the hotbar selection never changes (pick-block is blocked too);
-    - **right-click base-casts** too (like C) and never uses the held item (hold it for CHARGED/CHANNELED);
-    - the combat panel takes the hotbar's place (§3.6).
+  **G** Technique Mode, **C** cast (the selected ability's base cast, in or out of Technique Mode; hold it for
+  CHARGED/CHANNELED), **V** ultimate, **K** Sorcerer screen. There is no next/previous-ability key and no ability
+  menu (the hold-Z radial was removed: Technique Mode does that job).
+- **Technique Mode** (**G** toggles it). Out of it, number keys, scroll and right-click are all vanilla. While it is on:
+  - **one control picks abilities and the other stays on the hotbar** (client config `input.techniqueSelect`, also
+    on the Sorcerer screen's Settings page):
+    - `NUMBER_KEYS` (default): number keys **1–N** pick abilities (N = slots on the loadout; higher numbers do
+      nothing) and the scroll wheel moves through the hotbar;
+    - `SCROLL_WHEEL`: the scroll wheel picks abilities and number keys pick hotbar slots;
+  - **right-click base-casts** too (like C) and never uses the held item (hold it for CHARGED/CHANNELED);
+  - the combat panel takes the hotbar's place and the hotbar becomes a column on the left (§3.6).
 
-    It ends when you press G again, open any screen (the radial menu excepted, as it is part of picking abilities),
-    die, or become Severed (or lose your innate technique). G does nothing for Severed players.
-  - `SPLIT`: no mode. Scroll always picks abilities (when you have some), number keys always pick hotbar slots,
-    right-click uses items as normal, and **C** base-casts.
-  - The Cast key exists in both schemes (it was R before R became the special key).
-  - Selecting an ability is a `SelectAbilityPayload` request the server validates; a sub-tick right-click tap still
-    counts as a press.
+  It ends when you press G again, open any screen, die, or become Severed (or lose your innate technique). G does
+  nothing for Severed players.
+- The Cast key always exists (it was R before R became the special key).
+- Selecting an ability is a `SelectAbilityPayload` request the server validates; a sub-tick right-click tap still
+  counts as a press.
 - C→S payloads are **requests only**, and the server validates each one:
   - `IntentPayload`: which key went down or up (`CastIntent`)
-  - `SelectAbilityPayload`: radial menu slot
+  - `SelectAbilityPayload`: pick a loadout slot (Technique Mode's number keys or scroll)
   - `SorcererRequestPayload`: open the Sorcerer screen
   - `TalismanConfirmPayload`: confirm a reroll
 - S→C GUI payloads carry results that are already decided and saved: `RevealPayload`, `SorcererInfoPayload`,
@@ -262,11 +262,18 @@ All timestamps use **level game time**. They persist across restarts and are ide
 - **Without Technique Mode** the screen is vanilla. Only what can't wait shows, small and under the crosshair
   (`kegare:status`): freeze pips while there are stacks ("Frozen!" while frozen; Severed players too), and a thin
   charge/channel line while casting with the Cast key.
-- **G brings up the combat panel** (`kegare:combat_panel`, 182×50, slides up in 0.18 s). It **takes the hotbar's
-  place**: the vanilla hotbar, XP bar, level and jump meter are hidden (`HudClearance`); the hotbar is drawn as a
-  **column on the left edge** (`kegare:combat_hotbar`, selected slot lit, off-hand above it); hearts, food, armour and
-  air sit **on top of** the panel (it raises `Gui.leftHeight`/`rightHeight` to 61), and action-bar text moves up to
-  match. The panel:
+- **G brings up the combat panel** (`kegare:combat_panel`, slides up in 0.18 s). Its art is 182×50; the HUD draws it
+  **a bit bigger** (`CombatPanelLayer.hudScale`: one more screen pixel per texel than the GUI scale gives, about
+  1.25–1.5×, so it stays crisp; smaller on screens too narrow for it). It **takes the hotbar's place**: the vanilla
+  hotbar, XP bar, level and jump meter are hidden (`HudClearance`).
+  - The hotbar stands on the **left edge as a column** (`kegare:combat_hotbar`). It is the **vanilla hotbar**:
+    vanilla's own hotbar, selection and off-hand sprites turned a quarter turn (slot 1 at the top, the off-hand
+    slot above it), items upright with vanilla's pick-up pop. Chat moves right to clear it.
+  - Hearts, food, armour and air sit **on top of** the panel (it raises `Gui.leftHeight`/`rightHeight`), and
+    action-bar text, the held item's name and chat move up to match (chat sits just above the hearts, as in
+    vanilla).
+
+  The panel:
   - **crest**: freeze pips (pulsing while frozen);
   - **meter housing**: 12 cells of Malice in the innate technique's Malice color (§3.3) with slanted energy streaks;
     spent Malice lingers as a paler **ghost** for 0.45 s, then drains at half the meter per second; gains show at
@@ -280,7 +287,6 @@ All timestamps use **level game time**. They persist across restarts and are ide
     slots show only their number;
   - accents along the tray and crest in the technique's Malice color.
 - The selected ability's name shows above hearts/food for 2 s after picking it (`kegare:combat_name`).
-- `SPLIT` scheme: G only shows/hides the panel (number keys still pick hotbar slots from the column).
 - Severed players never get the panel (G does nothing). Everything is hidden when F1 hides the GUI and in spectator
   mode. Client config `hud.enabled` turns all of it off.
 
@@ -319,8 +325,9 @@ Malice is always shown as whole numbers (floored, like the HUD); the stored valu
     - `sixEyesTransferMode` (RANDOM | KILLER)
     - `sixEyesTransferDelaySeconds` (30)
     - `uniqueTraitInactiveDays` (0 = off; fractions allowed)
-- **Client TOML:** HUD on/off and offset, `reveal.animation` (spin on/off), `radial.holdTicks` (hold time that opens
-  the radial menu).
+- **Client TOML:** `hud.enabled`, `reveal.animation` (spin on/off), `input.techniqueSelect` (NUMBER_KEYS |
+  SCROLL_WHEEL, §3.5), `visuals.firstPersonAnimations`, `visuals.vfxQuality`. All but `hud.enabled` are also on the
+  Sorcerer screen's Settings page (§3.12), which saves them at once.
 - Both are editable in-game via Mods → Kegare → Config. Labels are generated into the lang file.
 
 ### 3.10 Data generation and art
@@ -335,12 +342,12 @@ Malice is always shown as whole numbers (floored, like the HUD); the stored valu
   - **Every asset is original,** and no third-party file is in this repo.
   - **Nine-slice sprites** (`textures/gui/sprites/`, each with a `.mcmeta`): `panel`, `card_common`, `card_rare`,
     `card_epic`, `card_legendary` (iron, blue steel, amethyst, gold leaf; corner ornaments grow with rarity),
-    `tab`/`tab_selected`, `radial_slot`/`radial_slot_selected`, `button`/`button_highlighted`/`button_disabled`
+    `tab`/`tab_selected`, `button`/`button_highlighted`/`button_disabled`
     (drawn by `InkButton`, a vanilla button with Kegare's sprites), and `divider` (a brush stroke, 3-slice).
     In 1.21.1 the edges and centre **tile**, they do not stretch, so the generator makes them seamless along the
     tile period and keeps every ornament inside the corners.
   - **Plain sprites:** `sparkle`, `severed_emblem`.
-  - **Textures:** the talisman item, `gui/malice_bar.png`, the HUD `gui/ability_slot(_selected).png`, and
+  - **Textures:** the talisman item, `gui/malice_bar.png`, the combat panel's `gui/combat/*`, and
     `gui/reveal_bg.png` (128×128 seamless smoke, tiled behind the reveal by `GuiDraw.inkBackground`).
     - `malice_bar.png` is 32×30: rows 0–9 the empty bar, rows 10–19 the fill's shading in greyscale, rows 20–29 a
       white shine; 5px caps, a 22px middle that tiles. `GuiDraw.maliceBar` draws it for both the HUD and the
@@ -349,8 +356,8 @@ Malice is always shown as whole numbers (floored, like the HUD); the stored valu
 - **Art for content (optional, with fallbacks).** New content should ship with:
   - an **emblem** per innate technique: `<namespace>:textures/gui/emblem/<path>.png`, 48×48. It is shown
     on reveal cards, the Sorcerer screen and the talisman prompt. Without one, the tab icon item is drawn instead.
-  - an **icon** per ability: `<namespace>:textures/gui/ability/<path>.png`, 16×16. It is shown in the HUD slots,
-    the radial menu and the Sorcerer screen. Without one, the slot number is drawn instead.
+  - an **icon** per ability: `<namespace>:textures/gui/ability/<path>.png`, 16×16. It is shown in the combat
+    panel's slots and the Sorcerer screen. Without one, the slot number is drawn instead.
   - Whether the art exists is looked up once per texture, and the answer is forgotten on resource reload, so
     resource packs can add or replace it.
 
@@ -363,7 +370,6 @@ a result back; they only send requests the server re-validates. All text comes f
 | Roll reveal (`RevealScreen`) | the server finished a roll: Awakening, Reawakening, admin reroll, replacement | `RevealPayload`, sent only to that player | nothing |
 | Sorcerer (`SorcererScreen`) | key **K** | `SorcererInfoPayload`, computed by the server, plus the live sync (loadout, Malice, cooldowns) | the open request (again whenever the sync shows an unlock, reroll or trait change); loadout edit requests (§3.16) |
 | Talisman confirm (`TalismanConfirmScreen`) | using a Purification Talisman (nothing consumed yet) | `TalismanPromptPayload` | a confirm request |
-| Ability radial (`AbilityRadialScreen`) | **holding** Z | the synced loadout | a select-slot request |
 
 **Roll reveal**
 - The spin is gacha-style: cards (weighted like real rolls) scroll past, ease out over about 4s, and land on the
@@ -398,31 +404,27 @@ a result back; they only send requests the server re-validates. All text comes f
 
   With nothing hovered, it shows the technique's description and how to edit the bar. Locked abilities show
   "???". The mouse wheel scrolls the box when the text is taller than it, with a thin scrollbar. The box also holds
-  the Traits view (name, a unique tag, description) and the Pity view:
+  the Traits view (name, a unique tag, description), the Pity view and the Settings view:
   - the count, with a progress bar toward hard pity
   - "Soft pity starts in N rolls", or the active Legendary weight
   - "Legendary guaranteed in N rolls" (`PityRoller.rollsUntilSoftPity` / `rollsUntilHardPity`, unit-tested)
   - total rolls
+  - **Settings** (a gear): client options as button rows, the current value lit gold, saved to the client config
+    at once: which control picks abilities in Technique Mode (number keys or scroll wheel, §3.5), ability effects
+    (Full / Reduced / Vanilla), your own animations in first person, the roll reveal spin.
 - **Right column:** the player model (follows the mouse), Malice current / capacity with the bar in the technique's
   Malice color, the tier, and regen per second (or "Regen paused").
 - **Bottom:** the HUD's combat panel itself (`CombatPanelLayer.drawPanel`), live, as the loadout bar (§3.16). Above
   it is a status line (hint, "Now click a slot on your bar", or the server's refusal); "Reset" sits beside it.
 - **Severed:** the Severed emblem and text, no category tabs and no bar.
-- **Keys:** 1–3 or Tab switch views, K or Esc close.
+- **Severed** players still get Traits, Pity and Settings.
+- **Keys:** 1–4 or Tab switch views, K or Esc close.
 
 **Talisman confirm:** *"Reroll your Innate Technique? Current: X. Pity: Y/50."*, with the current emblem.
 - **Reroll** sends a request. The server re-checks that the talisman is still in that hand, combat and Severed
   status, then rolls, consumes one talisman and sends the reveal.
 - **Cancel** or Esc consumes nothing.
 - Using the talisman while Severed or in combat is refused before the screen even opens.
-
-**Radial menu** (hold **Z**)
-- The current innate technique's abilities sit around a dotted ring, each with its icon and slot number, plus
-  cooldown sweeps and seconds left. The hovered slot is gold, the current one is outlined white, and active toggles
-  green.
-- Release (or click) over a slot to select it. Releasing in the center or pressing Esc keeps the current one.
-- The centre shows the hovered ability's name, cast type, current cost and its special ("R: Splinter"). The hint
-  sits above the ring, clear of the combat panel.
 
 **Layout and testing**
 - Layouts are computed from the screen size and support GUI sizes down to Minecraft's minimum of 320×240.
@@ -567,8 +569,7 @@ Package `com.cnethuka.kegare.innate_technique.rime`. **Rarity: RARE.** All numbe
 
   The total is clamped to [0.5, 2]. The innate technique reports it through `InnateTechnique.environment(player)`;
   it is synced (re-checked every 10 ticks) for the HUD's snowflake or flame icon next to the Malice bar, with the
-  multiplier. Hovering an ability on the Sorcerer screen shows its current cost, upkeep and every active factor; the
-  radial menu shows the current cost.
+  multiplier. Hovering an ability on the Sorcerer screen shows its current cost, upkeep and every active factor.
 - **Visuals:** PAL animations `frost_shard_cast`, `glacial_lance_charge` (loop), `glacial_lance_release`,
   `frost_field_channel` (loop), `rime_shell_toggle` and `frozen` (loop), in
   `assets/kegare/player_animations/rime.json`. Photon effects in `assets/kegare/fx/rime/`: `frost_shard_trail`,
@@ -644,7 +645,7 @@ Package `com.cnethuka.kegare.innate_technique.rime`. **Rarity: RARE.** All numbe
   requirements (green met / red unmet).
 - **HUD:** action-bar messages (cast feedback) and the held item's name move up to clear the combat panel
   (`HudClearance`). The panel's R badge marks slots whose ability has a special. A special's charge/channel outlines its
-  base slot, and a TOGGLE special lights the base slot green. The radial menu shows "R: <special>".
+  base slot, and a TOGGLE special lights the base slot green.
 - **Tests:** `SpecialsTest` (in-game JUnit) covers fizzles without cost, both requirement kinds, the release
   re-check and the shared cooldown both ways.
 
@@ -669,7 +670,7 @@ separate bar is filled from any of them.
     resolve (locked again, removed by an update) or repeat are emptied.
 - **Everything reads the loadout**, never the technique's fixed list: the cast key and R (`CastManager` resolves the
   selected loadout slot; specials come from whatever is slotted), number keys, scroll and Technique Mode, the HUD
-  combat panel, the radial menu and `/kegare info`.
+  combat panel, the Sorcerer screen and `/kegare info`.
 - **Editing** (Sorcerer screen, §3.12):
   - category tabs on the left edge (the innate technique's emblem; a silver ring for Shared). Locked shared
     abilities show a padlock and "???".
@@ -701,7 +702,7 @@ Package `rmt`. The first **shared** ability (§3.16), ID `kegare:reverse_malice_
 - **Locked by default.** Found through the green orb (§3.18); `/kegare shared unlock|lock` for admins. Severed
   players can never unlock it (`SharedAbilityService.unlock` refuses) or cast it (the cast pipeline refuses Severed
   players for everything).
-- **CHANNELED:** hold the cast key (right-click in Technique Mode, C in SPLIT) to heal **2 HP** at the end of every
+- **CHANNELED:** hold the cast key (C, or right-click in Technique Mode) to heal **2 HP** at the end of every
   full second held (`healPerSecond`); release to stop. Never above max health; once there is nothing left to heal
   the channel ends by itself ("Fully healed."). At full health it is refused before anything is paid ("You aren't
   hurt.").
