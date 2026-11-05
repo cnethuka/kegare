@@ -50,11 +50,14 @@ public final class GuiDraw {
     private static final ResourceLocation INK_BACKGROUND = Kegare.id("textures/gui/reveal_bg.png");
     private static final int INK_BACKGROUND_SIZE = 128;
 
-    /** Malice bar texture: 32x20, rows 0-9 empty, rows 10-19 full; 5px caps and a 22px middle that tiles. */
+    /**
+     * Malice bar texture: 32x30. Rows 0-9 the empty bar, 10-19 the fill's shading in greyscale (tinted with the
+     * innate technique's Malice color), 20-29 a white shine drawn untinted on top. 5px caps, a 22px middle that tiles.
+     */
     private static final ResourceLocation MALICE_BAR = Kegare.id("textures/gui/malice_bar.png");
     public static final int BAR_HEIGHT = 10;
     private static final int BAR_TEXTURE_W = 32;
-    private static final int BAR_TEXTURE_H = 20;
+    private static final int BAR_TEXTURE_H = 30;
     private static final int BAR_CAP = 5;
     private static final int BAR_MIDDLE = BAR_TEXTURE_W - 2 * BAR_CAP;
 
@@ -170,16 +173,52 @@ public final class GuiDraw {
 
     // ---------------------------------------------------------------- Malice bar
 
-    /** The Malice bar (HUD and Sorcerer screen): {@link #BAR_HEIGHT} tall, any width >= 10. */
+    /** The Malice bar in the default purple, no ghost. */
     public static void maliceBar(GuiGraphics g, int x, int y, int w, float fraction) {
+        maliceBar(g, x, y, w, fraction, InnateTechnique.DEFAULT_MALICE_COLOR, -1f);
+    }
+
+    /**
+     * The Malice bar (HUD and Sorcerer screen): {@link #BAR_HEIGHT} tall, any width >= 10, in the innate technique's
+     * Malice color: a soft glow round the filled part, the fill, and a paler "ghost" from the fill up to
+     * {@code ghost} (Malice just spent, draining away; below 0 = none).
+     */
+    public static void maliceBar(GuiGraphics g, int x, int y, int w, float fraction, int rgb, float ghost) {
         w = Math.max(2 * BAR_CAP, w);
-        barRow(g, x, y, w, 0);
         int fill = Mth.clamp(Math.round(w * fraction), 0, w);
-        if (fill > 0) {
-            g.enableScissor(x, y, x + fill, y + BAR_HEIGHT); // intersects with any enclosing scissor
+        int ghostFill = ghost < 0 ? fill : Mth.clamp(Math.round(w * ghost), fill, w);
+        if (fill > 0) { // glow
+            g.fill(x - 1, y - 1, x + fill + 1, y + BAR_HEIGHT + 1, 0x38000000 | (rgb & 0xFFFFFF));
+            g.fill(x - 2, y, x + fill + 2, y + BAR_HEIGHT, 0x20000000 | (rgb & 0xFFFFFF));
+        }
+        barRow(g, x, y, w, 0);
+        if (ghostFill > fill) {
+            g.enableScissor(x + fill, y, x + ghostFill, y + BAR_HEIGHT);
+            tint(g, mix(rgb, 0xFFFFFF, 0.45f), 0.55f);
             barRow(g, x, y, w, BAR_HEIGHT);
+            g.setColor(1f, 1f, 1f, 1f);
             g.disableScissor();
         }
+        if (fill > 0) {
+            g.enableScissor(x, y, x + fill, y + BAR_HEIGHT); // intersects with any enclosing scissor
+            tint(g, rgb, 1f);
+            barRow(g, x, y, w, BAR_HEIGHT);
+            g.setColor(1f, 1f, 1f, 1f);
+            barRow(g, x, y, w, 2 * BAR_HEIGHT); // shine, untinted
+            g.disableScissor();
+        }
+    }
+
+    private static void tint(GuiGraphics g, int rgb, float alpha) {
+        g.setColor(((rgb >> 16) & 0xFF) / 255f, ((rgb >> 8) & 0xFF) / 255f, (rgb & 0xFF) / 255f, alpha);
+    }
+
+    /** Blends two RGB colors ({@code t} = 0: a, 1: b). */
+    public static int mix(int a, int b, float t) {
+        int r = (int) Mth.lerp(t, (a >> 16) & 0xFF, (b >> 16) & 0xFF);
+        int gr = (int) Mth.lerp(t, (a >> 8) & 0xFF, (b >> 8) & 0xFF);
+        int bl = (int) Mth.lerp(t, a & 0xFF, b & 0xFF);
+        return (r << 16) | (gr << 8) | bl;
     }
 
     private static void barRow(GuiGraphics g, int x, int y, int w, int v) {

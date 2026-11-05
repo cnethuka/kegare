@@ -136,7 +136,9 @@ public final class SorcererScreen extends Screen {
         y += GuiDraw.heading(g, font, Component.translatable("gui.kegare.sorcerer.malice.heading"), contentX, y, 1.5f, contentW, GuiDraw.MALICE) + 2;
         y += line(g, Component.translatable("gui.kegare.sorcerer.malice.capacity", info.capacity(), tier), y, GuiDraw.WHITE);
         y += line(g, Component.translatable("gui.kegare.sorcerer.malice.reserve", (int) Math.floor(info.current()), info.capacity()), y, GuiDraw.WHITE);
-        GuiDraw.maliceBar(g, contentX, y + 1, Math.min(contentW, 200), info.capacity() <= 0 ? 0f : info.current() / info.capacity());
+        int color = info.innateTechnique().map(KegareRegistries.INNATE_TECHNIQUE::get).map(InnateTechnique::maliceColor)
+                .orElse(InnateTechnique.DEFAULT_MALICE_COLOR);
+        GuiDraw.maliceBar(g, contentX, y + 1, Math.min(contentW, 200), info.capacity() <= 0 ? 0f : info.current() / info.capacity(), color, -1f);
         y += GuiDraw.BAR_HEIGHT + 5;
         y += line(g, Component.translatable("gui.kegare.sorcerer.malice.regen", GuiDraw.amount(Math.round(info.regenPerSecond() * 10f) / 10f),
                 GuiDraw.amount(info.regenPercent())), y, GuiDraw.WHITE);

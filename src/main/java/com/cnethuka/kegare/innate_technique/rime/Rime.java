@@ -27,6 +27,9 @@ public final class Rime {
     public static final FrostFieldAbility FROST_FIELD = new FrostFieldAbility();
     public static final RimeShellAbility RIME_SHELL = new RimeShellAbility();
 
+    /** Rime's Malice bar: deep ice blue (the bar's white shine keeps it readable on the dark HUD). */
+    public static final int MALICE_COLOR = 0x1E3A8A;
+
     // Specials (R), each sharing its base ability's cooldown.
     public static final SplinterAbility SPLINTER = new SplinterAbility();
     public static final GlacialSpireAbility GLACIAL_SPIRE = new GlacialSpireAbility();
@@ -40,6 +43,7 @@ public final class Rime {
                     .ability(FROST_FIELD)
                     .ability(RIME_SHELL)
                     .lockedUltimate()
+                    .maliceColor(MALICE_COLOR)
                     .tabIcon(Items.BLUE_ICE)));
 
     private Rime() {}

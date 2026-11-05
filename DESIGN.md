@@ -151,6 +151,11 @@ All timestamps use **level game time**. They persist across restarts and are ide
   - an ordered **ability list**, picked with the scroll wheel, number keys or radial menu (§3.5); each ability may
     have a **special** on R (§3.15)
   - an optional **ultimate** (the ultimate key, where dominions will plug in)
+  - a **Malice color** (`Builder.maliceColor(0xRRGGBB)`, read with `maliceColor()`; default Malice purple
+    `#9D4EDD`, `InnateTechnique.DEFAULT_MALICE_COLOR`). It colors the Malice bar's fill, glow and ghost fill on the
+    HUD and the Sorcerer screen, and the Technique Mode glow. Display only: definitions are registry-synced, so the
+    client looks it up from the synced innate technique ID, and it changes the moment the technique does (reroll,
+    admin, rebirth). Rime uses deep blue `#1E3A8A`; the test techniques keep the default.
   - the hooks `onAssigned` / `onRemoved`
 - `Ability` interface: `cost`, `cooldownTicks`, `castType`, `upkeepPerSecond`, min/max charge, max channel,
   `canCast`, `execute`, `tick`, `onEnd`, plus `special`, `cooldownKey` and `requirements` (§3.15). Costs take the
@@ -252,6 +257,9 @@ All timestamps use **level game time**. They persist across restarts and are ide
 - **Top-left** (`kegare:malice_hud`, offset in client config): the innate technique name in rarity color, the Malice
   bar with current/capacity and the surroundings cost icon, and your freeze stacks. Severed players see only freeze
   stacks.
+  - The bar is in your innate technique's Malice color (§3.3), with a soft glow round the filled part. When Malice
+    is spent, the lost part stays as a paler **ghost fill** for 0.45 s, then drains down at half the bar per second;
+    gains show at once.
 - **Ability bar** (`kegare:ability_bar`), bottom-centre above the hotbar. It stacks above hearts, armour, food and air
   using `Gui.leftHeight`/`rightHeight`, so it never overlaps them, even with extra heart rows.
   - One 20×20 slot per ability, then a larger 26×26 gold ultimate slot (a padlock while the ultimate is locked).
@@ -321,8 +329,10 @@ Malice is always shown as whole numbers (floored, like the HUD); the stored valu
   - **Plain sprites:** `sparkle`, `severed_emblem`.
   - **Textures:** the talisman item, `gui/malice_bar.png`, the HUD `gui/ability_slot(_selected).png`, and
     `gui/reveal_bg.png` (128×128 seamless smoke, tiled behind the reveal by `GuiDraw.inkBackground`).
-    - `malice_bar.png` is 32×20: rows 0–9 empty, rows 10–19 full, 5px caps, a 22px middle that tiles.
-      `GuiDraw.maliceBar` draws it for both the HUD and the Sorcerer screen.
+    - `malice_bar.png` is 32×30: rows 0–9 the empty bar, rows 10–19 the fill's shading in greyscale, rows 20–29 a
+      white shine; 5px caps, a 22px middle that tiles. `GuiDraw.maliceBar` draws it for both the HUD and the
+      Sorcerer screen, tinting the fill with the innate technique's Malice color (§3.3) and drawing the shine
+      untinted on top, so any color keeps its gloss and stays readable.
 - **Art for content (optional, with fallbacks).** New content should ship with:
   - an **emblem** per innate technique: `<namespace>:textures/gui/emblem/<path>.png`, 48×48. It is shown
     on reveal cards, the Sorcerer screen and the talisman prompt. Without one, the tab icon item is drawn instead.

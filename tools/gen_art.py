@@ -496,34 +496,44 @@ def button(state: str) -> Image.Image:
 # ---------------------------------------------------------------------------------------------------- HUD
 
 def malice_bar() -> Image.Image:
-    """32x20: rows 0-9 empty, 10-19 full. 5px caps; the middle 22px tiles horizontally."""
-    w, h, cap = 32, 20, 5
+    """32x30, three rows of 10. 5px caps; the middle 22px tiles horizontally.
+
+    Rows 0-9: the empty bar (frame, studs and the dark well). Rows 10-19: the fill's shading in greyscale, only inside
+    the well (transparent elsewhere); the game tints it with the current innate technique's Malice color. Rows 20-29:
+    a white highlight (top shine and drifting wisps) drawn untinted over the fill, so every color keeps its gloss.
+    """
+    w, h, cap = 32, 30, 5
     img = new(w, h)
     fill = noise_stack(71, w - 2 * cap, 10, (6, 3))
-    for block in (0, 1):
-        oy = block * 10
-        for y in range(10):
-            for x in range(w):
-                d = min(x, y, w - 1 - x, 9 - y)
-                if (x in (0, w - 1)) and (y in (0, 9)):
-                    continue
-                if d == 0:
-                    c = INK
-                elif d == 1:
-                    c = IRON[5] if (y == 1 or x == 1) else IRON[2]
-                elif d == 2:
-                    c = INK
-                elif block == 0:
-                    c = dither(PLUM, 0.2 + (y / 10) * 0.2, x, y)
-                else:
-                    # Malice: bright top, deep bottom, wisps drifting through
-                    t = 0.95 - (y - 3) / 4 * 0.6 + (fbm(fill, x - cap, y) - 0.5) * 0.5
-                    c = dither(MALICE[2:], t, x, y)
-                img.putpixel((x, oy + y), c)
-        # cap ornaments: a small diamond stud on each end
-        for sx in (2, w - 3):
-            for dy, c in ((3, IRON[6]), (4, IRON[4]), (5, IRON[4]), (6, IRON[2])):
-                put(img, sx, oy + dy, c)
+    grey = [(v, v, v, 255) for v in (150, 172, 194, 214, 234, 255)]
+    for y in range(10):
+        for x in range(w):
+            d = min(x, y, w - 1 - x, 9 - y)
+            if (x in (0, w - 1)) and (y in (0, 9)):
+                continue
+            if d == 0:
+                c = INK
+            elif d == 1:
+                c = IRON[5] if (y == 1 or x == 1) else IRON[2]
+            elif d == 2:
+                c = INK
+            else:
+                c = dither(PLUM, 0.2 + (y / 10) * 0.2, x, y)
+            img.putpixel((x, y), c)
+            if d >= 3:
+                # Fill shading: bright top, deeper bottom, wisps drifting through (as greyscale for tinting)
+                n = fbm(fill, x - cap, y)
+                t = 0.95 - (y - 3) / 4 * 0.6 + (n - 0.5) * 0.5
+                img.putpixel((x, 10 + y), dither(grey, t, x, y))
+                shine = 0.55 if y == 3 else 0.2 if y == 4 else 0.0
+                if n > 0.68:
+                    shine = max(shine, 0.22)
+                if shine > 0:
+                    img.putpixel((x, 20 + y), (255, 255, 255, int(255 * shine)))
+    # cap ornaments: a small diamond stud on each end (frame only)
+    for sx in (2, w - 3):
+        for dy, c in ((3, IRON[6]), (4, IRON[4]), (5, IRON[4]), (6, IRON[2])):
+            put(img, sx, dy, c)
     return img
 
 

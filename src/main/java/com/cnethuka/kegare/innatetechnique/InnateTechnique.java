@@ -19,6 +19,9 @@ import net.minecraft.world.level.ItemLike;
  * Register new ones with a {@code DeferredRegister} on {@link KegareRegistries#INNATE_TECHNIQUE_KEY}.
  */
 public class InnateTechnique {
+    /** Malice purple: the bar color for innate techniques that don't set their own. */
+    public static final int DEFAULT_MALICE_COLOR = 0x9D4EDD;
+
     private final InnateTechniqueRarity rarity;
     private final List<Ability> abilities;
     @Nullable
@@ -26,6 +29,7 @@ public class InnateTechnique {
     private final boolean testContent;
     private final ItemLike tabIcon;
     private final boolean ultimateLocked;
+    private final int maliceColor;
 
     protected InnateTechnique(Builder builder) {
         if (builder.abilities.isEmpty()) throw new IllegalArgumentException("An innate technique needs at least one ability");
@@ -35,6 +39,7 @@ public class InnateTechnique {
         this.testContent = builder.testContent;
         this.tabIcon = builder.tabIcon;
         this.ultimateLocked = builder.ultimate == null && builder.ultimateLocked;
+        this.maliceColor = builder.maliceColor & 0xFFFFFF;
     }
 
     public static Builder builder(InnateTechniqueRarity rarity) {
@@ -57,6 +62,14 @@ public class InnateTechnique {
 
     public final Optional<Ability> ultimate() {
         return Optional.ofNullable(ultimate);
+    }
+
+    /**
+     * RGB of the Malice bar (fill, ghost and glow) while a player holds this innate technique; the Technique Mode
+     * glow uses it too. Client display only: the definition is registry-synced, so nothing extra is sent.
+     */
+    public final int maliceColor() {
+        return maliceColor;
     }
 
     /** No ultimate yet, but one is planned (its Dominion comes later): the ultimate slot shows as locked. */
@@ -129,6 +142,7 @@ public class InnateTechnique {
         private boolean testContent;
         private ItemLike tabIcon = Items.ENCHANTED_BOOK;
         private boolean ultimateLocked;
+        private int maliceColor = DEFAULT_MALICE_COLOR;
 
         private Builder(InnateTechniqueRarity rarity) {
             this.rarity = rarity;
@@ -153,6 +167,12 @@ public class InnateTechnique {
         /** No ultimate yet; the ultimate slot shows as locked until one is added. */
         public Builder lockedUltimate() {
             this.ultimateLocked = true;
+            return this;
+        }
+
+        /** RGB (0xRRGGBB) of the Malice bar for holders of this innate technique. Default: Malice purple. */
+        public Builder maliceColor(int rgb) {
+            this.maliceColor = rgb & 0xFFFFFF;
             return this;
         }
 

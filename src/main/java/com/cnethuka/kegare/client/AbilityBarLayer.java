@@ -88,7 +88,7 @@ public final class AbilityBarLayer implements LayeredDraw.Layer {
         occupiedTop = top - (mode ? 26 : 12) - 2; // down to the selected-ability name line
 
         if (mode) {
-            int color = GuiDraw.MALICE & 0xFFFFFF;
+            int color = technique.maliceColor(); // the bar's glow follows the innate technique's Malice color
             GuiDraw.glow(g, x0 - 4, top - 4, width + 8, ULT + 8, color, 0.55f);
             GuiDraw.sprite(g, GuiDraw.PANEL, x0 - 6, top - 6, width + 12, ULT + 12);
             GuiDraw.centered(g, font, Component.translatable("hud.kegare.technique_mode"), screenW / 2, top - 16, 0.75f,
@@ -184,6 +184,7 @@ public final class AbilityBarLayer implements LayeredDraw.Layer {
         g.drawCenteredString(font, name, cx, y, (alpha << 24) | 0xFFFFFF);
     }
 
+    /** Lifts dark Malice colors (e.g. Rime's deep blue) enough for the label to read on the panel. */
     private static int brighten(int rgb) {
         int r = Math.min(255, ((rgb >> 16) & 0xFF) + 90);
         int gr = Math.min(255, ((rgb >> 8) & 0xFF) + 90);

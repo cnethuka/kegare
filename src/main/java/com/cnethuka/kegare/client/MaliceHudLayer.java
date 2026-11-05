@@ -29,6 +29,14 @@ import net.minecraft.util.Mth;
  * Purely visual: reads {@link ClientData}, never decides anything.
  */
 public final class MaliceHudLayer implements LayeredDraw.Layer {
+    private static final long GHOST_HOLD_MS = 450;
+    /** Fraction of the whole bar the ghost drains per second. */
+    private static final float GHOST_DRAIN_PER_SECOND = 0.5f;
+    private static float ghost = -1f;
+    private static float lastFraction = -1f;
+    private static long ghostHoldUntil;
+    private static long lastFrameMs;
+
     public static final ResourceLocation ID = Kegare.id("malice_hud");
 
     private static final int BAR_WIDTH = 100;
@@ -61,12 +69,31 @@ public final class MaliceHudLayer implements LayeredDraw.Layer {
         g.drawString(font, title, x, y, COLOR_TEXT);
         y += font.lineHeight + 2;
 
-        GuiDraw.maliceBar(g, x, y, BAR_WIDTH, data.capacity() <= 0 ? 0f : data.current() / data.capacity());
+        float fraction = data.capacity() <= 0 ? 0f : data.current() / data.capacity();
+        int color = innateTechnique != null ? innateTechnique.maliceColor() : InnateTechnique.DEFAULT_MALICE_COLOR;
+        GuiDraw.maliceBar(g, x, y, BAR_WIDTH, fraction, color, ghost(fraction));
         int textEnd = g.drawString(font, Component.translatable("hud.kegare.malice", Mth.floor(data.current()), data.capacity()), x + BAR_WIDTH + 4, y + 1, COLOR_MALICE_TEXT);
         drawEnvironment(g, font, data, textEnd + 4, y);
         y += BAR_HEIGHT + 4;
 
         drawFreeze(g, font, data, x, y, now); // ability slots live on the ability bar (AbilityBarLayer)
+    }
+
+    /**
+     * The ghost fill: after Malice is spent, the lost part stays (paler) for a moment, then drains down to the new
+     * value. Gains show at once.
+     */
+    private static float ghost(float fraction) {
+        long ms = net.minecraft.Util.getMillis();
+        if (ghost < 0 || fraction >= ghost) {
+            ghost = fraction;
+        } else {
+            if (fraction < lastFraction - 1.0e-4f) ghostHoldUntil = ms + GHOST_HOLD_MS;
+            if (ms > ghostHoldUntil) ghost = Math.max(fraction, ghost - (ms - lastFrameMs) / 1000f * GHOST_DRAIN_PER_SECOND);
+        }
+        lastFraction = fraction;
+        lastFrameMs = ms;
+        return ghost;
     }
 
     /** Snowflake (cheaper) or flame (dearer) next to the Malice bar, with the current cost multiplier. */
