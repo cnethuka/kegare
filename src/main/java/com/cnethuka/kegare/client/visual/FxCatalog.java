@@ -16,6 +16,7 @@ public final class FxCatalog {
         out.putAll(RimeFxAuthoring.effects());
         out.putAll(com.cnethuka.kegare.rmt.client.RmtFxAuthoring.effects());
         out.putAll(com.cnethuka.kegare.innate_technique.swap.client.SwapFxAuthoring.effects());
+        out.putAll(com.cnethuka.kegare.innate_technique.puppet_manipulation.client.PuppetFxAuthoring.effects());
         return out;
     }
 }

@@ -650,6 +650,10 @@ Package `com.cnethuka.kegare.innate_technique.rime`. **Rarity: RARE.** All numbe
   | Mimic (Awareness) | own hand-across-the-face animation, its own evoker-spell sound, and a teal flicker on the caster (`mimic_flicker`) that everyone nearby sees; the trick is the disguise afterwards, not a hidden cast |
   | Send Off (Anchor) | own two-handed shove; the target vanishes onto the glowing anchor |
   | Momentum Exchange (Exchange) | own arms-up sweep, a burst on both players, a lower teleport sound |
+  | Possess (Puppet Creation) | own cast (two fingers to the temple, then the hand flung at the puppet), a soul-escape sound at the body and a lavender thread shooting to the puppet; afterwards the empty body stands slack, a thread running from it to the puppet |
+  | Focus (Directive) | own pointing pose (arm thrust out, the other hand drawn back), a bell at the target and a lavender mark on it for 2 s (a ring tightening round it, a bead over its head) |
+  | Chain Burst (Curio Burst) | own both-hands-overhead cast, a rising whistle at the target, then the blasts going off one after another |
+  | Stand-In (Understudy) | own presenting bow; the puppet grows in a rising column of lavender motes with a mirror sound (and shrinks back the same way) |
 - **Shared cooldown:** `cooldownKey()` is the base ability's ID, so casting either the base or the special starts the
   one cooldown and both show it on the base slot. The length defaults to the base's `cooldownTicks` (a special may
   override it).
