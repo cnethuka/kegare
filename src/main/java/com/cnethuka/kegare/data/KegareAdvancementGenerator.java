@@ -4,6 +4,7 @@ import com.cnethuka.kegare.Kegare;
 import com.cnethuka.kegare.advancement.KegareAdvancements;
 import com.cnethuka.kegare.innate_technique.rime.RimeAdvancements;
 import com.cnethuka.kegare.innate_technique.swap.SwapAdvancements;
+import com.cnethuka.kegare.innate_technique.puppet_manipulation.PuppetAdvancements;
 import com.cnethuka.kegare.innatetechnique.InnateTechnique;
 import com.cnethuka.kegare.registry.KegareItems;
 import com.cnethuka.kegare.registry.KegareRegistries;
@@ -113,6 +114,18 @@ public final class KegareAdvancementGenerator implements AdvancementProvider.Adv
         techniqueChild(saver, swap, SwapAdvancements.ROUND_TRIP, "swap.round_trip", Items.COMPASS, AdvancementType.GOAL);
         techniqueChild(saver, swap, SwapAdvancements.IDENTITY_CRISIS, "swap.identity_crisis", Items.PLAYER_HEAD, AdvancementType.CHALLENGE);
         techniqueChild(saver, swap, SwapAdvancements.NEWTONS_THIRD, "swap.newtons_third", Items.WIND_CHARGE, AdvancementType.CHALLENGE);
+
+        // ---- Puppet Manipulation tab: all hidden and silent; mastery ones need a player on the other side ----
+        AdvancementHolder puppets = techniqueRoots.get(Kegare.id("puppet_manipulation"));
+        if (puppets == null) throw new IllegalStateException("Puppet Manipulation's tab root was not generated");
+        techniqueChild(saver, puppets, PuppetAdvancements.PULLING_STRINGS, "puppet_manipulation.pulling_strings", Items.STRING, AdvancementType.TASK);
+        techniqueChild(saver, puppets, PuppetAdvancements.OUT_OF_BODY, "puppet_manipulation.out_of_body", Items.SOUL_LANTERN, AdvancementType.TASK);
+        techniqueChild(saver, puppets, PuppetAdvancements.KURU_KURU, "puppet_manipulation.kuru_kuru", Items.BREEZE_ROD, AdvancementType.TASK);
+        techniqueChild(saver, puppets, PuppetAdvancements.NOBODY_HOME, "puppet_manipulation.nobody_home", Items.ARMOR_STAND, AdvancementType.TASK);
+        techniqueChild(saver, puppets, PuppetAdvancements.DECOY, "puppet_manipulation.decoy", Items.HAY_BLOCK, AdvancementType.GOAL);
+        techniqueChild(saver, puppets, PuppetAdvancements.WHOS_REAL, "puppet_manipulation.whos_real", Items.TINTED_GLASS, AdvancementType.GOAL);
+        techniqueChild(saver, puppets, PuppetAdvancements.CURIOSITY_KILLED, "puppet_manipulation.curiosity_killed", Items.TNT, AdvancementType.GOAL);
+        techniqueChild(saver, puppets, PuppetAdvancements.LITTLE_ME, "puppet_manipulation.little_me", Items.TOTEM_OF_UNDYING, AdvancementType.CHALLENGE);
     }
 
     /**

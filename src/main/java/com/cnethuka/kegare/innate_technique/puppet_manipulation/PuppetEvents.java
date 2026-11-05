@@ -98,6 +98,28 @@ public final class PuppetEvents {
     @SubscribeEvent
     static void onServerTick(net.neoforged.neoforge.event.tick.ServerTickEvent.Post event) {
         CurioBursts.tick(event.getServer());
+        if (event.getServer().getTickCount() % 20 == 0 && event.getServer().overworld() != null) {
+            PuppetAdvancements.checkSpinning(event.getServer());
+        }
+    }
+
+    /**
+     * Kill-based advancements (mastery: a PLAYER on the other side). Decoy: a player kills your puppet while you're far
+     * away. Curiosity Killed: your Curio Burst kills a player. Little Me: you land the killing blow on a player while
+     * possessing a puppet. Runs before the possession death handling (a possessing VICTIM is handled there).
+     */
+    @SubscribeEvent(priority = EventPriority.HIGH)
+    static void onKill(LivingDeathEvent event) {
+        if (event.getEntity().level().isClientSide) return;
+        if (event.getEntity() instanceof PuppetEntity puppet && event.getSource().getEntity() instanceof ServerPlayer killer) {
+            PuppetAdvancements.puppetKilled(puppet, killer);
+        }
+        if (!(event.getEntity() instanceof ServerPlayer victim) || Possession.isPossessing(victim)) return;
+        if (!(event.getSource().getEntity() instanceof ServerPlayer killer) || killer == victim) return;
+        if (event.getSource().is(CurioBursts.CURIO_BURST)) PuppetAdvancements.award(killer, PuppetAdvancements.CURIOSITY_KILLED);
+        if (Possession.isPossessing(killer) && event.getSource().getDirectEntity() == killer) {
+            PuppetAdvancements.award(killer, PuppetAdvancements.LITTLE_ME);
+        }
     }
 
     @SubscribeEvent

@@ -40,6 +40,7 @@ public final class Puppets {
         owner.serverLevel().addFreshEntity(puppet);
         data.add(owner.getUUID(), puppet.getUUID());
         PuppetHud.markDirty(owner);
+        PuppetAdvancements.award(owner, PuppetAdvancements.PULLING_STRINGS);
         VisualService.playOnce(puppet, Visual.effect(PuppetIds.FX_PUPPET_FORM, Visual.Anchor.BODY));
         owner.level().playSound(null, puppet.getX(), puppet.getY(), puppet.getZ(), SoundEvents.WOOL_PLACE, SoundSource.PLAYERS, 0.9f, 1.3f);
         return puppet;

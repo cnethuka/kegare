@@ -149,6 +149,7 @@ public final class Possession {
         PossessionLinks.travel(level, from, Swapper.bodyPos(player));
         level.playSound(null, shell.getX(), shell.getY(), shell.getZ(), SoundEvents.SOUL_ESCAPE.value(), SoundSource.PLAYERS, 1.2f, 0.9f);
         level.playSound(null, player.getX(), player.getY(), player.getZ(), SoundEvents.WOOL_PLACE, SoundSource.PLAYERS, 0.9f, 0.7f);
+        PuppetAdvancements.award(player, PuppetAdvancements.OUT_OF_BODY);
         changed(player);
     }
 
@@ -272,6 +273,9 @@ public final class Possession {
         if (owner == null) {
             shell.discard();
             return false;
+        }
+        if (source.getEntity() instanceof ServerPlayer attacker && attacker != owner) {
+            PuppetAdvancements.award(owner, PuppetAdvancements.NOBODY_HOME);
         }
         release(owner, Return.SHELL_HIT);
         owner.invulnerableTime = 0;

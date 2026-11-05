@@ -363,6 +363,14 @@ public final class KegareLanguageProvider extends LanguageProvider {
         advancement("swap.round_trip", "Round Trip", "Damage a player during Switchback before you're swapped back");
         advancement("swap.two_of_you", "There Are Two of You", "While using Mimic, have a player damage the real target");
         advancement("swap.special_delivery_swap", "Return to Sender", "Send Off a player or mob onto your anchor");
+        advancement("puppet_manipulation.pulling_strings", "Pulling Strings", "Create your first puppet");
+        advancement("puppet_manipulation.out_of_body", "Out of Body", "Possess a puppet for the first time");
+        advancement("puppet_manipulation.kuru_kuru", "Kuru Kuru", "Have 10 puppets spinning at once");
+        advancement("puppet_manipulation.nobody_home", "Nobody Home", "Have your empty body hit by a player while you're possessing");
+        advancement("puppet_manipulation.decoy", "Decoy", "Have a player kill your puppet while you're more than 16 blocks away");
+        advancement("puppet_manipulation.whos_real", "Who's Real?", "Have a player hit your Stand-In");
+        advancement("puppet_manipulation.curiosity_killed", "Curiosity Killed", "Kill a player with Curio Burst");
+        advancement("puppet_manipulation.little_me", "Little Me", "Land the final hit on a player while possessing a puppet");
         advancement("swap.newtons_third", "Newton's Third", "A player dies from fall damage after you used Momentum Exchange on them");
         advancement("rime.brain_freeze", "Brain Freeze", "Freeze a player while they're charging or channeling");
         advancement("rime.full_charge", "Full Charge", "Hit a player with a fully charged Glacial Lance");

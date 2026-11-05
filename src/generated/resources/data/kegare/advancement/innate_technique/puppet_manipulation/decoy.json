@@ -1,0 +1,29 @@
+{
+  "parent": "kegare:innate_technique/puppet_manipulation",
+  "criteria": {
+    "granted": {
+      "trigger": "minecraft:impossible"
+    }
+  },
+  "display": {
+    "announce_to_chat": false,
+    "description": {
+      "translate": "advancements.kegare.puppet_manipulation.decoy.description"
+    },
+    "frame": "goal",
+    "hidden": true,
+    "icon": {
+      "count": 1,
+      "id": "minecraft:hay_block"
+    },
+    "title": {
+      "translate": "advancements.kegare.puppet_manipulation.decoy.title"
+    }
+  },
+  "requirements": [
+    [
+      "granted"
+    ]
+  ],
+  "sends_telemetry_event": true
+}

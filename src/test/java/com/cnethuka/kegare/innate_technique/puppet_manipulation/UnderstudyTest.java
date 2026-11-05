@@ -143,9 +143,13 @@ class UnderstudyTest {
                 InnateTechniqueService.clearCooldowns(owner);
                 second.startStandIn(owner, 100);
                 DirectiveTest.tick(server, second);
+                // (other tests share this world: only count items that appear now)
+                java.util.Set<ItemEntity> itemsBefore = new java.util.HashSet<>(level.getEntitiesOfClass(ItemEntity.class, second.getBoundingBox().inflate(8)));
                 second.hurt(level.damageSources().genericKill(), 1000f);
                 second.tick();
-                assertTrue(level.getEntitiesOfClass(ItemEntity.class, owner.getBoundingBox().inflate(8)).isEmpty(), "no drops");
+                List<ItemEntity> after = new ArrayList<>(level.getEntitiesOfClass(ItemEntity.class, second.getBoundingBox().inflate(8)));
+                after.removeAll(itemsBefore);
+                assertTrue(after.isEmpty(), "no drops: " + after);
 
                 // Then it shrinks back and gives everything back.
                 for (int i = 0; i < PuppetConfig.ticks(PuppetConfig.STAND_IN_DURATION); i++) DirectiveTest.tick(server, puppet);

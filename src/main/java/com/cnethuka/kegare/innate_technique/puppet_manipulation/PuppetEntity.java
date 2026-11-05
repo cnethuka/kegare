@@ -431,6 +431,16 @@ public class PuppetEntity extends PathfinderMob implements Puppet {
     }
 
     @Override
+    public boolean hurt(DamageSource source, float amount) {
+        boolean hurt = super.hurt(source, amount);
+        if (hurt && !level().isClientSide && isStandIn() && source.getEntity() instanceof ServerPlayer attacker && !isOwnedBy(attacker)
+                && owner() != null) {
+            PuppetAdvancements.award(owner(), PuppetAdvancements.WHOS_REAL);
+        }
+        return hurt;
+    }
+
+    @Override
     public boolean isInvulnerableTo(DamageSource source) {
         // While possessed, the possessor's body takes the hits; the hidden puppet takes none.
         if (isPossessed() && !source.is(net.minecraft.tags.DamageTypeTags.BYPASSES_INVULNERABILITY)) return true;
