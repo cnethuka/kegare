@@ -1,4 +1,6 @@
 {
+  "ability.kegare.awareness": "Awareness",
+  "ability.kegare.awareness.desc": "Swap looks with the player you're looking at for 5 seconds: everyone else sees you as them and them as you (name, skin, armor, held items, tab list). Only looks change hands.",
   "ability.kegare.cast_type.channeled": "Channeled",
   "ability.kegare.cast_type.charged": "Charged",
   "ability.kegare.cast_type.instant": "Instant",
@@ -13,6 +15,8 @@
   "ability.kegare.glacial_spire.desc": "Hold to charge (up to 2s) while aiming at the ground in range. A frost circle marks the spot, then an ice spike erupts: damage, 2 Freeze stacks, and anyone on it is launched (higher with more charge).",
   "ability.kegare.ice_path": "Ice Path",
   "ability.kegare.ice_path.desc": "While held, slide fast the way you look over a trail of ice. Anyone else on the trail is slowed until it melts. Drains Malice while held.",
+  "ability.kegare.mimic": "Mimic",
+  "ability.kegare.mimic.desc": "Look like the player you're looking at for 8 seconds. They stay as themselves.",
   "ability.kegare.positions": "Positions",
   "ability.kegare.positions.desc": "Swap places and facing with the player you're looking at (up to 24 blocks, in line of sight).",
   "ability.kegare.reverse_malice_technique": "Reverse Malice Technique",

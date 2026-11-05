@@ -24,13 +24,16 @@ public final class Swap {
     public static final int MALICE_COLOR = 0x14B8A6;
 
     public static final PositionsAbility POSITIONS = new PositionsAbility();
+    public static final AwarenessAbility AWARENESS = new AwarenessAbility();
 
     // Specials (R), each sharing its base ability's cooldown.
     public static final SwitchbackAbility SWITCHBACK = new SwitchbackAbility();
+    public static final MimicAbility MIMIC = new MimicAbility();
 
     public static final DeferredHolder<InnateTechnique, InnateTechnique> SWAP = INNATE_TECHNIQUES.register("swap",
             () -> InnateTechnique.builder(InnateTechniqueRarity.COMMON)
                     .ability(POSITIONS)
+                    .ability(AWARENESS)
                     .lockedUltimate()
                     .maliceColor(MALICE_COLOR)
                     .tabIcon(Items.ENDER_PEARL)
@@ -44,6 +47,7 @@ public final class Swap {
         VisualHooks.registerEffect(SwapIds.FX_SWAP_ARRIVE);
         VisualHooks.registerEffect(SwapIds.FX_SWAP_LINK);
         VisualHooks.registerEffect(SwapIds.FX_SWITCHBACK_TIMER);
+        VisualHooks.registerEffect(SwapIds.FX_AWARENESS_SHIMMER);
     }
 
     public static boolean holds(ServerPlayer player) {

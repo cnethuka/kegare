@@ -14,7 +14,10 @@ import net.neoforged.neoforge.client.event.ClientPlayerNetworkEvent;
 import net.neoforged.neoforge.client.event.ClientTickEvent;
 import net.neoforged.neoforge.common.NeoForge;
 
-/** Swap's client side: effects drawn along a line (the swap link, Exchange's travelling orbs). */
+/**
+ * Swap's client side: effects drawn along a line (the swap link, Exchange's travelling orbs) and the disguises
+ * ({@link DisguiseClient}).
+ */
 public final class SwapClient {
     /** Blocks between two beads of a line. */
     private static final double SPACING = 0.9;
@@ -46,6 +49,7 @@ public final class SwapClient {
 
     public static void init(IEventBus modBus) {
         SwapLink.Payload.setClientHandler(SwapClient::onLink);
+        DisguiseClient.init();
         NeoForge.EVENT_BUS.addListener(SwapClient::onClientTick);
         NeoForge.EVENT_BUS.addListener(SwapClient::onLogout);
     }

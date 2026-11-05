@@ -138,6 +138,69 @@ class SwapTest {
         });
     }
 
+    @Test
+    void disguises(MinecraftServer server) throws Exception {
+        TestServer.onServerThread(server, () -> {
+            TestServer.ensureOverworld(server);
+            ServerLevel level = server.overworld();
+            level.getHeight(Heightmap.Types.MOTION_BLOCKING, 0, 0);
+            ServerPlayer caster = TestServer.player(server, "disguise_caster");
+            ServerPlayer target = TestServer.player(server, "disguise_target");
+            level.addNewPlayer(caster);
+            level.addNewPlayer(target);
+            BirthService.rebirth(caster, OptionalInt.of(1000));
+            InnateTechniqueService.setInnateTechnique(caster, Swap.SWAP.get());
+            InnateTechniqueService.select(caster, 1);
+            assertEquals(Swap.AWARENESS, com.cnethuka.kegare.loadout.LoadoutService.abilityAt(caster, 1), "setup: Awareness in slot 2");
+
+            // Awareness: each looks like the other; the API sees through it.
+            face(caster, target);
+            double before = malice(caster);
+            CastManager.handleIntent(caster, CastIntent.CAST_PRESS);
+            assertEquals(before - SwapConfig.AWARENESS_COST.get(), malice(caster), EPS, "cost");
+            assertTrue(Disguises.isDisguised(caster));
+            assertEquals(target.getUUID(), Disguises.getDisguisedAs(caster).orElseThrow(), "caster looks like the target");
+            assertEquals(caster.getUUID(), Disguises.getDisguisedAs(target).orElseThrow(), "target looks like the caster");
+            assertEquals(caster.getUUID(), Disguises.getRealIdentity(caster));
+            assertEquals(Disguises.Kind.AWARENESS, Disguises.get(caster).orElseThrow().kind());
+            Vec3 at = caster.position();
+            assertEquals(at, caster.position(), "visual only: nobody moved");
+
+            // It ends on its own after the duration.
+            TestServer.advanceGameTime(server, SwapConfig.ticks(SwapConfig.AWARENESS_DURATION) - 1);
+            Disguises.tick(server);
+            assertTrue(Disguises.isDisguised(caster), "not yet");
+            TestServer.advanceGameTime(server, 1);
+            Disguises.tick(server);
+            assertFalse(Disguises.isDisguised(caster), "expired");
+            assertFalse(Disguises.isDisguised(target), "expired");
+
+            // Mimic: one way only, shares Awareness' cooldown.
+            InnateTechniqueService.clearCooldowns(caster);
+            face(caster, target);
+            CastManager.handleIntent(caster, CastIntent.SPECIAL_PRESS);
+            assertEquals(target.getUUID(), Disguises.getDisguisedAs(caster).orElseThrow(), "mimic: caster looks like the target");
+            assertFalse(Disguises.isDisguised(target), "mimic: the target stays as themselves");
+            assertTrue(InnateTechniqueService.cooldownRemaining(caster, Swap.AWARENESS) > 0, "shared cooldown");
+            // The face's owner dies (or logs out, or leaves): it ends.
+            Disguises.endInvolving(target);
+            assertFalse(Disguises.isDisguised(caster), "ended with the target");
+
+            // Refused by SwapTargetEvent: no disguise, Malice spent, no cooldown.
+            InnateTechniqueService.clearCooldowns(caster);
+            face(caster, target);
+            SwapDebug.setUnswappable(target.getUUID(), true);
+            before = malice(caster);
+            CastManager.handleIntent(caster, CastIntent.CAST_PRESS);
+            assertFalse(Disguises.isDisguised(caster));
+            assertEquals(before - SwapConfig.AWARENESS_COST.get(), malice(caster), EPS, "refused: Malice spent");
+            assertEquals(0, InnateTechniqueService.cooldownRemaining(caster, Swap.AWARENESS), "refused: no cooldown");
+            SwapDebug.setUnswappable(target.getUUID(), false);
+
+            for (ServerPlayer p : new ServerPlayer[] {caster, target}) level.removePlayerImmediately(p, Entity.RemovalReason.DISCARDED);
+        });
+    }
+
     /** Puts the two players 8 blocks apart in the air, the caster looking straight at the target. */
     static void face(ServerPlayer caster, ServerPlayer target) {
         caster.moveTo(0.5, Y, 0.5, -90f, 0f); // facing +X

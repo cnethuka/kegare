@@ -34,6 +34,9 @@ public final class KegareNetwork {
                 com.cnethuka.kegare.rmt.OrbPayload::handle);
         registrar.playToClient(com.cnethuka.kegare.innate_technique.swap.SwapLink.Payload.TYPE,
                 com.cnethuka.kegare.innate_technique.swap.SwapLink.Payload.STREAM_CODEC, com.cnethuka.kegare.innate_technique.swap.SwapLink.Payload::handle);
+        registrar.playToClient(com.cnethuka.kegare.innate_technique.swap.Disguises.StatePayload.TYPE,
+                com.cnethuka.kegare.innate_technique.swap.Disguises.StatePayload.STREAM_CODEC,
+                com.cnethuka.kegare.innate_technique.swap.Disguises.StatePayload::handle);
         // server -> clients tracking an entity (cosmetic only: animations and VFX)
         registrar.playToClient(VisualPayload.TYPE, VisualPayload.STREAM_CODEC, VisualPayload::handle);
     }

@@ -118,6 +118,11 @@ public final class KegareLanguageProvider extends LanguageProvider {
         add("ability.kegare.switchback", "Switchback");
         add("ability.kegare.switchback.desc", "Swap places like Positions, then swap back on your own after 3 seconds. "
                 + "Called off if either of you dies, logs out or leaves the dimension.");
+        add("ability.kegare.awareness", "Awareness");
+        add("ability.kegare.awareness.desc", "Swap looks with the player you're looking at for 5 seconds: everyone else sees you as them "
+                + "and them as you (name, skin, armor, held items, tab list). Only looks change hands.");
+        add("ability.kegare.mimic", "Mimic");
+        add("ability.kegare.mimic.desc", "Look like the player you're looking at for 8 seconds. They stay as themselves.");
         add("message.kegare.swap.no_target", "No player in sight.");
         add("message.kegare.swap.refused", "Something stops the swap.");
         add("message.kegare.swap.switchback_refused", "Something stops the swap back.");
