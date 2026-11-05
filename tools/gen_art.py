@@ -861,6 +861,175 @@ def emblem_rime() -> Image.Image:
     return img
 
 
+# ---- Swap: ability icons (shape rules with a bevel and ink outline) and the emblem
+
+def shaped_icon(fill) -> "Image.Image":
+    """16x16 icon from a shape rule: fill(x, y) -> a color ramp (or None). Pixels get a bevel (lit top edge, shaded
+    bottom edge), then the ink outline."""
+    mask = [[fill(x, y) for x in range(16)] for y in range(16)]
+    img = new(16, 16)
+    for y in range(16):
+        for x in range(16):
+            r = mask[y][x]
+            if r is None:
+                continue
+            up = y == 0 or mask[y - 1][x] is None
+            down = y == 15 or mask[y + 1][x] is None
+            left = x == 0 or mask[y][x - 1] is None
+            shade = 6 if up and left else 5 if up or left else 3 if down else 4
+            img.putpixel((x, y), r[shade])
+    return outline(img)
+
+
+def _arrow(x, y, x0, x1, cy, right: bool, shaft=1.0, head=3.2, head_len=4):
+    """Inside a horizontal arrow from x0 to x1 at row cy (pointing right or left)."""
+    tip = x1 if right else x0
+    base = tip - head_len if right else tip + head_len
+    if (right and base <= x <= tip) or (not right and tip <= x <= base):
+        return abs(y - cy) <= head * abs(tip - x) / head_len + 0.01
+    lo, hi = (x0, base) if right else (base, x1)
+    return lo <= x <= hi and abs(y - cy) <= shaft
+
+
+def icon_positions():
+    def f(x, y):
+        if _arrow(x, y, 1, 13, 4.5, True, shaft=0.6, head=3.0):
+            return TEAL
+        if _arrow(x, y, 2, 14, 10.5, False, shaft=0.6, head=3.0):
+            return MALICE
+        return None
+    return shaped_icon(f)
+
+
+def icon_switchback():
+    def f(x, y):
+        # out along the top, round the bend on the right, back along the bottom to an arrowhead
+        if 2 <= x <= 9 and 3.4 <= y <= 5.6:
+            return TEAL
+        d = math.hypot(x - 9.5, y - 8.0)
+        if x >= 9.5 and 2.6 <= d <= 4.7:
+            return TEAL if y < 8 else MALICE
+        if _arrow(x, y, 2, 9, 11.0, False, shaft=1.0, head=3.2, head_len=4):
+            return MALICE
+        return None
+    return shaped_icon(f)
+
+def _mask(x, y):
+    """A domino mask with two eye holes: True inside the mask (holes excluded)."""
+    inside = ((x - 7.5) / 7.3) ** 2 + ((y - 7.5) / 4.3) ** 2 <= 1.0 and not (y > 9.5 and 6 <= x <= 9)
+    hole = any(((x - hx) / 1.9) ** 2 + ((y - 7.0) / 1.4) ** 2 <= 1.0 for hx in (4.3, 10.7))
+    return inside and not hole
+
+
+def icon_awareness():
+    return shaped_icon(lambda x, y: MALICE if _mask(x, y) else None)
+
+def icon_mimic():
+    def f(x, y):
+        # half a mask (violet) and its teal reflection beyond a mirror line
+        if x == 8 and 1 <= y <= 14:
+            return SILVER
+        if _mask(x, y):
+            return MALICE if x < 8 else TEAL
+        return None
+    return shaped_icon(f)
+
+def icon_anchor():
+    def f(x, y):
+        if math.hypot(x - 10.0, y - 5.5) <= 3.6:
+            return TEAL
+        # the throw: a dotted arc up from the bottom-left
+        t = (x - 1) / 7.0
+        if 0 <= t <= 1 and x % 2 == 1:
+            cy = 13.5 - 7.5 * math.sin(t * math.pi / 2)
+            if abs(y - cy) <= 0.6:
+                return MALICE
+        return None
+    return shaped_icon(f)
+
+
+def icon_send_off():
+    def f(x, y):
+        if math.hypot(x - 11.5, y - 7.5) <= 3.2:
+            return TEAL
+        if _arrow(x, y, 1, 7, 7.5, True, shaft=0.6, head=3.0, head_len=3):
+            return MALICE
+        return None
+    return shaped_icon(f)
+
+
+def icon_exchange():
+    def f(x, y):
+        if math.hypot(x - 4.5, y - 4.5) <= 3.0:
+            return TEAL
+        if math.hypot(x - 11.5, y - 11.5) <= 3.0:
+            return MALICE
+        # two small arrows crossing between them
+        if _arrow(x, y, 8, 13, 4.5, True, shaft=0.5, head=2.0, head_len=2):
+            return MALICE
+        if _arrow(x, y, 2, 7, 11.5, False, shaft=0.5, head=2.0, head_len=2):
+            return TEAL
+        return None
+    return shaped_icon(f)
+
+
+def icon_momentum_exchange():
+    def f(x, y):
+        # chevrons: teal rushing right on top, violet rushing left below
+        for cy, tips, right, r in ((4.0, (8, 13), True, TEAL), (11.0, (2, 7), False, MALICE)):
+            if abs(y - cy) > 3.2:
+                continue
+            for tip in tips:
+                edge = tip - abs(y - cy) if right else tip + abs(y - cy)
+                if abs(x - edge) <= 1.3:
+                    return r
+        return None
+    return shaped_icon(f)
+
+def icon_total_swap():
+    def f(x, y):
+        d = math.hypot(x - 7.5, y - 7.5)
+        a = math.atan2(y - 7.5, x - 7.5)
+        if 4.8 <= d <= 6.6:
+            if -2.6 <= a <= -0.3:
+                return TEAL
+            if 0.55 <= a <= 2.85:
+                return MALICE
+        # arrowheads at the ends of the arcs
+        for tipa, r in ((-0.3, TEAL), (2.85, MALICE)):
+            tx, ty = 7.5 + math.cos(tipa) * 5.7, 7.5 + math.sin(tipa) * 5.7
+            if math.hypot(x - tx, y - ty) <= 2.0 and ((x - tx) * math.cos(tipa) + (y - ty) * math.sin(tipa)) <= 0.6:
+                return r
+        if d <= 1.6:
+            return GOLD
+        return None
+    return shaped_icon(f)
+
+
+def emblem_swap():
+    """Two brush-stroke arrows chasing each other round a circle (teal and Malice violet), a pearl in the middle."""
+    img = vignette(48, TEAL, seed=401)
+    fg = new(48, 48)
+    cx, cy, r = 23.5, 23.5, 15.5
+    for k, (pal, seed) in enumerate(((TEAL, 403), (MALICE, 409))):
+        a0 = math.pi * (1.12 + k)
+        a1 = a0 + math.pi * 0.7
+        pts = [(cx + math.cos(a0 + (a1 - a0) * i / 16) * r, cy + math.sin(a0 + (a1 - a0) * i / 16) * r) for i in range(17)]
+        brush(fg, pts, 2.2, pal[3:], seed=seed, taper=(0.25, 0.0), wobble=0.2)
+        tip = pts[-1]
+        heading = a1 + math.pi / 2
+        for side in (-1, 1):
+            back = heading + math.pi + side * 0.62
+            brush(fg, [tip, (tip[0] + math.cos(back) * 7, tip[1] + math.sin(back) * 7)], 1.8, pal[3:],
+                  seed=seed + 2 + (side > 0), taper=(0.05, 0.55))
+    ring(fg, cx, cy, 4.2, 1.3, TEAL[4:], seed=421, wobble=0.1)
+    ring(fg, cx, cy, 1.6, 1.2, MALICE[4:], seed=423, wobble=0.05)
+    paste(img, rim_light(outline(fg), TEAL[-1]))
+    for (x, y) in ((7, 8), (37, 36)):
+        paste(img, sparkle().resize((5, 5), Image.NEAREST), x, y)
+    return img
+
+
 def special_badge(lit: bool) -> Image.Image:
     """9x9 "R" badge on an ability slot: lit gold when the ability has a special (R), grey when not."""
     grid = [
@@ -1430,11 +1599,15 @@ def main() -> None:
              "test_shockwave": icon(ICON_SHOCKWAVE, MALICE),
              "frost_shard": icon(ICON_FROST_SHARD, ICE), "glacial_lance": icon(ICON_GLACIAL_LANCE, ICE),
              "frost_field": icon(ICON_FROST_FIELD, ICE), "rime_shell": icon(ICON_RIME_SHELL, ICE),
-             "reverse_malice_technique": icon(ICON_RMT, HEAL)}
+             "reverse_malice_technique": icon(ICON_RMT, HEAL),
+             "positions": icon_positions(), "switchback": icon_switchback(), "awareness": icon_awareness(),
+             "mimic": icon_mimic(), "anchor": icon_anchor(), "send_off": icon_send_off(), "exchange": icon_exchange(),
+             "momentum_exchange": icon_momentum_exchange(), "total_swap": icon_total_swap()}
     for name, img in icons.items():
         save(img, f"gui/ability/{name}.png")
     emblems = {"test_kinetic": emblem_kinetic(), "test_flux": emblem_flux(),
-               "test_prism": emblem_prism(), "test_apex": emblem_apex(), "rime": emblem_rime()}
+               "test_prism": emblem_prism(), "test_apex": emblem_apex(), "rime": emblem_rime(),
+               "swap": emblem_swap()}
     for name, img in emblems.items():
         save(img, f"gui/emblem/{name}.png")
 

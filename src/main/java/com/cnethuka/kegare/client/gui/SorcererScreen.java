@@ -413,20 +413,25 @@ public final class SorcererScreen extends Screen {
         if (special.isPresent()) {
             Ability sp = special.get();
             SorcererInfoPayload.SpecialInfo spInfo = abilityInfo != null ? abilityInfo.special().orElse(null) : null;
-            GuiDraw.specialBadge(g, x, y - 1, true);
+            // The special's own icon when it has art (with the R badge on its corner), else just the badge.
+            boolean icon = GuiDraw.abilityIcon(g, sp, x, y - 2);
+            if (icon) GuiDraw.specialBadge(g, x + 9, y + 7, true);
+            else GuiDraw.specialBadge(g, x, y - 1, true);
+            int ix = icon ? 20 : 12;
             Component line = spInfo != null && spInfo.upkeepPerSecond() > 0
                     ? Component.translatable("gui.kegare.sorcerer.special.line_upkeep", sp.displayName(), Component.translatable(sp.castType().translationKey()),
                             GuiDraw.amount(spInfo.cost()), GuiDraw.amount(spInfo.upkeepPerSecond()))
                     : Component.translatable("gui.kegare.sorcerer.special.line", sp.displayName(), Component.translatable(sp.castType().translationKey()),
                             GuiDraw.amount(spInfo != null ? spInfo.cost() : 0f));
-            y += GuiDraw.wrapped(g, font, line, x + 12, y, w - 12, spInfo == null || spInfo.available() ? GuiDraw.GOLD : GuiDraw.GRAY);
-            y += GuiDraw.wrapped(g, font, GuiDraw.description(sp.descriptionId()), x + 12, y, w - 12, GuiDraw.DARK_GRAY);
+            int top = y;
+            y += GuiDraw.wrapped(g, font, line, x + ix, y, w - ix, spInfo == null || spInfo.available() ? GuiDraw.GOLD : GuiDraw.GRAY);
+            y += GuiDraw.wrapped(g, font, GuiDraw.description(sp.descriptionId()), x + ix, y, w - ix, GuiDraw.DARK_GRAY);
             for (Requirement requirement : sp.requirements()) {
                 boolean met = spInfo != null && spInfo.available();
-                y += GuiDraw.wrapped(g, font, Component.translatable("gui.kegare.special.requires", requirement.description()), x + 12, y, w - 12,
+                y += GuiDraw.wrapped(g, font, Component.translatable("gui.kegare.special.requires", requirement.description()), x + ix, y, w - ix,
                         met ? 0xFF7CFC8A : GuiDraw.RED);
             }
-            y += 3;
+            y = Math.max(y, icon ? top + 16 : y) + 3;
         } else if (!SharedAbilities.isShared(ability.id()) || ability.special().isEmpty()) {
             GuiDraw.specialBadge(g, x, y - 1, false);
             y += GuiDraw.wrapped(g, font, Component.translatable("gui.kegare.sorcerer.special.none"), x + 12, y, w - 12, GuiDraw.DARK_GRAY) + 3;
