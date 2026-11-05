@@ -36,7 +36,8 @@ import net.minecraft.util.Mth;
  *       just spent), the current amount on the centre plate (cyan/orange and a snowflake/flame when the surroundings
  *       make casting cheaper/dearer), and a thin charge/channel line under the cells.</li>
  *   <li>The tray: the nine loadout slots plus the ultimate. Each shows its icon, number key, cooldown sweep,
- *       ready flash and R badge; the selected slot is lit gold, active toggles green.</li>
+ *       ready flash and R badge; the selected slot is lit gold, active toggles green. Innate techniques can add their
+ *       own marks to their slots ({@link #addSlotDecorator}).</li>
  * </ul>
  * Display only: reads {@link ClientData}.
  */
@@ -81,6 +82,21 @@ public final class CombatPanelLayer implements LayeredDraw.Layer {
     private static float lastFraction = -1f;
     private static long ghostHoldUntil;
     private static long lastFrameMs;
+
+    /**
+     * Something an innate technique draws on one of its own slots, over the icon (e.g. how many puppets there are, or
+     * the current order). Drawn wherever the panel is drawn (the HUD and the Sorcerer screen's tray).
+     */
+    @FunctionalInterface
+    public interface SlotDecorator {
+        void decorate(GuiGraphics g, Font font, Ability ability, int x, int y, int size);
+    }
+
+    private static final List<SlotDecorator> DECORATORS = new java.util.concurrent.CopyOnWriteArrayList<>();
+
+    public static void addSlotDecorator(SlotDecorator decorator) {
+        DECORATORS.add(decorator);
+    }
 
     /** True while the panel is up (and so the hotbar is drawn as a column instead). */
     public static boolean shown() {
@@ -281,6 +297,12 @@ public final class CombatPanelLayer implements LayeredDraw.Layer {
             g.renderOutline(x + 1, y + 1, SLOT_SIZE - 2, SLOT_SIZE - 2, 0xFFFFD24A);
         }
         GuiDraw.specialBadge(g, x + SLOT_SIZE - 7, y - 3, ability.special().isPresent());
+        if (!DECORATORS.isEmpty()) {
+            g.pose().pushPose();
+            g.pose().translate(0, 0, 250);
+            for (SlotDecorator decorator : DECORATORS) decorator.decorate(g, font, ability, x, y, SLOT_SIZE);
+            g.pose().popPose();
+        }
         if (!cooling) label(g, font, key, x + SLOT_SIZE, y + SLOT_SIZE, selected ? GuiDraw.WHITE : 0xFFD8D2E0);
     }
 

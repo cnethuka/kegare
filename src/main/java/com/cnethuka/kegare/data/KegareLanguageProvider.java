@@ -153,8 +153,8 @@ public final class KegareLanguageProvider extends LanguageProvider {
                 + "Command them, ride inside them, set them off, or let one stand in for you.");
         add("ability.kegare.puppet_creation", "Puppet Creation");
         add("ability.kegare.puppet_creation.desc", "Hold to charge, release to make a half-size puppet of yourself beside you. "
-                + "A tap makes a weak one (2 health, faint glow), half a charge a steady one (4 health), a full charge a strong one "
-                + "(8 health, bright glow and an outline). The longer the charge, the higher the cost. Puppets last until killed.");
+                + "A tap (10 Malice) makes a weak one: 2 health, a faint glow. Half a charge (25) a steady one: 4 health. A full "
+                + "charge (45) a strong one: 8 health, a bright glow and an outline. Puppets last until killed.");
         add("ability.kegare.directive", "Directive");
         add("ability.kegare.directive.desc", "Give every puppet within 32 blocks the next order: Follow, Stay, Guard (attack whoever "
                 + "damages you, player or mob) or Go (walk to the block you're looking at, then stay). New puppets take the current order.");

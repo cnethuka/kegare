@@ -36,7 +36,7 @@
   "ability.kegare.possess": "Possess",
   "ability.kegare.possess.desc": "Move into the puppet you're looking at (or your nearest one) and become it: its size, its health, no items, no casting. Your body stays behind, defenceless. R again returns. You snap back if your body is hit, if you go more than 64 blocks from it, or if the puppet dies (with backlash: nausea, a stun and lost Malice).",
   "ability.kegare.puppet_creation": "Puppet Creation",
-  "ability.kegare.puppet_creation.desc": "Hold to charge, release to make a half-size puppet of yourself beside you. A tap makes a weak one (2 health, faint glow), half a charge a steady one (4 health), a full charge a strong one (8 health, bright glow and an outline). The longer the charge, the higher the cost. Puppets last until killed.",
+  "ability.kegare.puppet_creation.desc": "Hold to charge, release to make a half-size puppet of yourself beside you. A tap (10 Malice) makes a weak one: 2 health, a faint glow. Half a charge (25) a steady one: 4 health. A full charge (45) a strong one: 8 health, a bright glow and an outline. Puppets last until killed.",
   "ability.kegare.reverse_malice_technique": "Reverse Malice Technique",
   "ability.kegare.reverse_malice_technique.desc": "Turn Malice back on your own body. Hold to heal a little every second; release to stop. It drains Malice fast. Interrupted by stuns and freezing like any channel.",
   "ability.kegare.rime_shell": "Rime Shell",

@@ -50,6 +50,8 @@ SEAL = ramp("#5c0f0c", "#8c1a14", "#b3261e", "#d94a3a", "#f08a76")
 HEAL = ramp("#06210f", "#0c3d1c", "#15652d", "#22a046", "#4ed873", "#a6f5b8", "#f2fff4")  # Reverse Malice Technique
 ICE = ramp("#081428", "#0f2d55", "#1a5590", "#3a8fcc", "#79c8ec", "#c2eefa", "#f2fdff")  # Rime: deep blue to white
 TEAL = ramp("#03201d", "#063b36", "#0b5f57", "#0f8a7e", "#14b8a6", "#5eead4", "#ccfbf1")  # Swap: teal (with Malice violet)
+LAVENDER = ramp("#1a1233", "#2c1f57", "#45338a", "#6450be", "#9886ee", "#c4b5fd", "#f1edff")  # Puppet Manipulation
+WOOD = ramp("#1f1208", "#3a220f", "#5c3818", "#83532a", "#a8723e", "#c99a62", "#ead0a6")  # a marionette's control bar
 
 
 def pick(r: list, t: float):
@@ -1030,6 +1032,167 @@ def emblem_swap():
     return img
 
 
+# ---- Puppet Manipulation: ability icons, order glyphs and the emblem (lavender, with wood for the control bar)
+
+def _doll(x, y, cx, top, scale=1.0):
+    """Inside a little doll (round head, body, arms out, two legs) whose head top is at (cx, top)."""
+    s = scale
+    if math.hypot(x - cx, y - (top + 2.2 * s)) <= 2.2 * s:
+        return True
+    body_top, body_bot = top + 4.4 * s, top + 8.6 * s
+    if abs(x - cx) <= 1.4 * s and body_top <= y <= body_bot:
+        return True
+    if abs(y - (body_top + 1.0 * s)) <= 0.6 * s and abs(x - cx) <= 3.6 * s:
+        return True
+    return body_bot < y <= top + 11.4 * s and 0.4 * s <= abs(x - cx) <= 1.5 * s
+
+
+def icon_puppet_creation():
+    def f(x, y):
+        if _doll(x, y, 7.5, 2.0):
+            return LAVENDER
+        if (x == 13 and 1 <= y <= 5) or (y == 3 and 11 <= x <= 15):  # a sparkle: freshly made
+            return GOLD
+        return None
+    return shaped_icon(f)
+
+
+def icon_possess():
+    def f(x, y):
+        if _doll(x, y, 11.0, 3.5, 0.85):
+            return LAVENDER
+        # the mind leaving: a wisp arcing in from the lower left to the doll's head
+        t = (x - 1.0) / 8.0
+        if 0 <= t <= 1:
+            cy = 12.5 - 8.0 * math.sin(t * math.pi / 2)
+            if abs(y - cy) <= 0.75 + 0.5 * t:
+                return MALICE
+        return None
+    return shaped_icon(f)
+
+
+def icon_directive():
+    def f(x, y):
+        if 2 <= y <= 3 and 1 <= x <= 14:  # the control bar
+            return WOOD
+        if 7 <= x <= 8 and 0 <= y <= 5:
+            return WOOD
+        for sx in (2, 7.5, 13):
+            if abs(x - sx) <= 0.3 and 4 <= y <= 10:  # strings
+                return SILVER
+            if math.hypot(x - sx, y - 12) <= 1.8:  # heads at the ends
+                return LAVENDER
+        return None
+    return shaped_icon(f)
+
+
+def icon_focus():
+    def f(x, y):
+        d = math.hypot(x - 7.5, y - 7.5)
+        if 5.2 <= d <= 6.7:
+            return LAVENDER
+        if d <= 1.6:
+            return MALICE
+        # four ticks pointing in
+        if (abs(x - 7.5) <= 0.5 and (y <= 3 or y >= 12)) or (abs(y - 7.5) <= 0.5 and (x <= 3 or x >= 12)):
+            return LAVENDER
+        return None
+    return shaped_icon(f)
+
+
+def _burst(x, y, cx, cy, r_out, r_in, points=8, phase=0.0):
+    a = math.atan2(y - cy, x - cx) + phase
+    d = math.hypot(x - cx, y - cy)
+    k = abs(math.cos(a * points / 2))
+    return d <= r_in + (r_out - r_in) * k ** 3
+
+
+def icon_curio_burst():
+    def f(x, y):
+        if math.hypot(x - 7.5, y - 7.5) <= 2.0:
+            return GOLD
+        if _burst(x, y, 7.5, 7.5, 7.3, 2.6):
+            return LAVENDER
+        return None
+    return shaped_icon(f)
+
+
+def icon_chain_burst():
+    def f(x, y):
+        for (cx, cy, ro, ri) in ((3.0, 12.5, 3.0, 1.2), (7.5, 8.0, 3.6, 1.4), (12.5, 3.0, 4.2, 1.6)):
+            if math.hypot(x - cx, y - cy) <= ri * 0.8:
+                return GOLD
+            if _burst(x, y, cx, cy, ro, ri, points=6):
+                return LAVENDER
+        return None
+    return shaped_icon(f)
+
+
+def icon_understudy():
+    def f(x, y):
+        if _doll(x, y, 3.5, 5.0, 0.8):
+            return LAVENDER
+        if _doll(x, y, 12.0, 3.5, 1.0):
+            return MALICE
+        # the swap: a little arc over both
+        d = math.hypot(x - 7.8, y - 7.0)
+        if 6.2 <= d <= 7.2 and y <= 3.5 and 4 <= x <= 12:
+            return SILVER
+        return None
+    return shaped_icon(f)
+
+
+def icon_stand_in():
+    def f(x, y):
+        if _doll(x, y, 4.0, 8.0, 0.6):
+            return LAVENDER
+        if _doll(x, y, 10.5, 1.0, 1.25):
+            return MALICE
+        return None
+    return shaped_icon(f)
+
+
+def order_glyph(kind: str) -> "Image.Image":
+    """7x7 glyph of a Directive order, drawn on the Directive slot: follow (a chevron), stay (a bar), guard (a shield),
+    go (a flag)."""
+    grids = {
+        "follow": [".......", "..X....", "...X...", "....X..", "...X...", "..X....", "......."],
+        "stay": [".......", ".......", ".XXXXX.", ".XXXXX.", ".XXXXX.", ".......", "......."],
+        "guard": [".XXXXX.", ".XXXXX.", ".XXXXX.", ".XXXXX.", "..XXX..", "...X...", "......."],
+        "go": [".X.....", ".XXXX..", ".XXXXX.", ".XXX...", ".X.....", ".X.....", ".X....."],
+    }
+    img = new(7, 7)
+    for y, row in enumerate(grids[kind]):
+        for x, c in enumerate(row):
+            if c == "X":
+                img.putpixel((x, y), LAVENDER[6] if y < 2 else LAVENDER[5])
+    return outline(img) if False else img
+
+
+def emblem_puppet_manipulation():
+    """A marionette: the wooden control cross at the top, three strings down to a little lavender doll with its arms
+    out (mid kuru kuru), over a lavender vignette."""
+    img = vignette(48, LAVENDER, seed=611)
+    fg = new(48, 48)
+    # the control cross
+    brush(fg, [(9, 9), (39, 9)], 1.9, WOOD[2:], seed=613, taper=(0.15, 0.15), wobble=0.15)
+    brush(fg, [(24, 3), (24, 16)], 1.8, WOOD[2:], seed=617, taper=(0.15, 0.2), wobble=0.12)
+    # strings
+    for (x0, y0, x1, y1, sd) in ((10, 10, 15, 27, 619), (38, 10, 33, 27, 621), (24, 16, 24, 20, 623)):
+        brush(fg, [(x0, y0), (x1, y1)], 0.55, SILVER[4:], seed=sd, taper=(0.0, 0.0), wobble=0.05)
+    # the doll
+    for r, w in ((2.6, 1.6), (1.2, 1.4)):  # a filled round head
+        ring(fg, 24, 24.0, r, w, LAVENDER[4:], seed=631, wobble=0.05)
+    brush(fg, [(24, 28), (24, 36)], 2.2, LAVENDER[3:], seed=633, taper=(0.1, 0.25), wobble=0.15)
+    brush(fg, [(15, 28), (33, 28)], 1.4, LAVENDER[3:], seed=637, taper=(0.3, 0.3), wobble=0.2)
+    brush(fg, [(24, 35), (20, 43)], 1.3, LAVENDER[3:], seed=641, taper=(0.1, 0.5), wobble=0.2)
+    brush(fg, [(24, 35), (28, 43)], 1.3, LAVENDER[3:], seed=643, taper=(0.1, 0.5), wobble=0.2)
+    paste(img, rim_light(outline(fg), LAVENDER[-1]))
+    for (x, y) in ((6, 30), (39, 35), (37, 19)):
+        paste(img, sparkle().resize((5, 5), Image.NEAREST), x, y)
+    return img
+
+
 def special_badge(lit: bool) -> Image.Image:
     """9x9 "R" badge on an ability slot: lit gold when the ability has a special (R), grey when not."""
     grid = [
@@ -1631,6 +1794,8 @@ def main() -> None:
     save(icon(ICON_GLACIAL_LANCE, ICE), "item/glacial_lance.png")
     save(swap_anchor_item(), "item/swap_anchor.png")
     save(puppet_glow(), "entity/puppet_glow.png")
+    for kind in ("follow", "stay", "guard", "go"):
+        save(order_glyph(kind), f"gui/puppet_order/{kind}.png")
 
     icons = {"test_dash": icon(ICON_DASH, MALICE), "test_burst": icon(ICON_BURST, MALICE),
              "test_hover": icon(ICON_HOVER, MALICE), "test_aura": icon(ICON_AURA, MALICE),
@@ -1640,12 +1805,15 @@ def main() -> None:
              "reverse_malice_technique": icon(ICON_RMT, HEAL),
              "positions": icon_positions(), "switchback": icon_switchback(), "awareness": icon_awareness(),
              "mimic": icon_mimic(), "anchor": icon_anchor(), "send_off": icon_send_off(), "exchange": icon_exchange(),
-             "momentum_exchange": icon_momentum_exchange(), "total_swap": icon_total_swap()}
+             "momentum_exchange": icon_momentum_exchange(), "total_swap": icon_total_swap(),
+             "puppet_creation": icon_puppet_creation(), "possess": icon_possess(), "directive": icon_directive(),
+             "focus": icon_focus(), "curio_burst": icon_curio_burst(), "chain_burst": icon_chain_burst(),
+             "understudy": icon_understudy(), "stand_in": icon_stand_in()}
     for name, img in icons.items():
         save(img, f"gui/ability/{name}.png")
     emblems = {"test_kinetic": emblem_kinetic(), "test_flux": emblem_flux(),
                "test_prism": emblem_prism(), "test_apex": emblem_apex(), "rime": emblem_rime(),
-               "swap": emblem_swap()}
+               "swap": emblem_swap(), "puppet_manipulation": emblem_puppet_manipulation()}
     for name, img in emblems.items():
         save(img, f"gui/emblem/{name}.png")
 

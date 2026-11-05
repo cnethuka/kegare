@@ -70,6 +70,7 @@ public final class PossessionClient {
             hud = PuppetHud.Payload.NONE;
         });
         StatusLayer.addExtra(PossessionClient::status);
+        PuppetHudClient.init();
     }
 
     /** The owner's latest HUD numbers (puppet count, order, possession). */
