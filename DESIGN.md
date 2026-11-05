@@ -556,10 +556,10 @@ Package `com.cnethuka.kegare.innate_technique.rime`. **Rarity: RARE.** All numbe
     the slide ends, it stops laying ice and what is there melts on its own time. State loops (shell, cone, charge,
     spire circle) still vanish at once.
   - Photon's model particles scale uniformly, so tall shapes (the spike) are stacks of cubes.
-- **Effect authoring:** the effects are built from Photon's own objects in `RimeFxAuthoring` and written with
-  Photon's serializer, the same `.fx` format the editor exports. In a dev client, `/kegarefx export` rewrites them
-  (and the running game's copy), and `/kegarefx play <name> [front|self|loop]` previews one. The command exists
-  only in the dev environment.
+- **Effect authoring:** the effects are built from Photon's own objects in `RimeFxAuthoring` (building blocks in the
+  shared `client.visual.FxKit`) and written with Photon's serializer, the same `.fx` format the editor exports. In a
+  dev client, `/kegarefx export` rewrites every effect in `FxCatalog` (Rime's and RMT's, and the running game's
+  copy), and `/kegarefx play <name> [front|self|loop]` previews one. The command exists only in the dev environment.
 - **Advancements** (Rime tab, root `kegare:innate_technique/rime`, which unlocks on first rolling Rime). All are
   hidden, use `minecraft:impossible`, are awarded from code, and are never announced in chat: they would reveal who
   has Rime. Datagen enforces this for every advancement under `innate_technique/`. Only a player who currently holds
@@ -663,6 +663,33 @@ separate bar is filled from any of them.
 - **Tests:** `LoadoutTest` (in-game JUnit): default layout, moving instead of duplicating, empty slots, the ultimate
   and bad slots, other techniques' abilities, mid-cast and in-combat refusals, toggles switching off, reset on a new
   technique, login repair.
+
+### 3.17 Reverse Malice Technique (RMT)
+Package `rmt`. The first **shared** ability (§3.16), ID `kegare:reverse_malice_technique`. Numbers in
+`[reverse_malice_technique]` of `kegare-server.toml`.
+- **Locked by default.** Found through the green orb (§3.18); `/kegare shared unlock|lock` for admins. Severed
+  players can never unlock it (`SharedAbilityService.unlock` refuses) or cast it (the cast pipeline refuses Severed
+  players for everything).
+- **CHANNELED:** hold the cast key (right-click in Technique Mode, C in SPLIT) to heal **2 HP** at the end of every
+  full second held (`healPerSecond`); release to stop. Never above max health; once there is nothing left to heal
+  the channel ends by itself ("Fully healed."). At full health it is refused before anything is paid ("You aren't
+  hurt.").
+- **Expensive:** 10 Malice to start, then **24 Malice/s**, about double a typical attack's cost. Shared abilities take
+  no innate technique's surroundings modifier.
+- **Ends** like every channel: release, out of Malice, `maxDuration` (0 = none), a stun or a freeze (interrupted);
+  plus fully healed. The **15 s cooldown** starts when it ends.
+- **No special:** R on it fizzles at no cost.
+- **Visuals:** PAL `rmt_channel` (loop: hands drawn to the chest, head bowed) in `player_animations/rmt.json`;
+  Photon `rmt/rmt_channel_aura` (green motes rising round the body, white sparkles circling, a faint glow at the
+  chest) and `rmt/rmt_heal_pulse` (each heal: a green ring on the ground, rising glints, a soft flash), authored in
+  `RmtFxAuthoring` with the shared `FxKit` building blocks. Vanilla fallback: happy-villager sparkles.
+  Palette: green and white, never Malice violet.
+- **Icon** `textures/gui/ability/reverse_malice_technique.png`: a plus inside a ring that turns back on itself, in its
+  own green ramp (`gen_art.py`), independent of any innate technique or Malice color. Own name, description and
+  tooltip in the lang file.
+- **Tests:** `RmtTest`: Severed can't unlock; locked can't be slotted; swap a Rime ability for it; refused at full
+  health; R fizzles; start cost, heal after each full second, upkeep; cooldown on release; a freeze interrupts it;
+  ends when fully healed; a reroll resets the loadout but keeps the unlock; locking takes it off the bar.
 
 ---
 

@@ -162,6 +162,17 @@ public final class CastManager {
     }
 
     /**
+     * Ends the running channel from code as if it had run its course (e.g. a heal with nothing left to heal):
+     * {@code onEnd} with {@link EndReason#EXPIRED}, then the cooldown. Safe to call from the channel's own tick.
+     */
+    public static void finishChannel(ServerPlayer player) {
+        CastState.Active cast = state(player).casting;
+        Optional<InnateTechnique> innateTechnique = InnateTechniqueService.current(player);
+        if (cast == null || cast.ability.castType() != CastType.CHANNELED || innateTechnique.isEmpty()) return;
+        endChannel(player, innateTechnique.get(), cast, EndReason.EXPIRED);
+    }
+
+    /**
      * Switches a running TOGGLE off from code (e.g. a special that uses it up, with {@link EndReason#CONSUMED}).
      * It ends as usual: {@code onEnd}, then its cooldown. Returns whether it was on.
      */
@@ -221,7 +232,8 @@ public final class CastManager {
                     } else {
                         ability.tick(new AbilityContext(player, innateTechnique, ability, cast.slot, 1f, cast.activeTicks));
                         int max = ability.maxChannelTicks(player);
-                        if (max > 0 && cast.activeTicks >= max) endChannel(player, innateTechnique, cast, EndReason.EXPIRED);
+                        // (the tick may have finished the channel itself)
+                        if (state.casting == cast && max > 0 && cast.activeTicks >= max) endChannel(player, innateTechnique, cast, EndReason.EXPIRED);
                     }
                 }
             }

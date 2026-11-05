@@ -189,6 +189,13 @@ public final class KegareLanguageProvider extends LanguageProvider {
         add("message.kegare.cast.no_ultimate", "Your " + INNATE_TECHNIQUE + " has no ultimate.");
         add("message.kegare.cast.empty_slot", "That slot is empty. Fill it on the Sorcerer screen's Loadout page.");
 
+        // Reverse Malice Technique (shared ability)
+        add("ability.kegare.reverse_malice_technique", "Reverse Malice Technique");
+        add("ability.kegare.reverse_malice_technique.desc", "Turn " + MALICE + " back on your own body. Hold to heal a little every second; "
+                + "release to stop. It drains " + MALICE + " fast. Interrupted by stuns and freezing like any channel.");
+        add("message.kegare.rmt.not_hurt", "You aren't hurt.");
+        add("message.kegare.rmt.healed", "Fully healed.");
+
         // Loadout
         add("ability_category.kegare.innate_technique", INNATE_TECHNIQUE);
         add("ability_category.kegare.innate_technique.desc", "Abilities of your " + INNATE_TECHNIQUE + ". A reroll replaces them.");

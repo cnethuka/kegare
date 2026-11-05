@@ -1,4 +1,4 @@
-package com.cnethuka.kegare.innate_technique.rime.client;
+package com.cnethuka.kegare.client.visual;
 
 import com.cnethuka.kegare.Kegare;
 import com.cnethuka.kegare.client.visual.ClientVisuals;
@@ -25,14 +25,14 @@ import net.neoforged.fml.loading.FMLPaths;
 import net.neoforged.neoforge.client.event.RegisterClientCommandsEvent;
 
 /**
- * DEV TOOL, registered only in the dev environment. {@code /kegarefx export} writes Rime's effects from
- * {@link RimeFxAuthoring} into the project's resources (and the running game's copy, then drops Photon's cache so the
- * new versions play at once). {@code /kegarefx play <name> [self|front]} previews one.
+ * DEV TOOL, registered only in the dev environment. {@code /kegarefx export} writes every effect in
+ * {@link FxCatalog} into the project's resources (and the running game's copy, then drops Photon's cache so the new
+ * versions play at once). {@code /kegarefx play <name> [self|front|loop]} previews one.
  * Text here is developer-only, so it is not in the lang file.
  */
 @EventBusSubscriber(modid = Kegare.MODID, value = Dist.CLIENT)
-public final class RimeFxDevCommand {
-    private RimeFxDevCommand() {}
+public final class FxDevCommand {
+    private FxDevCommand() {}
 
     @SubscribeEvent
     static void register(RegisterClientCommandsEvent event) {
@@ -51,7 +51,7 @@ public final class RimeFxDevCommand {
 
     private static List<String> names() {
         List<String> out = new ArrayList<>();
-        RimeFxAuthoring.effects().keySet().forEach(id -> out.add(id.getPath().substring(id.getPath().lastIndexOf('/') + 1)));
+        FxCatalog.effects().keySet().forEach(id -> out.add(shortName(id)));
         return out;
     }
 
@@ -62,9 +62,9 @@ public final class RimeFxDevCommand {
             int files = 0;
             for (Path root : roots) {
                 if (!Files.isDirectory(root.getParent())) continue;
-                files += RimeFxAuthoring.export(root).size();
+                files += FxKit.export(FxCatalog.effects(), root).size();
             }
-            FXHelper.invalidate(new ArrayList<>(RimeFxAuthoring.effects().keySet()));
+            FXHelper.invalidate(new ArrayList<>(FxCatalog.effects().keySet()));
             int count = files;
             source.sendSuccess(() -> Component.literal("Exported " + count + " .fx files under " + project), false);
             return 1;
@@ -78,7 +78,8 @@ public final class RimeFxDevCommand {
     private static int play(CommandSourceStack source, String name, String where) {
         Player player = Minecraft.getInstance().player;
         if (player == null) return 0;
-        ResourceLocation id = Kegare.id("rime/" + name);
+        ResourceLocation id = FxCatalog.effects().keySet().stream().filter(e -> shortName(e).equals(name)).findFirst().orElse(null);
+        if (id == null) return 0;
         switch (where) {
             case "self" -> ClientVisuals.playOnce(player, Visual.effect(id, Visual.Anchor.BODY));
             case "loop" -> ClientVisuals.startLoop(player, "dev:" + name, Visual.effect(id, Visual.Anchor.EYES), 0);
@@ -88,5 +89,9 @@ public final class RimeFxDevCommand {
             }
         }
         return 1;
+    }
+
+    private static String shortName(ResourceLocation id) {
+        return id.getPath().substring(id.getPath().lastIndexOf('/') + 1);
     }
 }

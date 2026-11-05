@@ -1,5 +1,9 @@
 package com.cnethuka.kegare.innate_technique.rime.client;
 
+import static com.cnethuka.kegare.client.visual.FxKit.*;
+
+import com.cnethuka.kegare.client.visual.FxKit;
+
 import com.cnethuka.kegare.innate_technique.rime.RimeIds;
 import com.lowdragmc.lowdraglib2.Platform;
 import com.lowdragmc.lowdraglib2.math.GradientColor;
@@ -83,21 +87,6 @@ public final class RimeFxAuthoring {
         out.put(RimeIds.FX_ICE_PATH_TRAIL, RimeFxAuthoring::icePathTrail);
         out.put(RimeIds.FX_SHATTER_SHELL_BURST, RimeFxAuthoring::shatterShellBurst);
         return out;
-    }
-
-    /** Writes every effect under {@code <assetsRoot>/<namespace>/fx/<path>.fx}. Returns the files written. */
-    public static List<Path> export(Path assetsRoot) throws IOException {
-        List<Path> written = new java.util.ArrayList<>();
-        for (Map.Entry<ResourceLocation, Supplier<FX>> e : effects().entrySet()) {
-            ResourceLocation id = e.getKey();
-            Path file = assetsRoot.resolve(id.getNamespace()).resolve("fx").resolve(id.getPath() + FX.SUFFIX);
-            CompoundTag tag = e.getValue().get().serializeNBT(Platform.getFrozenRegistry());
-            tag.putInt("version", FXProject.VERSION);
-            Files.createDirectories(file.getParent());
-            NbtIo.writeCompressed(tag, file);
-            written.add(file);
-        }
-        return written;
     }
 
     // ================================================================ effects
@@ -769,175 +758,12 @@ public final class RimeFxAuthoring {
         return fx(ring, fragments, glints, mist);
     }
 
-    /**
-     * A size curve that shoots from a stub to full size in the first 2.5% of the life (5 ticks of a 200-tick life),
-     * then holds. ECBCurves takes cubic Bezier segments of 8 floats (start, two controls, end), each spanning its own
-     * stretch of the life.
-     */
-    private static NumberFunction shootUp() {
-        return new Curve(0, 1, 0, 1, "t", "v", new ECBCurves(
-                0f, 0.05f, 0.004f, 1f, 0.012f, 1f, 0.025f, 1f,
-                0.025f, 1f, 0.35f, 1f, 0.7f, 1f, 1f, 1f));
-    }
 
-    // ================================================================ building blocks
+    // ================================================================ Rime-only building blocks
 
-    private static FX fx(IFXObject... objects) {
-        FX fx = new FX();
-        fx.getFxData().objects().addAll(List.of(objects));
-        return fx;
-    }
-
-    private static ParticleEmitter emitter(String name, boolean looping, int duration) {
-        ParticleEmitter e = new ParticleEmitter();
-        e.setName(name);
-        e.config.setLooping(looping);
-        e.config.setDuration(duration);
-        e.config.renderer.setUseGPUInstance(false);
-        return e;
-    }
-
-    /** A one-shot burst of {@code count} particles (the emitter plays once). */
-    private static ParticleEmitter burstEmitter(String name, int count, int maxParticles) {
-        ParticleEmitter e = emitter(name, false, 40);
-        e.config.setMaxParticles(maxParticles);
-        e.config.emission.setEmissionRate(NumberFunction.constant(0));
-        e.config.emission.getBursts().add(burst(0, count));
-        return e;
-    }
-
-    /** One particle, once, that lives {@code lifetime} ticks at {@code size} (flashes, rings). */
-    private static ParticleEmitter single(String name, int lifetime, float size) {
-        ParticleEmitter e = burstEmitter(name, 1, 1);
-        e.config.setStartLifetime(NumberFunction.constant(lifetime));
-        e.config.setStartSpeed(NumberFunction.constant(0));
-        e.config.setStartSize(uniform(NumberFunction.constant(size)));
-        e.config.shape.setScale(new NumberFunction3(0, 0, 0));
-        return e;
-    }
-
-    /**
-     * A ribbon behind a moving anchor: one particle riding the anchor (local space) whose trail records its path.
-     * The particle itself is not drawn. Built the way Photon's gallery builds its energy-trail showcase.
-     */
+    /** An ice ribbon (pale to cyan to clear blue) with Rime's energy-trail material. */
     private static ParticleEmitter ribbon(String name, float width, int lengthTicks, int color) {
-        ParticleEmitter e = emitter(name, true, 40);
-        ParticleConfig c = e.config;
-        c.setMaxParticles(1);
-        c.setStartLifetime(NumberFunction.constant(40));
-        c.setStartSpeed(NumberFunction.constant(0));
-        c.setStartSize(uniform(NumberFunction.constant(width)));
-        c.shape.setScale(new NumberFunction3(0, 0, 0));
-        c.emission.setEmissionRate(NumberFunction.constant(0));
-        c.emission.getBursts().add(burst(0, 1));
-        c.renderer.setRenderMode(ParticleRendererSetting.Mode.None);
-        c.renderer.getMaterials().clear();
-        var trails = c.trails;
-        trails.setEnable(true);
-        trails.setRatio(1f);
-        trails.setLifetime(NumberFunction.constant(lengthTicks));
-        trails.setSizeAffectsWidth(true);
-        trails.setColorOverLifetime(gradient(color, CYAN, 0x003A8FCC));
-        trails.config.setWidthOverTrail(curve(1f, 0f));
-        trails.config.renderer.getMaterials().clear();
-        trails.config.renderer.getMaterials().add(new MaterialSetting(recolor(KilaPresets.ENERGY_TRAIL.create(), 0.45f, 0.82f, 1f, 1.5f)));
-        MaterialRequirements.fix(trails.config.renderer.getMaterials(), trails.config.additionalGPUDataSetting, false,
-                trails.config.renderer::isUseGPUInstance, trails.config.renderer::setUseGPUInstance);
-        return e;
-    }
-
-    private static EmissionSetting.Burst burst(int time, int count) {
-        EmissionSetting.Burst b = new EmissionSetting.Burst();
-        b.time = time;
-        b.cycles = 1;
-        b.setCount(NumberFunction.constant(count));
-        return b;
-    }
-
-    private static Sphere sphere(float radius) {
-        Sphere s = new Sphere();
-        s.setRadius(radius);
-        return s;
-    }
-
-    private static Cone cone(float angle, float radius) {
-        Cone c = new Cone();
-        c.setAngle(angle);
-        c.setRadius(radius);
-        return c;
-    }
-
-    private static void material(ParticleEmitter emitter, IMaterial material) {
-        emitter.config.renderer.getMaterials().clear();
-        emitter.config.renderer.getMaterials().add(new MaterialSetting(material));
-    }
-
-    /** Additive glow sprite (Kila GLOW preset), recoloured. */
-    private static KilaMaterial glow(float r, float g, float b, float intensity) {
-        return recolor(KilaPresets.GLOW.create(), r, g, b, intensity);
-    }
-
-    /** Soft frosty mist (Kila SMOKE preset), pale blue, alpha-blended. */
-    private static KilaMaterial mist() {
-        KilaMaterial m = KilaPresets.SMOKE.create();
-        m.color = new HDRColor(0.78f, 0.92f, 1f, 0.75f, 1f);
-        m.worldLight = false;
-        return m;
-    }
-
-    private static KilaMaterial recolor(KilaMaterial m, float r, float g, float b, float intensity) {
-        m.color = new HDRColor(r, g, b, 1f, intensity);
-        m.worldLight = false;
-        if (m.blend == BlendMode.Preset.ALPHA) m.blend = BlendMode.Preset.ADDITIVE;
-        return m;
-    }
-
-    private static NumberFunction range(float min, float max) {
-        return new RandomConstant(min, max);
-    }
-
-    private static NumberFunction3 uniform(NumberFunction f) {
-        return new NumberFunction3(f, f, f);
-    }
-
-    /** A 0..1 curve from {@code start} to {@code end} over the particle's life (smooth). */
-    private static NumberFunction curve(float start, float end) {
-        return new Curve(0, 1, 0, 1, "t", "v", new ECBCurves(0, start, 0.3f, start, 0.7f, end, 1, end));
-    }
-
-    private static Gradient gradient(int... argb) {
-        return new Gradient(new GradientColor(argb));
-    }
-
-    private static void fadeOut(ParticleConfig c, int from, int to) {
-        c.colorOverLifetime.setEnable(true);
-        c.colorOverLifetime.setColor(gradient(from, to, to & 0x00FFFFFF));
-    }
-
-    private static void fadeIn(ParticleConfig c, int from, int to) {
-        c.colorOverLifetime.setEnable(true);
-        c.colorOverLifetime.setColor(gradient(from & 0x00FFFFFF, from, to));
-    }
-
-    private static void fadeInOut(ParticleConfig c, int peak, int edge) {
-        c.colorOverLifetime.setEnable(true);
-        c.colorOverLifetime.setColor(gradient(edge & 0x00FFFFFF, peak, edge & 0x00FFFFFF));
-    }
-
-    private static void shrink(ParticleConfig c) {
-        c.sizeOverLifetime.setEnable(true);
-        c.sizeOverLifetime.setSize(uniform(curve(1f, 0f)));
-    }
-
-    /** Grows from {@code from} (fraction) to full size over its life. */
-    private static void grow(ParticleConfig c, float from) {
-        c.sizeOverLifetime.setEnable(true);
-        c.sizeOverLifetime.setSize(uniform(curve(from, 1f)));
-    }
-
-    private static void gravity(ParticleConfig c, float g) {
-        c.physics.setEnable(true);
-        c.physics.setHasCollision(false);
-        c.physics.setGravity(NumberFunction.constant(g));
+        return FxKit.ribbon(name, width, lengthTicks, gradient(color, CYAN, 0x003A8FCC),
+                recolor(KilaPresets.ENERGY_TRAIL.create(), 0.45f, 0.82f, 1f, 1.5f));
     }
 }

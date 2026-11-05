@@ -137,6 +137,7 @@ public final class KegareServerConfig {
         b.pop();
 
         com.cnethuka.kegare.innate_technique.rime.RimeConfig.define(b);
+        com.cnethuka.kegare.rmt.RmtConfig.define(b);
 
         b.comment("TEST CONTENT: numbers for the placeholder test abilities. Delete with the test innate techniques.").push("test_abilities");
         b.push("dash");

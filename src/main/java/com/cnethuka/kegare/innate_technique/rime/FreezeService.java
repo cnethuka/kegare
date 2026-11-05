@@ -117,7 +117,7 @@ public final class FreezeService {
     }
 
     /** Clears everything (death): no shatter, no immunity. */
-    static void clear(LivingEntity entity) {
+    public static void clear(LivingEntity entity) {
         if (!entity.hasData(RimeRegistry.FREEZE)) return;
         FreezeData data = get(entity);
         data.stacks = 0;

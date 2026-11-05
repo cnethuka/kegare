@@ -47,6 +47,7 @@ SILVER = ramp("#141416", "#24242a", "#36363e", "#4d4d57", "#6c6c78", "#9a9aa6", 
 JADE = ramp("#06160f", "#0d2a1d", "#16442f", "#226646", "#3a9468", "#72c99a", "#cff5df")
 PAPER = ramp("#b8a77c", "#cdbd93", "#ddd0ad", "#ebe1c4", "#f6efdb")
 SEAL = ramp("#5c0f0c", "#8c1a14", "#b3261e", "#d94a3a", "#f08a76")
+HEAL = ramp("#06210f", "#0c3d1c", "#15652d", "#22a046", "#4ed873", "#a6f5b8", "#f2fff4")  # Reverse Malice Technique
 ICE = ramp("#081428", "#0f2d55", "#1a5590", "#3a8fcc", "#79c8ec", "#c2eefa", "#f2fdff")  # Rime: deep blue to white
 
 
@@ -850,6 +851,27 @@ ICON_RIME_SHELL = [
 ]
 
 
+# Reverse Malice Technique: a plus inside a ring that turns back on itself (green and white, never Malice violet).
+ICON_RMT = [
+    "................",
+    "......KKKK......",
+    "....KK4444KK....",
+    "...K44KKKK44K...",
+    "..K4K..KK..K4K..",
+    "..K4K.K66K..KK..",
+    ".K4K.KK66KK.K5K.",
+    ".K4KK666666KK54K",
+    ".K4KK655556K.K5K",
+    ".K4K.KK66KK..KK.",
+    "..K4K.K66K......",
+    "..K4K..KK..K4K..",
+    "...K44KKKK44K...",
+    "....KK4444KK....",
+    "......KKKK......",
+    "................",
+]
+
+
 def emblem_rime() -> Image.Image:
     """A six-armed snowflake of brush strokes with crystal branches over a deep-blue vignette."""
     img = vignette(48, ICE, seed=301)
@@ -1093,7 +1115,8 @@ def main() -> None:
              "test_hover": icon(ICON_HOVER, MALICE), "test_aura": icon(ICON_AURA, MALICE),
              "test_shockwave": icon(ICON_SHOCKWAVE, MALICE),
              "frost_shard": icon(ICON_FROST_SHARD, ICE), "glacial_lance": icon(ICON_GLACIAL_LANCE, ICE),
-             "frost_field": icon(ICON_FROST_FIELD, ICE), "rime_shell": icon(ICON_RIME_SHELL, ICE)}
+             "frost_field": icon(ICON_FROST_FIELD, ICE), "rime_shell": icon(ICON_RIME_SHELL, ICE),
+             "reverse_malice_technique": icon(ICON_RMT, HEAL)}
     for name, img in icons.items():
         save(img, f"gui/ability/{name}.png")
     emblems = {"test_kinetic": emblem_kinetic(), "test_flux": emblem_flux(),
