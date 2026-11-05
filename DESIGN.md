@@ -392,6 +392,8 @@ a result back; they only send requests the server re-validates. All text comes f
   cooldown sweeps and seconds left. The hovered slot is gold, the current one is outlined white, and active toggles
   green.
 - Release (or click) over a slot to select it. Releasing in the center or pressing Esc keeps the current one.
+- The centre shows the hovered ability's name, cast type, current cost and its special ("R: Splinter"). The hint
+  sits above the ring, clear of the ability bar.
 
 **Layout and testing**
 - Layouts are computed from the screen size and support GUI sizes down to Minecraft's minimum of 320×240.
@@ -508,7 +510,7 @@ Package `com.cnethuka.kegare.innate_technique.rime`. **Rarity: RARE.** All numbe
   | Special (of) | Type | What it does (defaults) |
   |---|---|---|
   | **Splinter** (Frost Shard) | INSTANT | Three smaller shards in a fan, 9° apart (`spreadAngle`), 2 blocks/tick, 1 s flight. 2 damage and +1 Freeze stack each. Shards of one cast skip the hurt cooldown a sibling left, so all three can land on one target (other attacks still respect it). Real projectiles (`SplinterShardEntity`), damage type `kegare:rime`. Cost 14, cooldown 3 s. |
-  | **Glacial Spire** (Glacial Lance) | CHARGED | Hold up to 2 s (a tap under 0.3 s fizzles) while aiming at the ground within 20 blocks. Aiming at a wall picks the floor in front of it; no ground in range at release fizzles for free ("Glacial Spire needs ground within 20 blocks."). While charging, only the caster sees a ring of frost dust where it will rise. On release a marker entity (`GlacialSpireEntity`, never saved, no blocks) shows a frost warning circle (radius 1.5) for 0.75 s, then an ice spike erupts: 6 damage, +2 Freeze stacks, and everyone on it (up to 2.5 blocks above the ground) is launched upward at 0.6 to 1.2 blocks/tick by charge. The spike stands 1.25 s, then shatters. Cost 30, cooldown 8 s. |
+  | **Glacial Spire** (Glacial Lance) | CHARGED | Hold up to 2 s (a tap under 0.3 s fizzles) while aiming at the ground within 20 blocks. Aiming at a wall picks the floor in front of it; no ground in range at release fizzles for free ("Glacial Spire needs ground within 20 blocks."). While charging, only the caster sees a ring of frost dust where it will rise. On release a marker entity (`GlacialSpireEntity`, never saved, no blocks) shows a frost warning circle (radius 1.5) for 0.75 s, with a curtain of glints rising from its edge past head height so a player standing in it sees the warning while looking straight ahead, then an ice spike erupts: 6 damage, +2 Freeze stacks, and everyone on it (up to 2.5 blocks above the ground) is launched upward at 0.6 to 1.2 blocks/tick by charge. The spike stands 1.25 s, then shatters. Cost 30, cooldown 8 s. |
   | **Ice Path** (Frost Field) | CHANNELED | Hold R: you slide the way you look at 0.65 blocks/tick (step height +0.5 so you ride up blocks; no fall damage while sliding) over an ice trail laid under your feet. Anyone else within 0.9 blocks of the trail gets Slowness II until it melts, 4 s after each bit was laid. The trail is server-side points (`IcePaths`, a level attachment), never blocks. Cost 8, then 10 Malice/s; max 3 s; cooldown 6 s after it ends. |
   | **Shatter Shell** (Rime Shell) | INSTANT | Burst outward: everyone within 4.5 blocks is knocked back (1.4) and gets +2 Freeze stacks. With Rime Shell on, the shell is used up (`EndReason.CONSUMED`) and it costs 8; with no shell up it costs 22. The HUD and Sorcerer screen show whichever applies right now. Cooldown 8 s. |
 
@@ -544,7 +546,7 @@ Package `com.cnethuka.kegare.innate_technique.rime`. **Rarity: RARE.** All numbe
   vanilla-particle lookalike for the fallback.
   - Specials: animations `splinter_cast`, `glacial_spire_charge` (loop), `glacial_spire_release`, `ice_path_slide`
     (loop, a surfing stance) and `shatter_shell_cast`. Effects `splinter_cast`, `splinter_trail`,
-    `glacial_spire_charge` (frost round the lowered hand), `glacial_spire_warning` (the frost circle, a loop on the
+    `glacial_spire_charge` (frost round the lowered hand), `glacial_spire_warning` (the frost circle plus a curtain of rising glints, a loop on the
     marker), `glacial_spire_spike` (a stack of crystal cubes, a loop on the marker), `glacial_spire_erupt`,
     `ice_path_trail` and `shatter_shell_burst`.
   - `ice_path_trail` is a **lingering** loop (`Visual.lingering`): what it throws up stays in the world and fades on

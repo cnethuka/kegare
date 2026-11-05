@@ -86,6 +86,8 @@ class SpecialsTest {
             assertNull(CastManager.state(p).casting(), "no trait: Updraft fizzles");
             assertEquals(before, malice(p), EPS);
 
+            // Tests share one server, and any fake player's birth can roll the (unique) trait: free it first.
+            com.cnethuka.kegare.trait.TraitSuccession.release(server, KegareTraits.SIX_EYES.get());
             assertEquals(TraitService.AddResult.ADDED, TraitService.add(p, KegareTraits.SIX_EYES.get(), Trait.AddReason.ADMIN));
             CastManager.handleIntent(p, CastIntent.SPECIAL_PRESS);
             CastState.Active charging = CastManager.state(p).casting();

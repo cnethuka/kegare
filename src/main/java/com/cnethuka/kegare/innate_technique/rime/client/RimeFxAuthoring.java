@@ -475,7 +475,10 @@ public final class RimeFxAuthoring {
         return fx(core, swirl);
     }
 
-    /** Glacial Spire's warning: a pulsing frost circle flat on the ground (authored for the default 1.5 radius). */
+    /**
+     * Glacial Spire's warning: a pulsing frost circle flat on the ground (authored for the default 1.5 radius), frost
+     * rising inside it, and a curtain of glints rising from its edge.
+     */
     private static FX glacialSpireWarning() {
         ParticleEmitter ring = emitter("ring", true, 8);
         ParticleConfig c = ring.config;
@@ -521,7 +524,25 @@ public final class RimeFxAuthoring {
         f.velocityOverLifetime.setLinear(new NumberFunction3(0, 0.8f, 0));
         fadeInOut(f, WHITE, CYAN);
         material(frost, glow(0.5f, 0.85f, 1f, 1.2f));
-        return fx(ring, disc, frost);
+
+        // A curtain of glints rising from the circle's edge past head height: someone standing in it sees the warning
+        // at the edge of their view even while looking straight ahead (the circle itself is below it).
+        ParticleEmitter curtain = emitter("curtain", true, 20);
+        ParticleConfig k = curtain.config;
+        k.setMaxParticles(200);
+        k.setStartLifetime(range(14, 20));
+        k.setStartSpeed(NumberFunction.constant(0));
+        k.setStartSize(uniform(range(0.03f, 0.055f)));
+        Sphere edge = sphere(1.5f);
+        edge.setRadiusThickness(0f);
+        k.shape.setShape(edge);
+        k.shape.setScale(new NumberFunction3(1f, 0f, 1f));
+        k.emission.setEmissionRate(NumberFunction.constant(6f));
+        k.velocityOverLifetime.setEnable(true);
+        k.velocityOverLifetime.setLinear(new NumberFunction3(0, 3.4f, 0));
+        fadeInOut(k, WHITE, CYAN);
+        material(curtain, glow(0.5f, 0.86f, 1f, 1.1f));
+        return fx(ring, disc, frost, curtain);
     }
 
     /**

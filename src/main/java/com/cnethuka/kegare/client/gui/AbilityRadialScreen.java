@@ -114,7 +114,8 @@ public final class AbilityRadialScreen extends Screen {
         CostTooltip.shortLine(ability.id()).ifPresent(line -> GuiDraw.centered(g, font, line, cx, cy + 2 + font.lineHeight + 1, 1f, GuiDraw.MALICE));
         ability.special().ifPresent(special -> GuiDraw.centered(g, font, Component.translatable("gui.kegare.radial.special",
                 KegareKeys.SPECIAL.getTranslatedKeyMessage(), special.displayName()), cx, cy + 2 + 2 * (font.lineHeight + 1), 1f, GuiDraw.GOLD));
-        GuiDraw.centered(g, font, Component.translatable("gui.kegare.radial.hint"), cx, Math.min(height - 12, cy + r + SLOT), 1f, GuiDraw.GRAY);
+        // Above the ring: below it would sit on the ability bar.
+        GuiDraw.centered(g, font, Component.translatable("gui.kegare.radial.hint"), cx, Math.max(4, cy - r - SLOT - 6), 1f, GuiDraw.GRAY);
     }
 
     /** Slot 0 at the top, then clockwise. */

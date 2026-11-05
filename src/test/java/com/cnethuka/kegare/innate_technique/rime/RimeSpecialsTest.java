@@ -135,9 +135,59 @@ class RimeSpecialsTest {
             CastManager.handleIntent(p, CastIntent.SPECIAL_PRESS);
             assertEquals(before - noShell, malice(p), 1e-3, "paid the without-shell cost");
 
+            // Shattered Pressure: three players caught by one Shatter Shell (two aren't enough). NeoForge's fake
+            // players ignore advancements, so this caster keeps real ones.
+            ServerPlayer shatterCaster = withRealAdvancements(server, level, "rime_shatter_caster");
+            BirthService.rebirth(shatterCaster, OptionalInt.of(1000));
+            InnateTechniqueService.setInnateTechnique(shatterCaster, Rime.RIME.get());
+            InnateTechniqueService.select(shatterCaster, 3);
+            shatterCaster.moveTo(0.5, ground, 0.5, 0f, 0f);
+            MaliceService.refill(shatterCaster);
+            ServerPlayer a = TestServer.player(server, "rime_target_a");
+            ServerPlayer b = TestServer.player(server, "rime_target_b");
+            ServerPlayer c = TestServer.player(server, "rime_target_c");
+            // Fake players aren't in the level until added, and area queries only see entities that are.
+            for (ServerPlayer t : List.of(a, b, c)) level.addNewPlayer(t);
+            a.moveTo(shatterCaster.getX() + 2, shatterCaster.getY(), shatterCaster.getZ(), 0f, 0f);
+            b.moveTo(shatterCaster.getX() - 2, shatterCaster.getY(), shatterCaster.getZ(), 0f, 0f);
+            c.moveTo(shatterCaster.getX(), shatterCaster.getY(), shatterCaster.getZ() + 40, 0f, 0f); // out of range for the first burst
+            CastManager.handleIntent(shatterCaster, CastIntent.SPECIAL_PRESS);
+            assertEquals(RimeConfig.SHATTER_FREEZE_STACKS.get(), FreezeService.stacks(a), "setup: the burst reached the players");
+            assertEquals(0, FreezeService.stacks(c), "setup: the far one was out of range");
+            assertFalse(hasAdvancement(server, shatterCaster, RimeAdvancements.SHATTERED_PRESSURE), "two players: not yet");
+            InnateTechniqueService.clearCooldowns(shatterCaster);
+            MaliceService.refill(shatterCaster);
+            for (ServerPlayer t : List.of(a, b, c)) FreezeService.clear(t);
+            a.moveTo(shatterCaster.getX() + 2, shatterCaster.getY(), shatterCaster.getZ(), 0f, 0f);
+            b.moveTo(shatterCaster.getX() - 2, shatterCaster.getY(), shatterCaster.getZ(), 0f, 0f);
+            c.moveTo(shatterCaster.getX(), shatterCaster.getY(), shatterCaster.getZ() + 2, 0f, 0f);
+            CastManager.handleIntent(shatterCaster, CastIntent.SPECIAL_PRESS);
+            for (ServerPlayer t : List.of(a, b, c)) {
+                assertEquals(RimeConfig.SHATTER_FREEZE_STACKS.get(), FreezeService.stacks(t), "setup: the second burst reached " + t.getGameProfile().getName());
+            }
+            assertTrue(Rime.holds(shatterCaster), "setup: the caster holds Rime");
+            assertTrue(hasAdvancement(server, shatterCaster, RimeAdvancements.SHATTERED_PRESSURE), "three players in one burst");
+            for (ServerPlayer t : List.of(a, b, c)) level.removePlayerImmediately(t, net.minecraft.world.entity.Entity.RemovalReason.DISCARDED);
+
             cow.discard();
             CastManager.stopAll(p, com.cnethuka.kegare.innatetechnique.EndReason.CANCELLED);
         });
+    }
+
+    private static ServerPlayer withRealAdvancements(MinecraftServer server, ServerLevel level, String name) {
+        java.util.UUID uuid = java.util.UUID.nameUUIDFromBytes(("kegare-test:" + name).getBytes(java.nio.charset.StandardCharsets.UTF_8));
+        return new net.neoforged.neoforge.common.util.FakePlayer(level, new com.mojang.authlib.GameProfile(uuid, name)) {
+            @Override
+            public boolean isFakePlayer() {
+                return false; // NeoForge gives fake players throwaway advancements; this one keeps real ones
+            }
+        };
+    }
+
+    private static boolean hasAdvancement(MinecraftServer server, ServerPlayer p, net.minecraft.resources.ResourceLocation id) {
+        var holder = server.getAdvancements().get(id);
+        assertNotNull(holder, "advancement " + id + " is loaded");
+        return p.getAdvancements().getOrStartProgress(holder).isDone();
     }
 
     private static double malice(ServerPlayer p) {
