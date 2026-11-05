@@ -15,6 +15,10 @@ import com.cnethuka.kegare.innatetechnique.CastType;
 import com.cnethuka.kegare.innatetechnique.InnateTechniqueData;
 import com.cnethuka.kegare.innatetechnique.InnateTechniqueService;
 import com.cnethuka.kegare.trait.TraitService;
+import com.cnethuka.kegare.combat.CombatHelper;
+import com.cnethuka.kegare.loadout.LoadoutService;
+import com.cnethuka.kegare.loadout.SharedAbilities;
+import com.cnethuka.kegare.loadout.SharedAbilityService;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -45,7 +49,10 @@ public record SyncPayload(
         List<AbilityCost> costs,
         int freezeStacks,
         int maxFreezeStacks,
-        long frozenUntil
+        long frozenUntil,
+        List<Optional<ResourceLocation>> loadout,
+        List<ResourceLocation> sharedUnlocked,
+        boolean inCombat
 ) implements CustomPacketPayload {
     public record CooldownEntry(ResourceLocation ability, long endTick, int duration) {}
 
@@ -83,6 +90,9 @@ public record SyncPayload(
         technique.ifPresent(t -> {
             for (Ability a : t.everyAbility()) costs.add(new AbilityCost(a.id(), (float) a.cost(player), (float) a.upkeepPerSecond(player)));
         });
+        for (Ability a : SharedAbilities.all()) {
+            if (SharedAbilityService.isUnlocked(player, a.id())) costs.add(new AbilityCost(a.id(), (float) a.cost(player), (float) a.upkeepPerSecond(player)));
+        }
 
         return new SyncPayload(
                 malice.isBorn(), malice.isSevered(), malice.tier().ordinal(), malice.capacity(), (float) malice.current(),
@@ -90,7 +100,9 @@ public record SyncPayload(
                 cooldowns, toggles, casting,
                 new ArrayList<>(TraitService.get(player).view()),
                 environment, costs,
-                FreezeService.stacks(player), RimeConfig.FREEZE_MAX_STACKS.get(), FreezeService.frozenUntil(player));
+                FreezeService.stacks(player), RimeConfig.FREEZE_MAX_STACKS.get(), FreezeService.frozenUntil(player),
+                LoadoutService.slots(player), new ArrayList<>(SharedAbilityService.get(player).unlocked()),
+                CombatHelper.isInCombat(player));
     }
 
     private void write(FriendlyByteBuf buf) {
@@ -127,6 +139,9 @@ public record SyncPayload(
         buf.writeVarInt(freezeStacks);
         buf.writeVarInt(maxFreezeStacks);
         buf.writeVarLong(frozenUntil);
+        buf.writeCollection(loadout, (b, slot) -> b.writeOptional(slot, FriendlyByteBuf::writeResourceLocation));
+        buf.writeCollection(sharedUnlocked, FriendlyByteBuf::writeResourceLocation);
+        buf.writeBoolean(inCombat);
     }
 
     private static SyncPayload read(FriendlyByteBuf buf) {
@@ -145,7 +160,10 @@ public record SyncPayload(
                 new CostEnvironment(buf.readFloat(), buf.readEnum(CostEnvironment.Icon.class),
                         buf.readList(b -> new CostEnvironment.Factor(b.readUtf(128), b.readFloat()))),
                 buf.readList(b -> new AbilityCost(b.readResourceLocation(), b.readFloat(), b.readFloat())),
-                buf.readVarInt(), buf.readVarInt(), buf.readVarLong());
+                buf.readVarInt(), buf.readVarInt(), buf.readVarLong(),
+                buf.readList(b -> b.readOptional(FriendlyByteBuf::readResourceLocation)),
+                buf.readList(FriendlyByteBuf::readResourceLocation),
+                buf.readBoolean());
     }
 
     @Override

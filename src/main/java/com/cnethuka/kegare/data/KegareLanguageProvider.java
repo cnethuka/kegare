@@ -163,6 +163,7 @@ public final class KegareLanguageProvider extends LanguageProvider {
         add("hud.kegare.cooldown", "%ss");
         add("hud.kegare.cost_multiplier", "×%s");
         add("hud.kegare.technique_mode", "Technique Mode");
+        add("hud.kegare.empty_slot", "Empty slot");
         add("hud.kegare.freeze", "Freeze");
         add("hud.kegare.frozen", "Frozen!");
         add("gui.kegare.cost.current", "Cost here: %s " + MALICE);
@@ -186,6 +187,36 @@ public final class KegareLanguageProvider extends LanguageProvider {
         add("message.kegare.cast.severed", "You are " + SEVERED + ". No " + MALICE + " flows through you.");
         add("message.kegare.cast.no_innate_technique", "You have no " + INNATE_TECHNIQUE + ".");
         add("message.kegare.cast.no_ultimate", "Your " + INNATE_TECHNIQUE + " has no ultimate.");
+        add("message.kegare.cast.empty_slot", "That slot is empty. Fill it on the Sorcerer screen's Loadout page.");
+
+        // Loadout
+        add("ability_category.kegare.innate_technique", INNATE_TECHNIQUE);
+        add("ability_category.kegare.innate_technique.desc", "Abilities of your " + INNATE_TECHNIQUE + ". A reroll replaces them.");
+        add("ability_category.kegare.shared", "Shared");
+        add("ability_category.kegare.shared.desc", "Abilities you unlock yourself. They're yours for good, through every reroll.");
+        add("gui.kegare.sorcerer.tab.loadout", "Loadout");
+        add("gui.kegare.loadout.heading", "Loadout");
+        add("gui.kegare.loadout.category_heading", "%s · %s");
+        add("gui.kegare.loadout.category_empty", "Nothing here yet.");
+        add("gui.kegare.loadout.kind", "%s · %s");
+        add("gui.kegare.loadout.hint", "Drag an ability onto a slot (or click it, then a slot). Drag slots to swap them; drag one off the bar or right-click it to empty it.");
+        add("gui.kegare.loadout.reset", "Reset to default");
+        add("gui.kegare.loadout.reset.desc", "Put your " + INNATE_TECHNIQUE + "'s abilities back in their usual order.");
+        add("gui.kegare.loadout.in_slot", "On your bar: slot %s");
+        add("gui.kegare.loadout.not_slotted", "Not on your bar");
+        add("gui.kegare.loadout.slot_hint", "Drag to move · right-click to empty");
+        add("gui.kegare.loadout.locked", "???");
+        add("gui.kegare.loadout.locked.desc", "Locked. Some abilities can't be learned, only found.");
+        add("gui.kegare.loadout.ultimate_fixed", "Always your " + INNATE_TECHNIQUE + "'s ultimate. This slot can't be changed.");
+        add("gui.kegare.loadout.severed", "You are " + SEVERED + ": there are no abilities to arrange.");
+        add("message.kegare.loadout.in_combat", "You can't change your loadout mid-fight.");
+        add("message.kegare.loadout.casting", "Finish casting first.");
+        add("message.kegare.loadout.severed", "You are " + SEVERED + ": there's no loadout to change.");
+        add("message.kegare.loadout.no_innate_technique", "You have no " + INNATE_TECHNIQUE + ".");
+        add("message.kegare.loadout.ultimate_fixed", "The ultimate slot can't be changed.");
+        add("message.kegare.loadout.bad_slot", "That slot doesn't exist.");
+        add("message.kegare.loadout.locked", "You haven't unlocked that ability.");
+        add("message.kegare.loadout.unavailable", "That ability isn't available to you."); 
         add("message.kegare.cast.ultimate_locked", "Locked. Your " + DOMINION + " comes later.");
         add("message.kegare.cast.no_special", "%s has no special.");
         add("message.kegare.cast.requirement", "%s requires %s.");
@@ -319,6 +350,16 @@ public final class KegareLanguageProvider extends LanguageProvider {
         add("commands.kegare.info.innate_technique", INNATE_TECHNIQUE + ": %s (%s), slot %s/%s: %s");
         add("commands.kegare.info.no_innate_technique", INNATE_TECHNIQUE + ": none");
         add("commands.kegare.info.cooldowns", "Cooldowns: %s");
+        add("commands.kegare.info.loadout", "Loadout: %s");
+        add("commands.kegare.info.loadout_entry", "%s %s");
+        add("commands.kegare.info.shared", "Shared unlocked: %s");
+        add("commands.kegare.shared.unknown", "Unknown shared ability: %s");
+        add("commands.kegare.shared.unlocked", "Unlocked %s for %s");
+        add("commands.kegare.shared.locked", "Locked %s again for %s");
+        add("commands.kegare.shared.already", "%s already has %s");
+        add("commands.kegare.shared.not_unlocked", "%s hasn't unlocked %s");
+        add("commands.kegare.shared.severed", "%s is " + SEVERED + " and can't unlock %s");
+        add("commands.kegare.loadout.reset", "Reset %s's loadout");
         add("commands.kegare.info.cooldown_entry", "%s %ss");
         add("commands.kegare.info.active", "Active: %s");
         add("commands.kegare.info.traits", "Traits: %s");
@@ -400,6 +441,10 @@ public final class KegareLanguageProvider extends LanguageProvider {
                 if (!written.contains(ability.descriptionId())) missing.add(ability.descriptionId());
                 if (!written.contains(ability.descriptionId() + ".desc")) missing.add(ability.descriptionId() + ".desc");
             }
+        }
+        for (Ability ability : com.cnethuka.kegare.loadout.SharedAbilities.all()) {
+            if (!written.contains(ability.descriptionId())) missing.add(ability.descriptionId());
+            if (!written.contains(ability.descriptionId() + ".desc")) missing.add(ability.descriptionId() + ".desc");
         }
         for (Trait trait : KegareRegistries.TRAIT) {
             if (!written.contains(trait.descriptionId())) missing.add(trait.descriptionId());

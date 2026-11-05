@@ -6,6 +6,7 @@ import com.cnethuka.kegare.config.KegareClientConfig;
 import com.cnethuka.kegare.innatetechnique.Ability;
 import com.cnethuka.kegare.innatetechnique.CastType;
 import com.cnethuka.kegare.innatetechnique.InnateTechnique;
+import com.cnethuka.kegare.loadout.AbilityLookup;
 import com.cnethuka.kegare.network.SyncPayload;
 import java.util.HashMap;
 import java.util.List;
@@ -67,7 +68,7 @@ public final class AbilityBarLayer implements LayeredDraw.Layer {
         SyncPayload data = ClientData.get();
         InnateTechnique technique = TechniqueMode.current(); // null when Severed: no ability bar
         if (data == null || technique == null) return;
-        List<Ability> abilities = technique.abilities();
+        List<Ability> abilities = ClientLoadout.abilities(); // the loadout; null = an empty slot
         if (abilities.isEmpty()) return;
 
         Font font = mc.font;
@@ -99,8 +100,12 @@ public final class AbilityBarLayer implements LayeredDraw.Layer {
         for (int i = 0; i < abilities.size(); i++) {
             int sx = x0 + i * (SLOT + GAP);
             int sy = bottom - SLOT;
-            drawSlot(g, font, data, abilities.get(i), sx, sy, SLOT, i == data.selectedSlot(), Component.literal(Integer.toString(i + 1)),
-                    castingId, now, mode);
+            Component label = Component.literal(Integer.toString(i + 1));
+            if (abilities.get(i) == null) {
+                drawEmptySlot(g, font, sx, sy, i == data.selectedSlot(), label);
+            } else {
+                drawSlot(g, font, data, abilities.get(i), sx, sy, SLOT, i == data.selectedSlot(), label, castingId, now, mode);
+            }
         }
         if (hasUlt) {
             int ux = x0 + abilities.size() * (SLOT + GAP) - GAP + 6;
@@ -157,10 +162,20 @@ public final class AbilityBarLayer implements LayeredDraw.Layer {
         }
     }
 
+    /** A loadout slot with nothing in it: the bare frame and its number. */
+    private static void drawEmptySlot(GuiGraphics g, Font font, int x, int y, boolean selected, Component label) {
+        GuiDraw.emptySlot(g, x, y, SLOT, selected);
+        if (selected) {
+            int cx = x + SLOT / 2;
+            for (int i = 0; i < 3; i++) g.fill(cx - 3 + i, y - 4 + i, cx + 3 - i, y - 3 + i, 0xFFFFD24A);
+        }
+        g.drawCenteredString(font, label, x + SLOT / 2, y + (SLOT - 8) / 2, selected ? 0xFFFFFF : 0x606060);
+    }
+
     /** A thin charge (fills) or channel (drains) bar just above the slots. */
     private static void drawCastProgress(GuiGraphics g, InnateTechnique technique, SyncPayload data, long now, int x, int y, int width) {
         data.casting().ifPresent(casting -> {
-            Ability ability = technique.findAbility(casting.ability()).orElse(null);
+            Ability ability = AbilityLookup.find(technique, casting.ability()).orElse(null);
             if (ability == null) return;
             long elapsed = Math.max(0, now - casting.startTick());
             boolean charged = ability.castType() == CastType.CHARGED;
@@ -180,7 +195,8 @@ public final class AbilityBarLayer implements LayeredDraw.Layer {
         if (age >= NAME_TICKS || selected < 0 || selected >= abilities.size()) return;
         int alpha = age < NAME_TICKS - 10 ? 255 : (int) (255 * (NAME_TICKS - age) / 10f);
         if (alpha <= 8) return;
-        Component name = abilities.get(selected).displayName();
+        Ability ability = abilities.get(selected);
+        Component name = ability != null ? ability.displayName() : Component.translatable("hud.kegare.empty_slot");
         g.drawCenteredString(font, name, cx, y, (alpha << 24) | 0xFFFFFF);
     }
 

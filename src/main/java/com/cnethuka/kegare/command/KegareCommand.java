@@ -17,6 +17,10 @@ import com.cnethuka.kegare.roll.RollData;
 import com.cnethuka.kegare.roll.RollReason;
 import com.cnethuka.kegare.roll.RollService;
 import com.cnethuka.kegare.innatetechnique.Ability;
+import com.cnethuka.kegare.loadout.AbilityLookup;
+import com.cnethuka.kegare.loadout.LoadoutService;
+import com.cnethuka.kegare.loadout.SharedAbilities;
+import com.cnethuka.kegare.loadout.SharedAbilityService;
 import com.cnethuka.kegare.innatetechnique.CastManager;
 import com.cnethuka.kegare.innatetechnique.InnateTechnique;
 import com.cnethuka.kegare.innatetechnique.InnateTechniqueData;
@@ -52,10 +56,14 @@ public final class KegareCommand {
             (ctx, builder) -> SharedSuggestionProvider.suggestResource(KegareRegistries.INNATE_TECHNIQUE.keySet(), builder);
     private static final SuggestionProvider<CommandSourceStack> TRAITS =
             (ctx, builder) -> SharedSuggestionProvider.suggestResource(KegareRegistries.TRAIT.keySet(), builder);
+    private static final SuggestionProvider<CommandSourceStack> SHARED_ABILITIES = (c, b) ->
+            SharedSuggestionProvider.suggestResource(SharedAbilities.all().stream().map(Ability::id), b);
     private static final DynamicCommandExceptionType UNKNOWN_INNATE_TECHNIQUE =
             new DynamicCommandExceptionType(id -> Component.translatable("commands.kegare.unknown_innate_technique", String.valueOf(id)));
     private static final DynamicCommandExceptionType UNKNOWN_TRAIT =
             new DynamicCommandExceptionType(id -> Component.translatable("commands.kegare.unknown_trait", String.valueOf(id)));
+    private static final DynamicCommandExceptionType UNKNOWN_SHARED = new DynamicCommandExceptionType(
+            id -> Component.translatable("commands.kegare.shared.unknown", String.valueOf(id)));
 
     private KegareCommand() {}
 
@@ -124,6 +132,23 @@ public final class KegareCommand {
                                 .then(Commands.argument("capacity", IntegerArgumentType.integer(0, 1_000_000))
                                         .executes(c -> rebirth(c.getSource(), EntityArgument.getPlayer(c, "player"),
                                                 OptionalInt.of(IntegerArgumentType.getInteger(c, "capacity")))))))
+                // Shared abilities (Reverse Malice Technique...): unlock or lock again.
+                .then(Commands.literal("shared")
+                        .then(Commands.literal("unlock")
+                                .then(Commands.argument("player", EntityArgument.player())
+                                        .then(Commands.argument("ability", ResourceLocationArgument.id()).suggests(SHARED_ABILITIES)
+                                                .executes(c -> sharedUnlock(c.getSource(), EntityArgument.getPlayer(c, "player"),
+                                                        ResourceLocationArgument.getId(c, "ability"), true)))))
+                        .then(Commands.literal("lock")
+                                .then(Commands.argument("player", EntityArgument.player())
+                                        .then(Commands.argument("ability", ResourceLocationArgument.id()).suggests(SHARED_ABILITIES)
+                                                .executes(c -> sharedUnlock(c.getSource(), EntityArgument.getPlayer(c, "player"),
+                                                        ResourceLocationArgument.getId(c, "ability"), false))))))
+                // Loadout back to the innate technique's default layout.
+                .then(Commands.literal("loadout")
+                        .then(Commands.literal("reset")
+                                .then(Commands.argument("player", EntityArgument.player())
+                                        .executes(c -> loadoutReset(c.getSource(), EntityArgument.getPlayer(c, "player"))))))
                 .then(Commands.literal("stun")
                         .then(Commands.argument("player", EntityArgument.player())
                                 .then(Commands.argument("seconds", DoubleArgumentType.doubleArg(0, 3600))
@@ -147,16 +172,27 @@ public final class KegareCommand {
         Optional<InnateTechnique> innateTechnique = InnateTechniqueService.current(player);
         if (innateTechnique.isPresent()) {
             InnateTechnique t = innateTechnique.get();
-            Ability selected = t.ability(innateTechniqueData.selectedSlot());
+            Ability selected = LoadoutService.abilityAt(player, innateTechniqueData.selectedSlot());
             lines.add(Component.translatable("commands.kegare.info.innate_technique", t.displayName(),
-                    Component.translatable(t.rarity().translationKey()), innateTechniqueData.selectedSlot() + 1, t.abilities().size(),
+                    Component.translatable(t.rarity().translationKey()), innateTechniqueData.selectedSlot() + 1, LoadoutService.size(player),
                     selected == null ? Component.translatable("commands.kegare.info.none") : selected.displayName()));
+            List<Component> slots = new ArrayList<>();
+            for (int i = 0; i < LoadoutService.size(player); i++) {
+                Ability a = LoadoutService.abilityAt(player, i);
+                slots.add(Component.translatable("commands.kegare.info.loadout_entry", i + 1,
+                        a == null ? Component.translatable("commands.kegare.info.none") : a.displayName()));
+            }
+            lines.add(Component.translatable("commands.kegare.info.loadout", join(slots)));
         } else {
             lines.add(Component.translatable("commands.kegare.info.no_innate_technique"));
         }
 
+        List<Component> shared = new ArrayList<>();
+        for (ResourceLocation id : SharedAbilityService.get(player).unlocked()) SharedAbilities.get(id).ifPresent(a -> shared.add(a.displayName()));
+        lines.add(Component.translatable("commands.kegare.info.shared", join(shared)));
+
         List<Component> cooldowns = new ArrayList<>();
-        innateTechnique.ifPresent(t -> innateTechniqueData.cooldowns().keySet().forEach(id -> t.findAbility(id).ifPresent(a -> {
+        innateTechnique.ifPresent(t -> innateTechniqueData.cooldowns().keySet().forEach(id -> AbilityLookup.find(t, id).ifPresent(a -> {
             int remaining = InnateTechniqueService.cooldownRemaining(player, a);
             if (remaining > 0) cooldowns.add(Component.translatable("commands.kegare.info.cooldown_entry", a.displayName(), CastManager.seconds(remaining)));
         })));
@@ -246,6 +282,25 @@ public final class KegareCommand {
     private static int setPity(CommandSourceStack source, ServerPlayer player, int rolls) {
         RollService.setPity(player, rolls);
         source.sendSuccess(() -> Component.translatable("commands.kegare.setpity.success", player.getDisplayName(), rolls), true);
+        return 1;
+    }
+
+    private static int sharedUnlock(CommandSourceStack source, ServerPlayer player, ResourceLocation id, boolean unlock) throws CommandSyntaxException {
+        Ability ability = SharedAbilities.get(id).orElseThrow(() -> UNKNOWN_SHARED.create(id));
+        boolean changed = unlock ? SharedAbilityService.unlock(player, ability) : SharedAbilityService.lock(player, ability);
+        if (!changed) {
+            source.sendFailure(Component.translatable(unlock ? (MaliceService.isSevered(player) ? "commands.kegare.shared.severed" : "commands.kegare.shared.already")
+                    : "commands.kegare.shared.not_unlocked", player.getDisplayName(), ability.displayName()));
+            return 0;
+        }
+        source.sendSuccess(() -> Component.translatable(unlock ? "commands.kegare.shared.unlocked" : "commands.kegare.shared.locked",
+                ability.displayName(), player.getDisplayName()), true);
+        return 1;
+    }
+
+    private static int loadoutReset(CommandSourceStack source, ServerPlayer player) {
+        LoadoutService.reset(player);
+        source.sendSuccess(() -> Component.translatable("commands.kegare.loadout.reset", player.getDisplayName()), true);
         return 1;
     }
 

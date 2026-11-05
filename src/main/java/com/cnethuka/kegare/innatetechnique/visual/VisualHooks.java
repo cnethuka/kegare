@@ -39,6 +39,10 @@ public final class VisualHooks {
         for (InnateTechnique innateTechnique : KegareRegistries.INNATE_TECHNIQUE) {
             innateTechnique.everyAbility().forEach(a -> out.addAll(a.visuals().effects()));
         }
+        for (com.cnethuka.kegare.innatetechnique.Ability shared : com.cnethuka.kegare.loadout.SharedAbilities.all()) {
+            out.addAll(shared.visuals().effects());
+            shared.special().ifPresent(special -> out.addAll(special.visuals().effects()));
+        }
         return out;
     }
 }

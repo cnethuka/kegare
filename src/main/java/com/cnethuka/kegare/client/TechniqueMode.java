@@ -44,8 +44,7 @@ public final class TechniqueMode {
     public static boolean abilitiesAvailable() {
         Minecraft mc = Minecraft.getInstance();
         if (mc.player == null || mc.player.isDeadOrDying() || mc.player.isSpectator()) return false;
-        InnateTechnique technique = current();
-        return technique != null && !technique.abilities().isEmpty();
+        return current() != null && ClientLoadout.size() > 0;
     }
 
     @Nullable

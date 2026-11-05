@@ -68,6 +68,8 @@ public final class GuiDraw {
     /** The ultimate's slot on the ability bar: bigger, gold-framed. */
     private static final ResourceLocation ULTIMATE_SLOT = Kegare.id("textures/gui/ultimate_slot.png");
     public static final int ULTIMATE_SLOT_SIZE = 26;
+    /** The Shared category's tab icon on the Loadout page (16x16). */
+    public static final ResourceLocation CATEGORY_SHARED = Kegare.id("category_shared");
     public static final ResourceLocation BADGE_SPECIAL = Kegare.id("badge_special");
     public static final ResourceLocation BADGE_SPECIAL_NONE = Kegare.id("badge_special_none");
 
@@ -243,6 +245,12 @@ public final class GuiDraw {
         RenderSystem.enableBlend();
         slotFrame(g, x, y, size, selected);
         return abilityIcon(g, ability, x + (size - 16) / 2, y + (size - 16) / 2);
+    }
+
+    /** A slot frame with nothing in it (an empty loadout slot). */
+    public static void emptySlot(GuiGraphics g, int x, int y, int size, boolean selected) {
+        RenderSystem.enableBlend();
+        slotFrame(g, x, y, size, selected);
     }
 
     private static void slotFrame(GuiGraphics g, int x, int y, int size, boolean selected) {

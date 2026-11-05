@@ -16,7 +16,7 @@ public final class PlayerSync {
         player.getData(KegareAttachments.SYNC_STATE).dirty = true;
     }
 
-    /** Every 10 ticks: resend if the innate technique's cost environment changed (rain, water, biome). */
+    /** Every 10 ticks: resend if the cost environment (rain, water, biome) or the in-combat state changed. */
     public static void watchEnvironment(ServerPlayer player) {
         if (player.tickCount % 10 != 0) return;
         var environment = com.cnethuka.kegare.innatetechnique.InnateTechniqueService.current(player)
@@ -25,6 +25,12 @@ public final class PlayerSync {
         SyncState state = player.getData(KegareAttachments.SYNC_STATE);
         if (!environment.equals(state.lastEnvironment)) {
             state.lastEnvironment = environment;
+            state.dirty = true;
+        }
+        // Combat runs out on its own (no event): the Loadout page shows whether edits are allowed.
+        boolean inCombat = com.cnethuka.kegare.combat.CombatHelper.isInCombat(player);
+        if (inCombat != state.lastInCombat) {
+            state.lastInCombat = inCombat;
             state.dirty = true;
         }
     }

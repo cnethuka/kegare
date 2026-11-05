@@ -108,9 +108,8 @@ public final class ClientInput {
         double delta = event.getScrollDeltaY();
         if (delta == 0) return;
         SyncPayload data = ClientData.get();
-        InnateTechnique technique = TechniqueMode.current();
-        if (data == null || technique == null) return;
-        int size = technique.abilities().size();
+        int size = ClientLoadout.size();
+        if (data == null || size == 0) return;
         // Like the hotbar: scrolling up moves left.
         selectSlot(Mth.positiveModulo(data.selectedSlot() + (delta > 0 ? -1 : 1), size));
     }
@@ -136,8 +135,7 @@ public final class ClientInput {
     }
 
     private static void selectSlot(int slot) {
-        InnateTechnique technique = TechniqueMode.current();
-        if (technique == null || slot < 0 || slot >= technique.abilities().size()) return;
+        if (slot < 0 || slot >= ClientLoadout.size()) return;
         PacketDistributor.sendToServer(new SelectAbilityPayload(slot));
     }
 

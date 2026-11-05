@@ -348,9 +348,9 @@ a result back; they only send requests the server re-validates. All text comes f
 | Screen | Opens when | Data | Sends |
 |---|---|---|---|
 | Roll reveal (`RevealScreen`) | the server finished a roll: Awakening, Reawakening, admin reroll, replacement | `RevealPayload`, sent only to that player | nothing |
-| Sorcerer (`SorcererScreen`) | key **K** | `SorcererInfoPayload`, computed by the server | the open request |
+| Sorcerer (`SorcererScreen`) | key **K** | `SorcererInfoPayload`, computed by the server; the Loadout page reads the synced loadout | the open request; loadout edit requests (§3.16) |
 | Talisman confirm (`TalismanConfirmScreen`) | using a Purification Talisman (nothing consumed yet) | `TalismanPromptPayload` | a confirm request |
-| Ability radial (`AbilityRadialScreen`) | **holding** the next-ability key (Z); a tap still cycles | synced state | a select-slot request |
+| Ability radial (`AbilityRadialScreen`) | **holding** Z | the synced loadout | a select-slot request |
 
 **Roll reveal**
 - The spin is gacha-style: cards (weighted like real rolls) scroll past, ease out over about 4s, and land on the
@@ -369,7 +369,8 @@ a result back; they only send requests the server re-validates. All text comes f
 - Reveals queue up and open only when no other screen is open, e.g. after the world finishes loading on first join.
 
 **Sorcerer screen**
-- Four tabs: **Malice**, **Innate Technique** (or **Severed** for Severed players), **Traits**, **Pity**.
+- Five tabs: **Malice**, **Innate Technique** (or **Severed** for Severed players), **Loadout** (§3.16),
+  **Traits**, **Pity**.
 - Malice: capacity and tier, reserve bar, regen per second (and % of capacity), and whether regen is paused.
 - Innate Technique: emblem, name, rarity and description, then every ability (and the ultimate) with its icon, cast
   type, Malice cost, upkeep, cooldown and description.
@@ -379,7 +380,7 @@ a result back; they only send requests the server re-validates. All text comes f
   - "Soft pity starts in N rolls", or the active Legendary weight
   - "Legendary guaranteed in N rolls" (`PityRoller.rollsUntilSoftPity` / `rollsUntilHardPity`, unit-tested)
   - total rolls
-- Keys: 1–4 or Tab switch pages, arrows or the mouse wheel scroll, K or Esc close.
+- Keys: 1–5 or Tab switch pages, arrows or the mouse wheel scroll, K or Esc close.
 
 **Talisman confirm:** *"Reroll your Innate Technique? Current: X. Pity: Y/50."*, with the current emblem.
 - **Reroll** sends a request. The server re-checks that the talisman is still in that hand, combat and Severed
@@ -617,6 +618,52 @@ Package `com.cnethuka.kegare.innate_technique.rime`. **Rarity: RARE.** All numbe
 - **Tests:** `SpecialsTest` (in-game JUnit) covers fizzles without cost, both requirement kinds, the release
   re-check and the shared cooldown both ways.
 
+### 3.16 Loadout and ability categories
+Package `loadout`. Abilities are sorted into category tabs, and a
+separate bar is filled from any of them.
+- **Categories** (`AbilityCategory`), one tab each on the Loadout page:
+  - **Innate Technique**: the current innate technique's abilities. A reroll replaces them.
+  - **Shared**: abilities a player unlocks once and keeps through every reroll (`SharedAbilities` registry,
+    unlocks in attachment `kegare:shared_abilities`, saved, kept on death). Reverse Malice Technique is the first
+    (§3.17). Later categories (martial arts, cursed tools...) slot in as more enum values.
+- **The loadout** (attachment `kegare:loadout`, saved, kept on death; `LoadoutService`):
+  - one regular slot per ability of the current innate technique (Rime: 4), filled with them in order by default;
+  - each slot holds one of those abilities, an unlocked shared ability, or nothing ("Empty slot"; casting it says
+    so and costs nothing);
+  - nothing is slotted twice: placing an ability that is already on the bar moves it (whatever was in the target
+    goes where it came from), so a technique ability taken off the bar can always be put back;
+  - the ultimate (V) is **not** a loadout slot and can never change;
+  - changing the innate technique (reroll, admin, rebirth) resets the loadout to the new default; shared unlocks
+    stay;
+  - on login a layout built for another technique (or the wrong size) is rebuilt, and entries that no longer
+    resolve (locked again, removed by an update) or repeat are emptied.
+- **Everything reads the loadout**, never the technique's fixed list: the cast key and R (`CastManager` resolves the
+  selected loadout slot; specials come from whatever is slotted), number keys, scroll and Technique Mode, the HUD
+  ability bar, the radial menu and `/kegare info`.
+- **Editing** (Sorcerer screen → Loadout):
+  - category tabs on the left (the innate technique's emblem; a silver ring for Shared); locked shared abilities
+    show a padlock and "???";
+  - the selected category's abilities as tiles (a gold number marks the slot each one is on), with a tooltip:
+    category, cast type, description, current cost, special, and whether it's on the bar;
+  - below, the loadout bar with each slot's key and the fixed ultimate (padlock while locked);
+  - drag a tile onto a slot, or click a tile then a slot; drag a slot onto another to swap; drag one off the bar
+    or right-click it to empty it; "Reset to default".
+- **Server validation** (`LoadoutService.edit`, every request; the client is never trusted):
+  - not Severed and has an innate technique;
+  - a real regular slot (the ultimate's position → "The ultimate slot can't be changed.");
+  - **not in combat** ("You can't change your loadout mid-fight.") and not mid-cast ("Finish casting first.");
+  - the ability belongs to the current innate technique, or is a shared ability the player has **unlocked**;
+  - no duplicates.
+
+  A refusal shows on the action bar and on the Loadout page (`LoadoutResultPayload`); a toggle taken off the bar
+  switches off. The sync carries the loadout, the unlocked shared abilities and whether the player is in combat
+  (re-checked every 10 ticks), so the page and HUD update live.
+- **Commands:** `/kegare shared unlock|lock <player> <ability>`, `/kegare loadout reset <player>`; `/kegare info`
+  lists the loadout and the unlocked shared abilities.
+- **Tests:** `LoadoutTest` (in-game JUnit): default layout, moving instead of duplicating, empty slots, the ultimate
+  and bad slots, other techniques' abilities, mid-cast and in-combat refusals, toggles switching off, reset on a new
+  technique, login repair.
+
 ---
 
 ## 4. Extension points (how later content plugs in)
@@ -624,6 +671,8 @@ Package `com.cnethuka.kegare.innate_technique.rime`. **Rarity: RARE.** All numbe
 - **New innate technique:** create a `DeferredRegister<InnateTechnique>` on
   `KegareRegistries.INNATE_TECHNIQUE_KEY`, build abilities with `BaseAbility`, add the lang names, and put the
   numbers in config. Nothing in the base changes.
+- **Shared abilities:** build the ability, `SharedAbilities.register` it at mod construction, unlock it with
+  `SharedAbilityService.unlock` (§3.16).
 - **Specials:** override `special()` on the base ability and build the special on `SpecialAbility` (§3.15).
 - **New trait:** register a `Trait` subclass (unique or not) and override its hooks.
 - **Dominions:** an innate technique's `ultimate` ability. It uses `CombatHelper` (stun, combat) and the shared

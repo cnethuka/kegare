@@ -25,13 +25,14 @@ import org.lwjgl.glfw.GLFW;
  * Keys: 1-4 or Tab switch pages, arrows / mouse wheel scroll, K or Esc close.
  */
 public final class SorcererScreen extends Screen {
-    private enum Page { MALICE, INNATE_TECHNIQUE, TRAITS, PITY }
+    private enum Page { MALICE, INNATE_TECHNIQUE, LOADOUT, TRAITS, PITY }
 
     private static Page lastPage = Page.MALICE;
     private static final int TOOLTIP_WIDTH = 220;
 
     private SorcererInfoPayload info;
     private Page page = lastPage;
+    private final LoadoutPage loadout = new LoadoutPage();
     private double scroll;
     private int contentHeight;
 
@@ -55,6 +56,11 @@ public final class SorcererScreen extends Screen {
     /** New data from the server while open (e.g. pressing K again). */
     void update(SorcererInfoPayload info) {
         this.info = info;
+    }
+
+    /** A loadout edit was refused by the server. */
+    void onLoadoutResult(com.cnethuka.kegare.loadout.LoadoutResult result) {
+        loadout.onResult(result);
     }
 
     @Override
@@ -91,12 +97,17 @@ public final class SorcererScreen extends Screen {
         int bottom = switch (page) {
             case MALICE -> renderMalice(g, top);
             case INNATE_TECHNIQUE -> info.severed() ? renderSevered(g, top) : renderInnateTechnique(g, top);
+            case LOADOUT -> loadout.render(g, font, contentX, top, contentW, mouseX, mouseY);
             case TRAITS -> renderTraits(g, top);
             case PITY -> renderPity(g, top);
         };
         g.disableScissor();
         contentHeight = bottom - top;
         renderScrollbar(g);
+        if (page == Page.LOADOUT) {
+            loadout.renderOverlay(g, font, mouseX, mouseY, mouseY >= contentY && mouseY < contentY + contentH);
+            return;
+        }
         if (mouseY >= contentY && mouseY < contentY + contentH) {
             for (HoverRow row : hoverRows) { // first match wins: special lines are added before their whole card
                 if (row.contains(mouseX, mouseY)) {
@@ -111,6 +122,7 @@ public final class SorcererScreen extends Screen {
         return Component.translatable(switch (p) {
             case MALICE -> "gui.kegare.sorcerer.tab.malice";
             case INNATE_TECHNIQUE -> info.severed() ? "gui.kegare.sorcerer.tab.severed" : "gui.kegare.sorcerer.tab.innate_technique";
+            case LOADOUT -> "gui.kegare.sorcerer.tab.loadout";
             case TRAITS -> "gui.kegare.sorcerer.tab.traits";
             case PITY -> "gui.kegare.sorcerer.tab.pity";
         });
@@ -339,7 +351,24 @@ public final class SorcererScreen extends Screen {
             setPage(p);
             return true;
         }
+        if (page == Page.LOADOUT && inContent(mouseX, mouseY) && loadout.mouseClicked(mouseX, mouseY, button)) return true;
         return super.mouseClicked(mouseX, mouseY, button);
+    }
+
+    @Override
+    public boolean mouseDragged(double mouseX, double mouseY, int button, double dragX, double dragY) {
+        if (page == Page.LOADOUT && loadout.mouseDragged(mouseX, mouseY, button)) return true;
+        return super.mouseDragged(mouseX, mouseY, button, dragX, dragY);
+    }
+
+    @Override
+    public boolean mouseReleased(double mouseX, double mouseY, int button) {
+        if (page == Page.LOADOUT && loadout.mouseReleased(mouseX, mouseY, button)) return true;
+        return super.mouseReleased(mouseX, mouseY, button);
+    }
+
+    private boolean inContent(double mouseX, double mouseY) {
+        return mouseX >= contentX && mouseX < contentX + contentW + 6 && mouseY >= contentY && mouseY < contentY + contentH;
     }
 
     @Override

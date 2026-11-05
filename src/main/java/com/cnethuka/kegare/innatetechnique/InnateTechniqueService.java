@@ -1,6 +1,7 @@
 package com.cnethuka.kegare.innatetechnique;
 
 import com.cnethuka.kegare.Kegare;
+import com.cnethuka.kegare.loadout.LoadoutService;
 import com.cnethuka.kegare.network.PlayerSync;
 import com.cnethuka.kegare.registry.KegareAttachments;
 import com.cnethuka.kegare.registry.KegareRegistries;
@@ -31,6 +32,7 @@ public final class InnateTechniqueService {
         Optional<InnateTechnique> old = current(player);
         CastManager.stopAll(player, EndReason.INNATE_TECHNIQUE_CHANGED);
         get(player).setInnateTechnique(innateTechnique == null ? null : innateTechnique.id());
+        LoadoutService.reset(player); // the new technique's default layout; shared unlocks are kept
         old.ifPresent(t -> t.onRemoved(player));
         if (innateTechnique != null) innateTechnique.onAssigned(player);
         PlayerSync.markDirty(player);
@@ -38,20 +40,25 @@ public final class InnateTechniqueService {
 
     /** Moves the selected slot by {@code delta}, wrapping around. */
     public static void cycle(ServerPlayer player, int delta) {
-        Optional<InnateTechnique> innateTechnique = current(player);
-        if (innateTechnique.isEmpty()) return;
-        int size = innateTechnique.get().abilities().size();
+        if (current(player).isEmpty()) return;
+        int size = LoadoutService.size(player);
+        if (size == 0) return;
         InnateTechniqueData data = get(player);
         data.setSelectedSlot(Mth.positiveModulo(data.selectedSlot() + delta, size));
         PlayerSync.markDirty(player);
     }
 
-    /** Selects a specific slot (radial menu). Out-of-range requests are ignored. */
+    /** Selects a loadout slot (number keys, scroll, radial menu). Out-of-range requests are ignored. */
     public static void select(ServerPlayer player, int slot) {
-        Optional<InnateTechnique> innateTechnique = current(player);
-        if (innateTechnique.isEmpty() || slot < 0 || slot >= innateTechnique.get().abilities().size()) return;
+        if (current(player).isEmpty() || slot < 0 || slot >= LoadoutService.size(player)) return;
         get(player).setSelectedSlot(slot);
         PlayerSync.markDirty(player);
+    }
+
+    /** Keeps the selected slot inside the loadout. */
+    public static void clampSelection(ServerPlayer player) {
+        InnateTechniqueData data = get(player);
+        if (data.selectedSlot() < 0 || data.selectedSlot() >= Math.max(1, LoadoutService.size(player))) data.setSelectedSlot(0);
     }
 
     public static int cooldownRemaining(ServerPlayer player, Ability ability) {
@@ -90,9 +97,8 @@ public final class InnateTechniqueService {
             PlayerSync.markDirty(player);
             return true;
         }
-        current(player).ifPresent(t -> {
-            if (data.selectedSlot() < 0 || data.selectedSlot() >= t.abilities().size()) data.setSelectedSlot(0);
-        });
+        LoadoutService.validate(player);
+        clampSelection(player);
         return false;
     }
 }

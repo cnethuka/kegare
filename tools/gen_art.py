@@ -917,6 +917,29 @@ def special_badge(lit: bool) -> Image.Image:
     return from_grid(grid, pal)
 
 
+def category_shared() -> Image.Image:
+    """16x16 tab icon for the Shared ability category: a silver ring around a pale diamond core."""
+    grid = [
+        "................",
+        ".....KKKKKK.....",
+        "...KKSSSSSSKK...",
+        "..KSShhhhhhSSK..",
+        "..KSK......KSK..",
+        ".KShK..WW..KhSK.",
+        ".KShK.WPPW.KhSK.",
+        ".KShKWPPPPWKhSK.",
+        ".KShKWPPPPWKhSK.",
+        ".KShK.WPPW.KhSK.",
+        ".KShK..WW..KhSK.",
+        "..KSK......KSK..",
+        "..KSShhhhhhSSK..",
+        "...KKSSSSSSKK...",
+        ".....KKKKKK.....",
+        "................",
+    ]
+    return from_grid(grid, {"K": INK, "S": SILVER[3], "h": SILVER[5], "W": MALICE[5], "P": MALICE[6]})
+
+
 def env_cold() -> Image.Image:
     grid = [
         "....K.K....",
@@ -1039,6 +1062,7 @@ def build() -> dict[str, Image.Image]:
     out["freeze_pip_empty"] = freeze_pip(False)
     out["badge_special"] = special_badge(True)
     out["badge_special_none"] = special_badge(False)
+    out["category_shared"] = category_shared()
     return out
 
 

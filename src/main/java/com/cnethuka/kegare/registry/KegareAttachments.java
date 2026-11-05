@@ -22,6 +22,8 @@ import net.neoforged.neoforge.registries.NeoForgeRegistries;
  *   innate technique   saved, kept on death   innate technique, selected slot, cooldowns
  *   roll        saved, kept on death   pity counter
  *   combat      saved, reset on death  combat tag + stun timestamps
+ *   loadout     saved, kept on death   what each regular ability slot holds
+ *   shared_abilities saved, kept on death unlocked shared abilities, last green-orb roll
  *   cast_state  runtime only           active charge/channel/toggles
  *   sync_state  runtime only           client sync dirty flag
  *   visual_state runtime only          cosmetic loops playing on an entity (re-sent to late trackers)
@@ -45,6 +47,14 @@ public final class KegareAttachments {
 
     public static final Supplier<AttachmentType<CombatData>> COMBAT = ATTACHMENT_TYPES.register("combat",
             () -> AttachmentType.builder(() -> new CombatData()).serialize(CombatData.CODEC).build());
+
+    public static final Supplier<AttachmentType<com.cnethuka.kegare.loadout.LoadoutData>> LOADOUT = ATTACHMENT_TYPES.register("loadout",
+            () -> AttachmentType.builder(() -> new com.cnethuka.kegare.loadout.LoadoutData())
+                    .serialize(com.cnethuka.kegare.loadout.LoadoutData.CODEC).copyOnDeath().build());
+
+    public static final Supplier<AttachmentType<com.cnethuka.kegare.loadout.SharedAbilityData>> SHARED_ABILITIES = ATTACHMENT_TYPES.register("shared_abilities",
+            () -> AttachmentType.builder(() -> new com.cnethuka.kegare.loadout.SharedAbilityData())
+                    .serialize(com.cnethuka.kegare.loadout.SharedAbilityData.CODEC).copyOnDeath().build());
 
     public static final Supplier<AttachmentType<CastState>> CAST_STATE = ATTACHMENT_TYPES.register("cast_state",
             () -> AttachmentType.builder(() -> new CastState()).build());

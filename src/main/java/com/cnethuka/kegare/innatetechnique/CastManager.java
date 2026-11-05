@@ -3,6 +3,7 @@ package com.cnethuka.kegare.innatetechnique;
 import com.cnethuka.kegare.malice.MaliceData;
 import com.cnethuka.kegare.malice.MaliceService;
 import com.cnethuka.kegare.combat.CombatHelper;
+import com.cnethuka.kegare.loadout.LoadoutService;
 import com.cnethuka.kegare.network.PlayerSync;
 import com.cnethuka.kegare.registry.KegareAttachments;
 import java.util.List;
@@ -55,12 +56,13 @@ public final class CastManager {
             feedback(player, CastResult.NO_INNATE_TECHNIQUE, null);
             return null;
         }
+        // Regular keys cast what the loadout holds (a technique or shared ability); V is always the ultimate.
         Ability ability = switch (slot) {
-            case SELECTED, SPECIAL -> innateTechnique.get().ability(InnateTechniqueService.get(player).selectedSlot());
+            case SELECTED, SPECIAL -> LoadoutService.abilityAt(player, InnateTechniqueService.get(player).selectedSlot());
             case ULTIMATE -> innateTechnique.get().ultimate().orElse(null);
         };
         if (ability == null) {
-            CastResult why = slot != CastSlot.ULTIMATE ? CastResult.NO_INNATE_TECHNIQUE
+            CastResult why = slot != CastSlot.ULTIMATE ? CastResult.EMPTY_SLOT
                     : innateTechnique.get().ultimateLocked() ? CastResult.ULTIMATE_LOCKED : CastResult.NO_ULTIMATE;
             feedback(player, why, null);
             return null;

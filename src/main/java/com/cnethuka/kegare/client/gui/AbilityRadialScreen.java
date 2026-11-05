@@ -1,6 +1,7 @@
 package com.cnethuka.kegare.client.gui;
 
 import com.cnethuka.kegare.client.ClientData;
+import com.cnethuka.kegare.client.ClientLoadout;
 import com.cnethuka.kegare.client.KegareKeys;
 import com.cnethuka.kegare.innatetechnique.Ability;
 import com.cnethuka.kegare.innatetechnique.InnateTechnique;
@@ -34,8 +35,7 @@ public final class AbilityRadialScreen extends Screen {
     public static boolean canOpen() {
         SyncPayload data = ClientData.get();
         if (data == null || !data.born() || data.severed()) return false;
-        InnateTechnique t = innateTechnique(data);
-        return t != null && !t.abilities().isEmpty();
+        return innateTechnique(data) != null && ClientLoadout.size() > 0;
     }
 
     @Nullable
@@ -61,7 +61,7 @@ public final class AbilityRadialScreen extends Screen {
             onClose();
             return;
         }
-        List<Ability> abilities = t.abilities();
+        List<Ability> abilities = ClientLoadout.abilities(); // the loadout; null = an empty slot
         int cx = width / 2;
         int cy = height / 2;
         int r = radius();
@@ -85,6 +85,10 @@ public final class AbilityRadialScreen extends Screen {
             boolean isHovered = i == hovered;
             GuiDraw.sprite(g, isHovered ? GuiDraw.SLOT_SELECTED : GuiDraw.SLOT, x, y, SLOT, SLOT);
             if (i == data.selectedSlot()) g.renderOutline(x - 2, y - 2, SLOT + 4, SLOT + 4, GuiDraw.WHITE); // current (hover is gold)
+            if (ability == null) {
+                g.drawCenteredString(font, Integer.toString(i + 1), x + SLOT / 2, y + (SLOT - 8) / 2, isHovered ? GuiDraw.WHITE : 0xFF606060);
+                continue;
+            }
             if (com.cnethuka.kegare.client.AbilityBarLayer.toggledOn(data, ability)) g.renderOutline(x, y, SLOT, SLOT, 0xFF5CFF7A);
 
             boolean hasIcon = GuiDraw.abilityIcon(g, ability, x + (SLOT - 16) / 2, y + (SLOT - 16) / 2);
@@ -109,13 +113,16 @@ public final class AbilityRadialScreen extends Screen {
         // Center: the hovered ability (or the current one).
         int shown = hovered >= 0 ? hovered : Mth.clamp(data.selectedSlot(), 0, abilities.size() - 1);
         Ability ability = abilities.get(shown);
+        GuiDraw.centered(g, font, Component.translatable("gui.kegare.radial.hint"), cx, Math.max(4, cy - r - SLOT - 6), 1f, GuiDraw.GRAY);
+        if (ability == null) {
+            GuiDraw.centered(g, font, Component.translatable("hud.kegare.empty_slot"), cx, cy - font.lineHeight / 2, 1f, GuiDraw.DARK_GRAY);
+            return;
+        }
         GuiDraw.centered(g, font, ability.displayName(), cx, cy - font.lineHeight, 1f, hovered >= 0 ? GuiDraw.WHITE : GuiDraw.GRAY);
         GuiDraw.centered(g, font, Component.translatable(ability.castType().translationKey()), cx, cy + 2, 1f, GuiDraw.DARK_GRAY);
         CostTooltip.shortLine(ability.id()).ifPresent(line -> GuiDraw.centered(g, font, line, cx, cy + 2 + font.lineHeight + 1, 1f, GuiDraw.MALICE));
         ability.special().ifPresent(special -> GuiDraw.centered(g, font, Component.translatable("gui.kegare.radial.special",
                 KegareKeys.SPECIAL.getTranslatedKeyMessage(), special.displayName()), cx, cy + 2 + 2 * (font.lineHeight + 1), 1f, GuiDraw.GOLD));
-        // Above the ring: below it would sit on the ability bar.
-        GuiDraw.centered(g, font, Component.translatable("gui.kegare.radial.hint"), cx, Math.max(4, cy - r - SLOT - 6), 1f, GuiDraw.GRAY);
     }
 
     /** Slot 0 at the top, then clockwise. */
@@ -180,8 +187,7 @@ public final class AbilityRadialScreen extends Screen {
 
     private int abilityCount() {
         SyncPayload data = ClientData.get();
-        InnateTechnique t = data == null ? null : innateTechnique(data);
-        return t == null ? 0 : t.abilities().size();
+        return ClientLoadout.size();
     }
 
     @Override

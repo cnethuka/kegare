@@ -27,6 +27,11 @@ public final class ClientGuiHooks {
         }
     }
 
+    /** A loadout edit was refused: tell the Loadout page (if open) why. */
+    public static void onLoadoutResult(com.cnethuka.kegare.loadout.LoadoutResult result) {
+        if (Minecraft.getInstance().screen instanceof SorcererScreen screen) screen.onLoadoutResult(result);
+    }
+
     /** The server accepted a talisman use: ask the player to confirm. Nothing has been consumed yet. */
     public static void onTalismanPrompt(TalismanPromptPayload payload) {
         Minecraft mc = Minecraft.getInstance();
