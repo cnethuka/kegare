@@ -14,7 +14,8 @@ import net.neoforged.neoforge.registries.DeferredHolder;
 import net.neoforged.neoforge.registries.DeferredRegister;
 
 /**
- * Rime (RARE): the first real innate technique. Frost Shard, Glacial Lance, Frost Field, Rime Shell; no ultimate yet
+ * Rime (RARE): the first real innate technique. Frost Shard, Glacial Lance, Frost Field, Rime Shell, with the specials
+ * Splinter, Glacial Spire, Ice Path and Shatter Shell on R; no ultimate yet
  * (the slot shows as locked until its Dominion arrives). Freeze stacks on targets; cheaper in the cold, dearer in the
  * heat. All numbers: [rime] in kegare-server.toml.
  */
@@ -25,6 +26,12 @@ public final class Rime {
     public static final GlacialLanceAbility GLACIAL_LANCE = new GlacialLanceAbility();
     public static final FrostFieldAbility FROST_FIELD = new FrostFieldAbility();
     public static final RimeShellAbility RIME_SHELL = new RimeShellAbility();
+
+    // Specials (R), each sharing its base ability's cooldown.
+    public static final SplinterAbility SPLINTER = new SplinterAbility();
+    public static final GlacialSpireAbility GLACIAL_SPIRE = new GlacialSpireAbility();
+    public static final IcePathAbility ICE_PATH = new IcePathAbility();
+    public static final ShatterShellAbility SHATTER_SHELL = new ShatterShellAbility();
 
     public static final DeferredHolder<InnateTechnique, InnateTechnique> RIME = INNATE_TECHNIQUES.register("rime",
             () -> new RimeInnateTechnique(InnateTechnique.builder(InnateTechniqueRarity.RARE)
@@ -41,6 +48,9 @@ public final class Rime {
         INNATE_TECHNIQUES.register(modBus);
         RimeRegistry.register(modBus);
         VisualHooks.registerEffect(RimeIds.FX_FREEZE_SHATTER);
+        VisualHooks.registerEffect(RimeIds.FX_GLACIAL_SPIRE_WARNING);
+        VisualHooks.registerEffect(RimeIds.FX_GLACIAL_SPIRE_SPIKE);
+        VisualHooks.registerEffect(RimeIds.FX_ICE_PATH_TRAIL);
     }
 
     public static boolean holds(ServerPlayer player) {

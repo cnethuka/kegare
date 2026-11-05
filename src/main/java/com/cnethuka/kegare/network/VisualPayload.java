@@ -19,9 +19,15 @@ import net.neoforged.neoforge.network.handling.IPayloadContext;
  * @param key       identifies a loop so it can be stopped (e.g. {@code kegare:glacial_lance/charge_loop})
  * @param pos       {@link Action#PLAY_AT} only: where the effect plays
  * @param growTicks loops only: the effect grows from small to full size over this many ticks (0 = full size)
+ * @param lifetimeTicks loops only: lifetime of the effect's {@code persist*} emitters' particles (0 = as authored), so
+ *                      a lingering trail lasts exactly as long as the server's config says
  */
-public record VisualPayload(Action action, int entityId, String key, Visual visual, Vec3 pos, int growTicks)
+public record VisualPayload(Action action, int entityId, String key, Visual visual, Vec3 pos, int growTicks, int lifetimeTicks)
         implements CustomPacketPayload {
+    public VisualPayload(Action action, int entityId, String key, Visual visual, Vec3 pos, int growTicks) {
+        this(action, entityId, key, visual, pos, growTicks, 0);
+    }
+
     public enum Action {
         /** Play once on the entity. */
         PLAY_ONCE,
@@ -52,10 +58,12 @@ public record VisualPayload(Action action, int entityId, String key, Visual visu
         buf.writeOptional(visual.animation(), FriendlyByteBuf::writeResourceLocation);
         buf.writeOptional(visual.effect(), FriendlyByteBuf::writeResourceLocation);
         buf.writeEnum(visual.anchor());
+        buf.writeBoolean(visual.linger());
         buf.writeDouble(pos.x);
         buf.writeDouble(pos.y);
         buf.writeDouble(pos.z);
         buf.writeVarInt(growTicks);
+        buf.writeVarInt(lifetimeTicks);
     }
 
     private static VisualPayload read(FriendlyByteBuf buf) {
@@ -65,8 +73,9 @@ public record VisualPayload(Action action, int entityId, String key, Visual visu
         Optional<ResourceLocation> animation = buf.readOptional(FriendlyByteBuf::readResourceLocation);
         Optional<ResourceLocation> effect = buf.readOptional(FriendlyByteBuf::readResourceLocation);
         Visual.Anchor anchor = buf.readEnum(Visual.Anchor.class);
+        boolean linger = buf.readBoolean();
         Vec3 pos = new Vec3(buf.readDouble(), buf.readDouble(), buf.readDouble());
-        return new VisualPayload(action, entityId, key, new Visual(animation, effect, anchor), pos, buf.readVarInt());
+        return new VisualPayload(action, entityId, key, new Visual(animation, effect, anchor, linger), pos, buf.readVarInt(), buf.readVarInt());
     }
 
     @Override

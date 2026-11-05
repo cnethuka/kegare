@@ -1,0 +1,29 @@
+{
+  "parent": "kegare:innate_technique/rime",
+  "criteria": {
+    "granted": {
+      "trigger": "minecraft:impossible"
+    }
+  },
+  "display": {
+    "announce_to_chat": false,
+    "description": {
+      "translate": "advancements.kegare.rime.shattered_pressure.description"
+    },
+    "frame": "challenge",
+    "hidden": true,
+    "icon": {
+      "count": 1,
+      "id": "minecraft:light_blue_stained_glass"
+    },
+    "title": {
+      "translate": "advancements.kegare.rime.shattered_pressure.title"
+    }
+  },
+  "requirements": [
+    [
+      "granted"
+    ]
+  ],
+  "sends_telemetry_event": true
+}

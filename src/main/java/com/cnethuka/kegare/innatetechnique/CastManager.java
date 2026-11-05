@@ -159,6 +159,18 @@ public final class CastManager {
         return state(player).toggles.containsKey(toggle.id());
     }
 
+    /**
+     * Switches a running TOGGLE off from code (e.g. a special that uses it up, with {@link EndReason#CONSUMED}).
+     * It ends as usual: {@code onEnd}, then its cooldown. Returns whether it was on.
+     */
+    public static boolean switchOff(ServerPlayer player, Ability toggle, EndReason reason) {
+        CastState.Active active = state(player).toggles.get(toggle.id());
+        Optional<InnateTechnique> innateTechnique = InnateTechniqueService.current(player);
+        if (active == null || innateTechnique.isEmpty()) return false;
+        endToggle(player, innateTechnique.get(), active, reason);
+        return true;
+    }
+
     private static void release(ServerPlayer player, CastSlot slot) {
         CastState state = state(player);
         CastState.Active active = state.casting;
@@ -304,6 +316,12 @@ public final class CastManager {
             feedback(player, CastResult.REQUIREMENT_UNMET, ability);
             return;
         }
+        // Ability-specific release check (e.g. a target in range): fizzles for free.
+        if (!ability.canRelease(ctx)) {
+            ability.onEnd(ctx, EndReason.CANCELLED);
+            feedback(player, CastResult.BLOCKED, ability);
+            return;
+        }
         // Toggle upkeep may have drained the reserve while charging: re-check at release.
         if (!MaliceService.trySpend(player, ability.cost(player))) {
             ability.onEnd(ctx, EndReason.OUT_OF_MALICE);
@@ -330,7 +348,7 @@ public final class CastManager {
     private static void endToggle(ServerPlayer player, InnateTechnique innateTechnique, CastState.Active toggle, EndReason reason) {
         state(player).toggles.remove(toggle.ability.id());
         VisualService.stopAbility(player, toggle.ability, VisualPhase.TOGGLE_LOOP);
-        if (reason != EndReason.DEATH && reason != EndReason.LOGOUT && reason != EndReason.DIMENSION_CHANGE) {
+        if (reason != EndReason.DEATH && reason != EndReason.LOGOUT && reason != EndReason.DIMENSION_CHANGE && reason != EndReason.CONSUMED) {
             VisualService.ability(player, toggle.ability, VisualPhase.TOGGLE_OFF);
         }
         toggle.ability.onEnd(new AbilityContext(player, innateTechnique, toggle.ability, toggle.slot, 1f, toggle.activeTicks), reason);
@@ -364,6 +382,7 @@ public final class CastManager {
                     Integer.toString((int) Math.ceil((ability == null ? 0 : ability.cost(player)) - 1.0e-6)),
                     Integer.toString((int) Math.floor(MaliceService.get(player).current())));
             case STUNNED -> Component.translatable(result.translationKey(), seconds(CombatHelper.stunTicksRemaining(player)));
+            case BLOCKED -> ability != null ? ability.blockedMessage(player) : Component.translatable(result.translationKey(), name);
             case REQUIREMENT_UNMET -> Component.translatable(result.translationKey(), name,
                     ability == null ? Component.empty() : unmetRequirement(player, ability).map(Requirement::description).orElse(Component.empty()));
             default -> Component.translatable(result.translationKey(), name);

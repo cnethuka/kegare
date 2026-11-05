@@ -29,6 +29,13 @@ public final class RimeRegistry {
     public static final DeferredHolder<EntityType<?>, EntityType<GlacialLanceEntity>> GLACIAL_LANCE = ENTITIES.register("glacial_lance",
             () -> EntityType.Builder.<GlacialLanceEntity>of(GlacialLanceEntity::new, MobCategory.MISC)
                     .sized(0.6f, 0.6f).clientTrackingRange(6).updateInterval(5).build("glacial_lance"));
+    public static final DeferredHolder<EntityType<?>, EntityType<SplinterShardEntity>> SPLINTER_SHARD = ENTITIES.register("splinter_shard",
+            () -> EntityType.Builder.<SplinterShardEntity>of(SplinterShardEntity::new, MobCategory.MISC)
+                    .sized(0.25f, 0.25f).clientTrackingRange(6).updateInterval(5).build("splinter_shard"));
+    /** Glacial Spire's marker on the ground (warning circle, then the spike). Never saved. */
+    public static final DeferredHolder<EntityType<?>, EntityType<GlacialSpireEntity>> GLACIAL_SPIRE = ENTITIES.register("glacial_spire",
+            () -> EntityType.Builder.<GlacialSpireEntity>of(GlacialSpireEntity::new, MobCategory.MISC)
+                    .sized(1.0f, 0.25f).noSave().fireImmune().clientTrackingRange(6).updateInterval(20).build("glacial_spire"));
 
     public static final Supplier<AttachmentType<FreezeData>> FREEZE = ATTACHMENTS.register("freeze",
             () -> AttachmentType.builder(() -> new FreezeData()).build());
@@ -36,6 +43,12 @@ public final class RimeRegistry {
             () -> AttachmentType.builder(() -> new RimeStats()).serialize(RimeStats.CODEC).copyOnDeath().build());
     public static final Supplier<AttachmentType<RimeTracker>> TRACKER = ATTACHMENTS.register("rime_tracker",
             () -> AttachmentType.builder(() -> new RimeTracker()).build());
+    /** On a victim: who launched them with Glacial Spire (Sky High). Runtime only. */
+    public static final Supplier<AttachmentType<RimeLaunch.Mark>> LAUNCH = ATTACHMENTS.register("rime_launch",
+            () -> AttachmentType.builder(() -> new RimeLaunch.Mark()).build());
+    /** On a level: Ice Path trails. Runtime only. */
+    public static final Supplier<AttachmentType<IcePaths.Store>> ICE_PATHS = ATTACHMENTS.register("ice_paths",
+            () -> AttachmentType.builder(() -> new IcePaths.Store()).build());
 
     private RimeRegistry() {}
 

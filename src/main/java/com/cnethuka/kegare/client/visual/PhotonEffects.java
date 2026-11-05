@@ -144,6 +144,23 @@ final class PhotonEffects {
         }
     }
 
+    /**
+     * Sets the particle lifetime of every emitter named {@code persist...} (world-space trails left on the ground), so
+     * they last exactly as long as the server's config says. Their {@code maxParticles} must leave room for it.
+     */
+    static void persistLifetime(@Nullable FXEffectExecutor executor, int ticks) {
+        try {
+            if (executor == null || executor.getRuntime() == null) return;
+            for (IFXObject object : executor.getRuntime().getObjects().values()) {
+                if (object instanceof ParticleEmitter emitter && emitter.getName() != null && emitter.getName().startsWith("persist")) {
+                    emitter.runtime().startLifetime.set(new Constant(ticks));
+                }
+            }
+        } catch (Throwable t) {
+            Kegare.LOGGER.debug("Couldn't set a Photon effect's lifetime", t);
+        }
+    }
+
     /** REDUCED quality: about half the particles from every particle emitter (rate and cap). */
     private static void reduce(FXRuntime runtime) {
         for (IFXObject object : runtime.getObjects().values()) {

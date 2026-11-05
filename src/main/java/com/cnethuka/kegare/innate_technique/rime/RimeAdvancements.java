@@ -21,6 +21,16 @@ public final class RimeAdvancements {
     public static final ResourceLocation DEEP_FREEZE = id("deep_freeze");
     public static final ResourceLocation LONG_WAY_FROM_HOME = id("long_way_from_home");
     public static final ResourceLocation HOME_FIELD = id("home_field");
+    // Specials
+    public static final ResourceLocation SPLINTER = id("splinter");
+    public static final ResourceLocation SKY_HIGH = id("sky_high");
+    public static final ResourceLocation SLIP_N_SLIDE = id("slip_n_slide");
+    public static final ResourceLocation SHATTERED_PRESSURE = id("shattered_pressure");
+
+    /** Slip 'n Slide: total blocks slid with Ice Path (kept across sessions). */
+    public static final double SLIP_N_SLIDE_BLOCKS = 100.0;
+    /** Shattered Pressure: players hit by one Shatter Shell. */
+    public static final int SHATTERED_PRESSURE_PLAYERS = 3;
 
     /** Thin Ice: total damage Rime Shell has blocked (kept across sessions). */
     public static final double THIN_ICE_DAMAGE = 100.0;

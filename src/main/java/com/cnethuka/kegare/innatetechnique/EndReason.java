@@ -12,6 +12,8 @@ public enum EndReason {
     INTERRUPTED,
     /** Charge released too early, or cancelled for another non-player reason. */
     CANCELLED,
+    /** Used up by another ability (e.g. Shatter Shell bursting an active Rime Shell). No toggle-off visuals. */
+    CONSUMED,
     /** Innate technique was changed (reroll, admin, rebirth). */
     INNATE_TECHNIQUE_CHANGED,
     DEATH,

@@ -9,7 +9,12 @@ import java.util.Map;
  */
 public final class VisualState {
     /** @param startTick game time the loop started (a late viewer's charge effect resumes at the right size) */
-    public record Loop(Visual visual, int growTicks, long startTick) {}
+    /** @param lifetimeTicks overrides the effect's persistent particles' lifetime (0 = as authored) */
+    public record Loop(Visual visual, int growTicks, long startTick, int lifetimeTicks) {
+        public Loop(Visual visual, int growTicks, long startTick) {
+            this(visual, growTicks, startTick, 0);
+        }
+    }
 
     final Map<String, Loop> loops = new LinkedHashMap<>();
 

@@ -47,9 +47,20 @@ public final class AbilityBarLayer implements LayeredDraw.Layer {
     private static final Map<ResourceLocation, Boolean> WAS_COOLING = new HashMap<>();
     private static int lastSelected = -1;
     private static long selectedAt;
+    /** Highest screen row the bar (with its label and name line) used this frame; MAX_VALUE when not drawn. */
+    private static int occupiedTop = Integer.MAX_VALUE;
+
+    /**
+     * How far vanilla text that sits just above the hotbar (action-bar messages, the held item's name) must move up
+     * so it clears the bar. Its layers draw after this one, so this frame's value is current.
+     */
+    public static int clearance(int vanillaTextBottom) {
+        return occupiedTop == Integer.MAX_VALUE ? 0 : Math.max(0, vanillaTextBottom - occupiedTop);
+    }
 
     @Override
     public void render(GuiGraphics g, DeltaTracker deltaTracker) {
+        occupiedTop = Integer.MAX_VALUE;
         Minecraft mc = Minecraft.getInstance();
         if (!KegareClientConfig.HUD_ENABLED.get() || mc.options.hideGui || mc.player == null || mc.level == null) return;
         if (mc.player.isSpectator()) return;
@@ -74,6 +85,7 @@ public final class AbilityBarLayer implements LayeredDraw.Layer {
         int bottom = screenH - stack - 3;
         int top = bottom - ULT;
         int x0 = (screenW - width) / 2;
+        occupiedTop = top - (mode ? 26 : 12) - 2; // down to the selected-ability name line
 
         if (mode) {
             int color = GuiDraw.MALICE & 0xFFFFFF;

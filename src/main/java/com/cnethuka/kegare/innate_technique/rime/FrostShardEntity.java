@@ -48,6 +48,9 @@ public class FrostShardEntity extends RimeProjectile {
         int slow = RimeConfig.ticks(RimeConfig.SHARD_SLOWNESS_SECONDS);
         if (slow > 0) target.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SLOWDOWN, slow, RimeConfig.SHARD_SLOWNESS_AMPLIFIER.get()), caster);
         FreezeService.addStacks(target, RimeConfig.SHARD_FREEZE_STACKS.get(), caster);
-        if (caster != null && target instanceof ServerPlayer && target != caster) RimeAdvancements.award(caster, RimeAdvancements.COLD_OPEN);
+        if (caster != null && target instanceof ServerPlayer && target != caster) {
+            RimeAdvancements.award(caster, RimeAdvancements.COLD_OPEN);
+            RimeLaunch.onShardHit(caster, target);
+        }
     }
 }

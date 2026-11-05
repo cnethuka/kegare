@@ -1,8 +1,10 @@
 package com.cnethuka.kegare.innate_technique.rime;
 
+import com.cnethuka.kegare.innatetechnique.Ability;
 import com.cnethuka.kegare.innatetechnique.AbilityContext;
 import com.cnethuka.kegare.innatetechnique.CastType;
 import com.cnethuka.kegare.innatetechnique.visual.AbilityVisuals;
+import java.util.Optional;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
@@ -28,6 +30,7 @@ public final class GlacialLanceAbility extends RimeAbility {
     @Override public int minChargeTicks(ServerPlayer p) { return RimeConfig.ticks(RimeConfig.LANCE_MIN_CHARGE); }
     @Override public int maxChargeTicks(ServerPlayer p) { return Math.max(1, RimeConfig.ticks(RimeConfig.LANCE_MAX_CHARGE)); }
     @Override public AbilityVisuals visuals() { return VISUALS; }
+    @Override public Optional<Ability> special() { return Optional.of(Rime.GLACIAL_SPIRE); }
 
     @Override
     public void tick(AbilityContext ctx) {

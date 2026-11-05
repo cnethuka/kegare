@@ -90,6 +90,11 @@ public final class KegareAdvancementGenerator implements AdvancementProvider.Adv
         techniqueChild(saver, rime, RimeAdvancements.COLD_BLOODED, "rime.cold_blooded", Items.WITHER_SKELETON_SKULL, AdvancementType.GOAL);
         techniqueChild(saver, rime, RimeAdvancements.DEEP_FREEZE, "rime.deep_freeze", Items.BLUE_ICE, AdvancementType.CHALLENGE);
         techniqueChild(saver, rime, RimeAdvancements.LONG_WAY_FROM_HOME, "rime.long_way_from_home", Items.MAGMA_BLOCK, AdvancementType.CHALLENGE);
+        // Specials
+        techniqueChild(saver, rime, RimeAdvancements.SPLINTER, "rime.splinter", Items.PRISMARINE_SHARD, AdvancementType.TASK);
+        techniqueChild(saver, rime, RimeAdvancements.SLIP_N_SLIDE, "rime.slip_n_slide", Items.SNOW, AdvancementType.TASK);
+        techniqueChild(saver, rime, RimeAdvancements.SKY_HIGH, "rime.sky_high", Items.FEATHER, AdvancementType.GOAL);
+        techniqueChild(saver, rime, RimeAdvancements.SHATTERED_PRESSURE, "rime.shattered_pressure", Items.LIGHT_BLUE_STAINED_GLASS, AdvancementType.CHALLENGE);
     }
 
     /**

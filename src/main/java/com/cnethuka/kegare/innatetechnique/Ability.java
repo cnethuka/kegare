@@ -67,6 +67,19 @@ public interface Ability {
         return true;
     }
 
+    /**
+     * CHARGED only: checked at release, before anything is paid (e.g. "is there ground in range where I aim").
+     * False: the cast fizzles with {@link #blockedMessage}, no cost and no cooldown.
+     */
+    default boolean canRelease(AbilityContext ctx) {
+        return true;
+    }
+
+    /** Action-bar message when {@link #canCast} or {@link #canRelease} says no. */
+    default Component blockedMessage(ServerPlayer player) {
+        return Component.translatable("message.kegare.cast.blocked", displayName());
+    }
+
     /** The effect. See the class docs for when it runs per cast type. */
     void execute(AbilityContext ctx);
 

@@ -64,9 +64,14 @@ public final class VisualService {
     }
 
     public static void startLoop(Entity entity, String key, Visual visual, int growTicks) {
+        startLoop(entity, key, visual, growTicks, 0);
+    }
+
+    /** @param lifetimeTicks lifetime of the effect's persistent ({@code persist*}) particles, e.g. a trail's config duration */
+    public static void startLoop(Entity entity, String key, Visual visual, int growTicks, int lifetimeTicks) {
         if (visual.isEmpty()) return;
-        entity.getData(KegareAttachments.VISUAL_STATE).loops.put(key, new VisualState.Loop(visual, growTicks, entity.level().getGameTime()));
-        send(entity, new VisualPayload(VisualPayload.Action.START_LOOP, entity.getId(), key, visual, Vec3.ZERO, growTicks));
+        entity.getData(KegareAttachments.VISUAL_STATE).loops.put(key, new VisualState.Loop(visual, growTicks, entity.level().getGameTime(), lifetimeTicks));
+        send(entity, new VisualPayload(VisualPayload.Action.START_LOOP, entity.getId(), key, visual, Vec3.ZERO, growTicks, lifetimeTicks));
     }
 
     public static void stopLoop(Entity entity, String key) {
@@ -98,7 +103,7 @@ public final class VisualService {
             Visual visual = loop.visual();
             // A late viewer's looping animation simply starts from its first frame.
             PacketDistributor.sendToPlayer(tracker, new VisualPayload(VisualPayload.Action.START_LOOP, target.getId(),
-                    e.getKey(), visual, Vec3.ZERO, grow));
+                    e.getKey(), visual, Vec3.ZERO, grow, loop.lifetimeTicks()));
         }
     }
 

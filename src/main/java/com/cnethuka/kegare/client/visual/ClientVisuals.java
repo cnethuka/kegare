@@ -65,7 +65,7 @@ public final class ClientVisuals {
             }
             case START_LOOP -> {
                 Entity entity = level.getEntity(payload.entityId());
-                if (entity != null) startLoop(entity, payload.key(), payload.visual(), payload.growTicks());
+                if (entity != null) startLoop(entity, payload.key(), payload.visual(), payload.growTicks(), payload.lifetimeTicks());
             }
             case STOP -> stopLoop(level, payload.entityId(), payload.key());
             case STOP_ALL -> stopAll(level, payload.entityId());
@@ -90,19 +90,24 @@ public final class ClientVisuals {
     }
 
     public static void startLoop(Entity entity, String key, Visual visual, int growTicks) {
+        startLoop(entity, key, visual, growTicks, 0);
+    }
+
+    public static void startLoop(Entity entity, String key, Visual visual, int growTicks, int lifetimeTicks) {
         stopLoop(entity.level(), entity.getId(), key);
         boolean animation = false;
         if (visual.animation().isPresent() && entity instanceof AbstractClientPlayer player) {
             PlayerAnimations.play(player, visual.animation().get(), true);
             animation = true;
         }
-        boolean trail = TRAIL_KEY.equals(key);
+        boolean trail = TRAIL_KEY.equals(key) || visual.linger();
         FXEffectExecutor executor = null;
         if (visual.effect().isPresent()) {
             VfxQuality quality = KegareClientConfig.VFX_QUALITY.get();
             if (quality != VfxQuality.VANILLA) {
                 executor = PhotonEffects.onEntity(visual.effect().get(), entity, visual.anchor(), quality == VfxQuality.REDUCED, !trail);
                 if (growTicks > 0) PhotonEffects.scale(executor, GROW_FROM);
+                if (lifetimeTicks > 0) PhotonEffects.persistLifetime(executor, lifetimeTicks);
             }
         }
         LOOPS.computeIfAbsent(entity.getId(), id -> new HashMap<>())
@@ -149,7 +154,7 @@ public final class ClientVisuals {
 
     private static void end(@Nullable Entity entity, Loop loop) {
         // A state loop (shell, cone, charge, frozen) vanishes at once: a lingering shell would lie to opponents.
-        // Only a trail fades out behind its projectile.
+        // Only trails (behind a projectile, or a lingering ground trail) fade out.
         PhotonEffects.stop(loop.executor, !loop.trail);
         if (loop.animation && entity instanceof AbstractClientPlayer player) {
             loop.visual.animation().ifPresent(animation -> PlayerAnimations.stop(player, animation));

@@ -61,8 +61,12 @@ public abstract class RimeProjectile extends ThrowableItemProjectile {
         super.onHitEntity(hit);
         if (level().isClientSide || !(hit.getEntity() instanceof LivingEntity target)) return;
         ServerPlayer caster = getOwner() instanceof ServerPlayer p ? p : null;
+        beforeHurt(target, caster);
         if (target.hurt(RimeDamage.source(level(), this, getOwner()), damage)) onLivingHit(target, caster);
     }
+
+    /** Just before the hit's damage (e.g. Splinter clearing a sibling shard's hurt cooldown). */
+    protected void beforeHurt(LivingEntity target, @Nullable ServerPlayer caster) {}
 
     @Override
     protected void onHit(HitResult result) {

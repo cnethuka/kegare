@@ -1,10 +1,12 @@
 package com.cnethuka.kegare.innate_technique.rime;
 
+import com.cnethuka.kegare.innatetechnique.Ability;
 import com.cnethuka.kegare.innatetechnique.AbilityContext;
 import com.cnethuka.kegare.innatetechnique.CastManager;
 import com.cnethuka.kegare.innatetechnique.CastType;
 import com.cnethuka.kegare.innatetechnique.EndReason;
 import com.cnethuka.kegare.innatetechnique.visual.AbilityVisuals;
+import java.util.Optional;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
@@ -28,6 +30,7 @@ public final class RimeShellAbility extends RimeAbility {
     @Override public double upkeepPerSecond(ServerPlayer p) { return RimeConfig.SHELL_UPKEEP.get() * environment(p); }
     @Override public int cooldownTicks(ServerPlayer p) { return RimeConfig.ticks(RimeConfig.SHELL_COOLDOWN); }
     @Override public AbilityVisuals visuals() { return VISUALS; }
+    @Override public Optional<Ability> special() { return Optional.of(Rime.SHATTER_SHELL); }
 
     public boolean isActive(ServerPlayer player) {
         return CastManager.state(player).toggles().containsKey(id());

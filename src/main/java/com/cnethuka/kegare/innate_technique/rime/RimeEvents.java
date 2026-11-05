@@ -13,8 +13,14 @@ import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.event.entity.living.LivingDamageEvent;
 import net.neoforged.neoforge.event.entity.living.LivingDeathEvent;
 import net.neoforged.neoforge.event.tick.EntityTickEvent;
+import net.neoforged.neoforge.event.tick.LevelTickEvent;
+import net.neoforged.neoforge.event.tick.PlayerTickEvent;
+import net.minecraft.server.level.ServerLevel;
 
-/** Rime's server-side hooks: the shell's damage reduction and melee chill, freeze ticking, and Cold Blooded. */
+/**
+ * Rime's server-side hooks: the shell's damage reduction and melee chill, freeze ticking, Cold Blooded, Ice Path
+ * trails melting and slowing, and forgetting Glacial Spire launches on landing.
+ */
 @EventBusSubscriber(modid = Kegare.MODID)
 public final class RimeEvents {
     private RimeEvents() {}
@@ -48,6 +54,16 @@ public final class RimeEvents {
         if (event.getEntity() instanceof LivingEntity living && !living.level().isClientSide && living.hasData(RimeRegistry.FREEZE)) {
             FreezeService.tick(living);
         }
+    }
+
+    @SubscribeEvent
+    static void onPlayerTick(PlayerTickEvent.Post event) {
+        if (event.getEntity() instanceof ServerPlayer player) RimeLaunch.tick(player);
+    }
+
+    @SubscribeEvent
+    static void onLevelTick(LevelTickEvent.Post event) {
+        if (event.getLevel() instanceof ServerLevel level) IcePaths.tick(level);
     }
 
     /** Cold Blooded: kill a player who is frozen solid. Then the freeze ends without a shatter. */

@@ -492,9 +492,19 @@ Package `com.cnethuka.kegare.innate_technique.rime`. **Rarity: RARE.** All numbe
 | **Frost Field** | CHANNELED | A cone in front of you while held (6 blocks, 35° half-angle, line of sight). Slowness II on everyone in it, +1 Freeze stack per second. Cost 8, then 12 Malice/s; max 5 s; cooldown 5 s after it ends. |
 | **Rime Shell** | TOGGLE | 30% damage reduction; anyone who hits you in melee gets Slowness II for 2 s. Cost 10, then 4 Malice/s; cooldown 8 s after switching off. Like every toggle it keeps running while you are stunned or frozen. |
 
+- **Specials (R)**, one per ability (framework §3.15). Each shares its base ability's cooldown; the "cooldown" below
+  is how long that shared cooldown runs after the special. Numbers in `[rime.<special>]`.
+
+  | Special (of) | Type | What it does (defaults) |
+  |---|---|---|
+  | **Splinter** (Frost Shard) | INSTANT | Three smaller shards in a fan, 9° apart (`spreadAngle`), 2 blocks/tick, 1 s flight. 2 damage and +1 Freeze stack each. Shards of one cast skip the hurt cooldown a sibling left, so all three can land on one target (other attacks still respect it). Real projectiles (`SplinterShardEntity`), damage type `kegare:rime`. Cost 14, cooldown 3 s. |
+  | **Glacial Spire** (Glacial Lance) | CHARGED | Hold up to 2 s (a tap under 0.3 s fizzles) while aiming at the ground within 20 blocks. Aiming at a wall picks the floor in front of it; no ground in range at release fizzles for free ("Glacial Spire needs ground within 20 blocks."). While charging, only the caster sees a ring of frost dust where it will rise. On release a marker entity (`GlacialSpireEntity`, never saved, no blocks) shows a frost warning circle (radius 1.5) for 0.75 s, then an ice spike erupts: 6 damage, +2 Freeze stacks, and everyone on it (up to 2.5 blocks above the ground) is launched upward at 0.6 to 1.2 blocks/tick by charge. The spike stands 1.25 s, then shatters. Cost 30, cooldown 8 s. |
+  | **Ice Path** (Frost Field) | CHANNELED | Hold R: you slide the way you look at 0.65 blocks/tick (step height +0.5 so you ride up blocks; no fall damage while sliding) over an ice trail laid under your feet. Anyone else within 0.9 blocks of the trail gets Slowness II until it melts, 4 s after each bit was laid. The trail is server-side points (`IcePaths`, a level attachment), never blocks. Cost 8, then 10 Malice/s; max 3 s; cooldown 6 s after it ends. |
+  | **Shatter Shell** (Rime Shell) | INSTANT | Burst outward: everyone within 4.5 blocks is knocked back (1.4) and gets +2 Freeze stacks. With Rime Shell on, the shell is used up (`EndReason.CONSUMED`) and it costs 8; with no shell up it costs 22. The HUD and Sorcerer screen show whichever applies right now. Cooldown 8 s. |
+
 - **No ultimate yet.** The V slot shows a padlock in the HUD and the Sorcerer screen, and pressing V says it is locked
   (`InnateTechnique.Builder.lockedUltimate()`). Rime's Dominion comes later.
-- **Projectiles** are real entities with velocity (`FrostShardEntity`, `GlacialLanceEntity`, vanilla throwables
+- **Projectiles** are real entities with velocity (`FrostShardEntity`, `GlacialLanceEntity`, `SplinterShardEntity`, vanilla throwables
   rendered as their item sprite). Damage type `kegare:rime` (`data/kegare/damage_type/rime.json`, freezing hurt
   sound): the caster is the source entity, the projectile the direct entity, so kills are credited to the caster.
 - **Freeze stacks** (any living target, runtime attachment `kegare:freeze`):
@@ -522,6 +532,17 @@ Package `com.cnethuka.kegare.innate_technique.rime`. **Rarity: RARE.** All numbe
   `frost_shard_impact`, `glacial_lance_charge` (grows with charge), `glacial_lance_trail`, `glacial_lance_impact`,
   `frost_field_cone`, `rime_shell_aura` (an ice bubble, invisible from the inside) and `freeze_shatter`. Each has a
   vanilla-particle lookalike for the fallback.
+  - Specials: animations `splinter_cast`, `glacial_spire_charge` (loop), `glacial_spire_release`, `ice_path_slide`
+    (loop, a surfing stance) and `shatter_shell_cast`. Effects `splinter_cast`, `splinter_trail`,
+    `glacial_spire_charge` (frost round the lowered hand), `glacial_spire_warning` (the frost circle, a loop on the
+    marker), `glacial_spire_spike` (a stack of crystal cubes, a loop on the marker), `glacial_spire_erupt`,
+    `ice_path_trail` and `shatter_shell_burst`.
+  - `ice_path_trail` is a **lingering** loop (`Visual.lingering`): what it throws up stays in the world and fades on
+    its own; the ice itself is block marks ("Ice Path's look", below). The loop sends `trailSeconds` as
+    `VisualPayload.lifetimeTicks`, the particle lifetime of an effect's `persist*` emitters (this one has none). When
+    the slide ends, it stops laying ice and what is there melts on its own time. State loops (shell, cone, charge,
+    spire circle) still vanish at once.
+  - Photon's model particles scale uniformly, so tall shapes (the spike) are stacks of cubes.
 - **Effect authoring:** the effects are built from Photon's own objects in `RimeFxAuthoring` and written with
   Photon's serializer, the same `.fx` format the editor exports. In a dev client, `/kegarefx export` rewrites them
   (and the running game's copy), and `/kegarefx play <name> [front|self|loop]` previews one. The command exists
@@ -542,10 +563,16 @@ Package `com.cnethuka.kegare.innate_technique.rime`. **Rarity: RARE.** All numbe
   | `deep_freeze` | Deep Freeze | Freeze the same player 3 times within 60 seconds | challenge |
   | `long_way_from_home` | Long Way From Home | Freeze a player in the Nether | challenge |
   | `home_field` | Home Field | Cast a Rime ability during snowfall in a cold biome | task |
+  | `splinter` | Splinter | Hit one player with all 3 Splinter shards | task |
+  | `sky_high` | Sky High | Launch a player with Glacial Spire and hit them with Frost Shard before they land (Splinter shards count too; the launch is forgotten once they land) | goal |
+  | `slip_n_slide` | Slip 'n Slide | Travel 100 blocks with Ice Path (total, saved in `kegare:rime_stats`) | task |
+  | `shattered_pressure` | Shattered Pressure | Hit 3 players with one Shatter Shell | challenge |
 - **Art:** emblem `textures/gui/emblem/rime.png` and ability icons `textures/gui/ability/<ability>.png` (from
   `gen_art.py`, ice palette), plus HUD sprites `env_cold`, `env_hot`, `lock`, `freeze_pip` and `freeze_pip_empty`.
 - **Tests:** `RimeFreezeTest` (in-game JUnit) covers stacks, the freeze at max (stun, channel interrupted, visual
-  loops), immunity, decay, and the shell's reduction and Thin Ice count.
+  loops), immunity, decay, and the shell's reduction and Thin Ice count. `RimeSpecialsTest` covers Splinter's three
+  shards and shared cooldown, Glacial Spire's free fizzle with no ground and its eruption (stacks, launch, gone
+  afterwards), Ice Path's trail (laid, slows others, melts) and Shatter Shell's two costs and shell consumption.
 
 ### 3.15 Specials (R)
 - Any slot ability can define a **special** (`Ability.special()`): a second ability cast with **R** while the base is
@@ -562,6 +589,9 @@ Package `com.cnethuka.kegare.innate_technique.rime`. **Rarity: RARE.** All numbe
   - no special → `"<ability> has no special."`, nothing paid;
   - otherwise the same shared checks as a base cast (busy, stun, cooldown, requirements, cost, `canCast`), and the
     same lifecycle. Only R's release ends an R charge/channel (right-click/C releases don't).
+- **Hooks specials use:** `Ability.canRelease(ctx)` (CHARGED: checked at release before paying; false fizzles
+  for free with `blockedMessage`), `CastManager.switchOff(player, toggle, reason)` (end a toggle from code, e.g.
+  `EndReason.CONSUMED`), and lingering visual loops (§3.14, Ice Path).
 - **Requirements** (`Requirement`): `Requirement.trait(trait)`, `Requirement.toggleActive(ability)` or
   `Requirement.of(test, description)`.
   - Unmet at the press → `"<special> requires <description>."`, nothing paid, no cooldown.
@@ -569,7 +599,8 @@ Package `com.cnethuka.kegare.innate_technique.rime`. **Rarity: RARE.** All numbe
 - **Sorcerer screen:** under each ability card, an **R** badge with "Special: name (type) · cost" (gold when
   available now, grey when a requirement is unmet) or "No special". Hovering it shows the type, description,
   current cost, requirements (green met / red unmet) and "Shares <base>'s cooldown".
-- **HUD:** the ability bar's R badge is lit for abilities with a special. A special's charge/channel outlines its
+- **HUD:** action-bar messages (cast feedback) and the held item's name move up to clear the ability bar
+  (`HudClearance`). The ability bar's R badge is lit for abilities with a special. A special's charge/channel outlines its
   base slot, and a TOGGLE special lights the base slot green. The radial menu shows "R: <special>".
 - **Tests:** `SpecialsTest` (in-game JUnit) covers fizzles without cost, both requirement kinds, the release
   re-check and the shared cooldown both ways.

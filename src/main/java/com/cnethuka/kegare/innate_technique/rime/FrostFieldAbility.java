@@ -1,9 +1,11 @@
 package com.cnethuka.kegare.innate_technique.rime;
 
+import com.cnethuka.kegare.innatetechnique.Ability;
 import com.cnethuka.kegare.innatetechnique.AbilityContext;
 import com.cnethuka.kegare.innatetechnique.CastType;
 import com.cnethuka.kegare.innatetechnique.visual.AbilityVisuals;
 import java.util.List;
+import java.util.Optional;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
@@ -29,6 +31,7 @@ public final class FrostFieldAbility extends RimeAbility {
     @Override public int cooldownTicks(ServerPlayer p) { return RimeConfig.ticks(RimeConfig.FIELD_COOLDOWN); }
     @Override public int maxChannelTicks(ServerPlayer p) { return Math.max(1, RimeConfig.ticks(RimeConfig.FIELD_MAX_DURATION)); }
     @Override public AbilityVisuals visuals() { return VISUALS; }
+    @Override public Optional<Ability> special() { return Optional.of(Rime.ICE_PATH); }
 
     @Override
     public void execute(AbilityContext ctx) {

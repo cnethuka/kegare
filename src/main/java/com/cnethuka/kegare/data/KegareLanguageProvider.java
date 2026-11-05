@@ -98,8 +98,22 @@ public final class KegareLanguageProvider extends LanguageProvider {
         add("ability.kegare.frost_field.desc", "While held, a freezing cone in front of you slows and adds 1 Freeze stack per second.");
         add("ability.kegare.rime_shell", "Rime Shell");
         add("ability.kegare.rime_shell.desc", "Toggle a shell of ice: take less damage, and anyone who hits you up close is slowed.");
+        add("ability.kegare.splinter", "Splinter");
+        add("ability.kegare.splinter.desc", "Three smaller shards in a fan. Each deals less damage and adds 1 Freeze stack; all three can hit one target.");
+        add("ability.kegare.glacial_spire", "Glacial Spire");
+        add("ability.kegare.glacial_spire.desc", "Hold to charge (up to 2s) while aiming at the ground in range. A frost circle marks the spot, "
+                + "then an ice spike erupts: damage, 2 Freeze stacks, and anyone on it is launched (higher with more charge).");
+        add("ability.kegare.ice_path", "Ice Path");
+        add("ability.kegare.ice_path.desc", "While held, slide fast the way you look over a trail of ice. Anyone else on the trail is "
+                + "slowed until it melts. Drains " + MALICE + " while held.");
+        add("ability.kegare.shatter_shell", "Shatter Shell");
+        add("ability.kegare.shatter_shell.desc", "Burst outward: everyone nearby is knocked back and gets 2 Freeze stacks. "
+                + "Uses up an active Rime Shell; costs more without one.");
+        add("message.kegare.glacial_spire.no_ground", "%s needs ground within %s blocks.");
         add("entity.kegare.frost_shard", "Frost Shard");
         add("entity.kegare.glacial_lance", "Glacial Lance");
+        add("entity.kegare.splinter_shard", "Splinter");
+        add("entity.kegare.glacial_spire", "Glacial Spire");
         add("item.kegare.frost_shard", "Frost Shard");
         add("item.kegare.glacial_lance", "Glacial Lance");
         add("death.attack.kegare.rime", "%1$s was frozen solid by %2$s");
@@ -221,6 +235,10 @@ public final class KegareLanguageProvider extends LanguageProvider {
         advancement("rime.deep_freeze", "Deep Freeze", "Freeze the same player 3 times within 60 seconds");
         advancement("rime.long_way_from_home", "Long Way From Home", "Freeze a player in the Nether");
         advancement("rime.home_field", "Home Field", "Cast a Rime ability during snowfall in a cold biome");
+        advancement("rime.splinter", "Splinter", "Hit one player with all 3 Splinter shards");
+        advancement("rime.sky_high", "Sky High", "Launch a player with Glacial Spire and hit them with Frost Shard before they land");
+        advancement("rime.slip_n_slide", "Slip 'n Slide", "Travel 100 blocks with Ice Path");
+        advancement("rime.shattered_pressure", "Shattered Pressure", "Hit 3 players with one Shatter Shell");
         advancement("the_cycle_continues", "The Cycle Continues", "Inherit " + LENSING_EYES + " from a fallen bearer.");
         advancement("eyes_closed", "Eyes Closed", "Lose your " + LENSING_EYES + ".");
         advancement("blinded", "Blinded", "Kill the bearer of " + LENSING_EYES + ".");
