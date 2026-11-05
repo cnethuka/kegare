@@ -258,22 +258,31 @@ All timestamps use **level game time**. They persist across restarts and are ide
   refused.
 
 ### 3.6 HUD
-- **Top-left** (`kegare:malice_hud`, offset in client config): the innate technique name in rarity color, the Malice
-  bar with current/capacity and the surroundings cost icon, and your freeze stacks. Severed players see only freeze
-  stacks.
-  - The bar is in your innate technique's Malice color (§3.3), with a soft glow round the filled part. When Malice
-    is spent, the lost part stays as a paler **ghost fill** for 0.45 s, then drains down at half the bar per second;
-    gains show at once.
-- **Ability bar** (`kegare:ability_bar`), bottom-centre above the hotbar. It stacks above hearts, armour, food and air
-  using `Gui.leftHeight`/`rightHeight`, so it never overlaps them, even with extra heart rows.
-  - One 20×20 slot per ability, then a larger 26×26 gold ultimate slot (a padlock while the ultimate is locked).
-  - Each slot: the icon, its number key, a cooldown sweep with seconds left, a white flash the moment it comes off
-    cooldown, and a small **R** badge (lit gold if the ability has a special, grey if not). Active toggles get a
-    green outline and the casting ability a gold one.
-  - The selected slot has a gold frame and a caret above it; its name shows above the bar for 2 s after selecting.
-  - A thin bar above the slots fills while charging and drains while channeling.
-  - **Technique Mode:** the bar sits on a lit panel labelled "Technique Mode" and the hotbar is dimmed.
-- Severed players have no ability bar. Everything is hidden when F1 hides the GUI and in spectator mode.
+**Rule: the combat HUD does not exist until the player asks for it** (art in `gen_art.py` → `textures/gui/combat/`).
+- **Without Technique Mode** the screen is vanilla. Only what can't wait shows, small and under the crosshair
+  (`kegare:status`): freeze pips while there are stacks ("Frozen!" while frozen; Severed players too), and a thin
+  charge/channel line while casting with the Cast key.
+- **G brings up the combat panel** (`kegare:combat_panel`, 182×50, slides up in 0.18 s). It **takes the hotbar's
+  place**: the vanilla hotbar, XP bar, level and jump meter are hidden (`HudClearance`); the hotbar is drawn as a
+  **column on the left edge** (`kegare:combat_hotbar`, selected slot lit, off-hand above it); hearts, food, armour and
+  air sit **on top of** the panel (it raises `Gui.leftHeight`/`rightHeight` to 61), and action-bar text moves up to
+  match. The panel:
+  - **crest**: freeze pips (pulsing while frozen);
+  - **meter housing**: 12 cells of Malice in the innate technique's Malice color (§3.3) with slanted energy streaks;
+    spent Malice lingers as a paler **ghost** for 0.45 s, then drains at half the meter per second; gains show at
+    once. The current amount sits on the **centre plate**, cyan with a snowflake when the surroundings make casting
+    cheaper, orange with a flame when dearer. A thin line under the cells fills while charging (gold) and drains
+    while channeling (cyan);
+  - **tray**: one recessed slot per loadout slot (§3.16), then the ultimate in its iron-and-bronze frame (a padlock
+    while locked). Each slot: icon, number key (big, bottom-right), cooldown sweep with seconds left, a white flash
+    when it comes off cooldown, and a small **R** plate (gold letter if the ability has a special, dull if not). The
+    selected slot is lit gold; active toggles get a green outline, the casting ability a gold one. Empty loadout
+    slots show only their number;
+  - accents along the tray and crest in the technique's Malice color.
+- The selected ability's name shows above hearts/food for 2 s after picking it (`kegare:combat_name`).
+- `SPLIT` scheme: G only shows/hides the panel (number keys still pick hotbar slots from the column).
+- Severed players never get the panel (G does nothing). Everything is hidden when F1 hides the GUI and in spectator
+  mode. Client config `hud.enabled` turns all of it off.
 
 ### 3.7 Combat state (`CombatHelper`)
 - `markCombat`, `isInCombat` (`combatTagSeconds`, 10s), and `isRegenPaused`.

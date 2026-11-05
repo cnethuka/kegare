@@ -9,12 +9,14 @@ import javax.annotation.Nullable;
 import net.minecraft.client.Minecraft;
 
 /**
- * Client-only input state for {@link InputScheme#TOGGLE_MODE}. While Technique Mode is on, scroll and number keys pick
- * abilities (the hotbar never changes) and right-click base-casts instead of using the held item. Purely an input
- * mapping: the server still validates every request.
+ * Client-only Technique Mode state (key G). While it is on the combat panel replaces the hotbar
+ * ({@link CombatPanelLayer}); in {@link InputScheme#TOGGLE_MODE} scroll and number keys also pick abilities (the hotbar
+ * never changes) and right-click base-casts instead of using the held item. In {@link InputScheme#SPLIT} G only shows
+ * or hides the panel. Purely input and display: the server still validates every request.
  */
 public final class TechniqueMode {
     private static boolean active;
+    private static long shownAtMs;
 
     private TechniqueMode() {}
 
@@ -27,12 +29,23 @@ public final class TechniqueMode {
         return active && scheme() == InputScheme.TOGGLE_MODE;
     }
 
-    /** G: on when allowed, off when on. Does nothing for Severed players, in SPLIT, or without abilities. */
+    /** The combat panel is up (either scheme). */
+    public static boolean panelShown() {
+        return active && abilitiesAvailable();
+    }
+
+    /** When the panel last came up (it slides in). */
+    public static long shownAtMs() {
+        return shownAtMs;
+    }
+
+    /** G: on when allowed, off when on. Does nothing for Severed players or without abilities. */
     static void toggle() {
         if (active) {
             exit();
-        } else if (scheme() == InputScheme.TOGGLE_MODE && abilitiesAvailable()) {
+        } else if (abilitiesAvailable()) {
             active = true;
+            shownAtMs = net.minecraft.Util.getMillis();
         }
     }
 

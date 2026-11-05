@@ -26,6 +26,12 @@ public final class ClientLoadout {
         return Collections.unmodifiableList(out);
     }
 
+    /** The ability or its special is a TOGGLE that is switched on. */
+    public static boolean toggledOn(SyncPayload data, Ability ability) {
+        return data.activeToggles().contains(ability.id())
+                || ability.special().map(special -> data.activeToggles().contains(special.id())).orElse(false);
+    }
+
     public static int size() {
         SyncPayload data = ClientData.get();
         return data == null || TechniqueMode.current() == null ? 0 : data.loadout().size();

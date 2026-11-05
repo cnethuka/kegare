@@ -157,14 +157,7 @@ public final class KegareLanguageProvider extends LanguageProvider {
         add("message.kegare.trait.six_eyes.succession", "The eyes have closed... and opened elsewhere.");
 
         // HUD
-        add("hud.kegare.no_innate_technique", "No " + INNATE_TECHNIQUE);
-        add("hud.kegare.malice", MALICE + " %s/%s");
-        add("hud.kegare.selected", "» %s (%s)");
-        add("hud.kegare.cooldown", "%ss");
-        add("hud.kegare.cost_multiplier", "×%s");
-        add("hud.kegare.technique_mode", "Technique Mode");
         add("hud.kegare.empty_slot", "Empty slot");
-        add("hud.kegare.freeze", "Freeze");
         add("hud.kegare.frozen", "Frozen!");
         add("gui.kegare.cost.current", "Cost here: %s " + MALICE);
         add("gui.kegare.cost.upkeep", "Upkeep here: %s " + MALICE + "/s");

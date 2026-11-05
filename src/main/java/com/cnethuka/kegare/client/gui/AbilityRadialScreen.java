@@ -89,7 +89,7 @@ public final class AbilityRadialScreen extends Screen {
                 g.drawCenteredString(font, Integer.toString(i + 1), x + SLOT / 2, y + (SLOT - 8) / 2, isHovered ? GuiDraw.WHITE : 0xFF606060);
                 continue;
             }
-            if (com.cnethuka.kegare.client.AbilityBarLayer.toggledOn(data, ability)) g.renderOutline(x, y, SLOT, SLOT, 0xFF5CFF7A);
+            if (ClientLoadout.toggledOn(data, ability)) g.renderOutline(x, y, SLOT, SLOT, 0xFF5CFF7A);
 
             boolean hasIcon = GuiDraw.abilityIcon(g, ability, x + (SLOT - 16) / 2, y + (SLOT - 16) / 2);
 

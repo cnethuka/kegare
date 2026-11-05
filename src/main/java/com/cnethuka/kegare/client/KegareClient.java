@@ -34,8 +34,13 @@ public final class KegareClient {
     }
 
     private static void registerGuiLayers(RegisterGuiLayersEvent event) {
-        event.registerAbove(VanillaGuiLayers.HOTBAR, MaliceHudLayer.ID, new MaliceHudLayer());
-        // After hearts/armour/food/air so it can stack above whatever they used (Gui.leftHeight/rightHeight).
-        event.registerAbove(VanillaGuiLayers.EXPERIENCE_LEVEL, AbilityBarLayer.ID, new AbilityBarLayer());
+        // Technique Mode: the combat panel takes the hotbar's place (HudClearance hides the vanilla hotbar and XP);
+        // it raises Gui.leftHeight/rightHeight so hearts and food sit on top of it.
+        event.registerAbove(VanillaGuiLayers.HOTBAR, CombatPanelLayer.ID, new CombatPanelLayer());
+        event.registerAbove(CombatPanelLayer.ID, CombatHotbarLayer.ID, new CombatHotbarLayer());
+        // After hearts/armour/food/air, so it clears whatever they used.
+        event.registerAbove(VanillaGuiLayers.EXPERIENCE_LEVEL, CombatNameLayer.ID, new CombatNameLayer());
+        // Without the panel: freeze stacks and casting progress under the crosshair.
+        event.registerAbove(VanillaGuiLayers.CROSSHAIR, StatusLayer.ID, new StatusLayer());
     }
 }

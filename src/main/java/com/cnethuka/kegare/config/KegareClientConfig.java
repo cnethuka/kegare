@@ -7,8 +7,6 @@ public final class KegareClientConfig {
     public static final ModConfigSpec SPEC;
 
     public static final ModConfigSpec.BooleanValue HUD_ENABLED;
-    public static final ModConfigSpec.IntValue HUD_X;
-    public static final ModConfigSpec.IntValue HUD_Y;
     public static final ModConfigSpec.BooleanValue REVEAL_ANIMATION;
     public static final ModConfigSpec.IntValue RADIAL_HOLD_TICKS;
     public static final ModConfigSpec.BooleanValue FIRST_PERSON_ANIMATIONS;
@@ -40,8 +38,6 @@ public final class KegareClientConfig {
         ModConfigSpec.Builder b = new ModConfigSpec.Builder();
         b.push("hud");
         HUD_ENABLED = b.define("enabled", true);
-        HUD_X = b.comment("HUD offset from the left edge of the screen (GUI pixels).").defineInRange("offsetX", 4, 0, 4000);
-        HUD_Y = b.comment("HUD offset from the top edge of the screen (GUI pixels).").defineInRange("offsetY", 4, 0, 4000);
         b.pop();
         b.push("reveal");
         REVEAL_ANIMATION = b.comment("Play the roll reveal spin. Off = show the result instantly.").define("animation", true);

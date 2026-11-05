@@ -10,8 +10,9 @@ import net.neoforged.neoforge.client.event.RenderGuiLayerEvent;
 import net.neoforged.neoforge.client.gui.VanillaGuiLayers;
 
 /**
- * Moves vanilla text that sits just above the hotbar (action-bar messages such as cast feedback, and the held item's
- * name) up past the ability bar, so neither covers the other.
+ * While the combat panel is up: hides the vanilla hotbar, XP bar and level (the panel takes their place; the hotbar is
+ * drawn as a column on the left), and moves the vanilla text above the hotbar (action-bar messages, the held item's
+ * name) up by as much as the panel raised hearts and food.
  */
 @EventBusSubscriber(modid = Kegare.MODID, value = Dist.CLIENT)
 public final class HudClearance {
@@ -23,11 +24,22 @@ public final class HudClearance {
 
     private HudClearance() {}
 
+    /** The combat panel takes the hotbar's place: no vanilla hotbar or XP bar while it is up. */
+    @SubscribeEvent(priority = EventPriority.HIGH)
+    static void hide(RenderGuiLayerEvent.Pre event) {
+        if (!CombatPanelLayer.shown()) return;
+        ResourceLocation layer = event.getName();
+        if (layer.equals(VanillaGuiLayers.HOTBAR) || layer.equals(VanillaGuiLayers.EXPERIENCE_BAR)
+                || layer.equals(VanillaGuiLayers.EXPERIENCE_LEVEL) || layer.equals(VanillaGuiLayers.JUMP_METER)) {
+            event.setCanceled(true);
+        }
+    }
+
     @SubscribeEvent(priority = EventPriority.LOWEST)
     static void pre(RenderGuiLayerEvent.Pre event) {
         int fromBottom = textBottom(event.getName());
         if (fromBottom < 0 || event.isCanceled()) return;
-        int up = AbilityBarLayer.clearance(event.getGuiGraphics().guiHeight() - fromBottom);
+        int up = CombatPanelLayer.extraHeight();
         if (up <= 0) return;
         event.getGuiGraphics().pose().pushPose();
         event.getGuiGraphics().pose().translate(0, -up, 0);

@@ -932,10 +932,259 @@ def special_badge(lit: bool) -> Image.Image:
         "KbbbbbbbK",
         ".KKKKKKK.",
     ]
+    # A dark iron plate with the letter in gold (lit) or dull iron (no special): readable, but it doesn't shout.
     if lit:
-        pal = {"K": INK, "b": GOLD[5], "R": INK}
+        pal = {"K": INK, "b": IRON[1], "R": GOLD[5]}
     else:
-        pal = {"K": INK, "b": IRON[2], "R": IRON[4]}
+        pal = {"K": INK, "b": PLUM[2], "R": IRON[3]}
+    return from_grid(grid, pal)
+
+
+# ---------------------------------------------------------------------------------------------------- combat HUD
+# Technique Mode's combat panel: it replaces the hotbar while the mode is on (the hotbar moves to a column on the left
+# edge): a meter housing with the number on a centre plate, and a
+# tray of numbered slots under it; every pixel here is our own: cursed iron, plum-black ink, accents tinted with the
+# innate technique's Malice color at draw time.
+
+PANEL_W, PANEL_H = 182, 50
+CREST_TOP, FRAME_TOP, FRAME_BOTTOM, TRAY_BOTTOM = 0, 6, 23, 49
+
+
+def _shade(r: list, t: float, x: int, y: int):
+    return dither(r, t, x, y)
+
+
+def combat_panel() -> Image.Image:
+    """182x50. Rows 0-6: the crest (a raised plate for freeze pips). Rows 6-23: the meter housing, with a recessed
+    well (rows 9-20; cells at rows 11-18) and a raised centre plate for the number. Rows 23-49: the tray for ability
+    slots (22px slots at rows 25-46), narrowing toward the bottom."""
+    w, h = PANEL_W, PANEL_H
+    img = new(w, h)
+    grain = noise_stack(907, w, h, (12, 6, 3))
+
+    # ---- tray (drawn first: the housing overlaps its top)
+    for y in range(FRAME_BOTTOM - 1, TRAY_BOTTOM + 1):
+        inset = 5 + (y - FRAME_BOTTOM) // 4
+        x0, x1 = inset, w - 1 - inset
+        for x in range(x0, x1 + 1):
+            if x in (x0, x1) or y == TRAY_BOTTOM:
+                c = INK
+            elif y >= TRAY_BOTTOM - 2:  # lip
+                c = IRON[3] if y == TRAY_BOTTOM - 2 else IRON[1]
+            elif x in (x0 + 1, x1 - 1):  # inner edge: lit on the left, shadowed on the right
+                c = IRON[4] if x == x0 + 1 else IRON[1]
+            else:
+                depth = (y - FRAME_BOTTOM) / (TRAY_BOTTOM - FRAME_BOTTOM)
+                t = 0.15 + depth * 0.35 + (fbm(grain, x, y) - 0.5) * 0.25
+                c = _shade(PLUM, t, x, y)
+                if y <= FRAME_BOTTOM + 1:
+                    c = INK  # shadow under the housing
+            put(img, x, y, c)
+
+    # ---- meter housing (rows FRAME_TOP..FRAME_BOTTOM), 2px chamfers
+    for y in range(FRAME_TOP, FRAME_BOTTOM + 1):
+        for x in range(w):
+            dy = min(y - FRAME_TOP, FRAME_BOTTOM - y)
+            dx = min(x, w - 1 - x)
+            if dx + dy < 2:
+                continue  # chamfered corner
+            edge = dx == 0 or dy == 0 or dx + dy == 2
+            if edge:
+                c = INK
+            elif y == FRAME_TOP + 1:
+                c = IRON[6]
+            elif y == FRAME_TOP + 2:
+                c = IRON[5]
+            elif y == FRAME_BOTTOM - 1:
+                c = IRON[1]
+            elif y == FRAME_BOTTOM - 2:
+                c = IRON[2]
+            elif x == 1:
+                c = IRON[5]
+            elif x == w - 2:
+                c = IRON[2]
+            else:
+                t = 0.45 + (fbm(grain, x, y) - 0.5) * 0.35 - (y - FRAME_TOP) / 40
+                c = _shade(IRON[2:6], t, x, y)
+            put(img, x, y, c)
+    # the recessed well for the cells
+    wx0, wx1, wy0, wy1 = 4, w - 5, FRAME_TOP + 3, FRAME_BOTTOM - 3
+    for y in range(wy0, wy1 + 1):
+        for x in range(wx0, wx1 + 1):
+            if x in (wx0, wx1) or y in (wy0, wy1):
+                c = INK
+            elif y == wy0 + 1:
+                c = PLUM[0]
+            else:
+                c = _shade(PLUM, 0.1 + (y - wy0) / (wy1 - wy0) * 0.35, x, y)
+            put(img, x, y, c)
+    # rivets on the housing's ends
+    for rx in (2, w - 3):
+        for (dx, dy, c) in ((0, -1, IRON[6]), (0, 0, IRON[5]), (0, 1, IRON[3])):
+            put(img, rx, (FRAME_TOP + FRAME_BOTTOM) // 2 + dy, c)
+
+    # ---- centre plate (raised, number window)
+    px0, px1, py0, py1 = 68, w - 69, FRAME_TOP - 1, FRAME_BOTTOM + 1
+    for y in range(py0, py1 + 1):
+        for x in range(px0, px1 + 1):
+            dy = min(y - py0, py1 - y)
+            dx = min(x - px0, px1 - x)
+            if dx + dy < 2:
+                continue
+            if dx == 0 or dy == 0 or dx + dy == 2:
+                c = INK
+            elif y == py0 + 1:
+                c = IRON[6]
+            elif y == py1 - 1:
+                c = IRON[1]
+            elif x == px0 + 1:
+                c = IRON[5]
+            elif x == px1 - 1:
+                c = IRON[2]
+            else:
+                c = _shade(IRON[2:5], 0.5 - (y - py0) / 30, x, y)
+            put(img, x, y, c)
+    nx0, nx1, ny0, ny1 = px0 + 4, px1 - 4, wy0, wy1
+    for y in range(ny0, ny1 + 1):
+        for x in range(nx0, nx1 + 1):
+            c = INK if (x in (nx0, nx1) or y in (ny0, ny1)) else _shade(PLUM[:3], 0.2 + (y - ny0) / 30, x, y)
+            put(img, x, y, c)
+
+    # ---- crest (rows 0..6): a raised trapezoid plate with a slot for freeze pips
+    for y in range(CREST_TOP, FRAME_TOP + 1):
+        x0, x1 = 58 - y, w - 59 + y
+        for x in range(x0, x1 + 1):
+            if x in (x0, x1) or y == CREST_TOP:
+                c = INK
+            elif y == CREST_TOP + 1:
+                c = IRON[6]
+            else:
+                c = _shade(IRON[2:6], 0.55 - y / 14, x, y)
+            put(img, x, y, c)
+    for y in range(CREST_TOP + 2, FRAME_TOP + 1):  # pip slot
+        for x in range(66, w - 66):
+            put(img, x, y, INK if y == CREST_TOP + 2 else PLUM[1])
+    return img
+
+
+def combat_panel_accent() -> Image.Image:
+    """182x50, white on clear: the lines tinted with the innate technique's Malice color (tray edges, crest rim,
+    the well's lower lip)."""
+    img = new(PANEL_W, PANEL_H)
+    for y in range(FRAME_BOTTOM + 1, TRAY_BOTTOM - 2):
+        inset = 5 + (y - FRAME_BOTTOM) // 4
+        a = int(255 * (0.55 + 0.45 * (y - FRAME_BOTTOM) / (TRAY_BOTTOM - FRAME_BOTTOM)))
+        put(img, inset + 1, y, (255, 255, 255, a))
+        put(img, PANEL_W - 2 - inset, y, (255, 255, 255, a))
+    for x in range(60, PANEL_W - 60):  # crest rim glow
+        put(img, x, CREST_TOP + 1, (255, 255, 255, 150))
+    for x in range(5, PANEL_W - 5):  # the well's lower lip
+        if 68 <= x <= PANEL_W - 69:
+            continue
+        put(img, x, FRAME_BOTTOM - 4, (255, 255, 255, 70))
+    return img
+
+
+def meter_cells() -> Image.Image:
+    """33x8 atlas: an empty cell (x 0-10), a full cell in greyscale for tinting (11-21), its white shine (22-32).
+    Each cell is 10 wide plus a 1px gap. Slanted streaks run through both, so a full meter reads as flowing energy
+    and an empty one as etched iron."""
+    img = new(33, 8)
+    for y in range(8):
+        for x in range(10):
+            streak = (x + y) % 4 == 0
+            edge_l, edge_t, edge_b = x == 0, y == 0, y == 7
+            # empty: dark etched iron
+            if edge_t:
+                c = IRON[2]
+            elif edge_b:
+                c = INK
+            elif edge_l:
+                c = IRON[1]
+            else:
+                c = IRON[1] if streak else PLUM[2]
+            put(img, x, y, c)
+            # full: bright top, deeper bottom, lighter streaks
+            v = 250 if edge_t else int(225 - y * 15)
+            if streak and not edge_t:
+                v = min(255, v + 30)
+            if edge_l:
+                v = int(v * 0.8)
+            if edge_b:
+                v = int(v * 0.6)
+            put(img, 11 + x, y, (v, v, v, 255))
+            # shine: the top rim and the streaks' upper half
+            a = 170 if edge_t else 70 if y == 1 else (60 if streak and y < 4 else 0)
+            if a:
+                put(img, 22 + x, y, (255, 255, 255, a))
+    return img
+
+
+def combat_slot(kind: str) -> Image.Image:
+    """22x22 recessed slot ('normal', 'selected') or the 26x26 ultimate slot ('ultimate')."""
+    size = 26 if kind == "ultimate" else 22
+    img = new(size, size)
+    grain = noise_stack(613, size, size, (6, 3))
+    for y in range(size):
+        for x in range(size):
+            d = min(x, y, size - 1 - x, size - 1 - y)
+            corner = min(x, size - 1 - x) + min(y, size - 1 - y)
+            if corner < 2:
+                continue
+            if d == 0 or corner == 2:
+                c = INK
+            elif kind == "ultimate" and d <= 2:
+                lit = x < size - 1 - x and y < size - 1 - y
+                c = (IRON[6] if lit else IRON[3]) if d == 1 else (GOLD[3] if lit else GOLD[1])
+            elif d == 1 or (kind == "ultimate" and d == 3):
+                if kind == "selected":
+                    c = GOLD[5] if (y < size // 2 or x < size // 2) and not (y > size - 4 or x > size - 4) else GOLD[3]
+                else:
+                    # recessed: the top-left rim in shadow, the bottom-right lit
+                    c = IRON[1] if (x <= y and x < size - 1 - y) or (y < x and y < size - 1 - x) else IRON[4]
+            elif d == 2 or (kind == "ultimate" and d == 4):
+                c = INK if kind != "selected" else GOLD[1]
+            else:
+                inner = size - 2 * (5 if kind == "ultimate" else 3)
+                fy = (y - (5 if kind == "ultimate" else 3)) / max(1, inner)
+                cx = abs(x - (size - 1) / 2) / (size / 2)
+                t = 0.15 + fy * 0.45 - cx * 0.15 + (fbm(grain, x, y) - 0.5) * 0.2
+                c = dither(PLUM, t, x, y)
+            put(img, x, y, c)
+    if kind == "ultimate":  # gold studs on the corners
+        for (sx, sy) in ((3, 3), (size - 4, 3), (3, size - 4), (size - 4, size - 4)):
+            put(img, sx, sy, GOLD[6])
+    return img
+
+
+def hotbar_cell(selected: bool) -> Image.Image:
+    """20x20 cell of the vertical hotbar shown on the left edge while the combat panel is up."""
+    size = 20
+    img = new(size, size)
+    for y in range(size):
+        for x in range(size):
+            d = min(x, y, size - 1 - x, size - 1 - y)
+            if d == 0:
+                c = INK
+            elif d == 1:
+                if selected:
+                    c = hexc("#f2f2f2") if (x < 10 or y < 10) else hexc("#a8a8b4")
+                else:
+                    c = IRON[4] if (x == 1 or y == 1) else IRON[2]
+            else:
+                c = dither(PLUM, 0.25 + y / size * 0.3, x, y) if not selected else dither(IRON[1:4], 0.3 + y / size * 0.3, x, y)
+            put(img, x, y, c)
+    return img
+
+
+def env_mini(cold: bool) -> Image.Image:
+    """5x5 glyph in the corner of the combat panel's number plate: a snowflake (cheaper here) or a flame (dearer)."""
+    if cold:
+        grid = ["..a..", "a.b.a", ".bbb.", "a.b.a", "..a.."]
+        pal = {"a": ICE[5], "b": ICE[6]}
+    else:
+        grid = ["..a..", ".aa..", ".aba.", "abbba", ".bcb."]
+        pal = {"a": hexc("#c2410c"), "b": hexc("#fb923c"), "c": hexc("#fde68a")}
     return from_grid(grid, pal)
 
 
@@ -1085,6 +1334,8 @@ def build() -> dict[str, Image.Image]:
     out["badge_special"] = special_badge(True)
     out["badge_special_none"] = special_badge(False)
     out["category_shared"] = category_shared()
+    out["env_cold_mini"] = env_mini(True)
+    out["env_hot_mini"] = env_mini(False)
     return out
 
 
@@ -1106,6 +1357,14 @@ def main() -> None:
     save(hud_slot(False), "gui/ability_slot.png")
     save(hud_slot(True), "gui/ability_slot_selected.png")
     save(ultimate_slot(), "gui/ultimate_slot.png")
+    save(combat_panel(), "gui/combat/panel.png")
+    save(combat_panel_accent(), "gui/combat/panel_accent.png")
+    save(meter_cells(), "gui/combat/meter_cells.png")
+    save(combat_slot("normal"), "gui/combat/slot.png")
+    save(combat_slot("selected"), "gui/combat/slot_selected.png")
+    save(combat_slot("ultimate"), "gui/combat/slot_ultimate.png")
+    save(hotbar_cell(False), "gui/combat/hotbar_cell.png")
+    save(hotbar_cell(True), "gui/combat/hotbar_cell_selected.png")
     save(talisman_item(), "item/purification_talisman.png")
     # Rime's projectiles render as these items in flight
     save(icon(ICON_FROST_SHARD, ICE), "item/frost_shard.png")
