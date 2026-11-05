@@ -179,6 +179,9 @@ All timestamps use **level game time**. They persist across restarts and are ide
   - every `Requirement` met (unmet: fizzle with a message, nothing paid)
   - can afford the cost
   - `ability.canCast`
+- An INSTANT ability can still fizzle AFTER paying: `CastManager.fizzleKeepingCost` from its `execute` keeps the
+  Malice spent but starts no cooldown and plays no cast visuals (Swap uses it when `SwapTargetEvent` is cancelled,
+  §3.19).
 - Charges, channels and toggles are runtime-only and end on death, logout and innate technique change.
 - **TEST CONTENT** (`innatetechnique/test/`, config `[test_abilities]`):
 
@@ -254,8 +257,9 @@ All timestamps use **level game time**. They persist across restarts and are ide
   - It is sent at most once per tick, and only when something visible changed (Malice syncs when its whole number
     changes).
   - The client counts down cooldowns locally from game time.
-- Network version `4` (since specials in `SorcererInfoPayload`, §3.15). Bump it when payload formats change; mismatched clients are
-  refused.
+- Swap (§3.19) adds two cosmetic S→C payloads: `Disguises.StatePayload` (the disguise map, to everyone) and
+  `SwapLink.Payload` (effects drawn along a line).
+- Network version `6` (since Swap's payloads). Bump it when payload formats change; mismatched clients are refused.
 
 ### 3.6 HUD
 **Rule: the combat HUD does not exist until the player asks for it** (art in `gen_art.py` → `textures/gui/combat/`).
@@ -312,6 +316,7 @@ All timestamps use **level game time**. They persist across restarts and are ide
 | `trait status <id>` | Show holder / passing on / waiting |
 | `rebirth <player> [capacity]` | Wipe and re-roll everything (optionally forcing Malice capacity; 0 = Severed) |
 | `stun <player> <seconds>` | Extra, for testing stun; 0 clears |
+| `swap unswappable <player> <true\|false>` | Debug for Swap (§3.19): cancels `SwapTargetEvent` for swaps targeting this player (a stand-in for a future immunity) |
 
 Malice is always shown as whole numbers (floored, like the HUD); the stored value keeps its fraction.
 
@@ -319,7 +324,7 @@ Malice is always shown as whole numbers (floored, like the HUD); the stored valu
 - **Server TOML** (`config/kegare-server.toml`, where NeoForge 21.1 keeps server configs; synced to clients and
   hot-reloaded when edited) holds **every balance number**.
   - Sections: `malice` (with `tiers`), `traits`, `roll` (with `weights`, and `includeTestInnateTechniques`),
-    `combat`, `test_abilities`.
+    `combat`, `rime` (§3.14), `swap` (§3.19), `reverse_malice_technique` (§3.17), `test_abilities`.
   - The `traits` section includes:
     - `sixEyesBirthChance`
     - `sixEyesTransferMode` (RANDOM | KILLER)
@@ -470,6 +475,7 @@ Each tab has its own root.
 - The root is **silent in chat**. Announcing it would tell every opponent which innate technique a player rolled. The
   same goes for everything in the tab: datagen fails if any advancement under `innate_technique/` announces.
 - Test innate techniques get no tab.
+- Tabs so far: Rime (§3.14), Swap (§3.19).
 
 **Who sees which tab:** vanilla only shows a tab once the player has earned something in it.
 - Everyone sees the Base tab (*Awakening* is granted at birth).
@@ -757,6 +763,96 @@ Package `rmt`. The first **shared** ability (§3.16), ID `kegare:reverse_malice_
 
 ---
 
+### 3.19 Swap (COMMON innate technique)
+Package `innate_technique.swap`. Trade with other players: places, looks, effects, momentum. Malice color teal
+`#14B8A6`; tab icon ender pearl. All numbers in `[swap]` of `kegare-server.toml` (seconds, blocks).
+
+**Shared targeting** (`SwapTargeting`):
+- The player under the crosshair within `targeting.range` (24) blocks, with line of sight (blocks stop it), alive and
+  not a spectator. `aimTolerance` (0.3 blocks) widens the hit box a little.
+- No valid target: fizzle with "No player in sight.", nothing paid, no cooldown.
+- Stunned or frozen players can't cast (the shared checks) but CAN be swapped.
+
+**`SwapTargetEvent`** (cancellable, `NeoForge.EVENT_BUS`, server side): fired before ANY swap with the caster, the
+target (the anchor entity for a recall) and the ability. That covers every position swap (both ends of Switchback),
+the recall, Send Off, both disguises, Exchange, Momentum Exchange and Total Swap.
+- Cancelled: "Something stops the swap.", the cast fizzles with its Malice **spent** and **no cooldown**
+  (`CastManager.fizzleKeepingCost`, INSTANT abilities only), and the caster earns *Not Allowed*.
+- Swap hardcodes no immunities; a future technique cancels the event. Debug stand-in:
+  `/kegare swap unswappable <player> <true|false>` (`SwapDebug`, runtime only).
+
+**Position swaps** (`Swapper`): both players move at once (`teleportTo`, which also dismounts; sleepers wake), and
+both fall distances reset (only Momentum Exchange keeps fall distance, on purpose, and it never moves anyone).
+Both ends get `swap_depart`/`swap_arrive` and the enderman-teleport sound, plus `swap_link` between them.
+
+**Abilities** (default loadout order) and their specials (R, sharing the base ability's cooldown):
+
+| Ability | Type | Cost | Cooldown | Effect |
+|---|---|---|---|---|
+| **Positions** | INSTANT | 12 | 8 s | Swap positions AND facing with the target. |
+| ↳ **Switchback** (R) | INSTANT | 22 | shared | The same swap, then a swap back after `returnDelay` (3 s). The swap back fires `SwapTargetEvent` again; it is called off if either player dies, logs out or changes dimension. Both wear the `switchback_timer` ring until then. |
+| **Awareness** | INSTANT | 20 | 20 s | A 5 s disguise swap: everyone else sees the caster as the target and the target as the caster. |
+| ↳ **Mimic** (R) | INSTANT | 24 | shared | One way: the caster looks like the target for 8 s; the target stays as themselves. |
+| **Anchor** | INSTANT, two stages | throw 8 / recall 10 | throw 0.5 s / after use 12 s | First cast throws an anchor (pearl-like, passes through creatures, sticks to the first block it hits, times out after 20 s, never saved). Second cast swaps the caster onto it (out from walls, under ceilings, nudged out of blocks) and uses it up. |
+| ↳ **Send Off** (R) | INSTANT | 18 | shared | Needs an anchor out: the targeted player is swapped onto it instead of the caster; uses it up. No anchor: "You have no anchor out.", free. |
+| **Exchange** | INSTANT | 15 | 15 s | The caster gives its worst negative effect (highest level, then longest) to the target and takes the target's strongest positive one, duration and amplifier carried over. Either half may be missing; nothing at all: "Nothing to exchange.", free. Infinite effects never move. |
+| ↳ **Momentum Exchange** (R) | INSTANT | 18 | shared | Swap velocity vectors (what each client last reported, `getKnownMovement`) AND fall distance with the target; both velocities are sent to both clients. |
+| **Total Swap** (V, ultimate, no special) | INSTANT | 60 | 120 s | Positions + the Awareness disguise + health percentage: each gets the other's share of their OWN max health (4/20 and 18/20 become 18 and 4). The target must be at least `minDistance` (4) blocks away. |
+
+The HUD and Sorcerer screen show Anchor's current stage cost (throw or recall).
+
+**Disguises** (`Disguises`, VISUAL ONLY): inventories, health and data never move.
+- The server keeps the map (wearer → face UUID, end tick, kind, caster) and sends all of it to every client when it
+  changes and on login (`Disguises.StatePayload`: entity ID → disguised-as UUID, end tick, plus the wearer's UUID for
+  the tab list).
+- A disguise ends on expiry, or when the wearer or the face's owner dies, logs out or changes dimension.
+- Clients draw a disguised player as their face for everyone **but themselves** (each player sees their own body, HUD
+  and inventory normally):
+  - name tag (`RenderNameTagEvent`);
+  - skin, arm model and cape, and the tab-list head (`PlayerInfo#getSkin` mixin);
+  - tab-list name (`PlayerTabOverlay#getNameForDisplay` mixin);
+  - visible armor and held items, lent from the face for the length of one render (`RenderPlayerEvent`). If the
+    face isn't loaded on that client, the slots are drawn empty rather than showing the wearer's own gear.
+  - These are Kegare's first mixins (`kegare.mixins.json`, client only).
+- Only disguised players see `awareness_shimmer` (sent to them alone), so they know it's on.
+- **API** (either side): `Disguises.isDisguised(entity)`, `getRealIdentity(entity)`, `getDisguisedAs(entity)`; server:
+  `get(player)`, `wearing(face)`. Anything that must see through disguises asks here.
+
+**Visuals.** PAL animations (`player_animations/swap.json`): `swap_snap` (Positions, Switchback, Total Swap),
+`awareness_cast`, `mimic_cast`, `anchor_throw`, `anchor_recall`, `send_off_cast`, `exchange_cast`, `momentum_cast`.
+Photon effects (`SwapFxAuthoring` → `fx/swap/`), teal with Malice violet, with vanilla particle fallbacks:
+- `swap_depart` and `swap_arrive`: both ends of every swap.
+- `swap_link`: beads along the line between the two players (`SwapLink` payload; the client places them).
+- `switchback_timer`: a ring at both players' feet closing in once a second.
+- `awareness_shimmer`: on disguised players, for them only.
+- `anchor_marker` (loops while the anchor waits) and `anchor_trail` (in flight).
+- `exchange_transfer`: orbs travelling each way along the line, one per exchanged effect.
+- `momentum_burst` (both players) and `total_swap_burst` (both players).
+- Placeholder sound: enderman teleport.
+
+**Art:** emblem `gui/emblem/swap.png`, icons for all nine abilities (`gui/ability/`), the anchor's item sprite
+(`item/swap_anchor.png`). The Sorcerer screen shows a special's icon in its details when it has one.
+
+**Advancements** (tab root `kegare:innate_technique/swap`, unlocked on first rolling Swap, silent). All hidden,
+silent in chat and awarded from code to Swap holders only; PvP ones count player targets only.
+
+| Advancement | Frame | When |
+|---|---|---|
+| *Switcheroo* | task | swap positions with a player (Positions, Switchback, Total Swap) |
+| *Not Allowed* | task | a swap fails because `SwapTargetEvent` was cancelled |
+| *Return to Sender* (`special_delivery_swap`) | task | Send Off a player onto your anchor |
+| *Wrong Target* | goal | while disguised with Awareness (or Total Swap), a third player damages whoever wears your face |
+| *There Are Two of You* | goal | while you Mimic someone, another player damages the real one |
+| *Fall Guy* | goal | a player you moved with a swap (either Switchback leg and Send Off included) dies from falling within 5 s |
+| *Round Trip* | goal | you damage a player while waiting on Switchback's swap back |
+| *Identity Crisis* | challenge | cast Total Swap below 30% health and are alive 30 s later |
+| *Newton's Third* | challenge | a player dies from fall damage within 10 s of your Momentum Exchange on them |
+
+**Tests:** `SwapTest` (in-game JUnit): targeting and the free fizzle, the cancelled event (Malice spent, no
+cooldown), stunned targets and casters, Positions and Switchback (return and calling off), disguises (both kinds,
+the API, expiry, ending, refusal), Anchor (throw, recall, Send Off with and without an anchor, timing out), Exchange
+and Momentum Exchange, Total Swap's health math, and every advancement.
+
 ## 4. Extension points (how later content plugs in)
 
 - **New innate technique:** create a `DeferredRegister<InnateTechnique>` on
@@ -765,6 +861,8 @@ Package `rmt`. The first **shared** ability (§3.16), ID `kegare:reverse_malice_
 - **Shared abilities:** build the ability, `SharedAbilities.register` it at mod construction, unlock it with
   `SharedAbilityService.unlock` (§3.16).
 - **Specials:** override `special()` on the base ability and build the special on `SpecialAbility` (§3.15).
+- **Swap immunity:** listen for `SwapTargetEvent` and cancel it (§3.19). **Seeing through disguises:** ask
+  `Disguises` (`isDisguised`, `getRealIdentity`, `getDisguisedAs`), never what is drawn.
 - **New trait:** register a `Trait` subclass (unique or not) and override its hooks.
 - **Dominions:** an innate technique's `ultimate` ability. It uses `CombatHelper` (stun, combat) and the shared
   `CastManager.validate` checks. Dominion-specific state gets its own attachment.
@@ -775,8 +873,8 @@ Package `rmt`. The first **shared** ability (§3.16), ID `kegare:reverse_malice_
 
 ## 5. Future (TBD, not in Step 1)
 
-- **Innate techniques:** more real ones after Rime (§3.14), with their abilities, balance and visuals. Remove the test
-  content.
+- **Innate techniques:** more real ones after Rime (§3.14) and Swap (§3.19), with their abilities, balance and visuals.
+  Remove the test content.
 - **Rime's Dominion** (its ultimate; the slot is locked until then).
 - **Dominions:** expansion, guaranteed-hit rules, clashes, counters, burnout.
 - **Malice-neutralizing tools:** weapons and items that bypass, drain or cancel Malice. Possibly Severed-focused

@@ -59,6 +59,7 @@ public final class Switchback {
             if (!usable(caster, pending) || !usable(target, pending)) return;
             if (!SwapTargeting.allowed(caster, target, Swap.SWITCHBACK, Component.translatable("message.kegare.swap.switchback_refused"))) return;
             Swapper.swapPlayers(caster, target, true);
+            SwapTracker.swapped(caster, target);
         });
     }
 

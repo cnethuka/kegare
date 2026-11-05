@@ -1,0 +1,29 @@
+{
+  "parent": "kegare:innate_technique/swap",
+  "criteria": {
+    "granted": {
+      "trigger": "minecraft:impossible"
+    }
+  },
+  "display": {
+    "announce_to_chat": false,
+    "description": {
+      "translate": "advancements.kegare.swap.wrong_target.description"
+    },
+    "frame": "goal",
+    "hidden": true,
+    "icon": {
+      "count": 1,
+      "id": "minecraft:carved_pumpkin"
+    },
+    "title": {
+      "translate": "advancements.kegare.swap.wrong_target.title"
+    }
+  },
+  "requirements": [
+    [
+      "granted"
+    ]
+  ],
+  "sends_telemetry_event": true
+}

@@ -36,6 +36,7 @@ public final class PositionsAbility extends SwapAbility {
     /** The swap itself (Switchback and Total Swap do the same). */
     static void swap(ServerPlayer caster, ServerPlayer target) {
         Swapper.swapPlayers(caster, target, true);
+        SwapTracker.swapped(caster, target);
         SwapAdvancements.award(caster, SwapAdvancements.SWITCHEROO);
     }
 }

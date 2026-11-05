@@ -294,6 +294,15 @@ public final class KegareLanguageProvider extends LanguageProvider {
         // Rime tab (kegare:innate_technique/rime/...)
         advancement("rime.shatter", "Shatter", "Freeze a player solid");
         advancement("rime.cold_open", "Cold Open", "Hit a player with Frost Shard");
+        advancement("swap.switcheroo", "Switcheroo", "Swap positions with a player");
+        advancement("swap.wrong_target", "Wrong Target", "While disguised with Awareness, have a third player damage the person wearing your disguise");
+        advancement("swap.fall_guy", "Fall Guy", "A player you swapped dies from falling within 5 seconds");
+        advancement("swap.identity_crisis", "Identity Crisis", "Use Total Swap below 30% health and survive for 30 seconds");
+        advancement("swap.not_allowed", "Not Allowed", "Have a swap fail because the target can't be swapped");
+        advancement("swap.round_trip", "Round Trip", "Damage a player during Switchback before you're swapped back");
+        advancement("swap.two_of_you", "There Are Two of You", "While using Mimic, have a player damage the real target");
+        advancement("swap.special_delivery_swap", "Return to Sender", "Send Off a player onto your anchor");
+        advancement("swap.newtons_third", "Newton's Third", "A player dies from fall damage after you used Momentum Exchange on them");
         advancement("rime.brain_freeze", "Brain Freeze", "Freeze a player while they're charging or channeling");
         advancement("rime.full_charge", "Full Charge", "Hit a player with a fully charged Glacial Lance");
         advancement("rime.thin_ice", "Thin Ice", "Block 100 total damage with Rime Shell");

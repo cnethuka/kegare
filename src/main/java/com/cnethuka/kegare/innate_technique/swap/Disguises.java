@@ -76,6 +76,13 @@ public final class Disguises {
         return Optional.ofNullable(SERVER.get(wearer.getUUID()));
     }
 
+    /** Server: every disguise that borrows this player's face right now. */
+    public static List<Disguise> wearing(UUID face) {
+        List<Disguise> out = new ArrayList<>();
+        for (Disguise d : SERVER.values()) if (d.as().equals(face)) out.add(d);
+        return out;
+    }
+
     /** Client: the synced entry for a player UUID (expired ones included; callers check the end tick). */
     @Nullable
     public static Entry clientEntry(UUID wearer) {

@@ -11,7 +11,12 @@ import com.cnethuka.kegare.innatetechnique.CastManager;
 import com.cnethuka.kegare.innatetechnique.InnateTechniqueService;
 import com.cnethuka.kegare.malice.MaliceService;
 import com.cnethuka.kegare.player.BirthService;
+import com.mojang.authlib.GameProfile;
+import java.nio.charset.StandardCharsets;
 import java.util.OptionalInt;
+import java.util.UUID;
+import net.minecraft.world.damagesource.DamageSource;
+import net.neoforged.neoforge.common.util.FakePlayer;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
@@ -414,6 +419,139 @@ class SwapTest {
                 for (ServerPlayer p : new ServerPlayer[] {caster, target}) level.removePlayerImmediately(p, Entity.RemovalReason.DISCARDED);
             }
         });
+    }
+
+    @Test
+    void advancements(MinecraftServer server) throws Exception {
+        TestServer.onServerThread(server, () -> {
+            TestServer.ensureOverworld(server);
+            ServerLevel level = server.overworld();
+            loadArena(level);
+            ServerPlayer caster = damageable(server, "swap_adv_caster");
+            ServerPlayer target = damageable(server, "swap_adv_target");
+            ServerPlayer third = damageable(server, "swap_adv_third");
+            level.addNewPlayer(caster);
+            level.addNewPlayer(target);
+            level.addNewPlayer(third);
+            boolean pvp = server.isPvpAllowed();
+            server.setPvpAllowed(true); // the hits below are player against player
+            try {
+            BirthService.rebirth(caster, OptionalInt.of(5000));
+            InnateTechniqueService.setInnateTechnique(caster, Swap.SWAP.get());
+            third.moveTo(4.5, Y, 6.5, 0f, 0f); // off to the side, out of the line of sight
+
+            // Switcheroo: a position swap with a player.
+            InnateTechniqueService.select(caster, 0);
+            face(caster, target);
+            CastManager.handleIntent(caster, CastIntent.CAST_PRESS);
+            assertTrue(TestServer.hasAdvancement(server, caster, SwapAdvancements.SWITCHEROO), "switcheroo");
+
+            // Fall Guy: the swapped player falls to their death within 5 s.
+            SwapTracker.fellToDeath(target);
+            assertTrue(TestServer.hasAdvancement(server, caster, SwapAdvancements.FALL_GUY), "fall guy");
+
+            // Not Allowed: SwapTargetEvent cancelled.
+            InnateTechniqueService.clearCooldowns(caster);
+            face(caster, target);
+            SwapDebug.setUnswappable(target.getUUID(), true);
+            CastManager.handleIntent(caster, CastIntent.CAST_PRESS);
+            SwapDebug.setUnswappable(target.getUUID(), false);
+            assertTrue(TestServer.hasAdvancement(server, caster, SwapAdvancements.NOT_ALLOWED), "not allowed");
+
+            // Round Trip: hit a player while waiting to be swapped back.
+            face(caster, target);
+            CastManager.handleIntent(caster, CastIntent.SPECIAL_PRESS);
+            assertTrue(Switchback.isPending(caster), "setup: switchback pending");
+            hit(caster, third);
+            assertTrue(TestServer.hasAdvancement(server, caster, SwapAdvancements.ROUND_TRIP), "round trip");
+            Switchback.cancelInvolving(caster);
+
+            // Wrong Target: a third player hits whoever wears the caster's face.
+            InnateTechniqueService.clearCooldowns(caster);
+            InnateTechniqueService.select(caster, 1);
+            face(caster, target);
+            CastManager.handleIntent(caster, CastIntent.CAST_PRESS);
+            assertTrue(Disguises.isDisguised(target), "setup: awareness");
+            hit(third, target);
+            assertTrue(TestServer.hasAdvancement(server, caster, SwapAdvancements.WRONG_TARGET), "wrong target");
+            Disguises.endInvolving(caster);
+
+            // There Are Two of You: while Mimicking, someone hits the real target.
+            InnateTechniqueService.clearCooldowns(caster);
+            face(caster, target);
+            CastManager.handleIntent(caster, CastIntent.SPECIAL_PRESS);
+            assertTrue(Disguises.isDisguised(caster), "setup: mimic");
+            hit(third, target);
+            assertTrue(TestServer.hasAdvancement(server, caster, SwapAdvancements.TWO_OF_YOU), "two of you");
+            Disguises.endInvolving(caster);
+
+            // Return to Sender: Send Off a player onto the anchor.
+            InnateTechniqueService.clearCooldowns(caster);
+            InnateTechniqueService.select(caster, 2);
+            face(caster, target);
+            CastManager.handleIntent(caster, CastIntent.CAST_PRESS);
+            Anchors.get(caster).orElseThrow().setPos(3.5, Y, -5.5);
+            InnateTechniqueService.clearCooldowns(caster);
+            face(caster, target);
+            CastManager.handleIntent(caster, CastIntent.SPECIAL_PRESS);
+            assertTrue(TestServer.hasAdvancement(server, caster, SwapAdvancements.RETURN_TO_SENDER), "return to sender");
+
+            // Newton's Third: the player you traded momentum with falls to their death.
+            InnateTechniqueService.clearCooldowns(caster);
+            InnateTechniqueService.select(caster, 3);
+            face(caster, target);
+            CastManager.handleIntent(caster, CastIntent.SPECIAL_PRESS);
+            SwapTracker.fellToDeath(target);
+            assertTrue(TestServer.hasAdvancement(server, caster, SwapAdvancements.NEWTONS_THIRD), "newton's third");
+
+            // Identity Crisis: Total Swap below 30% health, alive 30 s later.
+            face(caster, target);
+            caster.setHealth(4f);
+            target.setHealth(18f);
+            CastManager.handleIntent(caster, CastIntent.ULTIMATE_PRESS);
+            TestServer.advanceGameTime(server, (int) SwapAdvancements.IDENTITY_CRISIS_SURVIVE_TICKS);
+            SwapTracker.tick(server);
+            assertTrue(TestServer.hasAdvancement(server, caster, SwapAdvancements.IDENTITY_CRISIS), "identity crisis");
+            Disguises.endInvolving(caster);
+            } finally {
+                server.setPvpAllowed(pvp);
+                for (ServerPlayer p : new ServerPlayer[] {caster, target, third}) level.removePlayerImmediately(p, Entity.RemovalReason.DISCARDED);
+            }
+        });
+    }
+
+    /** A test player with real advancements that can be hurt (NeoForge's fake players can't). */
+    static ServerPlayer damageable(MinecraftServer server, String name) {
+        UUID uuid = UUID.nameUUIDFromBytes(("kegare-test:" + name).getBytes(StandardCharsets.UTF_8));
+        return new FakePlayer(server.overworld(), new GameProfile(uuid, name)) {
+            @Override
+            public boolean isFakePlayer() {
+                return false;
+            }
+
+            @Override
+            public boolean isInvulnerableTo(DamageSource source) {
+                return false;
+            }
+
+            @Override
+            public boolean canHarmPlayer(net.minecraft.world.entity.player.Player other) {
+                return true; // FakePlayer refuses all PvP; these stand in for real players
+            }
+        };
+    }
+
+    static void hit(ServerPlayer attacker, ServerPlayer victim) {
+        try { // a new player is spawn-protected for 3 s, and tests never tick it down
+            java.lang.reflect.Field spawnProtection = ServerPlayer.class.getDeclaredField("spawnInvulnerableTime");
+            spawnProtection.setAccessible(true);
+            spawnProtection.setInt(victim, 0);
+        } catch (ReflectiveOperationException e) {
+            throw new IllegalStateException(e);
+        }
+        victim.invulnerableTime = 0;
+        victim.setHealth(victim.getMaxHealth());
+        assertTrue(victim.hurt(attacker.damageSources().playerAttack(attacker), 1f), "setup: the hit landed");
     }
 
     /** Loads the test chunk: area queries only see entities in loaded chunks. */

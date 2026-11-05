@@ -2,6 +2,7 @@ package com.cnethuka.kegare.innate_technique.swap;
 
 import com.cnethuka.kegare.Kegare;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.tags.DamageTypeTags;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.event.entity.living.LivingDamageEvent;
@@ -36,6 +37,8 @@ public final class SwapEvents {
     static void onDamage(LivingDamageEvent.Post event) {
         if (!(event.getEntity() instanceof ServerPlayer victim) || event.getNewDamage() <= 0) return;
         if (!(event.getSource().getEntity() instanceof ServerPlayer attacker) || attacker == victim) return;
+        // Round Trip: the attacker is waiting on a Switchback swap back.
+        if (Switchback.isPending(attacker)) SwapAdvancements.award(attacker, SwapAdvancements.ROUND_TRIP);
         // Wrong Target: the victim wears the caster's face (Awareness or Total Swap), and a third player hit them.
         Disguises.get(victim).ifPresent(d -> {
             if (d.kind() == Disguises.Kind.MIMIC || !d.as().equals(d.caster())) return;
@@ -45,17 +48,17 @@ public final class SwapEvents {
             }
         });
         // There Are Two of You: someone Mimicking the victim, and another player hit the real one.
-        for (ServerPlayer mimic : victim.server.getPlayerList().getPlayers()) {
-            if (mimic == attacker || mimic == victim) continue;
-            Disguises.get(mimic).ifPresent(d -> {
-                if (d.kind() == Disguises.Kind.MIMIC && d.as().equals(victim.getUUID())) SwapAdvancements.award(mimic, SwapAdvancements.TWO_OF_YOU);
-            });
+        for (Disguises.Disguise d : Disguises.wearing(victim.getUUID())) {
+            if (d.kind() != Disguises.Kind.MIMIC) continue;
+            ServerPlayer mimic = Switchback.find(victim.server, d.wearer());
+            if (mimic != null && mimic != attacker) SwapAdvancements.award(mimic, SwapAdvancements.TWO_OF_YOU);
         }
     }
 
     @SubscribeEvent
     static void onDeath(LivingDeathEvent event) {
         if (event.getEntity() instanceof ServerPlayer player) {
+            if (event.getSource().is(DamageTypeTags.IS_FALL)) SwapTracker.fellToDeath(player);
             SwapTracker.forget(player);
             endAll(player);
         }

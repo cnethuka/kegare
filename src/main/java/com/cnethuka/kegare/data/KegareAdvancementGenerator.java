@@ -3,6 +3,7 @@ package com.cnethuka.kegare.data;
 import com.cnethuka.kegare.Kegare;
 import com.cnethuka.kegare.advancement.KegareAdvancements;
 import com.cnethuka.kegare.innate_technique.rime.RimeAdvancements;
+import com.cnethuka.kegare.innate_technique.swap.SwapAdvancements;
 import com.cnethuka.kegare.innatetechnique.InnateTechnique;
 import com.cnethuka.kegare.registry.KegareItems;
 import com.cnethuka.kegare.registry.KegareRegistries;
@@ -99,6 +100,19 @@ public final class KegareAdvancementGenerator implements AdvancementProvider.Adv
         techniqueChild(saver, rime, RimeAdvancements.SLIP_N_SLIDE, "rime.slip_n_slide", Items.SNOW, AdvancementType.TASK);
         techniqueChild(saver, rime, RimeAdvancements.SKY_HIGH, "rime.sky_high", Items.FEATHER, AdvancementType.GOAL);
         techniqueChild(saver, rime, RimeAdvancements.SHATTERED_PRESSURE, "rime.shattered_pressure", Items.LIGHT_BLUE_STAINED_GLASS, AdvancementType.CHALLENGE);
+
+        // ---- Swap tab: all hidden and silent (they would reveal who has Swap); PvP ones count player targets only ----
+        AdvancementHolder swap = techniqueRoots.get(Kegare.id("swap"));
+        if (swap == null) throw new IllegalStateException("Swap's tab root was not generated");
+        techniqueChild(saver, swap, SwapAdvancements.SWITCHEROO, "swap.switcheroo", Items.ENDER_PEARL, AdvancementType.TASK);
+        techniqueChild(saver, swap, SwapAdvancements.NOT_ALLOWED, "swap.not_allowed", Items.BARRIER, AdvancementType.TASK);
+        techniqueChild(saver, swap, SwapAdvancements.RETURN_TO_SENDER, "swap.special_delivery_swap", Items.ENDER_EYE, AdvancementType.TASK);
+        techniqueChild(saver, swap, SwapAdvancements.WRONG_TARGET, "swap.wrong_target", Items.CARVED_PUMPKIN, AdvancementType.GOAL);
+        techniqueChild(saver, swap, SwapAdvancements.TWO_OF_YOU, "swap.two_of_you", Items.ARMOR_STAND, AdvancementType.GOAL);
+        techniqueChild(saver, swap, SwapAdvancements.FALL_GUY, "swap.fall_guy", Items.POINTED_DRIPSTONE, AdvancementType.GOAL);
+        techniqueChild(saver, swap, SwapAdvancements.ROUND_TRIP, "swap.round_trip", Items.COMPASS, AdvancementType.GOAL);
+        techniqueChild(saver, swap, SwapAdvancements.IDENTITY_CRISIS, "swap.identity_crisis", Items.PLAYER_HEAD, AdvancementType.CHALLENGE);
+        techniqueChild(saver, swap, SwapAdvancements.NEWTONS_THIRD, "swap.newtons_third", Items.WIND_CHARGE, AdvancementType.CHALLENGE);
     }
 
     /**

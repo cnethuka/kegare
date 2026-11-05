@@ -48,6 +48,7 @@ public final class SendOffAbility extends SwapAbility.Special {
         Anchors.consume(caster, anchor);
         Swapper.moveTo(target, to);
         Swapper.arrive(target);
+        SwapTracker.swapped(caster, target);
         SwapAdvancements.award(caster, SwapAdvancements.RETURN_TO_SENDER);
     }
 }

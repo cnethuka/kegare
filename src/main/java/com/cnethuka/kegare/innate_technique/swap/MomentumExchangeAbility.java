@@ -38,6 +38,7 @@ public final class MomentumExchangeAbility extends SwapAbility.Special {
         Vec3 targetMotion = target.getKnownMovement();
         setMotion(caster, targetMotion);
         setMotion(target, casterMotion);
+        SwapTracker.momentum(caster, target);
         float casterFall = caster.fallDistance;
         caster.fallDistance = target.fallDistance;
         target.fallDistance = casterFall;
