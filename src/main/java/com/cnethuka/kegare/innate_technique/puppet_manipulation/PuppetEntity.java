@@ -89,7 +89,7 @@ public class PuppetEntity extends PathfinderMob implements Puppet {
     public static AttributeSupplier.Builder createAttributes() {
         return Mob.createMobAttributes()
                 .add(Attributes.MAX_HEALTH, 8.0)
-                .add(Attributes.MOVEMENT_SPEED, 0.32)
+                .add(Attributes.MOVEMENT_SPEED, 0.42)
                 .add(Attributes.ATTACK_DAMAGE, 1.0)
                 .add(Attributes.FOLLOW_RANGE, 32.0)
                 .add(Attributes.SCALE, 0.5);
@@ -447,6 +447,32 @@ public class PuppetEntity extends PathfinderMob implements Puppet {
         return super.isInvulnerableTo(source);
     }
 
+    /** A puppet's punch: bosses take the damage but keep their footing (DESIGN §4: never moved by a technique). */
+    @Override
+    public boolean doHurtTarget(Entity target) {
+        Vec3 before = target.getDeltaMovement();
+        boolean hit = super.doHurtTarget(target);
+        if (hit && com.cnethuka.kegare.combat.CombatHelper.isBoss(target)) target.setDeltaMovement(before);
+        return hit;
+    }
+
+    /**
+     * A puppet's punch reaches 1.4 blocks out from its centre, whatever its size. Pathing stops a block or so short of
+     * the target (up to about 1.8 blocks from a cow's centre), and vanilla's melee reach doesn't grow with a mob's size,
+     * so a half-size puppet would otherwise stop just out of its own reach.
+     */
+    @Override
+    protected net.minecraft.world.phys.AABB getAttackBoundingBox() {
+        double reach = Math.max(0.0, REACH - getBbWidth() / 2.0);
+        return getBoundingBox().inflate(reach, 0.0, reach);
+    }
+
+    /** Following: further than this (blocks) from the owner, a puppet runs at {@link #CATCH_UP_SPEED}x. */
+    private static final double CATCH_UP_DISTANCE = 6.0;
+    private static final double CATCH_UP_SPEED = 1.35;
+    /** How far out (blocks, from its centre) a puppet's punch reaches. */
+    private static final double REACH = 1.4;
+
     @Override
     public boolean isPickable() {
         return !isPossessed() && super.isPickable();
@@ -628,8 +654,9 @@ public class PuppetEntity extends PathfinderMob implements Puppet {
                 return;
             }
             if (--repath <= 0) {
-                repath = 10;
-                getNavigation().moveTo(owner, 1.0);
+                repath = 5;
+                // Left behind (the owner sprinted off): run to catch up.
+                getNavigation().moveTo(owner, distanceToSqr(owner) > CATCH_UP_DISTANCE * CATCH_UP_DISTANCE ? CATCH_UP_SPEED : 1.0);
             }
         }
     }

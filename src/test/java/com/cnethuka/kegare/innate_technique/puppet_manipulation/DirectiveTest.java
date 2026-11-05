@@ -110,6 +110,12 @@ class DirectiveTest {
                 assertTrue(cow.getHealth() < cowHealth, "the guard landed a punch");
                 assertTrue(cowHealth - cow.getHealth() <= PuppetConfig.MELEE_DAMAGE.get() + 1e-3, "a weak one");
 
+                // Pathing stops about a block short of a target: a half-size puppet still reaches it from there.
+                b.moveTo(cow.getX(), ground, cow.getZ() + 1.8, 0f, 0f);
+                assertTrue(b.isWithinMeleeAttackRange(cow), "reaches a cow from where pathing leaves it");
+                b.moveTo(cow.getX(), ground, cow.getZ() + 2.6, 0f, 0f);
+                assertFalse(b.isWithinMeleeAttackRange(cow), "but not from further");
+
                 // A new order calls off the chase.
                 DirectiveAbility.give(owner, PuppetOrder.STAY, null);
                 assertNull(b.getTarget(), "new order: chase over");
@@ -130,6 +136,12 @@ class DirectiveTest {
                 wither.setNoAi(true);
                 level.addFreshEntity(wither);
                 assertTrue(a.attack(wither), "a boss is a fair target");
+                wither.setDeltaMovement(net.minecraft.world.phys.Vec3.ZERO);
+                float witherHealth = wither.getHealth();
+                a.moveTo(wither.getX() - 1.0, ground, wither.getZ(), -90f, 0f);
+                assertTrue(a.doHurtTarget(wither), "the punch lands on the boss");
+                assertTrue(wither.getHealth() < witherHealth, "and hurts it");
+                assertEquals(net.minecraft.world.phys.Vec3.ZERO, wither.getDeltaMovement(), "but never pushes it");
                 wither.discard();
                 assertFalse(a.attack(owner), "never the owner");
                 assertFalse(a.attack(b), "nor a puppet of the same owner");

@@ -64,8 +64,9 @@ public final class PuppetConfig {
         b.comment("The puppets themselves.").push("puppet");
         SCALE = b.comment("Size next to their owner (the 1.21 scale attribute). Never changes, except during Stand-In.")
                 .defineInRange("scale", 0.5, 0.1, 1.0);
-        MOVEMENT_SPEED = b.comment("Movement speed attribute. Players walk at 0.1 and sprint at 0.13; mobs move at about 2/3 of their attribute in"
-                + " player terms, so 0.32 keeps a little ahead of a running player.").defineInRange("movementSpeed", 0.32, 0.01, 2.0);
+        MOVEMENT_SPEED = b.comment("Movement speed attribute (mob scale, not a player's): 0.42 walks a little faster than a walking player.",
+                "Following puppets left behind run at 1.35x that to catch up, which keeps pace with a sprint.")
+                .defineInRange("movementSpeed", 0.42, 0.01, 2.0);
         MELEE_DAMAGE = b.comment("Damage of a puppet's punch (and of a possessed puppet's).").defineInRange("meleeDamage", 1.0, 0.0, 100.0);
         SAFETY_CAP = b.comment("Lag protection only, not a balance limit: the most puppets one player can have at once (loaded or not).",
                 "At the cap, Puppet Creation fizzles for free.").defineInRange("safetyCap", 50, 1, 10_000);

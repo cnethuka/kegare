@@ -2,8 +2,8 @@
 
 A cursed-energy combat framework for **NeoForge 21.1.x / Minecraft 1.21.1 / Java 21**, built mainly for **PvP with friends**.
 It covers the base systems (§3.1–3.13) and the content built on them: specials (§3.15), the loadout (§3.16), Reverse
-Malice Technique (§3.17–3.18), and the innate techniques Rime (§3.14) and Swap (§3.19). Mobs (the Kegare), dominions
-and lore come later (§5).
+Malice Technique (§3.17–3.18), and the innate techniques Rime (§3.14), Swap (§3.19) and Puppet Manipulation (§3.20).
+Mobs (the Kegare), dominions and lore come later (§5).
 
 - Mod ID: `kegare` · Package: `com.cnethuka.kegare` · Build: ModDevGradle MDK
 - Everything is server-authoritative. Clients send key intents and render what the server syncs.
@@ -890,6 +890,129 @@ Momentum Exchange and Send Off on a pig; Switcheroo, Not Allowed and Return to S
 Trip and Newton's Third not; a mob's hit not counting for Wrong Target or There Are Two of You; Awareness and Total
 Swap ignoring it; bosses and armor stands never targets). `LoadoutTest` covers the nine slots and padding an old bar.
 
+### 3.20 Puppet Manipulation (EPIC innate technique)
+Package `innate_technique.puppet_manipulation`. Half-size puppets of yourself, charged with Malice: command them, ride
+inside them, set them off, or let one stand in for you. Malice color lavender `#C4B5FD` (also the puppets' glow); tab
+icon armor stand; ultimate locked (its Dominion comes later). All numbers in `[puppet_manipulation]` of
+`kegare-server.toml` (seconds, blocks).
+
+**The puppet** (`PuppetEntity`, a `PathfinderMob`; saved with its chunk, never despawns, no loot or XP):
+- A copy of its owner at **half size** (the 1.21 `scale` attribute, `puppet.scale` 0.5; its hitbox too). It is drawn
+  with the owner's real skin and arm model (`PuppetSkins`: from the tab list while the owner is online, else from the
+  skin property the puppet carries, so offline owners' puppets still look like them; never a Swap disguise).
+- **Charge tier** (`PuppetTier`) set by Puppet Creation's charge:
+
+  | Tier | Charge | Cost | Health | Glow |
+  |---|---|---|---|---|
+  | Tap | released before `halfCharge` (0.6 s) | 10 | 2 | faint |
+  | Half | before `fullCharge` (1.5 s) | 25 | 4 | normal |
+  | Full | full charge | 45 | 8 | bright, plus an outline in the glow color |
+
+  The glow is a shell of drifting threads just outside the body (`PuppetGlowLayer`, additive, texture
+  `entity/puppet_glow.png`) in the owner's Malice color. The Full outline uses vanilla's outline pass, but only while
+  the viewer has line of sight, so it never gives a hidden puppet away through walls.
+- Barely any melee (`meleeDamage` 1, reach 1.4 blocks from its centre so a small body can still land it), and
+  `movementSpeed` 0.42: a little faster than a walking player; a following puppet more than 6 blocks behind runs at
+  1.35× and keeps pace with a sprint, and one more than `followTeleportDistance` (24) behind appears beside its owner.
+- **Kuru kuru:** standing still for `spinDelay` (0.5 s) it spins (`puppet_idle_spin`, arms out). Decided on the server
+  and synced, so every viewer agrees. Never while possessed or standing in.
+- **No limit**, only lag protection: `safetyCap` (50) per player, counting puppets in unloaded chunks too. At the cap,
+  Puppet Creation fizzles for free ("You can't hold more than 50 puppets.").
+- Lasts until killed: it survives its owner's death and logout. While the owner is offline (or dead, or in another
+  dimension) it stands idle and never attacks.
+- **Rerolling away** (reroll, rebirth, admin) dissolves EVERY puppet the player owns into Malice-colored threads
+  (`puppet_dissolve`). `PuppetSavedData` (`data/kegare_puppets.dat`) keeps each owner's puppet UUIDs (the cap) and a
+  **generation**: rerolling away bumps it, so a puppet in an unloaded chunk finds it is stale on its first tick after
+  loading and dissolves then. Even if the player rolls Puppet Manipulation again later, old puppets never come back.
+- **API** (`Puppet`, for future systems): `hasSoul()` (always false), `ownerId()`, `maliceColor()`, `tier()`.
+
+**Abilities** (default loadout order) and their specials (R, sharing the base ability's cooldown):
+
+| Ability | Type | Cost | Cooldown | Effect |
+|---|---|---|---|---|
+| **Puppet Creation** | CHARGED | 10 / 25 / 45 by tier | 2 s | Hold to charge, release to make a puppet beside you (a free spot at your right, left, back or front). The tier comes from the charge; the cost is the tier's (`Ability#releaseCost`: a CHARGED ability's cost may depend on the charge; pressing checks the cheapest). New puppets take your current Directive order. |
+| ↳ **Possess** (R) | INSTANT | 15 | shared | Move into the puppet you're looking at, or your nearest one (within 32). See **Possession** below. |
+| **Directive** | INSTANT | 5 | 1 s | Every puppet within `range` (32) takes the next order: **Follow → Stay → Guard → Go** → Follow. Guard follows too, and goes for whoever damages you (player or mob). Go walks to the block you're looking at, then stays; with no block in sight the cycle skips it. "Puppets: Guard (2 heard you)". The order is saved on you (`kegare:puppet_owner`) and a new order calls off any chase. |
+| ↳ **Focus** (R) | INSTANT | 10 | shared | Every puppet in range swarms the player or mob you're looking at, until it dies or gets away; then back to their order. Needs a target and at least one puppet in range, else free. |
+| **Curio Burst** | INSTANT | 8 | 4 s | Detonate the puppet you're looking at (`CurioBursts`): 4 / 7 / 12 damage by tier at the centre, half at the edge of a 2.5 / 3 / 4 block radius, and a push away (0.6). Damage type `kegare:curio_burst`, credited to you, tagged `is_explosion` (Blast Protection helps) and `no_knockback` (the only push is the blast's). Never hurts you, your puppets or your empty body; breaks no blocks. No puppet in sight: free. |
+| ↳ **Chain Burst** (R) | INSTANT | 16 | shared | Every puppet of yours within `radius` (8) of what you're looking at (player, mob or puppet) detonates, nearest first, `delay` (0.25 s) apart. Queued blasts drop if you log out. |
+| **Understudy** | INSTANT | 10 | 6 s | Swap places with the puppet you're looking at (within 32). Fires `SwapTargetEvent` with the puppet as the target first: a future deflection that cancels it blocks this too (Malice spent, no cooldown, "Something stops the swap."). |
+| ↳ **Stand-In** (R) | INSTANT | 20 | shared | For `duration` (8 s) one puppet (looked at, else nearest) grows to your size over 0.4 s and copies you: the same step each tick (on its own feet, so it still falls and bumps into things), facing, crouch, swings, held items, armor and name tag, with no glow or outline: it looks exactly like you. Then it shrinks back and gives it all back. Only ever its OWNER's look; one Stand-In per owner at a time; it never attacks, and nothing it borrowed can drop. |
+
+**Possession** (`Possession`, `PossessionData` saved on the player as `kegare:possession`):
+- The player **becomes the puppet**: they take its place, its size (a `scale` modifier) and its health (a max-health
+  modifier; it doesn't heal). Their inventory is stashed in the record (no items; nothing can be picked up and no
+  container opened). Weak melee only (empty hands). **No casting:** a `CastManager` interceptor
+  (`CastManager.addInterceptor`, first say over every key intent) lets R return and answers every other cast with "You
+  can't cast while possessing. Press R to return."
+- The body stays behind as a **shell** (`PuppetShellEntity`, never saved): their skin, armor and name, standing slack
+  with its head bowed, motionless (no knockback, not pushable) and defenceless. The puppet waits hidden inside the
+  player and can't be hit; others see the player drawn with the puppet's glow and no name tag, and a thin lavender
+  thread from the shell to them (`possess_link` beads, client-drawn with a slight sag).
+- **Ways back** (each puts back real health, size, inventory, and the position at the shell; items picked up meanwhile
+  are kept, never lost; the puppet comes back out where they left it, with what health they left it):
+  - R again;
+  - **the shell takes any damage:** snap back at once, and the hit lands on the real body;
+  - **the puppet dies** (lethal damage while possessing kills the puppet, not the player): snap back with
+    **backlash**: Nausea (4 s), a stun through the shared stun system (1 s), and 20 Malice lost;
+  - more than `maxDistance` (64) from the shell;
+  - logout (before the player is saved), death (a real death, e.g. `/kill`, returns them first and goes ahead in the
+    body), a dimension change (before travelling) or losing the technique.
+  - A server stop mid-possession: the saved record puts everything back on the next login.
+- **HUD** (`PuppetHud` payload, sent only when it changes): "Possessing" and the body's health under the crosshair, in
+  and out of Technique Mode (`StatusLayer.addExtra`).
+
+**Combat panel** (Technique Mode): your puppet count on Puppet Creation's slot and the current order's glyph on
+Directive's (top left of each; `CombatPanelLayer.addSlotDecorator`, new; the Sorcerer screen's tray shows them too).
+Order glyphs `gui/puppet_order/{follow,stay,guard,go}.png`.
+
+**Mob vs player boundary (§4):** puppets fight and damage mobs (Guard, Focus, Curio Burst); bosses take the damage but
+are never disabled or pushed (Curio Burst's push and a puppet punch's knockback skip them). Possess and Understudy only ever involve your own
+puppets; Stand-In copies only the owner's look.
+
+**Visuals.** PAL animations (`player_animations/puppet_manipulation.json`, written by `tools/gen_puppet_anims.py`):
+`puppet_create_charge` (loop), `puppet_create_release`, `possess_cast`, `possess_return`, `directive_cast`,
+`focus_point`, `curio_burst_cast`, `chain_burst_cast`, `understudy_cast`, `stand_in_cast`, and `puppet_idle_spin` on the
+puppet. PAL animates players only, so `PuppetPoses` reads the same file and samples the spin's keyframes for the
+puppet model (whole-body turn, arms and head). Photon effects (`PuppetFxAuthoring` → `fx/puppet_manipulation/`),
+lavender with threads as the motif, each with a lavender-dust vanilla fallback:
+- `puppet_form` (threads wound in round a new puppet, a seam ring), `puppet_dissolve` (threads drifting away);
+- `possess_link` (one bead of the thread), `directive_pulse` (rings spreading on the ground at each puppet that heard);
+- `focus_mark` (a ring tightening round the target, a bead over its head, 2 s);
+- `curio_burst_explosion_tap` / `_half` / `_full` (flash, ground ring, sparks, torn threads, a puff; scaled per tier);
+- `stand_in_grow` (a rising column of motes), `understudy_swap` (motes drawn in, a vertical seam, at both ends).
+- Sounds: wool (form, dissolve), soul escape (possess, return), note-block chime by order (Directive), bell (Focus),
+  firework launch then explosions (Chain Burst), illusioner mirror (Stand-In, Understudy).
+
+**Art** (`tools/gen_art.py`, lavender and wood ramps): emblem `gui/emblem/puppet_manipulation.png` (a marionette: the
+wooden control cross, strings, a doll with its arms out), icons for the four abilities and four specials, the order
+glyphs, and the glow texture.
+
+**Advancements** (tab root `kegare:innate_technique/puppet_manipulation`, unlocked on first rolling it, silent). All
+hidden, silent in chat, `minecraft:impossible`, awarded from code to holders only. Following §4: learning (task) ones may
+count anything; mastery (goal, challenge) ones need a player on the other side.
+
+| Advancement | Frame | When |
+|---|---|---|
+| *Pulling Strings* | task | create your first puppet |
+| *Out of Body* | task | possess a puppet for the first time |
+| *Kuru Kuru* | task | 10 of your puppets spinning at once (checked once a second) |
+| *Nobody Home* | task | a player hits your empty body while you're possessing (a mob's hit doesn't count) |
+| *Decoy* | goal | a player kills your puppet while you're more than 16 blocks away (or in another dimension) |
+| *Who's Real?* | goal | a player hits your Stand-In |
+| *Curiosity Killed* | goal | your Curio Burst kills a player |
+| *Little Me* | challenge | your hit kills a player while you possess a puppet |
+
+**Tests** (in-game JUnit): `PuppetTest` (tiers' cost, health and size, the cap's free fizzle, the spin, idling with
+the owner offline, rerolling away including a puppet saved in an unloaded chunk, same-technique reassignment keeping
+them), `PossessionTest` (possess and return with health, size, inventory and position; no casting, no healing, no spin;
+the shell hit, backlash, distance, a dimension change and rerolling while possessing; a real death; the crash restore),
+`DirectiveTest` (every order, Go walking, Stay and Follow, Guard on a mob, the reach, Focus on a mob and on a player,
+bosses as fair targets, an offline owner), `CurioBurstTest` (damage by tier and falloff, who is spared, bosses hurt but
+not pushed, the free fizzle, the chain's order and timing), `UnderstudyTest` (the swap and its `SwapTargetEvent`, a
+blocked swap, Stand-In's growth, mirroring, borrowed look, no drops, the return), `PuppetAdvancementsTest` (all eight,
+and mobs not counting where they shouldn't).
+
 ## 4. Extension points (how later content plugs in)
 
 **Rule (every innate technique): the MOB vs PLAYER boundary.**
@@ -907,7 +1030,10 @@ Swap ignoring it; bosses and armor stands never targets). `LoadoutTest` covers t
     no knockback. Every goal and challenge that names a target counts players only, and Thin Ice (goal) counts only
     damage blocked from players. Its task ones (Cold Open, Full Charge, Splinter) count players too, which the rule
     allows.
-  - The boss check is shared: `CombatHelper.isBoss` (`c:bosses`), used by Rime and by `SwapTargeting`.
+  - Puppet Manipulation follows it (§3.20): puppets fight mobs; bosses take Curio Burst and puppet damage but are never
+    pushed or disabled; Stand-In copies only its owner. Pulling Strings, Out of Body and Kuru Kuru count anything; Nobody
+    Home, Decoy, Who's Real?, Curiosity Killed and Little Me need a player.
+  - The boss check is shared: `CombatHelper.isBoss` (`c:bosses`), used by Rime, `SwapTargeting` and Curio Burst.
 
 - **New innate technique:** create a `DeferredRegister<InnateTechnique>` on
   `KegareRegistries.INNATE_TECHNIQUE_KEY`, build abilities with `BaseAbility`, add the lang names, and put the
@@ -921,7 +1047,12 @@ Swap ignoring it; bosses and armor stands never targets). `LoadoutTest` covers t
 - **Dominions:** an innate technique's `ultimate` ability. It uses `CombatHelper` (stun, combat) and the shared
   `CastManager.validate` checks. Dominion-specific state gets its own attachment.
 - **Cost or cooldown modifiers** (e.g. from traits): `Ability.cost(player)` and `cooldownTicks(player)` already
-  receive the caster.
+  receive the caster. A CHARGED ability whose cost grows with the charge overrides `releaseCost(player, charge)`.
+- **Taking over the keys** (a possession, a channelled state): `CastManager.addInterceptor` gets first say over every
+  key intent and can swallow it (§3.20).
+- **HUD from an innate technique:** `StatusLayer.addExtra` (a line under the crosshair, shown in and out of Technique
+  Mode) and `CombatPanelLayer.addSlotDecorator` (marks on its own slots of the combat panel).
+- **Soulless things:** anything that only works on living souls asks `Puppet#hasSoul()`.
 
 ---
 
