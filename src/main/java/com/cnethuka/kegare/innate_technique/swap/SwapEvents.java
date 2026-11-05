@@ -22,6 +22,7 @@ public final class SwapEvents {
     static void onServerTick(ServerTickEvent.Post event) {
         Switchback.tick(event.getServer());
         Disguises.tick(event.getServer());
+        SwapTracker.tick(event.getServer());
     }
 
     /** A joining player gets the current disguises. */
@@ -54,12 +55,18 @@ public final class SwapEvents {
 
     @SubscribeEvent
     static void onDeath(LivingDeathEvent event) {
-        if (event.getEntity() instanceof ServerPlayer player) endAll(player);
+        if (event.getEntity() instanceof ServerPlayer player) {
+            SwapTracker.forget(player);
+            endAll(player);
+        }
     }
 
     @SubscribeEvent
     static void onLogout(PlayerEvent.PlayerLoggedOutEvent event) {
-        if (event.getEntity() instanceof ServerPlayer player) endAll(player);
+        if (event.getEntity() instanceof ServerPlayer player) {
+            SwapTracker.forget(player);
+            endAll(player);
+        }
     }
 
     @SubscribeEvent
@@ -72,6 +79,7 @@ public final class SwapEvents {
         Switchback.clear();
         Disguises.clear();
         Anchors.clear();
+        SwapTracker.clear();
         SwapDebug.clear();
     }
 

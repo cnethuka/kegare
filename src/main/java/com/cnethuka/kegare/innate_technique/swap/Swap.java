@@ -34,13 +34,16 @@ public final class Swap {
     public static final SendOffAbility SEND_OFF = new SendOffAbility();
     public static final MomentumExchangeAbility MOMENTUM_EXCHANGE = new MomentumExchangeAbility();
 
+    /** The ultimate (V). */
+    public static final TotalSwapAbility TOTAL_SWAP = new TotalSwapAbility();
+
     public static final DeferredHolder<InnateTechnique, InnateTechnique> SWAP = INNATE_TECHNIQUES.register("swap",
             () -> InnateTechnique.builder(InnateTechniqueRarity.COMMON)
                     .ability(POSITIONS)
                     .ability(AWARENESS)
                     .ability(ANCHOR)
                     .ability(EXCHANGE)
-                    .lockedUltimate()
+                    .ultimate(TOTAL_SWAP)
                     .maliceColor(MALICE_COLOR)
                     .tabIcon(Items.ENDER_PEARL)
                     .build());
@@ -59,6 +62,7 @@ public final class Swap {
         VisualHooks.registerEffect(SwapIds.FX_ANCHOR_TRAIL);
         VisualHooks.registerEffect(SwapIds.FX_EXCHANGE_TRANSFER);
         VisualHooks.registerEffect(SwapIds.FX_MOMENTUM_BURST);
+        VisualHooks.registerEffect(SwapIds.FX_TOTAL_SWAP_BURST);
     }
 
     public static boolean holds(ServerPlayer player) {

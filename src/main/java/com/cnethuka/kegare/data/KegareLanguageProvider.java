@@ -136,6 +136,10 @@ public final class KegareLanguageProvider extends LanguageProvider {
         add("ability.kegare.momentum_exchange.desc", "Swap velocity and fall distance with the player you're looking at. "
                 + "Nobody moves; their momentum does.");
         add("message.kegare.swap.nothing_to_exchange", "Nothing to exchange.");
+        add("ability.kegare.total_swap", "Total Swap");
+        add("ability.kegare.total_swap.desc", "Everything at once with the player you're looking at (4+ blocks away): swap places and facing, "
+                + "look like each other for 5 seconds, and trade health as a share of max health.");
+        add("message.kegare.swap.too_close", "%s needs the target at least %s blocks away.");
         add("entity.kegare.swap_anchor", "Swap Anchor");
         add("item.kegare.swap_anchor", "Swap Anchor");
         add("message.kegare.swap.no_anchor", "You have no anchor out.");

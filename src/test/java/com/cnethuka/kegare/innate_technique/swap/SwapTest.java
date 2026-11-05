@@ -352,6 +352,70 @@ class SwapTest {
         });
     }
 
+    @Test
+    void totalSwap(MinecraftServer server) throws Exception {
+        TestServer.onServerThread(server, () -> {
+            TestServer.ensureOverworld(server);
+            ServerLevel level = server.overworld();
+            loadArena(level);
+            ServerPlayer caster = TestServer.player(server, "total_caster");
+            ServerPlayer target = TestServer.player(server, "total_target");
+            level.addNewPlayer(caster);
+            level.addNewPlayer(target);
+            try {
+            BirthService.rebirth(caster, OptionalInt.of(1000));
+            InnateTechniqueService.setInnateTechnique(caster, Swap.SWAP.get());
+            assertEquals(Swap.TOTAL_SWAP, Swap.SWAP.get().ultimate().orElseThrow(), "setup: Total Swap is the ultimate");
+
+            // Too close: free fizzle.
+            face(caster, target);
+            target.moveTo(caster.getX() + 2, caster.getY(), caster.getZ(), 90f, 0f);
+            double before = malice(caster);
+            CastManager.handleIntent(caster, CastIntent.ULTIMATE_PRESS);
+            assertEquals(before, malice(caster), EPS, "too close: free");
+            assertEquals(0, InnateTechniqueService.cooldownRemaining(caster, Swap.TOTAL_SWAP));
+
+            // 4/20 and 18/20 become 18 and 4; places swap; each looks like the other.
+            face(caster, target);
+            caster.setHealth(4f);
+            target.setHealth(18f);
+            Vec3 casterAt = caster.position();
+            Vec3 targetAt = target.position();
+            before = malice(caster);
+            CastManager.handleIntent(caster, CastIntent.ULTIMATE_PRESS);
+            assertEquals(before - SwapConfig.TOTAL_SWAP_COST.get(), malice(caster), EPS, "cost");
+            assertEquals(18f, caster.getHealth(), EPS, "caster got the target's share");
+            assertEquals(4f, target.getHealth(), EPS, "target got the caster's share");
+            assertEquals(targetAt, caster.position(), "positions swapped");
+            assertEquals(casterAt, target.position(), "positions swapped");
+            assertEquals(target.getUUID(), Disguises.getDisguisedAs(caster).orElseThrow(), "disguised as each other");
+            assertEquals(caster.getUUID(), Disguises.getDisguisedAs(target).orElseThrow(), "disguised as each other");
+            assertEquals(Disguises.Kind.TOTAL_SWAP, Disguises.get(caster).orElseThrow().kind());
+            assertEquals(SwapConfig.ticks(SwapConfig.TOTAL_SWAP_COOLDOWN), InnateTechniqueService.cooldownRemaining(caster, Swap.TOTAL_SWAP));
+            // Cast below 30%: Identity Crisis is on the clock for 30 s.
+            assertTrue(SwapTracker.identityCrisisPending(caster));
+            TestServer.advanceGameTime(server, (int) SwapAdvancements.IDENTITY_CRISIS_SURVIVE_TICKS);
+            SwapTracker.tick(server);
+            assertFalse(SwapTracker.identityCrisisPending(caster), "30 s survived");
+            Disguises.endInvolving(caster);
+
+            // Shares, not points: each gets the other's percentage of their OWN max health.
+            InnateTechniqueService.clearCooldowns(caster);
+            face(caster, target);
+            target.getAttribute(net.minecraft.world.entity.ai.attributes.Attributes.MAX_HEALTH).setBaseValue(40.0);
+            caster.setHealth(4f);   // 20%
+            target.setHealth(30f);  // 75%
+            CastManager.handleIntent(caster, CastIntent.ULTIMATE_PRESS);
+            assertEquals(15f, caster.getHealth(), EPS, "75% of 20");
+            assertEquals(8f, target.getHealth(), EPS, "20% of 40");
+            target.getAttribute(net.minecraft.world.entity.ai.attributes.Attributes.MAX_HEALTH).setBaseValue(20.0);
+            Disguises.endInvolving(caster);
+            } finally {
+                for (ServerPlayer p : new ServerPlayer[] {caster, target}) level.removePlayerImmediately(p, Entity.RemovalReason.DISCARDED);
+            }
+        });
+    }
+
     /** Loads the test chunk: area queries only see entities in loaded chunks. */
     static void loadArena(ServerLevel level) {
         level.getHeight(Heightmap.Types.MOTION_BLOCKING, 0, 0);
