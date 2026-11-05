@@ -32,6 +32,8 @@ public final class CastState {
     @Nullable
     Active casting;
     final Map<ResourceLocation, Active> toggles = new LinkedHashMap<>();
+    /** Set during an INSTANT cast's execute: the cast fizzled after paying, so no cooldown starts. */
+    boolean noCooldown;
 
     @Nullable
     public Active casting() {

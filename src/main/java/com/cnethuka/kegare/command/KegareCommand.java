@@ -1,6 +1,7 @@
 package com.cnethuka.kegare.command;
 
 import com.mojang.brigadier.CommandDispatcher;
+import com.mojang.brigadier.arguments.BoolArgumentType;
 import com.mojang.brigadier.arguments.DoubleArgumentType;
 import com.mojang.brigadier.arguments.IntegerArgumentType;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
@@ -159,6 +160,13 @@ public final class KegareCommand {
                         .then(Commands.literal("reset")
                                 .then(Commands.argument("player", EntityArgument.player())
                                         .executes(c -> loadoutReset(c.getSource(), EntityArgument.getPlayer(c, "player"))))))
+                // Debug for Swap: make a player unswappable (cancels SwapTargetEvent; a stand-in for a future immunity).
+                .then(Commands.literal("swap")
+                        .then(Commands.literal("unswappable")
+                                .then(Commands.argument("player", EntityArgument.player())
+                                        .then(Commands.argument("on", BoolArgumentType.bool())
+                                                .executes(c -> swapUnswappable(c.getSource(), EntityArgument.getPlayer(c, "player"),
+                                                        BoolArgumentType.getBool(c, "on")))))))
                 .then(Commands.literal("stun")
                         .then(Commands.argument("player", EntityArgument.player())
                                 .then(Commands.argument("seconds", DoubleArgumentType.doubleArg(0, 3600))
@@ -292,6 +300,13 @@ public final class KegareCommand {
     private static int setPity(CommandSourceStack source, ServerPlayer player, int rolls) {
         RollService.setPity(player, rolls);
         source.sendSuccess(() -> Component.translatable("commands.kegare.setpity.success", player.getDisplayName(), rolls), true);
+        return 1;
+    }
+
+    private static int swapUnswappable(CommandSourceStack source, ServerPlayer player, boolean on) {
+        com.cnethuka.kegare.innate_technique.swap.SwapDebug.setUnswappable(player.getUUID(), on);
+        source.sendSuccess(() -> Component.translatable(on ? "commands.kegare.swap.unswappable.on" : "commands.kegare.swap.unswappable.off",
+                player.getDisplayName()), true);
         return 1;
     }
 

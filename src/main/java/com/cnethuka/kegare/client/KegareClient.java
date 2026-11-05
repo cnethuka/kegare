@@ -26,6 +26,7 @@ public final class KegareClient {
         VisualClientEvents.init(modBus);
         com.cnethuka.kegare.innate_technique.rime.client.RimeClient.init(modBus);
         com.cnethuka.kegare.rmt.client.RmtClient.init();
+        com.cnethuka.kegare.innate_technique.swap.client.SwapClient.init(modBus);
     }
 
     /** Emblem/icon art is looked up once per texture; forget the answers when resource packs change. */

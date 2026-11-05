@@ -121,9 +121,14 @@ public final class CastManager {
         switch (ability.castType()) {
             case INSTANT -> {
                 if (!MaliceService.trySpend(player, ability.cost(player))) return;
+                state.noCooldown = false;
                 ability.execute(ctx);
-                InnateTechniqueService.startCooldown(player, ability);
-                VisualService.ability(player, ability, VisualPhase.CAST);
+                if (state.noCooldown) { // fizzled after paying (see fizzleKeepingCost): no cooldown, no cast visuals
+                    state.noCooldown = false;
+                } else {
+                    InnateTechniqueService.startCooldown(player, ability);
+                    VisualService.ability(player, ability, VisualPhase.CAST);
+                }
             }
             // Cost is checked now but paid on release.
             case CHARGED -> {
@@ -147,6 +152,15 @@ public final class CastManager {
             }
         }
         PlayerSync.markDirty(player);
+    }
+
+    /**
+     * Call from an INSTANT ability's {@code execute}: the cast fizzled after its Malice was paid (e.g. something
+     * refused the effect at the last moment). The Malice stays spent, but no cooldown starts and the cast visuals
+     * don't play.
+     */
+    public static void fizzleKeepingCost(ServerPlayer player) {
+        state(player).noCooldown = true;
     }
 
     /** The first of the ability's {@link Requirement}s the player doesn't meet right now. */

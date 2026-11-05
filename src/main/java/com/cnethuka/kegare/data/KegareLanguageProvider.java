@@ -108,6 +108,19 @@ public final class KegareLanguageProvider extends LanguageProvider {
         add("ability.kegare.shatter_shell", "Shatter Shell");
         add("ability.kegare.shatter_shell.desc", "Burst outward: everyone nearby is knocked back and gets 2 Freeze stacks. "
                 + "Uses up an active Rime Shell; costs more without one.");
+
+        // Swap
+        add("innate_technique.kegare.swap", "Swap");
+        add("innate_technique.kegare.swap.desc", "Trade with other players: places, faces, fortunes and falls. "
+                + "Everything Swap does needs a player in sight.");
+        add("ability.kegare.positions", "Positions");
+        add("ability.kegare.positions.desc", "Swap places and facing with the player you're looking at (up to 24 blocks, in line of sight).");
+        add("ability.kegare.switchback", "Switchback");
+        add("ability.kegare.switchback.desc", "Swap places like Positions, then swap back on your own after 3 seconds. "
+                + "Called off if either of you dies, logs out or leaves the dimension.");
+        add("message.kegare.swap.no_target", "No player in sight.");
+        add("message.kegare.swap.refused", "Something stops the swap.");
+        add("message.kegare.swap.switchback_refused", "Something stops the swap back.");
         add("message.kegare.glacial_spire.no_ground", "%s needs ground within %s blocks.");
         add("entity.kegare.frost_shard", "Frost Shard");
         add("entity.kegare.glacial_lance", "Glacial Lance");
@@ -399,6 +412,8 @@ public final class KegareLanguageProvider extends LanguageProvider {
         add("commands.kegare.trait.status.unclaimed", "%s is unclaimed");
         add("commands.kegare.rebirth.success", "%s was reborn");
         add("commands.kegare.stun.success", "Stunned %s for %ss");
+        add("commands.kegare.swap.unswappable.on", "%s can't be swapped now (debug: cancels SwapTargetEvent)");
+        add("commands.kegare.swap.unswappable.off", "%s can be swapped again");
 
         // Config screen labels, generated from the config specs.
         add("kegare.configuration.title", "Kegare Configuration");
