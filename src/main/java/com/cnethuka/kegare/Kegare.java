@@ -38,6 +38,7 @@ public final class Kegare {
         KegareTraits.TRAITS.register(modBus);
         Rime.register(modBus);
         com.cnethuka.kegare.innate_technique.swap.Swap.register(modBus);
+        com.cnethuka.kegare.innate_technique.puppet_manipulation.PuppetManipulation.register(modBus);
         com.cnethuka.kegare.rmt.Rmt.init(modBus); // registers Reverse Malice Technique as a shared ability
         TestInnateTechniques.INNATE_TECHNIQUES.register(modBus); // TEST CONTENT
 

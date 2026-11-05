@@ -1578,6 +1578,32 @@ def build() -> dict[str, Image.Image]:
     return out
 
 
+
+# ---------------------------------------------------------------------------------------------------- Puppet Manipulation
+
+def puppet_glow() -> "Image.Image":
+    """The puppets' glow shell (entity texture, drawn additively and tinted with the Malice color, scrolling slowly):
+    soft white threads woven across a black tile, wrapping seamlessly both ways."""
+    size = 64
+    img = Image.new("RGBA", (size, size), (0, 0, 0, 255))
+    layers = noise_stack(seed=611, px=size, py=size, cells=(8, 4))
+    for y in range(size):
+        for x in range(size):
+            v = 0.0
+            # three families of threads (sine waves that tile: whole periods across the 64px tile)
+            for k, (fx, fy, amp, phase, width, strength) in enumerate((
+                    (1, 2, 5.0, 0.0, 0.8, 1.0), (2, 1, 4.0, 1.7, 0.7, 0.7))):
+                t = (fx * x + fy * y) / size * 2 * math.pi
+                offset = amp * math.sin(t * 2 + phase)
+                d = ((fy * x - fx * y) / math.hypot(fx, fy) + offset) % (size / 4)
+                d = min(d, size / 4 - d)
+                v = max(v, strength * max(0.0, 1.0 - d / width))
+            v = min(1.0, v * (0.55 + 0.45 * fbm(layers, x, y)))  # threads only, brighter in places; no haze
+            c = int(255 * v)
+            img.putpixel((x, y), (c, c, c, 255))
+    return img
+
+
 def main() -> None:
     sprites = build()
     borders = {"panel": 12, "card_common": 12, "card_rare": 12, "card_epic": 12, "card_legendary": 12,
@@ -1604,6 +1630,7 @@ def main() -> None:
     save(icon(ICON_FROST_SHARD, ICE), "item/frost_shard.png")
     save(icon(ICON_GLACIAL_LANCE, ICE), "item/glacial_lance.png")
     save(swap_anchor_item(), "item/swap_anchor.png")
+    save(puppet_glow(), "entity/puppet_glow.png")
 
     icons = {"test_dash": icon(ICON_DASH, MALICE), "test_burst": icon(ICON_BURST, MALICE),
              "test_hover": icon(ICON_HOVER, MALICE), "test_aura": icon(ICON_AURA, MALICE),

@@ -39,6 +39,15 @@ public interface Ability {
     /** Malice paid when the cast fires (INSTANT / CHARGED release) or starts (CHANNELED / TOGGLE). */
     double cost(ServerPlayer player);
 
+    /**
+     * CHARGED only: what the release actually costs, for a charge of {@code charge} (0..1). Default: {@link #cost}.
+     * Override when the cost grows with the charge (e.g. tiers); {@link #cost} is then the cheapest release, which is
+     * what pressing the key checks and what the HUD shows.
+     */
+    default double releaseCost(ServerPlayer player, float charge) {
+        return cost(player);
+    }
+
     /** Cooldown in ticks, started after firing (INSTANT / CHARGED) or after ending (CHANNELED / TOGGLE). */
     int cooldownTicks(ServerPlayer player);
 

@@ -1,0 +1,28 @@
+{
+  "criteria": {
+    "rolled": {
+      "trigger": "minecraft:impossible"
+    }
+  },
+  "display": {
+    "announce_to_chat": false,
+    "background": "minecraft:textures/block/black_concrete.png",
+    "description": {
+      "translate": "advancements.kegare.innate_technique_root.description"
+    },
+    "icon": {
+      "count": 1,
+      "id": "minecraft:armor_stand"
+    },
+    "title": {
+      "color": "#C77DFF",
+      "translate": "innate_technique.kegare.puppet_manipulation"
+    }
+  },
+  "requirements": [
+    [
+      "rolled"
+    ]
+  ],
+  "sends_telemetry_event": true
+}

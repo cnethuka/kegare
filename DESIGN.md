@@ -260,7 +260,7 @@ All timestamps use **level game time**. They persist across restarts and are ide
   - The client counts down cooldowns locally from game time.
 - Swap (§3.19) adds two cosmetic S→C payloads: `Disguises.StatePayload` (the disguise map, to everyone) and
   `SwapLink.Payload` (effects drawn along a line).
-- Network version `6` (since Swap's payloads). Bump it when payload formats change; mismatched clients are refused.
+- Network version `7` (since Puppet Manipulation's payloads). Bump it when payload formats change; mismatched clients are refused.
 
 ### 3.6 HUD
 **Rule: the combat HUD does not exist until the player asks for it** (art in `gen_art.py` → `textures/gui/combat/`).

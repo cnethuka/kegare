@@ -28,7 +28,25 @@ public final class CastManager {
 
     // ------------------------------------------------------------------ intents
 
+    /**
+     * Gets first say over a key intent, before the cast pipeline (e.g. while possessing a puppet, R returns and nothing
+     * else casts). Returns true when it handled the intent, which then goes no further.
+     */
+    @FunctionalInterface
+    public interface Interceptor {
+        boolean intercept(ServerPlayer player, CastIntent intent);
+    }
+
+    private static final List<Interceptor> INTERCEPTORS = new java.util.concurrent.CopyOnWriteArrayList<>();
+
+    public static void addInterceptor(Interceptor interceptor) {
+        INTERCEPTORS.add(interceptor);
+    }
+
     public static void handleIntent(ServerPlayer player, CastIntent intent) {
+        for (Interceptor interceptor : INTERCEPTORS) {
+            if (interceptor.intercept(player, intent)) return;
+        }
         switch (intent) {
             case CAST_PRESS -> tryCast(player, CastSlot.SELECTED);
             case CAST_RELEASE -> release(player, CastSlot.SELECTED);
@@ -350,10 +368,13 @@ public final class CastManager {
             feedback(player, CastResult.BLOCKED, ability);
             return;
         }
-        // Toggle upkeep may have drained the reserve while charging: re-check at release.
-        if (!MaliceService.trySpend(player, ability.cost(player))) {
+        // Toggle upkeep may have drained the reserve while charging, and a charge may cost more the longer it was
+        // held (Ability#releaseCost): re-check at release.
+        double cost = ability.releaseCost(player, ctx.charge());
+        if (!MaliceService.trySpend(player, cost)) {
             ability.onEnd(ctx, EndReason.OUT_OF_MALICE);
-            feedback(player, CastResult.NOT_ENOUGH_MALICE, ability);
+            player.displayClientMessage(Component.translatable(CastResult.NOT_ENOUGH_MALICE.translationKey(),
+                    Integer.toString((int) Math.ceil(cost - 1.0e-6)), Integer.toString((int) Math.floor(MaliceService.get(player).current()))), true);
             return;
         }
         ability.execute(ctx);

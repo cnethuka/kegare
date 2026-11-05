@@ -19,16 +19,34 @@ import net.minecraft.util.Mth;
 /**
  * Without the combat panel the HUD stays out of the way: only what can't wait shows, small and under the crosshair.
  * Freeze stacks while there are any ("Frozen!" while frozen; Severed players too), and the charge/channel line while
- * casting with the Cast key.
+ * casting with the Cast key. Innate techniques can add lines that show in Technique Mode too ({@link #addExtra}).
  */
 public final class StatusLayer implements LayeredDraw.Layer {
     public static final ResourceLocation ID = Kegare.id("status");
+
+    /**
+     * A line an innate technique adds under the crosshair, drawn in AND out of Technique Mode (e.g. possessing a
+     * puppet). Draws at {@code y} (centered on {@code cx}) and returns the y for whatever comes next.
+     */
+    @FunctionalInterface
+    public interface Extra {
+        int render(GuiGraphics g, Minecraft mc, int cx, int y);
+    }
+
+    private static final java.util.List<Extra> EXTRAS = new java.util.concurrent.CopyOnWriteArrayList<>();
+
+    public static void addExtra(Extra extra) {
+        EXTRAS.add(extra);
+    }
 
     @Override
     public void render(GuiGraphics g, DeltaTracker deltaTracker) {
         Minecraft mc = Minecraft.getInstance();
         if (!KegareClientConfig.HUD_ENABLED.get() || mc.options.hideGui || mc.player == null || mc.level == null) return;
-        if (mc.player.isSpectator() || CombatPanelLayer.shown()) return;
+        if (mc.player.isSpectator()) return;
+        int extraY = g.guiHeight() / 2 + (CombatPanelLayer.shown() ? 10 : 40);
+        for (Extra extra : EXTRAS) extraY = extra.render(g, mc, g.guiWidth() / 2, extraY);
+        if (CombatPanelLayer.shown()) return;
         SyncPayload data = ClientData.get();
         if (data == null || !data.born()) return;
         long now = mc.level.getGameTime();

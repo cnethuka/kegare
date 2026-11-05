@@ -147,6 +147,37 @@ public final class KegareLanguageProvider extends LanguageProvider {
         add("message.kegare.swap.no_target_any", "Nothing in sight to swap with.");
         add("message.kegare.swap.refused", "Something stops the swap.");
         add("message.kegare.swap.switchback_refused", "Something stops the swap back.");
+        // Puppet Manipulation
+        add("innate_technique.kegare.puppet_manipulation", "Puppet Manipulation");
+        add("innate_technique.kegare.puppet_manipulation.desc", "Charge Malice into little copies of yourself. "
+                + "Command them, ride inside them, set them off, or let one stand in for you.");
+        add("ability.kegare.puppet_creation", "Puppet Creation");
+        add("ability.kegare.puppet_creation.desc", "Hold to charge, release to make a half-size puppet of yourself beside you. "
+                + "A tap makes a weak one (2 health, faint glow), half a charge a steady one (4 health), a full charge a strong one "
+                + "(8 health, bright glow and an outline). The longer the charge, the higher the cost. Puppets last until killed.");
+        add("entity.kegare.puppet", "Puppet");
+        add("ability.kegare.possess", "Possess");
+        add("ability.kegare.possess.desc", "Move into the puppet you're looking at (or your nearest one) and become it: its size, "
+                + "its health, no items, no casting. Your body stays behind, defenceless. R again returns. You snap back if your body "
+                + "is hit, if you go more than 64 blocks from it, or if the puppet dies (with backlash: nausea, a stun and lost Malice).");
+        add("entity.kegare.puppet_shell", "Empty Body");
+        add("message.kegare.possess.no_puppet", "No puppet of yours within %s blocks.");
+        add("message.kegare.possess.no_casting", "You can't cast while possessing. Press R to return.");
+        add("message.kegare.possess.snapped_back.shell_hit", "Your body was hit! You snap back.");
+        add("message.kegare.possess.snapped_back.puppet_died", "Your puppet was destroyed! The backlash hits you.");
+        add("message.kegare.possess.snapped_back.too_far", "Too far from your body. You snap back.");
+        add("message.kegare.possess.snapped_back.death", "You return to your body.");
+        add("message.kegare.possess.snapped_back.dimension_change", "You return to your body.");
+        add("hud.kegare.possessing", "Possessing");
+        add("hud.kegare.shell_health", "Body %s");
+        add("message.kegare.puppet.cap", "You can't hold more than %s puppets.");
+        add(com.cnethuka.kegare.innate_technique.puppet_manipulation.PuppetTier.TAP.translationKey(), "Tap");
+        add(com.cnethuka.kegare.innate_technique.puppet_manipulation.PuppetTier.HALF.translationKey(), "Half");
+        add(com.cnethuka.kegare.innate_technique.puppet_manipulation.PuppetTier.FULL.translationKey(), "Full");
+        add(com.cnethuka.kegare.innate_technique.puppet_manipulation.PuppetOrder.FOLLOW.translationKey(), "Follow");
+        add(com.cnethuka.kegare.innate_technique.puppet_manipulation.PuppetOrder.STAY.translationKey(), "Stay");
+        add(com.cnethuka.kegare.innate_technique.puppet_manipulation.PuppetOrder.GUARD.translationKey(), "Guard");
+        add(com.cnethuka.kegare.innate_technique.puppet_manipulation.PuppetOrder.GO.translationKey(), "Go");
         add("message.kegare.glacial_spire.no_ground", "%s needs ground within %s blocks.");
         add("entity.kegare.frost_shard", "Frost Shard");
         add("entity.kegare.glacial_lance", "Glacial Lance");
