@@ -28,6 +28,13 @@ public final class PuppetConfig {
     public static ModConfigSpec.DoubleValue BACKLASH_STUN;
     public static ModConfigSpec.DoubleValue BACKLASH_MALICE;
 
+    // directive (INSTANT) and focus (special of directive, INSTANT)
+    public static ModConfigSpec.DoubleValue DIRECTIVE_COST;
+    public static ModConfigSpec.DoubleValue DIRECTIVE_COOLDOWN;
+    public static ModConfigSpec.DoubleValue DIRECTIVE_RANGE;
+    public static ModConfigSpec.DoubleValue FOCUS_COST;
+    public static ModConfigSpec.DoubleValue FOCUS_TARGET_RANGE;
+
     private PuppetConfig() {}
 
     /** Called from KegareServerConfig while it builds the spec. */
@@ -79,6 +86,19 @@ public final class PuppetConfig {
                 .defineInRange("stun", 1.0, 0.0, 30.0);
         BACKLASH_MALICE = b.comment("Malice lost.").defineInRange("malice", 20.0, 0.0, 100_000.0);
         b.pop();
+        b.pop();
+
+        b.comment("Give every puppet in range the next order: Follow, Stay, Guard (attack whoever damages you), Go (walk to the",
+                "block you're looking at).").push("directive");
+        DIRECTIVE_COST = b.defineInRange("cost", 5.0, 0.0, 100_000.0);
+        DIRECTIVE_COOLDOWN = b.defineInRange("cooldown", 1.0, 0.0, 3600.0);
+        DIRECTIVE_RANGE = b.comment("Puppets this close (blocks) hear Directive and Focus; also how far Go can point.")
+                .defineInRange("range", 32.0, 1.0, 256.0);
+        b.pop();
+
+        b.comment("Special of Directive: every puppet in range swarms the player or mob you're looking at.").push("focus");
+        FOCUS_COST = b.defineInRange("cost", 10.0, 0.0, 100_000.0);
+        FOCUS_TARGET_RANGE = b.comment("How far away (blocks) the target can be.").defineInRange("targetRange", 32.0, 1.0, 256.0);
         b.pop();
 
         b.pop();

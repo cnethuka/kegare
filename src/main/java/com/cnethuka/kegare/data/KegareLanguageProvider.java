@@ -155,6 +155,16 @@ public final class KegareLanguageProvider extends LanguageProvider {
         add("ability.kegare.puppet_creation.desc", "Hold to charge, release to make a half-size puppet of yourself beside you. "
                 + "A tap makes a weak one (2 health, faint glow), half a charge a steady one (4 health), a full charge a strong one "
                 + "(8 health, bright glow and an outline). The longer the charge, the higher the cost. Puppets last until killed.");
+        add("ability.kegare.directive", "Directive");
+        add("ability.kegare.directive.desc", "Give every puppet within 32 blocks the next order: Follow, Stay, Guard (attack whoever "
+                + "damages you, player or mob) or Go (walk to the block you're looking at, then stay). New puppets take the current order.");
+        add("ability.kegare.focus", "Focus");
+        add("ability.kegare.focus.desc", "Every puppet in range swarms the player or mob you're looking at, until it dies or gets away; "
+                + "then they go back to their order.");
+        add("message.kegare.directive.order", "Puppets: %s (%s heard you)");
+        add("message.kegare.focus.no_target", "Nothing in sight to focus on.");
+        add("message.kegare.focus.no_puppets", "No puppets of yours in range.");
+        add("message.kegare.focus.swarm", "%s puppets swarm %s.");
         add("entity.kegare.puppet", "Puppet");
         add("ability.kegare.possess", "Possess");
         add("ability.kegare.possess.desc", "Move into the puppet you're looking at (or your nearest one) and become it: its size, "

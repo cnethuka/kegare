@@ -24,13 +24,16 @@ public final class PuppetManipulation {
     public static final int MALICE_COLOR = 0xC4B5FD;
 
     public static final PuppetCreationAbility PUPPET_CREATION = new PuppetCreationAbility();
+    public static final DirectiveAbility DIRECTIVE = new DirectiveAbility();
 
     // Specials (R), each sharing its base ability's cooldown.
     public static final PossessAbility POSSESS = new PossessAbility();
+    public static final FocusAbility FOCUS = new FocusAbility();
 
     public static final DeferredHolder<InnateTechnique, InnateTechnique> PUPPET_MANIPULATION = INNATE_TECHNIQUES.register("puppet_manipulation",
             () -> new InnateTechnique(InnateTechnique.builder(InnateTechniqueRarity.EPIC)
                     .ability(PUPPET_CREATION)
+                    .ability(DIRECTIVE)
                     .lockedUltimate()
                     .maliceColor(MALICE_COLOR)
                     .tabIcon(Items.ARMOR_STAND)) {

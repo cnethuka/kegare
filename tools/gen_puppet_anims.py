@@ -67,5 +67,22 @@ A["possess_return"] = anim(0.5, {
     "torso": [(0, (10, 0, 0), "linear"), (0.1, (-4, 0, 0), "easeOutQuad"), (0.5, (0, 0, 0), "easeInOutSine")],
 })
 
+# Directive: a raised hand sweeps out over the puppets, then snaps closed (the order given).
+A["directive_cast"] = anim(0.55, {
+    "right_arm": [(0, (0, 0, 0), "easeOutQuad"), (0.12, (-160, 10, -10), "easeOutQuad"), (0.3, (-110, 30, 30), "easeInOutSine"),
+                  (0.36, (-112, 28, 28), "linear"), (0.55, (0, 0, 0), "easeInOutSine")],
+    "torso": [(0, (0, 0, 0), "easeOutQuad"), (0.3, (0, 12, 0), "easeInOutSine"), (0.55, (0, 0, 0), "easeInOutSine")],
+    "head": [(0, (0, 0, 0), "easeOutQuad"), (0.12, (-10, 0, 0), "easeOutQuad"), (0.55, (0, 0, 0), "easeInOutSine")],
+})
+
+# Focus: a long arm thrust straight at the target, held, the other hand drawn back like pulling a string taut.
+A["focus_point"] = anim(0.7, {
+    "right_arm": [(0, (0, 0, 0), "easeOutQuad"), (0.08, (-92, -6, 0), "easeOutQuad"), (0.45, (-90, -6, 0), "linear"),
+                  (0.7, (0, 0, 0), "easeInOutSine")],
+    "left_arm": [(0, (0, 0, 0), "easeOutQuad"), (0.1, (-70, 40, 0), "easeOutQuad"), (0.45, (-68, 42, 0), "linear"),
+                 (0.7, (0, 0, 0), "easeInOutSine")],
+    "torso": [(0, (0, 0, 0), "easeOutQuad"), (0.1, (0, -16, 0), "easeOutQuad"), (0.45, (0, -16, 0), "linear"), (0.7, (0, 0, 0), "easeInOutSine")],
+})
+
 OUT.write_text(json.dumps({"format_version": "1.8.0", "animations": A}, indent=2) + "\n")
 print("wrote", OUT, "with", len(A), "animations")

@@ -35,8 +35,11 @@ public final class Puppets {
         puppet.moveTo(at.x, at.y, at.z, owner.getYRot(), 0f);
         puppet.setYHeadRot(owner.getYRot());
         puppet.setYBodyRot(owner.getYRot());
+        PuppetOwnerData orders = owner.getData(PuppetRegistry.OWNER.get());
+        puppet.setOrder(orders.order(), orders.goTarget()); // it takes the current order
         owner.serverLevel().addFreshEntity(puppet);
         data.add(owner.getUUID(), puppet.getUUID());
+        PuppetHud.markDirty(owner);
         VisualService.playOnce(puppet, Visual.effect(PuppetIds.FX_PUPPET_FORM, Visual.Anchor.BODY));
         owner.level().playSound(null, puppet.getX(), puppet.getY(), puppet.getZ(), SoundEvents.WOOL_PLACE, SoundSource.PLAYERS, 0.9f, 1.3f);
         return puppet;
@@ -64,7 +67,9 @@ public final class Puppets {
     /** A puppet is gone for good (killed or dissolved): it no longer counts toward its owner's cap. */
     static void forget(PuppetEntity puppet) {
         UUID owner = puppet.ownerId();
-        if (owner != null && puppet.level() instanceof ServerLevel level) PuppetSavedData.get(level.getServer()).remove(owner, puppet.getUUID());
+        if (owner == null || !(puppet.level() instanceof ServerLevel level)) return;
+        PuppetSavedData.get(level.getServer()).remove(owner, puppet.getUUID());
+        if (level.getPlayerByUUID(owner) instanceof ServerPlayer player) PuppetHud.markDirty(player);
     }
 
     /** Dissolves one puppet into Malice-colored threads (no death, no drops). */
@@ -105,6 +110,17 @@ public final class Puppets {
                 owner.getBoundingBox().inflate(range), p -> p.isAlive() && !p.isPossessed() && p.isOwnedBy(owner) && p.distanceToSqr(owner) <= range * range));
         out.sort(Comparator.comparingDouble(p -> p.distanceToSqr(owner)));
         return out;
+    }
+
+    /**
+     * Guard: someone (player or mob) damaged the owner; their guarding puppets in range go for the attacker. Puppets
+     * already chasing something keep at it.
+     */
+    static void ownerAttacked(ServerPlayer owner, net.minecraft.world.entity.LivingEntity attacker) {
+        if (attacker == owner) return;
+        for (PuppetEntity puppet : near(owner, PuppetConfig.DIRECTIVE_RANGE.get())) {
+            if (puppet.order() == PuppetOrder.GUARD && puppet.getTarget() == null) puppet.attack(attacker);
+        }
     }
 
     /** A following puppet left far behind appears beside its owner, like a tamed pet. */

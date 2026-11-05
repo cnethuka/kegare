@@ -26,6 +26,7 @@ import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.ai.goal.FloatGoal;
 import net.minecraft.world.entity.ai.goal.Goal;
 import net.minecraft.world.entity.ai.goal.LookAtPlayerGoal;
+import net.minecraft.world.entity.ai.goal.MeleeAttackGoal;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.Vec3;
@@ -119,6 +120,8 @@ public class PuppetEntity extends PathfinderMob implements Puppet {
     @Override
     protected void registerGoals() {
         goalSelector.addGoal(0, new FloatGoal(this));
+        goalSelector.addGoal(1, new MeleeAttackGoal(this, 1.2, true));
+        goalSelector.addGoal(2, new GoToGoal());
         goalSelector.addGoal(3, new FollowOwnerGoal());
         goalSelector.addGoal(6, new LookAtPlayerGoal(this, Player.class, 8f) {
             @Override
@@ -274,6 +277,8 @@ public class PuppetEntity extends PathfinderMob implements Puppet {
         if (owner == null) { // offline, dead or elsewhere: stand idle, never attack
             getNavigation().stop();
             setTarget(null);
+        } else if (getTarget() != null && !canKeepTarget(getTarget(), owner)) {
+            setTarget(null); // dead, gone, too far, or (somehow) its own side
         }
         updateSpin();
     }
@@ -285,6 +290,32 @@ public class PuppetEntity extends PathfinderMob implements Puppet {
         stillTicks = still ? stillTicks + 1 : 0;
         boolean spin = stillTicks > PuppetConfig.ticks(PuppetConfig.SPIN_DELAY);
         if (spin != isSpinning()) entityData.set(SPINNING, spin);
+    }
+
+    // ---------------------------------------------------------------- orders and targets
+
+    /** Directive: a new order. Any chase (Focus, Guard) ends; Go walks to {@code goTarget}. */
+    void setOrder(PuppetOrder order, @Nullable BlockPos goTarget) {
+        this.order = order;
+        this.goTarget = order == PuppetOrder.GO ? goTarget : null;
+        setTarget(null);
+        getNavigation().stop();
+    }
+
+    /** Focus or Guard: go for {@code target} (never its owner or the owner's side). */
+    boolean attack(LivingEntity target) {
+        ServerPlayer owner = owner();
+        if (owner == null || isPossessed() || !canKeepTarget(target, owner)) return false;
+        setTarget(target);
+        return true;
+    }
+
+    private boolean canKeepTarget(LivingEntity target, ServerPlayer owner) {
+        return target.isAlive() && !target.isRemoved() && target != owner && target.level() == level()
+                && !(target instanceof PuppetEntity p && owner.getUUID().equals(p.ownerId()))
+                && !(target instanceof PuppetShellEntity shell && owner.getUUID().equals(shell.ownerId()))
+                && !(target instanceof Player player && (player.isCreative() || player.isSpectator()))
+                && distanceToSqr(target) < 48 * 48;
     }
 
     // ---------------------------------------------------------------- death and removal
@@ -394,6 +425,48 @@ public class PuppetEntity extends PathfinderMob implements Puppet {
     }
 
     // ---------------------------------------------------------------- goals
+
+    /** Go: walk to the block the owner pointed at, then stay there. */
+    private final class GoToGoal extends Goal {
+        private int repath;
+
+        GoToGoal() {
+            setFlags(EnumSet.of(Flag.MOVE));
+        }
+
+        /** Within 1.2 blocks of the spot (puppets sent together jostle for it). */
+        private boolean arrived() {
+            return goTarget == null || distanceToSqr(Vec3.atBottomCenterOf(goTarget)) < 1.44;
+        }
+
+        @Override
+        public boolean canUse() {
+            return order == PuppetOrder.GO && getTarget() == null && owner() != null && !arrived();
+        }
+
+        @Override
+        public boolean canContinueToUse() {
+            return canUse();
+        }
+
+        @Override
+        public void start() {
+            repath = 0;
+        }
+
+        @Override
+        public void stop() {
+            getNavigation().stop();
+        }
+
+        @Override
+        public void tick() {
+            if (goTarget != null && --repath <= 0) {
+                repath = 20;
+                getNavigation().moveTo(getNavigation().createPath(goTarget, 0), 1.0); // to the block itself, not just near it
+            }
+        }
+    }
 
     /** Follow (and Guard): walk back to the owner when too far, catch up at once when left far behind. */
     private final class FollowOwnerGoal extends Goal {

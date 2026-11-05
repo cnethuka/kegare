@@ -65,6 +65,16 @@ public final class PuppetEvents {
         }
     }
 
+    /** Guard: whoever damages a Puppet Manipulation player has their guarding puppets to deal with. */
+    @SubscribeEvent
+    static void onOwnerDamaged(net.neoforged.neoforge.event.entity.living.LivingDamageEvent.Post event) {
+        if (event.getNewDamage() <= 0 || !(event.getEntity() instanceof ServerPlayer owner)) return;
+        if (event.getSource().getEntity() instanceof net.minecraft.world.entity.LivingEntity attacker && attacker != owner
+                && !(attacker instanceof PuppetEntity puppet && puppet.isOwnedBy(owner))) {
+            Puppets.ownerAttacked(owner, attacker);
+        }
+    }
+
     /** A puppet doesn't heal (natural regeneration would mend it for free). */
     @SubscribeEvent
     static void onHeal(LivingHealEvent event) {
