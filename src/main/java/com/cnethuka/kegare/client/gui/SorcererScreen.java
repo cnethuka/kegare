@@ -354,11 +354,16 @@ public final class SorcererScreen extends Screen {
         int color = technique != null ? technique.maliceColor() : InnateTechnique.DEFAULT_MALICE_COLOR;
         GuiDraw.text(g, font, Component.translatable("gui.kegare.sorcerer.side.malice"), x, y, 1f, GuiDraw.GRAY);
         y += 10;
-        GuiDraw.text(g, font, Component.translatable("gui.kegare.sorcerer.side.amount", Mth.floor(info.current()), info.capacity()), x, y, 1f, GuiDraw.WHITE);
+        // Live from the sync (the info payload is a snapshot from when the screen opened).
+        SyncPayload live = ClientData.get();
+        float current = live != null ? live.current() : info.current();
+        int capacity = live != null ? live.capacity() : info.capacity();
+        int tier = live != null ? live.tier() : info.tier();
+        GuiDraw.text(g, font, Component.translatable("gui.kegare.sorcerer.side.amount", Mth.floor(current), capacity), x, y, 1f, GuiDraw.WHITE);
         y += 10;
-        GuiDraw.maliceBar(g, x, y, w, info.capacity() <= 0 ? 0f : info.current() / info.capacity(), color, -1f);
+        GuiDraw.maliceBar(g, x, y, w, capacity <= 0 ? 0f : current / capacity, color, -1f);
         y += GuiDraw.BAR_HEIGHT + 3;
-        GuiDraw.text(g, font, Component.translatable(MaliceTier.values()[Mth.clamp(info.tier(), 0, MaliceTier.values().length - 1)].translationKey()),
+        GuiDraw.text(g, font, Component.translatable(MaliceTier.values()[Mth.clamp(tier, 0, MaliceTier.values().length - 1)].translationKey()),
                 x, y, 1f, GuiDraw.MALICE);
         y += 10;
         Component regen = info.regenPaused() ? Component.translatable("gui.kegare.sorcerer.side.regen_paused")
