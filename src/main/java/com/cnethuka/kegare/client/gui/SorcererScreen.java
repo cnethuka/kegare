@@ -1,52 +1,117 @@
 package com.cnethuka.kegare.client.gui;
 
+import com.cnethuka.kegare.Kegare;
+import com.cnethuka.kegare.client.ClientData;
+import com.cnethuka.kegare.client.ClientLoadout;
+import com.cnethuka.kegare.client.CombatPanelLayer;
 import com.cnethuka.kegare.client.KegareKeys;
 import com.cnethuka.kegare.innatetechnique.Ability;
 import com.cnethuka.kegare.innatetechnique.CastType;
+import com.cnethuka.kegare.innatetechnique.CostEnvironment;
 import com.cnethuka.kegare.innatetechnique.InnateTechnique;
 import com.cnethuka.kegare.innatetechnique.Requirement;
+import com.cnethuka.kegare.loadout.AbilityCategory;
+import com.cnethuka.kegare.loadout.AbilityLookup;
+import com.cnethuka.kegare.loadout.LoadoutResult;
+import com.cnethuka.kegare.loadout.LoadoutService;
+import com.cnethuka.kegare.loadout.SharedAbilities;
 import com.cnethuka.kegare.malice.MaliceTier;
+import com.cnethuka.kegare.network.LoadoutEditPayload;
 import com.cnethuka.kegare.network.SorcererInfoPayload;
+import com.cnethuka.kegare.network.SorcererRequestPayload;
+import com.cnethuka.kegare.network.SyncPayload;
 import com.cnethuka.kegare.registry.KegareRegistries;
 import com.cnethuka.kegare.trait.Trait;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Optional;
+import java.util.Set;
 import javax.annotation.Nullable;
 import net.minecraft.ChatFormatting;
+import net.minecraft.Util;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.client.gui.screens.inventory.InventoryScreen;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
-import net.minecraft.util.FormattedCharSequence;
 import net.minecraft.util.Mth;
+import net.neoforged.neoforge.network.PacketDistributor;
 import org.lwjgl.glfw.GLFW;
 
 /**
- * Sorcerer screen (key K): Malice, Innate Technique (or the Severed page), Traits and Pity. All numbers come from
- * a {@link SorcererInfoPayload} computed by the server; this screen only displays them.
- * Keys: 1-4 or Tab switch pages, arrows / mouse wheel scroll, K or Esc close.
+ * The Sorcerer screen (key K): one window (our own art).
+ * <ul>
+ *   <li>Left edge: ability category tabs (Innate Technique, Shared).</li>
+ *   <li>Header: the innate technique's emblem, name and rarity, and the selected category's abilities (padlocks for
+ *       locked ones; a gold number marks the slot each is on).</li>
+ *   <li>The large box: whatever ability is hovered (or clicked): category, cast type, current cost and cooldown,
+ *       description, its special and its slot. The right-edge buttons switch the box to Traits or Pity.</li>
+ *   <li>Right column: your player model, Malice capacity and tier, reserve, regen.</li>
+ *   <li>Bottom: the combat panel itself, live, as the loadout bar. Drag an ability onto a slot (or click it, then a
+ *       slot); drag slots to swap, off the bar or right-click to empty; the ultimate slot is fixed.</li>
+ * </ul>
+ * Everything shown is decided by the server ({@link SorcererInfoPayload} and the sync); loadout changes are requests
+ * ({@link LoadoutEditPayload}) the server checks.
  */
 public final class SorcererScreen extends Screen {
-    private enum Page { MALICE, INNATE_TECHNIQUE, LOADOUT, TRAITS, PITY }
+    private enum View { TECHNIQUE, TRAITS, PITY }
 
-    private static Page lastPage = Page.MALICE;
-    private static final int TOOLTIP_WIDTH = 220;
+    private static final ResourceLocation FRAME = Kegare.id("menu_frame");
+    private static final ResourceLocation WELL = Kegare.id("menu_well");
+    private static final ResourceLocation TAB = Kegare.id("menu_tab");
+    private static final ResourceLocation TAB_SELECTED = Kegare.id("menu_tab_selected");
+    private static final ResourceLocation ICON_TRAITS = Kegare.id("view_traits");
+    private static final ResourceLocation ICON_PITY = Kegare.id("view_pity");
+    private static final ResourceLocation ICON_TECHNIQUE = Kegare.id("view_technique");
+    private static final int TILE = 22;
+    private static final int TAB_SIZE = 24;
+    private static final long STATUS_MS = 3500;
+
+    private static View lastView = View.TECHNIQUE;
+    private static AbilityCategory lastCategory = AbilityCategory.INNATE_TECHNIQUE;
 
     private SorcererInfoPayload info;
-    private Page page = lastPage;
-    private final LoadoutPage loadout = new LoadoutPage();
-    private double scroll;
-    private int contentHeight;
+    private View view = lastView;
+    private AbilityCategory category = lastCategory;
 
-    private int panelX, panelY, panelW, panelH;
-    /** Ability rows drawn this frame (screen coordinates), for hover tooltips. */
-    private final java.util.List<HoverRow> hoverRows = new java.util.ArrayList<>();
+    /** Clicked ability: its details stay in the box, and it is "in hand" for click-to-assign. */
+    @Nullable
+    private ResourceLocation pinned;
+    private boolean inHand;
+    /** Mouse-down on a tile or a loadout slot, waiting to see if it becomes a drag. */
+    @Nullable
+    private ResourceLocation pressAbility;
+    private int pressSlot = -1;
+    private double pressX, pressY;
+    private boolean dragging;
+    @Nullable
+    private Component status;
+    @Nullable
+    private LoadoutResult statusResult;
+    private long statusUntil;
 
-    private record HoverRow(int x, int y, int w, int h, java.util.List<FormattedCharSequence> lines) {
+    /** The big box scrolls (mouse wheel) when what it shows is taller than it. */
+    private int scroll, scrollMax;
+    @Nullable
+    private Object scrollFor;
+
+    /** What the info was built against: when the sync says it changed (an unlock, a reroll), ask for fresh info. */
+    @Nullable
+    private Object infoBasis;
+
+    private int px, py, pw, ph;
+    private int lx0, lx1, rcx, rcw, wellY0, wellY1, trayX, trayY;
+
+    private enum Kind { CATEGORY, VIEW, TILE, RESET }
+
+    private record Hit(Kind kind, int x, int y, int w, int h, int index, @Nullable ResourceLocation ability, boolean unlocked) {
         boolean contains(double mx, double my) {
             return mx >= x && mx < x + w && my >= y && my < y + h;
         }
     }
-    private int contentX, contentY, contentW, contentH;
-    private int tabY, tabH, tabW;
+
+    private final List<Hit> hits = new ArrayList<>();
+    private List<CombatPanelLayer.SlotRect> traySlots = List.of();
 
     public SorcererScreen(SorcererInfoPayload info) {
         super(Component.translatable("gui.kegare.sorcerer.title"));
@@ -55,327 +120,495 @@ public final class SorcererScreen extends Screen {
 
     /** New data from the server while open (e.g. pressing K again). */
     void update(SorcererInfoPayload info) {
+        boolean hadBar = hasBar();
         this.info = info;
+        if (hasBar() != hadBar) layout();
+        SyncPayload data = ClientData.get();
+        infoBasis = data == null ? null : basis(data);
+    }
+
+    private static Object basis(SyncPayload data) {
+        return List.of(data.severed(), data.innateTechnique(), Set.copyOf(data.sharedUnlocked()), Set.copyOf(data.traits()));
     }
 
     /** A loadout edit was refused by the server. */
-    void onLoadoutResult(com.cnethuka.kegare.loadout.LoadoutResult result) {
-        loadout.onResult(result);
+    void onLoadoutResult(LoadoutResult result) {
+        if (result.translationKey() == null) return;
+        status = Component.translatable(result.translationKey());
+        statusResult = result;
+        statusUntil = Util.getMillis() + STATUS_MS;
     }
 
     @Override
     protected void init() {
-        panelW = Math.min(width - 12, 400);
-        panelH = Math.min(height - 12, 280);
-        panelX = (width - panelW) / 2;
-        panelY = (height - panelH) / 2;
-        tabH = 18;
-        tabY = panelY + 18;
-        tabW = (panelW - 12) / Page.values().length;
-        contentX = panelX + 10;
-        contentY = tabY + tabH + 6;
-        contentW = panelW - 20 - 6; // room for the scrollbar
-        contentH = panelY + panelH - 8 - contentY;
-        clampScroll();
+        layout();
+    }
+
+    /** No innate technique (or Severed) means no bar: the frame ends below the big box. */
+    private boolean hasBar() {
+        return !info.severed() && info.innateTechnique().isPresent();
+    }
+
+    private void layout() {
+        boolean bar = hasBar();
+        pw = Math.min(340, width - 56);
+        ph = Math.min(bar ? 262 : 196, height - 12);
+        px = (width - pw) / 2;
+        py = Math.max(4, (height - ph) / 2);
+        rcw = pw >= 290 ? 84 : 70;
+        rcx = px + pw - 10 - rcw;
+        lx0 = px + 10;
+        lx1 = rcx - 5;
+        trayX = px + (pw - CombatPanelLayer.W) / 2;
+        trayY = py + ph - 9 - CombatPanelLayer.H;
+        wellY0 = py + 58;
+        wellY1 = bar ? trayY - 13 : py + ph - 11;
     }
 
     @Override
     public void renderBackground(GuiGraphics g, int mouseX, int mouseY, float partialTick) {
-        g.fill(0, 0, width, height, 0xB0000000);
+        g.fill(0, 0, width, height, 0xC0050308);
     }
 
     @Override
     public void render(GuiGraphics g, int mouseX, int mouseY, float partialTick) {
         super.render(g, mouseX, mouseY, partialTick);
-        GuiDraw.sprite(g, GuiDraw.PANEL, panelX, panelY, panelW, panelH);
-        GuiDraw.text(g, font, title, panelX + 8, panelY + 6, 1f, GuiDraw.GOLD);
-        renderTabs(g, mouseX, mouseY);
+        hits.clear();
+        SyncPayload data = ClientData.get();
+        if (data != null) {
+            Object basis = basis(data);
+            if (infoBasis == null) infoBasis = basis;
+            else if (!basis.equals(infoBasis)) {
+                infoBasis = basis;
+                PacketDistributor.sendToServer(SorcererRequestPayload.INSTANCE);
+            }
+        }
+        InnateTechnique technique = info.severed() ? null : info.innateTechnique().map(KegareRegistries.INNATE_TECHNIQUE::get).orElse(null);
+        long now = minecraft != null && minecraft.level != null ? minecraft.level.getGameTime() : 0L;
 
-        hoverRows.clear();
-        g.enableScissor(contentX, contentY, contentX + contentW + 6, contentY + contentH);
-        int top = contentY - (int) scroll;
-        int bottom = switch (page) {
-            case MALICE -> renderMalice(g, top);
-            case INNATE_TECHNIQUE -> info.severed() ? renderSevered(g, top) : renderInnateTechnique(g, top);
-            case LOADOUT -> loadout.render(g, font, contentX, top, contentW, mouseX, mouseY);
-            case TRAITS -> renderTraits(g, top);
-            case PITY -> renderPity(g, top);
+        renderEdgeTabs(g, technique, mouseX, mouseY);
+        GuiDraw.sprite(g, FRAME, px, py, pw, ph);
+        renderHeader(g, technique, data, mouseX, mouseY);
+        renderRightColumn(g, technique, mouseX, mouseY);
+
+        // The big box.
+        GuiDraw.sprite(g, WELL, lx0, wellY0, lx1 - lx0, wellY1 - wellY0);
+        ResourceLocation shown = view == View.TECHNIQUE ? shownAbility(mouseX, mouseY) : null;
+        Object key = view == View.TECHNIQUE ? (shown != null ? shown : category) : view;
+        if (!key.equals(scrollFor)) {
+            scrollFor = key;
+            scroll = 0;
+        }
+        g.enableScissor(lx0 + 3, wellY0 + 3, lx1 - 3, wellY1 - 3);
+        int bx = lx0 + 7, by = wellY0 + 6 - scroll, bw = lx1 - lx0 - 16;
+        int end = switch (view) {
+            case TECHNIQUE -> renderDetails(g, technique, data, shown, bx, by, bw);
+            case TRAITS -> renderTraits(g, bx, by, bw);
+            case PITY -> renderPity(g, bx, by, bw);
         };
         g.disableScissor();
-        contentHeight = bottom - top;
-        renderScrollbar(g);
-        if (page == Page.LOADOUT) {
-            loadout.renderOverlay(g, font, mouseX, mouseY, mouseY >= contentY && mouseY < contentY + contentH);
+        scrollMax = Math.max(0, end + scroll - (wellY1 - 5));
+        scroll = Math.min(scroll, scrollMax);
+        if (scrollMax > 0) { // a thin scrollbar on the box's right edge
+            int trackY = wellY0 + 4, trackH = wellY1 - wellY0 - 8;
+            int thumbH = Math.max(8, trackH * trackH / (trackH + scrollMax));
+            int thumbY = trackY + (trackH - thumbH) * scroll / scrollMax;
+            g.fill(lx1 - 6, trackY, lx1 - 4, trackY + trackH, 0x40FFFFFF);
+            g.fill(lx1 - 6, thumbY, lx1 - 4, thumbY + thumbH, 0xC0D9B3FF);
+        }
+
+        // The loadout bar: the combat panel itself, live.
+        if (technique != null && data != null) {
+            int dropTarget = -1;
+            if (dragging || inHand) {
+                for (CombatPanelLayer.SlotRect r : traySlots) if (r.contains(mouseX, mouseY) && !r.ultimate()) dropTarget = r.index();
+            }
+            traySlots = CombatPanelLayer.drawPanel(g, font, data, technique, ClientLoadout.abilities(), now, trayX, trayY, dropTarget);
+            renderLoadoutStatus(g, data, mouseX, mouseY);
+        } else {
+            traySlots = List.of();
+        }
+
+        renderOverlay(g, technique, mouseX, mouseY);
+    }
+
+    // ---------------------------------------------------------------- edges
+
+    private void renderEdgeTabs(GuiGraphics g, @Nullable InnateTechnique technique, int mouseX, int mouseY) {
+        if (technique != null) {
+            AbilityCategory[] categories = AbilityCategory.values();
+            for (int i = 0; i < categories.length; i++) {
+                int x = px - TAB_SIZE + 4, y = py + 12 + i * (TAB_SIZE + 3);
+                boolean selected = view == View.TECHNIQUE && category == categories[i];
+                GuiDraw.sprite(g, selected ? TAB_SELECTED : TAB, x, y, TAB_SIZE, TAB_SIZE);
+                if (categories[i] == AbilityCategory.INNATE_TECHNIQUE) GuiDraw.emblem(g, technique, x + 4, y + 4, 16);
+                else GuiDraw.sprite(g, GuiDraw.CATEGORY_SHARED, x + 4, y + 4, 16, 16);
+                hits.add(new Hit(Kind.CATEGORY, x, y, TAB_SIZE, TAB_SIZE, i, null, true));
+            }
+        }
+        View[] views = View.values();
+        for (int i = 0; i < views.length; i++) {
+            int x = px + pw - 4, y = py + 12 + i * (TAB_SIZE + 3);
+            GuiDraw.sprite(g, view == views[i] ? TAB_SELECTED : TAB, x, y, TAB_SIZE, TAB_SIZE);
+            switch (views[i]) {
+                case TECHNIQUE -> GuiDraw.sprite(g, ICON_TECHNIQUE, x + 4, y + 4, 16, 16);
+                case TRAITS -> GuiDraw.sprite(g, ICON_TRAITS, x + 4, y + 4, 16, 16);
+                case PITY -> GuiDraw.sprite(g, ICON_PITY, x + 4, y + 4, 16, 16);
+            }
+            hits.add(new Hit(Kind.VIEW, x, y, TAB_SIZE, TAB_SIZE, i, null, true));
+        }
+    }
+
+    // ---------------------------------------------------------------- header
+
+    private void renderHeader(GuiGraphics g, @Nullable InnateTechnique technique, @Nullable SyncPayload data, int mouseX, int mouseY) {
+        int ex = lx0 + 3, ey = py + 11;
+        if (technique == null) {
+            GuiDraw.sprite(g, GuiDraw.SEVERED_EMBLEM, ex, ey, 40, 40);
+            GuiDraw.text(g, font, Component.translatable(info.severed() ? "gui.kegare.sorcerer.severed.heading" : "gui.kegare.sorcerer.innate_technique.none"),
+                    ex + 48, ey + 1, 1f, info.severed() ? 0xFFE6E6E6 : GuiDraw.GRAY);
+            if (info.severed()) GuiDraw.wrapped(g, font, Component.translatable("gui.kegare.sorcerer.severed.short"), ex + 48, ey + 13, lx1 - ex - 50, GuiDraw.GRAY);
             return;
         }
-        if (mouseY >= contentY && mouseY < contentY + contentH) {
-            for (HoverRow row : hoverRows) { // first match wins: special lines are added before their whole card
-                if (row.contains(mouseX, mouseY)) {
-                    if (!row.lines().isEmpty()) g.renderTooltip(font, row.lines(), mouseX, mouseY);
-                    break;
+        GuiDraw.framedEmblem(g, technique, ex, ey, 40);
+        int tx = ex + 48;
+        int color = 0xFF000000 | technique.rarity().color();
+        Component name = technique.displayName();
+        GuiDraw.text(g, font, name, tx, ey + 1, font.width(name) * 1.25f <= lx1 - tx ? 1.25f : 1f, color);
+        Component sub = view == View.TECHNIQUE
+                ? Component.translatable("gui.kegare.sorcerer.header.category", Component.translatable(technique.rarity().translationKey()),
+                        Component.translatable(category.translationKey()))
+                : Component.translatable(view == View.TRAITS ? "gui.kegare.sorcerer.tab.traits" : "gui.kegare.sorcerer.tab.pity");
+        GuiDraw.text(g, font, sub, tx, ey + 13, 1f, view == View.TECHNIQUE ? GuiDraw.GRAY : GuiDraw.GOLD);
+        if (view != View.TECHNIQUE || data == null) return;
+
+        // The category's abilities.
+        List<Ability> tiles = category == AbilityCategory.INNATE_TECHNIQUE ? technique.abilities() : SharedAbilities.all();
+        int ty = ey + 23;
+        if (tiles.isEmpty()) {
+            GuiDraw.text(g, font, Component.translatable("gui.kegare.loadout.category_empty"), tx, ty + 7, 1f, GuiDraw.DARK_GRAY);
+        }
+        for (int i = 0; i < tiles.size(); i++) {
+            Ability ability = tiles.get(i);
+            int x = tx + i * (TILE + 3);
+            if (x + TILE > lx1) break;
+            boolean unlocked = category == AbilityCategory.INNATE_TECHNIQUE || data.sharedUnlocked().contains(ability.id());
+            CombatPanelLayer.slotFrame(g, x, ty, ability.id().equals(pinned) || (mouseX >= x && mouseX < x + TILE && mouseY >= ty && mouseY < ty + TILE));
+            if (unlocked) {
+                if (!GuiDraw.abilityIcon(g, ability, x + 3, ty + 3)) {
+                    g.drawCenteredString(font, ability.displayName().getString().substring(0, 1), x + TILE / 2, ty + 7, GuiDraw.WHITE);
                 }
+                int slot = data.loadout().indexOf(Optional.of(ability.id()));
+                if (slot >= 0) {
+                    g.pose().pushPose();
+                    g.pose().translate(0, 0, 200);
+                    g.drawString(font, Integer.toString(slot + 1), x + 2, ty + 1, GuiDraw.GOLD, true);
+                    g.pose().popPose();
+                }
+            } else {
+                GuiDraw.sprite(g, GuiDraw.LOCK, x + 5, ty + 5, 11, 11);
+            }
+            hits.add(new Hit(Kind.TILE, x, ty, TILE, TILE, i, ability.id(), unlocked));
+        }
+    }
+
+    // ---------------------------------------------------------------- right column
+
+    private void renderRightColumn(GuiGraphics g, @Nullable InnateTechnique technique, int mouseX, int mouseY) {
+        int top = py + 11, bottom = wellY1;
+        GuiDraw.sprite(g, WELL, rcx, top, rcw, bottom - top);
+        int modelH = Mth.clamp(bottom - top - 64, 56, 96);
+        if (minecraft != null && minecraft.player != null) {
+            InventoryScreen.renderEntityInInventoryFollowsMouse(g, rcx + 3, top + 3, rcx + rcw - 3, top + modelH, modelH * 2 / 5, 0.0625f,
+                    mouseX, mouseY, minecraft.player);
+        }
+        int x = rcx + 6, w = rcw - 12, y = top + modelH + 2;
+        if (info.severed()) {
+            GuiDraw.wrapped(g, font, Component.translatable("gui.kegare.sorcerer.malice.severed_short"), x, y, w, GuiDraw.RED);
+            return;
+        }
+        int color = technique != null ? technique.maliceColor() : InnateTechnique.DEFAULT_MALICE_COLOR;
+        GuiDraw.text(g, font, Component.translatable("gui.kegare.sorcerer.side.malice"), x, y, 1f, GuiDraw.GRAY);
+        y += 10;
+        GuiDraw.text(g, font, Component.translatable("gui.kegare.sorcerer.side.amount", Mth.floor(info.current()), info.capacity()), x, y, 1f, GuiDraw.WHITE);
+        y += 10;
+        GuiDraw.maliceBar(g, x, y, w, info.capacity() <= 0 ? 0f : info.current() / info.capacity(), color, -1f);
+        y += GuiDraw.BAR_HEIGHT + 3;
+        GuiDraw.text(g, font, Component.translatable(MaliceTier.values()[Mth.clamp(info.tier(), 0, MaliceTier.values().length - 1)].translationKey()),
+                x, y, 1f, GuiDraw.MALICE);
+        y += 10;
+        Component regen = info.regenPaused() ? Component.translatable("gui.kegare.sorcerer.side.regen_paused")
+                : Component.translatable("gui.kegare.sorcerer.side.regen", GuiDraw.amount(Math.round(info.regenPerSecond() * 10f) / 10f));
+        GuiDraw.text(g, font, regen, x, y, 1f, info.regenPaused() ? GuiDraw.RED : GuiDraw.GRAY);
+    }
+
+    // ---------------------------------------------------------------- the big box
+
+    /** Draws the details of {@code shown} (or the overview); returns the y below the last line. */
+    private int renderDetails(GuiGraphics g, @Nullable InnateTechnique technique, @Nullable SyncPayload data, @Nullable ResourceLocation shown,
+                              int x, int y, int w) {
+        if (technique == null) {
+            return y + GuiDraw.wrapped(g, font, Component.translatable(info.severed() ? "gui.kegare.sorcerer.severed.desc" : "gui.kegare.sorcerer.innate_technique.none"),
+                    x, y, w, GuiDraw.GRAY);
+        }
+        Ability ability = shown == null ? null : AbilityLookup.find(technique, shown).orElse(null);
+        boolean locked = ability != null && SharedAbilities.isShared(ability.id()) && data != null && !data.sharedUnlocked().contains(ability.id());
+        if (ability == null) { // overview
+            y += GuiDraw.wrapped(g, font, GuiDraw.description(technique.descriptionId()), x, y, w, 0xFFD8D2E0) + 6;
+            return y + GuiDraw.wrapped(g, font, Component.translatable("gui.kegare.sorcerer.overview_hint"), x, y, w, GuiDraw.DARK_GRAY);
+        }
+        if (locked) {
+            y += GuiDraw.text(g, font, Component.translatable("gui.kegare.loadout.locked"), x, y, 1.25f, GuiDraw.GRAY) + 3;
+            return y + GuiDraw.wrapped(g, font, Component.translatable("gui.kegare.loadout.locked.desc"), x, y, w, GuiDraw.DARK_GRAY);
+        }
+        y += GuiDraw.text(g, font, ability.displayName(), x, y, 1.25f, GuiDraw.WHITE) + 2;
+        y += GuiDraw.wrapped(g, font, Component.translatable("gui.kegare.loadout.kind",
+                Component.translatable(AbilityLookup.category(ability.id()).translationKey()),
+                Component.translatable(ability.castType().translationKey())), x, y, w, GuiDraw.GRAY) + 1;
+        SorcererInfoPayload.AbilityInfo abilityInfo = abilityInfo(ability.id());
+        SyncPayload.AbilityCost cost = CostTooltip.cost(ability.id());
+        float costNow = cost != null ? cost.cost() : abilityInfo != null ? abilityInfo.cost() : 0f;
+        float upkeep = cost != null ? cost.upkeepPerSecond() : abilityInfo != null ? abilityInfo.upkeepPerSecond() : 0f;
+        String cooldown = abilityInfo != null ? GuiDraw.seconds(abilityInfo.cooldownTicks()) : "?";
+        Component stats = (ability.castType() == CastType.CHANNELED || ability.castType() == CastType.TOGGLE) && upkeep > 0
+                ? Component.translatable("gui.kegare.sorcerer.ability.stats_upkeep", GuiDraw.amount(round(costNow)), GuiDraw.amount(round(upkeep)), cooldown)
+                : Component.translatable("gui.kegare.sorcerer.ability.stats", GuiDraw.amount(round(costNow)), cooldown);
+        y += GuiDraw.wrapped(g, font, stats, x, y, w, GuiDraw.MALICE);
+        if (data != null && !SharedAbilities.isShared(ability.id())) { // surroundings (innate technique abilities only)
+            CostEnvironment env = data.environment();
+            for (CostEnvironment.Factor f : env.factors()) {
+                y += GuiDraw.wrapped(g, font, Component.translatable("gui.kegare.cost.factor", GuiDraw.multiplier(f.multiplier()),
+                        Component.translatable(f.translationKey())), x, y, w, f.multiplier() < 1f ? GuiDraw.AQUA : GuiDraw.RED);
             }
         }
-    }
+        y += 4;
+        y += GuiDraw.wrapped(g, font, GuiDraw.description(ability.descriptionId()), x, y, w, 0xFFD8D2E0) + 4;
 
-    private Component tabLabel(Page p) {
-        return Component.translatable(switch (p) {
-            case MALICE -> "gui.kegare.sorcerer.tab.malice";
-            case INNATE_TECHNIQUE -> info.severed() ? "gui.kegare.sorcerer.tab.severed" : "gui.kegare.sorcerer.tab.innate_technique";
-            case LOADOUT -> "gui.kegare.sorcerer.tab.loadout";
-            case TRAITS -> "gui.kegare.sorcerer.tab.traits";
-            case PITY -> "gui.kegare.sorcerer.tab.pity";
-        });
-    }
-
-    private void renderTabs(GuiGraphics g, int mouseX, int mouseY) {
-        for (Page p : Page.values()) {
-            int x = panelX + 6 + p.ordinal() * tabW;
-            boolean selected = p == page;
-            GuiDraw.sprite(g, selected ? GuiDraw.TAB_SELECTED : GuiDraw.TAB, x, tabY, tabW - 2, tabH);
-            Component label = tabLabel(p);
-            int labelWidth = font.width(label);
-            float scale = Math.min(1f, (tabW - 8) / (float) Math.max(1, labelWidth));
-            int color = selected ? GuiDraw.WHITE : (hoverTab(mouseX, mouseY) == p ? 0xFFDDDDDD : GuiDraw.GRAY);
-            GuiDraw.centered(g, font, label, x + (tabW - 2) / 2, tabY + (tabH - (int) (8 * scale)) / 2, scale, color);
+        // Its special.
+        Optional<Ability> special = ability.special();
+        if (special.isPresent()) {
+            Ability sp = special.get();
+            SorcererInfoPayload.SpecialInfo spInfo = abilityInfo != null ? abilityInfo.special().orElse(null) : null;
+            GuiDraw.specialBadge(g, x, y - 1, true);
+            Component line = spInfo != null && spInfo.upkeepPerSecond() > 0
+                    ? Component.translatable("gui.kegare.sorcerer.special.line_upkeep", sp.displayName(), Component.translatable(sp.castType().translationKey()),
+                            GuiDraw.amount(spInfo.cost()), GuiDraw.amount(spInfo.upkeepPerSecond()))
+                    : Component.translatable("gui.kegare.sorcerer.special.line", sp.displayName(), Component.translatable(sp.castType().translationKey()),
+                            GuiDraw.amount(spInfo != null ? spInfo.cost() : 0f));
+            y += GuiDraw.wrapped(g, font, line, x + 12, y, w - 12, spInfo == null || spInfo.available() ? GuiDraw.GOLD : GuiDraw.GRAY);
+            y += GuiDraw.wrapped(g, font, GuiDraw.description(sp.descriptionId()), x + 12, y, w - 12, GuiDraw.DARK_GRAY);
+            for (Requirement requirement : sp.requirements()) {
+                boolean met = spInfo != null && spInfo.available();
+                y += GuiDraw.wrapped(g, font, Component.translatable("gui.kegare.special.requires", requirement.description()), x + 12, y, w - 12,
+                        met ? 0xFF7CFC8A : GuiDraw.RED);
+            }
+            y += 3;
+        } else if (!SharedAbilities.isShared(ability.id()) || ability.special().isEmpty()) {
+            GuiDraw.specialBadge(g, x, y - 1, false);
+            y += GuiDraw.wrapped(g, font, Component.translatable("gui.kegare.sorcerer.special.none"), x + 12, y, w - 12, GuiDraw.DARK_GRAY) + 3;
         }
-    }
 
-    // ---------------------------------------------------------------- pages
-
-    private int renderMalice(GuiGraphics g, int y) {
-        Component tier = Component.translatable(tierKey(info.tier()));
-        y += GuiDraw.heading(g, font, Component.translatable("gui.kegare.sorcerer.malice.heading"), contentX, y, 1.5f, contentW, GuiDraw.MALICE) + 2;
-        y += line(g, Component.translatable("gui.kegare.sorcerer.malice.capacity", info.capacity(), tier), y, GuiDraw.WHITE);
-        y += line(g, Component.translatable("gui.kegare.sorcerer.malice.reserve", (int) Math.floor(info.current()), info.capacity()), y, GuiDraw.WHITE);
-        int color = info.innateTechnique().map(KegareRegistries.INNATE_TECHNIQUE::get).map(InnateTechnique::maliceColor)
-                .orElse(InnateTechnique.DEFAULT_MALICE_COLOR);
-        GuiDraw.maliceBar(g, contentX, y + 1, Math.min(contentW, 200), info.capacity() <= 0 ? 0f : info.current() / info.capacity(), color, -1f);
-        y += GuiDraw.BAR_HEIGHT + 5;
-        y += line(g, Component.translatable("gui.kegare.sorcerer.malice.regen", GuiDraw.amount(Math.round(info.regenPerSecond() * 10f) / 10f),
-                GuiDraw.amount(info.regenPercent())), y, GuiDraw.WHITE);
-        if (info.regenPaused()) y += line(g, Component.translatable("gui.kegare.sorcerer.malice.regen_paused"), y, GuiDraw.RED);
-        if (info.severed()) y += line(g, Component.translatable("gui.kegare.sorcerer.malice.severed"), y, GuiDraw.RED);
+        // Where it is.
+        if (data != null) {
+            int slot = data.loadout().indexOf(Optional.of(ability.id()));
+            boolean ultimate = technique.ultimate().map(u -> u.id().equals(ability.id())).orElse(false);
+            Component where = ultimate ? Component.translatable("gui.kegare.loadout.ultimate_fixed")
+                    : slot >= 0 ? Component.translatable("gui.kegare.loadout.in_slot", slot + 1)
+                    : Component.translatable("gui.kegare.loadout.not_slotted");
+            y += GuiDraw.wrapped(g, font, where, x, y, w, slot >= 0 ? GuiDraw.GOLD : GuiDraw.DARK_GRAY);
+        }
         return y;
     }
 
-    private int renderInnateTechnique(GuiGraphics g, int y) {
-        InnateTechnique innateTechnique = info.innateTechnique().map(KegareRegistries.INNATE_TECHNIQUE::get).orElse(null);
-        if (innateTechnique == null) return y + line(g, Component.translatable("gui.kegare.sorcerer.innate_technique.none"), y, GuiDraw.GRAY);
-        int color = 0xFF000000 | innateTechnique.rarity().color();
-
-        // Header: emblem on the left; name, rarity and description beside it.
-        int emblem = 48;
-        GuiDraw.framedEmblem(g, innateTechnique, contentX + 2, y + 2, emblem);
-        int tx = contentX + emblem + 10;
-        int tw = contentW - emblem - 10;
-        int ty = y + 2;
-        Component name = innateTechnique.displayName();
-        ty += GuiDraw.text(g, font, name, tx, ty, font.width(name) * 1.5f <= tw ? 1.5f : 1f, color) + 2;
-        ty += GuiDraw.wrapped(g, font, Component.translatable(innateTechnique.rarity().translationKey()), tx, ty, tw, color) + 2;
-        ty += GuiDraw.wrapped(g, font, GuiDraw.description(innateTechnique.descriptionId()), tx, ty, tw, GuiDraw.GRAY);
-        y = Math.max(y + emblem + 4, ty) + 8;
-
-        y += GuiDraw.heading(g, font, Component.translatable("gui.kegare.sorcerer.abilities"), contentX, y, 1f, contentW, GuiDraw.GOLD) + 2;
-        int slot = 1;
-        int textX = contentX + GuiDraw.ICON_SLOT_SIZE + 6;
-        int textW = contentW - GuiDraw.ICON_SLOT_SIZE - 6;
-        for (SorcererInfoPayload.AbilityInfo a : info.abilities()) {
-            Ability ability = innateTechnique.findAbility(a.id()).orElse(null);
-            Component abilityName = ability != null ? ability.displayName() : Component.literal(a.id().toString());
-            CastType castType = castType(a.castType());
-            Component slotLabel = a.ultimate() ? KegareKeys.ULTIMATE.getTranslatedKeyMessage() : Component.literal(Integer.toString(slot));
-            Component header = a.ultimate()
-                    ? Component.translatable("gui.kegare.sorcerer.ability.ultimate", abilityName, Component.translatable(castType.translationKey()))
-                    : Component.translatable("gui.kegare.sorcerer.ability.slot", slot++, abilityName, Component.translatable(castType.translationKey()));
-
-            int rowTop = y;
-            if (ability != null && !GuiDraw.abilitySlot(g, ability, contentX, y, a.ultimate())) {
-                GuiDraw.centered(g, font, slotLabel, contentX + GuiDraw.ICON_SLOT_SIZE / 2, y + 6, 1f, GuiDraw.GRAY);
-            }
-            int rowY = y;
-            rowY += GuiDraw.wrapped(g, font, header, textX, rowY, textW, a.ultimate() ? GuiDraw.GOLD : GuiDraw.WHITE);
-            Component stats = (castType == CastType.CHANNELED || castType == CastType.TOGGLE)
-                    ? Component.translatable("gui.kegare.sorcerer.ability.stats_upkeep", GuiDraw.amount(a.cost()),
-                            GuiDraw.amount(a.upkeepPerSecond()), GuiDraw.seconds(a.cooldownTicks()))
-                    : Component.translatable("gui.kegare.sorcerer.ability.stats", GuiDraw.amount(a.cost()), GuiDraw.seconds(a.cooldownTicks()));
-            rowY += GuiDraw.wrapped(g, font, stats, textX, rowY, textW, GuiDraw.MALICE);
-            if (ability != null) {
-                rowY += GuiDraw.wrapped(g, font, GuiDraw.description(ability.descriptionId()), textX, rowY, textW, GuiDraw.DARK_GRAY);
-            }
-            if (!a.ultimate()) rowY += renderSpecialLine(g, ability, a, textX, rowY + 1, textW) + 1;
-            y = Math.max(y + GuiDraw.ICON_SLOT_SIZE + 2, rowY) + 5;
-            hoverRows.add(new HoverRow(contentX, rowTop, contentW, y - rowTop, visual(CostTooltip.lines(a.id()))));
+    private int renderTraits(GuiGraphics g, int x, int y, int w) {
+        if (info.traits().isEmpty()) {
+            return y + GuiDraw.wrapped(g, font, Component.translatable("gui.kegare.sorcerer.traits.none"), x, y, w, GuiDraw.GRAY);
         }
-        if (innateTechnique.ultimateLocked()) {
-            GuiDraw.lockedSlot(g, font, contentX, y, KegareKeys.ULTIMATE.getTranslatedKeyMessage());
-            int rowY = y;
-            rowY += GuiDraw.wrapped(g, font, Component.translatable("gui.kegare.sorcerer.ability.ultimate_locked"), textX, rowY, textW, GuiDraw.DARK_GRAY);
-            rowY += GuiDraw.wrapped(g, font, Component.translatable("gui.kegare.sorcerer.ability.ultimate_locked.desc"), textX, rowY, textW, GuiDraw.DARK_GRAY);
-            y = Math.max(y + GuiDraw.ICON_SLOT_SIZE + 2, rowY) + 5;
-        }
-        return y;
-    }
-
-    /** The R line under an ability: its special (hover for details) or "No special". Returns the height used. */
-    private int renderSpecialLine(GuiGraphics g, @Nullable Ability ability, SorcererInfoPayload.AbilityInfo a, int x, int y, int w) {
-        Ability special = ability == null ? null : ability.special().orElse(null);
-        SorcererInfoPayload.SpecialInfo sp = a.special().orElse(null);
-        GuiDraw.specialBadge(g, x, y, sp != null);
-        if (sp == null || special == null) {
-            int h = GuiDraw.wrapped(g, font, Component.translatable("gui.kegare.sorcerer.special.none"), x + 12, y + 1, w - 12, GuiDraw.DARK_GRAY);
-            return Math.max(10, h + 1);
-        }
-        CastType castType = castType(sp.castType());
-        Component typeName = Component.translatable(castType.translationKey());
-        Component line = sp.upkeepPerSecond() > 0
-                ? Component.translatable("gui.kegare.sorcerer.special.line_upkeep", special.displayName(), typeName,
-                        GuiDraw.amount(sp.cost()), GuiDraw.amount(sp.upkeepPerSecond()))
-                : Component.translatable("gui.kegare.sorcerer.special.line", special.displayName(), typeName, GuiDraw.amount(sp.cost()));
-        int h = Math.max(10, GuiDraw.wrapped(g, font, line, x + 12, y + 1, w - 12, sp.available() ? GuiDraw.GOLD : GuiDraw.GRAY) + 1);
-        hoverRows.add(new HoverRow(x, y, w, h, specialTooltip(ability, special, sp, castType)));
-        return h;
-    }
-
-    private java.util.List<FormattedCharSequence> specialTooltip(Ability base, Ability special, SorcererInfoPayload.SpecialInfo sp, CastType castType) {
-        java.util.List<FormattedCharSequence> out = new java.util.ArrayList<>();
-        out.add(special.displayName().copy().withStyle(ChatFormatting.GOLD).getVisualOrderText());
-        out.add(Component.translatable("gui.kegare.special.kind", KegareKeys.SPECIAL.getTranslatedKeyMessage(),
-                Component.translatable(castType.translationKey())).withStyle(ChatFormatting.GRAY).getVisualOrderText());
-        out.addAll(font.split(GuiDraw.description(special.descriptionId()).copy().withStyle(ChatFormatting.WHITE), TOOLTIP_WIDTH));
-        out.addAll(visual(CostTooltip.lines(special.id())));
-        for (Requirement requirement : special.requirements()) {
-            out.addAll(font.split(Component.translatable("gui.kegare.special.requires", requirement.description())
-                    .withStyle(sp.available() ? ChatFormatting.GREEN : ChatFormatting.RED), TOOLTIP_WIDTH));
-        }
-        out.addAll(font.split(Component.translatable("gui.kegare.special.shared_cooldown", base.displayName())
-                .withStyle(ChatFormatting.DARK_GRAY), TOOLTIP_WIDTH));
-        return out;
-    }
-
-    private static java.util.List<FormattedCharSequence> visual(java.util.List<Component> lines) {
-        return lines.stream().map(Component::getVisualOrderText).toList();
-    }
-
-    private static CastType castType(int ordinal) {
-        return CastType.values()[Mth.clamp(ordinal, 0, CastType.values().length - 1)];
-    }
-
-    private int renderSevered(GuiGraphics g, int y) {
-        int emblem = 32;
-        GuiDraw.sprite(g, GuiDraw.SEVERED_EMBLEM, contentX + contentW / 2 - emblem / 2, y, emblem, emblem);
-        y += emblem + 6;
-        GuiDraw.centered(g, font, Component.translatable("gui.kegare.sorcerer.severed.heading"), contentX + contentW / 2, y, 1.5f, 0xFFE6E6E6);
-        y += 16;
-        y += GuiDraw.wrappedCentered(g, font, Component.translatable("gui.kegare.sorcerer.severed.desc"), contentX + contentW / 2, y, contentW, GuiDraw.GRAY);
-        return y;
-    }
-
-    private int renderTraits(GuiGraphics g, int y) {
-        y += GuiDraw.heading(g, font, Component.translatable("gui.kegare.sorcerer.traits.heading"), contentX, y, 1.5f, contentW, GuiDraw.AQUA) + 2;
-        if (info.traits().isEmpty()) return y + line(g, Component.translatable("gui.kegare.sorcerer.traits.none"), y, GuiDraw.GRAY);
         for (ResourceLocation id : info.traits()) {
             Trait trait = KegareRegistries.TRAIT.get(id);
             if (trait == null) continue;
-            Component name = trait.isUnique()
-                    ? Component.translatable("gui.kegare.sorcerer.traits.unique", trait.displayName())
-                    : trait.displayName();
-            y += line(g, name, y, GuiDraw.AQUA);
-            y += GuiDraw.wrapped(g, font, GuiDraw.description(trait.descriptionId()), contentX + 8, y, contentW - 8, GuiDraw.GRAY) + 4;
+            Component name = trait.isUnique() ? Component.translatable("gui.kegare.sorcerer.traits.unique", trait.displayName()) : trait.displayName();
+            y += GuiDraw.text(g, font, name, x, y, 1f, GuiDraw.AQUA) + 1;
+            y += GuiDraw.wrapped(g, font, GuiDraw.description(trait.descriptionId()), x + 6, y, w - 6, GuiDraw.GRAY) + 5;
         }
         return y;
     }
 
-    private int renderPity(GuiGraphics g, int y) {
-        y += GuiDraw.heading(g, font, Component.translatable("gui.kegare.sorcerer.pity.heading"), contentX, y, 1.5f, contentW, GuiDraw.GOLD) + 2;
-        y += line(g, Component.translatable("gui.kegare.sorcerer.pity.count", info.rollsSinceLegendary()), y, GuiDraw.WHITE);
+    private int renderPity(GuiGraphics g, int x, int y, int w) {
+        y += GuiDraw.wrapped(g, font, Component.translatable("gui.kegare.sorcerer.pity.count", info.rollsSinceLegendary()), x, y, w, GuiDraw.WHITE) + 1;
         if (info.hardPity() > 0) {
-            GuiDraw.progress(g, contentX, y + 1, Math.min(contentW, 200), 6, info.rollsSinceLegendary() / (float) info.hardPity(), GuiDraw.GOLD);
-            y += 6 + 5;
+            GuiDraw.progress(g, x, y, w, 6, info.rollsSinceLegendary() / (float) info.hardPity(), GuiDraw.GOLD);
+            y += 10;
         }
         Component soft = info.rollsUntilSoftPity() <= 0
                 ? Component.translatable("gui.kegare.sorcerer.pity.soft_active", info.legendaryWeight(), info.baseLegendaryWeight())
                 : Component.translatable("gui.kegare.sorcerer.pity.soft_in", info.rollsUntilSoftPity());
-        y += GuiDraw.wrapped(g, font, soft, contentX, y, contentW, GuiDraw.WHITE);
+        y += GuiDraw.wrapped(g, font, soft, x, y, w, GuiDraw.WHITE) + 1;
         Component hard;
         if (info.rollsUntilHardPity() < 0) hard = Component.translatable("gui.kegare.sorcerer.pity.hard_disabled");
         else if (info.rollsUntilHardPity() == 1) hard = Component.translatable("gui.kegare.sorcerer.pity.hard_next");
         else hard = Component.translatable("gui.kegare.sorcerer.pity.hard_in", info.rollsUntilHardPity());
-        y += GuiDraw.wrapped(g, font, hard, contentX, y, contentW, GuiDraw.GOLD);
-        y += line(g, Component.translatable("gui.kegare.sorcerer.pity.total", info.totalRolls()), y, GuiDraw.GRAY);
-        return y;
+        y += GuiDraw.wrapped(g, font, hard, x, y, w, GuiDraw.GOLD) + 1;
+        return y + GuiDraw.wrapped(g, font, Component.translatable("gui.kegare.sorcerer.pity.total", info.totalRolls()), x, y, w, GuiDraw.GRAY);
     }
 
-    // ---------------------------------------------------------------- drawing helpers
+    // ---------------------------------------------------------------- loadout status, overlay
 
-    private int line(GuiGraphics g, Component text, int y, int color) {
-        return GuiDraw.wrapped(g, font, text, contentX, y, contentW, color);
+    private void renderLoadoutStatus(GuiGraphics g, SyncPayload data, int mouseX, int mouseY) {
+        int y = wellY1 + 2;
+        Component line;
+        int color;
+        boolean repeatsCombat = statusResult == LoadoutResult.IN_COMBAT && data.inCombat();
+        if (status != null && Util.getMillis() < statusUntil && !repeatsCombat) {
+            line = status;
+            color = GuiDraw.RED;
+        } else if (data.inCombat()) {
+            line = Component.translatable("message.kegare.loadout.in_combat");
+            color = GuiDraw.RED;
+        } else {
+            line = Component.translatable(inHand ? "gui.kegare.sorcerer.hint.in_hand" : "gui.kegare.sorcerer.hint");
+            color = inHand ? GuiDraw.GOLD : 0xFF6B6276;
+        }
+        float scale = font.width(line) > pw - 24 ? 0.75f : 1f;
+        GuiDraw.centered(g, font, line, px + pw / 2, y, scale, color);
+
+        // Reset, to the right of the bar.
+        Component reset = Component.translatable("gui.kegare.loadout.reset_short");
+        int bw = font.width(reset) + 10;
+        int bx = trayX + CombatPanelLayer.W + 4;
+        int by = trayY + 29;
+        boolean hover = mouseX >= bx && mouseX < bx + bw && mouseY >= by && mouseY < by + 14;
+        GuiDraw.sprite(g, hover ? GuiDraw.TAB_SELECTED : GuiDraw.TAB, bx, by, bw, 14);
+        GuiDraw.centered(g, font, reset, bx + bw / 2, by + 3, 1f, hover ? GuiDraw.WHITE : GuiDraw.GRAY);
+        hits.add(new Hit(Kind.RESET, bx, by, bw, 14, 0, null, true));
     }
 
-    private void renderScrollbar(GuiGraphics g) {
-        if (contentHeight <= contentH) return;
-        int trackX = contentX + contentW + 2;
-        g.fill(trackX, contentY, trackX + 3, contentY + contentH, GuiDraw.INK);
-        int thumbH = Math.max(12, contentH * contentH / contentHeight);
-        int thumbY = contentY + (int) ((contentH - thumbH) * (scroll / Math.max(1, contentHeight - contentH)));
-        g.fill(trackX, thumbY, trackX + 3, thumbY + thumbH, 0xFF7D6A94);
-        g.fill(trackX, thumbY, trackX + 1, thumbY + thumbH, 0xFFAB98C4);
-    }
-
-    private static String tierKey(int ordinal) {
-        return MaliceTier.values()[Mth.clamp(ordinal, 0, MaliceTier.values().length - 1)].translationKey();
+    private void renderOverlay(GuiGraphics g, @Nullable InnateTechnique technique, int mouseX, int mouseY) {
+        if (technique != null && dragging && pressAbility != null) {
+            AbilityLookup.find(technique, pressAbility).ifPresent(ability -> {
+                g.pose().pushPose();
+                g.pose().translate(0, 0, 400);
+                CombatPanelLayer.slotFrame(g, mouseX - TILE / 2, mouseY - TILE / 2, true);
+                GuiDraw.abilityIcon(g, ability, mouseX - TILE / 2 + 3, mouseY - TILE / 2 + 3);
+                g.pose().popPose();
+            });
+            return;
+        }
+        Hit hit = hitAt(mouseX, mouseY);
+        if (hit != null && (hit.kind == Kind.CATEGORY || hit.kind == Kind.VIEW || hit.kind == Kind.RESET)) {
+            Component label = switch (hit.kind) {
+                case CATEGORY -> Component.translatable(AbilityCategory.values()[hit.index].translationKey());
+                case VIEW -> Component.translatable(switch (View.values()[hit.index]) {
+                    case TECHNIQUE -> "gui.kegare.sorcerer.view.technique";
+                    case TRAITS -> "gui.kegare.sorcerer.tab.traits";
+                    case PITY -> "gui.kegare.sorcerer.tab.pity";
+                });
+                default -> Component.translatable("gui.kegare.loadout.reset.desc");
+            };
+            g.renderTooltip(font, label, mouseX, mouseY);
+            return;
+        }
+        for (CombatPanelLayer.SlotRect r : traySlots) {
+            if (!r.contains(mouseX, mouseY)) continue;
+            List<Component> lines = new ArrayList<>();
+            Ability ability = technique == null ? null : r.ultimate() ? technique.ultimate().orElse(null) : ClientLoadout.abilities().get(r.index());
+            lines.add(ability != null ? ability.displayName()
+                    : Component.translatable(r.ultimate() ? "gui.kegare.sorcerer.ability.ultimate_locked" : "hud.kegare.empty_slot"));
+            String hint = !r.ultimate() ? (ability != null ? "gui.kegare.loadout.slot_hint" : "gui.kegare.loadout.empty_slot_hint")
+                    : ability != null ? "gui.kegare.loadout.ultimate_fixed" : "gui.kegare.sorcerer.ability.ultimate_locked.desc";
+            lines.add(Component.translatable(hint).withStyle(ChatFormatting.DARK_GRAY));
+            g.renderComponentTooltip(font, lines, mouseX, mouseY);
+            return;
+        }
     }
 
     // ---------------------------------------------------------------- input
 
-    private Page hoverTab(double mouseX, double mouseY) {
-        if (mouseY < tabY || mouseY >= tabY + tabH) return null;
-        int index = (int) ((mouseX - panelX - 6) / tabW);
-        return index >= 0 && index < Page.values().length && mouseX >= panelX + 6 ? Page.values()[index] : null;
-    }
-
-    private void setPage(Page p) {
-        page = p;
-        lastPage = p;
-        scroll = 0;
-    }
-
-    private void clampScroll() {
-        scroll = Mth.clamp(scroll, 0, Math.max(0, contentHeight - contentH));
-    }
-
     @Override
     public boolean mouseClicked(double mouseX, double mouseY, int button) {
-        Page p = hoverTab(mouseX, mouseY);
-        if (p != null) {
-            setPage(p);
+        Hit hit = hitAt(mouseX, mouseY);
+        CombatPanelLayer.SlotRect slot = slotAt(mouseX, mouseY);
+        if (button == 1) {
+            if (slot != null && !slot.ultimate()) send(LoadoutService.Action.CLEAR, slot.index(), 0, null);
+            inHand = false;
             return true;
         }
-        if (page == Page.LOADOUT && inContent(mouseX, mouseY) && loadout.mouseClicked(mouseX, mouseY, button)) return true;
+        if (button != 0) return super.mouseClicked(mouseX, mouseY, button);
+        if (hit != null) {
+            switch (hit.kind) {
+                case CATEGORY -> {
+                    category = AbilityCategory.values()[hit.index];
+                    lastCategory = category;
+                    setView(View.TECHNIQUE);
+                    pinned = null;
+                    inHand = false;
+                }
+                case VIEW -> setView(View.values()[hit.index]);
+                case TILE -> {
+                    if (hit.unlocked) press(hit.ability, -1, mouseX, mouseY);
+                    else pinned = hit.ability; // its "locked" card
+                }
+                case RESET -> send(LoadoutService.Action.RESET, 0, 0, null);
+            }
+            return true;
+        }
+        if (slot != null) {
+            if (inHand && pinned != null) {
+                send(LoadoutService.Action.SET, slot.index(), 0, pinned); // the ultimate's index: the server refuses it
+                inHand = false;
+            } else if (!slot.ultimate()) {
+                Ability ability = ClientLoadout.abilities().size() > slot.index() ? ClientLoadout.abilities().get(slot.index()) : null;
+                press(ability != null ? ability.id() : null, slot.index(), mouseX, mouseY);
+            }
+            return true;
+        }
+        inHand = false;
         return super.mouseClicked(mouseX, mouseY, button);
     }
 
     @Override
     public boolean mouseDragged(double mouseX, double mouseY, int button, double dragX, double dragY) {
-        if (page == Page.LOADOUT && loadout.mouseDragged(mouseX, mouseY, button)) return true;
+        if (button == 0 && pressAbility != null) {
+            if (!dragging && Math.hypot(mouseX - pressX, mouseY - pressY) > 3) dragging = true;
+            return true;
+        }
         return super.mouseDragged(mouseX, mouseY, button, dragX, dragY);
     }
 
     @Override
     public boolean mouseReleased(double mouseX, double mouseY, int button) {
-        if (page == Page.LOADOUT && loadout.mouseReleased(mouseX, mouseY, button)) return true;
-        return super.mouseReleased(mouseX, mouseY, button);
-    }
-
-    private boolean inContent(double mouseX, double mouseY) {
-        return mouseX >= contentX && mouseX < contentX + contentW + 6 && mouseY >= contentY && mouseY < contentY + contentH;
+        if (button != 0 || (pressAbility == null && pressSlot < 0)) return super.mouseReleased(mouseX, mouseY, button);
+        ResourceLocation ability = pressAbility;
+        int fromSlot = pressSlot;
+        pressAbility = null;
+        pressSlot = -1;
+        if (!dragging) { // a click: pick up a tile (click it again to put it down)
+            if (fromSlot < 0 && ability != null) {
+                boolean same = ability.equals(pinned) && inHand;
+                pinned = ability;
+                inHand = !same;
+            }
+            return true;
+        }
+        dragging = false;
+        CombatPanelLayer.SlotRect target = slotAt(mouseX, mouseY);
+        if (fromSlot < 0) {
+            if (target != null) send(LoadoutService.Action.SET, target.index(), 0, ability);
+        } else if (target != null) {
+            if (target.index() != fromSlot) send(LoadoutService.Action.SWAP, fromSlot, target.index(), null);
+        } else if (ability != null) {
+            send(LoadoutService.Action.CLEAR, fromSlot, 0, null); // dragged off the bar
+        }
+        return true;
     }
 
     @Override
     public boolean mouseScrolled(double mouseX, double mouseY, double scrollX, double scrollY) {
-        scroll -= scrollY * 12;
-        clampScroll();
-        return true;
+        if (scrollMax > 0 && mouseX >= lx0 && mouseX < lx1 && mouseY >= wellY0 && mouseY < wellY1) {
+            scroll = Mth.clamp(scroll - (int) Math.round(scrollY * 12), 0, scrollMax);
+            return true;
+        }
+        return super.mouseScrolled(mouseX, mouseY, scrollX, scrollY);
     }
 
     @Override
@@ -384,17 +617,12 @@ public final class SorcererScreen extends Screen {
             onClose();
             return true;
         }
-        if (keyCode >= GLFW.GLFW_KEY_1 && keyCode < GLFW.GLFW_KEY_1 + Page.values().length) {
-            setPage(Page.values()[keyCode - GLFW.GLFW_KEY_1]);
+        if (keyCode >= GLFW.GLFW_KEY_1 && keyCode < GLFW.GLFW_KEY_1 + View.values().length) {
+            setView(View.values()[keyCode - GLFW.GLFW_KEY_1]);
             return true;
         }
         if (keyCode == GLFW.GLFW_KEY_TAB) {
-            setPage(Page.values()[(page.ordinal() + 1) % Page.values().length]);
-            return true;
-        }
-        if (keyCode == GLFW.GLFW_KEY_DOWN || keyCode == GLFW.GLFW_KEY_UP) {
-            scroll += keyCode == GLFW.GLFW_KEY_DOWN ? 12 : -12;
-            clampScroll();
+            setView(View.values()[(view.ordinal() + 1) % View.values().length]);
             return true;
         }
         return super.keyPressed(keyCode, scanCode, modifiers);
@@ -403,5 +631,69 @@ public final class SorcererScreen extends Screen {
     @Override
     public boolean isPauseScreen() {
         return false;
+    }
+
+    // ---------------------------------------------------------------- helpers
+
+    private void setView(View v) {
+        view = v;
+        lastView = v;
+    }
+
+    private void press(@Nullable ResourceLocation ability, int slot, double mx, double my) {
+        pressAbility = ability;
+        pressSlot = slot;
+        pressX = mx;
+        pressY = my;
+        dragging = false;
+    }
+
+    /** The ability the big box is about: the hovered tile or bar slot, else the clicked one. */
+    @Nullable
+    private ResourceLocation shownAbility(int mouseX, int mouseY) {
+        if (dragging && pressAbility != null) return pressAbility;
+        ResourceLocation hovered = hoveredAbility(mouseX, mouseY);
+        return hovered != null ? hovered : pinned;
+    }
+
+    @Nullable
+    private ResourceLocation hoveredAbility(int mouseX, int mouseY) {
+        Hit hit = hitAt(mouseX, mouseY);
+        if (hit != null && hit.kind == Kind.TILE) return hit.ability;
+        CombatPanelLayer.SlotRect slot = slotAt(mouseX, mouseY);
+        InnateTechnique technique = info.innateTechnique().map(KegareRegistries.INNATE_TECHNIQUE::get).orElse(null);
+        if (slot != null && technique != null) {
+            Ability ability = slot.ultimate() ? technique.ultimate().orElse(null)
+                    : ClientLoadout.abilities().size() > slot.index() ? ClientLoadout.abilities().get(slot.index()) : null;
+            return ability == null ? null : ability.id();
+        }
+        return null;
+    }
+
+    @Nullable
+    private SorcererInfoPayload.AbilityInfo abilityInfo(ResourceLocation id) {
+        for (SorcererInfoPayload.AbilityInfo a : info.abilities()) if (a.id().equals(id)) return a;
+        for (SorcererInfoPayload.AbilityInfo a : info.shared()) if (a.id().equals(id)) return a;
+        return null;
+    }
+
+    @Nullable
+    private Hit hitAt(double mx, double my) {
+        for (Hit hit : hits) if (hit.contains(mx, my)) return hit;
+        return null;
+    }
+
+    @Nullable
+    private CombatPanelLayer.SlotRect slotAt(double mx, double my) {
+        for (CombatPanelLayer.SlotRect r : traySlots) if (r.contains(mx, my)) return r;
+        return null;
+    }
+
+    private static void send(LoadoutService.Action action, int slot, int other, @Nullable ResourceLocation ability) {
+        PacketDistributor.sendToServer(new LoadoutEditPayload(action, slot, other, Optional.ofNullable(ability)));
+    }
+
+    private static float round(float value) {
+        return Math.round(value * 10f) / 10f;
     }
 }

@@ -233,7 +233,7 @@ All timestamps use **level game time**. They persist across restarts and are ide
     - scroll and number keys **1–N** pick abilities (N = abilities in the current technique; higher numbers do
       nothing), and the hotbar selection never changes (pick-block is blocked too);
     - **right-click base-casts** too (like C) and never uses the held item (hold it for CHARGED/CHANNELED);
-    - the ability bar lights up and the hotbar dims.
+    - the combat panel takes the hotbar's place (§3.6).
 
     It ends when you press G again, open any screen (the radial menu excepted, as it is part of picking abilities),
     die, or become Severed (or lose your innate technique). G does nothing for Severed players.
@@ -361,7 +361,7 @@ a result back; they only send requests the server re-validates. All text comes f
 | Screen | Opens when | Data | Sends |
 |---|---|---|---|
 | Roll reveal (`RevealScreen`) | the server finished a roll: Awakening, Reawakening, admin reroll, replacement | `RevealPayload`, sent only to that player | nothing |
-| Sorcerer (`SorcererScreen`) | key **K** | `SorcererInfoPayload`, computed by the server; the Loadout page reads the synced loadout | the open request; loadout edit requests (§3.16) |
+| Sorcerer (`SorcererScreen`) | key **K** | `SorcererInfoPayload`, computed by the server, plus the live sync (loadout, Malice, cooldowns) | the open request (again whenever the sync shows an unlock, reroll or trait change); loadout edit requests (§3.16) |
 | Talisman confirm (`TalismanConfirmScreen`) | using a Purification Talisman (nothing consumed yet) | `TalismanPromptPayload` | a confirm request |
 | Ability radial (`AbilityRadialScreen`) | **holding** Z | the synced loadout | a select-slot request |
 
@@ -381,19 +381,34 @@ a result back; they only send requests the server re-validates. All text comes f
   until the reveal closes. The server no longer plays the Legendary sound; the client plays it when the card lands.
 - Reveals queue up and open only when no other screen is open, e.g. after the world finishes loading on first join.
 
-**Sorcerer screen**
-- Five tabs: **Malice**, **Innate Technique** (or **Severed** for Severed players), **Loadout** (§3.16),
-  **Traits**, **Pity**.
-- Malice: capacity and tier, reserve bar, regen per second (and % of capacity), and whether regen is paused.
-- Innate Technique: emblem, name, rarity and description, then every ability (and the ultimate) with its icon, cast
-  type, Malice cost, upkeep, cooldown and description.
-- Traits: name, a unique tag, description.
-- Pity:
+**Sorcerer screen** (one window)
+- **Frame:** a riveted plum nine-slice (`menu_frame`) with dark inset wells (`menu_well`) inside it.
+- **Left edge:** ability category tabs (`menu_tab`): Innate, Malice and Melee, each with its own icon (§3.16).
+- **Right edge:** view buttons: Innate Technique, Traits (an eye) and Pity (a star).
+- **Header:** the framed emblem, the name in rarity color, "rarity · category", then the selected category's
+  abilities as tiles (the HUD's slot frames). A gold number marks the slot each tile is on, and locked shared
+  abilities show a padlock.
+- **Details box** (the large well) shows whatever ability is hovered (a tile or a bar slot). Clicking a tile keeps
+  it there. It lists:
+  - category and cast type;
+  - current cost, upkeep and cooldown, plus the surroundings' cost factors (innate technique abilities only);
+  - the description;
+  - the special block (§3.15);
+  - where it sits on the bar.
+
+  With nothing hovered, it shows the technique's description and how to edit the bar. Locked abilities show
+  "???". The mouse wheel scrolls the box when the text is taller than it, with a thin scrollbar. The box also holds
+  the Traits view (name, a unique tag, description) and the Pity view:
   - the count, with a progress bar toward hard pity
   - "Soft pity starts in N rolls", or the active Legendary weight
   - "Legendary guaranteed in N rolls" (`PityRoller.rollsUntilSoftPity` / `rollsUntilHardPity`, unit-tested)
   - total rolls
-- Keys: 1–5 or Tab switch pages, arrows or the mouse wheel scroll, K or Esc close.
+- **Right column:** the player model (follows the mouse), Malice current / capacity with the bar in the technique's
+  Malice color, the tier, and regen per second (or "Regen paused").
+- **Bottom:** the HUD's combat panel itself (`CombatPanelLayer.drawPanel`), live, as the loadout bar (§3.16). Above
+  it is a status line (hint, "Now click a slot on your bar", or the server's refusal); "Reset" sits beside it.
+- **Severed:** the Severed emblem and text, no category tabs and no bar.
+- **Keys:** 1–3 or Tab switch views, K or Esc close.
 
 **Talisman confirm:** *"Reroll your Innate Technique? Current: X. Pity: Y/50."*, with the current emblem.
 - **Reroll** sends a request. The server re-checks that the talisman is still in that hand, combat and Severed
@@ -407,7 +422,7 @@ a result back; they only send requests the server re-validates. All text comes f
   green.
 - Release (or click) over a slot to select it. Releasing in the center or pressing Esc keeps the current one.
 - The centre shows the hovered ability's name, cast type, current cost and its special ("R: Splinter"). The hint
-  sits above the ring, clear of the ability bar.
+  sits above the ring, clear of the combat panel.
 
 **Layout and testing**
 - Layouts are computed from the screen size and support GUI sizes down to Minecraft's minimum of 320×240.
@@ -624,11 +639,11 @@ Package `com.cnethuka.kegare.innate_technique.rime`. **Rarity: RARE.** All numbe
   `Requirement.of(test, description)`.
   - Unmet at the press → `"<special> requires <description>."`, nothing paid, no cooldown.
   - Re-checked at a charge's release (a lapse fizzles for free). A channel or toggle ends when one lapses.
-- **Sorcerer screen:** under each ability card, an **R** badge with "Special: name (type) · cost" (gold when
-  available now, grey when a requirement is unmet) or "No special". Hovering it shows the type, description,
-  current cost, requirements (green met / red unmet) and "Shares <base>'s cooldown".
-- **HUD:** action-bar messages (cast feedback) and the held item's name move up to clear the ability bar
-  (`HudClearance`). The ability bar's R badge is lit for abilities with a special. A special's charge/channel outlines its
+- **Sorcerer screen:** in an ability's details, an **R** badge with "Special: name (type) · cost" (gold when
+  available now, grey when a requirement is unmet) or "No special", then the special's description and its
+  requirements (green met / red unmet).
+- **HUD:** action-bar messages (cast feedback) and the held item's name move up to clear the combat panel
+  (`HudClearance`). The panel's R badge marks slots whose ability has a special. A special's charge/channel outlines its
   base slot, and a TOGGLE special lights the base slot green. The radial menu shows "R: <special>".
 - **Tests:** `SpecialsTest` (in-game JUnit) covers fizzles without cost, both requirement kinds, the release
   re-check and the shared cooldown both ways.
@@ -636,7 +651,7 @@ Package `com.cnethuka.kegare.innate_technique.rime`. **Rarity: RARE.** All numbe
 ### 3.16 Loadout and ability categories
 Package `loadout`. Abilities are sorted into category tabs, and a
 separate bar is filled from any of them.
-- **Categories** (`AbilityCategory`), one tab each on the Loadout page:
+- **Categories** (`AbilityCategory`), one tab each on the Sorcerer screen's left edge:
   - **Innate Technique**: the current innate technique's abilities. A reroll replaces them.
   - **Shared**: abilities a player unlocks once and keeps through every reroll (`SharedAbilities` registry,
     unlocks in attachment `kegare:shared_abilities`, saved, kept on death). Reverse Malice Technique is the first
@@ -654,15 +669,16 @@ separate bar is filled from any of them.
     resolve (locked again, removed by an update) or repeat are emptied.
 - **Everything reads the loadout**, never the technique's fixed list: the cast key and R (`CastManager` resolves the
   selected loadout slot; specials come from whatever is slotted), number keys, scroll and Technique Mode, the HUD
-  ability bar, the radial menu and `/kegare info`.
-- **Editing** (Sorcerer screen → Loadout):
-  - category tabs on the left (the innate technique's emblem; a silver ring for Shared); locked shared abilities
-    show a padlock and "???";
-  - the selected category's abilities as tiles (a gold number marks the slot each one is on), with a tooltip:
-    category, cast type, description, current cost, special, and whether it's on the bar;
-  - below, the loadout bar with each slot's key and the fixed ultimate (padlock while locked);
-  - drag a tile onto a slot, or click a tile then a slot; drag a slot onto another to swap; drag one off the bar
-    or right-click it to empty it; "Reset to default".
+  combat panel, the radial menu and `/kegare info`.
+- **Editing** (Sorcerer screen, §3.12):
+  - category tabs on the left edge (the innate technique's emblem; a silver ring for Shared). Locked shared
+    abilities show a padlock and "???".
+  - the selected category's abilities as tiles in the header (a gold number marks the slot each is on). Their
+    details fill the large box.
+  - the loadout bar is the HUD's combat panel, drawn live: slot keys, R badges, cooldowns and the fixed ultimate
+    (a padlock while locked).
+  - drag a tile onto a slot, or click a tile then a slot. Drag a slot onto another to swap. Drag one off the bar
+    or right-click it to empty it. "Reset" restores the default. The slot under a drag is outlined white.
 - **Server validation** (`LoadoutService.edit`, every request; the client is never trusted):
   - not Severed and has an innate technique;
   - a real regular slot (the ultimate's position → "The ultimate slot can't be changed.");
@@ -670,9 +686,9 @@ separate bar is filled from any of them.
   - the ability belongs to the current innate technique, or is a shared ability the player has **unlocked**;
   - no duplicates.
 
-  A refusal shows on the action bar and on the Loadout page (`LoadoutResultPayload`); a toggle taken off the bar
-  switches off. The sync carries the loadout, the unlocked shared abilities and whether the player is in combat
-  (re-checked every 10 ticks), so the page and HUD update live.
+  A refusal shows on the action bar and on the Sorcerer screen's status line (`LoadoutResultPayload`). A toggle
+  taken off the bar switches off. The sync carries the loadout, the unlocked shared abilities and whether the
+  player is in combat (re-checked every 10 ticks), so the screen and HUD update live.
 - **Commands:** `/kegare shared unlock|lock <player> <ability>`, `/kegare loadout reset <player>`; `/kegare info`
   lists the loadout and the unlocked shared abilities.
 - **Tests:** `LoadoutTest` (in-game JUnit): default layout, moving instead of duplicating, empty slots, the ultimate

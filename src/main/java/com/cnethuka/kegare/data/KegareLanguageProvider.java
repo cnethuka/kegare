@@ -180,7 +180,7 @@ public final class KegareLanguageProvider extends LanguageProvider {
         add("message.kegare.cast.severed", "You are " + SEVERED + ". No " + MALICE + " flows through you.");
         add("message.kegare.cast.no_innate_technique", "You have no " + INNATE_TECHNIQUE + ".");
         add("message.kegare.cast.no_ultimate", "Your " + INNATE_TECHNIQUE + " has no ultimate.");
-        add("message.kegare.cast.empty_slot", "That slot is empty. Fill it on the Sorcerer screen's Loadout page.");
+        add("message.kegare.cast.empty_slot", "That slot is empty. Fill it from the Sorcerer screen.");
 
         // Reverse Malice Technique (shared ability)
         add("ability.kegare.reverse_malice_technique", "Reverse Malice Technique");
@@ -204,21 +204,16 @@ public final class KegareLanguageProvider extends LanguageProvider {
         add("ability_category.kegare.innate_technique.desc", "Abilities of your " + INNATE_TECHNIQUE + ". A reroll replaces them.");
         add("ability_category.kegare.shared", "Shared");
         add("ability_category.kegare.shared.desc", "Abilities you unlock yourself. They're yours for good, through every reroll.");
-        add("gui.kegare.sorcerer.tab.loadout", "Loadout");
-        add("gui.kegare.loadout.heading", "Loadout");
-        add("gui.kegare.loadout.category_heading", "%s · %s");
         add("gui.kegare.loadout.category_empty", "Nothing here yet.");
         add("gui.kegare.loadout.kind", "%s · %s");
-        add("gui.kegare.loadout.hint", "Drag an ability onto a slot (or click it, then a slot). Drag slots to swap them; drag one off the bar or right-click it to empty it.");
-        add("gui.kegare.loadout.reset", "Reset to default");
         add("gui.kegare.loadout.reset.desc", "Put your " + INNATE_TECHNIQUE + "'s abilities back in their usual order.");
         add("gui.kegare.loadout.in_slot", "On your bar: slot %s");
         add("gui.kegare.loadout.not_slotted", "Not on your bar");
         add("gui.kegare.loadout.slot_hint", "Drag to move · right-click to empty");
+        add("gui.kegare.loadout.empty_slot_hint", "Drag an ability here");
         add("gui.kegare.loadout.locked", "???");
         add("gui.kegare.loadout.locked.desc", "Locked. Some abilities can't be learned, only found.");
         add("gui.kegare.loadout.ultimate_fixed", "Always your " + INNATE_TECHNIQUE + "'s ultimate. This slot can't be changed.");
-        add("gui.kegare.loadout.severed", "You are " + SEVERED + ": there are no abilities to arrange.");
         add("message.kegare.loadout.in_combat", "You can't change your loadout mid-fight.");
         add("message.kegare.loadout.casting", "Finish casting first.");
         add("message.kegare.loadout.severed", "You are " + SEVERED + ": there's no loadout to change.");
@@ -307,29 +302,27 @@ public final class KegareLanguageProvider extends LanguageProvider {
 
         // ---- GUI: Sorcerer screen ----
         add("gui.kegare.sorcerer.title", "Sorcerer");
-        add("gui.kegare.sorcerer.tab.malice", MALICE);
-        add("gui.kegare.sorcerer.tab.innate_technique", INNATE_TECHNIQUE);
-        add("gui.kegare.sorcerer.tab.severed", SEVERED);
+        add("gui.kegare.sorcerer.view.technique", INNATE_TECHNIQUE);
+        add("gui.kegare.sorcerer.header.category", "%s · %s");
+        add("gui.kegare.sorcerer.overview_hint", "Hover an ability to read about it; click one to keep it here. Drag abilities onto your bar, drag slots to swap them, right-click a slot to empty it.");
+        add("gui.kegare.sorcerer.hint", "Drag abilities onto your bar");
+        add("gui.kegare.sorcerer.hint.in_hand", "Now click a slot on your bar");
+        add("gui.kegare.sorcerer.side.malice", MALICE);
+        add("gui.kegare.sorcerer.side.amount", "%s / %s");
+        add("gui.kegare.sorcerer.side.regen", "+%s/s");
+        add("gui.kegare.sorcerer.side.regen_paused", "Regen paused");
+        add("gui.kegare.sorcerer.malice.severed_short", "No " + MALICE + ".");
+        add("gui.kegare.sorcerer.severed.short", "No " + INNATE_TECHNIQUE + " will ever answer.");
+        add("gui.kegare.loadout.reset_short", "Reset");
         add("gui.kegare.sorcerer.tab.traits", "Traits");
         add("gui.kegare.sorcerer.tab.pity", "Pity");
-        add("gui.kegare.sorcerer.malice.heading", MALICE);
-        add("gui.kegare.sorcerer.malice.capacity", "Capacity: %s (%s)");
-        add("gui.kegare.sorcerer.malice.reserve", "Reserve: %s / %s");
-        add("gui.kegare.sorcerer.malice.regen", "Regeneration: %s per second (%s%% of capacity)");
-        add("gui.kegare.sorcerer.malice.regen_paused", "Regeneration paused: in combat");
-        add("gui.kegare.sorcerer.malice.severed", SEVERED + ": you have no " + MALICE + ".");
         add("gui.kegare.sorcerer.innate_technique.none", "No " + INNATE_TECHNIQUE + ".");
-        add("gui.kegare.sorcerer.abilities", "Abilities");
-        add("gui.kegare.sorcerer.ability.slot", "%s. %s (%s)");
-        add("gui.kegare.sorcerer.ability.ultimate", "Ultimate: %s (%s)");
         add("gui.kegare.sorcerer.ability.stats", "Cost: %s " + MALICE + " · Cooldown: %ss");
         add("gui.kegare.sorcerer.ability.stats_upkeep", "Cost: %s " + MALICE + " · Upkeep: %s/s · Cooldown: %ss");
         add("gui.kegare.sorcerer.severed.heading", SEVERED);
         add("gui.kegare.sorcerer.severed.desc", "Born without " + MALICE + ". You hold no " + INNATE_TECHNIQUE + ", cannot cast and cannot reroll.");
-        add("gui.kegare.sorcerer.traits.heading", "Traits");
         add("gui.kegare.sorcerer.traits.none", "No traits.");
         add("gui.kegare.sorcerer.traits.unique", "%s (unique)");
-        add("gui.kegare.sorcerer.pity.heading", "Pity");
         add("gui.kegare.sorcerer.pity.count", "Rolls since Legendary: %s");
         add("gui.kegare.sorcerer.pity.soft_in", "Soft pity starts in %s rolls");
         add("gui.kegare.sorcerer.pity.soft_active", "Soft pity active: Legendary weight %s (base %s)");

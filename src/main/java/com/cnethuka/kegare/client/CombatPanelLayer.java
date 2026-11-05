@@ -65,7 +65,7 @@ public final class CombatPanelLayer implements LayeredDraw.Layer {
     public static final int STACK_BASE = H + 11;
 
     private static final int READY_FLASH_TICKS = 8;
-    private static final long SLIDE_MS = 180;
+    private static final long SLOT_SLIDE_MS = 180;
     private static final long GHOST_HOLD_MS = 450;
     private static final float GHOST_DRAIN_PER_SECOND = 0.5f;
 
@@ -104,10 +104,26 @@ public final class CombatPanelLayer implements LayeredDraw.Layer {
         Font font = mc.font;
         long now = mc.level.getGameTime();
         int x0 = (g.guiWidth() - W) / 2;
-        int slide = Math.round((1f - easeOut(Math.min(1f, (Util.getMillis() - TechniqueMode.shownAtMs()) / (float) SLIDE_MS))) * (H + 4));
+        int slide = Math.round((1f - easeOut(Math.min(1f, (Util.getMillis() - TechniqueMode.shownAtMs()) / (float) SLOT_SLIDE_MS))) * (H + 4));
         int y0 = g.guiHeight() - H + slide;
-        int color = technique.maliceColor();
 
+        drawPanel(g, font, data, technique, abilities, now, x0, y0, -1);
+    }
+
+    /** Where a slot of the tray was drawn ({@code index} = loadout slot, or the slot count for the ultimate). */
+    public record SlotRect(int index, int x, int y, int size, boolean ultimate) {
+        public boolean contains(double mx, double my) {
+            return mx >= x && mx < x + size && my >= y && my < y + size;
+        }
+    }
+
+    /**
+     * Draws the whole panel at {@code (x0, y0)}: the HUD uses it, and the Sorcerer screen draws the same panel as its
+     * loadout tray. {@code dropTarget}: a slot index to outline as a drop target (-1 = none). Returns the slots drawn.
+     */
+    public static List<SlotRect> drawPanel(GuiGraphics g, Font font, SyncPayload data, InnateTechnique technique, List<Ability> abilities,
+                                           long now, int x0, int y0, int dropTarget) {
+        int color = technique.maliceColor();
         RenderSystem.enableBlend();
         g.blit(PANEL, x0, y0, 0f, 0f, W, H, W, H);
         tint(g, GuiDraw.mix(color, 0xFFFFFF, 0.45f), 1f);
@@ -117,7 +133,7 @@ public final class CombatPanelLayer implements LayeredDraw.Layer {
         drawMeter(g, font, data, color, x0, y0);
         drawFreeze(g, data, now, x0, y0);
         drawCastProgress(g, technique, data, now, x0, y0);
-        drawTray(g, font, data, technique, abilities, now, x0, y0);
+        return drawTray(g, font, data, technique, abilities, now, x0, y0, dropTarget);
     }
 
     // ---------------------------------------------------------------- meter
@@ -210,8 +226,9 @@ public final class CombatPanelLayer implements LayeredDraw.Layer {
 
     // ---------------------------------------------------------------- tray
 
-    private static void drawTray(GuiGraphics g, Font font, SyncPayload data, InnateTechnique technique, List<Ability> abilities,
-                                 long now, int x0, int y0) {
+    private static List<SlotRect> drawTray(GuiGraphics g, Font font, SyncPayload data, InnateTechnique technique, List<Ability> abilities,
+                                           long now, int x0, int y0, int dropTarget) {
+        List<SlotRect> rects = new java.util.ArrayList<>();
         int n = abilities.size();
         boolean hasUlt = technique.ultimate().isPresent() || technique.ultimateLocked();
         int gap = 5, ultGap = 9;
@@ -227,6 +244,8 @@ public final class CombatPanelLayer implements LayeredDraw.Layer {
             int x = sx + i * (SLOT_SIZE + gap);
             int y = y0 + SLOT_Y;
             drawSlot(g, font, data, abilities.get(i), x, y, i == data.selectedSlot(), Component.literal(Integer.toString(i + 1)), castingId, now);
+            if (i == dropTarget) g.renderOutline(x - 1, y - 1, SLOT_SIZE + 2, SLOT_SIZE + 2, 0xFFFFFFFF);
+            rects.add(new SlotRect(i, x, y, SLOT_SIZE, false));
         }
         if (hasUlt) {
             int ux = sx + n * (SLOT_SIZE + gap) - gap + ultGap;
@@ -241,7 +260,9 @@ public final class CombatPanelLayer implements LayeredDraw.Layer {
                 GuiDraw.sprite(g, GuiDraw.LOCK, ux + 8, uy + 7, 11, 11);
             }
             label(g, font, KegareKeys.ULTIMATE.getTranslatedKeyMessage(), ux + ULT_SIZE, uy + ULT_SIZE, 0xFFB8B0C4);
+            rects.add(new SlotRect(n, ux, uy, ULT_SIZE, true));
         }
+        return rects;
     }
 
     private static void drawSlot(GuiGraphics g, Font font, SyncPayload data, @Nullable Ability ability, int x, int y, boolean selected,
@@ -262,6 +283,12 @@ public final class CombatPanelLayer implements LayeredDraw.Layer {
         }
         GuiDraw.specialBadge(g, x + SLOT_SIZE - 8, y - 2, ability.special().isPresent());
         if (!cooling) label(g, font, key, x + SLOT_SIZE, y + SLOT_SIZE, selected ? GuiDraw.WHITE : 0xFFD8D2E0);
+    }
+
+    /** A bare 22x22 tray slot frame (selected = lit gold), for screens that show abilities the HUD's way. */
+    public static void slotFrame(GuiGraphics g, int x, int y, boolean selected) {
+        RenderSystem.enableBlend();
+        g.blit(selected ? SLOT_SELECTED : SLOT, x, y, 0f, 0f, SLOT_SIZE, SLOT_SIZE, SLOT_SIZE, SLOT_SIZE);
     }
 
     /** Cooldown sweep (and seconds) over a 16x16 icon area, plus the ready flash. Returns whether it is cooling. */

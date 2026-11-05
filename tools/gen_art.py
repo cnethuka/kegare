@@ -1188,6 +1188,119 @@ def env_mini(cold: bool) -> Image.Image:
     return from_grid(grid, pal)
 
 
+# ---------------------------------------------------------------------------------------------------- Sorcerer screen
+# One window in the combat panel's language: a heavy cursed-iron frame, recessed boxes, category tabs on the left
+# edge and view buttons on the right edge (our own art).
+
+def menu_frame() -> Image.Image:
+    """64x64 nine-slice (border 10): the Sorcerer window. Heavy bevelled iron, rivets, a near-black ink interior."""
+    size, border = 64, 10
+    tile = size - 2 * border
+    return frame(size, size, 7, IRON, plum_interior(23, tile, tile, r=PLUM[:3], contrast=0.35), seed=17,
+                 tile_x=tile, tile_y=tile, rim=IRON[6], rivets=True)
+
+
+def menu_well() -> Image.Image:
+    """16x16 nine-slice (border 4): a recessed box inside the window (shadowed top-left, lit bottom-right rim)."""
+    size = 16
+    img = new(size, size)
+    for y in range(size):
+        for x in range(size):
+            d = min(x, y, size - 1 - x, size - 1 - y)
+            top_left = (x <= y and x < size - 1 - y) or (y < x and y < size - 1 - x)
+            if d == 0:
+                c = INK
+            elif d == 1:
+                c = IRON[0] if top_left else IRON[3]
+            elif d == 2:
+                c = INK if top_left else PLUM[1]
+            else:
+                c = dither(PLUM[:3], 0.25 + (y / size) * 0.25, x, y)
+            put(img, x, y, c)
+    return img
+
+
+def menu_tab(selected: bool) -> Image.Image:
+    """24x24 tab/button on the window's edge: an iron plate around a dark well for a 16px icon; lit gold when selected."""
+    size = 24
+    img = new(size, size)
+    for y in range(size):
+        for x in range(size):
+            d = min(x, y, size - 1 - x, size - 1 - y)
+            corner = min(x, size - 1 - x) + min(y, size - 1 - y)
+            if corner < 2:
+                continue
+            if d == 0 or corner == 2:
+                c = INK
+            elif d == 1:
+                lit = x < size - 1 - x and y < size - 1 - y
+                c = (GOLD[5] if lit else GOLD[3]) if selected else (IRON[5] if lit else IRON[2])
+            elif d == 2:
+                c = (GOLD[2] if selected else IRON[3])
+            elif d == 3:
+                c = INK
+            else:
+                c = dither(IRON[1:4] if selected else PLUM, 0.3 + y / size * 0.3, x, y)
+            put(img, x, y, c)
+    return img
+
+
+ICON_VIEW_TECHNIQUE = [  # a spiral: the innate technique
+    "................",
+    "....KKKKKKK.....",
+    "...K6666666K....",
+    "..K66KKKKK66K...",
+    ".K66K55555K66K..",
+    ".K6K55KKK55K6K..",
+    ".K6K5K444K5K6K..",
+    ".K6K5K4KK45K6K..",
+    ".K6K5K4K.K5K6K..",
+    ".K6K5KK..K5K6K..",
+    ".K6K55KKK55K6K..",
+    ".K66K55555KK6K..",
+    "..K66KKKKK.K6K..",
+    "...K66666666K...",
+    "....KKKKKKKK....",
+    "................",
+]
+ICON_VIEW_TRAITS = [  # an eye: traits
+    "................",
+    "................",
+    "................",
+    ".....KKKKKK.....",
+    "...KK666666KK...",
+    "..K666KKKK666K..",
+    ".K66KK5555KK66K.",
+    "K66K55KKKK55K66K",
+    "K66K55K66K55K66K",
+    ".K66KK5555KK66K.",
+    "..K666KKKK666K..",
+    "...KK666666KK...",
+    ".....KKKKKK.....",
+    "................",
+    "................",
+    "................",
+]
+ICON_VIEW_PITY = [  # a four-pointed star: luck and pity
+    "................",
+    ".......KK.......",
+    ".......K6K......",
+    "......K66K......",
+    "......K656K.....",
+    ".....KK656KK....",
+    "..KKKK66566KKK..",
+    ".K6666655566666K",
+    "..KKKK66566KKK..",
+    ".....KK656KK....",
+    "......K656K.....",
+    "......K66K......",
+    ".......K6K......",
+    ".......KK.......",
+    "................",
+    "................",
+]
+
+
 def category_shared() -> Image.Image:
     """16x16 tab icon for the Shared ability category: a silver ring around a pale diamond core."""
     grid = [
@@ -1334,6 +1447,13 @@ def build() -> dict[str, Image.Image]:
     out["badge_special"] = special_badge(True)
     out["badge_special_none"] = special_badge(False)
     out["category_shared"] = category_shared()
+    out["menu_frame"] = menu_frame()
+    out["menu_well"] = menu_well()
+    out["menu_tab"] = menu_tab(False)
+    out["menu_tab_selected"] = menu_tab(True)
+    out["view_technique"] = icon(ICON_VIEW_TECHNIQUE, MALICE)
+    out["view_traits"] = icon(ICON_VIEW_TRAITS, ICE)
+    out["view_pity"] = icon(ICON_VIEW_PITY, GOLD)
     out["env_cold_mini"] = env_mini(True)
     out["env_hot_mini"] = env_mini(False)
     return out
@@ -1343,7 +1463,7 @@ def main() -> None:
     sprites = build()
     borders = {"panel": 12, "card_common": 12, "card_rare": 12, "card_epic": 12, "card_legendary": 12,
                "tab": 5, "tab_selected": 5, "radial_slot": 7, "radial_slot_selected": 7, "divider": (10, 0, 10, 0),
-               "button": 4, "button_highlighted": 4, "button_disabled": 4}
+               "button": 4, "button_highlighted": 4, "button_disabled": 4, "menu_frame": 10, "menu_well": 4}
     for name, img in sprites.items():
         sprite(img, name, borders.get(name))
     stale = TEXTURES / "gui" / "sprites" / "card.png"  # the old greyscale, tinted placeholder
