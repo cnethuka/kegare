@@ -123,6 +123,15 @@ public final class KegareLanguageProvider extends LanguageProvider {
                 + "and them as you (name, skin, armor, held items, tab list). Only looks change hands.");
         add("ability.kegare.mimic", "Mimic");
         add("ability.kegare.mimic.desc", "Look like the player you're looking at for 8 seconds. They stay as themselves.");
+        add("ability.kegare.anchor", "Anchor");
+        add("ability.kegare.anchor.desc", "First cast: throw an anchor that sticks where it lands (it lasts 20 seconds). "
+                + "Second cast: swap yourself with it.");
+        add("ability.kegare.send_off", "Send Off");
+        add("ability.kegare.send_off.desc", "Needs your anchor out: swap the player you're looking at with the anchor instead of yourself. "
+                + "Uses the anchor up.");
+        add("entity.kegare.swap_anchor", "Swap Anchor");
+        add("item.kegare.swap_anchor", "Swap Anchor");
+        add("message.kegare.swap.no_anchor", "You have no anchor out.");
         add("message.kegare.swap.no_target", "No player in sight.");
         add("message.kegare.swap.refused", "Something stops the swap.");
         add("message.kegare.swap.switchback_refused", "Something stops the swap back.");

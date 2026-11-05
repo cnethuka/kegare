@@ -25,15 +25,18 @@ public final class Swap {
 
     public static final PositionsAbility POSITIONS = new PositionsAbility();
     public static final AwarenessAbility AWARENESS = new AwarenessAbility();
+    public static final AnchorAbility ANCHOR = new AnchorAbility();
 
     // Specials (R), each sharing its base ability's cooldown.
     public static final SwitchbackAbility SWITCHBACK = new SwitchbackAbility();
     public static final MimicAbility MIMIC = new MimicAbility();
+    public static final SendOffAbility SEND_OFF = new SendOffAbility();
 
     public static final DeferredHolder<InnateTechnique, InnateTechnique> SWAP = INNATE_TECHNIQUES.register("swap",
             () -> InnateTechnique.builder(InnateTechniqueRarity.COMMON)
                     .ability(POSITIONS)
                     .ability(AWARENESS)
+                    .ability(ANCHOR)
                     .lockedUltimate()
                     .maliceColor(MALICE_COLOR)
                     .tabIcon(Items.ENDER_PEARL)
@@ -43,11 +46,14 @@ public final class Swap {
 
     public static void register(IEventBus modBus) {
         INNATE_TECHNIQUES.register(modBus);
+        SwapRegistry.register(modBus);
         VisualHooks.registerEffect(SwapIds.FX_SWAP_DEPART);
         VisualHooks.registerEffect(SwapIds.FX_SWAP_ARRIVE);
         VisualHooks.registerEffect(SwapIds.FX_SWAP_LINK);
         VisualHooks.registerEffect(SwapIds.FX_SWITCHBACK_TIMER);
         VisualHooks.registerEffect(SwapIds.FX_AWARENESS_SHIMMER);
+        VisualHooks.registerEffect(SwapIds.FX_ANCHOR_MARKER);
+        VisualHooks.registerEffect(SwapIds.FX_ANCHOR_TRAIL);
     }
 
     public static boolean holds(ServerPlayer player) {

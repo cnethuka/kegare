@@ -33,11 +33,12 @@ class SwapTest {
         TestServer.onServerThread(server, () -> {
             TestServer.ensureOverworld(server);
             ServerLevel level = server.overworld();
-            level.getHeight(Heightmap.Types.MOTION_BLOCKING, 0, 0); // loads the chunk: area queries only see entities in loaded chunks
+            loadArena(level);
             ServerPlayer caster = TestServer.player(server, "swap_caster");
             ServerPlayer target = TestServer.player(server, "swap_target");
             level.addNewPlayer(caster);
             level.addNewPlayer(target);
+            try {
             BirthService.rebirth(caster, OptionalInt.of(1000));
             InnateTechniqueService.setInnateTechnique(caster, Swap.SWAP.get());
             InnateTechniqueService.select(caster, 0);
@@ -134,7 +135,9 @@ class SwapTest {
             assertEquals(afterSwap, caster.position(), "called off: no swap back");
             assertFalse(Switchback.isPending(caster));
 
-            for (ServerPlayer p : new ServerPlayer[] {caster, target}) level.removePlayerImmediately(p, Entity.RemovalReason.DISCARDED);
+            } finally {
+                for (ServerPlayer p : new ServerPlayer[] {caster, target}) level.removePlayerImmediately(p, Entity.RemovalReason.DISCARDED);
+            }
         });
     }
 
@@ -143,11 +146,12 @@ class SwapTest {
         TestServer.onServerThread(server, () -> {
             TestServer.ensureOverworld(server);
             ServerLevel level = server.overworld();
-            level.getHeight(Heightmap.Types.MOTION_BLOCKING, 0, 0);
+            loadArena(level);
             ServerPlayer caster = TestServer.player(server, "disguise_caster");
             ServerPlayer target = TestServer.player(server, "disguise_target");
             level.addNewPlayer(caster);
             level.addNewPlayer(target);
+            try {
             BirthService.rebirth(caster, OptionalInt.of(1000));
             InnateTechniqueService.setInnateTechnique(caster, Swap.SWAP.get());
             InnateTechniqueService.select(caster, 1);
@@ -197,8 +201,92 @@ class SwapTest {
             assertEquals(0, InnateTechniqueService.cooldownRemaining(caster, Swap.AWARENESS), "refused: no cooldown");
             SwapDebug.setUnswappable(target.getUUID(), false);
 
-            for (ServerPlayer p : new ServerPlayer[] {caster, target}) level.removePlayerImmediately(p, Entity.RemovalReason.DISCARDED);
+            } finally {
+                for (ServerPlayer p : new ServerPlayer[] {caster, target}) level.removePlayerImmediately(p, Entity.RemovalReason.DISCARDED);
+            }
         });
+    }
+
+    @Test
+    void anchor(MinecraftServer server) throws Exception {
+        TestServer.onServerThread(server, () -> {
+            TestServer.ensureOverworld(server);
+            ServerLevel level = server.overworld();
+            loadArena(level);
+            ServerPlayer caster = TestServer.player(server, "anchor_caster");
+            ServerPlayer target = TestServer.player(server, "anchor_target");
+            level.addNewPlayer(caster);
+            level.addNewPlayer(target);
+            try {
+            BirthService.rebirth(caster, OptionalInt.of(1000));
+            InnateTechniqueService.setInnateTechnique(caster, Swap.SWAP.get());
+            InnateTechniqueService.select(caster, 2);
+            assertEquals(Swap.ANCHOR, com.cnethuka.kegare.loadout.LoadoutService.abilityAt(caster, 2), "setup: Anchor in slot 3");
+            Vec3 spot = new Vec3(3.5, Y, 6.5);
+
+            // Send Off with no anchor out: fizzles at no cost.
+            face(caster, target);
+            double before = malice(caster);
+            CastManager.handleIntent(caster, CastIntent.SPECIAL_PRESS);
+            assertEquals(before, malice(caster), EPS, "no anchor: free");
+            assertEquals(0, InnateTechniqueService.cooldownRemaining(caster, Swap.ANCHOR), "no anchor: no cooldown");
+
+            // First cast: throw (throw cost, the short throw cooldown).
+            CastManager.handleIntent(caster, CastIntent.CAST_PRESS);
+            assertEquals(before - SwapConfig.ANCHOR_THROW_COST.get(), malice(caster), EPS, "throw went off");
+            assertTrue(Anchors.has(caster), "thrown");
+            assertEquals(before - SwapConfig.ANCHOR_THROW_COST.get(), malice(caster), EPS, "throw cost");
+            assertEquals(SwapConfig.ticks(SwapConfig.ANCHOR_THROW_COOLDOWN), InnateTechniqueService.cooldownRemaining(caster, Swap.ANCHOR), "throw cooldown");
+
+            // Second cast: the caster lands on the anchor, which is used up; the full cooldown starts.
+            AnchorEntity anchor = Anchors.get(caster).orElseThrow();
+            anchor.setPos(spot.x, spot.y, spot.z);
+            InnateTechniqueService.clearCooldowns(caster);
+            caster.fallDistance = 7f;
+            before = malice(caster);
+            CastManager.handleIntent(caster, CastIntent.CAST_PRESS);
+            assertEquals(spot, caster.position(), "recalled onto the anchor");
+            assertEquals(0f, caster.fallDistance, EPS, "fall distance reset");
+            assertTrue(anchor.isRemoved(), "used up");
+            assertFalse(Anchors.has(caster));
+            assertEquals(before - SwapConfig.ANCHOR_RECALL_COST.get(), malice(caster), EPS, "recall cost");
+            assertEquals(SwapConfig.ticks(SwapConfig.ANCHOR_COOLDOWN), InnateTechniqueService.cooldownRemaining(caster, Swap.ANCHOR), "full cooldown");
+
+            // Send Off: the target goes to the anchor instead; the caster stays; shared cooldown.
+            InnateTechniqueService.clearCooldowns(caster);
+            face(caster, target);
+            CastManager.handleIntent(caster, CastIntent.CAST_PRESS);
+            anchor = Anchors.get(caster).orElseThrow();
+            anchor.setPos(spot.x, spot.y, spot.z);
+            InnateTechniqueService.clearCooldowns(caster);
+            face(caster, target);
+            Vec3 casterAt = caster.position();
+            before = malice(caster);
+            CastManager.handleIntent(caster, CastIntent.SPECIAL_PRESS);
+            assertEquals(spot, target.position(), "the target was sent to the anchor");
+            assertEquals(casterAt, caster.position(), "the caster stayed");
+            assertTrue(anchor.isRemoved(), "Send Off used it up");
+            assertEquals(before - SwapConfig.SEND_OFF_COST.get(), malice(caster), EPS, "send off cost");
+            assertEquals(SwapConfig.ticks(SwapConfig.ANCHOR_COOLDOWN), InnateTechniqueService.cooldownRemaining(caster, Swap.ANCHOR), "shared cooldown");
+
+            // An anchor nobody uses times out.
+            InnateTechniqueService.clearCooldowns(caster);
+            CastManager.handleIntent(caster, CastIntent.CAST_PRESS);
+            anchor = Anchors.get(caster).orElseThrow();
+            anchor.tickCount = SwapConfig.ticks(SwapConfig.ANCHOR_LIFETIME);
+            anchor.tick();
+            assertTrue(anchor.isRemoved(), "timed out");
+            assertFalse(Anchors.has(caster));
+
+            } finally {
+                for (ServerPlayer p : new ServerPlayer[] {caster, target}) level.removePlayerImmediately(p, Entity.RemovalReason.DISCARDED);
+            }
+        });
+    }
+
+    /** Loads the test chunk: area queries only see entities in loaded chunks. */
+    static void loadArena(ServerLevel level) {
+        level.getHeight(Heightmap.Types.MOTION_BLOCKING, 0, 0);
     }
 
     /** Puts the two players 8 blocks apart in the air, the caster looking straight at the target. */

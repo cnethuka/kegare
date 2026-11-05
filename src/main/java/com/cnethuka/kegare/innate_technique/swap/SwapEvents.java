@@ -71,6 +71,7 @@ public final class SwapEvents {
     static void onServerStopped(ServerStoppedEvent event) {
         Switchback.clear();
         Disguises.clear();
+        Anchors.clear();
         SwapDebug.clear();
     }
 
@@ -78,5 +79,6 @@ public final class SwapEvents {
     private static void endAll(ServerPlayer player) {
         Switchback.cancelInvolving(player);
         Disguises.endInvolving(player);
+        Anchors.drop(player);
     }
 }

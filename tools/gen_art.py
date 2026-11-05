@@ -49,6 +49,7 @@ PAPER = ramp("#b8a77c", "#cdbd93", "#ddd0ad", "#ebe1c4", "#f6efdb")
 SEAL = ramp("#5c0f0c", "#8c1a14", "#b3261e", "#d94a3a", "#f08a76")
 HEAL = ramp("#06210f", "#0c3d1c", "#15652d", "#22a046", "#4ed873", "#a6f5b8", "#f2fff4")  # Reverse Malice Technique
 ICE = ramp("#081428", "#0f2d55", "#1a5590", "#3a8fcc", "#79c8ec", "#c2eefa", "#f2fdff")  # Rime: deep blue to white
+TEAL = ramp("#03201d", "#063b36", "#0b5f57", "#0f8a7e", "#14b8a6", "#5eead4", "#ccfbf1")  # Swap: teal (with Malice violet)
 
 
 def pick(r: list, t: float):
@@ -505,6 +506,30 @@ def malice_bar() -> Image.Image:
     for sx in (2, w - 3):
         for dy, c in ((3, IRON[6]), (4, IRON[4]), (5, IRON[4]), (6, IRON[2])):
             put(img, sx, dy, c)
+    return img
+
+
+def swap_anchor_item() -> Image.Image:
+    """16x16: Swap's anchor, a teal pearl lit from the top-left with a violet core and an ink outline."""
+    img = new(16, 16)
+    cx = cy = 7.5
+    for y in range(16):
+        for x in range(16):
+            d = math.hypot(x - cx, y - cy)
+            if d > 5.6:
+                continue
+            if d > 4.6:
+                img.putpixel((x, y), INK)
+                continue
+            light = ((cx - x) + (cy - y)) / 9.0
+            t = 0.55 + 0.45 * light - 0.3 * (d / 4.6)
+            img.putpixel((x, y), TEAL[max(1, min(5, round(t * 6)))])
+    for p in ((7, 7), (8, 7), (7, 8), (8, 8)):
+        img.putpixel(p, MALICE[4])
+    for p in ((7, 6), (6, 7)):
+        img.putpixel(p, MALICE[5])
+    for p in ((5, 4), (4, 5), (5, 5)):
+        img.putpixel(p, TEAL[6])
     return img
 
 
@@ -1398,6 +1423,7 @@ def main() -> None:
     # Rime's projectiles render as these items in flight
     save(icon(ICON_FROST_SHARD, ICE), "item/frost_shard.png")
     save(icon(ICON_GLACIAL_LANCE, ICE), "item/glacial_lance.png")
+    save(swap_anchor_item(), "item/swap_anchor.png")
 
     icons = {"test_dash": icon(ICON_DASH, MALICE), "test_burst": icon(ICON_BURST, MALICE),
              "test_hover": icon(ICON_HOVER, MALICE), "test_aura": icon(ICON_AURA, MALICE),

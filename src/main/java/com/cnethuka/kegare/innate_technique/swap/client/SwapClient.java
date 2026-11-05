@@ -2,6 +2,9 @@ package com.cnethuka.kegare.innate_technique.swap.client;
 
 import com.cnethuka.kegare.client.visual.ClientVisuals;
 import com.cnethuka.kegare.innate_technique.swap.SwapLink;
+import com.cnethuka.kegare.innate_technique.swap.SwapRegistry;
+import net.minecraft.client.renderer.entity.ThrownItemRenderer;
+import net.neoforged.neoforge.client.event.EntityRenderersEvent;
 import com.cnethuka.kegare.innatetechnique.visual.Visual;
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -50,8 +53,14 @@ public final class SwapClient {
     public static void init(IEventBus modBus) {
         SwapLink.Payload.setClientHandler(SwapClient::onLink);
         DisguiseClient.init();
+        modBus.addListener(SwapClient::registerRenderers);
         NeoForge.EVENT_BUS.addListener(SwapClient::onClientTick);
         NeoForge.EVENT_BUS.addListener(SwapClient::onLogout);
+    }
+
+    private static void registerRenderers(EntityRenderersEvent.RegisterRenderers event) {
+        // The anchor's item sprite, full-bright so it reads in the dark.
+        event.registerEntityRenderer(SwapRegistry.ANCHOR.get(), ctx -> new ThrownItemRenderer<>(ctx, 0.9f, true));
     }
 
     private static void onLink(SwapLink.Payload payload) {
