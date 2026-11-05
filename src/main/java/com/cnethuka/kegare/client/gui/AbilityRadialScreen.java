@@ -161,7 +161,7 @@ public final class AbilityRadialScreen extends Screen {
 
     @Override
     public boolean keyReleased(int keyCode, int scanCode, int modifiers) {
-        if (KegareKeys.NEXT_ABILITY.matches(keyCode, scanCode)) {
+        if (KegareKeys.RADIAL.matches(keyCode, scanCode)) {
             commit();
             return true;
         }

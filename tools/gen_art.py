@@ -862,6 +862,51 @@ def emblem_rime() -> Image.Image:
     return img
 
 
+def ultimate_slot() -> Image.Image:
+    """26x26 gold-framed slot for the ultimate on the ability bar (a 16x16 icon sits in the middle)."""
+    size = 26
+    img = new(size, size)
+    for y in range(size):
+        for x in range(size):
+            d = min(x, y, size - 1 - x, size - 1 - y)
+            if (x in (0, size - 1)) and (y in (0, size - 1)):
+                continue
+            top_left = x + y < size
+            if d == 0:
+                c = INK
+            elif d <= 2:
+                c = GOLD[5] if (d == 1 and top_left) else GOLD[3] if top_left else GOLD[1]
+            elif d == 3:
+                c = INK
+            else:
+                g = 1 - math.hypot(x - 8, y - 8) / 20
+                c = dither(MALICE[:3], 0.12 + g * 0.45, x, y)
+            img.putpixel((x, y), c)
+    for (x, y) in ((5, 5), (6, 5), (5, 6)):
+        put(img, x, y, (255, 255, 255, 90))
+    return img
+
+
+def special_badge(lit: bool) -> Image.Image:
+    """9x9 "R" badge on an ability slot: lit gold when the ability has a special (R), grey when not."""
+    grid = [
+        ".KKKKKKK.",
+        "KbbbbbbbK",
+        "KbRRRbbbK",
+        "KbRbbRbbK",
+        "KbRRRbbbK",
+        "KbRbRbbbK",
+        "KbRbbRbbK",
+        "KbbbbbbbK",
+        ".KKKKKKK.",
+    ]
+    if lit:
+        pal = {"K": INK, "b": GOLD[5], "R": INK}
+    else:
+        pal = {"K": INK, "b": IRON[2], "R": IRON[4]}
+    return from_grid(grid, pal)
+
+
 def env_cold() -> Image.Image:
     grid = [
         "....K.K....",
@@ -982,6 +1027,8 @@ def build() -> dict[str, Image.Image]:
     out["lock"] = lock_icon()
     out["freeze_pip"] = freeze_pip(True)
     out["freeze_pip_empty"] = freeze_pip(False)
+    out["badge_special"] = special_badge(True)
+    out["badge_special_none"] = special_badge(False)
     return out
 
 
@@ -1002,6 +1049,7 @@ def main() -> None:
     save(malice_bar(), "gui/malice_bar.png")
     save(hud_slot(False), "gui/ability_slot.png")
     save(hud_slot(True), "gui/ability_slot_selected.png")
+    save(ultimate_slot(), "gui/ultimate_slot.png")
     save(talisman_item(), "item/purification_talisman.png")
     # Rime's projectiles render as these items in flight
     save(icon(ICON_FROST_SHARD, ICE), "item/frost_shard.png")

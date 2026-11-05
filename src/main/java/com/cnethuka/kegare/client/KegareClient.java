@@ -34,5 +34,7 @@ public final class KegareClient {
 
     private static void registerGuiLayers(RegisterGuiLayersEvent event) {
         event.registerAbove(VanillaGuiLayers.HOTBAR, MaliceHudLayer.ID, new MaliceHudLayer());
+        // After hearts/armour/food/air so it can stack above whatever they used (Gui.leftHeight/rightHeight).
+        event.registerAbove(VanillaGuiLayers.EXPERIENCE_LEVEL, AbilityBarLayer.ID, new AbilityBarLayer());
     }
 }

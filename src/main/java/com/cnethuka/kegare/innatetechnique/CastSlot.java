@@ -1,7 +1,8 @@
 package com.cnethuka.kegare.innatetechnique;
 
-/** Which key started a cast: the cast key (selected ability) or the ultimate key. */
+/** What a cast key refers to: the selected ability (base), its special (R), or the ultimate (V). */
 public enum CastSlot {
     SELECTED,
+    SPECIAL,
     ULTIMATE
 }

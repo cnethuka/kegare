@@ -71,6 +71,14 @@ public interface Ability {
     default void onEnd(AbilityContext ctx, EndReason reason) {}
 
     /**
+     * This ability's special (cast with R), if it has one. A special is an ability in its own right (own cast type,
+     * cost, effect and visuals) that shares this ability's cooldown. Default: none.
+     */
+    default java.util.Optional<Ability> special() {
+        return java.util.Optional.empty();
+    }
+
+    /**
      * Cosmetics per phase (player animations and VFX). Sent to clients when the server acts; never waited on.
      * See {@link com.cnethuka.kegare.innatetechnique.visual.VisualPhase} for when each phase plays.
      */

@@ -61,9 +61,10 @@ public final class KegareLanguageProvider extends LanguageProvider {
 
         // Keybinds
         add("key.categories.kegare", "Kegare");
-        add("key.kegare.cast", "Cast Ability");
-        add("key.kegare.next_ability", "Next Ability");
-        add("key.kegare.previous_ability", "Previous Ability");
+        add("key.kegare.special", "Special (of the selected ability)");
+        add("key.kegare.technique_mode", "Technique Mode");
+        add("key.kegare.cast", "Cast Ability (Split scheme)");
+        add("key.kegare.radial", "Ability Menu (hold)");
         add("key.kegare.ultimate", "Ultimate");
         add("key.kegare.sorcerer", "Sorcerer Screen");
 
@@ -143,6 +144,7 @@ public final class KegareLanguageProvider extends LanguageProvider {
         add("hud.kegare.selected", "» %s (%s)");
         add("hud.kegare.cooldown", "%ss");
         add("hud.kegare.cost_multiplier", "×%s");
+        add("hud.kegare.technique_mode", "Technique Mode");
         add("hud.kegare.freeze", "Freeze");
         add("hud.kegare.frozen", "Frozen!");
         add("gui.kegare.cost.current", "Cost here: %s " + MALICE);
@@ -160,6 +162,7 @@ public final class KegareLanguageProvider extends LanguageProvider {
         add("message.kegare.cast.no_innate_technique", "You have no " + INNATE_TECHNIQUE + ".");
         add("message.kegare.cast.no_ultimate", "Your " + INNATE_TECHNIQUE + " has no ultimate.");
         add("message.kegare.cast.ultimate_locked", "Locked. Your " + DOMINION + " comes later.");
+        add("message.kegare.cast.no_special", "%s has no special.");
         add("message.kegare.cast.busy", "Already casting.");
         add("message.kegare.cast.stunned", "Stunned! (%ss)");
         add("message.kegare.cast.on_cooldown", "%s is on cooldown (%ss)");

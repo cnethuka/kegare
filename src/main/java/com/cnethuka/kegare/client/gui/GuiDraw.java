@@ -62,6 +62,11 @@ public final class GuiDraw {
     private static final ResourceLocation ICON_SLOT = Kegare.id("textures/gui/ability_slot.png");
     private static final ResourceLocation ICON_SLOT_SELECTED = Kegare.id("textures/gui/ability_slot_selected.png");
     public static final int ICON_SLOT_SIZE = 20;
+    /** The ultimate's slot on the ability bar: bigger, gold-framed. */
+    private static final ResourceLocation ULTIMATE_SLOT = Kegare.id("textures/gui/ultimate_slot.png");
+    public static final int ULTIMATE_SLOT_SIZE = 26;
+    public static final ResourceLocation BADGE_SPECIAL = Kegare.id("badge_special");
+    public static final ResourceLocation BADGE_SPECIAL_NONE = Kegare.id("badge_special_none");
 
     private static final int EMBLEM_TEXTURE_SIZE = 48;
     private static final int DIVIDER_HEIGHT = 7;
@@ -191,9 +196,30 @@ public final class GuiDraw {
 
     /** Draws a 20x20 ability slot and the ability's icon in it. Returns false if the ability has no icon art. */
     public static boolean abilitySlot(GuiGraphics g, Ability ability, int x, int y, boolean selected) {
+        return abilitySlot(g, ability, x, y, ICON_SLOT_SIZE, selected);
+    }
+
+    /** A 20x20 ability slot, or the 26x26 ultimate slot ({@code size} = {@link #ULTIMATE_SLOT_SIZE}), with the icon. */
+    public static boolean abilitySlot(GuiGraphics g, Ability ability, int x, int y, int size, boolean selected) {
         RenderSystem.enableBlend();
-        g.blit(selected ? ICON_SLOT_SELECTED : ICON_SLOT, x, y, 0f, 0f, ICON_SLOT_SIZE, ICON_SLOT_SIZE, ICON_SLOT_SIZE, ICON_SLOT_SIZE);
-        return abilityIcon(g, ability, x + 2, y + 2);
+        slotFrame(g, x, y, size, selected);
+        return abilityIcon(g, ability, x + (size - 16) / 2, y + (size - 16) / 2);
+    }
+
+    private static void slotFrame(GuiGraphics g, int x, int y, int size, boolean selected) {
+        if (size == ULTIMATE_SLOT_SIZE) {
+            g.blit(ULTIMATE_SLOT, x, y, 0f, 0f, size, size, size, size);
+        } else {
+            g.blit(selected ? ICON_SLOT_SELECTED : ICON_SLOT, x, y, 0f, 0f, ICON_SLOT_SIZE, ICON_SLOT_SIZE, ICON_SLOT_SIZE, ICON_SLOT_SIZE);
+        }
+    }
+
+    /** The small "R" badge on a slot: lit if the ability has a special, greyed out if not. 9x9. */
+    public static void specialBadge(GuiGraphics g, int x, int y, boolean hasSpecial) {
+        g.pose().pushPose();
+        g.pose().translate(0, 0, 200);
+        sprite(g, hasSpecial ? BADGE_SPECIAL : BADGE_SPECIAL_NONE, x, y, 9, 9);
+        g.pose().popPose();
     }
 
     /** The ability's 16x16 icon at 1:1. Returns false (drawing nothing) if it has no icon art. */
@@ -207,11 +233,15 @@ public final class GuiDraw {
 
     /** An empty ability slot with a padlock: the ultimate is planned but not unlocked yet (its Dominion comes later). */
     public static void lockedSlot(GuiGraphics g, Font font, int x, int y, Component label) {
+        lockedSlot(g, font, x, y, ICON_SLOT_SIZE, label);
+    }
+
+    public static void lockedSlot(GuiGraphics g, Font font, int x, int y, int size, Component label) {
         RenderSystem.enableBlend();
-        g.blit(ICON_SLOT, x, y, 0f, 0f, ICON_SLOT_SIZE, ICON_SLOT_SIZE, ICON_SLOT_SIZE, ICON_SLOT_SIZE);
-        g.fill(x + 2, y + 2, x + ICON_SLOT_SIZE - 2, y + ICON_SLOT_SIZE - 2, 0x66000000);
-        sprite(g, LOCK, x + (ICON_SLOT_SIZE - 11) / 2, y + (ICON_SLOT_SIZE - 11) / 2, 11, 11);
-        cornerLabel(g, font, label, x, y, ICON_SLOT_SIZE, 0xFF6B6276);
+        slotFrame(g, x, y, size, false);
+        g.fill(x + 2, y + 2, x + size - 2, y + size - 2, 0x66000000);
+        sprite(g, LOCK, x + (size - 11) / 2, y + (size - 11) / 2, 11, 11);
+        cornerLabel(g, font, label, x, y, size, 0xFF6B6276);
     }
 
     /** "0.85", "1.5": a cost multiplier with at most two decimals. */

@@ -8,6 +8,8 @@ public enum CastResult {
     SEVERED("message.kegare.cast.severed"),
     NO_INNATE_TECHNIQUE("message.kegare.cast.no_innate_technique"),
     NO_ULTIMATE("message.kegare.cast.no_ultimate"),
+    /** R on an ability without a special: fizzles, costs nothing. */
+    NO_SPECIAL("message.kegare.cast.no_special"),
     /** The innate technique's ultimate is planned but not unlocked yet. */
     ULTIMATE_LOCKED("message.kegare.cast.ultimate_locked"),
     BUSY("message.kegare.cast.busy"),

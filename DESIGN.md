@@ -211,7 +211,22 @@ All timestamps use **level game time**. They persist across restarts and are ide
 - The pity math is plain Java (`PityRoller`, `MaliceRoller`) and unit-tested (`./gradlew test`).
 
 ### 3.5 Input and networking
-- Keys: cast **R**, next **Z**, previous **X**, ultimate **V** (rebindable).
+- **Keys** (all rebindable): **R** special of the selected ability (hold for CHARGED/CHANNELED specials, §3.15),
+  **G** Technique Mode, **C** cast (SPLIT scheme only), hold **Z** radial menu, **V** ultimate, **K** Sorcerer
+  screen. There is no next/previous-ability key any more.
+- **Input schemes** (client config `input.inputScheme`):
+  - `TOGGLE_MODE` (default): **G** toggles Technique Mode. While it is on:
+    - scroll and number keys **1–N** pick abilities (N = abilities in the current technique; higher numbers do
+      nothing), and the hotbar selection never changes (pick-block is blocked too);
+    - **right-click base-casts** the selected ability and never uses the held item (hold it for CHARGED/CHANNELED);
+    - the ability bar lights up and the hotbar dims.
+
+    It ends when you press G again, open any screen (the radial menu excepted, as it is part of picking abilities),
+    die, or become Severed (or lose your innate technique). G does nothing for Severed players.
+  - `SPLIT`: no mode. Scroll always picks abilities (when you have some), number keys always pick hotbar slots,
+    right-click uses items as normal, and **C** base-casts.
+  - Selecting an ability is a `SelectAbilityPayload` request the server validates; a sub-tick right-click tap still
+    counts as a press.
 - C→S payloads are **requests only**, and the server validates each one:
   - `IntentPayload`: which key went down or up (`CastIntent`)
   - `SelectAbilityPayload`: radial menu slot
@@ -228,16 +243,19 @@ All timestamps use **level game time**. They persist across restarts and are ide
   refused.
 
 ### 3.6 HUD
-- A registered GUI layer (`kegare:malice_hud`, top-left, offset in client config) shows:
-  - the innate technique name, in rarity color
-  - the Malice bar with current/capacity
-  - ability slots (20×20) with each ability's icon and its slot number in the corner: every slot on cooldown dims,
-    shows a sweep for the remaining time and its seconds left; the selected slot has a gold frame, and active
-    toggles and casts get outlines
-  - the ultimate slot, labelled with its bound key
-  - the selected ability with its cast type and cooldown
-  - a charge or channel progress bar
-- Hidden for Severed players, when F1 hides the GUI, on the F3 screen, and in spectator mode.
+- **Top-left** (`kegare:malice_hud`, offset in client config): the innate technique name in rarity color, the Malice
+  bar with current/capacity and the surroundings cost icon, and your freeze stacks. Severed players see only freeze
+  stacks.
+- **Ability bar** (`kegare:ability_bar`), bottom-centre above the hotbar. It stacks above hearts, armour, food and air
+  using `Gui.leftHeight`/`rightHeight`, so it never overlaps them, even with extra heart rows.
+  - One 20×20 slot per ability, then a larger 26×26 gold ultimate slot (a padlock while the ultimate is locked).
+  - Each slot: the icon, its number key, a cooldown sweep with seconds left, a white flash the moment it comes off
+    cooldown, and a small **R** badge (lit gold if the ability has a special, grey if not). Active toggles get a
+    green outline and the casting ability a gold one.
+  - The selected slot has a gold frame and a caret above it; its name shows above the bar for 2 s after selecting.
+  - A thin bar above the slots fills while charging and drains while channeling.
+  - **Technique Mode:** the bar sits on a lit panel labelled "Technique Mode" and the hotbar is dimmed.
+- Severed players have no ability bar. Everything is hidden when F1 hides the GUI and in spectator mode.
 
 ### 3.7 Combat state (`CombatHelper`)
 - `markCombat`, `isInCombat` (`combatTagSeconds`, 10s), and `isRegenPaused`.
@@ -353,7 +371,7 @@ a result back; they only send requests the server re-validates. All text comes f
 - **Cancel** or Esc consumes nothing.
 - Using the talisman while Severed or in combat is refused before the screen even opens.
 
-**Radial menu**
+**Radial menu** (hold **Z**)
 - The current innate technique's abilities sit around a dotted ring, each with its icon and slot number, plus
   cooldown sweeps and seconds left. The hovered slot is gold, the current one is outlined white, and active toggles
   green.

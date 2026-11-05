@@ -31,10 +31,10 @@ public final class CastManager {
         switch (intent) {
             case CAST_PRESS -> tryCast(player, CastSlot.SELECTED);
             case CAST_RELEASE -> release(player, CastSlot.SELECTED);
+            case SPECIAL_PRESS -> tryCast(player, CastSlot.SPECIAL);
+            case SPECIAL_RELEASE -> release(player, CastSlot.SPECIAL);
             case ULTIMATE_PRESS -> tryCast(player, CastSlot.ULTIMATE);
             case ULTIMATE_RELEASE -> release(player, CastSlot.ULTIMATE);
-            case NEXT_ABILITY -> InnateTechniqueService.cycle(player, 1);
-            case PREVIOUS_ABILITY -> InnateTechniqueService.cycle(player, -1);
         }
     }
 
@@ -55,9 +55,14 @@ public final class CastManager {
             feedback(player, CastResult.NO_INNATE_TECHNIQUE, null);
             return null;
         }
-        Ability ability = slot == CastSlot.SELECTED
-                ? innateTechnique.get().ability(InnateTechniqueService.get(player).selectedSlot())
-                : innateTechnique.get().ultimate().orElse(null);
+        Ability ability = switch (slot) {
+            case SELECTED, SPECIAL -> innateTechnique.get().ability(InnateTechniqueService.get(player).selectedSlot());
+            case ULTIMATE -> innateTechnique.get().ultimate().orElse(null);
+        };
+        if (slot == CastSlot.SPECIAL && ability != null) {
+            feedback(player, CastResult.NO_SPECIAL, ability); // specials arrive with the specials framework
+            return null;
+        }
         if (ability == null) {
             CastResult why = slot != CastSlot.ULTIMATE ? CastResult.NO_INNATE_TECHNIQUE
                     : innateTechnique.get().ultimateLocked() ? CastResult.ULTIMATE_LOCKED : CastResult.NO_ULTIMATE;
