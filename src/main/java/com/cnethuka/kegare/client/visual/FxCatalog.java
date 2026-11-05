@@ -15,6 +15,7 @@ public final class FxCatalog {
         Map<ResourceLocation, Supplier<FX>> out = new LinkedHashMap<>();
         out.putAll(RimeFxAuthoring.effects());
         out.putAll(com.cnethuka.kegare.rmt.client.RmtFxAuthoring.effects());
+        out.putAll(com.cnethuka.kegare.innate_technique.swap.client.SwapFxAuthoring.effects());
         return out;
     }
 }

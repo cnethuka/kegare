@@ -1,7 +1,12 @@
 package com.cnethuka.kegare.innate_technique.swap.client;
 
 import com.cnethuka.kegare.client.visual.ClientVisuals;
+import com.cnethuka.kegare.client.visual.VanillaFallback;
+import com.cnethuka.kegare.innate_technique.swap.SwapIds;
 import com.cnethuka.kegare.innate_technique.swap.SwapLink;
+import net.minecraft.core.particles.DustParticleOptions;
+import net.minecraft.core.particles.ParticleTypes;
+import org.joml.Vector3f;
 import com.cnethuka.kegare.innate_technique.swap.SwapRegistry;
 import net.minecraft.client.renderer.entity.ThrownItemRenderer;
 import net.neoforged.neoforge.client.event.EntityRenderersEvent;
@@ -47,6 +52,7 @@ public final class SwapClient {
     }
 
     private static final List<Travel> TRAVELLING = new ArrayList<>();
+    private static final DustParticleOptions TEAL_DUST = new DustParticleOptions(new Vector3f(0.08f, 0.72f, 0.65f), 1.0f);
 
     private SwapClient() {}
 
@@ -54,6 +60,17 @@ public final class SwapClient {
         SwapLink.Payload.setClientHandler(SwapClient::onLink);
         DisguiseClient.init();
         modBus.addListener(SwapClient::registerRenderers);
+        // Lookalikes used when an effect can't load, or with vfxQuality = VANILLA (teal dust and violet witch sparks).
+        VanillaFallback.register(SwapIds.FX_SWAP_DEPART, new VanillaFallback.Spec(ParticleTypes.PORTAL, 1, 28, 0.5, 0.6));
+        VanillaFallback.register(SwapIds.FX_SWAP_ARRIVE, new VanillaFallback.Spec(TEAL_DUST, 1, 22, 0.6, 0.15));
+        VanillaFallback.register(SwapIds.FX_SWAP_LINK, new VanillaFallback.Spec(TEAL_DUST, 1, 2, 0.05, 0.0));
+        VanillaFallback.register(SwapIds.FX_SWITCHBACK_TIMER, new VanillaFallback.Spec(TEAL_DUST, 1, 4, 0.6, 0.0));
+        VanillaFallback.register(SwapIds.FX_AWARENESS_SHIMMER, new VanillaFallback.Spec(ParticleTypes.WITCH, 1, 4, 0.6, 0.0));
+        VanillaFallback.register(SwapIds.FX_ANCHOR_MARKER, new VanillaFallback.Spec(TEAL_DUST, 1, 6, 0.2, 0.0));
+        VanillaFallback.register(SwapIds.FX_ANCHOR_TRAIL, new VanillaFallback.Spec(TEAL_DUST, 2, 4, 0.05, 0.0));
+        VanillaFallback.register(SwapIds.FX_EXCHANGE_TRANSFER, new VanillaFallback.Spec(ParticleTypes.WITCH, 1, 3, 0.08, 0.0));
+        VanillaFallback.register(SwapIds.FX_MOMENTUM_BURST, new VanillaFallback.Spec(TEAL_DUST, 1, 24, 0.4, 0.3));
+        VanillaFallback.register(SwapIds.FX_TOTAL_SWAP_BURST, new VanillaFallback.Spec(ParticleTypes.REVERSE_PORTAL, 1, 40, 0.6, 0.3));
         NeoForge.EVENT_BUS.addListener(SwapClient::onClientTick);
         NeoForge.EVENT_BUS.addListener(SwapClient::onLogout);
     }
