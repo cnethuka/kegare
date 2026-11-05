@@ -41,14 +41,20 @@ class LoadoutTest {
             MaliceService.refill(p);
             clearCombat(server, p);
 
-            // Default: the innate technique's abilities in order; the ultimate is not a loadout slot.
-            assertEquals(List.of(id(Rime.FROST_SHARD), id(Rime.GLACIAL_LANCE), id(Rime.FROST_FIELD), id(Rime.RIME_SHELL)),
+            // Default: nine slots, the innate technique's abilities first in order, then empty; the ultimate is not one.
+            assertEquals(bar(id(Rime.FROST_SHARD), id(Rime.GLACIAL_LANCE), id(Rime.FROST_FIELD), id(Rime.RIME_SHELL)),
                     LoadoutService.slots(p));
 
             // Placing an ability that's already slotted moves it (never a duplicate).
             assertEquals(LoadoutResult.OK, edit(p, LoadoutService.Action.SET, 0, 0, Rime.GLACIAL_LANCE.id()));
-            assertEquals(List.of(id(Rime.GLACIAL_LANCE), id(Rime.FROST_SHARD), id(Rime.FROST_FIELD), id(Rime.RIME_SHELL)),
+            assertEquals(bar(id(Rime.GLACIAL_LANCE), id(Rime.FROST_SHARD), id(Rime.FROST_FIELD), id(Rime.RIME_SHELL)),
                     LoadoutService.slots(p));
+            // The empty slots past the technique's abilities take abilities too.
+            assertEquals(LoadoutResult.OK, edit(p, LoadoutService.Action.SET, 8, 0, Rime.FROST_FIELD.id()));
+            assertEquals(Optional.empty(), LoadoutService.slots(p).get(2), "moved from slot 3");
+            assertSame(Rime.FROST_FIELD, LoadoutService.abilityAt(p, 8));
+            assertEquals(LoadoutResult.OK, edit(p, LoadoutService.Action.SWAP, 8, 2, null));
+            assertSame(Rime.FROST_FIELD, LoadoutService.abilityAt(p, 2), "and back");
             assertEquals(LoadoutResult.OK, edit(p, LoadoutService.Action.SWAP, 0, 1, null));
             assertEquals(id(Rime.FROST_SHARD), LoadoutService.slots(p).get(0));
 
@@ -97,16 +103,30 @@ class LoadoutTest {
 
             // A new innate technique resets the loadout to its default layout.
             InnateTechniqueService.setInnateTechnique(p, TestInnateTechniques.KINETIC.get());
-            assertEquals(List.of(id(TestAbilities.DASH), id(TestAbilities.BURST)), LoadoutService.slots(p));
+            assertEquals(bar(id(TestAbilities.DASH), id(TestAbilities.BURST)), LoadoutService.slots(p));
             assertEquals(0, InnateTechniqueService.get(p).selectedSlot());
 
             // Login repair: a layout built for another technique is rebuilt.
             InnateTechniqueService.setInnateTechnique(p, Rime.RIME.get());
             LoadoutService.get(p).builtFor = TestInnateTechniques.KINETIC.getId();
             LoadoutService.validate(p);
-            assertEquals(4, LoadoutService.size(p));
+            assertEquals(LoadoutService.SLOTS, LoadoutService.size(p));
             assertEquals(id(Rime.FROST_SHARD), LoadoutService.slots(p).get(0));
+
+            // A bar saved before there were nine slots (one per ability) keeps its order and is padded.
+            LoadoutService.get(p).slots.clear();
+            LoadoutService.get(p).slots.addAll(List.of(id(Rime.RIME_SHELL), id(Rime.FROST_SHARD), Optional.empty(), id(Rime.GLACIAL_LANCE)));
+            LoadoutService.validate(p);
+            assertEquals(bar(id(Rime.RIME_SHELL), id(Rime.FROST_SHARD), Optional.empty(), id(Rime.GLACIAL_LANCE)), LoadoutService.slots(p));
         });
+    }
+
+    /** A nine-slot bar: these entries, then empty slots. */
+    @SafeVarargs
+    static List<Optional<ResourceLocation>> bar(Optional<ResourceLocation>... first) {
+        List<Optional<ResourceLocation>> out = new java.util.ArrayList<>(List.of(first));
+        while (out.size() < LoadoutService.SLOTS) out.add(Optional.empty());
+        return out;
     }
 
     static LoadoutResult edit(ServerPlayer p, LoadoutService.Action action, int slot, int other, ResourceLocation ability) {

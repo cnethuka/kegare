@@ -85,7 +85,8 @@ public final class SorcererScreen extends Screen {
     private static final ResourceLocation BUTTON_LIT = Kegare.id("button_highlighted");
     private static final int BUTTON_H = 16;
     private static final ResourceLocation ICON_TECHNIQUE = Kegare.id("view_technique");
-    private static final int TILE = 22;
+    private static final int TILE = CombatPanelLayer.SLOT_SIZE;
+    private static final int TILE_INSET = 2;
     private static final int TAB_SIZE = 24;
     private static final long STATUS_MS = 3500;
 
@@ -319,8 +320,8 @@ public final class SorcererScreen extends Screen {
             boolean unlocked = category == AbilityCategory.INNATE_TECHNIQUE || data.sharedUnlocked().contains(ability.id());
             CombatPanelLayer.slotFrame(g, x, ty, ability.id().equals(pinned) || (mouseX >= x && mouseX < x + TILE && mouseY >= ty && mouseY < ty + TILE));
             if (unlocked) {
-                if (!GuiDraw.abilityIcon(g, ability, x + 3, ty + 3)) {
-                    g.drawCenteredString(font, ability.displayName().getString().substring(0, 1), x + TILE / 2, ty + 7, GuiDraw.WHITE);
+                if (!GuiDraw.abilityIcon(g, ability, x + TILE_INSET, ty + TILE_INSET)) {
+                    g.drawCenteredString(font, ability.displayName().getString().substring(0, 1), x + TILE / 2, ty + 6, GuiDraw.WHITE);
                 }
                 int slot = data.loadout().indexOf(Optional.of(ability.id()));
                 if (slot >= 0) {
@@ -330,7 +331,7 @@ public final class SorcererScreen extends Screen {
                     g.pose().popPose();
                 }
             } else {
-                GuiDraw.sprite(g, GuiDraw.LOCK, x + 5, ty + 5, 11, 11);
+                GuiDraw.sprite(g, GuiDraw.LOCK, x + (TILE - 11) / 2, ty + (TILE - 11) / 2, 11, 11);
             }
             hits.add(new Hit(Kind.TILE, x, ty, TILE, TILE, i, ability.id(), unlocked));
         }
@@ -558,11 +559,11 @@ public final class SorcererScreen extends Screen {
         float scale = font.width(line) > pw - 24 ? 0.75f : 1f;
         GuiDraw.centered(g, font, line, px + pw / 2, y, scale, color);
 
-        // Reset, to the right of the bar.
+        // Reset, at the right end of the status row (the nine-slot bar leaves no room beside it).
         Component reset = Component.translatable("gui.kegare.loadout.reset_short");
         int bw = font.width(reset) + 10;
-        int bx = trayX + CombatPanelLayer.W + 4;
-        int by = trayY + 28;
+        int bx = px + pw - 10 - bw;
+        int by = wellY1 + 1;
         boolean hover = mouseX >= bx && mouseX < bx + bw && mouseY >= by && mouseY < by + BUTTON_H;
         GuiDraw.sprite(g, hover ? BUTTON_LIT : BUTTON, bx, by, bw, BUTTON_H);
         GuiDraw.centered(g, font, reset, bx + bw / 2, by + 4, 1f, hover ? GuiDraw.WHITE : GuiDraw.GRAY);
@@ -575,7 +576,7 @@ public final class SorcererScreen extends Screen {
                 g.pose().pushPose();
                 g.pose().translate(0, 0, 400);
                 CombatPanelLayer.slotFrame(g, mouseX - TILE / 2, mouseY - TILE / 2, true);
-                GuiDraw.abilityIcon(g, ability, mouseX - TILE / 2 + 3, mouseY - TILE / 2 + 3);
+                GuiDraw.abilityIcon(g, ability, mouseX - TILE / 2 + TILE_INSET, mouseY - TILE / 2 + TILE_INSET);
                 g.pose().popPose();
             });
             return;

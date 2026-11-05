@@ -234,9 +234,9 @@ All timestamps use **level game time**. They persist across restarts and are ide
 - **Technique Mode** (**G** toggles it). Out of it, number keys, scroll and right-click are all vanilla. While it is on:
   - **one control picks abilities and the other stays on the hotbar** (client config `input.techniqueSelect`, also
     on the Sorcerer screen's Settings page):
-    - `NUMBER_KEYS` (default): number keys **1–N** pick abilities (N = slots on the loadout; higher numbers do
-      nothing) and the scroll wheel moves through the hotbar;
-    - `SCROLL_WHEEL`: the scroll wheel picks abilities and number keys pick hotbar slots;
+    - `NUMBER_KEYS` (default): number keys **1–9** pick the loadout's nine slots (an empty one too) and the scroll
+      wheel moves through the hotbar;
+    - `SCROLL_WHEEL`: the scroll wheel picks abilities (skipping empty slots) and number keys pick hotbar slots;
   - **right-click base-casts** too (like C) and never uses the held item (hold it for CHARGED/CHANNELED);
   - the combat panel takes the hotbar's place and the hotbar becomes a column on the left (§3.6).
 
@@ -266,10 +266,9 @@ All timestamps use **level game time**. They persist across restarts and are ide
 - **Without Technique Mode** the screen is vanilla. Only what can't wait shows, small and under the crosshair
   (`kegare:status`): freeze pips while there are stacks ("Frozen!" while frozen; Severed players too), and a thin
   charge/channel line while casting with the Cast key.
-- **G brings up the combat panel** (`kegare:combat_panel`, slides up in 0.18 s). Its art is 182×50; the HUD draws it
-  **a bit bigger** (`CombatPanelLayer.hudScale`: one more screen pixel per texel than the GUI scale gives, about
-  1.25–1.5×, so it stays crisp; smaller on screens too narrow for it). It **takes the hotbar's place**: the vanilla
-  hotbar, XP bar, level and jump meter are hidden (`HudClearance`).
+- **G brings up the combat panel** (`kegare:combat_panel`, 250×50, slides up in 0.18 s), drawn at the GUI's own
+  scale: ability icons are 16 px, the size of the hotbar's items.
+  It **takes the hotbar's place**: the vanilla hotbar, XP bar, level and jump meter are hidden (`HudClearance`).
   - The hotbar stands on the **left edge as a column** (`kegare:combat_hotbar`). It is the **vanilla hotbar**:
     vanilla's own hotbar, selection and off-hand sprites turned a quarter turn (slot 1 at the top, the off-hand
     slot above it), items upright with vanilla's pick-up pop. Chat moves right to clear it.
@@ -279,13 +278,13 @@ All timestamps use **level game time**. They persist across restarts and are ide
 
   The panel:
   - **crest**: freeze pips (pulsing while frozen);
-  - **meter housing**: 12 cells of Malice in the innate technique's Malice color (§3.3) with slanted energy streaks;
+  - **meter housing**: 16 cells of Malice (eight either side of the centre plate) in the innate technique's Malice color (§3.3) with slanted energy streaks;
     spent Malice lingers as a paler **ghost** for 0.45 s, then drains at half the meter per second; gains show at
     once. The current amount sits on the **centre plate**, cyan with a snowflake when the surroundings make casting
     cheaper, orange with a flame when dearer. A thin line under the cells fills while charging (gold) and drains
     while channeling (cyan);
-  - **tray**: one recessed slot per loadout slot (§3.16), then the ultimate in its iron-and-bronze frame (a padlock
-    while locked). Each slot: icon, number key (big, bottom-right), cooldown sweep with seconds left, a white flash
+  - **tray**: the nine loadout slots (§3.16; 20 px, a 1 px rim round the icon, 2 px apart), then the 24 px ultimate
+    in its iron-and-gold frame (a padlock while locked). Each slot: icon, number key (big, bottom-right), cooldown sweep with seconds left, a white flash
     when it comes off cooldown, and a small **R** plate (gold letter if the ability has a special, dull if not). The
     selected slot is lit gold; active toggles get a green outline, the casting ability a gold one. Empty loadout
     slots show only their number;
@@ -420,7 +419,7 @@ a result back; they only send requests the server re-validates. All text comes f
 - **Right column:** the player model (follows the mouse), Malice current / capacity with the bar in the technique's
   Malice color, the tier, and regen per second (or "Regen paused").
 - **Bottom:** the HUD's combat panel itself (`CombatPanelLayer.drawPanel`), live, as the loadout bar (§3.16). Above
-  it is a status line (hint, "Now click a slot on your bar", or the server's refusal); "Reset" sits beside it.
+  it is a status line (hint, "Now click a slot on your bar", or the server's refusal), with "Reset" at its right end.
 - **Severed:** the Severed emblem and text, no category tabs and no bar.
 - **Severed** players still get Traits, Pity and Settings.
 - **Keys:** 1–4 or Tab switch views, K or Esc close.
@@ -664,7 +663,10 @@ separate bar is filled from any of them.
     unlocks in attachment `kegare:shared_abilities`, saved, kept on death). Reverse Malice Technique is the first
     (§3.17). Later categories (martial arts, cursed tools...) slot in as more enum values.
 - **The loadout** (attachment `kegare:loadout`, saved, kept on death; `LoadoutService`):
-  - one regular slot per ability of the current innate technique (Rime: 4), filled with them in order by default;
+  - **nine** regular slots (`LoadoutService.SLOTS`, number keys 1–9). By default the innate technique's abilities
+    fill the first ones in order (Rime and Swap: 4) and the rest stay empty, ready for shared abilities (Reverse
+    Malice Technique) and whatever comes later;
+  - bars saved before there were nine slots (one per ability) keep their order and are padded on login;
   - each slot holds one of those abilities, an unlocked shared ability, or nothing ("Empty slot"; casting it says
     so and costs nothing);
   - nothing is slotted twice: placing an ability that is already on the bar moves it (whatever was in the target
@@ -851,7 +853,8 @@ silent in chat and awarded from code to Swap holders only; PvP ones count player
 **Tests:** `SwapTest` (in-game JUnit): targeting and the free fizzle, the cancelled event (Malice spent, no
 cooldown), stunned targets and casters, Positions and Switchback (return and calling off), disguises (both kinds,
 the API, expiry, ending, refusal), Anchor (throw, recall, Send Off with and without an anchor, timing out), Exchange
-and Momentum Exchange, Total Swap's health math, and every advancement.
+and Momentum Exchange, Total Swap's health math, and every advancement. `LoadoutTest` covers the nine slots and
+padding an old bar.
 
 ## 4. Extension points (how later content plugs in)
 

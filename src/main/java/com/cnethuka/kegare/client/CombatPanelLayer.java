@@ -27,15 +27,15 @@ import net.minecraft.util.Mth;
 
 /**
  * The combat panel: Technique Mode's HUD. It does not exist until the player presses the Technique Mode key (G); then
- * it slides up and takes the hotbar's place, drawn a bit bigger than its art ({@link #hudScale}; the hotbar moves to a
- * column on the left edge, {@link CombatHotbarLayer}; hearts and food sit on top of the panel). The art is our own
+ * it slides up and takes the hotbar's place (the hotbar moves to a column on the left edge, {@link CombatHotbarLayer};
+ * hearts and food sit on top of the panel). The art is our own
  * ({@code tools/gen_art.py}, textures under {@code gui/combat/}).
  * <ul>
  *   <li>The crest: freeze pips.</li>
- *   <li>The meter housing: 12 cells of Malice in the innate technique's Malice color (a paler ghost where Malice was
+ *   <li>The meter housing: 16 cells of Malice in the innate technique's Malice color (a paler ghost where Malice was
  *       just spent), the current amount on the centre plate (cyan/orange and a snowflake/flame when the surroundings
  *       make casting cheaper/dearer), and a thin charge/channel line under the cells.</li>
- *   <li>The tray: one slot per loadout slot plus the ultimate. Each shows its icon, number key, cooldown sweep,
+ *   <li>The tray: the nine loadout slots plus the ultimate. Each shows its icon, number key, cooldown sweep,
  *       ready flash and R badge; the selected slot is lit gold, active toggles green.</li>
  * </ul>
  * Display only: reads {@link ClientData}.
@@ -43,7 +43,7 @@ import net.minecraft.util.Mth;
 public final class CombatPanelLayer implements LayeredDraw.Layer {
     public static final ResourceLocation ID = Kegare.id("combat_panel");
 
-    public static final int W = 182;
+    public static final int W = 250;
     public static final int H = 50;
     private static final ResourceLocation PANEL = Kegare.id("textures/gui/combat/panel.png");
     private static final ResourceLocation ACCENT = Kegare.id("textures/gui/combat/panel_accent.png");
@@ -57,10 +57,18 @@ public final class CombatPanelLayer implements LayeredDraw.Layer {
     private static final int CELL_W = 11;
     private static final int CELL_H = 8;
     private static final int CELL_Y = 11;
-    private static final int[] CELL_X = {5, 16, 27, 38, 49, 60, 114, 125, 136, 147, 158, 169};
-    private static final int SLOT_SIZE = 22;
-    private static final int ULT_SIZE = 26;
+    /** 16 cells: eight either side of the centre plate. */
+    private static final int[] CELL_X = {9, 20, 31, 42, 53, 64, 75, 86, 154, 165, 176, 187, 198, 209, 220, 231};
+    /** Tray slots: a 1px ink edge and a 1px rim around the 16x16 icon (the ultimate has 4px of rings). */
+    public static final int SLOT_SIZE = 20;
+    private static final int SLOT_INSET = 2;
+    private static final int ULT_SIZE = 24;
+    private static final int ULT_INSET = 4;
+    private static final int SLOT_GAP = 2;
+    private static final int ULT_GAP = 6;
     private static final int SLOT_Y = 25;
+    /** Hearts and food sit this far above the bottom of the screen while the panel is up (vanilla: 39). */
+    public static final int STACK_BASE = H + 11;
 
     private static final int READY_FLASH_TICKS = 8;
     private static final long SLOT_SLIDE_MS = 180;
@@ -81,31 +89,9 @@ public final class CombatPanelLayer implements LayeredDraw.Layer {
                 && TechniqueMode.panelShown();
     }
 
-    /**
-     * The HUD draws the panel a bit bigger than its art (about 1.25-1.5x): a whole number of screen pixels per texel
-     * (one more than the GUI scale gives, at least), so it stays crisp at every GUI scale.
-     */
-    public static float hudScale() {
-        int gs = guiScale();
-        int texel = Math.max(gs + 1, Math.round(gs * 1.25f));
-        // On a very narrow screen, no bigger than leaves room for the hotbar column on either side.
-        int room = (Minecraft.getInstance().getWindow().getGuiScaledWidth() - 2 * (CombatHotbarLayer.WIDTH + 4)) * gs;
-        while (texel > gs && W * texel > room) texel--;
-        return texel / (float) gs;
-    }
-
-    private static int guiScale() {
-        return Math.max(1, (int) Math.round(Minecraft.getInstance().getWindow().getGuiScale()));
-    }
-
-    /** Hearts and food sit this far above the bottom of the screen while the panel is up (vanilla: 39). */
-    public static int stackBase() {
-        return Mth.ceil(H * hudScale()) + 11;
-    }
-
     /** How far the vanilla stack (hearts, food, armour, air, action bar) moves up while the panel is up. */
     public static int extraHeight() {
-        return shown() ? stackBase() - 39 : 0;
+        return shown() ? STACK_BASE - 39 : 0;
     }
 
     @Override
@@ -118,22 +104,14 @@ public final class CombatPanelLayer implements LayeredDraw.Layer {
         List<Ability> abilities = ClientLoadout.abilities();
 
         // Hearts, food, armour and air stack on top of the panel.
-        int stack = stackBase();
-        mc.gui.leftHeight = Math.max(mc.gui.leftHeight, stack);
-        mc.gui.rightHeight = Math.max(mc.gui.rightHeight, stack);
+        mc.gui.leftHeight = Math.max(mc.gui.leftHeight, STACK_BASE);
+        mc.gui.rightHeight = Math.max(mc.gui.rightHeight, STACK_BASE);
 
-        // Bottom centre, scaled up, its corner on a whole screen pixel.
-        int gs = guiScale();
-        float scale = hudScale();
-        int texel = Math.round(scale * gs);
-        float x0 = Math.round((g.guiWidth() * gs - W * texel) / 2f) / (float) gs;
-        float slide = (1f - easeOut(Math.min(1f, (Util.getMillis() - TechniqueMode.shownAtMs()) / (float) SLOT_SLIDE_MS))) * (H * scale + 4);
-        float y0 = g.guiHeight() - H * texel / (float) gs + slide;
-        g.pose().pushPose();
-        g.pose().translate(x0, y0, 0f);
-        g.pose().scale(scale, scale, 1f);
-        drawPanel(g, mc.font, data, technique, abilities, mc.level.getGameTime(), 0, 0, -1);
-        g.pose().popPose();
+        // Bottom centre, at the GUI's own scale: icons are the size of the hotbar's items.
+        int x0 = (g.guiWidth() - W) / 2;
+        int slide = Math.round((1f - easeOut(Math.min(1f, (Util.getMillis() - TechniqueMode.shownAtMs()) / (float) SLOT_SLIDE_MS))) * (H + 4));
+        int y0 = g.guiHeight() - H + slide;
+        drawPanel(g, mc.font, data, technique, abilities, mc.level.getGameTime(), x0, y0, -1);
     }
 
     /** Where a slot of the tray was drawn ({@code index} = loadout slot, or the slot count for the ultimate). */
@@ -198,7 +176,7 @@ public final class CombatPanelLayer implements LayeredDraw.Layer {
         float scale = font.width(amount) > 28 ? 0.75f : 1f;
         GuiDraw.centered(g, font, Component.literal(amount), x0 + W / 2, y0 + CELL_Y + (scale < 1f ? 2 : 0), scale, textColor);
         if (env.icon() != CostEnvironment.Icon.NONE) {
-            GuiDraw.sprite(g, env.icon() == CostEnvironment.Icon.COLD ? ENV_COLD : ENV_HOT, x0 + W / 2 + 15, y0 + 9, 5, 5);
+            GuiDraw.sprite(g, env.icon() == CostEnvironment.Icon.COLD ? ENV_COLD : ENV_HOT, x0 + W / 2 + 16, y0 + 9, 5, 5);
         }
     }
 
@@ -257,13 +235,8 @@ public final class CombatPanelLayer implements LayeredDraw.Layer {
         List<SlotRect> rects = new java.util.ArrayList<>();
         int n = abilities.size();
         boolean hasUlt = technique.ultimate().isPresent() || technique.ultimateLocked();
-        int gap = 5, ultGap = 9;
+        int gap = SLOT_GAP, ultGap = ULT_GAP;
         int width = n * SLOT_SIZE + Math.max(0, n - 1) * gap + (hasUlt ? ultGap + ULT_SIZE : 0);
-        if (width > W - 24) { // many abilities: tighten up
-            gap = 2;
-            ultGap = 5;
-            width = n * SLOT_SIZE + Math.max(0, n - 1) * gap + (hasUlt ? ultGap + ULT_SIZE : 0);
-        }
         int sx = x0 + (W - width) / 2;
         ResourceLocation castingId = data.casting().map(SyncPayload.CastingEntry::ability).orElse(null);
         for (int i = 0; i < n; i++) {
@@ -280,10 +253,10 @@ public final class CombatPanelLayer implements LayeredDraw.Layer {
             g.blit(SLOT_ULTIMATE, ux, uy, 0f, 0f, ULT_SIZE, ULT_SIZE, ULT_SIZE, ULT_SIZE);
             Optional<Ability> ult = technique.ultimate();
             if (ult.isPresent()) {
-                GuiDraw.abilityIcon(g, ult.get(), ux + 5, uy + 5);
-                drawCooldown(g, font, data, ult.get(), ux + 5, uy + 5, 16, now);
+                GuiDraw.abilityIcon(g, ult.get(), ux + ULT_INSET, uy + ULT_INSET);
+                drawCooldown(g, font, data, ult.get(), ux + ULT_INSET, uy + ULT_INSET, 16, now);
             } else {
-                GuiDraw.sprite(g, GuiDraw.LOCK, ux + 8, uy + 7, 11, 11);
+                GuiDraw.sprite(g, GuiDraw.LOCK, ux + (ULT_SIZE - 11) / 2, uy + (ULT_SIZE - 11) / 2, 11, 11);
             }
             label(g, font, KegareKeys.ULTIMATE.getTranslatedKeyMessage(), ux + ULT_SIZE, uy + ULT_SIZE, 0xFFB8B0C4);
             rects.add(new SlotRect(n, ux, uy, ULT_SIZE, true));
@@ -299,19 +272,19 @@ public final class CombatPanelLayer implements LayeredDraw.Layer {
             label(g, font, key, x + SLOT_SIZE, y + SLOT_SIZE, selected ? GuiDraw.WHITE : 0xFF6B6276);
             return;
         }
-        if (!GuiDraw.abilityIcon(g, ability, x + 3, y + 3)) {
-            g.drawCenteredString(font, ability.displayName().getString().substring(0, 1), x + SLOT_SIZE / 2, y + 7, GuiDraw.WHITE);
+        if (!GuiDraw.abilityIcon(g, ability, x + SLOT_INSET, y + SLOT_INSET)) {
+            g.drawCenteredString(font, ability.displayName().getString().substring(0, 1), x + SLOT_SIZE / 2, y + 6, GuiDraw.WHITE);
         }
-        boolean cooling = drawCooldown(g, font, data, ability, x + 3, y + 3, 16, now);
+        boolean cooling = drawCooldown(g, font, data, ability, x + SLOT_INSET, y + SLOT_INSET, 16, now);
         if (ClientLoadout.toggledOn(data, ability)) g.renderOutline(x + 1, y + 1, SLOT_SIZE - 2, SLOT_SIZE - 2, 0xFF5CFF7A);
         if (ability.id().equals(castingId) || ability.special().map(s -> s.id().equals(castingId)).orElse(false)) {
             g.renderOutline(x + 1, y + 1, SLOT_SIZE - 2, SLOT_SIZE - 2, 0xFFFFD24A);
         }
-        GuiDraw.specialBadge(g, x + SLOT_SIZE - 8, y - 2, ability.special().isPresent());
+        GuiDraw.specialBadge(g, x + SLOT_SIZE - 7, y - 3, ability.special().isPresent());
         if (!cooling) label(g, font, key, x + SLOT_SIZE, y + SLOT_SIZE, selected ? GuiDraw.WHITE : 0xFFD8D2E0);
     }
 
-    /** A bare 22x22 tray slot frame (selected = lit gold), for screens that show abilities the HUD's way. */
+    /** A bare 20x20 tray slot frame (selected = lit gold; the icon goes 2px in), for screens that show abilities the HUD's way. */
     public static void slotFrame(GuiGraphics g, int x, int y, boolean selected) {
         RenderSystem.enableBlend();
         g.blit(selected ? SLOT_SELECTED : SLOT, x, y, 0f, 0f, SLOT_SIZE, SLOT_SIZE, SLOT_SIZE, SLOT_SIZE);

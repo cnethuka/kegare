@@ -195,10 +195,16 @@ public final class KegareCommand {
                     Component.translatable(t.rarity().translationKey()), innateTechniqueData.selectedSlot() + 1, LoadoutService.size(player),
                     selected == null ? Component.translatable("commands.kegare.info.none") : selected.displayName()));
             List<Component> slots = new ArrayList<>();
-            for (int i = 0; i < LoadoutService.size(player); i++) {
+            int size = LoadoutService.size(player);
+            int last = -1; // trailing empty slots are summed up, not listed
+            for (int i = 0; i < size; i++) if (LoadoutService.abilityAt(player, i) != null) last = i;
+            for (int i = 0; i <= last; i++) {
                 Ability a = LoadoutService.abilityAt(player, i);
                 slots.add(Component.translatable("commands.kegare.info.loadout_entry", i + 1,
                         a == null ? Component.translatable("commands.kegare.info.none") : a.displayName()));
+            }
+            if (last < size - 1) {
+                slots.add(Component.translatable("commands.kegare.info.loadout_empty_rest", last + 2, size));
             }
             lines.add(Component.translatable("commands.kegare.info.loadout", join(slots)));
         } else {

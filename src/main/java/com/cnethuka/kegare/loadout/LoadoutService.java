@@ -72,13 +72,22 @@ public final class LoadoutService {
         return shared.isPresent() && SharedAbilityService.isUnlocked(player, id) ? shared.get() : null;
     }
 
-    /** The default layout: the innate technique's abilities in order. Runs whenever the innate technique changes. */
+    /** Regular slots on every bar (number keys 1-9). The ultimate (V) comes after them and never changes. */
+    public static final int SLOTS = 9;
+
+    /**
+     * The default layout: the innate technique's abilities in order, then empty slots up to {@link #SLOTS} (room for
+     * shared abilities and whatever comes later). Runs whenever the innate technique changes.
+     */
     public static void reset(ServerPlayer player) {
         LoadoutData data = get(player);
         List<Optional<ResourceLocation>> before = List.copyOf(data.slots);
         data.slots.clear();
         Optional<InnateTechnique> technique = InnateTechniqueService.current(player);
-        technique.ifPresent(t -> t.abilities().forEach(a -> data.slots.add(Optional.of(a.id()))));
+        technique.ifPresent(t -> {
+            for (Ability a : t.abilities()) if (data.slots.size() < SLOTS) data.slots.add(Optional.of(a.id()));
+            while (data.slots.size() < SLOTS) data.slots.add(Optional.empty());
+        });
         data.builtFor = technique.map(InnateTechnique::id).orElse(null);
         switchOffRemoved(player, before);
         InnateTechniqueService.clampSelection(player);
@@ -86,20 +95,27 @@ public final class LoadoutService {
     }
 
     /**
-     * Login repair: a layout built for another innate technique (or the wrong size) is rebuilt; entries that no
-     * longer resolve (locked or removed abilities) and duplicates are emptied.
+     * Login repair: a layout built for another innate technique is rebuilt. One of the wrong size (bars from before
+     * there were nine slots had one per ability) keeps its entries and is padded or trimmed to {@link #SLOTS}.
+     * Entries that no longer resolve (locked or removed abilities) and duplicates are emptied.
      */
     public static void validate(ServerPlayer player) {
         LoadoutData data = get(player);
         Optional<InnateTechnique> technique = InnateTechniqueService.current(player);
         ResourceLocation techniqueId = technique.map(InnateTechnique::id).orElse(null);
-        int size = technique.map(t -> t.abilities().size()).orElse(0);
-        if (!Objects.equals(data.builtFor, techniqueId) || data.slots.size() != size) {
+        if (!Objects.equals(data.builtFor, techniqueId)) {
             reset(player);
             return;
         }
-        Set<ResourceLocation> seen = new HashSet<>();
         boolean changed = false;
+        int size = technique.isPresent() ? SLOTS : 0;
+        if (data.slots.size() != size) {
+            while (data.slots.size() < size) data.slots.add(Optional.empty());
+            while (data.slots.size() > size) data.slots.remove(data.slots.size() - 1);
+            InnateTechniqueService.clampSelection(player);
+            changed = true;
+        }
+        Set<ResourceLocation> seen = new HashSet<>();
         for (int i = 0; i < data.slots.size(); i++) {
             Optional<ResourceLocation> id = data.slots.get(i);
             if (id.isPresent() && (resolve(player, id.get()) == null || !seen.add(id.get()))) {

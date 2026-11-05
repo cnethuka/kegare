@@ -407,6 +407,7 @@ public final class KegareLanguageProvider extends LanguageProvider {
         add("commands.kegare.info.cooldowns", "Cooldowns: %s");
         add("commands.kegare.info.loadout", "Loadout: %s");
         add("commands.kegare.info.loadout_entry", "%s %s");
+        add("commands.kegare.info.loadout_empty_rest", "%s-%s empty");
         add("commands.kegare.info.shared", "Shared unlocked: %s");
         add("commands.kegare.shared.unknown", "Unknown shared ability: %s");
         add("commands.kegare.shared.unlocked", "Unlocked %s for %s");

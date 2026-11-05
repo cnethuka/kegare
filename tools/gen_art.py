@@ -1057,8 +1057,13 @@ def special_badge(lit: bool) -> Image.Image:
 # tray of numbered slots under it; every pixel here is our own: cursed iron, plum-black ink, accents tinted with the
 # innate technique's Malice color at draw time.
 
-PANEL_W, PANEL_H = 182, 50
+PANEL_W, PANEL_H = 250, 50
 CREST_TOP, FRAME_TOP, FRAME_BOTTOM, TRAY_BOTTOM = 0, 6, 23, 49
+PLATE_W = 48            # the centre plate (number window), centred
+PLATE_X0 = (PANEL_W - PLATE_W) // 2
+PLATE_X1 = PLATE_X0 + PLATE_W - 1
+CREST_HALF = 33         # the crest's top half-width (it widens one pixel per row)
+PIP_HALF = 25           # the freeze-pip slot's half-width
 
 
 def _shade(r: list, t: float, x: int, y: int):
@@ -1066,9 +1071,9 @@ def _shade(r: list, t: float, x: int, y: int):
 
 
 def combat_panel() -> Image.Image:
-    """182x50. Rows 0-6: the crest (a raised plate for freeze pips). Rows 6-23: the meter housing, with a recessed
-    well (rows 9-20; cells at rows 11-18) and a raised centre plate for the number. Rows 23-49: the tray for ability
-    slots (22px slots at rows 25-46), narrowing toward the bottom."""
+    """250x50. Rows 0-6: the crest (a raised plate for freeze pips). Rows 6-23: the meter housing, with a recessed
+    well (rows 9-20; cells at rows 11-18) and a raised centre plate for the number. Rows 23-49: the tray for nine
+    20px ability slots and the 24px ultimate (rows 23-46), narrowing toward the bottom."""
     w, h = PANEL_W, PANEL_H
     img = new(w, h)
     grain = noise_stack(907, w, h, (12, 6, 3))
@@ -1135,7 +1140,7 @@ def combat_panel() -> Image.Image:
             put(img, rx, (FRAME_TOP + FRAME_BOTTOM) // 2 + dy, c)
 
     # ---- centre plate (raised, number window)
-    px0, px1, py0, py1 = 68, w - 69, FRAME_TOP - 1, FRAME_BOTTOM + 1
+    px0, px1, py0, py1 = PLATE_X0, PLATE_X1, FRAME_TOP - 1, FRAME_BOTTOM + 1
     for y in range(py0, py1 + 1):
         for x in range(px0, px1 + 1):
             dy = min(y - py0, py1 - y)
@@ -1162,8 +1167,9 @@ def combat_panel() -> Image.Image:
             put(img, x, y, c)
 
     # ---- crest (rows 0..6): a raised trapezoid plate with a slot for freeze pips
+    cx = (w - 1) / 2
     for y in range(CREST_TOP, FRAME_TOP + 1):
-        x0, x1 = 58 - y, w - 59 + y
+        x0, x1 = int(cx - CREST_HALF) - y, int(cx + CREST_HALF + 0.5) + y
         for x in range(x0, x1 + 1):
             if x in (x0, x1) or y == CREST_TOP:
                 c = INK
@@ -1173,13 +1179,13 @@ def combat_panel() -> Image.Image:
                 c = _shade(IRON[2:6], 0.55 - y / 14, x, y)
             put(img, x, y, c)
     for y in range(CREST_TOP + 2, FRAME_TOP + 1):  # pip slot
-        for x in range(66, w - 66):
+        for x in range(int(cx - PIP_HALF), int(cx + PIP_HALF + 0.5) + 1):
             put(img, x, y, INK if y == CREST_TOP + 2 else PLUM[1])
     return img
 
 
 def combat_panel_accent() -> Image.Image:
-    """182x50, white on clear: the lines tinted with the innate technique's Malice color (tray edges, crest rim,
+    """250x50, white on clear: the lines tinted with the innate technique's Malice color (tray edges, crest rim,
     the well's lower lip)."""
     img = new(PANEL_W, PANEL_H)
     for y in range(FRAME_BOTTOM + 1, TRAY_BOTTOM - 2):
@@ -1187,10 +1193,11 @@ def combat_panel_accent() -> Image.Image:
         a = int(255 * (0.55 + 0.45 * (y - FRAME_BOTTOM) / (TRAY_BOTTOM - FRAME_BOTTOM)))
         put(img, inset + 1, y, (255, 255, 255, a))
         put(img, PANEL_W - 2 - inset, y, (255, 255, 255, a))
-    for x in range(60, PANEL_W - 60):  # crest rim glow
+    cx = (PANEL_W - 1) / 2
+    for x in range(int(cx - CREST_HALF) + 2, int(cx + CREST_HALF + 0.5) - 1):  # crest rim glow
         put(img, x, CREST_TOP + 1, (255, 255, 255, 150))
     for x in range(5, PANEL_W - 5):  # the well's lower lip
-        if 68 <= x <= PANEL_W - 69:
+        if PLATE_X0 <= x <= PLATE_X1:
             continue
         put(img, x, FRAME_BOTTOM - 4, (255, 255, 255, 70))
     return img
@@ -1232,8 +1239,10 @@ def meter_cells() -> Image.Image:
 
 
 def combat_slot(kind: str) -> Image.Image:
-    """22x22 recessed slot ('normal', 'selected') or the 26x26 ultimate slot ('ultimate')."""
-    size = 26 if kind == "ultimate" else 22
+    """20x20 recessed slot ('normal', 'selected'): an ink edge and a 1px rim around a 16x16 well for the icon.
+    Or the 24x24 ultimate slot ('ultimate'): ink, iron and gold rings around the same 16x16 well."""
+    size = 24 if kind == "ultimate" else 20
+    rings = 4 if kind == "ultimate" else 2  # pixels from the edge to the icon well
     img = new(size, size)
     grain = noise_stack(613, size, size, (6, 3))
     for y in range(size):
@@ -1242,31 +1251,33 @@ def combat_slot(kind: str) -> Image.Image:
             corner = min(x, size - 1 - x) + min(y, size - 1 - y)
             if corner < 2:
                 continue
+            lit = x < size - 1 - x and y < size - 1 - y
             if d == 0 or corner == 2:
                 c = INK
-            elif kind == "ultimate" and d <= 2:
-                lit = x < size - 1 - x and y < size - 1 - y
-                c = (IRON[6] if lit else IRON[3]) if d == 1 else (GOLD[3] if lit else GOLD[1])
-            elif d == 1 or (kind == "ultimate" and d == 3):
+            elif kind == "ultimate" and d == 1:
+                c = IRON[6] if lit else IRON[3]
+            elif kind == "ultimate" and d == 2:
+                c = GOLD[3] if lit else GOLD[1]
+            elif kind == "ultimate" and d == 3:
+                c = INK
+            elif d == 1:
                 if kind == "selected":
                     c = GOLD[5] if (y < size // 2 or x < size // 2) and not (y > size - 4 or x > size - 4) else GOLD[3]
                 else:
                     # recessed: the top-left rim in shadow, the bottom-right lit
                     c = IRON[1] if (x <= y and x < size - 1 - y) or (y < x and y < size - 1 - x) else IRON[4]
-            elif d == 2 or (kind == "ultimate" and d == 4):
-                c = INK if kind != "selected" else GOLD[1]
             else:
-                inner = size - 2 * (5 if kind == "ultimate" else 3)
-                fy = (y - (5 if kind == "ultimate" else 3)) / max(1, inner)
+                fy = (y - rings) / 16
                 cx = abs(x - (size - 1) / 2) / (size / 2)
                 t = 0.15 + fy * 0.45 - cx * 0.15 + (fbm(grain, x, y) - 0.5) * 0.2
                 c = dither(PLUM, t, x, y)
+                if kind == "selected" and d == 2:
+                    c = GOLD[1]  # a faint warm inner line on the lit slot
             put(img, x, y, c)
     if kind == "ultimate":  # gold studs on the corners
-        for (sx, sy) in ((3, 3), (size - 4, 3), (3, size - 4), (size - 4, size - 4)):
+        for (sx, sy) in ((2, 2), (size - 3, 2), (2, size - 3), (size - 3, size - 3)):
             put(img, sx, sy, GOLD[6])
     return img
-
 
 def env_mini(cold: bool) -> Image.Image:
     """5x5 glyph in the corner of the combat panel's number plate: a snowflake (cheaper here) or a flame (dearer)."""

@@ -135,6 +135,7 @@
   "commands.kegare.info.header": "--- %s ---",
   "commands.kegare.info.innate_technique": "Innate Technique: %s (%s), slot %s/%s: %s",
   "commands.kegare.info.loadout": "Loadout: %s",
+  "commands.kegare.info.loadout_empty_rest": "%s-%s empty",
   "commands.kegare.info.loadout_entry": "%s %s",
   "commands.kegare.info.malice": "Malice: %s / %s (%s)",
   "commands.kegare.info.no": "no",

@@ -101,8 +101,17 @@ public final class ClientInput {
         SyncPayload data = ClientData.get();
         int size = ClientLoadout.size();
         if (data == null || size == 0) return;
-        // Like the hotbar: scrolling up moves left.
-        selectSlot(Mth.positiveModulo(data.selectedSlot() + (delta > 0 ? -1 : 1), size));
+        // Like the hotbar: scrolling up moves left. Empty slots are skipped (number keys still reach them).
+        java.util.List<com.cnethuka.kegare.innatetechnique.Ability> abilities = ClientLoadout.abilities();
+        int step = delta > 0 ? -1 : 1;
+        int slot = data.selectedSlot();
+        for (int i = 0; i < size; i++) {
+            slot = Mth.positiveModulo(slot + step, size);
+            if (slot < abilities.size() && abilities.get(slot) != null) {
+                selectSlot(slot);
+                return;
+            }
+        }
     }
 
     /** Opening any screen leaves Technique Mode. */
