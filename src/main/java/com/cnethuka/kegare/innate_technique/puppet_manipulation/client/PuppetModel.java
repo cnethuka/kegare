@@ -16,6 +16,10 @@ public class PuppetModel extends PlayerModel<PuppetEntity> {
 
     @Override
     public void setupAnim(PuppetEntity puppet, float limbSwing, float limbSwingAmount, float ageInTicks, float netHeadYaw, float headPitch) {
+        // Like a player: crouching, and arms held out for whatever it holds (a Stand-In borrows its owner's items).
+        crouching = puppet.isCrouching();
+        rightArmPose = puppet.getMainHandItem().isEmpty() ? ArmPose.EMPTY : ArmPose.ITEM;
+        leftArmPose = puppet.getOffhandItem().isEmpty() ? ArmPose.EMPTY : ArmPose.ITEM;
         super.setupAnim(puppet, limbSwing, limbSwingAmount, ageInTicks, netHeadYaw, headPitch);
         if (!puppet.isSpinning()) return;
         PuppetPoses.idleSpin().ifPresent(clip -> {

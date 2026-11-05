@@ -123,6 +123,13 @@ public final class Puppets {
         }
     }
 
+    /** Stand-In's grow (and shrink back): seen by everyone, with a sound. */
+    static void standInEffect(PuppetEntity puppet) {
+        if (!(puppet.level() instanceof ServerLevel level)) return;
+        VisualService.playAt(level, puppet.position().add(0, 0.9, 0), Visual.effect(PuppetIds.FX_STAND_IN_GROW, Visual.Anchor.BODY));
+        level.playSound(null, puppet.getX(), puppet.getY(), puppet.getZ(), SoundEvents.ILLUSIONER_PREPARE_MIRROR, SoundSource.PLAYERS, 0.9f, 1.1f);
+    }
+
     /** A following puppet left far behind appears beside its owner, like a tamed pet. */
     static void catchUp(PuppetEntity puppet, ServerPlayer owner) {
         Vec3 at = spotBeside(owner, puppet);

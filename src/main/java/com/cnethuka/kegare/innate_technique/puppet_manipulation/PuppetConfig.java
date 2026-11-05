@@ -46,6 +46,14 @@ public final class PuppetConfig {
     public static ModConfigSpec.DoubleValue CHAIN_RADIUS;
     public static ModConfigSpec.DoubleValue CHAIN_DELAY;
 
+    // understudy (INSTANT) and stand_in (special of understudy, INSTANT)
+    public static ModConfigSpec.DoubleValue UNDERSTUDY_COST;
+    public static ModConfigSpec.DoubleValue UNDERSTUDY_COOLDOWN;
+    public static ModConfigSpec.DoubleValue UNDERSTUDY_RANGE;
+    public static ModConfigSpec.DoubleValue STAND_IN_COST;
+    public static ModConfigSpec.DoubleValue STAND_IN_DURATION;
+    public static ModConfigSpec.DoubleValue STAND_IN_GROW;
+
     private PuppetConfig() {}
 
     /** Called from KegareServerConfig while it builds the spec. */
@@ -133,6 +141,20 @@ public final class PuppetConfig {
         CHAIN_COST = b.defineInRange("cost", 16.0, 0.0, 100_000.0);
         CHAIN_RADIUS = b.comment("Puppets this close (blocks) to the target go off.").defineInRange("radius", 8.0, 1.0, 64.0);
         CHAIN_DELAY = b.comment("Between one detonation and the next, seconds.").defineInRange("delay", 0.25, 0.0, 5.0);
+        b.pop();
+
+        b.comment("Swap places with the puppet you're looking at (fires SwapTargetEvent: a technique that blocks swaps blocks it).")
+                .push("understudy");
+        UNDERSTUDY_COST = b.defineInRange("cost", 10.0, 0.0, 100_000.0);
+        UNDERSTUDY_COOLDOWN = b.defineInRange("cooldown", 6.0, 0.0, 3600.0);
+        UNDERSTUDY_RANGE = b.comment("How far away (blocks) the puppet can be. Stand-In uses it too.").defineInRange("range", 32.0, 1.0, 256.0);
+        b.pop();
+
+        b.comment("Special of Understudy: one puppet (the one you look at, else your nearest) grows to your size and copies your",
+                "movements, held items, armor and name: it looks exactly like you. Then it shrinks back.").push("stand_in");
+        STAND_IN_COST = b.defineInRange("cost", 20.0, 0.0, 100_000.0);
+        STAND_IN_DURATION = b.defineInRange("duration", 8.0, 0.5, 600.0);
+        STAND_IN_GROW = b.comment("How long growing (and shrinking back) takes.").defineInRange("grow", 0.4, 0.0, 5.0);
         b.pop();
 
         b.pop();

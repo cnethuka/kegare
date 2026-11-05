@@ -177,6 +177,13 @@ public final class KegareLanguageProvider extends LanguageProvider {
         add("death.attack.kegare.curio_burst", "%1$s was blown apart by %2$s's puppet");
         add("death.attack.kegare.curio_burst.item", "%1$s was blown apart by %2$s's puppet");
         add("death.attack.kegare.curio_burst.player", "%1$s was blown apart by a puppet while fighting %2$s");
+        add("ability.kegare.understudy", "Understudy");
+        add("ability.kegare.understudy.desc", "Swap places with the puppet you're looking at (up to 32 blocks). Anything that blocks "
+                + "swaps blocks this too.");
+        add("ability.kegare.stand_in", "Stand-In");
+        add("ability.kegare.stand_in.desc", "For 8 seconds one puppet (the one you look at, else your nearest) grows to your size and "
+                + "copies you: your moves, your held items and armor, your name. It looks exactly like you. Then it shrinks back.");
+        add("message.kegare.understudy.refused", "Something stops the swap.");
         add("entity.kegare.puppet", "Puppet");
         add("ability.kegare.possess", "Possess");
         add("ability.kegare.possess.desc", "Move into the puppet you're looking at (or your nearest one) and become it: its size, "

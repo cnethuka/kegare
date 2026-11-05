@@ -104,5 +104,6 @@ public final class PuppetEvents {
     static void onServerStopped(ServerStoppedEvent event) {
         Possession.clear();
         CurioBursts.clear();
+        StandInAbility.clear();
     }
 }

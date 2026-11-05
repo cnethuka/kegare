@@ -42,7 +42,7 @@ public class PuppetGlowLayer extends RenderLayer<PuppetEntity, PuppetModel> {
     @Override
     public void render(PoseStack pose, MultiBufferSource buffers, int light, PuppetEntity puppet, float limbSwing, float limbSwingAmount,
                        float partialTick, float ageInTicks, float netHeadYaw, float headPitch) {
-        if (puppet.isInvisible()) return;
+        if (puppet.isInvisible() || puppet.isStandIn()) return; // a Stand-In looks exactly like its owner
         float t = puppet.tickCount + partialTick;
         model.prepareMobModel(puppet, limbSwing, limbSwingAmount, partialTick);
         getParentModel().copyPropertiesTo(model);

@@ -102,5 +102,22 @@ A["chain_burst_cast"] = anim(0.7, {
     "torso": [(0, (0, 0, 0), "easeOutQuad"), (0.14, (-6, 0, 0), "easeOutQuad"), (0.45, (6, 0, 0), "easeInQuad"), (0.7, (0, 0, 0), "easeInOutSine")],
 })
 
+# Understudy: a quick beckon with two fingers (come here), the body already turning to where the puppet stands.
+A["understudy_cast"] = anim(0.45, {
+    "right_arm": [(0, (0, 0, 0), "easeOutQuad"), (0.08, (-84, -10, 0), "easeOutQuad"), (0.18, (-120, -6, 0), "easeOutQuad"),
+                  (0.26, (-70, -10, 0), "easeInOutSine"), (0.45, (0, 0, 0), "easeInOutSine")],
+    "torso": [(0, (0, 0, 0), "easeOutQuad"), (0.18, (0, 14, 0), "easeOutQuad"), (0.45, (0, 0, 0), "easeInOutSine")],
+})
+
+# Stand-In: arms spread wide, presenting (here, take my place), then a small bow.
+A["stand_in_cast"] = anim(0.8, {
+    "right_arm": [(0, (0, 0, 0), "easeOutQuad"), (0.2, (-40, 0, 70), "easeOutQuad"), (0.45, (-40, 0, 70), "linear"),
+                  (0.8, (0, 0, 0), "easeInOutSine")],
+    "left_arm": [(0, (0, 0, 0), "easeOutQuad"), (0.2, (-40, 0, -70), "easeOutQuad"), (0.45, (-40, 0, -70), "linear"),
+                 (0.8, (0, 0, 0), "easeInOutSine")],
+    "torso": [(0, (0, 0, 0), "easeOutQuad"), (0.45, (0, 0, 0), "linear"), (0.6, (16, 0, 0), "easeInOutSine"), (0.8, (0, 0, 0), "easeInOutSine")],
+    "head": [(0, (0, 0, 0), "easeOutQuad"), (0.45, (0, 0, 0), "linear"), (0.6, (20, 0, 0), "easeInOutSine"), (0.8, (0, 0, 0), "easeInOutSine")],
+})
+
 OUT.write_text(json.dumps({"format_version": "1.8.0", "animations": A}, indent=2) + "\n")
 print("wrote", OUT, "with", len(A), "animations")

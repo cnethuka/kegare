@@ -64,7 +64,7 @@ public final class PuppetClient {
      * through walls, so it gives nobody's hiding puppet away.
      */
     private static boolean outlined(PuppetEntity puppet) {
-        if (puppet.tier() != PuppetTier.FULL || puppet.isInvisible()) return false;
+        if (puppet.tier() != PuppetTier.FULL || puppet.isInvisible() || puppet.isStandIn()) return false;
         Minecraft mc = Minecraft.getInstance();
         if (mc.player == null || mc.level == null) return false;
         long now = mc.level.getGameTime();

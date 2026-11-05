@@ -44,6 +44,9 @@ public class PuppetEntity extends PathfinderMob implements Puppet {
     private static final EntityDataAccessor<Byte> TIER = SynchedEntityData.defineId(PuppetEntity.class, EntityDataSerializers.BYTE);
     private static final EntityDataAccessor<Integer> COLOR = SynchedEntityData.defineId(PuppetEntity.class, EntityDataSerializers.INT);
     private static final EntityDataAccessor<Boolean> SPINNING = SynchedEntityData.defineId(PuppetEntity.class, EntityDataSerializers.BOOLEAN);
+    /** Stand-In: grown to its owner's size, copying them. Never saved. */
+    private static final EntityDataAccessor<Boolean> STAND_IN = SynchedEntityData.defineId(PuppetEntity.class, EntityDataSerializers.BOOLEAN);
+    private static final net.minecraft.resources.ResourceLocation STAND_IN_SCALE = com.cnethuka.kegare.Kegare.id("stand_in_scale");
     /** Someone is inside it (Possess): hidden, untouchable, carried along with them. Never saved. */
     private static final EntityDataAccessor<Boolean> POSSESSED = SynchedEntityData.defineId(PuppetEntity.class, EntityDataSerializers.BOOLEAN);
     /** The owner's name and skin property, so the owner's look is drawn even while they are offline. */
@@ -59,6 +62,12 @@ public class PuppetEntity extends PathfinderMob implements Puppet {
     private int stillTicks;
     /** Checked once, on the first server tick after it is loaded (or made). */
     private boolean validated;
+    /** Stand-In: ticks left, and how long it lasts in all (server side). */
+    private int standInTicks;
+    private int standInTotal;
+    /** Where the owner was last tick, so the Stand-In takes the same step they did. */
+    @Nullable
+    private Vec3 lastOwnerPos;
     /** Who is inside it, while possessed (server side, runtime only). */
     @Nullable
     private UUID possessor;
@@ -112,6 +121,7 @@ public class PuppetEntity extends PathfinderMob implements Puppet {
         builder.define(COLOR, PuppetManipulation.MALICE_COLOR);
         builder.define(SPINNING, false);
         builder.define(POSSESSED, false);
+        builder.define(STAND_IN, false);
         builder.define(OWNER_NAME, "");
         builder.define(SKIN_VALUE, "");
         builder.define(SKIN_SIGNATURE, "");
@@ -120,13 +130,18 @@ public class PuppetEntity extends PathfinderMob implements Puppet {
     @Override
     protected void registerGoals() {
         goalSelector.addGoal(0, new FloatGoal(this));
-        goalSelector.addGoal(1, new MeleeAttackGoal(this, 1.2, true));
+        goalSelector.addGoal(1, new MeleeAttackGoal(this, 1.2, true) {
+            @Override
+            public boolean canUse() {
+                return !isStandIn() && super.canUse();
+            }
+        });
         goalSelector.addGoal(2, new GoToGoal());
         goalSelector.addGoal(3, new FollowOwnerGoal());
         goalSelector.addGoal(6, new LookAtPlayerGoal(this, Player.class, 8f) {
             @Override
             public boolean canUse() {
-                return !isSpinning() && super.canUse();
+                return !isSpinning() && !isStandIn() && super.canUse();
             }
         });
     }
@@ -160,6 +175,72 @@ public class PuppetEntity extends PathfinderMob implements Puppet {
 
     public boolean isSpinning() {
         return entityData.get(SPINNING);
+    }
+
+    /** Standing in for its owner right now (full size, their look and moves; see {@link #startStandIn}). */
+    public boolean isStandIn() {
+        return entityData.get(STAND_IN);
+    }
+
+    /**
+     * Stand-In: for {@code ticks}, grow to the owner's size and copy them: where they move, where they look, crouching,
+     * swings, held items, armor and name. The glow goes (it looks exactly like them). Then it shrinks back.
+     */
+    void startStandIn(ServerPlayer owner, int ticks) {
+        standInTotal = Math.max(1, ticks);
+        standInTicks = standInTotal;
+        entityData.set(STAND_IN, true);
+        entityData.set(SPINNING, false);
+        stillTicks = 0;
+        setTarget(null);
+        getNavigation().stop();
+        for (net.minecraft.world.entity.EquipmentSlot slot : net.minecraft.world.entity.EquipmentSlot.values()) setDropChance(slot, 0f);
+        setCustomName(owner.getName());
+        setCustomNameVisible(true);
+        lastOwnerPos = owner.position();
+        mirror(owner);
+    }
+
+    void endStandIn() {
+        if (!isStandIn()) return;
+        entityData.set(STAND_IN, false);
+        standInTicks = 0;
+        getAttribute(Attributes.SCALE).removeModifier(STAND_IN_SCALE);
+        for (net.minecraft.world.entity.EquipmentSlot slot : net.minecraft.world.entity.EquipmentSlot.values()) {
+            setItemSlot(slot, net.minecraft.world.item.ItemStack.EMPTY);
+        }
+        setCustomName(null);
+        setCustomNameVisible(false);
+        setShiftKeyDown(false);
+        setPose(net.minecraft.world.entity.Pose.STANDING);
+        Puppets.standInEffect(this);
+    }
+
+    /** Copies the owner for one tick: size (growing or shrinking), facing, crouch, swing, and how they look. */
+    private void mirror(ServerPlayer owner) {
+        int grow = Math.max(1, PuppetConfig.ticks(PuppetConfig.STAND_IN_GROW));
+        int elapsed = standInTotal - standInTicks;
+        float progress = Math.min(1f, Math.min(elapsed + 1, standInTicks) / (float) grow);
+        double base = getAttribute(Attributes.SCALE).getBaseValue();
+        double target = owner.getAttributeValue(Attributes.SCALE);
+        double scale = base + (target - base) * progress;
+        var attribute = getAttribute(Attributes.SCALE);
+        attribute.removeModifier(STAND_IN_SCALE);
+        attribute.addTransientModifier(new net.minecraft.world.entity.ai.attributes.AttributeModifier(STAND_IN_SCALE,
+                scale / Math.max(1.0e-3, base) - 1.0, net.minecraft.world.entity.ai.attributes.AttributeModifier.Operation.ADD_MULTIPLIED_TOTAL));
+        setYRot(owner.getYRot());
+        setXRot(owner.getXRot());
+        setYHeadRot(owner.getYHeadRot());
+        setYBodyRot(owner.yBodyRot);
+        setShiftKeyDown(owner.isShiftKeyDown());
+        setPose(owner.isCrouching() ? net.minecraft.world.entity.Pose.CROUCHING : net.minecraft.world.entity.Pose.STANDING);
+        setSprinting(owner.isSprinting());
+        if (owner.swinging && owner.swingTime <= 0) swing(owner.swingingArm);
+        for (net.minecraft.world.entity.EquipmentSlot slot : net.minecraft.world.entity.EquipmentSlot.values()) {
+            if (slot.getType() == net.minecraft.world.entity.EquipmentSlot.Type.ANIMAL_ARMOR) continue;
+            net.minecraft.world.item.ItemStack theirs = owner.getItemBySlot(slot);
+            if (!net.minecraft.world.item.ItemStack.matches(theirs, getItemBySlot(slot))) setItemSlot(slot, theirs.copy());
+        }
     }
 
     /** Someone is inside it right now (it waits hidden inside them; see {@link Possession}). */
@@ -264,8 +345,22 @@ public class PuppetEntity extends PathfinderMob implements Puppet {
                 return;
             }
         }
+        ServerPlayer standingInFor = !level().isClientSide && isStandIn() ? owner() : null;
         super.tick();
         if (level().isClientSide) return;
+        if (isStandIn()) {
+            // Moves as its owner moves (the same step each tick), on its own feet: it still falls and bumps into things.
+            if (standingInFor == null || --standInTicks <= 0) {
+                endStandIn();
+            } else {
+                Vec3 now = standingInFor.position();
+                Vec3 step = lastOwnerPos == null ? Vec3.ZERO : now.subtract(lastOwnerPos);
+                lastOwnerPos = now;
+                if (step.lengthSqr() > 1.0e-8 && step.lengthSqr() < 16.0) move(net.minecraft.world.entity.MoverType.SELF, step);
+                mirror(standingInFor);
+                return;
+            }
+        }
         if (!validated) {
             validated = true;
             if (!Puppets.isCurrent(this)) { // its owner rerolled away while it was unloaded
@@ -286,7 +381,7 @@ public class PuppetEntity extends PathfinderMob implements Puppet {
     /** Spins after standing still for {@code spinDelay}: no path, no target, barely moving. */
     private void updateSpin() {
         Vec3 v = getDeltaMovement();
-        boolean still = getNavigation().isDone() && getTarget() == null && v.x * v.x + v.z * v.z < 1.0e-4;
+        boolean still = !isStandIn() && getNavigation().isDone() && getTarget() == null && v.x * v.x + v.z * v.z < 1.0e-4;
         stillTicks = still ? stillTicks + 1 : 0;
         boolean spin = stillTicks > PuppetConfig.ticks(PuppetConfig.SPIN_DELAY);
         if (spin != isSpinning()) entityData.set(SPINNING, spin);
@@ -305,7 +400,7 @@ public class PuppetEntity extends PathfinderMob implements Puppet {
     /** Focus or Guard: go for {@code target} (never its owner or the owner's side). */
     boolean attack(LivingEntity target) {
         ServerPlayer owner = owner();
-        if (owner == null || isPossessed() || !canKeepTarget(target, owner)) return false;
+        if (owner == null || isPossessed() || isStandIn() || !canKeepTarget(target, owner)) return false;
         setTarget(target);
         return true;
     }
@@ -412,6 +507,11 @@ public class PuppetEntity extends PathfinderMob implements Puppet {
     @Override
     public void readAdditionalSaveData(CompoundTag tag) {
         super.readAdditionalSaveData(tag);
+        // A Stand-In isn't saved: anything it borrowed goes (in case it was saved mid-way).
+        for (net.minecraft.world.entity.EquipmentSlot slot : net.minecraft.world.entity.EquipmentSlot.values()) {
+            setItemSlot(slot, net.minecraft.world.item.ItemStack.EMPTY);
+        }
+        setCustomName(null);
         entityData.set(OWNER, tag.hasUUID("Owner") ? Optional.of(tag.getUUID("Owner")) : Optional.empty());
         entityData.set(OWNER_NAME, tag.getString("OwnerName"));
         entityData.set(SKIN_VALUE, tag.getString("SkinValue"));
@@ -441,7 +541,7 @@ public class PuppetEntity extends PathfinderMob implements Puppet {
 
         @Override
         public boolean canUse() {
-            return order == PuppetOrder.GO && getTarget() == null && owner() != null && !arrived();
+            return order == PuppetOrder.GO && !isStandIn() && getTarget() == null && owner() != null && !arrived();
         }
 
         @Override
@@ -484,7 +584,7 @@ public class PuppetEntity extends PathfinderMob implements Puppet {
 
         @Override
         public boolean canUse() {
-            if (!follows() || getTarget() != null) return false;
+            if (!follows() || isStandIn() || getTarget() != null) return false;
             owner = owner();
             double near = PuppetConfig.FOLLOW_DISTANCE.get();
             return owner != null && distanceToSqr(owner) > near * near;
@@ -492,7 +592,7 @@ public class PuppetEntity extends PathfinderMob implements Puppet {
 
         @Override
         public boolean canContinueToUse() {
-            if (!follows() || getTarget() != null || owner == null || owner != owner()) return false;
+            if (!follows() || isStandIn() || getTarget() != null || owner == null || owner != owner()) return false;
             double stop = PuppetConfig.FOLLOW_DISTANCE.get() * 0.6;
             return distanceToSqr(owner) > stop * stop;
         }
