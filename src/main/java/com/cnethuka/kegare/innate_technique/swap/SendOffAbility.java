@@ -6,10 +6,11 @@ import com.cnethuka.kegare.innatetechnique.CastType;
 import com.cnethuka.kegare.innatetechnique.visual.AbilityVisuals;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.phys.Vec3;
 
 /**
- * Special of Anchor (INSTANT): needs your anchor out. The player you're looking at is swapped with the anchor instead of
+ * Special of Anchor (INSTANT): needs your anchor out. The player or mob you're looking at is swapped with the anchor instead of
  * you; the anchor is used up. No anchor (or nobody in sight): fizzles at no cost.
  */
 public final class SendOffAbility extends SwapAbility.Special {
@@ -24,8 +25,10 @@ public final class SendOffAbility extends SwapAbility.Special {
 
     @Override
     public boolean canCast(AbilityContext ctx) {
-        return Anchors.has(ctx.player()) && SwapAbility.hasTarget(ctx);
+        return Anchors.has(ctx.player()) && SwapAbility.hasLivingTarget(ctx);
     }
+
+    @Override boolean takesMobs() { return true; }
 
     @Override
     public Component blockedMessage(ServerPlayer player) {
@@ -35,7 +38,7 @@ public final class SendOffAbility extends SwapAbility.Special {
     @Override
     public void execute(AbilityContext ctx) {
         ServerPlayer caster = ctx.player();
-        ServerPlayer target = SwapTargeting.lookedAt(caster).orElse(null);
+        LivingEntity target = SwapTargeting.lookedAtLiving(caster).orElse(null);
         AnchorEntity anchor = Anchors.get(caster).orElse(null);
         if (target == null || anchor == null || !SwapTargeting.allowed(caster, target, this)) {
             CastManager.fizzleKeepingCost(caster);

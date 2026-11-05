@@ -23,6 +23,8 @@ import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.entity.animal.Pig;
 import net.minecraft.world.level.levelgen.Heightmap;
 import net.minecraft.world.phys.Vec3;
 import net.neoforged.testframework.junit.EphemeralTestServerProvider;
@@ -518,6 +520,131 @@ class SwapTest {
                 for (ServerPlayer p : new ServerPlayer[] {caster, target, third}) level.removePlayerImmediately(p, Entity.RemovalReason.DISCARDED);
             }
         });
+    }
+
+    @Test
+    void mobs(MinecraftServer server) throws Exception {
+        TestServer.onServerThread(server, () -> {
+            TestServer.ensureOverworld(server);
+            ServerLevel level = server.overworld();
+            loadArena(level);
+            ServerPlayer caster = damageable(server, "swap_mob_caster");
+            ServerPlayer player = TestServer.player(server, "swap_mob_player");
+            level.addNewPlayer(caster);
+            level.addNewPlayer(player);
+            Pig pig = EntityType.PIG.create(level);
+            boolean pvp = server.isPvpAllowed();
+            server.setPvpAllowed(true);
+            try {
+            BirthService.rebirth(caster, OptionalInt.of(5000));
+            InnateTechniqueService.setInnateTechnique(caster, Swap.SWAP.get());
+            player.moveTo(30.5, Y, 30.5, 0f, 0f); // out of the way
+            pig.setNoAi(true);
+            pig.moveTo(8.5, Y, 0.5, 90f, 0f);
+            level.addFreshEntity(pig);
+
+            // Positions takes a mob: places and facing trade, the pig's fall distance resets; Switcheroo counts it.
+            InnateTechniqueService.select(caster, 0);
+            facePig(caster, pig);
+            pig.fallDistance = 5f;
+            assertTrue(SwapTargeting.lookedAtLiving(caster).isPresent(), "setup: the pig is in sight");
+            CastManager.handleIntent(caster, CastIntent.CAST_PRESS);
+            assertEquals(new Vec3(8.5, Y, 0.5), caster.position(), "caster took the pig's place");
+            assertEquals(new Vec3(0.5, Y, 0.5), pig.position(), "the pig took the caster's place");
+            assertEquals(-90f, pig.getYRot(), EPS, "facing traded");
+            assertEquals(0f, pig.fallDistance, EPS);
+            assertTrue(TestServer.hasAdvancement(server, caster, SwapAdvancements.SWITCHEROO), "switcheroo on a mob");
+            // Fall Guy: the swapped mob falls to its death.
+            SwapTracker.fellToDeath(pig);
+            assertTrue(TestServer.hasAdvancement(server, caster, SwapAdvancements.FALL_GUY), "fall guy on a mob");
+
+            // Switchback with a mob: Round Trip by hitting the mob, then the swap back; called off if the mob dies.
+            InnateTechniqueService.clearCooldowns(caster);
+            facePig(caster, pig);
+            Vec3 casterAt = caster.position();
+            CastManager.handleIntent(caster, CastIntent.SPECIAL_PRESS);
+            assertTrue(Switchback.isPending(caster), "switchback on a mob");
+            pig.invulnerableTime = 0;
+            assertTrue(pig.hurt(caster.damageSources().playerAttack(caster), 1f), "setup: hit the pig");
+            assertTrue(TestServer.hasAdvancement(server, caster, SwapAdvancements.ROUND_TRIP), "round trip on a mob");
+            TestServer.advanceGameTime(server, SwapConfig.ticks(SwapConfig.SWITCHBACK_DELAY));
+            Switchback.tick(server);
+            assertEquals(casterAt, caster.position(), "swapped back with the pig");
+            InnateTechniqueService.clearCooldowns(caster);
+            facePig(caster, pig);
+            CastManager.handleIntent(caster, CastIntent.SPECIAL_PRESS);
+            Vec3 afterSwap = caster.position();
+            Switchback.cancelInvolving(pig); // what its death does
+            TestServer.advanceGameTime(server, SwapConfig.ticks(SwapConfig.SWITCHBACK_DELAY) + 1);
+            Switchback.tick(server);
+            assertEquals(afterSwap, caster.position(), "called off with the mob");
+
+            // Exchange and Momentum Exchange take mobs.
+            InnateTechniqueService.clearCooldowns(caster);
+            InnateTechniqueService.select(caster, 3);
+            facePig(caster, pig);
+            caster.removeAllEffects();
+            pig.removeAllEffects();
+            caster.addEffect(new MobEffectInstance(MobEffects.POISON, 200, 0));
+            pig.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SPEED, 200, 1));
+            CastManager.handleIntent(caster, CastIntent.CAST_PRESS);
+            assertTrue(pig.hasEffect(MobEffects.POISON), "the pig got the Poison");
+            assertTrue(caster.hasEffect(MobEffects.MOVEMENT_SPEED), "the caster got the pig's Speed");
+            InnateTechniqueService.clearCooldowns(caster);
+            facePig(caster, pig);
+            pig.setDeltaMovement(new Vec3(0, -1.2, 0));
+            caster.setKnownMovement(Vec3.ZERO);
+            pig.fallDistance = 12f;
+            caster.fallDistance = 0f;
+            CastManager.handleIntent(caster, CastIntent.SPECIAL_PRESS);
+            assertEquals(new Vec3(0, -1.2, 0), caster.getDeltaMovement(), "momentum from the pig");
+            assertEquals(Vec3.ZERO, pig.getDeltaMovement(), "the caster's stillness to the pig");
+            assertEquals(12f, caster.fallDistance, EPS);
+            assertEquals(0f, pig.fallDistance, EPS);
+            // Newton's Third: the pig falls to its death after the exchange.
+            SwapTracker.fellToDeath(pig);
+            assertTrue(TestServer.hasAdvancement(server, caster, SwapAdvancements.NEWTONS_THIRD), "newton's third on a mob");
+
+            // Send Off a mob onto the anchor: Return to Sender.
+            InnateTechniqueService.clearCooldowns(caster);
+            InnateTechniqueService.select(caster, 2);
+            facePig(caster, pig);
+            CastManager.handleIntent(caster, CastIntent.CAST_PRESS);
+            Anchors.get(caster).orElseThrow().setPos(3.5, Y, -6.5);
+            InnateTechniqueService.clearCooldowns(caster);
+            facePig(caster, pig);
+            CastManager.handleIntent(caster, CastIntent.SPECIAL_PRESS);
+            assertEquals(new Vec3(3.5, Y, -6.5), pig.position(), "the pig was sent onto the anchor");
+            assertTrue(TestServer.hasAdvancement(server, caster, SwapAdvancements.RETURN_TO_SENDER), "return to sender with a mob");
+
+            // Players only: Awareness and Total Swap fizzle on a mob (free).
+            InnateTechniqueService.clearCooldowns(caster);
+            InnateTechniqueService.select(caster, 1);
+            facePig(caster, pig);
+            double before = malice(caster);
+            CastManager.handleIntent(caster, CastIntent.CAST_PRESS);
+            CastManager.handleIntent(caster, CastIntent.ULTIMATE_PRESS);
+            assertEquals(before, malice(caster), EPS, "awareness and total swap: no mob targets");
+            assertFalse(Disguises.isDisguised(caster));
+
+            // Never targets: bosses and armor stands.
+            assertFalse(SwapTargeting.swappableMob(EntityType.WITHER.create(level)), "bosses");
+            assertFalse(SwapTargeting.swappableMob(EntityType.ARMOR_STAND.create(level)), "armor stands");
+            assertTrue(SwapTargeting.swappableMob(pig));
+            } finally {
+                server.setPvpAllowed(pvp);
+                pig.discard();
+                for (ServerPlayer p : new ServerPlayer[] {caster, player}) level.removePlayerImmediately(p, Entity.RemovalReason.DISCARDED);
+            }
+        });
+    }
+
+    /** The caster 8 blocks from the pig, looking down at it (a level look from eye height passes over a pig). */
+    static void facePig(ServerPlayer caster, Pig pig) {
+        caster.moveTo(0.5, Y, 0.5, -90f, 10f);
+        caster.setYHeadRot(-90f);
+        pig.moveTo(8.5, Y, 0.5, 90f, 0f);
+        MaliceService.refill(caster);
     }
 
     /** A test player with real advancements that can be hurt (NeoForge's fake players can't). */

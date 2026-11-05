@@ -111,12 +111,12 @@ public final class KegareLanguageProvider extends LanguageProvider {
 
         // Swap
         add("innate_technique.kegare.swap", "Swap");
-        add("innate_technique.kegare.swap.desc", "Trade with other players: places, faces, fortunes and falls. "
-                + "Everything Swap does needs a player in sight.");
+        add("innate_technique.kegare.swap.desc", "Trade with whoever you're looking at: places, faces, fortunes and falls. "
+                + "Players always count; most of it works on mobs too.");
         add("ability.kegare.positions", "Positions");
-        add("ability.kegare.positions.desc", "Swap places and facing with the player you're looking at (up to 24 blocks, in line of sight).");
+        add("ability.kegare.positions.desc", "Swap places and facing with the player or mob you're looking at (up to 24 blocks, in line of sight).");
         add("ability.kegare.switchback", "Switchback");
-        add("ability.kegare.switchback.desc", "Swap places like Positions, then swap back on your own after 3 seconds. "
+        add("ability.kegare.switchback.desc", "Swap places like Positions (player or mob), then swap back on your own after 3 seconds. "
                 + "Called off if either of you dies, logs out or leaves the dimension.");
         add("ability.kegare.awareness", "Awareness");
         add("ability.kegare.awareness.desc", "Swap looks with the player you're looking at for 5 seconds: everyone else sees you as them "
@@ -127,13 +127,13 @@ public final class KegareLanguageProvider extends LanguageProvider {
         add("ability.kegare.anchor.desc", "First cast: throw an anchor that sticks where it lands (it lasts 20 seconds). "
                 + "Second cast: swap yourself with it.");
         add("ability.kegare.send_off", "Send Off");
-        add("ability.kegare.send_off.desc", "Needs your anchor out: swap the player you're looking at with the anchor instead of yourself. "
+        add("ability.kegare.send_off.desc", "Needs your anchor out: swap the player or mob you're looking at with the anchor instead of yourself. "
                 + "Uses the anchor up.");
         add("ability.kegare.exchange", "Exchange");
-        add("ability.kegare.exchange.desc", "Give the player you're looking at your worst negative effect and take their strongest "
+        add("ability.kegare.exchange.desc", "Give the player or mob you're looking at your worst negative effect and take their strongest "
                 + "positive one, duration and level included. Effects that last forever never move.");
         add("ability.kegare.momentum_exchange", "Momentum Exchange");
-        add("ability.kegare.momentum_exchange.desc", "Swap velocity and fall distance with the player you're looking at. "
+        add("ability.kegare.momentum_exchange.desc", "Swap velocity and fall distance with the player or mob you're looking at. "
                 + "Nobody moves; their momentum does.");
         add("message.kegare.swap.nothing_to_exchange", "Nothing to exchange.");
         add("ability.kegare.total_swap", "Total Swap");
@@ -144,6 +144,7 @@ public final class KegareLanguageProvider extends LanguageProvider {
         add("item.kegare.swap_anchor", "Swap Anchor");
         add("message.kegare.swap.no_anchor", "You have no anchor out.");
         add("message.kegare.swap.no_target", "No player in sight.");
+        add("message.kegare.swap.no_target_any", "Nothing in sight to swap with.");
         add("message.kegare.swap.refused", "Something stops the swap.");
         add("message.kegare.swap.switchback_refused", "Something stops the swap back.");
         add("message.kegare.glacial_spire.no_ground", "%s needs ground within %s blocks.");
@@ -294,15 +295,15 @@ public final class KegareLanguageProvider extends LanguageProvider {
         // Rime tab (kegare:innate_technique/rime/...)
         advancement("rime.shatter", "Shatter", "Freeze a player solid");
         advancement("rime.cold_open", "Cold Open", "Hit a player with Frost Shard");
-        advancement("swap.switcheroo", "Switcheroo", "Swap positions with a player");
-        advancement("swap.wrong_target", "Wrong Target", "While disguised with Awareness, have a third player damage the person wearing your disguise");
-        advancement("swap.fall_guy", "Fall Guy", "A player you swapped dies from falling within 5 seconds");
+        advancement("swap.switcheroo", "Switcheroo", "Swap positions with a player or a mob");
+        advancement("swap.wrong_target", "Wrong Target", "While disguised with Awareness, have someone else (a player or a mob) damage the person wearing your disguise");
+        advancement("swap.fall_guy", "Fall Guy", "A player or mob you swapped dies from falling within 5 seconds");
         advancement("swap.identity_crisis", "Identity Crisis", "Use Total Swap below 30% health and survive for 30 seconds");
         advancement("swap.not_allowed", "Not Allowed", "Have a swap fail because the target can't be swapped");
-        advancement("swap.round_trip", "Round Trip", "Damage a player during Switchback before you're swapped back");
-        advancement("swap.two_of_you", "There Are Two of You", "While using Mimic, have a player damage the real target");
-        advancement("swap.special_delivery_swap", "Return to Sender", "Send Off a player onto your anchor");
-        advancement("swap.newtons_third", "Newton's Third", "A player dies from fall damage after you used Momentum Exchange on them");
+        advancement("swap.round_trip", "Round Trip", "Damage a player or mob during Switchback before you're swapped back");
+        advancement("swap.two_of_you", "There Are Two of You", "While using Mimic, have someone (a player or a mob) damage the real target");
+        advancement("swap.special_delivery_swap", "Return to Sender", "Send Off a player or mob onto your anchor");
+        advancement("swap.newtons_third", "Newton's Third", "A player or mob dies from fall damage after you used Momentum Exchange on them");
         advancement("rime.brain_freeze", "Brain Freeze", "Freeze a player while they're charging or channeling");
         advancement("rime.full_charge", "Full Charge", "Hit a player with a fully charged Glacial Lance");
         advancement("rime.thin_ice", "Thin Ice", "Block 100 total damage with Rime Shell");

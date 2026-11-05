@@ -6,6 +6,7 @@ import java.util.Map;
 import java.util.UUID;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.entity.LivingEntity;
 
 /** Runtime bookkeeping for Swap's advancements (nothing here is saved). */
 public final class SwapTracker {
@@ -14,32 +15,34 @@ public final class SwapTracker {
 
     /** Identity Crisis: caster -> the tick they cast Total Swap below 30% health. */
     private static final Map<UUID, Long> IDENTITY_CRISIS = new HashMap<>();
-    /** Fall Guy: swapped player -> who swapped them, when. */
+    /** Fall Guy: swapped player or mob -> who swapped them, when. */
     private static final Map<UUID, Mark> SWAPPED = new HashMap<>();
     /** Newton's Third: Momentum Exchange target -> who exchanged with them, when. */
     private static final Map<UUID, Mark> MOMENTUM = new HashMap<>();
 
-    /** The caster moved {@code target} with a swap (Positions, Switchback either way, Send Off, Total Swap). */
-    static void swapped(ServerPlayer caster, ServerPlayer target) {
+    /** The caster moved {@code target} (a player or a mob) with a swap (Positions, Switchback either way, Send Off, Total Swap). */
+    static void swapped(ServerPlayer caster, LivingEntity target) {
         SWAPPED.put(target.getUUID(), new Mark(caster.getUUID(), caster.serverLevel().getGameTime()));
     }
 
-    /** The caster traded momentum with {@code target}. */
-    static void momentum(ServerPlayer caster, ServerPlayer target) {
+    /** The caster traded momentum with {@code target} (a player or a mob). */
+    static void momentum(ServerPlayer caster, LivingEntity target) {
         MOMENTUM.put(target.getUUID(), new Mark(caster.getUUID(), caster.serverLevel().getGameTime()));
     }
 
-    /** A player died from falling: whoever swapped them (5 s) or traded momentum with them (10 s) may earn something. */
-    static void fellToDeath(ServerPlayer victim) {
-        long now = victim.serverLevel().getGameTime();
+    /** A player or mob died from falling: whoever swapped it (5 s) or traded momentum with it (10 s) may earn something. */
+    static void fellToDeath(LivingEntity victim) {
+        MinecraftServer server = victim.getServer();
+        if (server == null) return;
+        long now = victim.level().getGameTime();
         Mark swap = SWAPPED.remove(victim.getUUID());
         if (swap != null && now - swap.tick() <= SwapAdvancements.FALL_GUY_WINDOW_TICKS) {
-            ServerPlayer caster = Switchback.find(victim.server, swap.caster());
+            ServerPlayer caster = Switchback.find(server, swap.caster());
             if (caster != null && caster != victim) SwapAdvancements.award(caster, SwapAdvancements.FALL_GUY);
         }
         Mark push = MOMENTUM.remove(victim.getUUID());
         if (push != null && now - push.tick() <= SwapAdvancements.NEWTONS_THIRD_WINDOW_TICKS) {
-            ServerPlayer caster = Switchback.find(victim.server, push.caster());
+            ServerPlayer caster = Switchback.find(server, push.caster());
             if (caster != null && caster != victim) SwapAdvancements.award(caster, SwapAdvancements.NEWTONS_THIRD);
         }
     }
@@ -63,8 +66,8 @@ public final class SwapTracker {
         }
     }
 
-    /** Death (after the fall checks) or logout: this player's marks are gone, and a pending Identity Crisis fails. */
-    static void forget(ServerPlayer player) {
+    /** Death (after the fall checks) or logout: the marks on it are gone, and a pending Identity Crisis fails. */
+    static void forget(LivingEntity player) {
         IDENTITY_CRISIS.remove(player.getUUID());
         SWAPPED.remove(player.getUUID());
         MOMENTUM.remove(player.getUUID());

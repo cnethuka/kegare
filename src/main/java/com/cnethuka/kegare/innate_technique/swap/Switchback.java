@@ -11,25 +11,27 @@ import net.minecraft.resources.ResourceKey;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.level.Level;
 
 /**
- * Switchback's pending swaps back (runtime only). Each one belongs to its caster; the swap back fires
- * {@link SwapTargetEvent} again. It is called off if either player dies, logs out or changes dimension. Both players
- * wear the countdown ring until then.
+ * Switchback's pending swaps back (runtime only). Each one belongs to its caster; the target is a player or a mob.
+ * The swap back fires {@link SwapTargetEvent} again. It is called off if either dies, logs out (or the mob is gone) or
+ * changes dimension. Both wear the countdown ring until then.
  */
 public final class Switchback {
-    private record Pending(UUID target, long dueTick, ResourceKey<Level> dimension) {}
+    /** The target is held by reference: a mob can't be looked up by name, and a player who relogs is a new entity. */
+    private record Pending(LivingEntity target, long dueTick, ResourceKey<Level> dimension) {}
 
     /** By caster. */
     private static final Map<UUID, Pending> PENDING = new HashMap<>();
 
     private Switchback() {}
 
-    static void schedule(ServerPlayer caster, ServerPlayer target) {
+    static void schedule(ServerPlayer caster, LivingEntity target) {
         cancel(caster.server, caster.getUUID());
         long due = caster.serverLevel().getGameTime() + SwapConfig.ticks(SwapConfig.SWITCHBACK_DELAY);
-        PENDING.put(caster.getUUID(), new Pending(target.getUUID(), due, caster.level().dimension()));
+        PENDING.put(caster.getUUID(), new Pending(target, due, caster.level().dimension()));
         String key = timerKey(caster.getUUID());
         VisualService.startLoop(caster, key, SwapIds.SWITCHBACK_TIMER, 0);
         VisualService.startLoop(target, key, SwapIds.SWITCHBACK_TIMER, 0);
@@ -54,34 +56,37 @@ public final class Switchback {
         }
         due.forEach((casterId, pending) -> {
             ServerPlayer caster = find(server, casterId);
-            ServerPlayer target = find(server, pending.target());
+            LivingEntity target = pending.target();
             stopTimers(casterId, caster, target);
-            if (!usable(caster, pending) || !usable(target, pending)) return;
+            if (caster == null || !usable(caster, pending) || !usable(target, pending)) return;
             if (!SwapTargeting.allowed(caster, target, Swap.SWITCHBACK, Component.translatable("message.kegare.swap.switchback_refused"))) return;
-            Swapper.swapPlayers(caster, target, true);
+            Swapper.swap(caster, target, true);
             SwapTracker.swapped(caster, target);
         });
     }
 
-    private static boolean usable(@Nullable ServerPlayer player, Pending pending) {
-        return player != null && player.isAlive() && !player.hasDisconnected() && player.level().dimension() == pending.dimension();
+    private static boolean usable(LivingEntity entity, Pending pending) {
+        if (entity instanceof ServerPlayer player && player.hasDisconnected()) return false;
+        return entity.isAlive() && !entity.isRemoved() && entity.level().dimension() == pending.dimension();
     }
 
-    /** Calls off every swap back this player is part of (death, logout, dimension change). */
-    static void cancelInvolving(ServerPlayer player) {
-        UUID id = player.getUUID();
+    /** Calls off every swap back this player or mob is part of (death, logout, dimension change). */
+    static void cancelInvolving(LivingEntity entity) {
+        if (PENDING.isEmpty() || entity.level().isClientSide) return;
+        UUID id = entity.getUUID();
+        MinecraftServer server = entity.getServer();
         for (Iterator<Map.Entry<UUID, Pending>> it = PENDING.entrySet().iterator(); it.hasNext(); ) {
             Map.Entry<UUID, Pending> e = it.next();
-            if (e.getKey().equals(id) || e.getValue().target().equals(id)) {
+            if (e.getKey().equals(id) || e.getValue().target().getUUID().equals(id)) {
                 it.remove();
-                stopTimers(e.getKey(), find(player.server, e.getKey()), find(player.server, e.getValue().target()));
+                stopTimers(e.getKey(), server == null ? null : find(server, e.getKey()), e.getValue().target());
             }
         }
     }
 
     private static void cancel(MinecraftServer server, UUID casterId) {
         Pending old = PENDING.remove(casterId);
-        if (old != null) stopTimers(casterId, find(server, casterId), find(server, old.target()));
+        if (old != null) stopTimers(casterId, find(server, casterId), old.target());
     }
 
     /** An online player by UUID (players in a level but not the player list, like test fake players, count too). */
@@ -95,7 +100,7 @@ public final class Switchback {
         return null;
     }
 
-    private static void stopTimers(UUID casterId, @Nullable ServerPlayer caster, @Nullable ServerPlayer target) {
+    private static void stopTimers(UUID casterId, @Nullable ServerPlayer caster, @Nullable LivingEntity target) {
         String key = timerKey(casterId);
         if (caster != null) VisualService.stopLoop(caster, key);
         if (target != null) VisualService.stopLoop(target, key);

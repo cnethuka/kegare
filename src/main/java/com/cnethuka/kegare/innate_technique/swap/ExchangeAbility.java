@@ -16,7 +16,7 @@ import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.entity.LivingEntity;
 
 /**
- * Exchange (INSTANT): you give the target your worst negative effect and take their strongest positive one, each with
+ * Exchange (INSTANT): you give the target (a player or a mob) your worst negative effect and take their strongest positive one, each with
  * its duration and amplifier. Either half may be missing; with nothing to swap at all it fizzles for free. Effects
  * with infinite duration never move. Special: Momentum Exchange.
  */
@@ -39,12 +39,12 @@ public final class ExchangeAbility extends SwapAbility {
 
     @Override
     public boolean canCast(AbilityContext ctx) {
-        return SwapTargeting.lookedAt(ctx.player()).map(t -> somethingToSwap(ctx.player(), t)).orElse(false);
+        return SwapTargeting.lookedAtLiving(ctx.player()).map(t -> somethingToSwap(ctx.player(), t)).orElse(false);
     }
 
     @Override
     public Component blockedMessage(ServerPlayer player) {
-        return SwapTargeting.lookedAt(player).isPresent()
+        return SwapTargeting.lookedAtLiving(player).isPresent()
                 ? Component.translatable("message.kegare.swap.nothing_to_exchange")
                 : super.blockedMessage(player);
     }
@@ -52,7 +52,7 @@ public final class ExchangeAbility extends SwapAbility {
     @Override
     public void execute(AbilityContext ctx) {
         ServerPlayer caster = ctx.player();
-        ServerPlayer target = SwapTargeting.lookedAt(caster).orElse(null);
+        LivingEntity target = SwapTargeting.lookedAtLiving(caster).orElse(null);
         if (target == null || !SwapTargeting.allowed(caster, target, this)) {
             CastManager.fizzleKeepingCost(caster);
             return;
@@ -73,7 +73,9 @@ public final class ExchangeAbility extends SwapAbility {
         target.level().playSound(null, target.getX(), target.getY(), target.getZ(), SoundEvents.ENDERMAN_TELEPORT, SoundSource.PLAYERS, 0.5f, 1.6f);
     }
 
-    static boolean somethingToSwap(ServerPlayer caster, ServerPlayer target) {
+    @Override boolean takesMobs() { return true; }
+
+    static boolean somethingToSwap(ServerPlayer caster, LivingEntity target) {
         return strongest(caster, MobEffectCategory.HARMFUL).isPresent() || strongest(target, MobEffectCategory.BENEFICIAL).isPresent();
     }
 

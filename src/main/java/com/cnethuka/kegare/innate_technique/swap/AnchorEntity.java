@@ -7,7 +7,6 @@ import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.EntityDataSerializers;
 import net.minecraft.network.syncher.SynchedEntityData;
-import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.entity.Entity;
@@ -16,7 +15,6 @@ import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.projectile.ThrowableItemProjectile;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.level.Level;
-import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
@@ -99,20 +97,14 @@ public class AnchorEntity extends ThrowableItemProjectile {
      * Where a player taken to this anchor stands: on the ground it landed on, out from the wall it stuck to, or hanging
      * under the ceiling; nudged up out of blocks if it must be.
      */
-    public Vec3 arrivalFor(ServerPlayer player) {
+    public Vec3 arrivalFor(Entity entity) {
         Vec3 at = position();
-        double halfWidth = player.getBbWidth() / 2.0 + 0.05;
-        Vec3 spot = switch (face) {
+        double halfWidth = entity.getBbWidth() / 2.0 + 0.05;
+        return switch (face) { // Swapper.moveTo nudges it up out of blocks if it must
             case UP -> at;
-            case DOWN -> at.subtract(0, player.getBbHeight() + 0.05, 0);
-            default -> at.add(face.getStepX() * halfWidth, -player.getBbHeight() / 2.0, face.getStepZ() * halfWidth);
+            case DOWN -> at.subtract(0, entity.getBbHeight() + 0.05, 0);
+            default -> at.add(face.getStepX() * halfWidth, -entity.getBbHeight() / 2.0, face.getStepZ() * halfWidth);
         };
-        AABB box = player.getDimensions(player.getPose()).makeBoundingBox(spot);
-        for (int i = 0; i < 8 && !level().noCollision(player, box); i++) {
-            spot = spot.add(0, 0.25, 0);
-            box = box.move(0, 0.25, 0);
-        }
-        return spot;
     }
 
     @Override

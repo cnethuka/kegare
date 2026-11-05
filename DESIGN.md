@@ -770,9 +770,14 @@ Package `innate_technique.swap`. Trade with other players: places, looks, effect
 `#14B8A6`; tab icon ender pearl. All numbers in `[swap]` of `kegare-server.toml` (seconds, blocks).
 
 **Shared targeting** (`SwapTargeting`):
-- The player under the crosshair within `targeting.range` (24) blocks, with line of sight (blocks stop it), alive and
+- The target under the crosshair within `targeting.range` (24) blocks, with line of sight (blocks stop it), alive and
   not a spectator. `aimTolerance` (0.3 blocks) widens the hit box a little.
-- No valid target: fizzle with "No player in sight.", nothing paid, no cooldown.
+- **Players or mobs:** Positions, Switchback, Send Off, Exchange and Momentum Exchange take any living mob too
+  (`SwapTargeting.lookedAtLiving`), except armor stands and bosses (`c:bosses`: the wither, the ender dragon...).
+  Awareness, Mimic and Total Swap take **players only** (a disguise borrows a player's look; trading health with a
+  cow would be a free heal); for those, mobs neither count nor block the view.
+- No valid target: fizzle with "No player in sight." (players-only abilities) or "Nothing in sight to swap with.",
+  nothing paid, no cooldown.
 - Stunned or frozen players can't cast (the shared checks) but CAN be swapped.
 
 **`SwapTargetEvent`** (cancellable, `NeoForge.EVENT_BUS`, server side): fired before ANY swap with the caster, the
@@ -783,8 +788,9 @@ the recall, Send Off, both disguises, Exchange, Momentum Exchange and Total Swap
 - Swap hardcodes no immunities; a future technique cancels the event. Debug stand-in:
   `/kegare swap unswappable <player> <true|false>` (`SwapDebug`, runtime only).
 
-**Position swaps** (`Swapper`): both players move at once (`teleportTo`, which also dismounts; sleepers wake), and
-both fall distances reset (only Momentum Exchange keeps fall distance, on purpose, and it never moves anyone).
+**Position swaps** (`Swapper`): both move at once, player or mob (`teleportTo`, which also dismounts; sleepers wake;
+a mob's pathing stops; anything that wouldn't fit where it lands is nudged up out of the blocks), and both fall
+distances reset (only Momentum Exchange keeps fall distance, on purpose, and it never moves anyone).
 Both ends get `swap_depart`/`swap_arrive` and the enderman-teleport sound, plus `swap_link` between them.
 
 **Abilities** (default loadout order) and their specials (R, sharing the base ability's cooldown):
@@ -792,11 +798,11 @@ Both ends get `swap_depart`/`swap_arrive` and the enderman-teleport sound, plus 
 | Ability | Type | Cost | Cooldown | Effect |
 |---|---|---|---|---|
 | **Positions** | INSTANT | 12 | 8 s | Swap positions AND facing with the target. |
-| ↳ **Switchback** (R) | INSTANT | 22 | shared | The same swap, then a swap back after `returnDelay` (3 s). The swap back fires `SwapTargetEvent` again; it is called off if either player dies, logs out or changes dimension. Both wear the `switchback_timer` ring until then. |
+| ↳ **Switchback** (R) | INSTANT | 22 | shared | The same swap, then a swap back after `returnDelay` (3 s). The swap back fires `SwapTargetEvent` again; it is called off if either dies, logs out (or the mob is gone) or changes dimension. Both wear the `switchback_timer` ring until then. |
 | **Awareness** | INSTANT | 20 | 20 s | A 5 s disguise swap: everyone else sees the caster as the target and the target as the caster. |
 | ↳ **Mimic** (R) | INSTANT | 24 | shared | One way: the caster looks like the target for 8 s; the target stays as themselves. |
 | **Anchor** | INSTANT, two stages | throw 8 / recall 10 | throw 0.5 s / after use 12 s | First cast throws an anchor (pearl-like, passes through creatures, sticks to the first block it hits, times out after 20 s, never saved). Second cast swaps the caster onto it (out from walls, under ceilings, nudged out of blocks) and uses it up. |
-| ↳ **Send Off** (R) | INSTANT | 18 | shared | Needs an anchor out: the targeted player is swapped onto it instead of the caster; uses it up. No anchor: "You have no anchor out.", free. |
+| ↳ **Send Off** (R) | INSTANT | 18 | shared | Needs an anchor out: the targeted player or mob is swapped onto it instead of the caster; uses it up. No anchor: "You have no anchor out.", free. |
 | **Exchange** | INSTANT | 15 | 15 s | The caster gives its worst negative effect (highest level, then longest) to the target and takes the target's strongest positive one, duration and amplifier carried over. Either half may be missing; nothing at all: "Nothing to exchange.", free. Infinite effects never move. |
 | ↳ **Momentum Exchange** (R) | INSTANT | 18 | shared | Swap velocity vectors (what each client last reported, `getKnownMovement`) AND fall distance with the target; both velocities are sent to both clients. |
 | **Total Swap** (V, ultimate, no special) | INSTANT | 60 | 120 s | Positions + the Awareness disguise + health percentage: each gets the other's share of their OWN max health (4/20 and 18/20 become 18 and 4). The target must be at least `minDistance` (4) blocks away. |
@@ -836,25 +842,26 @@ Photon effects (`SwapFxAuthoring` → `fx/swap/`), teal with Malice violet, with
 (`item/swap_anchor.png`). The Sorcerer screen shows a special's icon in its details when it has one.
 
 **Advancements** (tab root `kegare:innate_technique/swap`, unlocked on first rolling Swap, silent). All hidden,
-silent in chat and awarded from code to Swap holders only; PvP ones count player targets only.
+silent in chat and awarded from code to Swap holders only. Targets count whether they are players or mobs.
 
 | Advancement | Frame | When |
 |---|---|---|
-| *Switcheroo* | task | swap positions with a player (Positions, Switchback, Total Swap) |
+| *Switcheroo* | task | swap positions with a player or a mob (Positions, Switchback, Total Swap) |
 | *Not Allowed* | task | a swap fails because `SwapTargetEvent` was cancelled |
-| *Return to Sender* (`special_delivery_swap`) | task | Send Off a player onto your anchor |
-| *Wrong Target* | goal | while disguised with Awareness (or Total Swap), a third player damages whoever wears your face |
-| *There Are Two of You* | goal | while you Mimic someone, another player damages the real one |
-| *Fall Guy* | goal | a player you moved with a swap (either Switchback leg and Send Off included) dies from falling within 5 s |
-| *Round Trip* | goal | you damage a player while waiting on Switchback's swap back |
+| *Return to Sender* (`special_delivery_swap`) | task | Send Off a player or mob onto your anchor |
+| *Wrong Target* | goal | while disguised with Awareness (or Total Swap), someone else (a player or a mob) damages whoever wears your face |
+| *There Are Two of You* | goal | while you Mimic someone, anyone else (a player or a mob) damages the real one |
+| *Fall Guy* | goal | a player or mob you moved with a swap (either Switchback leg and Send Off included) dies from falling within 5 s |
+| *Round Trip* | goal | you damage a player or mob while waiting on Switchback's swap back |
 | *Identity Crisis* | challenge | cast Total Swap below 30% health and are alive 30 s later |
-| *Newton's Third* | challenge | a player dies from fall damage within 10 s of your Momentum Exchange on them |
+| *Newton's Third* | challenge | a player or mob dies from fall damage within 10 s of your Momentum Exchange on them |
 
 **Tests:** `SwapTest` (in-game JUnit): targeting and the free fizzle, the cancelled event (Malice spent, no
 cooldown), stunned targets and casters, Positions and Switchback (return and calling off), disguises (both kinds,
 the API, expiry, ending, refusal), Anchor (throw, recall, Send Off with and without an anchor, timing out), Exchange
-and Momentum Exchange, Total Swap's health math, and every advancement. `LoadoutTest` covers the nine slots and
-padding an old bar.
+and Momentum Exchange, Total Swap's health math, every advancement, and mobs (Positions, Switchback, Exchange,
+Momentum Exchange, Send Off and their advancements on a pig; Awareness and Total Swap ignoring it; bosses and armor
+stands never targets). `LoadoutTest` covers the nine slots and padding an old bar.
 
 ## 4. Extension points (how later content plugs in)
 

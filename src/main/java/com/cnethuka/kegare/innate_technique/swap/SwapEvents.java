@@ -2,6 +2,7 @@ package com.cnethuka.kegare.innate_technique.swap;
 
 import com.cnethuka.kegare.Kegare;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.tags.DamageTypeTags;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
@@ -32,35 +33,45 @@ public final class SwapEvents {
         if (event.getEntity() instanceof ServerPlayer player) Disguises.sendTo(player);
     }
 
-    /** Damage that lands on a disguised pair's other half, or on a Mimic's real target (player attackers only). */
+    /**
+     * Damage-based advancements. Round Trip: the caster hits anyone (player or mob) while a Switchback swap back is
+     * pending. Wrong Target: anyone but the caster (player or mob) hits whoever wears the caster's face. There Are Two
+     * of You: anyone but the mimic hits the player being Mimicked.
+     */
     @SubscribeEvent
     static void onDamage(LivingDamageEvent.Post event) {
-        if (!(event.getEntity() instanceof ServerPlayer victim) || event.getNewDamage() <= 0) return;
-        if (!(event.getSource().getEntity() instanceof ServerPlayer attacker) || attacker == victim) return;
-        // Round Trip: the attacker is waiting on a Switchback swap back.
-        if (Switchback.isPending(attacker)) SwapAdvancements.award(attacker, SwapAdvancements.ROUND_TRIP);
-        // Wrong Target: the victim wears the caster's face (Awareness or Total Swap), and a third player hit them.
-        Disguises.get(victim).ifPresent(d -> {
+        LivingEntity victim = event.getEntity();
+        if (victim.level().isClientSide || event.getNewDamage() <= 0) return;
+        if (!(event.getSource().getEntity() instanceof LivingEntity attacker) || attacker == victim) return;
+        if (attacker instanceof ServerPlayer caster && Switchback.isPending(caster)) {
+            SwapAdvancements.award(caster, SwapAdvancements.ROUND_TRIP);
+        }
+        if (!(victim instanceof ServerPlayer wearer)) return; // only players wear (or lend) faces
+        Disguises.get(wearer).ifPresent(d -> {
             if (d.kind() == Disguises.Kind.MIMIC || !d.as().equals(d.caster())) return;
-            ServerPlayer caster = Switchback.find(victim.server, d.caster());
+            ServerPlayer caster = Switchback.find(wearer.server, d.caster());
             if (caster != null && attacker != caster && Disguises.get(caster).isPresent()) {
                 SwapAdvancements.award(caster, SwapAdvancements.WRONG_TARGET);
             }
         });
-        // There Are Two of You: someone Mimicking the victim, and another player hit the real one.
-        for (Disguises.Disguise d : Disguises.wearing(victim.getUUID())) {
+        for (Disguises.Disguise d : Disguises.wearing(wearer.getUUID())) {
             if (d.kind() != Disguises.Kind.MIMIC) continue;
-            ServerPlayer mimic = Switchback.find(victim.server, d.wearer());
+            ServerPlayer mimic = Switchback.find(wearer.server, d.wearer());
             if (mimic != null && mimic != attacker) SwapAdvancements.award(mimic, SwapAdvancements.TWO_OF_YOU);
         }
     }
 
+    /** Any player or mob: fall-death advancements, then everything Swap has running with it ends. */
     @SubscribeEvent
     static void onDeath(LivingDeathEvent event) {
-        if (event.getEntity() instanceof ServerPlayer player) {
-            if (event.getSource().is(DamageTypeTags.IS_FALL)) SwapTracker.fellToDeath(player);
-            SwapTracker.forget(player);
+        LivingEntity entity = event.getEntity();
+        if (entity.level().isClientSide) return;
+        if (event.getSource().is(DamageTypeTags.IS_FALL)) SwapTracker.fellToDeath(entity);
+        SwapTracker.forget(entity);
+        if (entity instanceof ServerPlayer player) {
             endAll(player);
+        } else {
+            Switchback.cancelInvolving(entity);
         }
     }
 

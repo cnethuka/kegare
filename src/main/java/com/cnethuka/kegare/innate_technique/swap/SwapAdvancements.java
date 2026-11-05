@@ -8,7 +8,7 @@ import net.minecraft.server.level.ServerPlayer;
 /**
  * Swap's advancement tab (root {@code kegare:innate_technique/swap}, unlocked on first rolling Swap). Every one is
  * hidden and silent in chat (they would reveal who has Swap), uses minecraft:impossible and is awarded from code.
- * PvP ones count player targets only.
+ * Targets count whether they are players or mobs (only the disguises and Total Swap need players).
  */
 public final class SwapAdvancements {
     public static final ResourceLocation ROOT = KegareAdvancements.innateTechniqueRoot(Kegare.id("swap"));
