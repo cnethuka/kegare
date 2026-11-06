@@ -9,7 +9,7 @@ import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.event.server.ServerStoppedEvent;
 
 /**
- * DEBUG (op command {@code /kegare strings unmovable <player> <true|false>}): a stand-in for a future immunity. Cancels
+ * DEBUG (op command {@code /kegare debug strings unmovable <player> <on>}): a stand-in for a future immunity. Cancels
  * {@link StringsTargetEvent} for that player. Nothing in the game cancels the event otherwise.
  */
 @EventBusSubscriber(modid = Kegare.MODID)

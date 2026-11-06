@@ -46,7 +46,7 @@ import org.joml.Quaternionf;
 import org.joml.Vector3f;
 
 /**
- * DEV TOOL (client, dev environment only; see {@code /kegarefx export}). Builds Rime's Photon effects out of Photon's
+ * DEV TOOL (client, dev environment only; see {@code /kegare debug fx export}). Builds Rime's Photon effects out of Photon's
  * own objects and writes them with Photon's own serializer, exactly as the editor exports a {@code .fx}: the FX's NBT,
  * plus {@code version = FXProject.VERSION}, gzip-compressed. Re-run after changing anything here.
  * <p>

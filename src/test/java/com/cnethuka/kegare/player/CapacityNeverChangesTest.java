@@ -39,12 +39,12 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 
 /**
- * Malice capacity is fixed at birth: only birth, {@code /kegare rebirth} and {@code /kegare setcapacity} may change
+ * Malice capacity is fixed at birth: only birth, {@code /kegare rebirth} and {@code /kegare malice capacity} may change
  * it. This drives every reroll path through the real server code, many times, on a throwaway server, and checks that
  * capacity, tier and the Severed flag never move:
  * <ul>
  *   <li>Purification Talisman (the confirm handler the client's Reroll button triggers)</li>
- *   <li>admin reroll ({@code /kegare reroll})</li>
+ *   <li>admin reroll ({@code /kegare innate reroll})</li>
  *   <li>replacement roll (login with an innate technique an update removed)</li>
  * </ul>
  */

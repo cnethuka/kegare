@@ -21,7 +21,7 @@ import net.minecraft.resources.ResourceLocation;
 import org.joml.Vector3f;
 
 /**
- * DEV TOOL (exported with {@code /kegarefx export}): Puppet Manipulation's Photon effects, built from Photon's own
+ * DEV TOOL (exported with {@code /kegare debug fx export}): Puppet Manipulation's Photon effects, built from Photon's own
  * objects (see {@link FxKit}). Palette: lavender (the Malice color, #C4B5FD) from near-white to deep violet; threads
  * and seams are the motif. Body-anchored effects sit at mid-body: a half-size puppet's feet are local y -0.45, a
  * full-size body's -0.9.

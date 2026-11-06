@@ -17,8 +17,8 @@ config keys, lang keys and command names.
 
 | Concept | Code ID | Display name |
 |---|---|---|
-| Cursed energy | `malice` (`MaliceData`, `kegare:malice`, `/kegare setmalice`) | Malice |
-| Per-player power | `innate_technique` (`InnateTechnique`, `kegare:innate_technique`, `/kegare setinnatetechnique`) | Innate Technique |
+| Cursed energy | `malice` (`MaliceData`, `kegare:malice`, `/kegare malice`) | Malice |
+| Per-player power | `innate_technique` (`InnateTechnique`, `kegare:innate_technique`, `/kegare innate`) | Innate Technique |
 | Ultimate space (future) | `dominion` | Dominion |
 | Zero-Malice flag | `severed` | Severed |
 | Reroll item | `purification_talisman` | Purification Talisman |
@@ -113,7 +113,7 @@ All timestamps use **level game time**. They persist across restarts and are ide
   buys about six Frost Shards, or two and a half seconds of RMT. Higher tiers buy far more, on purpose. All of it is in
   config.
 - **Capacity never changes.** Death, rerolls and items leave it alone. The only exceptions are admin debug
-  (`/kegare setcapacity`, `/kegare rebirth`). A capacity set by hand takes the regen of the tier with the nearest base.
+  (`/kegare malice capacity`, `/kegare rebirth`). A capacity set by hand takes the regen of the tier with the nearest base.
 - **Reserve** (`current`) is spent by abilities and regenerates at its tier's percentage of capacity per second.
   Regen pauses for `regenPauseSeconds` (5s) after dealing or taking damage.
 - **New defaults don't reach an existing config.** NeoForge keeps whatever an existing `kegare-server.toml` holds and only adds
@@ -125,7 +125,7 @@ All timestamps use **level game time**. They persist across restarts and are ide
 - **Respawn** refills the reserve to capacity.
 - **Severed** = born with 0 capacity. The player gets no innate technique, can't reroll, and the HUD is hidden.
   Only the flag is stored; their superhuman body comes from it (§3.27).
-- **Becoming Severed** (birth or rebirth roll of 0, `/kegare setcapacity <player> 0`, or any future path):
+- **Becoming Severed** (birth or rebirth roll of 0, `/kegare malice capacity <player> 0`, or any future path):
   - Every `requiresMalice` trait is stripped (*"The eyes have closed."*).
   - Unique inheritable ones (six_eyes) go through the **normal transfer** (30s, then an eligible heir).
   - Other Malice-based traits are removed; a unique non-inheritable one is released.
@@ -161,7 +161,7 @@ All timestamps use **level game time**. They persist across restarts and are ide
     Malice), not the previous bearer.
   - RANDOM picks any eligible player. KILLER picks the killer if eligible, otherwise random.
   - If nobody is eligible, the next eligible player to log in gets it.
-  - Admin `trait add` overrides a pending succession.
+  - Admin `trait give` overrides a pending succession.
 - **`kegare:six_eyes`** (unique, requiresMalice, inheritable, lostOnPvpDeath, 1% birth, **no gameplay effects**):
   - **Killed by another player** (direct hit, or kill credit, e.g. knocked into the void): it is stripped before
     respawn, and after `sixEyesTransferDelaySeconds` (30) it opens in an heir per `sixEyesTransferMode`.
@@ -255,7 +255,7 @@ All timestamps use **level game time**. They persist across restarts and are ide
   |---|---|---|
   | BIRTH | yes | no |
   | TALISMAN | yes | yes |
-  | ADMIN (`/kegare reroll`) | yes | no |
+  | ADMIN (`/kegare innate reroll`, `/kegare debug reroll`) | yes | no |
   | REPLACEMENT | **no** | no |
 
   REPLACEMENT is the free roll on login when a player's stored innate technique no longer exists (removed by an
@@ -344,30 +344,66 @@ All timestamps use **level game time**. They persist across restarts and are ide
 - Players are tagged on dealing or taking real damage (`LivingDamageEvent.Post`). The API works on any
   `LivingEntity` for future systems.
 
-### 3.8 Debug commands (op level 2)
+### 3.8 Commands
+
+Every command reads `/kegare <system> <action> [player] [value]`.
+
+- **Permission:** level 2 for everything but `/kegare help`, which anyone can use and which lists only what the sender may run. The root stays open for that one command, so each system asks for the level itself. A non-op who types another command gets vanilla's "Incorrect argument for command".
+- **Players:** every player argument takes a name or a selector such as `@a`, and a command given several players runs for each, with a line for each. Where the player is the last argument it's usually optional and defaults to the sender. The console has to name one. The whole-wipe commands (`rebirth`, `progression reset`) always need a name.
+- **Short names:** innate techniques, traits and shared abilities go by the path of their ID (`rime`, not `kegare:rime`, which is refused as unknown). Should two mods ever use one short name, Kegare's wins. Suggestions show short names only. Hovering one shows what it is, like "Rime (Rare)" or "Six Eyes (Unique)"; traits have no rarity, so a unique one says so and any other shows only its name.
+- **Errors:** an unknown innate technique, trait or Grade points at its list command, and a bad player at `/list`.
+- **Feedback:** to the sender only (`sendSuccess(..., false)`), in sentences, with display names and no raw IDs. Everything goes through `CommandArgs.say`. A holder the server has no name for reads "a player this server has no name for", not a UUID. Rarity names take the rarity's color (`InnateTechniqueRarity.color()`, as on the emblem rim). Tier names take `GuiDraw.MALICE` as on the Sorcerer screen, `GuiDraw.GOLD` for Vast as in the reveal, and `GuiDraw.RED` for Zero. GuiDraw's colors are compile-time constants, so a dedicated server never loads that client class. With the vanilla gamerule `sendCommandFeedback` off, players see only errors, as with vanilla commands; the console sees everything.
+- **Help:** `HelpCommand.ENTRIES` is written by hand, and `KegareCommandTest.helpMatchesTheCommandTree` holds it to the real tree both ways. Clicking a line in `/kegare help` opens that system, and clicking a command in a system's list types it into the chat box.
 
 | Command | What it does |
 |---|---|
-| `/kegare info [player]` | Show a player's Malice, innate technique, traits, pity and combat state |
-| `setmalice <player> <amount>` | Set the current Malice reserve |
-| `setcapacity <player> <n>` | Admin override of Malice capacity |
-| `setinnatetechnique <player> <innate_technique>` | Set the innate technique |
-| `reroll <player> [innate_technique]` | Reroll the innate technique (optionally forcing the result, for testing reveals) |
-| `setpity <player> <n>` | Set the pity counter |
-| `trait add\|remove <player> <id>` | Grant or remove a trait |
-| `trait release <id>` | Free a unique trait from an online or offline holder |
-| `trait status <id>` | Show holder / passing on / waiting |
-| `rebirth <player> [capacity]` | Wipe and re-roll everything (optionally forcing Malice capacity; 0 = Severed) |
-| `stun <player> <seconds>` | Extra, for testing stun; 0 clears |
-| `swap unswappable <player> <true\|false>` | Debug for Swap (§3.19): cancels `SwapTargetEvent` for swaps targeting this player (a stand-in for a future immunity) |
-| `strings unmovable <player> <true\|false>` | Debug for Strings (§3.20): cancels `StringsTargetEvent` for this player (a stand-in for a future immunity) |
-| `grade get <player>` / `grade set <player> <grade>` | Show or set a Grade (§3.21). An admin can lower it; nothing else can |
-| `grade addxp <player> <amount>` | Add Grade XP, which promotes if the step needs only XP |
-| `assessment get <player>` | Recent scores and their Technique use, and where they stand against the next requirement |
-| `assessment addfight <player> <score> <opponent> [techniqueUse]` | Add a scored fight to the history. Technique use (0-100) defaults to the score. An online player's name uses their real UUID; any other name is hashed into a stable one |
-| `refinement get <player>` / `refinement set <player> <level>` | Show or set Refinement, clamped to the top level. Lowering it takes newly locked abilities off the bar |
-| `insight get <player>` / `insight add <player> <category> <amount>` | Show all three Insight values, or add to one |
-| `progression reset <player>` | Wipe Grade, Assessment, Refinement, Peak Refinement, Insight and framework unlocks. Advancements stay |
+| `/kegare help [system]` | Anyone. One line per system, or one system in full |
+| `/kegare info [player]` | Malice, innate technique, loadout, shared abilities, cooldowns, traits, pity and combat state |
+| `/kegare innate list` | Every innate technique, lowest rarity first, with its short name |
+| `/kegare innate get [player]` | A player's innate technique |
+| `/kegare innate set <player> <innate>` | Set it without rolling |
+| `/kegare innate reroll [player]` | Roll a new one, through the roll pipeline |
+| `/kegare trait list` | Every trait, with its short name |
+| `/kegare trait get [player]` | A player's traits |
+| `/kegare trait give <player> <trait>` | Grant a trait. This overrides a pending succession |
+| `/kegare trait remove <player> <trait>` | Take one away |
+| `/kegare trait release <trait>` | Free a unique trait from an online or offline holder |
+| `/kegare trait status <trait>` | Show holder / passing on / waiting |
+| `/kegare malice get [player]` | Current Malice, capacity and tier |
+| `/kegare malice set <player> <amount>` | Set the current reserve |
+| `/kegare malice fill [player]` | Fill the reserve |
+| `/kegare malice capacity <player> <amount>` | Admin override of capacity. 0 makes them Severed |
+| `/kegare rebirth <player> [capacity]` | Wipe and re-roll everything (optionally forcing Malice capacity; 0 = Severed) |
+| `/kegare loadout reset [player]` | Back to the innate technique's default layout |
+| `/kegare grade list` | The Grades, lowest first, with their short names |
+| `/kegare grade get [player]` | Grade and XP (§3.21) |
+| `/kegare grade set <player> <grade>` | Set a Grade. An admin can lower it; nothing else can |
+| `/kegare grade add <player> <amount>` | Add Grade XP, which promotes if the step needs only XP |
+| `/kegare assessment get [player]` | Recent scores and their Technique use, and where they stand against the next requirement |
+| `/kegare assessment add <player> <score> <opponent> [techniqueUse]` | Add a scored fight to the history. Technique use (0-100) defaults to the score. An online player's name uses their real UUID; any other name is hashed into a stable one |
+| `/kegare refinement get [player]` | Refinement, XP and Peak |
+| `/kegare refinement set <player> <level>` | Set Refinement, clamped to the top level. Lowering it takes newly locked abilities off the bar |
+| `/kegare insight get [player]` | All three Insight values |
+| `/kegare insight add <player> <category> <amount>` | Add to one |
+| `/kegare progression reset <player>` | Wipe Grade, Assessment, Refinement, Peak Refinement, Insight and framework unlocks. Advancements stay |
+
+Everything that exists only for testing is under `/kegare debug`:
+
+| Command | What it does |
+|---|---|
+| `/kegare debug stun <player> <seconds>` | Stun a player; 0 clears |
+| `/kegare debug pity <player> <rolls>` | Set the pity counter |
+| `/kegare debug reroll <player> <innate>` | Force a roll's result, for testing reveals. It still goes through the roll pipeline: pity, advancements, reveal. A player can't be forced into what they already hold |
+| `/kegare debug shared unlock <player> <ability>` | Unlock a shared ability (§3.16) |
+| `/kegare debug shared lock <player> <ability>` | Lock it again |
+| `/kegare debug orb spawn [player]` | Force a green orb now (§3.18) |
+| `/kegare debug orb status [player]` | Time to the next roll, and any orb under way |
+| `/kegare debug swap unswappable <player> <on>` | For Swap (§3.19): cancels `SwapTargetEvent` for swaps targeting this player (a stand-in for a future immunity) |
+| `/kegare debug strings unmovable <player> <on>` | For Strings (§3.20): cancels `StringsTargetEvent` for this player (a stand-in for a future immunity) |
+| `/kegare debug fx export` | Dev client only: rewrite every effect in `FxCatalog` (§3.14) |
+| `/kegare debug fx play <name> [front\|self\|loop]` | Dev client only: preview an effect |
+
+`debug fx` builds Photon effects, so it has to run on the client: `FxDevCommand` registers it in the dev client's own command tree, under the same `/kegare debug` and at the same level. NeoForge tries that tree first and sends anything it doesn't recognise on to the server, and the client's suggestions merge the two. Help lists it only outside a released game.
 
 Malice is always shown as whole numbers (floored, like the HUD); the stored value keeps its fraction.
 
@@ -466,7 +502,7 @@ Each tab has its own root.
   - title: its name, in rarity color
   - icon: `InnateTechnique.Builder.tabIcon(...)`, default an enchanted book
   - background: black concrete
-- Every roll (birth, talisman, admin, replacement) awards it; later rolls are no-ops. `/kegare setinnatetechnique`
+- Every roll (birth, talisman, admin, replacement) awards it; later rolls are no-ops. `/kegare innate set`
   is not a roll and doesn't award it.
 - Give that innate technique's own advancements this root as their parent.
 - The root is **silent in chat**. Announcing it would tell every opponent which innate technique a player rolled. The
@@ -715,8 +751,8 @@ Package `com.cnethuka.kegare.innate_technique.rime`. **Rarity: RARE.** All numbe
   - Photon's model particles scale uniformly, so tall shapes (the spike) are stacks of cubes.
 - **Effect authoring:** the effects are built from Photon's own objects in `RimeFxAuthoring` (building blocks in the
   shared `client.visual.FxKit`) and written with Photon's serializer, the same `.fx` format the editor exports. In a
-  dev client, `/kegarefx export` rewrites every effect in `FxCatalog` (Rime's and RMT's, and the running game's
-  copy), and `/kegarefx play <name> [front|self|loop]` previews one. The command exists only in the dev environment.
+  dev client, `/kegare debug fx export` rewrites every effect in `FxCatalog` (Rime's and RMT's, and the running game's
+  copy), and `/kegare debug fx play <name> [front|self|loop]` previews one. The command exists only in the dev environment.
 - **Advancements** (Rime tab, root `kegare:innate_technique/rime`, which unlocks on first rolling Rime). All are
   hidden, use `minecraft:impossible`, are awarded from code, and are never announced in chat: they would reveal who
   has Rime. Datagen enforces this for every advancement under `innate_technique/`. Only a player who currently holds
@@ -856,7 +892,7 @@ separate bar is filled from any of them.
   A refusal shows on the action bar and on the Sorcerer screen's status line (`LoadoutResultPayload`). A toggle
   taken off the bar switches off. The sync carries the loadout, the unlocked shared abilities and whether the
   player is in combat (re-checked every 10 ticks), so the screen and HUD update live.
-- **Commands:** `/kegare shared unlock|lock <player> <ability>`, `/kegare loadout reset <player>`; `/kegare info`
+- **Commands:** `/kegare debug shared unlock|lock <player> <ability>`, `/kegare loadout reset [player]`; `/kegare info`
   lists the loadout and the unlocked shared abilities.
 - **Tests:** `LoadoutTest` (in-game JUnit): default layout, moving instead of duplicating, empty slots, the ultimate
   and bad slots, other techniques' abilities, mid-cast and in-combat refusals, toggles switching off, reset on a new
@@ -870,7 +906,7 @@ separate bar is filled from any of them.
 Package `rmt`. The first **shared** ability (§3.16), ID `kegare:reverse_malice_technique`. Numbers in
 `[reverse_malice_technique]` of `kegare-server.toml`. Malice is negative energy, and this multiplies it by itself: negative times
 negative is positive energy, which is why it heals, and why its colors are white and green.
-- **Locked by default.** Found through the green orb (§3.18); `/kegare shared unlock|lock` for admins. Severed
+- **Locked by default.** Found through the green orb (§3.18); `/kegare debug shared unlock|lock` for admins. Severed
   players can never unlock it (`SharedAbilityService.unlock` refuses) or cast it (the cast pipeline refuses Severed
   players for everything).
 - **CHANNELED:** hold the cast key (C) to heal **2 HP** at the end of every
@@ -926,8 +962,8 @@ negative is positive energy, which is why it heals, and why its colors are white
     hears them;
   - a private chat line, "Your body remembers how to heal." (sent to that player only).
 - **Never again** after unlocking. Dying, or becoming Severed, removes a waiting orb.
-- **Commands:** `/kegare orb spawn <player>` forces an orb now, ignoring chance and the roll cooldown, but never for
-  Severed or already-unlocked players. `/kegare orb status <player>` shows the time to the next roll, whether an orb
+- **Commands:** `/kegare debug orb spawn [player]` forces an orb now, ignoring chance and the roll cooldown, but never for
+  Severed or already-unlocked players. `/kegare debug orb status [player]` shows the time to the next roll, whether an orb
   is waiting, RMT locked/unlocked, and eligibility.
 - **Tests:** `GreenOrbTest`: no roll above the threshold, one roll per cooldown, then again after it; where it starts and that it
   waits; a new route every orb; following to the last tick unlocks and heals, capped at max health; staring without following never does (25 routes);
@@ -958,7 +994,7 @@ the recall, Send Off, both disguises, Exchange, Momentum Exchange and Total Swap
 - Cancelled: "Something stops the swap.", the cast fizzles with its Malice **spent** and **no cooldown**
   (`CastManager.fizzleKeepingCost`, INSTANT abilities only), and the caster earns *Not Allowed*.
 - Swap hardcodes no immunities; a future technique cancels the event. Debug stand-in:
-  `/kegare swap unswappable <player> <true|false>` (`SwapDebug`, runtime only).
+  `/kegare debug swap unswappable <player> <on>` (`SwapDebug`, runtime only).
 
 **Position swaps** (`Swapper`): both move at once, player or mob (`teleportTo`, which also dismounts; sleepers wake;
 a mob's pathing stops; anything that wouldn't fit where it lands is nudged up out of the blocks), and both fall
@@ -1132,7 +1168,7 @@ icon armor stand; ultimate locked (its Dominion comes later). All numbers in `[p
 - **Pulls** are velocity, not teleports: every tick on the server, sent to a player's client (`hurtMarked`), which is what actually moves them. A client lags a tick or two, so pulls ease off over their last stretch rather than overshoot.
 - **Cooldown:** starts at stage 2 (running effects finish on it), or when a string that never got a stage 2 snaps, expires or loses its target.
 - **R with no string:** free, "No string attached."
-- **`StringsTargetEvent`** (cancellable, `NeoForge.EVENT_BUS`, server side): fired at stage 2, once per target, with the caster, target and `StringsVariation`. Cancelled: that target isn't moved (a cancelled Zip doesn't move the caster: the target refuses). If nothing is left to move, the cast fizzles like a refused swap: Malice spent, no cooldown, "The string won't pull.", and the string is gone. Strings never cancels it itself; `/kegare strings unmovable` is the debug stand-in.
+- **`StringsTargetEvent`** (cancellable, `NeoForge.EVENT_BUS`, server side): fired at stage 2, once per target, with the caster, target and `StringsVariation`. Cancelled: that target isn't moved (a cancelled Zip doesn't move the caster: the target refuses). If nothing is left to move, the cast fizzles like a refused swap: Malice spent, no cooldown, "The string won't pull.", and the string is gone. Strings never cancels it itself; `/kegare debug strings unmovable` is the debug stand-in.
 - **Bosses** (`c:bosses`): strings attach, but they're never moved. Reel In, or a Tie or Leash of two bosses, fizzles for free ("It won't budge.") and the string stays for a Zip. Zip works: you move. A Tie of a boss and something else pulls only the something else, and the boss takes the collision damage. A Leash holds only the something else.
 - **Ends** with the death, logout or dimension change of the caster or anyone on it, and when you possess a puppet (or the puppet on it is possessed) or lose the technique. A puppet on a running pull, tether or leash stops following its owner, so it doesn't teleport off the string.
 

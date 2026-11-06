@@ -9,7 +9,7 @@ import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
 
 /**
- * DEBUG (op command {@code /kegare swap unswappable <player> <true|false>}): a stand-in for a future immunity.
+ * DEBUG (op command {@code /kegare debug swap unswappable <player> <on>}): a stand-in for a future immunity.
  * Cancels {@link SwapTargetEvent} for swaps that target a marked player, through the same event any real immunity
  * would use. Runtime only; nothing is saved.
  */

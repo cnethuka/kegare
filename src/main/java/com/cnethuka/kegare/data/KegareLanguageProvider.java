@@ -297,9 +297,7 @@ public final class KegareLanguageProvider extends LanguageProvider {
         add("gui.kegare.sorcerer.special.line", "Special: %s (%s) · %s " + MALICE);
         add("gui.kegare.sorcerer.special.line_upkeep", "Special: %s (%s) · %s + %s/s " + MALICE);
         add("gui.kegare.sorcerer.special.none", "No special");
-        add("gui.kegare.special.kind", "Special (%s) · %s");
         add("gui.kegare.special.requires", "Requires %s");
-        add("gui.kegare.special.shared_cooldown", "Shares %s's cooldown");
         add("gui.kegare.sorcerer.ability.ultimate_locked", "Ultimate: Locked");
         add("gui.kegare.sorcerer.ability.ultimate_locked.desc", "Its " + DOMINION + " comes later.");
 
@@ -316,16 +314,6 @@ public final class KegareLanguageProvider extends LanguageProvider {
         add("message.kegare.rmt.not_hurt", "You aren't hurt.");
         add("message.kegare.rmt.healed", "Fully healed.");
         add("message.kegare.rmt.unlocked", "Your body remembers how to heal.");
-        add("commands.kegare.orb.spawned", "A green orb appeared for %s (only they can see it)");
-        add("commands.kegare.orb.already_unlocked", "%s has already unlocked Reverse Malice Technique: the orb never comes again");
-        add("commands.kegare.orb.severed", "%s is " + SEVERED + ": the orb never comes to them");
-        add("commands.kegare.orb.not_born", "%s hasn't been born yet");
-        add("commands.kegare.orb.status", "Green orb for %s: next chance roll in %ss; orb waiting: %s; Reverse Malice Technique %s; eligible: %s");
-        add("commands.kegare.orb.status.following", "yes (%s/%s ticks along, at %s %s %s)");
-        add("commands.kegare.orb.status.yes", "yes");
-        add("commands.kegare.orb.status.no", "no");
-        add("commands.kegare.orb.status.unlocked", "unlocked");
-        add("commands.kegare.orb.status.locked", "locked");
 
         // Loadout
         add("ability_category.kegare.innate_technique", INNATE_TECHNIQUE);
@@ -494,24 +482,6 @@ public final class KegareLanguageProvider extends LanguageProvider {
         add("insight.kegare.dominion", DOMINION);
         add("insight.kegare.ward", "Ward");
         add("insight.kegare.output", "Output");
-        add("commands.kegare.grade.unknown", "Unknown Grade: %s");
-        add("commands.kegare.grade.top", "nothing");
-        add("commands.kegare.grade.get", "%s is %s: %s / %s XP toward %s.");
-        add("commands.kegare.grade.set", "%s is now %s.");
-        add("commands.kegare.grade.addxp", "Gave %s XP to %s, who is %s with %s XP.");
-        add("commands.kegare.assessment.recent", "%s's recent fights, oldest first: %s");
-        add("commands.kegare.assessment.recent_technique", "Technique use in those fights: %s");
-        add("commands.kegare.assessment.none", "Their next step takes no Assessment.");
-        add("commands.kegare.assessment.status", "Toward %s: average %s / %s, Technique use %s / %s, fights %s / %s, opponents %s / %s, Peak Refinement %s / %s: %s");
-        add("commands.kegare.assessment.met", "met.");
-        add("commands.kegare.assessment.unmet", "not met.");
-        add("commands.kegare.assessment.addfight", "Added a %s (Technique use %s) against %s to %s, who is %s.");
-        add("commands.kegare.refinement.get", "%s: Refinement %s / %s, %s / %s XP to the next level, Peak Refinement %s.");
-        add("commands.kegare.refinement.set", "%s is now at Refinement %s.");
-        add("commands.kegare.insight.unknown", "Unknown Insight category: %s");
-        add("commands.kegare.insight.get", "%s: " + DOMINION + " %s, Ward %s, Output %s.");
-        add("commands.kegare.insight.add", "Added %s %s Insight to %s, who now has %s.");
-        add("commands.kegare.progression.reset", "%s's Grade, Assessment, Refinement, Insight and unlocks are all reset.");
         add("toast.kegare.promotion", "Promoted");
         add("toast.kegare.unlocked", "Unlocked");
         add("toast.kegare.unlocked.special", "Special unlocked");
@@ -572,27 +542,68 @@ public final class KegareLanguageProvider extends LanguageProvider {
         add("gui.kegare.talisman.cancel", "Cancel");
 
 
-        // Commands
-        add("commands.kegare.unknown_innate_technique", "Unknown " + INNATE_TECHNIQUE + ": %s");
-        add("commands.kegare.unknown_trait", "Unknown trait: %s");
+        // Commands: what they all share
+        add("commands.kegare.entry", "%s: %s");
+        add("commands.kegare.rated", "%s (%s)");
+        add("commands.kegare.no_player", "No online player matches %s. Use /list to see who's online.");
         add("commands.kegare.severed", "%s is " + SEVERED + " and can't hold an " + INNATE_TECHNIQUE + ".");
+
+        // /kegare help
+        add("commands.kegare.help.header", "Kegare commands. Use /kegare help <system> to see one in full, or click it.");
+        add("commands.kegare.help.header.system", "/kegare %s commands. Click one to type it:");
+        add("commands.kegare.help.unknown", "Unknown system: %s. Use /kegare help to see them all.");
+        add("commands.kegare.help.help", "Show the commands you can run, or one system in full.");
+        add("commands.kegare.help.info", "Show a player's " + MALICE + ", " + INNATE_TECHNIQUE + ", traits, pity and combat state.");
+        add("commands.kegare.help.innate.list", "List every " + INNATE_TECHNIQUE + ".");
+        add("commands.kegare.help.innate.get", "Show a player's " + INNATE_TECHNIQUE + ".");
+        add("commands.kegare.help.innate.set", "Give a player an " + INNATE_TECHNIQUE + " without rolling.");
+        add("commands.kegare.help.innate.reroll", "Roll a player a new " + INNATE_TECHNIQUE + ".");
+        add("commands.kegare.help.trait.list", "List every trait.");
+        add("commands.kegare.help.trait.get", "Show a player's traits.");
+        add("commands.kegare.help.trait.give", "Give a player a trait.");
+        add("commands.kegare.help.trait.remove", "Take a trait from a player.");
+        add("commands.kegare.help.trait.release", "Free a unique trait from whoever holds it, online or not.");
+        add("commands.kegare.help.trait.status", "Show who holds a unique trait, or whether it's passing on.");
+        add("commands.kegare.help.malice.get", "Show a player's " + MALICE + " and capacity.");
+        add("commands.kegare.help.malice.set", "Set a player's current " + MALICE + ".");
+        add("commands.kegare.help.malice.fill", "Fill a player's " + MALICE + ".");
+        add("commands.kegare.help.malice.capacity", "Set a player's " + MALICE + " capacity. 0 makes them " + SEVERED + ".");
+        add("commands.kegare.help.rebirth", "Wipe a player and roll everything again. A capacity forces their " + MALICE + "; 0 makes them " + SEVERED + ".");
+        add("commands.kegare.help.loadout.reset", "Put a player's loadout back to its default layout.");
+        add("commands.kegare.help.grade.list", "List the Grades, lowest first.");
+        add("commands.kegare.help.grade.get", "Show a player's Grade and XP.");
+        add("commands.kegare.help.grade.set", "Set a player's Grade. An admin can lower it; nothing else can.");
+        add("commands.kegare.help.grade.add", "Give a player Grade XP, which promotes them if the step needs only XP.");
+        add("commands.kegare.help.assessment.get", "Show a player's recent fights and where they stand.");
+        add("commands.kegare.help.assessment.add", "Add a scored fight. Technique use matches the score if left out.");
+        add("commands.kegare.help.refinement.get", "Show a player's Refinement and Peak.");
+        add("commands.kegare.help.refinement.set", "Set a player's Refinement.");
+        add("commands.kegare.help.insight.get", "Show a player's three Insight values.");
+        add("commands.kegare.help.insight.add", "Add to one of a player's Insight values.");
+        add("commands.kegare.help.progression.reset", "Wipe a player's Grade, Assessment, Refinement, Insight and unlocks.");
+        add("commands.kegare.help.debug.stun", "Stun a player. 0 clears it.");
+        add("commands.kegare.help.debug.pity", "Set a player's pity counter.");
+        add("commands.kegare.help.debug.reroll", "Roll a player into this " + INNATE_TECHNIQUE + ", reveal and all.");
+        add("commands.kegare.help.debug.shared.unlock", "Unlock a shared ability for a player.");
+        add("commands.kegare.help.debug.shared.lock", "Lock a shared ability again for a player.");
+        add("commands.kegare.help.debug.orb.spawn", "Bring a player a green orb now.");
+        add("commands.kegare.help.debug.orb.status", "Show a player's next orb roll and any orb under way.");
+        add("commands.kegare.help.debug.swap", "Stop swaps from reaching a player, or let them again.");
+        add("commands.kegare.help.debug.strings", "Stop strings from moving a player, or let them again.");
+        add("commands.kegare.help.debug.fx.export", "Dev client only: rewrite every Photon effect from its authoring class.");
+        add("commands.kegare.help.debug.fx.play", "Dev client only: preview an effect, in front, on yourself or looping.");
+
+        // /kegare info
         add("commands.kegare.info.header", "--- %s ---");
         add("commands.kegare.info.malice", MALICE + ": %s / %s (%s)");
         add("commands.kegare.info.severed", SEVERED + " (no " + INNATE_TECHNIQUE + ", can't reroll)");
         add("commands.kegare.info.innate_technique", INNATE_TECHNIQUE + ": %s (%s), slot %s/%s: %s");
         add("commands.kegare.info.no_innate_technique", INNATE_TECHNIQUE + ": none");
-        add("commands.kegare.info.cooldowns", "Cooldowns: %s");
         add("commands.kegare.info.loadout", "Loadout: %s");
         add("commands.kegare.info.loadout_entry", "%s %s");
         add("commands.kegare.info.loadout_empty_rest", "%s-%s empty");
         add("commands.kegare.info.shared", "Shared unlocked: %s");
-        add("commands.kegare.shared.unknown", "Unknown shared ability: %s");
-        add("commands.kegare.shared.unlocked", "Unlocked %s for %s");
-        add("commands.kegare.shared.locked", "Locked %s again for %s");
-        add("commands.kegare.shared.already", "%s already has %s");
-        add("commands.kegare.shared.not_unlocked", "%s hasn't unlocked %s");
-        add("commands.kegare.shared.severed", "%s is " + SEVERED + " and can't unlock %s");
-        add("commands.kegare.loadout.reset", "Reset %s's loadout");
+        add("commands.kegare.info.cooldowns", "Cooldowns: %s");
         add("commands.kegare.info.cooldown_entry", "%s %ss");
         add("commands.kegare.info.active", "Active: %s");
         add("commands.kegare.info.traits", "Traits: %s");
@@ -601,33 +612,95 @@ public final class KegareLanguageProvider extends LanguageProvider {
         add("commands.kegare.info.seconds", "%ss");
         add("commands.kegare.info.no", "no");
         add("commands.kegare.info.none", "none");
-        add("commands.kegare.setmalice.success", "Set %s's " + MALICE + " to %s / %s");
-        add("commands.kegare.setcapacity.success", "Set %s's " + MALICE + " capacity to %s (%s)");
-        add("commands.kegare.setcapacity.hint_reroll", "They have no " + INNATE_TECHNIQUE + ". Use /kegare reroll or /kegare setinnatetechnique.");
-        add("commands.kegare.setinnatetechnique.success", "Set %s's " + INNATE_TECHNIQUE + " to %s");
-        add("commands.kegare.reroll.success", "Rerolled %s into %s (pity counter: %s)");
-        add("commands.kegare.setpity.success", "Set %s's pity counter to %s");
-        add("commands.kegare.trait.added", "Gave %s to %s");
-        add("commands.kegare.trait.already_has", "%s already has %s");
-        add("commands.kegare.trait.unique_taken", "%s is unique and already held by %s");
-        add("commands.kegare.trait.not_present", "%s doesn't have %s");
-        add("commands.kegare.trait.removed", "Removed %s from %s");
-        add("commands.kegare.trait.requires_malice", "%s needs " + MALICE + ", and %s is " + SEVERED);
-        add("commands.kegare.trait.not_unique", "%s isn't a unique trait");
-        add("commands.kegare.trait.unclaimed", "Nobody holds %s");
-        add("commands.kegare.trait.released", "Released %s from %s");
-        add("commands.kegare.trait.released_offline", "Released %s from %s (offline: it is removed on their next login)");
-        add("commands.kegare.trait.passing_on", "%s passes to an eligible player in %ss (or the next eligible login)");
-        add("commands.kegare.trait.status.held", "%s is held by %s");
-        add("commands.kegare.trait.status.passing", "%s is passing on (opens in %ss)");
-        add("commands.kegare.trait.status.waiting", "%s is waiting for an eligible player to log in");
-        add("commands.kegare.trait.status.unclaimed", "%s is unclaimed");
-        add("commands.kegare.rebirth.success", "%s was reborn");
-        add("commands.kegare.stun.success", "Stunned %s for %ss");
-        add("commands.kegare.swap.unswappable.on", "%s can't be swapped now (debug: cancels SwapTargetEvent)");
-        add("commands.kegare.swap.unswappable.off", "%s can be swapped again");
-        add("commands.kegare.strings.unmovable.on", "%s can't be moved by strings now (debug: cancels StringsTargetEvent)");
-        add("commands.kegare.strings.unmovable.off", "%s can be moved by strings again");
+
+        // /kegare innate
+        add("commands.kegare.innate.list", INNATE_TECHNIQUE + "s, lowest rarity first:");
+        add("commands.kegare.innate.unknown", "Unknown " + INNATE_TECHNIQUE + ": %s. Use /kegare innate list to see them all.");
+        add("commands.kegare.innate.get", "%s has %s.");
+        add("commands.kegare.innate.get.none", "%s has no " + INNATE_TECHNIQUE + ".");
+        add("commands.kegare.innate.set", "Set %s's " + INNATE_TECHNIQUE + " to %s.");
+        add("commands.kegare.innate.reroll", "Rerolled %s into %s. Pity counter: %s.");
+
+        // /kegare trait
+        add("commands.kegare.trait.list", "Traits:");
+        add("commands.kegare.trait.unknown", "Unknown trait: %s. Use /kegare trait list to see them all.");
+        add("commands.kegare.trait.kind.unique", "Unique");
+        add("commands.kegare.trait.holder.unnamed", "a player this server has no name for");
+        add("commands.kegare.trait.get", "%s's traits: %s.");
+        add("commands.kegare.trait.get.none", "%s has no traits.");
+        add("commands.kegare.trait.give", "Gave %s to %s.");
+        add("commands.kegare.trait.give.already", "%s already has %s.");
+        add("commands.kegare.trait.give.unique_taken", "%s is unique and already held by %s.");
+        add("commands.kegare.trait.give.requires_malice", "%s needs " + MALICE + ", and %s is " + SEVERED + ".");
+        add("commands.kegare.trait.remove", "Removed %s from %s.");
+        add("commands.kegare.trait.remove.not_present", "%s doesn't have %s.");
+        add("commands.kegare.trait.release", "Released %s from %s.");
+        add("commands.kegare.trait.release.offline", "Released %s from %s, who is offline: it's removed on their next login.");
+        add("commands.kegare.trait.release.passing_on", "%s passes to an eligible player in %ss, or at the next eligible login.");
+        add("commands.kegare.trait.release.not_unique", "%s isn't a unique trait.");
+        add("commands.kegare.trait.release.unclaimed", "Nobody holds %s.");
+        add("commands.kegare.trait.status.held", "%s is held by %s.");
+        add("commands.kegare.trait.status.passing", "%s is passing on. It opens in %ss.");
+        add("commands.kegare.trait.status.waiting", "%s is waiting for an eligible player to log in.");
+        add("commands.kegare.trait.status.unclaimed", "%s is unclaimed.");
+
+        // /kegare malice
+        add("commands.kegare.malice.get", "%s has %s / %s " + MALICE + " (%s).");
+        add("commands.kegare.malice.get.severed", "%s is " + SEVERED + " and has no " + MALICE + ".");
+        add("commands.kegare.malice.set", "Set %s's " + MALICE + " to %s / %s.");
+        add("commands.kegare.malice.fill", "Filled %s's " + MALICE + " to %s / %s.");
+        add("commands.kegare.malice.capacity", "Set %s's " + MALICE + " capacity to %s (%s).");
+        add("commands.kegare.malice.capacity.hint", "They have no " + INNATE_TECHNIQUE + ". Use /kegare innate reroll or /kegare innate set.");
+
+        // /kegare rebirth and loadout
+        add("commands.kegare.rebirth", "%s was reborn.");
+        add("commands.kegare.loadout.reset", "Reset %s's loadout.");
+
+        // /kegare grade, assessment, refinement, insight, progression
+        add("commands.kegare.grade.list", "Grades, lowest first:");
+        add("commands.kegare.grade.unknown", "Unknown Grade: %s. Use /kegare grade list to see them all.");
+        add("commands.kegare.grade.get", "%s is %s: %s / %s XP toward %s.");
+        add("commands.kegare.grade.get.top", "%s is %s, the top of the ladder, with %s XP.");
+        add("commands.kegare.grade.set", "%s is now %s.");
+        add("commands.kegare.grade.add", "Gave %s XP to %s, who is %s with %s XP.");
+        add("commands.kegare.assessment.recent", "%s's recent fights, oldest first: %s.");
+        add("commands.kegare.assessment.recent_technique", "Technique use in those fights: %s.");
+        add("commands.kegare.assessment.none", "Their next step takes no Assessment.");
+        add("commands.kegare.assessment.status", "Toward %s: average %s / %s, Technique use %s / %s, fights %s / %s, opponents %s / %s, Peak Refinement %s / %s: %s");
+        add("commands.kegare.assessment.met", "met.");
+        add("commands.kegare.assessment.unmet", "not met.");
+        add("commands.kegare.assessment.add", "Added a %s (Technique use %s) against %s to %s, who is %s.");
+        add("commands.kegare.refinement.get", "%s: Refinement %s / %s, %s / %s XP to the next level, Peak Refinement %s.");
+        add("commands.kegare.refinement.set", "%s is now at Refinement %s.");
+        add("commands.kegare.insight.unknown", "Unknown Insight category: %s. Choose from %s.");
+        add("commands.kegare.insight.get", "%s: " + DOMINION + " %s, Ward %s, Output %s.");
+        add("commands.kegare.insight.add", "Added %s %s Insight to %s, who now has %s.");
+        add("commands.kegare.progression.reset", "%s's Grade, Assessment, Refinement, Insight and unlocks are all reset.");
+
+        // /kegare debug
+        add("commands.kegare.debug.stun", "Stunned %s for %ss.");
+        add("commands.kegare.debug.stun.cleared", "Cleared %s's stun.");
+        add("commands.kegare.debug.pity", "Set %s's pity counter to %s.");
+        add("commands.kegare.debug.shared.unknown", "Unknown shared ability: %s. Choose from %s.");
+        add("commands.kegare.debug.shared.unlocked", "Unlocked %s for %s.");
+        add("commands.kegare.debug.shared.locked", "Locked %s again for %s.");
+        add("commands.kegare.debug.shared.already", "%s already has %s.");
+        add("commands.kegare.debug.shared.not_unlocked", "%s hasn't unlocked %s.");
+        add("commands.kegare.debug.shared.severed", "%s is " + SEVERED + " and can't unlock %s.");
+        add("commands.kegare.debug.orb.spawned", "A green orb appeared for %s. Only they can see it.");
+        add("commands.kegare.debug.orb.already_unlocked", "%s has already unlocked Reverse Malice Technique, so the orb never comes again.");
+        add("commands.kegare.debug.orb.severed", "%s is " + SEVERED + ", so the orb never comes to them.");
+        add("commands.kegare.debug.orb.not_born", "%s hasn't been born yet.");
+        add("commands.kegare.debug.orb.status", "Green orb for %s: next chance roll in %ss; orb waiting: %s; Reverse Malice Technique %s; eligible: %s.");
+        add("commands.kegare.debug.orb.status.following", "yes (%s/%s ticks along, at %s %s %s)");
+        add("commands.kegare.debug.orb.status.yes", "yes");
+        add("commands.kegare.debug.orb.status.no", "no");
+        add("commands.kegare.debug.orb.status.unlocked", "unlocked");
+        add("commands.kegare.debug.orb.status.locked", "locked");
+        add("commands.kegare.debug.swap.on", "%s can't be swapped now. This cancels SwapTargetEvent.");
+        add("commands.kegare.debug.swap.off", "%s can be swapped again.");
+        add("commands.kegare.debug.strings.on", "%s can't be moved by strings now. This cancels StringsTargetEvent.");
+        add("commands.kegare.debug.strings.off", "%s can be moved by strings again.");
 
         // Config screen labels, generated from the config specs.
         add("kegare.configuration.title", "Kegare Configuration");

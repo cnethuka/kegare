@@ -51,6 +51,38 @@ class LangKeysTest {
         assertTrue(missing.isEmpty(), "Lang keys used in code but missing from en_us.json:\n  " + String.join("\n  ", missing));
     }
 
+    /** A command key nothing uses is left over from a form that's gone. Every one has to be written out in full, so this can see it. */
+    @Test
+    void everyCommandLangKeyIsUsed() throws IOException {
+        StringBuilder code = new StringBuilder();
+        try (Stream<Path> files = Files.walk(SOURCES)) {
+            for (Path file : files.filter(p -> p.toString().endsWith(".java") && !p.endsWith("KegareLanguageProvider.java")).toList()) {
+                code.append(Files.readString(file));
+            }
+        }
+        Set<String> unused = new TreeSet<>();
+        Matcher json = JSON_KEY.matcher(Files.readString(LANG));
+        while (json.find()) {
+            String key = json.group(1);
+            if (key.startsWith("commands.") && !code.toString().contains('"' + key + '"')) unused.add(key);
+        }
+        assertEquals(Set.of(), unused, "command lang keys nothing uses");
+    }
+
+    /** Commands take short names, so no message should show or ask for a namespaced ID. */
+    @Test
+    void noCommandTextHasARawId() throws IOException {
+        Set<String> found = new TreeSet<>();
+        Matcher entry = Pattern.compile("^\\s*\"(commands\\.[^\"]+)\"\\s*:\\s*\"((?:[^\"\\\\]|\\\\.)*)\"", Pattern.MULTILINE).matcher(Files.readString(LANG));
+        int commands = 0;
+        while (entry.find()) {
+            commands++;
+            if (entry.group(2).contains("kegare:")) found.add(entry.group(1));
+        }
+        assertTrue(commands > 100, "setup: found the command text, only " + commands);
+        assertEquals(Set.of(), found);
+    }
+
     /**
      * DESIGN §1: messages and cards must never name a unique trait or the Shrine. Every trait name in the lang file is
      * checked against every message and ability card, and the code against passing a trait's name along; the birth line is

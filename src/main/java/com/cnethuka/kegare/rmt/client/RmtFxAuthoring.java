@@ -18,7 +18,7 @@ import net.minecraft.resources.ResourceLocation;
 import org.joml.Vector3f;
 
 /**
- * DEV TOOL (exported with {@code /kegarefx export}): Reverse Malice Technique's Photon effects, built from Photon's own
+ * DEV TOOL (exported with {@code /kegare debug fx export}): Reverse Malice Technique's Photon effects, built from Photon's own
  * objects (see {@link com.cnethuka.kegare.client.visual.FxKit}). Malice is negative energy, and RMT multiplies it by itself:
  * negative times negative is positive energy. So its palette is white and soft green; never Malice violet. Effects anchored
  * at the body sit at mid-body, so the feet are local y -0.9.

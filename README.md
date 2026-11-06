@@ -48,7 +48,7 @@ file of each one. Minecraft refuses to start and names the missing mod if one is
 | `./gradlew runClient -PquickPlayWorld=<world>` | Dev client, straight into an existing singleplayer world |
 | `./gradlew runClient -PquickPlay=localhost` | Dev client, straight onto a server |
 | `./gradlew runServer` | Dev dedicated server (`run/eula.txt` must say `eula=true`) |
-| `/kegarefx export` (dev client only) | Rebuild every technique's Photon effects into `assets/kegare/fx/` from the authoring classes (`RimeFxAuthoring`, `PuppetFxAuthoring`, …); `/kegarefx play <name>` previews one |
+| `/kegare debug fx export` (dev client only) | Rebuild every technique's Photon effects into `assets/kegare/fx/` from the authoring classes (`RimeFxAuthoring`, `PuppetFxAuthoring`, …); `/kegare debug fx play <name>` previews one |
 | `python3 tools/gen_art.py [--preview sheet.png]` | Regenerate all GUI and item art (needs Pillow); see DESIGN.md §3.10 |
 
 Requires JDK 21 (e.g. Temurin). Point `JAVA_HOME` at it if it isn't your default Java.
@@ -57,7 +57,7 @@ Keys: **C** cast, **R** special, **V** ultimate, **G** Technique Mode (shows the
 pick abilities while the scroll wheel stays on the hotbar, or the other way round via Sorcerer screen → Settings),
 **K** Sorcerer screen. Right-click is always vanilla. See DESIGN.md §3.5.
 
-Admin/debug commands (op): `/kegare info`, `setmalice`, `setcapacity`, `setinnatetechnique`,
-`reroll [innate_technique]`, `setpity`, `trait add|remove|release|status`, `rebirth [capacity]`, `stun`, `grade`,
-`assessment`, `refinement`, `insight`, `progression reset`.
-The optional arguments force a result, which is handy for testing the reveal screens. See DESIGN.md §3.8.
+Commands read `/kegare <system> <action> [player] [value]` and take short names (`/kegare innate set Steve rime`).
+`/kegare help` lists what you can run: `info`, `innate`, `trait`, `malice`, `rebirth`, `loadout`, `grade`, `assessment`,
+`refinement`, `insight`, `progression`, and `debug` for anything that exists only for testing. All but `help` need
+permission level 2. See DESIGN.md §3.8.

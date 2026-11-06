@@ -7,7 +7,7 @@ import java.util.Map;
 import java.util.function.Supplier;
 import net.minecraft.resources.ResourceLocation;
 
-/** DEV TOOL: every effect authored in code, for {@code /kegarefx}. Add new authoring classes here. */
+/** DEV TOOL: every effect authored in code, for {@code /kegare debug fx}. Add new authoring classes here. */
 public final class FxCatalog {
     private FxCatalog() {}
 

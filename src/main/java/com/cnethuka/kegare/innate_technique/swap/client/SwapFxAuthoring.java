@@ -19,7 +19,7 @@ import net.minecraft.resources.ResourceLocation;
 import org.joml.Vector3f;
 
 /**
- * DEV TOOL (exported with {@code /kegarefx export}): Swap's Photon effects, built from Photon's own objects (see
+ * DEV TOOL (exported with {@code /kegare debug fx export}): Swap's Photon effects, built from Photon's own objects (see
  * {@link FxKit}). Palette: teal with Malice violet, never Rime's ice blue. Body-anchored effects sit at mid-body, so
  * the feet are local y -0.9.
  */

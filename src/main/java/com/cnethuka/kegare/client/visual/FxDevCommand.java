@@ -25,9 +25,10 @@ import net.neoforged.fml.loading.FMLPaths;
 import net.neoforged.neoforge.client.event.RegisterClientCommandsEvent;
 
 /**
- * DEV TOOL, registered only in the dev environment. {@code /kegarefx export} writes every effect in
+ * DEV TOOL, registered only in the dev environment. {@code /kegare debug fx export} writes every effect in
  * {@link FxCatalog} into the project's resources (and the running game's copy, then drops Photon's cache so the new
- * versions play at once). {@code /kegarefx play <name> [self|front|loop]} previews one.
+ * versions play at once). {@code /kegare debug fx play <name> [self|front|loop]} previews one.
+ * This is the client's own command tree: anything it doesn't recognise under {@code /kegare} goes on to the server.
  * Text here is developer-only, so it is not in the lang file.
  */
 @EventBusSubscriber(modid = Kegare.MODID, value = Dist.CLIENT)
@@ -37,16 +38,19 @@ public final class FxDevCommand {
     @SubscribeEvent
     static void register(RegisterClientCommandsEvent event) {
         if (FMLEnvironment.production) return;
-        event.getDispatcher().register(Commands.literal("kegarefx")
-                .then(Commands.literal("export").executes(c -> export(c.getSource())))
-                .then(Commands.literal("play")
-                        .then(Commands.argument("name", StringArgumentType.word())
-                                .suggests((c, b) -> SharedSuggestionProvider.suggest(names(), b))
-                                .executes(c -> play(c.getSource(), StringArgumentType.getString(c, "name"), "front"))
-                                .then(Commands.argument("where", StringArgumentType.word())
-                                        .suggests((c, b) -> SharedSuggestionProvider.suggest(List.of("front", "self", "loop"), b))
-                                        .executes(c -> play(c.getSource(), StringArgumentType.getString(c, "name"),
-                                                StringArgumentType.getString(c, "where")))))));
+        event.getDispatcher().register(Commands.literal("kegare")
+                .then(Commands.literal("debug")
+                        .requires(source -> source.hasPermission(2))
+                        .then(Commands.literal("fx")
+                                .then(Commands.literal("export").executes(c -> export(c.getSource())))
+                                .then(Commands.literal("play")
+                                        .then(Commands.argument("name", StringArgumentType.word())
+                                                .suggests((c, b) -> SharedSuggestionProvider.suggest(names(), b))
+                                                .executes(c -> play(c.getSource(), StringArgumentType.getString(c, "name"), "front"))
+                                                .then(Commands.argument("where", StringArgumentType.word())
+                                                        .suggests((c, b) -> SharedSuggestionProvider.suggest(List.of("front", "self", "loop"), b))
+                                                        .executes(c -> play(c.getSource(), StringArgumentType.getString(c, "name"),
+                                                                StringArgumentType.getString(c, "where")))))))));
     }
 
     private static List<String> names() {
@@ -79,7 +83,10 @@ public final class FxDevCommand {
         Player player = Minecraft.getInstance().player;
         if (player == null) return 0;
         ResourceLocation id = FxCatalog.effects().keySet().stream().filter(e -> shortName(e).equals(name)).findFirst().orElse(null);
-        if (id == null) return 0;
+        if (id == null) {
+            source.sendFailure(Component.literal("Unknown effect: " + name + ". Press Tab for the names."));
+            return 0;
+        }
         switch (where) {
             case "self" -> ClientVisuals.playOnce(player, Visual.effect(id, Visual.Anchor.BODY));
             case "loop" -> ClientVisuals.startLoop(player, "dev:" + name, Visual.effect(id, Visual.Anchor.EYES), 0);

@@ -6,7 +6,7 @@ public enum RollReason {
     BIRTH(true, false),
     /** Purification Talisman. */
     TALISMAN(true, true),
-    /** {@code /kegare reroll}. */
+    /** {@code /kegare innate reroll}. */
     ADMIN(true, false),
     /**
      * The stored innate technique no longer exists (removed by an update). A free replacement: rolls on base weights
