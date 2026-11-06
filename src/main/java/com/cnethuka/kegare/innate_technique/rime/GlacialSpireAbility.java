@@ -2,6 +2,7 @@ package com.cnethuka.kegare.innate_technique.rime;
 
 import com.cnethuka.kegare.innatetechnique.AbilityContext;
 import com.cnethuka.kegare.innatetechnique.CastType;
+import com.cnethuka.kegare.innatetechnique.GroundAim;
 import com.cnethuka.kegare.innatetechnique.visual.AbilityVisuals;
 import java.util.Locale;
 import java.util.Optional;
@@ -72,12 +73,15 @@ public final class GlacialSpireAbility extends RimeSpecial {
     }
 
     /**
-     * Where the spike would rise: the top of the block you look at within range. Aiming at a wall or ceiling, the
-     * floor just in front of it. Empty if there is no ground. Pure world query, so the client uses it for the
-     * caster's aiming preview.
+     * Where the spike would rise: with the crosshair on a living thing, the ground under it (see {@link GroundAim}; the
+     * spot is fixed at release and doesn't follow them). Otherwise the top of the block you look at within range. Aiming
+     * at a wall or ceiling, the floor just in front of it. Empty if there is no ground. Pure world query, so the client
+     * uses it for the caster's aiming preview.
      */
     public static Optional<Vec3> target(Player player) {
         double range = RimeConfig.SPIRE_RANGE.get();
+        Optional<Vec3> underTarget = GroundAim.underLookedAtEntity(player, range, e -> true);
+        if (underTarget.isPresent()) return underTarget;
         Level level = player.level();
         Vec3 eye = player.getEyePosition();
         Vec3 end = eye.add(player.getLookAngle().scale(range));

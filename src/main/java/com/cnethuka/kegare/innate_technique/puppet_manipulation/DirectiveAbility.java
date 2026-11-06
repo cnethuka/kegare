@@ -2,11 +2,13 @@ package com.cnethuka.kegare.innate_technique.puppet_manipulation;
 
 import com.cnethuka.kegare.innatetechnique.AbilityContext;
 import com.cnethuka.kegare.innatetechnique.CastType;
+import com.cnethuka.kegare.innatetechnique.GroundAim;
 import com.cnethuka.kegare.innatetechnique.visual.AbilityVisuals;
 import com.cnethuka.kegare.innatetechnique.visual.Visual;
 import com.cnethuka.kegare.innatetechnique.visual.VisualPhase;
 import com.cnethuka.kegare.innatetechnique.visual.VisualService;
 import java.util.List;
+import java.util.Optional;
 import javax.annotation.Nullable;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -15,6 +17,7 @@ import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.phys.BlockHitResult;
+import net.minecraft.world.phys.Vec3;
 
 /**
  * Directive (INSTANT): every puppet within {@code range} takes the next order, Follow, Stay, Guard, Go, Follow...
@@ -68,10 +71,17 @@ public final class DirectiveAbility extends PuppetAbility {
         return heard.size();
     }
 
-    /** Where Go sends them: the spot in front of the block face under the crosshair (on top of it for a floor). */
+    /**
+     * Where Go sends them: with the crosshair on a living thing, the ground under it. Otherwise the spot in front of the
+     * block face under the crosshair (on top of it for a floor). Your own puppets don't get in the way of pointing past them.
+     */
     @Nullable
     static BlockPos goTarget(ServerPlayer owner) {
-        BlockHitResult hit = PuppetTargeting.lookedAtBlock(owner, PuppetConfig.DIRECTIVE_RANGE.get()).orElse(null);
+        double range = PuppetConfig.DIRECTIVE_RANGE.get();
+        Optional<Vec3> underTarget = GroundAim.underLookedAtEntity(owner, range,
+                e -> !(e instanceof PuppetEntity puppet && owner.getUUID().equals(puppet.ownerId())));
+        if (underTarget.isPresent()) return BlockPos.containing(underTarget.get());
+        BlockHitResult hit = PuppetTargeting.lookedAtBlock(owner, range).orElse(null);
         if (hit == null) return null;
         Direction face = hit.getDirection();
         return face == Direction.DOWN ? hit.getBlockPos().below(2) : hit.getBlockPos().relative(face);
