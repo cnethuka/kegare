@@ -868,7 +868,8 @@ separate bar is filled from any of them.
 
 ### 3.17 Reverse Malice Technique (RMT)
 Package `rmt`. The first **shared** ability (§3.16), ID `kegare:reverse_malice_technique`. Numbers in
-`[reverse_malice_technique]` of `kegare-server.toml`.
+`[reverse_malice_technique]` of `kegare-server.toml`. Malice is negative energy, and this multiplies it by itself: negative times
+negative is positive energy, which is why it heals, and why its colors are white and green.
 - **Locked by default.** Found through the green orb (§3.18); `/kegare shared unlock|lock` for admins. Severed
   players can never unlock it (`SharedAbilityService.unlock` refuses) or cast it (the cast pipeline refuses Severed
   players for everything).
@@ -881,11 +882,12 @@ Package `rmt`. The first **shared** ability (§3.16), ID `kegare:reverse_malice_
 - **Ends** like every channel: release, out of Malice, `maxDuration` (0 = none), a stun or a freeze (interrupted);
   plus fully healed. The **15 s cooldown** starts when it ends.
 - **No special:** R on it fizzles at no cost.
-- **Visuals:** PAL `rmt_channel` (loop: hands drawn to the chest, head bowed) in `player_animations/rmt.json`;
-  Photon `rmt/rmt_channel_aura` (green motes rising round the body, white sparkles circling, a faint glow at the
-  chest) and `rmt/rmt_heal_pulse` (each heal: a green ring on the ground, rising glints, a soft flash), authored in
-  `RmtFxAuthoring` with the shared `FxKit` building blocks. Vanilla fallback: happy-villager sparkles.
-  Palette: green and white, never Malice violet.
+- **Visuals:** Photon only; **it has no player animation**, so the caster's body doesn't move. `rmt/rmt_channel_aura` (green and
+  white motes rising round the body, white sparkles circling, a white-hearted glow at the chest) and `rmt/rmt_heal_pulse` (each heal:
+  a green ring on the ground with a white one inside it, rising white glints, a soft green flash with a white heart), authored in
+  `RmtFxAuthoring` with the shared `FxKit` building blocks. Vanilla fallback: happy-villager sparkles. Palette: white and green,
+  never Malice violet. The motes shrink away as they rise, and nothing bright passes eye level: close to a first-person
+  camera it would cover the screen in the middle of a fight.
 - **Icon** `textures/gui/ability/reverse_malice_technique.png`: a plus inside a ring that turns back on itself, in its
   own green ramp (`gen_art.py`), independent of any innate technique or Malice color. Own name, description and
   tooltip in the lang file.

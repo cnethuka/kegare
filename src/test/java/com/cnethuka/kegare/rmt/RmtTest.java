@@ -20,6 +20,7 @@ import com.cnethuka.kegare.innatetechnique.InnateTechniqueService;
 import com.cnethuka.kegare.innatetechnique.test.TestInnateTechniques;
 import com.cnethuka.kegare.loadout.LoadoutResult;
 import com.cnethuka.kegare.loadout.LoadoutService;
+import com.cnethuka.kegare.innatetechnique.visual.VisualPhase;
 import com.cnethuka.kegare.loadout.SharedAbilityService;
 import com.cnethuka.kegare.malice.MaliceService;
 import com.cnethuka.kegare.player.BirthService;
@@ -35,6 +36,19 @@ import org.junit.jupiter.api.extension.ExtendWith;
 @ExtendWith(EphemeralTestServerProvider.class)
 class RmtTest {
     private static final double EPS = 1.0e-4;
+
+    /** The player doesn't move for it: every phase is effects only, and the channel still has its aura. */
+    @Test
+    void itHasNoPlayerAnimation() {
+        ReverseMaliceTechnique rmt = new ReverseMaliceTechnique();
+        for (VisualPhase phase : VisualPhase.values()) {
+            assertTrue(rmt.visuals().get(phase).animation().isEmpty(), phase.name());
+        }
+        assertEquals(java.util.Optional.of(RmtIds.FX_CHANNEL_AURA), rmt.visuals().get(VisualPhase.CHANNEL_LOOP).effect());
+        assertFalse(java.nio.file.Files.exists(java.nio.file.Path.of(System.getProperty("user.dir"), "src/main/resources/assets/kegare/player_animations/rmt.json"))
+                || java.nio.file.Files.exists(java.nio.file.Path.of(System.getProperty("user.dir"), "../src/main/resources/assets/kegare/player_animations/rmt.json")),
+                "and its file is gone");
+    }
 
     @Test
     void reverseMaliceTechnique(MinecraftServer server) throws Exception {
