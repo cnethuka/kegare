@@ -1,6 +1,8 @@
 package com.cnethuka.kegare.rmt;
 
 import com.cnethuka.kegare.Kegare;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.function.Consumer;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.network.codec.StreamCodec;
@@ -9,11 +11,14 @@ import net.minecraft.world.phys.Vec3;
 import net.neoforged.neoforge.network.handling.IPayloadContext;
 
 /**
- * Server to ONE client (the orb's finder only): show the green orb at a position the server picked, hide it, or play
- * its burst because it was taken in. Cosmetic: the server alone decides whether it was looked at.
+ * Server to ONE client (the orb's finder only): show the green orb and the route the server rolled, say how far along it is,
+ * hide it, or play its burst because it was taken in. Cosmetic: the server alone decides whether it's being followed.
+ *
+ * @param path SHOW: the route's points. TAKEN: where it was taken in. Otherwise empty.
+ * @param value SHOW: how many ticks the whole route takes. PROGRESS: how many of them are done.
  */
-public record OrbPayload(Action action, Vec3 pos, int lifetimeTicks) implements CustomPacketPayload {
-    public enum Action { SHOW, HIDE, TAKEN }
+public record OrbPayload(Action action, List<Vec3> path, int value) implements CustomPacketPayload {
+    public enum Action { SHOW, PROGRESS, HIDE, TAKEN }
 
     public static final Type<OrbPayload> TYPE = new Type<>(Kegare.id("green_orb"));
     public static final StreamCodec<FriendlyByteBuf, OrbPayload> STREAM_CODEC = StreamCodec.ofMember(OrbPayload::write, OrbPayload::read);
@@ -25,16 +30,39 @@ public record OrbPayload(Action action, Vec3 pos, int lifetimeTicks) implements 
         clientHandler = handler;
     }
 
+    static OrbPayload show(OrbPath path, int totalTicks) {
+        return new OrbPayload(Action.SHOW, path.points(), totalTicks);
+    }
+
+    static OrbPayload progress(int ticks) {
+        return new OrbPayload(Action.PROGRESS, List.of(), ticks);
+    }
+
+    static OrbPayload hide() {
+        return new OrbPayload(Action.HIDE, List.of(), 0);
+    }
+
+    static OrbPayload taken(Vec3 at) {
+        return new OrbPayload(Action.TAKEN, List.of(at), 0);
+    }
+
     private void write(FriendlyByteBuf buf) {
         buf.writeEnum(action);
-        buf.writeDouble(pos.x);
-        buf.writeDouble(pos.y);
-        buf.writeDouble(pos.z);
-        buf.writeVarInt(lifetimeTicks);
+        buf.writeVarInt(path.size());
+        for (Vec3 point : path) {
+            buf.writeDouble(point.x);
+            buf.writeDouble(point.y);
+            buf.writeDouble(point.z);
+        }
+        buf.writeVarInt(value);
     }
 
     private static OrbPayload read(FriendlyByteBuf buf) {
-        return new OrbPayload(buf.readEnum(Action.class), new Vec3(buf.readDouble(), buf.readDouble(), buf.readDouble()), buf.readVarInt());
+        Action action = buf.readEnum(Action.class);
+        int size = buf.readVarInt();
+        List<Vec3> path = new ArrayList<>(size);
+        for (int i = 0; i < size; i++) path.add(new Vec3(buf.readDouble(), buf.readDouble(), buf.readDouble()));
+        return new OrbPayload(action, path, buf.readVarInt());
     }
 
     @Override

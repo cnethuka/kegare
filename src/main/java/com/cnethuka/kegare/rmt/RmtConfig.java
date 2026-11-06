@@ -15,8 +15,14 @@ public final class RmtConfig {
     public static ModConfigSpec.DoubleValue ORB_CHANCE;
     public static ModConfigSpec.DoubleValue ORB_ROLL_COOLDOWN;
     public static ModConfigSpec.DoubleValue ORB_LIFETIME;
-    public static ModConfigSpec.DoubleValue ORB_LOOK_SECONDS;
+    public static ModConfigSpec.DoubleValue ORB_FOLLOW_SECONDS;
+    public static ModConfigSpec.IntValue ORB_FOLLOW_REWIND;
     public static ModConfigSpec.DoubleValue ORB_LOOK_ANGLE;
+    public static ModConfigSpec.IntValue ORB_PATH_LEGS;
+    public static ModConfigSpec.DoubleValue ORB_PATH_STEP;
+    public static ModConfigSpec.DoubleValue ORB_PATH_YAW_RANGE;
+    public static ModConfigSpec.DoubleValue ORB_PATH_PITCH_RANGE;
+    public static ModConfigSpec.DoubleValue ORB_PATH_MAX_TURN;
     public static ModConfigSpec.DoubleValue ORB_DISTANCE;
     public static ModConfigSpec.DoubleValue ORB_SIDE_ANGLE;
     public static ModConfigSpec.DoubleValue ORB_UNLOCK_HEAL;
@@ -42,9 +48,20 @@ public final class RmtConfig {
                 .defineInRange("healthThreshold", 10.0, 0.0, 1024.0);
         ORB_CHANCE = b.comment("Chance (0-1) per roll.").defineInRange("chance", 0.15, 0.0, 1.0);
         ORB_ROLL_COOLDOWN = b.comment("At most one roll per this many seconds per player.").defineInRange("rollCooldown", 60.0, 0.0, 86_400.0);
-        ORB_LIFETIME = b.comment("The orb fades after this many seconds.").defineInRange("lifetime", 5.0, 0.5, 600.0);
-        ORB_LOOK_SECONDS = b.comment("Look at it this long (without looking away) to take it in.").defineInRange("lookSeconds", 1.0, 0.05, 60.0);
+        ORB_LIFETIME = b.comment("The orb fades after this many seconds. Time spent following it doesn't count.").defineInRange("lifetime", 5.0, 0.5, 600.0);
+        ORB_FOLLOW_SECONDS = b.comment("Looking at it sends it off along a random route, and it only moves on while you keep looking.",
+                        "This is how long the whole route takes. Reach the end to take it in.")
+                .defineInRange("followSeconds", 3.0, 0.05, 60.0);
+        ORB_FOLLOW_REWIND = b.comment("Lose sight of it and it runs back along the route, this many times as fast.")
+                .defineInRange("followRewind", 3, 0, 100);
         ORB_LOOK_ANGLE = b.comment("How far off-centre (degrees) still counts as looking at it.").defineInRange("lookAngle", 10.0, 1.0, 45.0);
+        ORB_PATH_LEGS = b.comment("How many steps the route takes. It turns between each.").defineInRange("pathLegs", 5, 1, 16);
+        ORB_PATH_STEP = b.comment("How far each step goes, in degrees of your view. With followSeconds, this sets how fast you have to track it:",
+                        "pathLegs x pathStep / followSeconds degrees a second.")
+                .defineInRange("pathStep", 18.0, 1.0, 60.0);
+        ORB_PATH_YAW_RANGE = b.comment("How far left and right (degrees) of where you were looking the route can wander.").defineInRange("pathYawRange", 45.0, 5.0, 90.0);
+        ORB_PATH_PITCH_RANGE = b.comment("How far up and down (degrees) it can wander.").defineInRange("pathPitchRange", 25.0, 5.0, 45.0);
+        ORB_PATH_MAX_TURN = b.comment("The sharpest turn between two steps (degrees). The gentlest is a third of this.").defineInRange("pathMaxTurn", 120.0, 3.0, 170.0);
         ORB_DISTANCE = b.comment("How far in front of the player it appears, in blocks (closer if a wall is in the way).")
                 .defineInRange("distance", 3.0, 1.0, 16.0);
         ORB_SIDE_ANGLE = b.comment("Degrees to the left or right (random) of where the player looks: in view, but off the crosshair,",

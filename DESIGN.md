@@ -905,15 +905,21 @@ negative is positive energy, which is why it heals, and why its colors are white
   (`healthThreshold`) rolls a **15%** chance (`chance`). At most **one roll per 60 s** per player (`rollCooldown`; the
   roll counts whether or not the orb comes; last roll saved in `kegare:shared_abilities`). Only for players who
   are born, **not Severed**, haven't unlocked RMT, and have no orb waiting.
-- **Where:** the server picks the position: **3 blocks** in front of the eyes (`distance`), **25° to the left or right**
+- **Where:** the server rolls a **route**. It starts **3 blocks** in front of the eyes (`distance`), **25° to the left or right**
   of the crosshair (`sideAngle`, random side: clearly in view, but taking it in is a choice, never an accident while
-  staring at an opponent), at half the look's pitch so it stays near eye level, and short of any wall in the way. It sends it **to that player only** (`OrbPayload`);
-  no other player is told anything. The orb is client-side: a glowing green core that breathes and drifts a little,
-  a soft halo and circling motes (`rmt/rmt_orb`; vanilla stand-in: green dust and happy-villager sparkles), with a
-  soft chime. It **fades after 5 s** (`lifetime`); server and client run the same timer.
-- **Taking it in:** each tick the server checks the player's look vector against the position it picked (within
-  `lookAngle`, 10°). **1 s** of looking without looking away (`lookSeconds`) takes it in; looking away resets the
-  count. The client only swells the orb while it's looked at, as feedback. On success:
+  staring at an opponent), at half the look's pitch so it stays near eye level. From there it's a random walk over the view (`rmt.OrbPath`):
+  **5 steps** (`pathLegs`) of **18°** (`pathStep`), turning between 40° and 120° each time (`pathMaxTurn`), never further than **45°** left or
+  right (`pathYawRange`) or **25°** up or down (`pathPitchRange`) of where they were looking, every point short of any wall in the way, with a smooth
+  curve through the points. It sends the route **to that player only** (`OrbPayload`); no other player is told anything. The orb is client-side:
+  green with a white heart, breathing and drifting a little, in a soft halo with circling motes (`rmt/rmt_orb`), with **faint dots marking the way
+  ahead** (`rmt/rmt_trail_dot`) and sparks left hanging behind it (vanilla stand-in: green dust and happy-villager sparkles, white dust for the dots), and a soft
+  chime. It **fades after 5 s** (`lifetime`), not counting time spent following it, so a follow under way can't fade; the server says when.
+- **Taking it in: follow it to the end.** Each tick the server checks the player's look against where the orb is now (within `lookAngle`,
+  10°). While it's in sight it moves on along the route, and the route takes **3 s** (`followSeconds`), so about **30°/s** to track; the dots go out as it passes them.
+  Out of sight, it runs back **3× as fast** (`followRewind`), and the dots come back. So looking at it without moving gets nowhere: it wanders off to the edge of
+  the look and hovers there. Losing it isn't final: catch it again and it carries on from there, or run it from the start while time remains. High ping makes the
+  orb move slower rather than fail, since it only moves on when the server sees the look on it. The server sends the progress every tick it changes, and the client only draws
+  it, swelling it as it nears the end. A new route is rolled for every orb. On success:
   - RMT is unlocked (kept for good, through rerolls);
   - **real healing** of **8 HP** (`unlockHeal`), never above max health;
   - a green burst (`rmt/rmt_unlock_burst`), a heal pulse and a chime, **played locally**: only the player sees and
@@ -923,9 +929,11 @@ negative is positive energy, which is why it heals, and why its colors are white
 - **Commands:** `/kegare orb spawn <player>` forces an orb now, ignoring chance and the roll cooldown, but never for
   Severed or already-unlocked players. `/kegare orb status <player>` shows the time to the next roll, whether an orb
   is waiting, RMT locked/unlocked, and eligibility.
-- **Tests:** `GreenOrbTest`: no roll above the threshold, one roll per cooldown, then again after it; the orb's
-  distance; looking away resets; a full second unlocks and heals; capped at max health; fades on time; never for
-  Severed players (forced or rolled) or after unlocking.
+- **Tests:** `GreenOrbTest`: no roll above the threshold, one roll per cooldown, then again after it; where it starts and that it
+  waits; a new route every orb; following to the last tick unlocks and heals, capped at max health; staring without following never does (25 routes);
+  losing it runs it back, then a second try counts; fades on time, but never under someone following it; routes stay short of walls; the payload survives
+  the wire; never for Severed players (forced or rolled) or after unlocking. `OrbPathTest`: 2000 routes each stay in range, take every step, wind, and are
+  random; no tick moves the orb more than a third of the look cone; the curve passes through every point. `RmtTest` also checks it has no player animation.
 
 ---
 

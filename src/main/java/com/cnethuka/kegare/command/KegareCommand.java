@@ -358,7 +358,11 @@ public final class KegareCommand {
     private static int orbStatus(CommandSourceStack source, ServerPlayer player) {
         Component unlocked = Component.translatable(SharedAbilityService.isUnlocked(player, RmtIds.ABILITY)
                 ? "commands.kegare.orb.status.unlocked" : "commands.kegare.orb.status.locked");
-        Component waiting = Component.translatable(GreenOrbService.state(player).hasOrb() ? "commands.kegare.orb.status.yes" : "commands.kegare.orb.status.no");
+        var orb = GreenOrbService.state(player);
+        Component waiting = orb.hasOrb()
+                ? Component.translatable("commands.kegare.orb.status.following", orb.followTicks(), orb.followTotal(),
+                        String.format(java.util.Locale.ROOT, "%.2f", orb.orb().x), String.format(java.util.Locale.ROOT, "%.2f", orb.orb().y), String.format(java.util.Locale.ROOT, "%.2f", orb.orb().z))
+                : Component.translatable("commands.kegare.orb.status.no");
         source.sendSuccess(() -> Component.translatable("commands.kegare.orb.status", player.getDisplayName(),
                 CastManager.seconds(GreenOrbService.rollCooldownRemaining(player)), waiting, unlocked,
                 Component.translatable(GreenOrbService.eligible(player) ? "commands.kegare.orb.status.yes" : "commands.kegare.orb.status.no")), false);

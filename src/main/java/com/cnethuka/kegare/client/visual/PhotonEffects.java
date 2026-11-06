@@ -101,6 +101,50 @@ final class PhotonEffects {
         }
     }
 
+    /** A positional effect that can be moved, or null. */
+    @Nullable
+    static MovableEffect movableAt(ResourceLocation id, Level level, Vec3 pos, boolean reduced) {
+        FX fx = load(id);
+        if (fx == null) return null;
+        try {
+            MovableEffect executor = new MovableEffect(fx, level, pos);
+            executor.setAllowMulti(true);
+            executor.setCheckState(false);
+            executor.setForcedDeath(false);
+            executor.start();
+            if (executor.getRuntime() == null) return null;
+            if (reduced) reduce(executor.getRuntime());
+            executor.moveTo(pos);
+            executor.moveTo(pos);
+            return executor;
+        } catch (Throwable t) {
+            warnOnce(id, t.toString());
+            return null;
+        }
+    }
+
+    /** Moved once a tick, and glides between ticks at the frame rate, as an effect on an entity does. */
+    static final class MovableEffect extends BlockEffectExecutor {
+        private final Vector3f from = new Vector3f();
+        private final Vector3f to = new Vector3f();
+
+        private MovableEffect(FX fx, Level level, Vec3 pos) {
+            super(fx, level, BlockPos.containing(pos));
+            setOffset(new Vector3f((float) (pos.x - Math.floor(pos.x) - 0.5), (float) (pos.y - Math.floor(pos.y) - 0.5), (float) (pos.z - Math.floor(pos.z) - 0.5)));
+        }
+
+        void moveTo(Vec3 pos) {
+            from.set(to);
+            to.set((float) pos.x, (float) pos.y, (float) pos.z);
+        }
+
+        @Override
+        public void updateFXObjectFrame(IFXObject object, float partialTicks) {
+            if (runtime == null || object != runtime.root) return;
+            object.updatePos(new Vector3f(from).lerp(to, Math.min(1f, partialTicks)));
+        }
+    }
+
     /** Stops future emission; particles already in the air fade out naturally. */
     static void stop(@Nullable FXEffectExecutor executor) {
         stop(executor, false);

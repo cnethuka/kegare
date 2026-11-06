@@ -42,8 +42,10 @@ class RmtAdvancementsTest {
             assertFalse(TestServer.hasAdvancement(server, p, KegareAdvancements.A_GREEN_LIGHT));
             GreenOrbService.force(p);
             assertNotNull(GreenOrbService.state(p).orb());
-            p.lookAt(EntityAnchorArgument.Anchor.EYES, GreenOrbService.state(p).orb());
-            for (int i = 0; i < RmtConfig.ticks(RmtConfig.ORB_LOOK_SECONDS); i++) GreenOrbService.tick(p);
+            for (int i = 0; GreenOrbService.state(p).hasOrb() && i <= RmtConfig.ticks(RmtConfig.ORB_FOLLOW_SECONDS); i++) {
+                p.lookAt(EntityAnchorArgument.Anchor.EYES, GreenOrbService.state(p).orb());
+                GreenOrbService.tick(p);
+            }
             assertTrue(TestServer.hasAdvancement(server, p, KegareAdvancements.A_GREEN_LIGHT), "unlocking awards A Green Light");
 
             assertEquals(LoadoutResult.OK, LoadoutService.edit(p, LoadoutService.Action.SET, 0, 0, Optional.of(RmtIds.ABILITY)));

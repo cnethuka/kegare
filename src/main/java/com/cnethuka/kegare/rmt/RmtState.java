@@ -5,22 +5,44 @@ import net.minecraft.world.phys.Vec3;
 
 /**
  * Runtime only, per player (attachment {@code kegare:rmt_state}): the green orb waiting for them, if any (the server
- * picked its position), how long they have kept looking at it, and when a player last hit them.
+ * rolled its route), how far along it they have followed it, and when a player last hit them.
  */
 public final class RmtState {
     @Nullable
-    Vec3 orb;
+    OrbPath path;
+    /** Stays this far ahead while they follow it, so it can't fade under them. */
     long orbExpires;
-    int lookTicks;
+    int followTicks;
+    /** The whole route, fixed when it's rolled. */
+    int followTotal;
     long lastHitByPlayer = Long.MIN_VALUE;
 
     public boolean hasOrb() {
-        return orb != null;
+        return path != null;
+    }
+
+    /** Where the orb is now. */
+    @Nullable
+    public Vec3 orb() {
+        return path == null ? null : path.at(followTicks / (double) followTotal);
     }
 
     @Nullable
-    public Vec3 orb() {
-        return orb;
+    public OrbPath path() {
+        return path;
+    }
+
+    public int followTicks() {
+        return followTicks;
+    }
+
+    public int followTotal() {
+        return followTotal;
+    }
+
+    void clearOrb() {
+        path = null;
+        followTicks = 0;
     }
 
     public long lastHitByPlayer() {

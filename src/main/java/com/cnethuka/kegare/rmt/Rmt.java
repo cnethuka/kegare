@@ -17,6 +17,7 @@ public final class Rmt {
         GreenOrbService.register(modBus);
         VisualHooks.registerEffect(RmtIds.FX_HEAL_PULSE);
         VisualHooks.registerEffect(RmtIds.FX_ORB);
+        VisualHooks.registerEffect(RmtIds.FX_TRAIL_DOT);
         VisualHooks.registerEffect(RmtIds.FX_UNLOCK_BURST);
     }
 }

@@ -321,6 +321,7 @@ public final class KegareLanguageProvider extends LanguageProvider {
         add("commands.kegare.orb.severed", "%s is " + SEVERED + ": the orb never comes to them");
         add("commands.kegare.orb.not_born", "%s hasn't been born yet");
         add("commands.kegare.orb.status", "Green orb for %s: next chance roll in %ss; orb waiting: %s; Reverse Malice Technique %s; eligible: %s");
+        add("commands.kegare.orb.status.following", "yes (%s/%s ticks along, at %s %s %s)");
         add("commands.kegare.orb.status.yes", "yes");
         add("commands.kegare.orb.status.no", "no");
         add("commands.kegare.orb.status.unlocked", "unlocked");

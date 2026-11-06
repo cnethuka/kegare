@@ -17,6 +17,7 @@ public final class RmtClient {
         VanillaFallback.register(RmtIds.FX_CHANNEL_AURA, new VanillaFallback.Spec(ParticleTypes.HAPPY_VILLAGER, 1, 6, 0.5, 0.0));
         VanillaFallback.register(RmtIds.FX_HEAL_PULSE, new VanillaFallback.Spec(ParticleTypes.HAPPY_VILLAGER, 1, 12, 0.6, 0.05));
         VanillaFallback.register(RmtIds.FX_ORB, new VanillaFallback.Spec(ParticleTypes.HAPPY_VILLAGER, 1, 4, 0.2, 0.0));
+        VanillaFallback.register(RmtIds.FX_TRAIL_DOT, new VanillaFallback.Spec(ParticleTypes.HAPPY_VILLAGER, 1, 1, 0.0, 0.0));
         VanillaFallback.register(RmtIds.FX_UNLOCK_BURST, new VanillaFallback.Spec(ParticleTypes.HAPPY_VILLAGER, 1, 24, 0.5, 0.2));
     }
 }

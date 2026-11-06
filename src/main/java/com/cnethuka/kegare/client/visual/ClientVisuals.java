@@ -157,16 +157,21 @@ public final class ClientVisuals {
         ClientLevel level = Minecraft.getInstance().level;
         VfxQuality quality = KegareClientConfig.VFX_QUALITY.get();
         if (level == null || quality == VfxQuality.VANILLA) return null;
-        FXEffectExecutor executor = PhotonEffects.at(effect, level, pos, quality == VfxQuality.REDUCED);
+        PhotonEffects.MovableEffect executor = PhotonEffects.movableAt(effect, level, pos, quality == VfxQuality.REDUCED);
         return executor == null ? null : new PositionalEffect(executor);
     }
 
     /** Handle to a {@link #startAt} effect. */
     public static final class PositionalEffect {
-        private final FXEffectExecutor executor;
+        private final PhotonEffects.MovableEffect executor;
 
-        private PositionalEffect(FXEffectExecutor executor) {
+        private PositionalEffect(PhotonEffects.MovableEffect executor) {
             this.executor = executor;
+        }
+
+        /** Call once a tick; it glides there between ticks. */
+        public void moveTo(Vec3 pos) {
+            executor.moveTo(pos);
         }
 
         public void scale(float scale) {
