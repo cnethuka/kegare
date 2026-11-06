@@ -25,7 +25,8 @@ public final class PuppetEvents {
     static void onPlayerTick(PlayerTickEvent.Post event) {
         if (!(event.getEntity() instanceof ServerPlayer player)) return;
         Possession.tick(player);
-        if (player.tickCount % 10 == 0) PuppetHud.check(player);
+        // Every tick while a string waits: what its next stage would be depends on what you're looking at.
+        if (player.tickCount % 10 == 0 || Strings.isAttached(player)) PuppetHud.check(player);
     }
 
     @SubscribeEvent

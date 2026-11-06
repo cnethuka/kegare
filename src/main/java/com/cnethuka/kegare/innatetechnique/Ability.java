@@ -40,6 +40,14 @@ public interface Ability {
     double cost(ServerPlayer player);
 
     /**
+     * What the HUD and Sorcerer screen quote. Usually just {@link #cost}; different for an ability whose press is free right
+     * now because it would fizzle (R with no string) but which costs something once it can act.
+     */
+    default double shownCost(ServerPlayer player) {
+        return cost(player);
+    }
+
+    /**
      * CHARGED only: what the release actually costs, for a charge of {@code charge} (0..1). Default: {@link #cost}.
      * Override when the cost grows with the charge (e.g. tiers); {@link #cost} is then the cheapest release, which is
      * what pressing the key checks and what the HUD shows.
@@ -50,6 +58,14 @@ public interface Ability {
 
     /** Cooldown in ticks, started after firing (INSTANT / CHARGED) or after ending (CHANNELED / TOGGLE). */
     int cooldownTicks(ServerPlayer player);
+
+    /**
+     * The cooldown the Sorcerer screen quotes. Usually {@link #cooldownTicks}; different for a two-stage ability, whose
+     * first stage only has a moment's lockout.
+     */
+    default int shownCooldownTicks(ServerPlayer player) {
+        return cooldownTicks(player);
+    }
 
     /** Malice drained per second while a CHANNELED or TOGGLE ability is running. */
     default double upkeepPerSecond(ServerPlayer player) {

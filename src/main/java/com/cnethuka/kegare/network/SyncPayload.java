@@ -88,10 +88,10 @@ public record SyncPayload(
         CostEnvironment environment = technique.map(t -> t.environment(player)).orElse(CostEnvironment.NEUTRAL);
         List<AbilityCost> costs = new ArrayList<>();
         technique.ifPresent(t -> {
-            for (Ability a : t.everyAbility()) costs.add(new AbilityCost(a.id(), (float) a.cost(player), (float) a.upkeepPerSecond(player)));
+            for (Ability a : t.everyAbility()) costs.add(new AbilityCost(a.id(), (float) a.shownCost(player), (float) a.upkeepPerSecond(player)));
         });
         for (Ability a : SharedAbilities.all()) {
-            if (SharedAbilityService.isUnlocked(player, a.id())) costs.add(new AbilityCost(a.id(), (float) a.cost(player), (float) a.upkeepPerSecond(player)));
+            if (SharedAbilityService.isUnlocked(player, a.id())) costs.add(new AbilityCost(a.id(), (float) a.shownCost(player), (float) a.upkeepPerSecond(player)));
         }
 
         return new SyncPayload(

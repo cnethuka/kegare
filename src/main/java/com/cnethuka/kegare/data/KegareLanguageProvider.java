@@ -214,6 +214,17 @@ public final class KegareLanguageProvider extends LanguageProvider {
         add("message.kegare.possess.snapped_back.death", "You return to your body.");
         add("message.kegare.possess.snapped_back.dimension_change", "You return to your body.");
         add("hud.kegare.puppets", "Puppets: %s/%s");
+        add("hud.kegare.strings.fire", "Fire: %s");
+        add("hud.kegare.strings.attached", "[%s] %s %s  ·  [%s] %s %s  ·  %ss");
+        add("hud.kegare.strings.reel_in", "Reel In");
+        add("hud.kegare.strings.tie", "Tie");
+        add("hud.kegare.strings.zip", "Zip");
+        add("hud.kegare.strings.leash", "Leash");
+        add("gui.kegare.strings.stage.fire", "Now: fire a string (%s Malice)");
+        add("gui.kegare.strings.stage.attached", "Now: a string is attached");
+        add("gui.kegare.strings.stage.running", "Now: the string is at work");
+        add("gui.kegare.strings.then", "Then: Reel In %s or Tie %s");
+        add("gui.kegare.strings.then_special", "Then (R): Zip %s or Leash %s");
         add("hud.kegare.possessing", "Possessing");
         add("hud.kegare.shell_health", "Body %s");
         add("message.kegare.puppet.cap", "You can't hold more than %s puppets.");

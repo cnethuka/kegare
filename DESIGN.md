@@ -740,6 +740,10 @@ separate bar is filled from any of them.
   and bad slots, other techniques' abilities, mid-cast and in-combat refusals, toggles switching off, reset on a new
   technique, login repair.
 
+- **New abilities reach existing bars once** (`LoadoutData.known`): on login, an ability the technique gained after the bar
+  was built goes in its default slot if that's free, else the first free one. If the player then clears it, it stays
+  cleared.
+
 ### 3.17 Reverse Malice Technique (RMT)
 Package `rmt`. The first **shared** ability (§3.16), ID `kegare:reverse_malice_technique`. Numbers in
 `[reverse_malice_technique]` of `kegare-server.toml`.
@@ -980,6 +984,16 @@ icon armor stand; ultimate locked (its Dominion comes later). All numbers in `[p
 (`CombatPanelLayer.addPanelDecorator`), and the current order's glyph on Directive's slot (`addSlotDecorator`). The
 Sorcerer screen's tray shows them too.
 Order glyphs `gui/puppet_order/{follow,stay,guard,go}.png`.
+
+**Strings' stage on the HUD** (`PuppetHud.StringsHud`, checked every tick while a string waits, since its next stage
+depends on what you look at):
+- Strings selected, no string out: "Fire: 5" above the meter's right end.
+- A string waiting: the slot shows what the cast key would do now (`gui/ability/strings_reel`, `strings_tie`), with R's
+  (`strings_zip`, `strings_leash`) small in its corner and a lavender outline. Under the crosshair, in and out of Technique
+  Mode: "[C] Reel In 12 · [R] Zip 10 · 6s".
+- Sorcerer screen (`SorcererScreen.addDetailLines`): the stage now, then both stage-2 costs on each key. It quotes the
+  full cooldown and Zip's cost whatever the stage (`Ability#shownCooldownTicks` and `#shownCost`): R with no string is
+  free, and firing only has a moment's lockout.
 
 **Mob vs player boundary (§4):** puppets fight and damage mobs (Guard, Focus, Curio Burst); bosses take the damage but
 are never disabled or pushed (Curio Burst's push and a puppet punch's knockback skip them). Possess and Understudy only ever involve your own

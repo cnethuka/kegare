@@ -375,6 +375,18 @@ public final class SorcererScreen extends Screen {
     // ---------------------------------------------------------------- the big box
 
     /** Draws the details of {@code shown} (or the overview); returns the y below the last line. */
+    /** Lines an innate technique adds to one of its abilities' details, under its stats (e.g. which stage it's at). */
+    @FunctionalInterface
+    public interface DetailLines {
+        java.util.List<Component> lines(Ability ability);
+    }
+
+    private static final java.util.List<DetailLines> DETAIL_LINES = new java.util.concurrent.CopyOnWriteArrayList<>();
+
+    public static void addDetailLines(DetailLines lines) {
+        DETAIL_LINES.add(lines);
+    }
+
     private int renderDetails(GuiGraphics g, @Nullable InnateTechnique technique, @Nullable SyncPayload data, @Nullable ResourceLocation shown,
                               int x, int y, int w) {
         if (technique == null) {
@@ -410,6 +422,9 @@ public final class SorcererScreen extends Screen {
                 y += GuiDraw.wrapped(g, font, Component.translatable("gui.kegare.cost.factor", GuiDraw.multiplier(f.multiplier()),
                         Component.translatable(f.translationKey())), x, y, w, f.multiplier() < 1f ? GuiDraw.AQUA : GuiDraw.RED);
             }
+        }
+        for (DetailLines lines : DETAIL_LINES) {
+            for (Component line : lines.lines(ability)) y += GuiDraw.wrapped(g, font, line, x, y, w, GuiDraw.MALICE);
         }
         y += 4;
         y += GuiDraw.wrapped(g, font, GuiDraw.description(ability.descriptionId()), x, y, w, 0xFFD8D2E0) + 4;

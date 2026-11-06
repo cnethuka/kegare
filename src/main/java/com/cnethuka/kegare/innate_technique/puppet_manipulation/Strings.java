@@ -102,6 +102,18 @@ public final class Strings {
         return PuppetTargeting.lookedAtStringTarget(caster, PuppetConfig.STRINGS_RANGE.get()).filter(e -> e != a.first);
     }
 
+    /** What the owner's HUD shows of their string. */
+    static PuppetHud.StringsHud hud(ServerPlayer caster) {
+        Active a = ACTIVE.get(caster.getUUID());
+        boolean attached = a != null && a.phase == Phase.ATTACHED;
+        int stage = a == null ? 0 : attached ? 1 : 2;
+        int left = attached ? (int) Math.max(0, Math.ceil((a.endTick - caster.level().getGameTime()) / 20.0)) : 0;
+        return new PuppetHud.StringsHud(stage, attached ? variation(caster, false) : StringsVariation.REEL_IN,
+                attached ? variation(caster, true) : StringsVariation.ZIP, left,
+                PuppetConfig.STRINGS_FIRE_COST.get().floatValue(), PuppetConfig.STRINGS_REEL_COST.get().floatValue(), PuppetConfig.STRINGS_TIE_COST.get().floatValue(),
+                PuppetConfig.STRINGS_ZIP_COST.get().floatValue(), PuppetConfig.STRINGS_LEASH_COST.get().floatValue());
+    }
+
     /** Whether the second stage can move anything at all: not when every target is a boss (Zip moves the caster). */
     static boolean canMoveAnything(ServerPlayer caster, StringsVariation variation) {
         Active a = ACTIVE.get(caster.getUUID());
@@ -138,6 +150,7 @@ public final class Strings {
         grip(target);
         sound(caster, SoundEvents.FISHING_BOBBER_THROW, 0.8f, 1.5f);
         StringsSync.broadcast(caster.server);
+        PuppetHud.refresh(caster);
     }
 
     /** A knot takes hold of {@code target}. */
@@ -209,6 +222,7 @@ public final class Strings {
             }
         }
         StringsSync.broadcast(caster.server);
+        PuppetHud.refresh(caster);
     }
 
     /** Every string in {@code level}, for the clients there. */
@@ -404,6 +418,7 @@ public final class Strings {
         if (a.phase == Phase.ATTACHED && how != End.CUT) InnateTechniqueService.startCooldown(caster, PuppetManipulation.STRINGS);
         if (how == End.SNAPPED) caster.displayClientMessage(Component.translatable("message.kegare.strings.snapped"), true);
         if (how == End.SLACK) caster.displayClientMessage(Component.translatable("message.kegare.strings.slack"), true);
+        PuppetHud.refresh(caster);
     }
 
     /**

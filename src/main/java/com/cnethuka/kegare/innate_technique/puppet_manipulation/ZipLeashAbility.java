@@ -21,6 +21,12 @@ public final class ZipLeashAbility extends PuppetAbility.Special {
         return Strings.variation(p, true) == StringsVariation.LEASH ? PuppetConfig.STRINGS_LEASH_COST.get() : PuppetConfig.STRINGS_ZIP_COST.get();
     }
 
+    /** With no string the press is free, but the screens quote what Zip would cost once there is one. */
+    @Override
+    public double shownCost(ServerPlayer p) {
+        return Strings.isAttached(p) ? cost(p) : PuppetConfig.STRINGS_ZIP_COST.get();
+    }
+
     @Override
     public boolean canCast(AbilityContext ctx) {
         ServerPlayer p = ctx.player();

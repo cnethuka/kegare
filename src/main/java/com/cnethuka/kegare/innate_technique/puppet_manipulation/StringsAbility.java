@@ -30,6 +30,12 @@ public final class StringsAbility extends PuppetAbility {
         return Strings.isAttached(p) ? PuppetConfig.ticks(PuppetConfig.STRINGS_FIRE_COOLDOWN) : PuppetConfig.ticks(PuppetConfig.STRINGS_COOLDOWN);
     }
 
+    /** Whatever stage it's at: the fire's lockout is only there to stop a double press. */
+    @Override
+    public int shownCooldownTicks(ServerPlayer p) {
+        return PuppetConfig.ticks(PuppetConfig.STRINGS_COOLDOWN);
+    }
+
     @Override
     public Optional<Ability> special() {
         return Optional.of(PuppetManipulation.ZIP_LEASH);

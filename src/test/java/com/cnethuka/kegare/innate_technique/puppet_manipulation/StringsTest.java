@@ -9,6 +9,7 @@ import com.cnethuka.kegare.TestServer;
 import com.cnethuka.kegare.innatetechnique.CastIntent;
 import com.cnethuka.kegare.innatetechnique.CastManager;
 import com.cnethuka.kegare.innatetechnique.InnateTechniqueService;
+import com.cnethuka.kegare.loadout.LoadoutService;
 import com.cnethuka.kegare.malice.MaliceService;
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -566,6 +567,73 @@ class StringsTest {
             caster.setHealth(20f);
             a.discard();
         });
+    }
+
+    @Test
+    void theHudKnowsTheStage(MinecraftServer server) throws Exception {
+        arena(server, "strings_hud", (level, caster) -> {
+            PuppetHud.StringsHud hud = Strings.hud(caster);
+            assertEquals(0, hud.stage(), "ready to fire");
+            assertEquals(PuppetConfig.STRINGS_FIRE_COST.get(), hud.fireCost(), EPS);
+            assertEquals(PuppetConfig.STRINGS_ZIP_COST.get(), PuppetManipulation.ZIP_LEASH.shownCost(caster), EPS, "the screens quote Zip's cost even with no string");
+            assertEquals(0.0, PuppetManipulation.ZIP_LEASH.cost(caster), EPS, "though the press itself is free");
+
+            Cow a = cow(level, 12.5, Y, 0.5);
+            Cow b = cow(level, 0.5, Y, 12.5);
+            press(caster, a, CastIntent.CAST_PRESS);
+            hud = Strings.hud(caster);
+            assertEquals(1, hud.stage(), "attached");
+            assertEquals(StringsVariation.REEL_IN, hud.cast(), "looking at the same target");
+            assertEquals(StringsVariation.ZIP, hud.special());
+            assertEquals(PuppetConfig.STRINGS_LIFE.get().intValue(), hud.secondsLeft());
+            PossessionTest.aimAt(caster, b);
+            hud = Strings.hud(caster);
+            assertEquals(StringsVariation.TIE, hud.cast(), "looking at another target");
+            assertEquals(StringsVariation.LEASH, hud.special());
+            assertEquals(PuppetConfig.STRINGS_TIE_COST.get(), hud.cost(hud.cast()), EPS);
+            assertEquals(PuppetConfig.STRINGS_LEASH_COST.get(), hud.cost(hud.special()), EPS);
+            InnateTechniqueService.clearCooldowns(caster);
+            CastManager.handleIntent(caster, CastIntent.SPECIAL_PRESS);
+            assertEquals(2, Strings.hud(caster).stage(), "at work");
+            Strings.cut(caster);
+            assertEquals(0, Strings.hud(caster).stage(), "ready again");
+        });
+    }
+
+    @Test
+    void anExistingBarGetsStringsOnce(MinecraftServer server) throws Exception {
+        arena(server, "strings_bar", (level, caster) -> {
+            assertEquals(java.util.Optional.of(PuppetManipulation.STRINGS.id()), LoadoutService.get(caster).slots().get(4), "slot 5 by default");
+
+            // A bar saved before Strings existed: the four old abilities, and no record of what it has been offered.
+            List<String> slots = new ArrayList<>(List.of(PuppetManipulation.PUPPET_CREATION.id().toString(), PuppetManipulation.DIRECTIVE.id().toString(),
+                    PuppetManipulation.CURIO_BURST.id().toString(), PuppetManipulation.UNDERSTUDY.id().toString(), "", "", "", "", ""));
+            caster.setData(com.cnethuka.kegare.registry.KegareAttachments.LOADOUT, oldBar(slots));
+            LoadoutService.validate(caster);
+            assertEquals(java.util.Optional.of(PuppetManipulation.STRINGS.id()), LoadoutService.get(caster).slots().get(4), "an old bar gets it in slot 5");
+
+            // Cleared by hand: it stays cleared.
+            assertEquals(com.cnethuka.kegare.loadout.LoadoutResult.OK, LoadoutService.edit(caster, LoadoutService.Action.CLEAR, 4, 0, java.util.Optional.empty()));
+            LoadoutService.validate(caster);
+            assertEquals(java.util.Optional.empty(), LoadoutService.get(caster).slots().get(4), "a player's choice is kept");
+
+            // Slot 5 taken by something else: the first free one.
+            slots.set(4, slots.get(3)); // Understudy moved to slot 5, leaving slot 4 free
+            slots.set(3, "");
+            caster.setData(com.cnethuka.kegare.registry.KegareAttachments.LOADOUT, oldBar(slots));
+            LoadoutService.validate(caster);
+            assertEquals(java.util.Optional.of(PuppetManipulation.UNDERSTUDY.id()), LoadoutService.get(caster).slots().get(4), "what was there stays");
+            assertEquals(java.util.Optional.of(PuppetManipulation.STRINGS.id()), LoadoutService.get(caster).slots().get(3), "the first free slot");
+        });
+    }
+
+    private static com.cnethuka.kegare.loadout.LoadoutData oldBar(List<String> slots) {
+        com.google.gson.JsonObject json = new com.google.gson.JsonObject();
+        com.google.gson.JsonArray array = new com.google.gson.JsonArray();
+        slots.forEach(array::add);
+        json.add("slots", array);
+        json.addProperty("built_for", PuppetManipulation.PUPPET_MANIPULATION.getId().toString());
+        return com.cnethuka.kegare.loadout.LoadoutData.CODEC.parse(com.mojang.serialization.JsonOps.INSTANCE, json).getOrThrow();
     }
 
     // ---------------------------------------------------------------- helpers

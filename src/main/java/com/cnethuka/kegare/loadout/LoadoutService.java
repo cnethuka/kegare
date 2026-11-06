@@ -89,6 +89,8 @@ public final class LoadoutService {
             while (data.slots.size() < SLOTS) data.slots.add(Optional.empty());
         });
         data.builtFor = technique.map(InnateTechnique::id).orElse(null);
+        data.known.clear();
+        technique.ifPresent(t -> t.abilities().forEach(a -> data.known.add(a.id())));
         switchOffRemoved(player, before);
         InnateTechniqueService.clampSelection(player);
         PlayerSync.markDirty(player);
@@ -120,6 +122,18 @@ public final class LoadoutService {
             Optional<ResourceLocation> id = data.slots.get(i);
             if (id.isPresent() && (resolve(player, id.get()) == null || !seen.add(id.get()))) {
                 data.slots.set(i, Optional.empty());
+                changed = true;
+            }
+        }
+        // Abilities added to the technique since this bar was built: into their default slot if it's free, else the first free one.
+        if (technique.isPresent()) {
+            List<Ability> abilities = technique.get().abilities();
+            for (int i = 0; i < abilities.size(); i++) {
+                ResourceLocation id = abilities.get(i).id();
+                if (!data.known.add(id) || data.slots.contains(Optional.of(id))) continue;
+                int slot = i < data.slots.size() && data.slots.get(i).isEmpty() ? i : data.slots.indexOf(Optional.<ResourceLocation>empty());
+                if (slot < 0) continue;
+                data.slots.set(slot, Optional.of(id));
                 changed = true;
             }
         }

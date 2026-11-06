@@ -1128,6 +1128,105 @@ def icon_chain_burst():
     return shaped_icon(f)
 
 
+def _seg(x, y, ax, ay, bx, by, w=0.72):
+    """On the thick line from (ax, ay) to (bx, by)."""
+    dx, dy = bx - ax, by - ay
+    t = max(0.0, min(1.0, ((x - ax) * dx + (y - ay) * dy) / (dx * dx + dy * dy)))
+    return math.hypot(x - (ax + t * dx), y - (ay + t * dy)) <= w
+
+
+def _hoop(x, y, cx, cy, r, w=0.8):
+    return abs(math.hypot(x - cx, y - cy) - r) <= w
+
+
+def _chevron(x, y, tip_x, cy, facing, size=2):
+    """A little arrowhead pointing left (-1) or right (+1)."""
+    return abs(y - cy) <= size and abs(abs(y - cy) - (tip_x - x) * facing) <= 0.5
+
+
+def icon_strings():
+    """A loose, wavy thread running up to a knot and a small loop."""
+    def f(x, y):
+        if _hoop(x, y, 12.3, 3.4, 2.1, 0.7):
+            return LAVENDER
+        if math.hypot(x - 9.6, y - 6.0) <= 1.5:
+            return GOLD
+        t = (x - 1.0) / 8.6
+        if 0.0 <= t <= 1.0 and abs(y - (14.0 - 8.0 * t + 1.7 * math.sin(t * 2.0 * math.pi))) <= 0.9:
+            return LAVENDER
+        return None
+    return shaped_icon(f)
+
+
+def icon_zip_leash():
+    """The special's two halves: you (a doll), a string up and ahead with an arrow on it (Zip), and a second string (Leash)."""
+    def f(x, y):
+        if _doll(x, y, 4.0, 3.0, 0.85):
+            return LAVENDER
+        if _chevron(x, y, 13.0, 3.5, 1):
+            return GOLD
+        if _seg(x, y, 6.0, 7.0, 12.0, 3.5, 0.6):
+            return SILVER
+        if _seg(x, y, 6.0, 8.0, 13.5, 12.5, 0.6) or math.hypot(x - 13.5, y - 12.5) <= 1.5:
+            return MALICE
+        return None
+    return shaped_icon(f)
+
+
+def icon_strings_reel():
+    """Reel In: the target comes to you, along the string."""
+    def f(x, y):
+        if _doll(x, y, 12.0, 2.5, 0.85):
+            return MALICE
+        if _chevron(x, y, 2.0, 8.0, -1) or _chevron(x, y, 5.5, 8.0, -1):
+            return GOLD
+        if _seg(x, y, 2.0, 8.0, 10.0, 8.0, 0.5):
+            return LAVENDER
+        return None
+    return shaped_icon(f)
+
+
+def icon_strings_zip():
+    """Zip: you go to the target, along the string."""
+    def f(x, y):
+        if _doll(x, y, 4.0, 2.5, 0.85):
+            return LAVENDER
+        if _hoop(x, y, 13.0, 8.0, 1.6, 0.7):
+            return SILVER
+        if _chevron(x, y, 9.5, 8.0, 1) or _chevron(x, y, 12.0, 8.0, 1, 1):
+            return GOLD
+        if _seg(x, y, 6.0, 8.0, 11.5, 8.0, 0.5):
+            return SILVER
+        return None
+    return shaped_icon(f)
+
+
+def icon_strings_tie():
+    """Tie: two figures, one knot between them."""
+    def f(x, y):
+        if _doll(x, y, 3.0, 4.0, 0.7) or _doll(x, y, 13.0, 4.0, 0.7):
+            return MALICE
+        if math.hypot(x - 8.0, y - 7.5) <= 1.8:
+            return GOLD
+        if _seg(x, y, 4.5, 7.5, 11.5, 7.5, 0.5):
+            return LAVENDER
+        return None
+    return shaped_icon(f)
+
+
+def icon_strings_leash():
+    """Leash: you in the middle, a string to each of two others."""
+    def f(x, y):
+        if _doll(x, y, 8.0, 5.0, 0.85):
+            return LAVENDER
+        if math.hypot(x - 2.0, y - 2.5) <= 1.8 or math.hypot(x - 14.0, y - 2.5) <= 1.8:
+            return MALICE
+        if _seg(x, y, 8.0, 8.0, 2.0, 2.5, 0.5) or _seg(x, y, 8.0, 8.0, 14.0, 2.5, 0.5):
+            return SILVER
+        return None
+    return shaped_icon(f)
+
+
 def icon_understudy():
     def f(x, y):
         if _doll(x, y, 3.5, 5.0, 0.8):
@@ -1826,7 +1925,9 @@ def main() -> None:
              "momentum_exchange": icon_momentum_exchange(), "total_swap": icon_total_swap(),
              "puppet_creation": icon_puppet_creation(), "possess": icon_possess(), "directive": icon_directive(),
              "focus": icon_focus(), "curio_burst": icon_curio_burst(), "chain_burst": icon_chain_burst(),
-             "understudy": icon_understudy(), "stand_in": icon_stand_in()}
+             "understudy": icon_understudy(), "stand_in": icon_stand_in(),
+             "strings": icon_strings(), "zip_leash": icon_zip_leash(), "strings_reel": icon_strings_reel(),
+             "strings_tie": icon_strings_tie(), "strings_zip": icon_strings_zip(), "strings_leash": icon_strings_leash()}
     for name, img in icons.items():
         save(img, f"gui/ability/{name}.png")
     emblems = {"test_kinetic": emblem_kinetic(), "test_flux": emblem_flux(),
