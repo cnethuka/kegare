@@ -55,7 +55,8 @@ game never names a bearer, heir or killer of a secret holder.
   - Current: `clear_sight` (Six Eyes tab).
 - **Messages never name a unique trait.** No death message, chat line or action-bar message may say "Six
   Eyes" or any other unique trait's name, or say who holds one. Op debug commands are the exception (`/kegare trait`,
-  `/kegare info`): operators see everything anyway.
+  `/kegare info`): operators see everything anyway. A player born with a unique trait learns it from the private roll
+  reveal (§3.12), not from chat.
   - **Techniques aren't secret identities,** so kill messages may name them ("blown apart by %s's puppet", "tangled up in
     %s's strings", "frozen solid by %s").
 - **Related rule: PvP information is silent.** Advancements that would leak combat-relevant information get no chat

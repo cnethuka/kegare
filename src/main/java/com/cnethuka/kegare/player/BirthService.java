@@ -74,6 +74,7 @@ public final class BirthService {
             player.sendSystemMessage(Component.translatable("message.kegare.birth.malice", malice.capacity(), tier));
         }
         for (Trait trait : traits) {
+            if (trait.isUnique()) continue; // chat never names one (DESIGN §1): the private roll reveal tells them
             player.sendSystemMessage(Component.translatable("message.kegare.birth.trait", trait.displayName()));
         }
         if (malice.capacity() > 0 && outcome.isEmpty()) {
