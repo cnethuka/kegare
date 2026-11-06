@@ -1438,6 +1438,8 @@ For shared and system unlocks, separate from a technique's own abilities.
   be able to earn is registered by Grade and Insight alone.
 - **Nothing real is registered yet.** Dominions and later unlocks plug in when built. Tests use a
   test-only entry.
+- **Severed players and the planned unlocks.** Planned defences against sure-hits can use Refinement requirements: Severed players don't need them, since
+  sure-hits can't target them. Dominions and some other planned unlocks are also not for Severed players.
 
 #### What the player sees
 - **Sorcerer screen:** the Progress view, and greyed locked tiles and cards (§3.12).
