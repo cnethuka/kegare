@@ -68,6 +68,24 @@ public final class TechniqueUnlocks {
         return out;
     }
 
+    /**
+     * What a fight on this technique is scored against: its kit at their Peak Refinement level, or what they have unlocked if
+     * that's more (the requirement can be off). Peak survives a reroll, so a small new kit can't make two moves look like variety.
+     * Someone who has never been higher than they are now is scored against exactly what they have.
+     */
+    public static AssessmentScoring.Kit scoringKit(ServerPlayer player, InnateTechnique technique) {
+        int peak = RefinementService.peak(player);
+        int base = 0;
+        int specials = 0;
+        for (Ability a : technique.everyAbility()) {
+            if (requiredLevel(technique, a) > peak) continue;
+            if (a.isSpecial()) specials++;
+            else base++;
+        }
+        return new AssessmentScoring.Kit(Math.max(base, unlockedBase(player, technique).size()), Math.max(specials, unlockedSpecials(player, technique).size()),
+                required() && RefinementService.level(player) < peak);
+    }
+
     /** What is still locked, with the level each one needs, in the technique's own order. Sent to the owner for the screens. */
     public static Map<Ability, Integer> locked(ServerPlayer player) {
         Map<Ability, Integer> out = new LinkedHashMap<>();

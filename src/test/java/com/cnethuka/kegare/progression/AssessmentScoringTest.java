@@ -41,6 +41,51 @@ class AssessmentScoringTest {
     }
 
     @Test
+    void scoringAgainstExactlyWhatsUnlockedChangesNothing() {
+        List<List<Fight.Use>> fights = List.of(landings("a", "a", "a"), landings("a", "b", "a", "b"), landings("a", "ra", "b", "rb", "c"), landings("ra"));
+        for (List<Fight.Use> fight : fights) {
+            assertEquals(AssessmentScoring.techniqueUse(fight, FULL_BASE, FULL_SPECIALS, S),
+                    AssessmentScoring.techniqueUse(fight, FULL_BASE, FULL_SPECIALS, new AssessmentScoring.Kit(5, 5, false), S), EPS);
+        }
+    }
+
+    @Test
+    void aSmallKitAfterARerollDoesntFlatterTwoMoves() {
+        Set<String> levelZero = Set.of("a", "b");
+        List<Fight.Use> alternating = landings("a", "b", "a", "b");
+        assertEquals(1.0, AssessmentScoring.techniqueUse(alternating, levelZero, Set.of(), S), EPS, "fresh, it's all they have: full marks");
+
+        // Peak 5 on the default table: four abilities and three specials.
+        double kitOnly = AssessmentScoring.techniqueUse(alternating, levelZero, Set.of(), new AssessmentScoring.Kit(4, 3, false), S);
+        assertEquals((40 * 2 / 3.0 + 25) / 100, kitOnly, EPS, "two of the three it takes, none of the specials or mixing");
+        double rerolled = AssessmentScoring.techniqueUse(alternating, levelZero, Set.of(), new AssessmentScoring.Kit(4, 3, true), S);
+        assertEquals((40 * 2 / 3.0 + 25 * 2 / 3.0) / 100, rerolled, EPS, "and below their peak, two moves can't earn all of combining");
+    }
+
+    /** The case the kit alone leaves over Grade 1's 60: one ability and one special, at Peak 5 or 6. */
+    @Test
+    void belowTheirPeakAnAbilityAndASpecialDontPassGrade1() {
+        Set<String> levelOne = Set.of("a", "b");
+        Set<String> oneSpecial = Set.of("ra");
+        List<Fight.Use> alternating = landings("a", "ra", "a", "ra");
+        double atPeak = AssessmentScoring.techniqueUse(alternating, levelOne, oneSpecial, new AssessmentScoring.Kit(4, 3, false), S);
+        assertEquals((40 / 3.0 + 25 / 2.0 + 10 + 25) / 100, atPeak, EPS);
+        assertTrue(atPeak > 0.60, "someone really at level 5 still scores this: " + atPeak);
+        double rerolled = AssessmentScoring.techniqueUse(alternating, levelOne, oneSpecial, new AssessmentScoring.Kit(4, 3, true), S);
+        assertEquals((40 / 3.0 + 25 / 2.0 + 10 + 25 * 2 / 3.0) / 100, rerolled, EPS);
+        assertTrue(rerolled < 0.60, "rerolled, it no longer passes: " + rerolled);
+    }
+
+    @Test
+    void belowTheirPeakThreeMovesEarnAllOfCombining() {
+        Set<String> levelOne = Set.of("a", "b");
+        Set<String> oneSpecial = Set.of("ra");
+        double threeMoves = AssessmentScoring.techniqueUse(landings("a", "b", "ra", "a", "b", "ra"), levelOne, oneSpecial, new AssessmentScoring.Kit(4, 3, true), S);
+        assertEquals((40 * 2 / 3.0 + 25 / 2.0 + 10 + 25) / 100, threeMoves, EPS);
+        assertTrue(threeMoves > 0.60, "real variety on a rebuilding kit still passes Grade 1's minimum");
+    }
+
+    @Test
     void lockedAbilitiesDontLowerTheScore() {
         Set<String> levelZero = Set.of("a", "b");
         double fresh = AssessmentScoring.techniqueUse(landings("a", "b", "a", "b"), levelZero, Set.of(), S);

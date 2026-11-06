@@ -65,13 +65,14 @@ public final class AssessmentService {
         }
         Optional<InnateTechnique> technique = InnateTechniqueService.current(player);
         double techniqueUse = technique.map(t -> AssessmentScoring.techniqueUse(side.abilities(),
-                TechniqueUnlocks.unlockedBase(player, t), TechniqueUnlocks.unlockedSpecials(player, t), s)).orElse(0.0);
+                TechniqueUnlocks.unlockedBase(player, t), TechniqueUnlocks.unlockedSpecials(player, t), TechniqueUnlocks.scoringKit(player, t), s)).orElse(0.0);
         double efficiency = AssessmentScoring.efficiency(report.dealt(), side.baseMalice(), s);
         double score = AssessmentScoring.score(techniqueUse, efficiency, performance, opponent, s);
         // For admins tuning the weights. Debug only: Assessment is private.
         if (Kegare.LOGGER.isDebugEnabled()) {
-            Kegare.LOGGER.debug("Assessment of {} v {}: {} = technique {} efficiency {} ({} dealt per {} base Malice) performance {} ({} taken) opponent {}; landed {}",
-                    player.getScoreboardName(), report.opponent().getScoreboardName(), String.format("%.1f", score), String.format("%.2f", techniqueUse), String.format("%.2f", efficiency),
+            Kegare.LOGGER.debug("Assessment of {} v {}: {} = technique {} (of {}) efficiency {} ({} dealt per {} base Malice) performance {} ({} taken) opponent {}; landed {}",
+                    player.getScoreboardName(), report.opponent().getScoreboardName(), String.format("%.1f", score), String.format("%.2f", techniqueUse),
+                    technique.map(t -> TechniqueUnlocks.scoringKit(player, t)).orElse(null), String.format("%.2f", efficiency),
                     String.format("%.1f", report.dealt()), String.format("%.0f", side.baseMalice()), String.format("%.2f", performance), String.format("%.1f", report.taken()), String.format("%.2f", opponent),
                     side.abilities().stream().map(use -> use.id().replace("kegare:", "")).toList());
         }

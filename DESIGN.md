@@ -1298,15 +1298,20 @@ reach Special Grade. Assessment is private and never lowers Grade.
 
 | Part | Weight | What it rates |
 |---|---|---|
-| Technique use | 50 | Below, against what the player has **unlocked**: locked abilities can't lower it |
+| Technique use | 50 | Below, against the kit at their **Peak Refinement** level, or what they have unlocked if that's more |
 | Efficiency | 25 | Damage dealt per **base** Malice cost of what you cast (full marks at `efficiencyFull`, 0.08) |
 | Performance | 15 | Your share of the damage traded (full marks at `performanceFullShare`, 70%) |
 | Opponent | 10 | `opponentEven` 0.8 for your own Grade, +0.1 per Grade above, −0.3 per Grade below, down to 0.02. **A stronger opponent is never required:** an even fight can score 98 |
 
 - **Technique use** splits into distinct abilities landed (40), distinct specials landed (25), landing both a base and a special (10) and
   combining (25: different abilities landed back to back within `comboWindow`, 4 s, three for full marks). Landing 60%
-  (`distinctFullShare`, rounded up) of what's unlocked earns full marks on variety. With no special unlocked yet the special parts drop
+  (`distinctFullShare`, rounded up) of the kit earns full marks on variety. With no special in the kit yet the special parts drop
   out and their weight goes to the rest.
+- **Rerolling can't flatter it.** Peak Refinement survives a reroll, so the kit is the current technique's at that level (`TechniqueUnlocks.scoringKit`),
+  or what's unlocked if that's more. Below their peak, combining also asks for three different moves, not just three combos. Grade 1 takes Peak 5, and from
+  there alternating any two moves below their peak scores at most 52.5, under its 60. Someone at their peak isn't affected: a fresh player
+  alternating their two level 0 moves still scores 100, and a player really at level 5 or 6 alternating one ability and one special still scores 60.8. A rerolled Peak 10 player can reach Grade 1's
+  minimum from level 1 with three moves (70), and Special Grade's from level 3 (91.7).
 - **Repeating one move scores low:** past `spamFreeShare` (50% of your landings) one move lowers Technique use, down to 40% of it
   (`spamPenalty`) when it's every landing. The other three parts don't look at variety, so a perfect one-move fight can still reach
   about 49. That's under Grade 2's 50, but only just, so keep it in mind when changing the weights.

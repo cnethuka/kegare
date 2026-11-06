@@ -6,12 +6,15 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.cnethuka.kegare.TestServer;
 import com.cnethuka.kegare.innate_technique.rime.Rime;
+import com.cnethuka.kegare.innatetechnique.Ability;
+import com.cnethuka.kegare.innatetechnique.InnateTechnique;
 import com.cnethuka.kegare.innatetechnique.InnateTechniqueService;
 import com.cnethuka.kegare.malice.MaliceService;
 import com.cnethuka.kegare.player.BirthService;
 import com.cnethuka.kegare.trait.KegareTraits;
 import com.cnethuka.kegare.trait.Trait;
 import com.cnethuka.kegare.trait.TraitService;
+import java.util.List;
 import java.util.OptionalInt;
 import java.util.UUID;
 import net.minecraft.server.MinecraftServer;
@@ -244,6 +247,169 @@ class AssessmentTest {
             double varied = AssessmentService.assess(new FightReport(severed, b, mixed, FightOutcome.SURVIVED)).technique();
             assertTrue(spam < AssessmentService.requirement(Grade.GRADE_2).technique(), "the same punch: " + spam);
             assertTrue(varied >= AssessmentService.requirement(Grade.SPECIAL_GRADE).technique(), "they can still reach the top gate: " + varied);
+        });
+    }
+
+    private static final List<java.util.function.Supplier<InnateTechnique>> REAL_TECHNIQUES = List.of(Rime.RIME::get,
+            com.cnethuka.kegare.innate_technique.swap.Swap.SWAP::get, com.cnethuka.kegare.innate_technique.puppet_manipulation.PuppetManipulation.PUPPET_MANIPULATION::get);
+
+    /** Each move once a second, in this order, {@code rounds} times over. */
+    private static double techniqueUse(ServerPlayer a, ServerPlayer b, int rounds, Ability... moves) {
+        Fight fight = new Fight(a.getUUID(), b.getUUID(), 0);
+        long tick = 0;
+        for (int round = 0; round < rounds; round++) {
+            for (Ability move : moves) {
+                fight.landed(a.getUUID(), move.id().toString(), move.isSpecial(), tick);
+                tick += 20;
+            }
+        }
+        return AssessmentService.assess(new FightReport(a, b, fight, FightOutcome.SURVIVED)).technique();
+    }
+
+    private static List<Ability> unlocked(ServerPlayer p, InnateTechnique technique) {
+        return technique.everyAbility().stream().filter(a -> TechniqueUnlocks.isUnlocked(p, a)).toList();
+    }
+
+    /** Runs with Refinement gating on, as on a real server: the test server's default has it off. */
+    private static void withGating(Runnable test) {
+        boolean before = ProgressionConfig.REQUIRE_REFINEMENT.get();
+        ProgressionConfig.REQUIRE_REFINEMENT.set(true);
+        try {
+            test.run();
+        } finally {
+            ProgressionConfig.REQUIRE_REFINEMENT.set(before);
+        }
+    }
+
+    /** Every pair of moves they have, on every real technique, at every level below every Peak that can take these gates. */
+    @Test
+    void alternatingTwoMovesBelowTheirPeakNeverMeetsGrade1OrSpecialGrade(MinecraftServer server) throws Exception {
+        TestServer.onServerThread(server, () -> {
+            TestServer.ensureOverworld(server);
+            withGating(() -> {
+                double grade1 = AssessmentService.requirement(Grade.GRADE_1).technique();
+                double special = AssessmentService.requirement(Grade.SPECIAL_GRADE).technique();
+                ServerPlayer b = sorcerer(server, "pairs_opponent", 1000);
+                int checked = 0;
+                double highest = 0;
+                int index = 0;
+                for (java.util.function.Supplier<InnateTechnique> supplier : REAL_TECHNIQUES) {
+                    InnateTechnique technique = supplier.get();
+                    ServerPlayer p = sorcerer(server, "pairs_" + index++, 1000);
+                    InnateTechniqueService.setInnateTechnique(p, technique);
+                    for (int peak = AssessmentService.requirement(Grade.GRADE_1).peakRefinement(); peak <= RefinementService.maxLevel(); peak++) {
+                        RefinementService.setLevel(p, peak);
+                        for (int level = 0; level < peak; level++) {
+                            RefinementService.setLevel(p, level);
+                            List<Ability> moves = unlocked(p, technique);
+                            for (int i = 0; i < moves.size(); i++) {
+                                for (int j = i + 1; j < moves.size(); j++) {
+                                    double use = techniqueUse(p, b, 3, moves.get(i), moves.get(j));
+                                    String what = technique.id() + " Peak " + peak + " level " + level + ": " + moves.get(i).id() + " and " + moves.get(j).id() + " scored " + use;
+                                    assertTrue(use < grade1, what);
+                                    assertTrue(use < special, what);
+                                    highest = Math.max(highest, use);
+                                    checked++;
+                                }
+                            }
+                        }
+                    }
+                }
+                assertTrue(checked > 500, "the loops really ran: " + checked);
+                assertEquals(52.5, highest, EPS, "DESIGN §3.21 quotes this");
+            });
+        });
+    }
+
+    @Test
+    void aRealRerollToASmallKitNoLongerScoresFullMarksOnTwoMoves(MinecraftServer server) throws Exception {
+        TestServer.onServerThread(server, () -> {
+            TestServer.ensureOverworld(server);
+            withGating(() -> {
+                ServerPlayer b = sorcerer(server, "reroll_opponent", 1000);
+                ServerPlayer fresh = sorcerer(server, "reroll_fresh", 1000);
+                InnateTechnique swap = com.cnethuka.kegare.innate_technique.swap.Swap.SWAP.get();
+                InnateTechniqueService.setInnateTechnique(fresh, swap);
+                Ability[] two = unlocked(fresh, swap).toArray(new Ability[0]);
+                assertEquals(2, two.length, "setup: the level 0 kit");
+                assertEquals(100.0, techniqueUse(fresh, b, 3, two), EPS, "fresh, those two are all they have");
+
+                ServerPlayer rerolled = sorcerer(server, "reroll_away", 1000);
+                RefinementService.setLevel(rerolled, RefinementService.maxLevel());
+                InnateTechniqueService.setInnateTechnique(rerolled, swap);
+                assertEquals(0, RefinementService.level(rerolled), "setup: the reroll reset it");
+                assertEquals(RefinementService.maxLevel(), RefinementService.peak(rerolled), "setup: Peak stayed");
+                double after = techniqueUse(rerolled, b, 3, two);
+                assertEquals(100.0 * (40 * 2 / 3.0 + 25 * 2 / 3.0) / 100, after, EPS, "the same two moves");
+                assertTrue(after < AssessmentService.requirement(Grade.GRADE_1).technique());
+            });
+        });
+    }
+
+    /** Fresh players are scored as they always were: at their peak, the kit is what they have, level by level. */
+    @Test
+    void someoneAtTheirPeakScoresExactlyAsBefore(MinecraftServer server) throws Exception {
+        TestServer.onServerThread(server, () -> {
+            TestServer.ensureOverworld(server);
+            withGating(() -> {
+                ServerPlayer b = sorcerer(server, "peak_opponent", 1000);
+                int index = 0;
+                for (java.util.function.Supplier<InnateTechnique> supplier : REAL_TECHNIQUES) {
+                    InnateTechnique technique = supplier.get();
+                    ServerPlayer p = sorcerer(server, "peak_" + index++, 1000);
+                    InnateTechniqueService.setInnateTechnique(p, technique);
+                    for (int level = 0; level <= RefinementService.maxLevel(); level++) {
+                        RefinementService.setLevel(p, level);
+                        var base = TechniqueUnlocks.unlockedBase(p, technique);
+                        var specials = TechniqueUnlocks.unlockedSpecials(p, technique);
+                        AssessmentScoring.Kit kit = TechniqueUnlocks.scoringKit(p, technique);
+                        assertEquals(new AssessmentScoring.Kit(base.size(), specials.size(), false), kit, "level " + level);
+
+                        List<Ability> moves = unlocked(p, technique);
+                        Fight fight = new Fight(p.getUUID(), b.getUUID(), 0);
+                        for (int i = 0; i < 4; i++) fight.landed(p.getUUID(), moves.get(i % 2).id().toString(), moves.get(i % 2).isSpecial(), i * 20L);
+                        double before = 100.0 * AssessmentScoring.techniqueUse(fight.side(p.getUUID()).abilities(), base, specials, AssessmentService.settings());
+                        assertEquals(before, AssessmentService.assess(new FightReport(p, b, fight, FightOutcome.SURVIVED)).technique(), EPS, "level " + level);
+                    }
+                }
+            });
+        });
+    }
+
+    @Test
+    void aRerolledPlayerCanStillMeetTheGatesWithRealVariety(MinecraftServer server) throws Exception {
+        TestServer.onServerThread(server, () -> {
+            TestServer.ensureOverworld(server);
+            withGating(() -> {
+                ServerPlayer b = sorcerer(server, "variety_opponent", 1000);
+                ServerPlayer p = sorcerer(server, "variety", 1000);
+                RefinementService.setLevel(p, RefinementService.maxLevel());
+                InnateTechnique swap = com.cnethuka.kegare.innate_technique.swap.Swap.SWAP.get();
+                InnateTechniqueService.setInnateTechnique(p, swap);
+
+                RefinementService.setLevel(p, 1);
+                assertTrue(techniqueUse(p, b, 2, unlocked(p, swap).toArray(new Ability[0])) >= AssessmentService.requirement(Grade.GRADE_1).technique(),
+                        "level 1: all three moves meet Grade 1's");
+                RefinementService.setLevel(p, 2);
+                assertTrue(techniqueUse(p, b, 2, unlocked(p, swap).toArray(new Ability[0])) < AssessmentService.requirement(Grade.SPECIAL_GRADE).technique(),
+                        "level 2 is one special short of Special Grade's");
+                RefinementService.setLevel(p, 3);
+                assertTrue(techniqueUse(p, b, 2, unlocked(p, swap).toArray(new Ability[0])) >= AssessmentService.requirement(Grade.SPECIAL_GRADE).technique(),
+                        "level 3 meets it");
+            });
+        });
+    }
+
+    /** With the requirement off everything is unlocked, as it always was: nothing to rebuild, so nothing changes. */
+    @Test
+    void withGatingOffTheWholeTechniqueIsTheKit(MinecraftServer server) throws Exception {
+        TestServer.onServerThread(server, () -> {
+            TestServer.ensureOverworld(server);
+            ServerPlayer p = sorcerer(server, "gating_off", 1000);
+            RefinementService.setLevel(p, 2);
+            InnateTechnique technique = InnateTechniqueService.current(p).orElseThrow();
+            assertEquals(new AssessmentScoring.Kit(TechniqueUnlocks.unlockedBase(p, technique).size(), TechniqueUnlocks.unlockedSpecials(p, technique).size(), false),
+                    TechniqueUnlocks.scoringKit(p, technique));
         });
     }
 

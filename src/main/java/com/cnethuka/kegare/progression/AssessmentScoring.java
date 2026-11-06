@@ -30,15 +30,30 @@ public final class AssessmentScoring {
                            double spamPenalty, int comboTarget, long comboWindowTicks, double efficiencyFull, double performanceFullShare,
                            double opponentEven, double opponentPerAbove, double opponentPerBelow, double opponentFloor, int severedFullMoves) {}
 
+    /**
+     * What variety is scored against.
+     *
+     * @param base how many abilities and ultimates
+     * @param specials how many specials
+     * @param belowPeak they've been higher than this on some technique, as after a reroll
+     */
+    public record Kit(int base, int specials, boolean belowPeak) {}
+
     private AssessmentScoring() {}
 
+    /** Technique use (0..1) of a player scored against exactly what they have unlocked. */
+    public static double techniqueUse(List<Fight.Use> uses, Set<String> unlockedBase, Set<String> unlockedSpecials, Settings s) {
+        return techniqueUse(uses, unlockedBase, unlockedSpecials, new Kit(unlockedBase.size(), unlockedSpecials.size(), false), s);
+    }
+
     /**
-     * Technique use (0..1), against what the player has UNLOCKED: a locked ability can't lower it, and with no special
-     * unlocked yet the special parts drop out and their weight goes to the rest.
+     * Technique use (0..1), against {@code kit}. Only what's unlocked counts as landed. With no special in the kit yet the special
+     * parts drop out and their weight goes to the rest. Below their peak, combining also asks for as many different moves as it
+     * asks for combos: back and forth between two is worth less when they've shown they know more.
      *
      * @param uses every landing in the fight, in order
      */
-    public static double techniqueUse(List<Fight.Use> uses, Set<String> unlockedBase, Set<String> unlockedSpecials, Settings s) {
+    public static double techniqueUse(List<Fight.Use> uses, Set<String> unlockedBase, Set<String> unlockedSpecials, Kit kit, Settings s) {
         Set<String> landedBase = new HashSet<>();
         Set<String> landedSpecials = new HashSet<>();
         for (Fight.Use use : uses) {
@@ -46,15 +61,19 @@ public final class AssessmentScoring {
             if (unlockedSpecials.contains(use.id())) landedSpecials.add(use.id());
         }
         TechniqueWeights w = s.techniqueWeights;
-        double earned = w.distinct * coverage(landedBase.size(), unlockedBase.size(), s.distinctFullShare);
+        double earned = w.distinct * coverage(landedBase.size(), kit.base, s.distinctFullShare);
         double possible = w.distinct;
-        if (!unlockedSpecials.isEmpty()) {
-            earned += w.specials * coverage(landedSpecials.size(), unlockedSpecials.size(), s.distinctFullShare);
+        if (kit.specials > 0) {
+            earned += w.specials * coverage(landedSpecials.size(), kit.specials, s.distinctFullShare);
             earned += w.mixing * (!landedBase.isEmpty() && !landedSpecials.isEmpty() ? 1.0 : 0.0);
             possible += w.specials + w.mixing;
         }
-        if (unlockedBase.size() + unlockedSpecials.size() >= 2) {
-            earned += w.combos * Math.min(1.0, combos(uses, s.comboWindowTicks) / (double) Math.max(1, s.comboTarget));
+        int size = kit.base + kit.specials;
+        if (size >= 2) {
+            int target = Math.max(1, s.comboTarget);
+            double combining = Math.min(1.0, combos(uses, s.comboWindowTicks) / (double) target);
+            if (kit.belowPeak) combining = Math.min(combining, (landedBase.size() + landedSpecials.size()) / (double) Math.min(target, size));
+            earned += w.combos * combining;
             possible += w.combos;
         }
         if (possible <= 0) return 0.0;
