@@ -39,6 +39,7 @@ public final class ProgressionEvents {
         if (hit == null || !Attribution.isRealTarget(hit.attacker(), victim)) return;
         double counted = Math.min(amount, victim.getMaxHealth()); // what a single absurd hit is worth
         if (victim instanceof ServerPlayer target) FightTracker.damage(hit.attacker(), target, counted);
+        else GradeService.onMobDamage(hit.attacker(), counted);
     }
 
     /** Runs after everything else has had its say: a cancelled death is no death. */

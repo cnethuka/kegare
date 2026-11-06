@@ -43,6 +43,7 @@ public final class Kegare {
         com.cnethuka.kegare.rmt.Rmt.init(modBus); // registers Reverse Malice Technique as a shared ability
         TestInnateTechniques.INNATE_TECHNIQUES.register(modBus); // TEST CONTENT
 
+        com.cnethuka.kegare.progression.Progression.init();
         modBus.addListener(KegareItems::addToCreativeTabs);
         modBus.addListener(KegareNetwork::register);
         modBus.addListener(KegareDataGen::gather);

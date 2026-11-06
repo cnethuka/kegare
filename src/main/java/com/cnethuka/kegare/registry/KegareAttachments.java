@@ -65,6 +65,10 @@ public final class KegareAttachments {
     public static final Supplier<AttachmentType<VisualState>> VISUAL_STATE = ATTACHMENT_TYPES.register("visual_state",
             () -> AttachmentType.builder(() -> new VisualState()).build());
 
+    public static final Supplier<AttachmentType<com.cnethuka.kegare.progression.GradeData>> GRADE = ATTACHMENT_TYPES.register("grade",
+            () -> AttachmentType.builder(() -> new com.cnethuka.kegare.progression.GradeData())
+                    .serialize(com.cnethuka.kegare.progression.GradeData.CODEC).copyOnDeath().build());
+
     /** On any entity a cast spawned: which cast (see {@link com.cnethuka.kegare.progression.CastScope}). */
     public static final Supplier<AttachmentType<com.cnethuka.kegare.progression.CastOrigin>> CAST_ORIGIN = ATTACHMENT_TYPES.register("cast_origin",
             () -> AttachmentType.builder(() -> com.cnethuka.kegare.progression.CastOrigin.NONE)
