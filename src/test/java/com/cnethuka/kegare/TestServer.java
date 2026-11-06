@@ -36,6 +36,49 @@ public final class TestServer {
         };
     }
 
+    /** A test player that can be hurt and hurt others (NeoForge's fake players can't), with real advancements. */
+    public static ServerPlayer damageable(MinecraftServer server, String name) {
+        UUID uuid = UUID.nameUUIDFromBytes(("kegare-test:" + name).getBytes(StandardCharsets.UTF_8));
+        ServerPlayer player = new net.neoforged.neoforge.common.util.FakePlayer(server.overworld(), new GameProfile(uuid, name)) {
+            @Override
+            public boolean isFakePlayer() {
+                return false;
+            }
+
+            @Override
+            public boolean isInvulnerableTo(net.minecraft.world.damagesource.DamageSource source) {
+                return false;
+            }
+
+            @Override
+            public boolean canHarmPlayer(net.minecraft.world.entity.player.Player other) {
+                return true;
+            }
+
+            /** FakePlayer's death does nothing at all; a real player's first fires LivingDeathEvent (cancellable). */
+            @Override
+            public void die(net.minecraft.world.damagesource.DamageSource source) {
+                if (net.neoforged.neoforge.common.CommonHooks.onLivingDeath(this, source)) return;
+                dead = true;
+            }
+        };
+        try {
+            java.lang.reflect.Field spawnProtection = ServerPlayer.class.getDeclaredField("spawnInvulnerableTime");
+            spawnProtection.setAccessible(true);
+            spawnProtection.setInt(player, 0);
+        } catch (ReflectiveOperationException e) {
+            throw new IllegalStateException(e);
+        }
+        return player;
+    }
+
+    /** Takes every test player out of the overworld again, so one test's players never get in the way of the next. */
+    public static void removePlayers(MinecraftServer server) {
+        for (ServerPlayer p : java.util.List.copyOf(server.overworld().players())) {
+            server.overworld().removePlayerImmediately(p, net.minecraft.world.entity.Entity.RemovalReason.DISCARDED);
+        }
+    }
+
     public static boolean hasAdvancement(MinecraftServer server, ServerPlayer player, net.minecraft.resources.ResourceLocation id) {
         var holder = server.getAdvancements().get(id);
         if (holder == null) throw new IllegalStateException("advancement " + id + " isn't loaded");

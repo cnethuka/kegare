@@ -288,37 +288,6 @@ class PossessionTest {
 
     /** A test player that can be hurt and hurt others (NeoForge's fake players can't), with real advancements. */
     static ServerPlayer damageable(MinecraftServer server, String name) {
-        UUID uuid = UUID.nameUUIDFromBytes(("kegare-test:" + name).getBytes(StandardCharsets.UTF_8));
-        ServerPlayer player = new FakePlayer(server.overworld(), new GameProfile(uuid, name)) {
-            @Override
-            public boolean isFakePlayer() {
-                return false;
-            }
-
-            @Override
-            public boolean isInvulnerableTo(DamageSource source) {
-                return false;
-            }
-
-            @Override
-            public boolean canHarmPlayer(net.minecraft.world.entity.player.Player other) {
-                return true;
-            }
-
-            /** FakePlayer's death does nothing at all; a real player's first fires LivingDeathEvent (cancellable). */
-            @Override
-            public void die(DamageSource source) {
-                if (net.neoforged.neoforge.common.CommonHooks.onLivingDeath(this, source)) return;
-                dead = true;
-            }
-        };
-        try {
-            java.lang.reflect.Field spawnProtection = ServerPlayer.class.getDeclaredField("spawnInvulnerableTime");
-            spawnProtection.setAccessible(true);
-            spawnProtection.setInt(player, 0);
-        } catch (ReflectiveOperationException e) {
-            throw new IllegalStateException(e);
-        }
-        return player;
+        return TestServer.damageable(server, name);
     }
 }
