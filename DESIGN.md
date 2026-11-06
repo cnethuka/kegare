@@ -80,7 +80,7 @@ game never names a bearer, heir or killer of a secret holder.
 | `kegare:roll` | yes | yes | rolls since last Legendary (pity), total rolls |
 | `kegare:combat` | yes | **no** | last-combat tick, stunned-until tick (game time) |
 | `kegare:grade` | yes | yes | Grade, XP toward the next step, fights per opponent in the rolling window, this window's mob XP (§3.21) |
-| `kegare:assessment` | yes | yes | recent qualifying fights: score, opponent, tick (§3.21) |
+| `kegare:assessment` | yes | yes | recent qualifying fights: score, Technique use, opponent, tick (§3.21) |
 | `kegare:refinement` | yes | yes | level and XP (current technique), Peak Refinement, landings per target in the rolling window (§3.21) |
 | `kegare:insight` | yes | yes | Dominion, Ward and Output values, the first-time keys already paid (§3.21) |
 | `kegare:unlocks` | yes | yes | IDs held in the unlock framework (§3.21) |
@@ -301,7 +301,7 @@ All timestamps use **level game time**. They persist across restarts and are ide
   - The client counts down cooldowns locally from game time.
 - Swap (§3.19) adds two cosmetic S→C payloads: `Disguises.StatePayload` (the disguise map, to everyone) and
   `SwapLink.Payload` (effects drawn along a line).
-- Network version `11` (since progression's snapshot on `SyncPayload` and its toast payload). Bump it when payload formats change; mismatched clients are refused.
+- Network version `12` (since the Assessment's Technique use joined progression's snapshot on `SyncPayload`). Bump it when payload formats change; mismatched clients are refused.
 
 ### 3.6 HUD
 **Rule: the combat HUD does not exist until the player asks for it** (art in `gen_art.py` → `textures/gui/combat/`).
@@ -363,8 +363,8 @@ All timestamps use **level game time**. They persist across restarts and are ide
 | `strings unmovable <player> <true\|false>` | Debug for Strings (§3.20): cancels `StringsTargetEvent` for this player (a stand-in for a future immunity) |
 | `grade get <player>` / `grade set <player> <grade>` | Show or set a Grade (§3.21). An admin can lower it; nothing else can |
 | `grade addxp <player> <amount>` | Add Grade XP, which promotes if the step needs only XP |
-| `assessment get <player>` | Recent scores, and where they stand against the next requirement |
-| `assessment addfight <player> <score> <opponent>` | Add a scored fight to the history. An online player's name uses their real UUID; any other name is hashed into a stable one |
+| `assessment get <player>` | Recent scores and their Technique use, and where they stand against the next requirement |
+| `assessment addfight <player> <score> <opponent> [techniqueUse]` | Add a scored fight to the history. Technique use (0-100) defaults to the score. An online player's name uses their real UUID; any other name is hashed into a stable one |
 | `refinement get <player>` / `refinement set <player> <level>` | Show or set Refinement, clamped to the top level. Lowering it takes newly locked abilities off the bar |
 | `insight get <player>` / `insight add <player> <category> <amount>` | Show all three Insight values, or add to one |
 | `progression reset <player>` | Wipe Grade, Assessment, Refinement, Peak Refinement, Insight and framework unlocks. Advancements stay |
@@ -579,7 +579,7 @@ closing it or disconnecting at any point changes nothing.
   centered on the panel while that clears Reset, and centered in the space left of Reset when it doesn't.
 - **Severed:** the Severed emblem and text, no category tabs and no bar.
 - **Progress view** (§3.21): the Grade name, an XP bar to the next step, and the current Assessment against its requirement where
-  one applies (average, fights, opponents, Peak Refinement; each turns green when met, and at Grade 1 the XP line gives way to
+  one applies (average, Technique use (Melee for a Severed player), fights, opponents, Peak Refinement; each turns green when met, and at Grade 1 the XP line gives way to
   Assessment alone). Then the current technique's Refinement level and bar, Peak Refinement, and the three Insight values. It scrolls in
   small windows like the rest of the box.
 - **Severed** players still get Progress (no Refinement or Peak Refinement), Traits, Pity and Settings.
@@ -1321,11 +1321,17 @@ reach Special Grade. Assessment is private and never lowers Grade.
 **Your Assessment is the average of your recent qualifying fights,** which needs a minimum number of different opponents so one friend
 can't carry it:
 
-| Grade | Average | Over the last | Different opponents | Peak Refinement |
-|---|---|---|---|---|
-| Grade 2 | 50+ | 5 fights | 2+ | 2 |
-| Grade 1 | 70+ | 10 fights | 3+ | 5 |
-| Special Grade | 90+ | 20 fights | 3+ | 10 (the top level) |
+| Grade | Average | Technique use | Over the last | Different opponents | Peak Refinement |
+|---|---|---|---|---|---|
+| Grade 2 | 50+ | 40+ | 5 fights | 2+ | 2 |
+| Grade 1 | 70+ | 60+ | 10 fights | 3+ | 5 |
+| Special Grade | 90+ | 85+ | 20 fights | 3+ | 10 (the top level) |
+
+**Spam can't qualify.** Efficiency, performance and the opponent bonus can carry a one-move fight past 50, so every gate also asks for an average
+Technique use over the same fights (`minTechniqueUse`, 0-100; each fight's is stored with its score). One move repeated scores 12 at most, a real
+mix about 40, varied play 80 or more. Special Grade's has to be above 80 to mean anything, since with every other part full a 90 average already
+takes that. A Severed player's melee variety stands in, and is reachable at every gate. The score's weights are unaffected. Fights saved before this
+count as Technique use 0 and roll off as new ones come in.
 
 **Peak Refinement** is the highest level ever reached on any technique. It survives rerolls, so rerolling doesn't block promotion. Severed
 players skip it. Promotion is tried after every qualifying fight, XP change and new Refinement level, and on login.

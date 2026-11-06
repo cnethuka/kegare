@@ -466,6 +466,8 @@ public final class KegareLanguageProvider extends LanguageProvider {
         add("gui.kegare.sorcerer.progress.assessment_only", "%s comes by Assessment alone.");
         add("gui.kegare.sorcerer.progress.assessment", "Assessment");
         add("gui.kegare.sorcerer.progress.assessment.average", "Average %s / %s");
+        add("gui.kegare.sorcerer.progress.assessment.technique", "Technique %s / %s");
+        add("gui.kegare.sorcerer.progress.assessment.melee", "Melee %s / %s");
         add("gui.kegare.sorcerer.progress.assessment.fights", "Fights %s / %s");
         add("gui.kegare.sorcerer.progress.assessment.opponents", "Opponents %s / %s");
         add("gui.kegare.sorcerer.progress.assessment.peak", "Peak %s / %s");
@@ -497,11 +499,12 @@ public final class KegareLanguageProvider extends LanguageProvider {
         add("commands.kegare.grade.set", "%s is now %s.");
         add("commands.kegare.grade.addxp", "Gave %s XP to %s, who is %s with %s XP.");
         add("commands.kegare.assessment.recent", "%s's recent fights, oldest first: %s");
+        add("commands.kegare.assessment.recent_technique", "Technique use in those fights: %s");
         add("commands.kegare.assessment.none", "Their next step takes no Assessment.");
-        add("commands.kegare.assessment.status", "Toward %s: average %s / %s, fights %s / %s, opponents %s / %s, Peak Refinement %s / %s: %s");
+        add("commands.kegare.assessment.status", "Toward %s: average %s / %s, Technique use %s / %s, fights %s / %s, opponents %s / %s, Peak Refinement %s / %s: %s");
         add("commands.kegare.assessment.met", "met.");
         add("commands.kegare.assessment.unmet", "not met.");
-        add("commands.kegare.assessment.addfight", "Added a %s against %s to %s, who is %s.");
+        add("commands.kegare.assessment.addfight", "Added a %s (Technique use %s) against %s to %s, who is %s.");
         add("commands.kegare.refinement.get", "%s: Refinement %s / %s, %s / %s XP to the next level, Peak Refinement %s.");
         add("commands.kegare.refinement.set", "%s is now at Refinement %s.");
         add("commands.kegare.insight.unknown", "Unknown Insight category: %s");

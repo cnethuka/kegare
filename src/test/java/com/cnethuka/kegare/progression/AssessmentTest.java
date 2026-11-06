@@ -172,6 +172,82 @@ class AssessmentTest {
     }
 
     @Test
+    void everyGateAsksForMoreTechniqueUseThanTheLast(MinecraftServer server) throws Exception {
+        TestServer.onServerThread(server, () -> {
+            double grade2 = AssessmentService.requirement(Grade.GRADE_2).technique();
+            double grade1 = AssessmentService.requirement(Grade.GRADE_1).technique();
+            double special = AssessmentService.requirement(Grade.SPECIAL_GRADE).technique();
+            assertTrue(grade2 < grade1 && grade1 < special, grade2 + " < " + grade1 + " < " + special);
+            // With every other part at full marks and a stronger opponent, a 90 average still takes Technique use 80: under that, this gate would never be what stops anyone.
+            assertTrue(special > 80, "it has to ask for more than a 90 average already does");
+            assertTrue(grade2 > 12.4, "more than one move repeated can ever score");
+        });
+    }
+
+    @Test
+    void spammingOneMoveCantBePromotedWhateverItsAverage(MinecraftServer server) throws Exception {
+        TestServer.onServerThread(server, () -> {
+            TestServer.ensureOverworld(server);
+            ServerPlayer p = sorcerer(server, "spammer", 1000);
+            RefinementService.setLevel(p, 10);
+            GradeService.set(p, Grade.SEMI_GRADE_2);
+            GradeService.addXp(p, 1000);
+            // A 60 average beats Grade 2's 50, on Technique use a one-move fight really gets.
+            for (int i = 0; i < 5; i++) AssessmentService.addFight(p, 60, 5, opponent(i % 2 == 0 ? "one" : "two"));
+            assertEquals(Grade.SEMI_GRADE_2, Progression.getGrade(p), "everything is met but the Technique use");
+            for (int i = 0; i < 5; i++) AssessmentService.addFight(p, 60, 45, opponent(i % 2 == 0 ? "one" : "two"));
+            assertEquals(Grade.GRADE_2, Progression.getGrade(p), "real variety promotes");
+        });
+    }
+
+    @Test
+    void aRealFightRecordsItsTechniqueUse(MinecraftServer server) throws Exception {
+        TestServer.onServerThread(server, () -> {
+            TestServer.ensureOverworld(server);
+            ServerPlayer a = sorcerer(server, "records_a", 1000);
+            ServerPlayer b = sorcerer(server, "records_b", 1000);
+            RefinementService.setLevel(a, 3);
+            Fight fight = varied(a, b);
+            AssessmentService.Assessed assessed = AssessmentService.assess(new FightReport(a, b, fight, FightOutcome.SURVIVED));
+            assertTrue(assessed.technique() > 40, "three different moves: " + assessed.technique());
+            assertEquals(assessed.score(), AssessmentService.score(new FightReport(a, b, fight, FightOutcome.SURVIVED)), EPS);
+            AssessmentService.addFight(a, assessed.score(), assessed.technique(), b.getUUID());
+            AssessmentRules.Entry entry = AssessmentService.recent(a, 1).get(0);
+            assertEquals(assessed.technique(), entry.technique(), EPS);
+
+            // A saved fight keeps it, and one saved before it existed reads as none.
+            var saved = AssessmentData.CODEC.encodeStart(net.minecraft.nbt.NbtOps.INSTANCE, AssessmentService.get(a)).getOrThrow();
+            AssessmentData loaded = AssessmentData.CODEC.parse(net.minecraft.nbt.NbtOps.INSTANCE, saved).getOrThrow();
+            assertEquals(assessed.technique(), loaded.history().get(0).technique(), EPS);
+            net.minecraft.nbt.CompoundTag old = ((net.minecraft.nbt.CompoundTag) saved).copy();
+            old.getList("history", net.minecraft.nbt.Tag.TAG_COMPOUND).getCompound(0).remove("technique");
+            assertEquals(0.0, AssessmentData.CODEC.parse(net.minecraft.nbt.NbtOps.INSTANCE, old).getOrThrow().history().get(0).technique(), EPS);
+        });
+    }
+
+    @Test
+    void aSeveredPlayersMeleeVarietyStandsInForTechniqueUse(MinecraftServer server) throws Exception {
+        TestServer.onServerThread(server, () -> {
+            TestServer.ensureOverworld(server);
+            ServerPlayer severed = TestServer.damageable(server, "gate_severed");
+            server.overworld().addNewPlayer(severed);
+            BirthService.rebirth(severed, OptionalInt.of(0));
+            ServerPlayer b = sorcerer(server, "gate_severed_b", 1000);
+            Fight plain = new Fight(severed.getUUID(), b.getUUID(), 0);
+            Fight mixed = new Fight(severed.getUUID(), b.getUUID(), 0);
+            String[] moves = {"sword", "sword_critical", "axe", "axe_sprint", "sword", "fist"};
+            for (int i = 0; i < moves.length; i++) {
+                plain.melee(severed.getUUID(), "fist", i * 20L);
+                mixed.melee(severed.getUUID(), moves[i], i * 20L);
+            }
+            double spam = AssessmentService.assess(new FightReport(severed, b, plain, FightOutcome.SURVIVED)).technique();
+            double varied = AssessmentService.assess(new FightReport(severed, b, mixed, FightOutcome.SURVIVED)).technique();
+            assertTrue(spam < AssessmentService.requirement(Grade.GRADE_2).technique(), "the same punch: " + spam);
+            assertTrue(varied >= AssessmentService.requirement(Grade.SPECIAL_GRADE).technique(), "they can still reach the top gate: " + varied);
+        });
+    }
+
+    @Test
     void peakRefinementGatesPromotionAndSurvivesAReroll(MinecraftServer server) throws Exception {
         TestServer.onServerThread(server, () -> {
             TestServer.ensureOverworld(server);

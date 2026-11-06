@@ -7,15 +7,21 @@ import java.util.UUID;
 
 /** Whether a fight history meets a requirement. Pure, so one friend carrying it is easy to test. */
 public final class AssessmentRules {
-    /** One scored fight. */
-    public record Entry(double score, UUID opponent, long tick) {}
+    /**
+     * One scored fight.
+     *
+     * @param technique its Technique use, 0-100 like the score (a Severed player's melee variety)
+     */
+    public record Entry(double score, double technique, UUID opponent, long tick) {}
 
-    public record Requirement(double average, int fights, int opponents, int peakRefinement) {}
+    /** @param technique the average Technique use needed, 0-100, so one move repeated can't qualify however well it trades */
+    public record Requirement(double average, int fights, int opponents, int peakRefinement, double technique) {}
 
-    /** Where a history stands against a requirement. {@code average}: of up to the last {@code fights} entries. */
-    public record Status(double average, int fights, int opponents, int peakRefinement, boolean severed, Requirement requirement) {
+    /** Where a history stands against a requirement. {@code average} and {@code technique}: of up to the last {@code fights} entries. */
+    public record Status(double average, double technique, int fights, int opponents, int peakRefinement, boolean severed, Requirement requirement) {
         public boolean met() {
-            return fights >= requirement.fights && average + 1.0e-9 >= requirement.average && opponents >= requirement.opponents
+            return fights >= requirement.fights && average + 1.0e-9 >= requirement.average
+                    && technique + 1.0e-9 >= requirement.technique && opponents >= requirement.opponents
                     && (severed || peakRefinement >= requirement.peakRefinement);
         }
     }
@@ -26,13 +32,15 @@ public final class AssessmentRules {
     public static Status evaluate(List<Entry> history, Requirement requirement, int peakRefinement, boolean severed) {
         int from = Math.max(0, history.size() - requirement.fights);
         List<Entry> recent = history.subList(from, history.size());
-        double sum = 0;
+        double scores = 0;
+        double technique = 0;
         Set<UUID> opponents = new HashSet<>();
         for (Entry entry : recent) {
-            sum += entry.score;
+            scores += entry.score;
+            technique += entry.technique;
             opponents.add(entry.opponent);
         }
-        double average = recent.isEmpty() ? 0.0 : sum / recent.size();
-        return new Status(average, recent.size(), opponents.size(), peakRefinement, severed, requirement);
+        int count = recent.size();
+        return new Status(count == 0 ? 0.0 : scores / count, count == 0 ? 0.0 : technique / count, count, opponents.size(), peakRefinement, severed, requirement);
     }
 }

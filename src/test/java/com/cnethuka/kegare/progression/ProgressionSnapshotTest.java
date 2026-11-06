@@ -69,11 +69,13 @@ class ProgressionSnapshotTest {
             GradeService.set(p, Grade.SEMI_GRADE_1);
             RefinementService.setLevel(p, 3);
             Insight.add(p, InsightCategory.WARD, 7);
-            AssessmentService.addFight(p, 60, java.util.UUID.nameUUIDFromBytes(new byte[] {1}));
+            AssessmentService.addFight(p, 60, 45, java.util.UUID.nameUUIDFromBytes(new byte[] {1}));
             ProgressionSnapshot s = roundTrip(SyncPayload.of(p)).progression();
             ProgressionSnapshot.Assessment a = s.assessment().orElseThrow();
             assertEquals(70f, a.averageNeeded());
             assertEquals(60f, a.average());
+            assertEquals(45f, a.technique());
+            assertEquals(60f, a.techniqueNeeded());
             assertEquals(1, a.fights());
             assertEquals(10, a.fightsNeeded());
             assertEquals(1, a.opponents());

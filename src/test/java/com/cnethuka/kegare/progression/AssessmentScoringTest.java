@@ -136,11 +136,17 @@ class AssessmentScoringTest {
     private static final UUID A = UUID.nameUUIDFromBytes("a".getBytes());
     private static final UUID B = UUID.nameUUIDFromBytes("b".getBytes());
     private static final UUID C = UUID.nameUUIDFromBytes("c".getBytes());
-    private static final AssessmentRules.Requirement GRADE_2 = new AssessmentRules.Requirement(50, 5, 2, 2);
+    private static final AssessmentRules.Requirement GRADE_2 = new AssessmentRules.Requirement(50, 5, 2, 2, 40);
 
     private static List<AssessmentRules.Entry> history(double score, UUID... opponents) {
         List<AssessmentRules.Entry> out = new ArrayList<>();
-        for (UUID opponent : opponents) out.add(new AssessmentRules.Entry(score, opponent, 0));
+        for (UUID opponent : opponents) out.add(new AssessmentRules.Entry(score, score, opponent, 0));
+        return out;
+    }
+
+    private static List<AssessmentRules.Entry> history(double score, double technique, UUID... opponents) {
+        List<AssessmentRules.Entry> out = new ArrayList<>();
+        for (UUID opponent : opponents) out.add(new AssessmentRules.Entry(score, technique, opponent, 0));
         return out;
     }
 
@@ -158,7 +164,7 @@ class AssessmentScoringTest {
     void oneFriendCantCarryIt() {
         assertFalse(AssessmentRules.evaluate(history(100, A, A, A, A, A), GRADE_2, 2, false).met(), "five perfect fights with one friend");
         assertTrue(AssessmentRules.evaluate(history(100, A, A, A, A, B), GRADE_2, 2, false).met());
-        AssessmentRules.Requirement grade1 = new AssessmentRules.Requirement(70, 10, 3, 5);
+        AssessmentRules.Requirement grade1 = new AssessmentRules.Requirement(70, 10, 3, 5, 60);
         assertFalse(AssessmentRules.evaluate(history(100, A, B, A, B, A, B, A, B, A, B), grade1, 5, false).met(), "two friends isn't three");
         assertTrue(AssessmentRules.evaluate(history(100, A, B, A, B, A, B, A, B, A, C), grade1, 5, false).met());
     }
@@ -168,6 +174,32 @@ class AssessmentScoringTest {
         assertFalse(AssessmentRules.evaluate(history(100, A, B, A, B), GRADE_2, 2, false).met(), "only four fights");
         assertFalse(AssessmentRules.evaluate(history(49.9, A, B, A, B, A), GRADE_2, 2, false).met());
         assertTrue(AssessmentRules.evaluate(history(50, A, B, A, B, A), GRADE_2, 2, false).met(), "exactly the average");
+    }
+
+    /** The real fights this gate was set from: spam scored 45.6 with Technique use 5, a mix 52.3 with 43, varied play 72.4 with 83. */
+    @Test
+    void spamCantQualifyHoweverWellItTrades() {
+        assertFalse(AssessmentRules.evaluate(history(60, 5, A, B, A, B, A), GRADE_2, 2, false).met(), "a high enough average, on one move");
+        assertFalse(AssessmentRules.evaluate(history(100, 39.9, A, B, A, B, A), GRADE_2, 2, false).met(), "even a perfect average needs the Technique use");
+        assertTrue(AssessmentRules.evaluate(history(52.3, 43, A, B, A, B, A), GRADE_2, 2, false).met());
+        assertTrue(AssessmentRules.evaluate(history(72.4, 83, A, B, A, B, A), GRADE_2, 2, false).met(), "the varied fight passes Grade 2");
+        assertTrue(AssessmentRules.evaluate(history(50, 40, A, B, A, B, A), GRADE_2, 2, false).met(), "exactly the minimum");
+    }
+
+    @Test
+    void theTechniqueMinimumIsAnAverageOfTheSameFights() {
+        List<AssessmentRules.Entry> history = new ArrayList<>(history(60, 0, A, A, A));
+        history.addAll(history(60, 20, A, B));
+        history.addAll(history(60, 60, A, B, A));
+        AssessmentRules.Status status = AssessmentRules.evaluate(history, GRADE_2, 2, false);
+        assertEquals(44.0, status.technique(), EPS, "only the last five count: an off fight or two doesn't sink it");
+        assertTrue(status.met());
+    }
+
+    @Test
+    void severedPlayersAreHeldToItToo() {
+        assertFalse(AssessmentRules.evaluate(history(60, 5, A, B, A, B, A), GRADE_2, 0, true).met(), "the same hit, over and over");
+        assertTrue(AssessmentRules.evaluate(history(60, 40, A, B, A, B, A), GRADE_2, 0, true).met());
     }
 
     @Test

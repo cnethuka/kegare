@@ -10,6 +10,7 @@ import net.minecraft.core.UUIDUtil;
 public final class AssessmentData {
     private static final Codec<AssessmentRules.Entry> ENTRY_CODEC = RecordCodecBuilder.create(i -> i.group(
             Codec.DOUBLE.fieldOf("score").forGetter(AssessmentRules.Entry::score),
+            Codec.DOUBLE.optionalFieldOf("technique", 0.0).forGetter(AssessmentRules.Entry::technique),
             UUIDUtil.CODEC.fieldOf("opponent").forGetter(AssessmentRules.Entry::opponent),
             Codec.LONG.fieldOf("tick").forGetter(AssessmentRules.Entry::tick)
     ).apply(i, AssessmentRules.Entry::new));

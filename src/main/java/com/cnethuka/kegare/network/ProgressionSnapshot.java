@@ -30,14 +30,14 @@ import net.minecraft.server.level.ServerPlayer;
 public record ProgressionSnapshot(int grade, float gradeXp, float gradeXpNeeded, Optional<Assessment> assessment,
                                   int refinement, float refinementXp, float refinementXpNeeded, int peakRefinement, int maxRefinement,
                                   int dominion, int ward, int output, Map<ResourceLocation, Integer> locked) {
-    public record Assessment(float average, float averageNeeded, int fights, int fightsNeeded, int opponents, int opponentsNeeded,
-                             int peak, int peakNeeded, boolean severed) {}
+    public record Assessment(float average, float averageNeeded, float technique, float techniqueNeeded, int fights, int fightsNeeded,
+                             int opponents, int opponentsNeeded, int peak, int peakNeeded, boolean severed) {}
 
     public static ProgressionSnapshot of(ServerPlayer player) {
         Grade grade = GradeService.grade(player);
         AssessmentRules.Status status = AssessmentService.status(player);
         Optional<Assessment> assessment = Optional.ofNullable(status).map(s -> new Assessment((float) s.average(), (float) s.requirement().average(),
-                s.fights(), s.requirement().fights(), s.opponents(), s.requirement().opponents(), s.peakRefinement(), s.requirement().peakRefinement(), s.severed()));
+                (float) s.technique(), (float) s.requirement().technique(), s.fights(), s.requirement().fights(), s.opponents(), s.requirement().opponents(), s.peakRefinement(), s.requirement().peakRefinement(), s.severed()));
         RefinementData refinement = RefinementService.get(player);
         int max = RefinementService.maxLevel();
         Map<ResourceLocation, Integer> locked = new HashMap<>();
@@ -60,6 +60,8 @@ public record ProgressionSnapshot(int grade, float gradeXp, float gradeXpNeeded,
         buf.writeOptional(assessment, (b, a) -> {
             b.writeFloat(a.average());
             b.writeFloat(a.averageNeeded());
+            b.writeFloat(a.technique());
+            b.writeFloat(a.techniqueNeeded());
             b.writeVarInt(a.fights());
             b.writeVarInt(a.fightsNeeded());
             b.writeVarInt(a.opponents());
@@ -81,8 +83,8 @@ public record ProgressionSnapshot(int grade, float gradeXp, float gradeXpNeeded,
 
     static ProgressionSnapshot read(FriendlyByteBuf buf) {
         return new ProgressionSnapshot(buf.readVarInt(), buf.readFloat(), buf.readFloat(),
-                buf.readOptional(b -> new Assessment(b.readFloat(), b.readFloat(), b.readVarInt(), b.readVarInt(), b.readVarInt(), b.readVarInt(),
-                        b.readVarInt(), b.readVarInt(), b.readBoolean())),
+                buf.readOptional(b -> new Assessment(b.readFloat(), b.readFloat(), b.readFloat(), b.readFloat(), b.readVarInt(), b.readVarInt(),
+                        b.readVarInt(), b.readVarInt(), b.readVarInt(), b.readVarInt(), b.readBoolean())),
                 buf.readVarInt(), buf.readFloat(), buf.readFloat(), buf.readVarInt(), buf.readVarInt(),
                 buf.readVarInt(), buf.readVarInt(), buf.readVarInt(),
                 buf.readMap(FriendlyByteBuf::readResourceLocation, FriendlyByteBuf::readVarInt));

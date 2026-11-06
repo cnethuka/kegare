@@ -62,7 +62,10 @@ final class ProgressionCommands {
                                 .then(Commands.argument("score", DoubleArgumentType.doubleArg(0.0, 100.0))
                                         .then(Commands.argument("opponent", StringArgumentType.word())
                                                 .executes(c -> assessmentAddFight(c.getSource(), EntityArgument.getPlayer(c, "player"),
-                                                        DoubleArgumentType.getDouble(c, "score"), StringArgumentType.getString(c, "opponent"))))))));
+                                                        DoubleArgumentType.getDouble(c, "score"), DoubleArgumentType.getDouble(c, "score"), StringArgumentType.getString(c, "opponent")))
+                                                .then(Commands.argument("techniqueUse", DoubleArgumentType.doubleArg(0.0, 100.0))
+                                                        .executes(c -> assessmentAddFight(c.getSource(), EntityArgument.getPlayer(c, "player"),
+                                                                DoubleArgumentType.getDouble(c, "score"), DoubleArgumentType.getDouble(c, "techniqueUse"), StringArgumentType.getString(c, "opponent")))))))));
         root.then(Commands.literal("refinement")
                 .then(Commands.literal("get")
                         .then(Commands.argument("player", EntityArgument.player())
@@ -125,27 +128,32 @@ final class ProgressionCommands {
     }
 
     private static int assessmentGet(CommandSourceStack source, ServerPlayer player) {
-        String recent = AssessmentService.recentScores(player, 10).stream().map(ProgressionCommands::number).collect(Collectors.joining(", "));
+        var fights = AssessmentService.recent(player, 10);
+        String recent = fights.stream().map(fight -> number(fight.score())).collect(Collectors.joining(", "));
+        String technique = fights.stream().map(fight -> number(fight.technique())).collect(Collectors.joining(", "));
         source.sendSuccess(() -> Component.translatable("commands.kegare.assessment.recent", player.getDisplayName(), recent.isEmpty() ? "-" : recent), false);
+        source.sendSuccess(() -> Component.translatable("commands.kegare.assessment.recent_technique", technique.isEmpty() ? "-" : technique), false);
         AssessmentRules.Status status = AssessmentService.status(player);
         if (status == null) {
             source.sendSuccess(() -> Component.translatable("commands.kegare.assessment.none"), false);
         } else {
             Component target = GradeService.grade(player).next().map(ProgressionCommands::name).orElse(Component.empty());
             source.sendSuccess(() -> Component.translatable("commands.kegare.assessment.status", target,
-                    number(status.average()), number(status.requirement().average()), status.fights(), status.requirement().fights(),
+                    number(status.average()), number(status.requirement().average()), number(status.technique()), number(status.requirement().technique()),
+                    status.fights(), status.requirement().fights(),
                     status.opponents(), status.requirement().opponents(), status.peakRefinement(), status.requirement().peakRefinement(),
                     status.met() ? Component.translatable("commands.kegare.assessment.met") : Component.translatable("commands.kegare.assessment.unmet")), false);
         }
         return 1;
     }
 
-    private static int assessmentAddFight(CommandSourceStack source, ServerPlayer player, double score, String opponent) {
+    /** With no Technique use given, it's taken to match the score. */
+    private static int assessmentAddFight(CommandSourceStack source, ServerPlayer player, double score, double technique, String opponent) {
         // An online player counts as that player, so these mix with real fights; any other name is a made-up opponent.
         ServerPlayer online = player.server.getPlayerList().getPlayerByName(opponent);
         UUID id = online != null ? online.getUUID() : UUID.nameUUIDFromBytes(("kegare:opponent:" + opponent.toLowerCase(Locale.ROOT)).getBytes(StandardCharsets.UTF_8));
-        AssessmentService.addFight(player, score, id);
-        source.sendSuccess(() -> Component.translatable("commands.kegare.assessment.addfight", number(score), opponent, player.getDisplayName(), name(GradeService.grade(player))), false);
+        AssessmentService.addFight(player, score, technique, id);
+        source.sendSuccess(() -> Component.translatable("commands.kegare.assessment.addfight", number(score), number(technique), opponent, player.getDisplayName(), name(GradeService.grade(player))), false);
         return 1;
     }
 

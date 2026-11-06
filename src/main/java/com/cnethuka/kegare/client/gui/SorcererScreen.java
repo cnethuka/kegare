@@ -569,6 +569,9 @@ public final class SorcererScreen extends Screen {
         List<Boolean> met = new ArrayList<>();
         lines.add(Component.translatable("gui.kegare.sorcerer.progress.assessment.average", Math.round(a.average()), Math.round(a.averageNeeded())));
         met.add(a.fights() > 0 && a.average() + 1.0e-4f >= a.averageNeeded());
+        lines.add(Component.translatable(a.severed() ? "gui.kegare.sorcerer.progress.assessment.melee" : "gui.kegare.sorcerer.progress.assessment.technique",
+                Math.round(a.technique()), Math.round(a.techniqueNeeded())));
+        met.add(a.fights() > 0 && a.technique() + 1.0e-4f >= a.techniqueNeeded());
         lines.add(Component.translatable("gui.kegare.sorcerer.progress.assessment.fights", a.fights(), a.fightsNeeded()));
         met.add(a.fights() >= a.fightsNeeded());
         lines.add(Component.translatable("gui.kegare.sorcerer.progress.assessment.opponents", a.opponents(), a.opponentsNeeded()));

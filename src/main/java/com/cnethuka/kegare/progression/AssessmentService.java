@@ -44,15 +44,24 @@ public final class AssessmentService {
                 && fight.side(a).dealt() >= min && fight.side(b).dealt() >= min;
     }
 
-    /** The score of a finished fight for this player. {@link FightReport#outcome()} is deliberately not read. */
+    /** A fight's score, and the Technique use in it (a Severed player's melee variety), both 0-100. */
+    public record Assessed(double score, double technique) {}
+
+    /** The score of a finished fight for this player. */
     public static double score(FightReport report) {
+        return assess(report).score();
+    }
+
+    /** {@link FightReport#outcome()} is deliberately not read. */
+    public static Assessed assess(FightReport report) {
         ServerPlayer player = report.player();
         AssessmentScoring.Settings s = settings();
         Fight.Side side = report.side();
         double performance = AssessmentScoring.performance(report.dealt(), report.taken(), s);
         double opponent = AssessmentScoring.opponent(GradeService.grade(player), GradeService.grade(report.opponent()), s);
         if (MaliceService.isSevered(player)) {
-            return AssessmentScoring.severedScore(AssessmentScoring.meleeVariety(side.melee(), s), performance, opponent, s);
+            double variety = AssessmentScoring.meleeVariety(side.melee(), s);
+            return new Assessed(AssessmentScoring.severedScore(variety, performance, opponent, s), 100.0 * variety);
         }
         Optional<InnateTechnique> technique = InnateTechniqueService.current(player);
         double techniqueUse = technique.map(t -> AssessmentScoring.techniqueUse(side.abilities(),
@@ -66,21 +75,30 @@ public final class AssessmentService {
                     String.format("%.1f", report.dealt()), String.format("%.0f", side.baseMalice()), String.format("%.2f", performance), String.format("%.1f", report.taken()), String.format("%.2f", opponent),
                     side.abilities().stream().map(use -> use.id().replace("kegare:", "")).toList());
         }
-        return score;
+        return new Assessed(score, 100.0 * techniqueUse);
     }
 
     public static void onFightEnded(FightReport report) {
         if (!qualifies(report.fight(), report.player().getUUID(), report.opponent().getUUID())) return;
         if (!MaliceService.get(report.player()).isBorn()) return;
-        addFight(report.player(), score(report), report.opponent().getUUID());
+        Assessed assessed = assess(report);
+        addFight(report.player(), assessed.score(), assessed.technique(), report.opponent().getUUID());
     }
 
-    /** Records a scored fight (admin: any score, any opponent) and promotes if that was the last thing needed. */
+    /** An admin's made-up fight, with no separate Technique use: it's taken to match the score. */
     public static void addFight(ServerPlayer player, double score, UUID opponent) {
-        double clamped = Math.max(0.0, Math.min(100.0, score));
-        get(player).add(new AssessmentRules.Entry(clamped, opponent, player.server.overworld().getGameTime()));
+        addFight(player, score, score, opponent);
+    }
+
+    /** Records a scored fight (admin: any numbers, any opponent) and promotes if that was the last thing needed. */
+    public static void addFight(ServerPlayer player, double score, double technique, UUID opponent) {
+        get(player).add(new AssessmentRules.Entry(clamp(score), clamp(technique), opponent, player.server.overworld().getGameTime()));
         GradeService.tryPromote(player);
         PlayerSync.markDirty(player);
+    }
+
+    private static double clamp(double value) {
+        return Math.max(0.0, Math.min(100.0, value));
     }
 
     /** What a Grade's Assessment asks for; null for a Grade that takes none. Peak can't ask for more than the maximum level. */
@@ -108,13 +126,13 @@ public final class AssessmentService {
         return status != null && status.met();
     }
 
-    /** Admin: forget every fight. */
-    /** The latest scores, oldest first. For admins only: Assessment is private. */
-    public static java.util.List<Double> recentScores(ServerPlayer player, int count) {
+    /** The latest fights, oldest first. For admins only: Assessment is private. */
+    public static java.util.List<AssessmentRules.Entry> recent(ServerPlayer player, int count) {
         java.util.List<AssessmentRules.Entry> history = get(player).history;
-        return history.subList(Math.max(0, history.size() - count), history.size()).stream().map(entry -> entry.score()).toList();
+        return java.util.List.copyOf(history.subList(Math.max(0, history.size() - count), history.size()));
     }
 
+    /** Admin: forget every fight. */
     public static void reset(ServerPlayer player) {
         get(player).history.clear();
         PlayerSync.markDirty(player);

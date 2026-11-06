@@ -82,7 +82,7 @@ public final class ProgressionConfig {
     static final Map<InsightSource, ModConfigSpec.EnumValue<InsightCategory>> INSIGHT_CATEGORY = new java.util.EnumMap<>(InsightSource.class);
     private static final Map<InsightSource, ModConfigSpec.IntValue> INSIGHT_AMOUNT = new java.util.EnumMap<>(InsightSource.class);
 
-    private record Gate(ModConfigSpec.DoubleValue average, ModConfigSpec.IntValue fights, ModConfigSpec.IntValue opponents, ModConfigSpec.IntValue peak) {}
+    private record Gate(ModConfigSpec.DoubleValue average, ModConfigSpec.IntValue fights, ModConfigSpec.IntValue opponents, ModConfigSpec.IntValue peak, ModConfigSpec.DoubleValue technique) {}
 
     private ProgressionConfig() {}
 
@@ -178,9 +178,9 @@ public final class ProgressionConfig {
         OPPONENT_FLOOR = b.comment("The least a far weaker opponent is worth.").defineInRange("opponentFloor", 0.02, 0.0, 1.0);
         b.comment("What each Grade asks for. peakRefinement: the highest level ever reached on any technique. It survives rerolls and",
                 "Severed players skip it. Asking for more than the top Refinement level means the top level.").push("requirements");
-        GATES[Grade.GRADE_2.ordinal()] = gate(b, "grade_2", 50.0, 5, 2, 2);
-        GATES[Grade.GRADE_1.ordinal()] = gate(b, "grade_1", 70.0, 10, 3, 5);
-        GATES[Grade.SPECIAL_GRADE.ordinal()] = gate(b, "special_grade", 90.0, 20, 3, 10);
+        GATES[Grade.GRADE_2.ordinal()] = gate(b, "grade_2", 50.0, 5, 2, 2, 40.0);
+        GATES[Grade.GRADE_1.ordinal()] = gate(b, "grade_1", 70.0, 10, 3, 5, 60.0);
+        GATES[Grade.SPECIAL_GRADE.ordinal()] = gate(b, "special_grade", 90.0, 20, 3, 10, 85.0);
         b.pop();
         b.pop();
 
@@ -268,13 +268,15 @@ public final class ProgressionConfig {
         return level == null ? OptionalInt.empty() : OptionalInt.of(level);
     }
 
-    private static Gate gate(ModConfigSpec.Builder b, String name, double average, int fights, int opponents, int peak) {
+    private static Gate gate(ModConfigSpec.Builder b, String name, double average, int fights, int opponents, int peak, double technique) {
         b.push(name);
         Gate gate = new Gate(
                 b.comment("Average score needed...").defineInRange("average", average, 0.0, 100.0),
                 b.comment("...over this many of your most recent qualifying fights...").defineInRange("fights", fights, 1, 64),
                 b.comment("...against at least this many different opponents, so one friend can't carry it.").defineInRange("opponents", opponents, 1, 64),
-                b.comment("Peak Refinement needed.").defineInRange("peakRefinement", peak, 0, 1000));
+                b.comment("Peak Refinement needed.").defineInRange("peakRefinement", peak, 0, 1000),
+                b.comment("Average Technique use needed over those same fights (0-100), so one move repeated can't qualify however well it trades.",
+                        "A Severed player's melee variety stands in for it.").defineInRange("minTechniqueUse", technique, 0.0, 100.0));
         b.pop();
         return gate;
     }
@@ -283,7 +285,7 @@ public final class ProgressionConfig {
     static AssessmentRules.Requirement requirement(Grade grade) {
         Gate gate = GATES[grade.ordinal()];
         return new AssessmentRules.Requirement(gate.average.get(), gate.fights.get(), gate.opponents.get(),
-                Math.min(gate.peak.get(), REFINEMENT_MAX_LEVEL.get()));
+                Math.min(gate.peak.get(), REFINEMENT_MAX_LEVEL.get()), gate.technique.get());
     }
 
     static InsightCategory insightCategory(InsightSource source) {
