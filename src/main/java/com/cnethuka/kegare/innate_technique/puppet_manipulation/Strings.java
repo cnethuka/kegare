@@ -125,6 +125,22 @@ public final class Strings {
         };
     }
 
+    /** Strings Attached: {@code caster}'s running Tie has this puppet of theirs on one end and a player on the other. */
+    static boolean tiesPlayerTo(ServerPlayer caster, PuppetEntity puppet) {
+        Active a = ACTIVE.get(caster.getUUID());
+        if (a == null || a.phase != Phase.TIE_PULL && a.phase != Phase.TETHER) return false;
+        return a.first == puppet && realPlayer(a.second) || a.second == puppet && realPlayer(a.first);
+    }
+
+    /** Both ends of it are players, and neither refused it: the mastery advancements need that (§4). */
+    private static boolean twoPlayers(Active a) {
+        return a.firstMoves && a.secondMoves && realPlayer(a.first) && realPlayer(a.second);
+    }
+
+    private static boolean realPlayer(@Nullable LivingEntity e) {
+        return e instanceof ServerPlayer player && !player.isFakePlayer();
+    }
+
     /** A puppet on a running pull, tether or leash doesn't walk off, or catch up with its owner. */
     static boolean holds(PuppetEntity puppet) {
         for (Active a : ACTIVE.values()) {
@@ -219,6 +235,7 @@ public final class Strings {
                 slow(caster, true);
                 VisualService.playOnce(caster, Visual.animation(PuppetIds.ANIM_STRINGS_LEASH));
                 grip(other);
+                if (twoPlayers(a)) PuppetAdvancements.award(caster, PuppetAdvancements.WALKIES);
             }
         }
         StringsSync.broadcast(caster.server);
@@ -270,8 +287,13 @@ public final class Strings {
                 if (timeUp) finish(a, End.SLACK);
             }
             case REEL_IN -> {
-                if (timeUp || a.first.distanceTo(a.caster) <= PuppetConfig.STRINGS_ARRIVE.get() + ARRIVE_SLACK) {
+                boolean arrived = a.first.distanceTo(a.caster) <= PuppetConfig.STRINGS_ARRIVE.get() + ARRIVE_SLACK;
+                if (timeUp || arrived) {
                     land(a.first, ARRIVE_KEEP);
+                    // A player or a mob: your own puppet coming when called is nothing to write home about.
+                    if (arrived && !(a.first instanceof PuppetEntity puppet && puppet.isOwnedBy(a.caster))) {
+                        PuppetAdvancements.award(a.caster, PuppetAdvancements.GET_OVER_HERE);
+                    }
                     finish(a, End.DONE);
                 } else {
                     pull(a.first, a.caster, PuppetConfig.STRINGS_PULL_SPEED.get(), PuppetConfig.STRINGS_ARRIVE.get());
@@ -295,6 +317,7 @@ public final class Strings {
                     if (a.secondMoves) land(a.second, 0.0);
                     a.phase = Phase.TETHER;
                     a.endTick = a.caster.level().getGameTime() + PuppetConfig.ticks(PuppetConfig.STRINGS_TETHER_DURATION);
+                    if (twoPlayers(a)) PuppetAdvancements.award(a.caster, PuppetAdvancements.TIED_UP);
                     StringsSync.broadcast(a.caster.server);
                 } else {
                     // Each covers its share of the gap, so they meet at the collision distance, not inside each other.

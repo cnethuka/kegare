@@ -27,6 +27,10 @@ public final class PuppetAdvancements {
     public static final ResourceLocation WHOS_REAL = id("whos_real");
     public static final ResourceLocation CURIOSITY_KILLED = id("curiosity_killed");
     public static final ResourceLocation LITTLE_ME = id("little_me");
+    public static final ResourceLocation GET_OVER_HERE = id("get_over_here");
+    public static final ResourceLocation TIED_UP = id("tied_up");
+    public static final ResourceLocation WALKIES = id("walkies");
+    public static final ResourceLocation STRINGS_ATTACHED = id("strings_attached");
 
     /** Kuru Kuru: this many of your puppets spinning at once. */
     public static final int KURU_KURU_PUPPETS = 10;

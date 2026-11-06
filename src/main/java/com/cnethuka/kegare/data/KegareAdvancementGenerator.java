@@ -126,6 +126,10 @@ public final class KegareAdvancementGenerator implements AdvancementProvider.Adv
         techniqueChild(saver, puppets, PuppetAdvancements.WHOS_REAL, "puppet_manipulation.whos_real", Items.TINTED_GLASS, AdvancementType.GOAL);
         techniqueChild(saver, puppets, PuppetAdvancements.CURIOSITY_KILLED, "puppet_manipulation.curiosity_killed", Items.TNT, AdvancementType.GOAL);
         techniqueChild(saver, puppets, PuppetAdvancements.LITTLE_ME, "puppet_manipulation.little_me", Items.TOTEM_OF_UNDYING, AdvancementType.CHALLENGE);
+        techniqueChild(saver, puppets, PuppetAdvancements.GET_OVER_HERE, "puppet_manipulation.get_over_here", Items.FISHING_ROD, AdvancementType.TASK);
+        techniqueChild(saver, puppets, PuppetAdvancements.TIED_UP, "puppet_manipulation.tied_up", Items.COBWEB, AdvancementType.GOAL);
+        techniqueChild(saver, puppets, PuppetAdvancements.WALKIES, "puppet_manipulation.walkies", Items.LEAD, AdvancementType.GOAL);
+        techniqueChild(saver, puppets, PuppetAdvancements.STRINGS_ATTACHED, "puppet_manipulation.strings_attached", Items.TRIPWIRE_HOOK, AdvancementType.CHALLENGE);
     }
 
     /**

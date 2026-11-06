@@ -167,11 +167,25 @@ public final class KegareCommand {
                                         .then(Commands.argument("on", BoolArgumentType.bool())
                                                 .executes(c -> swapUnswappable(c.getSource(), EntityArgument.getPlayer(c, "player"),
                                                         BoolArgumentType.getBool(c, "on")))))))
+                // Debug for Strings: make a player unmovable (cancels StringsTargetEvent; a stand-in for a future immunity).
+                .then(Commands.literal("strings")
+                        .then(Commands.literal("unmovable")
+                                .then(Commands.argument("player", EntityArgument.player())
+                                        .then(Commands.argument("on", BoolArgumentType.bool())
+                                                .executes(c -> stringsUnmovable(c.getSource(), EntityArgument.getPlayer(c, "player"),
+                                                        BoolArgumentType.getBool(c, "on")))))))
                 .then(Commands.literal("stun")
                         .then(Commands.argument("player", EntityArgument.player())
                                 .then(Commands.argument("seconds", DoubleArgumentType.doubleArg(0, 3600))
                                         .executes(c -> stun(c.getSource(), EntityArgument.getPlayer(c, "player"),
                                                 DoubleArgumentType.getDouble(c, "seconds")))))));
+    }
+
+    private static int stringsUnmovable(CommandSourceStack source, ServerPlayer player, boolean on) {
+        com.cnethuka.kegare.innate_technique.puppet_manipulation.StringsDebug.setUnmovable(player.getUUID(), on);
+        source.sendSuccess(() -> Component.translatable(on ? "commands.kegare.strings.unmovable.on" : "commands.kegare.strings.unmovable.off",
+                player.getDisplayName()), true);
+        return 1;
     }
 
     // ------------------------------------------------------------------ info

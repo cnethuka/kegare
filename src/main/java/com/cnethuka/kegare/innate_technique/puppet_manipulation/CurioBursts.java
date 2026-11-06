@@ -64,6 +64,7 @@ public final class CurioBursts {
         double radius = PuppetConfig.CURIO_RADIUS[tier.ordinal()].get();
         double knockback = PuppetConfig.CURIO_KNOCKBACK.get();
         DamageSource source = source(level, puppet, owner);
+        if (Strings.tiesPlayerTo(owner, puppet)) PuppetAdvancements.award(owner, PuppetAdvancements.STRINGS_ATTACHED);
         puppet.discard(); // it IS the bomb
 
         VisualService.playAt(level, center, Visual.effect(effect(tier), Visual.Anchor.BODY));

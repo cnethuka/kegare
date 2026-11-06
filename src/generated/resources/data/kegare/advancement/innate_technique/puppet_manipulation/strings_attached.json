@@ -1,0 +1,29 @@
+{
+  "parent": "kegare:innate_technique/puppet_manipulation",
+  "criteria": {
+    "granted": {
+      "trigger": "minecraft:impossible"
+    }
+  },
+  "display": {
+    "announce_to_chat": false,
+    "description": {
+      "translate": "advancements.kegare.puppet_manipulation.strings_attached.description"
+    },
+    "frame": "challenge",
+    "hidden": true,
+    "icon": {
+      "count": 1,
+      "id": "minecraft:tripwire_hook"
+    },
+    "title": {
+      "translate": "advancements.kegare.puppet_manipulation.strings_attached.title"
+    }
+  },
+  "requirements": [
+    [
+      "granted"
+    ]
+  ],
+  "sends_telemetry_event": true
+}

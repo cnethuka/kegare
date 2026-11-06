@@ -399,6 +399,10 @@ public final class KegareLanguageProvider extends LanguageProvider {
         advancement("puppet_manipulation.whos_real", "Who's Real?", "Have a player hit your Stand-In");
         advancement("puppet_manipulation.curiosity_killed", "Curiosity Killed", "Kill a player with Curio Burst");
         advancement("puppet_manipulation.little_me", "Little Me", "Land the final hit on a player while possessing a puppet");
+        advancement("puppet_manipulation.get_over_here", "Get Over Here", "Reel in a player or mob");
+        advancement("puppet_manipulation.tied_up", "Tied Up", "Tie two players together");
+        advancement("puppet_manipulation.walkies", "Walkies", "Leash two players at once");
+        advancement("puppet_manipulation.strings_attached", "Strings Attached", "Tie a player to your puppet and detonate it with Curio Burst");
         advancement("swap.newtons_third", "Newton's Third", "A player dies from fall damage after you used Momentum Exchange on them");
         advancement("rime.brain_freeze", "Brain Freeze", "Freeze a player while they're charging or channeling");
         advancement("rime.full_charge", "Full Charge", "Hit a player with a fully charged Glacial Lance");
@@ -546,6 +550,8 @@ public final class KegareLanguageProvider extends LanguageProvider {
         add("commands.kegare.stun.success", "Stunned %s for %ss");
         add("commands.kegare.swap.unswappable.on", "%s can't be swapped now (debug: cancels SwapTargetEvent)");
         add("commands.kegare.swap.unswappable.off", "%s can be swapped again");
+        add("commands.kegare.strings.unmovable.on", "%s can't be moved by strings now (debug: cancels StringsTargetEvent)");
+        add("commands.kegare.strings.unmovable.off", "%s can be moved by strings again");
 
         // Config screen labels, generated from the config specs.
         add("kegare.configuration.title", "Kegare Configuration");

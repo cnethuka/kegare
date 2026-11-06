@@ -570,6 +570,118 @@ class StringsTest {
     }
 
     @Test
+    void advancements(MinecraftServer server) throws Exception {
+        arena(server, "strings_advancements", (level, caster) -> {
+            server.setPvpAllowed(true);
+            ServerPlayer a = player(server, level, "strings_adv_a", 12.5, Y, 0.5);
+            ServerPlayer b = player(server, level, "strings_adv_b", 0.5, Y, 12.5);
+            Cow cow = cow(level, 12.5, Y, 8.5);
+            Cow other = cow(level, 8.5, Y, 12.5);
+            try {
+                // Get Over Here: not your own puppet; a mob or a player will do.
+                PuppetEntity puppet = puppet(server, caster, 9.5, 2.5);
+                string(caster, puppet);
+                CastManager.handleIntent(caster, CastIntent.CAST_PRESS);
+                run(server, 20, puppet);
+                assertFalse(has(server, caster, PuppetAdvancements.GET_OVER_HERE), "your own puppet doesn't count");
+                string(caster, cow);
+                CastManager.handleIntent(caster, CastIntent.CAST_PRESS);
+                run(server, 20, cow);
+                assertTrue(has(server, caster, PuppetAdvancements.GET_OVER_HERE), "Get Over Here");
+                cow.moveTo(12.5, Y, 8.5, 0f, 0f);
+
+                // Tied Up: two players. Two mobs, or a player and a mob, don't count.
+                tie(server, caster, cow, other, CastIntent.CAST_PRESS);
+                assertFalse(has(server, caster, PuppetAdvancements.TIED_UP), "two mobs don't count");
+                Strings.cut(caster);
+                other.moveTo(8.5, Y, 12.5, 0f, 0f);
+                cow.moveTo(12.5, Y, 8.5, 0f, 0f);
+                tie(server, caster, a, cow, CastIntent.CAST_PRESS);
+                assertFalse(has(server, caster, PuppetAdvancements.TIED_UP), "a player and a mob don't count");
+                Strings.cut(caster);
+                a.moveTo(12.5, Y, 0.5, 0f, 0f);
+                cow.moveTo(12.5, Y, 8.5, 0f, 0f);
+                tie(server, caster, a, b, CastIntent.CAST_PRESS);
+                assertTrue(has(server, caster, PuppetAdvancements.TIED_UP), "Tied Up");
+                Strings.cut(caster);
+
+                // Walkies: two players, leashed at once.
+                a.moveTo(12.5, Y, 0.5, 0f, 0f);
+                b.moveTo(0.5, Y, 12.5, 0f, 0f);
+                tie(server, caster, cow, other, CastIntent.SPECIAL_PRESS);
+                assertFalse(has(server, caster, PuppetAdvancements.WALKIES), "two mobs don't count");
+                Strings.cut(caster);
+                other.moveTo(8.5, Y, 12.5, 0f, 0f);
+                cow.moveTo(12.5, Y, 8.5, 0f, 0f);
+                tie(server, caster, a, cow, CastIntent.SPECIAL_PRESS);
+                assertFalse(has(server, caster, PuppetAdvancements.WALKIES), "a player and a mob don't count");
+                Strings.cut(caster);
+                a.moveTo(12.5, Y, 0.5, 0f, 0f);
+                cow.moveTo(12.5, Y, 8.5, 0f, 0f);
+                tie(server, caster, a, b, CastIntent.SPECIAL_PRESS);
+                assertTrue(has(server, caster, PuppetAdvancements.WALKIES), "Walkies");
+                Strings.cut(caster);
+
+                // Strings Attached: your puppet tied to a player, then Curio Burst on it. A mob on the other end doesn't count, and neither does
+                // a puppet that isn't tied.
+                a.moveTo(12.5, Y, 0.5, 0f, 0f);
+                b.moveTo(0.5, Y, 12.5, 0f, 0f);
+                detonate(caster, puppet);
+                assertFalse(has(server, caster, PuppetAdvancements.STRINGS_ATTACHED), "not tied to anything");
+
+                PuppetEntity tiedToMob = puppet(server, caster, 9.5, 2.5);
+                tie(server, caster, tiedToMob, cow, CastIntent.CAST_PRESS);
+                detonate(caster, tiedToMob);
+                assertFalse(has(server, caster, PuppetAdvancements.STRINGS_ATTACHED), "tied to a mob doesn't count");
+                run(server, 1);
+                assertNull(Strings.phase(caster), "the puppet's gone, so is the string");
+
+                cow.discard();
+                other.discard();
+                a.setHealth(20f);
+                PuppetEntity tied = puppet(server, caster, 9.5, 2.5);
+                tie(server, caster, tied, a, CastIntent.CAST_PRESS);
+                assertTrue(tied.isAlive(), "a weak puppet survives the collision");
+                detonate(caster, tied);
+                assertTrue(has(server, caster, PuppetAdvancements.STRINGS_ATTACHED), "Strings Attached");
+            } finally {
+                PuppetTest.cleanUp(server, level, a);
+                PuppetTest.cleanUp(server, level, b);
+            }
+        });
+    }
+
+    private static boolean has(MinecraftServer server, ServerPlayer player, net.minecraft.resources.ResourceLocation id) {
+        return TestServer.hasAdvancement(server, player, id);
+    }
+
+    /** A string on {@code target}, ready for stage 2 (the firing lockout waived), looking at it. */
+    private static void string(ServerPlayer caster, LivingEntity target) {
+        InnateTechniqueService.clearCooldowns(caster);
+        InnateTechniqueService.select(caster, 4);
+        press(caster, target, CastIntent.CAST_PRESS);
+        assertTrue(Strings.isAttached(caster), "attached");
+        InnateTechniqueService.clearCooldowns(caster);
+    }
+
+    /** A string on {@code first}, then {@code key} looking at {@code second}: a Tie or a Leash; then time for them to meet. */
+    private static void tie(MinecraftServer server, ServerPlayer caster, LivingEntity first, LivingEntity second, CastIntent key) {
+        string(caster, first);
+        press(caster, second, key);
+        assertTrue(Strings.phase(caster) == Strings.Phase.TIE_PULL || Strings.phase(caster) == Strings.Phase.LEASH, "stage 2: " + Strings.phase(caster));
+        run(server, 15, first instanceof ServerPlayer ? new LivingEntity[0] : new LivingEntity[] {first});
+    }
+
+    /** Curio Burst, cast the real way: slot 3, looking at it. */
+    private static void detonate(ServerPlayer caster, PuppetEntity puppet) {
+        InnateTechniqueService.clearCooldowns(caster);
+        InnateTechniqueService.select(caster, 2);
+        press(caster, puppet, CastIntent.CAST_PRESS);
+        assertFalse(puppet.isAlive(), "detonated");
+        InnateTechniqueService.select(caster, 4);
+    }
+
+    @Test
     void theHudKnowsTheStage(MinecraftServer server) throws Exception {
         arena(server, "strings_hud", (level, caster) -> {
             PuppetHud.StringsHud hud = Strings.hud(caster);

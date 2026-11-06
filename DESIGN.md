@@ -261,7 +261,7 @@ All timestamps use **level game time**. They persist across restarts and are ide
   - The client counts down cooldowns locally from game time.
 - Swap (§3.19) adds two cosmetic S→C payloads: `Disguises.StatePayload` (the disguise map, to everyone) and
   `SwapLink.Payload` (effects drawn along a line).
-- Network version `9` (since Strings' state payload). Bump it when payload formats change; mismatched clients are refused.
+- Network version `10` (since Strings' stage on the HUD payload). Bump it when payload formats change; mismatched clients are refused.
 
 ### 3.6 HUD
 **Rule: the combat HUD does not exist until the player asks for it** (art in `gen_art.py` → `textures/gui/combat/`).
@@ -318,6 +318,7 @@ All timestamps use **level game time**. They persist across restarts and are ide
 | `rebirth <player> [capacity]` | Wipe and re-roll everything (optionally forcing Malice capacity; 0 = Severed) |
 | `stun <player> <seconds>` | Extra, for testing stun; 0 clears |
 | `swap unswappable <player> <true\|false>` | Debug for Swap (§3.19): cancels `SwapTargetEvent` for swaps targeting this player (a stand-in for a future immunity) |
+| `strings unmovable <player> <true\|false>` | Debug for Strings (§3.20): cancels `StringsTargetEvent` for this player (a stand-in for a future immunity) |
 
 Malice is always shown as whole numbers (floored, like the HUD); the stored value keeps its fraction.
 
@@ -955,6 +956,8 @@ icon armor stand; ultimate locked (its Dominion comes later). All numbers in `[p
 | **Curio Burst** | INSTANT | 8 | 4 s | Detonate the puppet you're looking at (`CurioBursts`): 4 / 7 / 12 damage by tier at the centre, half at the edge of a 2.5 / 3 / 4 block radius, and a push away (0.6). Damage type `kegare:curio_burst`, credited to you, tagged `is_explosion` (Blast Protection helps) and `no_knockback` (the only push is the blast's). Never hurts you, your puppets or your empty body; breaks no blocks. No puppet in sight: free. |
 | ↳ **Chain Burst** (R) | INSTANT | 16 | shared | Every puppet of yours within `radius` (8) of what you're looking at (player, mob or puppet) detonates, nearest first, `delay` (0.25 s) apart. Queued blasts drop if you log out. |
 | **Understudy** | INSTANT | 10 | 6 s | Swap places with the puppet you're looking at (within 32). Fires `SwapTargetEvent` with the puppet as the target first: a future deflection that cancels it blocks this too (Malice spent, no cooldown, "Something stops the swap."). |
+| **Strings** | INSTANT, two stages | 5 to fire; then 12 (Reel In) or 20 (Tie) | 10 s, from stage 2 or when it snaps or expires | See **Strings** below. |
+| ↳ **Zip / Leash** (R) | INSTANT | 10 (Zip) or 25 (Leash); free with no string | shared | See **Strings** below. |
 | ↳ **Stand-In** (R) | INSTANT | 20 | shared | For `duration` (8 s) one puppet (looked at, else nearest) grows to your size over 0.4 s and copies you: the same step each tick (on its own feet, so it still falls and bumps into things), facing, crouch, swings, held items, armor and name tag, with no glow or outline: it looks exactly like you. Then it shrinks back and gives it all back. Only ever its OWNER's look; one Stand-In per owner at a time; it never attacks, and nothing it borrowed can drop. |
 
 **Possession** (`Possession`, `PossessionData` saved on the player as `kegare:possession`):
@@ -980,6 +983,38 @@ icon armor stand; ultimate locked (its Dominion comes later). All numbers in `[p
 - **HUD** (`PuppetHud` payload, sent only when it changes): "Possessing" and the body's health under the crosshair, in
   and out of Technique Mode (`StatusLayer.addExtra`).
 
+**Strings** (`Strings`, runtime only: nothing is saved; `[puppet_manipulation.strings]`):
+- **Stage 1 (cast key):** fire a string at the player, mob or puppet you're looking at, within `range` (24), line of sight
+  required (`PuppetTargeting.lookedAtStringTarget`: not armor stands, empty bodies or possessed puppets). Another player's
+  puppet counts as a mob. Nothing in sight: free. One string at a time. It waits up to `life` (8 s), and snaps if stretched
+  beyond `snapRange` (32). Firing has only a `fireCooldown` (0.25 s) lockout, so a double press can't fire and pull at once.
+- **Stage 2** depends on the key and what you're looking at:
+
+  | Key | Same target, or nothing | A different valid target (within `range`) |
+  |---|---|---|
+  | Cast | **Reel In** (12): pull the target to you, stopping `arriveDistance` (2) short | **Tie** (20): both are pulled into each other at `pullSpeed` (1.2 blocks/tick); at `collideDistance` (1.2) both stop and take `tieDamage` (1.5, `kegare:strings_tie`, credited to you, no knockback; a weak puppet's 2 health survives it). Then they stay within `tetherDistance` (3) of each other for `tetherDuration` (4 s) |
+  | R | **Zip** (10): pull yourself to the target | **Leash** (25): both stay within `leashDistance` (6) of you for `leashDuration` (5 s), and you lose `leashSlow` (35%) of your speed while they do. They can still attack and cast |
+
+- **Holding:** past a tether or leash's limit, a target is dragged back at `dragSpeed` (0.4 blocks/tick, faster the further past, up to `pullSpeed`), so it can't be outrun. A Tie's string runs between its two targets, so you can walk away from it, and it drags both ways. A pull gives up after `pullTimeout` (2 s; a wall in the way). A Tie that times out skips the collision but still tethers.
+- **Pulls** are velocity, not teleports: every tick on the server, sent to a player's client (`hurtMarked`), which is what actually moves them. A client lags a tick or two, so pulls ease off over their last stretch rather than overshoot.
+- **Cooldown:** starts at stage 2 (running effects finish on it), or when a string that never got a stage 2 snaps, expires or loses its target.
+- **R with no string:** free, "No string attached."
+- **`StringsTargetEvent`** (cancellable, `NeoForge.EVENT_BUS`, server side): fired at stage 2, once per target, with the caster, target and `StringsVariation`. Cancelled: that target isn't moved (a cancelled Zip doesn't move the caster: the target refuses). If nothing is left to move, the cast fizzles like a refused swap: Malice spent, no cooldown, "The string won't pull.", and the string is gone. Strings never cancels it itself; `/kegare strings unmovable` is the debug stand-in.
+- **Bosses** (`c:bosses`): strings attach, but they're never moved. Reel In, or a Tie or Leash of two bosses, fizzles for free ("It won't budge.") and the string stays for a Zip. Zip works: you move. A Tie of a boss and something else pulls only the something else, and the boss takes the collision damage. A Leash holds only the something else.
+- **Ends** with the death, logout or dimension change of the caster or anyone on it, and when you possess a puppet (or the puppet on it is possessed) or lose the technique. A puppet on a running pull, tether or leash stops following its owner, so it doesn't teleport off the string.
+
+**Strings' art: edit it in Blockbench.** The sources are ordinary Blockbench projects; export over the same file name and the game picks it up (F3+T in a dev client). `StringsArtTest` catches an export the game can't use.
+
+| Source (`art/blockbench/`) | Export to (`src/main/resources/assets/kegare/`) | How |
+|---|---|---|
+| `string_segment.bbmodel` | `models/string/segment.json` | File > Export > Export Block/Item Model. Half a block of cord along +Z (z 0 to 8, centred on x=y=8): `StringsClient` lays it end to end, so keep that length. 1.21.1 only takes rotations of 22.5 or 45 degrees, on one axis |
+| `string_knot.bbmodel` | `models/string/knot.json` | The same. Its origin (8,8,8) sits on the attach point, with +Z pointing away from the string, into what it grips |
+| `string_animations.bbmodel` | `player_animations/puppet_strings.json` | Animation > Save All Animations. Five animations: `strings_fire`, `strings_reel`, `strings_zip`, `strings_tie`, `strings_leash`, each starting and ending on rest keys (a plain export can't carry PAL's fades). A channel you key replaces the vanilla pose for the whole animation, so leave the head's rotation out to keep the aim, and legs out to keep walking. A plain mannequin rig with PAL's bone names and pivots: no skin |
+
+Both models use `textures/item/string_braid.png` (embedded in each project; generated by `tools/gen_art.py`, which overwrites the PNG if run again). `tools/blockbench/build_string_models.py` and `build_string_animations.py` made these the first time, driving Blockbench through its API; running them overwrites hand edits.
+
+**The string on screen** (`StringsClient`, `StringsSync` to everyone in the dimension: the string is the tell). It's emissive, and the segment is laid at its true length along a shallow curve: a longer string has more segments, never stretched ones, so the braid can't smear, and each overlaps the next slightly so a bend can't open a gap. It hangs when slack, less the closer it is to its limit, and runs straight while pulling. Knots sit at each end; Leash draws two strings from the caster, Tie one between the two targets. Within 5 blocks of the camera the cord thins, and a knot within 1.6 blocks isn't drawn, or the end at your own hand or chest would fill the view. In your own first person it leaves from the lower right of the view, like a fishing line.
+
 **Combat panel** (Technique Mode): "Puppets: X/15" above the meter's left end, gold at the cap
 (`CombatPanelLayer.addPanelDecorator`), and the current order's glyph on Directive's slot (`addSlotDecorator`). The
 Sorcerer screen's tray shows them too.
@@ -997,7 +1032,7 @@ depends on what you look at):
 
 **Mob vs player boundary (§4):** puppets fight and damage mobs (Guard, Focus, Curio Burst); bosses take the damage but
 are never disabled or pushed (Curio Burst's push and a puppet punch's knockback skip them). Possess and Understudy only ever involve your own
-puppets; Stand-In copies only the owner's look.
+puppets; Stand-In copies only the owner's look. Strings is physical, so all of it works on mobs; bosses can be attached to and take a Tie's collision, but are never moved.
 
 **Visuals.** PAL animations (`player_animations/puppet_manipulation.json`, in Blockbench's own Bedrock format, written by
 `tools/anims/`; see `tools/blockbench/README.md`). A puppeteer's body language:
@@ -1015,6 +1050,11 @@ puppets; Stand-In copies only the owner's look.
 | `understudy_cast` | As you land in the puppet's place: a magician's reveal, arms flung open. |
 | `stand_in_cast` | A stage bow, one hand across the waist, the other behind the back, then rising to present the double. |
 | `puppet_idle_spin` | On the puppet: a full turn every 0.9 s at constant speed, arms out and bobbing, head tipping side to side. |
+| `strings_fire` | One hand cocked back across the body, then thrown straight out at the target (`player_animations/puppet_strings.json`, from Blockbench: see above). |
+| `strings_reel` | Hand over hand: each hand reaches out and hauls back to the hip in turn, leaning back against the weight. |
+| `strings_zip` | Yanked off the ground: the string arm up and ahead, body strung out behind it, legs trailing; a crouching catch on landing. |
+| `strings_tie` | Arms flung wide, then slammed together until the wrists cross; the knot jerked tight. |
+| `strings_leash` | Two leads in two fists: reaches for both, then yanks them back low and wide, leaning back, and holds. |
 
 Casts leave the legs to the game, so they work on the move, and (unless the gesture needs the head) leave the head
 looking where the player aims. They fade in from and out to whatever the player was doing (`beginTick`, `endTick`), and
@@ -1025,13 +1065,15 @@ lavender with threads as the motif, each with a lavender-dust vanilla fallback:
 - `possess_link` (one bead of the thread), `directive_pulse` (rings spreading on the ground at each puppet that heard);
 - `focus_mark` (a ring tightening round the target, a bead over its head, 2 s);
 - `curio_burst_explosion_tap` / `_half` / `_full` (flash, ground ring, sparks, torn threads, a puff; scaled per tier);
-- `stand_in_grow` (a rising column of motes), `understudy_swap` (motes drawn in, a vertical seam, at both ends).
+- `stand_in_grow` (a rising column of motes), `understudy_swap` (motes drawn in, a vertical seam, at both ends);
+- `strings_attach` (a burst of fibers where a knot grips, and a pinch of light), `strings_snap` (frayed fibers flung from both ends and the middle, curling down), `strings_tension` (a faint glint, spawned on each client along a string while it pulls or drags). Particles only: the string itself is the model above.
 - Sounds: wool (form, dissolve), soul escape (possess, return), note-block chime by order (Directive), bell (Focus),
-  firework launch then explosions (Chain Burst), illusioner mirror (Stand-In, Understudy).
+  firework launch then explosions (Chain Burst), illusioner mirror (Stand-In, Understudy), bobber throw and reel, leash knot and a knockback thud (Strings).
 
 **Art** (`tools/gen_art.py`, lavender and wood ramps): emblem `gui/emblem/puppet_manipulation.png` (a marionette: the
-wooden control cross, strings, a doll with its arms out), icons for the four abilities and four specials, the order
-glyphs, and the glow texture.
+wooden control cross, strings, a doll with its arms out), icons for the five abilities and five specials, the four Strings
+variations (`strings_reel`, `strings_tie`, `strings_zip`, `strings_leash`), the order glyphs, the glow texture and the cord's
+braid (`item/string_braid.png`).
 
 **Advancements** (tab root `kegare:innate_technique/puppet_manipulation`, unlocked on first rolling it, silent). All
 hidden, silent in chat, `minecraft:impossible`, awarded from code to holders only. Following §4: learning (task) ones may
@@ -1047,6 +1089,10 @@ count anything; mastery (goal, challenge) ones need a player on the other side.
 | *Who's Real?* | goal | a player hits your Stand-In |
 | *Curiosity Killed* | goal | your Curio Burst kills a player |
 | *Little Me* | challenge | your hit kills a player while you possess a puppet |
+| *Get Over Here* | task | Reel In a player or a mob all the way to you (not your own puppet; another player's counts as a mob) |
+| *Tied Up* | goal | Tie two players together (when they meet; if either refused it through the event, it doesn't count) |
+| *Walkies* | goal | Leash two players at once (the same) |
+| *Strings Attached* | challenge | detonate your puppet while your Tie has it on one end and a player on the other (Chain Burst counts: it's the same detonation, as for Curiosity Killed) |
 
 **Tests** (in-game JUnit): `PuppetTest` (tiers' cost, health and size, the cap's free fizzle, the spin, idling with
 the owner offline, rerolling away including a puppet saved in an unloaded chunk, same-technique reassignment keeping
@@ -1055,9 +1101,14 @@ the shell hit, backlash, distance, a dimension change and rerolling while posses
 `DirectiveTest` (every order, Go walking, Stay and Follow, Guard on a mob, the reach, Focus on a mob and on a player,
 bosses as fair targets, an offline owner), `CurioBurstTest` (damage by tier and falloff, who is spared, bosses hurt but
 not pushed, the free fizzle, the chain's order and timing), `UnderstudyTest` (the swap and its `SwapTargetEvent`, a
-blocked swap, Stand-In's growth, mirroring, borrowed look, no drops, the return), `PuppetAdvancementsTest` (all eight,
+blocked swap, Stand-In's growth, mirroring, borrowed look, no drops, the return), `PuppetAdvancementsTest` (the first eight,
 and mobs not counting where they shouldn't), `PuppetAnimationsTest` (PAL's own loader reads every animation the code
-plays, the charge's loop point and the fades; the puppet's sampling of the spin and of both keyframe styles).
+plays, the charge's loop point and the fades; the puppet's sampling of the spin and of both keyframe styles), `StringsTest`
+(both stages and all four variations on players, mobs and puppets, the costs, free fizzles, range, snapping, expiring and the
+cooldown's start, bosses, the cancelled event, everything that ends a string, the HUD's stage, an old bar getting it once, the
+four advancements), `StringsArtTest` (the exported models and animations are ones the game can use, their sources are in the
+repo, no two variations look alike). `PuppetTest` also covers the cap: the free fizzle, a slot freed by death and detonation,
+counting unloaded puppets, lowering the config.
 
 ## 4. Extension points (how later content plugs in)
 
@@ -1076,9 +1127,10 @@ plays, the charge's loop point and the fades; the puppet's sampling of the spin 
     no knockback. Every goal and challenge that names a target counts players only, and Thin Ice (goal) counts only
     damage blocked from players. Its task ones (Cold Open, Full Charge, Splinter) count players too, which the rule
     allows.
-  - Puppet Manipulation follows it (§3.20): puppets fight mobs; bosses take Curio Burst and puppet damage but are never
-    pushed or disabled; Stand-In copies only its owner. Pulling Strings, Out of Body and Kuru Kuru count anything; Nobody
-    Home, Decoy, Who's Real?, Curiosity Killed and Little Me need a player.
+  - Puppet Manipulation follows it (§3.20): puppets fight mobs; bosses take Curio Burst, puppet and Tie damage but are never
+    pushed, pulled or disabled; Stand-In copies only its owner. Pulling Strings, Out of Body, Kuru Kuru and Get Over Here count
+    anything (not your own puppet, for Get Over Here); Nobody Home, Decoy, Who's Real?, Curiosity Killed, Little Me, Tied Up, Walkies
+    and Strings Attached need a player.
   - The boss check is shared: `CombatHelper.isBoss` (`c:bosses`), used by Rime, `SwapTargeting` and Curio Burst.
 
 - **New innate technique:** create a `DeferredRegister<InnateTechnique>` on
