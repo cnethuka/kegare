@@ -37,4 +37,8 @@ public final class ClientGuiHooks {
         Minecraft mc = Minecraft.getInstance();
         if (mc.screen == null) mc.setScreen(new TalismanConfirmScreen(payload));
     }
+
+    public static void onProgressionToast(com.cnethuka.kegare.network.ProgressionToastPayload payload) {
+        net.minecraft.client.Minecraft.getInstance().getToasts().addToast(ProgressionToast.of(payload));
+    }
 }

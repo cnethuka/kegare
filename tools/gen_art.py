@@ -1629,6 +1629,25 @@ ICON_VIEW_SETTINGS = [  # a gear: settings
     ".......KK.......",
     "................",
 ]
+ICON_VIEW_PROGRESS = [  # steps climbing to the right: the ladder
+    "................",
+    "............KKK.",
+    "...........K655K",
+    "...........K544K",
+    "........KKKK544K",
+    ".......K6554544K",
+    ".......K5444544K",
+    "....KKKK5444544K",
+    "...K655454445 4K".replace(" ", "4"),
+    "...K544454445 4K".replace(" ", "4"),
+    "KKKK544454445 4K".replace(" ", "4"),
+    "K655544454445 4K".replace(" ", "4"),
+    "K544544454445 4K".replace(" ", "4"),
+    "K544544454445 4K".replace(" ", "4"),
+    "KKKKKKKKKKKKKKKK",
+    "................",
+]
+
 ICON_VIEW_PITY = [  # a four-pointed star: luck and pity
     "................",
     ".......KK.......",
@@ -2065,6 +2084,7 @@ def build() -> dict[str, Image.Image]:
     out["menu_tab"] = menu_tab(False)
     out["menu_tab_selected"] = menu_tab(True)
     out["view_technique"] = icon(ICON_VIEW_TECHNIQUE, MALICE)
+    out["view_progress"] = icon(ICON_VIEW_PROGRESS, TEAL)
     out["view_traits"] = icon(ICON_VIEW_TRAITS, ICE)
     out["view_pity"] = icon(ICON_VIEW_PITY, GOLD)
     out["view_settings"] = icon(ICON_VIEW_SETTINGS, SILVER)

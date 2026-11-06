@@ -221,7 +221,19 @@ public final class GuiDraw {
 
     /** The ability's 16x16 icon at 1:1. Returns false (drawing nothing) if it has no icon art. */
     public static boolean abilityIcon(GuiGraphics g, Ability ability, int x, int y) {
-        ResourceLocation texture = art("ability", ability.id());
+        return abilityIcon(g, ability.id(), x, y);
+    }
+
+    /** A locked ability's icon, greyed out. */
+    public static boolean greyedAbilityIcon(GuiGraphics g, Ability ability, int x, int y) {
+        g.setColor(0.42f, 0.42f, 0.42f, 1f);
+        boolean drawn = abilityIcon(g, ability.id(), x, y);
+        g.setColor(1f, 1f, 1f, 1f);
+        return drawn;
+    }
+
+    public static boolean abilityIcon(GuiGraphics g, ResourceLocation ability, int x, int y) {
+        ResourceLocation texture = art("ability", ability);
         if (texture == null) return false;
         RenderSystem.enableBlend();
         g.blit(texture, x, y, 0f, 0f, 16, 16, 16, 16);

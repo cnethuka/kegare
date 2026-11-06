@@ -18,6 +18,8 @@ public final class Progression {
         RefinementService.addLevelListener(TechniqueUnlocks::onLevelChanged);
         RefinementService.addLevelListener((player, from, to) -> Unlocks.evaluate(player));
         GradeService.addPromotionListener((player, grade) -> Unlocks.evaluate(player));
+        GradeService.addPromotionListener(ProgressionToasts::promoted);
+        Unlocks.addListener(ProgressionToasts::unlocked);
     }
 
     public static Grade getGrade(ServerPlayer player) {

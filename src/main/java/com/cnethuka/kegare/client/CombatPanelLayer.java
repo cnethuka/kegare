@@ -36,8 +36,9 @@ import net.minecraft.util.Mth;
  *       just spent), the current amount on the centre plate (cyan/orange and a snowflake/flame when the surroundings
  *       make casting cheaper/dearer), and a thin charge/channel line under the cells.</li>
  *   <li>The tray: the nine loadout slots plus the ultimate. Each shows its icon, number key, cooldown sweep,
- *       ready flash and R badge; the selected slot is lit gold, active toggles green. Innate techniques can add their
- *       own marks to their slots ({@link #addSlotDecorator}).</li>
+ *       ready flash and R badge (greyed out with no special, or while it's locked); the selected slot is lit gold,
+ *       active toggles green; an empty slot stays empty and the ultimate slot shows a lock until it's unlocked. Innate
+ *       techniques can add their own marks to their slots ({@link #addSlotDecorator}). No Grade or XP here.</li>
  * </ul>
  * Display only: reads {@link ClientData}.
  */
@@ -284,7 +285,7 @@ public final class CombatPanelLayer implements LayeredDraw.Layer {
             RenderSystem.enableBlend();
             g.blit(SLOT_ULTIMATE, ux, uy, 0f, 0f, ULT_SIZE, ULT_SIZE, ULT_SIZE, ULT_SIZE);
             Optional<Ability> ult = technique.ultimate();
-            if (ult.isPresent()) {
+            if (ult.isPresent() && !ClientLoadout.isLocked(data, ult.get())) {
                 GuiDraw.abilityIcon(g, ult.get(), ux + ULT_INSET, uy + ULT_INSET);
                 drawCooldown(g, font, data, ult.get(), ux + ULT_INSET, uy + ULT_INSET, 16, now);
             } else {
@@ -312,7 +313,7 @@ public final class CombatPanelLayer implements LayeredDraw.Layer {
         if (ability.id().equals(castingId) || ability.special().map(s -> s.id().equals(castingId)).orElse(false)) {
             g.renderOutline(x + 1, y + 1, SLOT_SIZE - 2, SLOT_SIZE - 2, 0xFFFFD24A);
         }
-        GuiDraw.specialBadge(g, x + SLOT_SIZE - 7, y - 3, ability.special().isPresent());
+        GuiDraw.specialBadge(g, x + SLOT_SIZE - 7, y - 3, ability.special().filter(special -> !ClientLoadout.isLocked(data, special)).isPresent());
         if (!DECORATORS.isEmpty()) {
             g.pose().pushPose();
             g.pose().translate(0, 0, 250);

@@ -52,7 +52,8 @@ public record SyncPayload(
         long frozenUntil,
         List<Optional<ResourceLocation>> loadout,
         List<ResourceLocation> sharedUnlocked,
-        boolean inCombat
+        boolean inCombat,
+        ProgressionSnapshot progression
 ) implements CustomPacketPayload {
     public record CooldownEntry(ResourceLocation ability, long endTick, int duration) {}
 
@@ -102,7 +103,8 @@ public record SyncPayload(
                 environment, costs,
                 FreezeService.stacks(player), RimeConfig.FREEZE_MAX_STACKS.get(), FreezeService.frozenUntil(player),
                 LoadoutService.slots(player), new ArrayList<>(SharedAbilityService.get(player).unlocked()),
-                CombatHelper.isInCombat(player));
+                CombatHelper.isInCombat(player),
+                ProgressionSnapshot.of(player));
     }
 
     private void write(FriendlyByteBuf buf) {
@@ -142,6 +144,7 @@ public record SyncPayload(
         buf.writeCollection(loadout, (b, slot) -> b.writeOptional(slot, FriendlyByteBuf::writeResourceLocation));
         buf.writeCollection(sharedUnlocked, FriendlyByteBuf::writeResourceLocation);
         buf.writeBoolean(inCombat);
+        progression.write(buf);
     }
 
     private static SyncPayload read(FriendlyByteBuf buf) {
@@ -163,7 +166,8 @@ public record SyncPayload(
                 buf.readVarInt(), buf.readVarInt(), buf.readVarLong(),
                 buf.readList(b -> b.readOptional(FriendlyByteBuf::readResourceLocation)),
                 buf.readList(FriendlyByteBuf::readResourceLocation),
-                buf.readBoolean());
+                buf.readBoolean(),
+                ProgressionSnapshot.read(buf));
     }
 
     @Override

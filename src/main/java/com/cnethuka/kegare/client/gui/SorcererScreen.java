@@ -22,7 +22,10 @@ import com.cnethuka.kegare.malice.MaliceTier;
 import com.cnethuka.kegare.network.LoadoutEditPayload;
 import com.cnethuka.kegare.network.SorcererInfoPayload;
 import com.cnethuka.kegare.network.SorcererRequestPayload;
+import com.cnethuka.kegare.network.ProgressionSnapshot;
 import com.cnethuka.kegare.network.SyncPayload;
+import com.cnethuka.kegare.progression.Grade;
+import com.cnethuka.kegare.progression.InsightCategory;
 import com.cnethuka.kegare.registry.KegareRegistries;
 import com.cnethuka.kegare.trait.Trait;
 import java.util.ArrayList;
@@ -50,8 +53,10 @@ import org.lwjgl.glfw.GLFW;
  *   <li>Header: the innate technique's emblem, name and rarity, and the selected category's abilities (padlocks for
  *       locked ones; a gold number marks the slot each is on).</li>
  *   <li>The large box: whatever ability is hovered (or clicked): category, cast type, current cost and cooldown,
- *       description, its special and its slot. The right-edge buttons switch the box to Traits, Pity or Settings
- *       (client options, saved at once: which control picks abilities in Technique Mode, effects, animations).</li>
+ *       description, its special and its slot; greyed out with a lock and the level it needs while Refinement hasn't
+ *       unlocked it. The right-edge buttons switch the box to Progress (Grade, Assessment, Refinement, Insight, all
+ *       private), Traits, Pity or Settings (client options, saved at once: which control picks abilities in Technique
+ *       Mode, effects, animations).</li>
  *   <li>Right column: your player model, Malice capacity and tier, reserve, regen.</li>
  *   <li>Bottom: the combat panel itself, live, as the loadout bar. Drag an ability onto a slot (or click it, then a
  *       slot); drag slots to swap, off the bar or right-click to empty; the ultimate slot is fixed.</li>
@@ -62,6 +67,7 @@ import org.lwjgl.glfw.GLFW;
 public final class SorcererScreen extends Screen {
     private enum View {
         TECHNIQUE("gui.kegare.sorcerer.view.technique"),
+        PROGRESS("gui.kegare.sorcerer.view.progress"),
         TRAITS("gui.kegare.sorcerer.tab.traits"),
         PITY("gui.kegare.sorcerer.tab.pity"),
         SETTINGS("gui.kegare.sorcerer.view.settings");
@@ -77,6 +83,7 @@ public final class SorcererScreen extends Screen {
     private static final ResourceLocation WELL = Kegare.id("menu_well");
     private static final ResourceLocation TAB = Kegare.id("menu_tab");
     private static final ResourceLocation TAB_SELECTED = Kegare.id("menu_tab_selected");
+    static final ResourceLocation ICON_PROGRESS = Kegare.id("view_progress");
     private static final ResourceLocation ICON_TRAITS = Kegare.id("view_traits");
     private static final ResourceLocation ICON_PITY = Kegare.id("view_pity");
     private static final ResourceLocation ICON_SETTINGS = Kegare.id("view_settings");
@@ -226,6 +233,7 @@ public final class SorcererScreen extends Screen {
         int bx = lx0 + 7, by = wellY0 + 6 - scroll, bw = lx1 - lx0 - 16;
         int end = switch (view) {
             case TECHNIQUE -> renderDetails(g, technique, data, shown, bx, by, bw);
+            case PROGRESS -> renderProgress(g, technique, data, bx, by, bw);
             case TRAITS -> renderTraits(g, bx, by, bw);
             case PITY -> renderPity(g, bx, by, bw);
             case SETTINGS -> renderSettings(g, bx, by, bw, mouseX, mouseY);
@@ -276,6 +284,7 @@ public final class SorcererScreen extends Screen {
             GuiDraw.sprite(g, view == views[i] ? TAB_SELECTED : TAB, x, y, TAB_SIZE, TAB_SIZE);
             switch (views[i]) {
                 case TECHNIQUE -> GuiDraw.sprite(g, ICON_TECHNIQUE, x + 4, y + 4, 16, 16);
+                case PROGRESS -> GuiDraw.sprite(g, ICON_PROGRESS, x + 4, y + 4, 16, 16);
                 case TRAITS -> GuiDraw.sprite(g, ICON_TRAITS, x + 4, y + 4, 16, 16);
                 case PITY -> GuiDraw.sprite(g, ICON_PITY, x + 4, y + 4, 16, 16);
                 case SETTINGS -> GuiDraw.sprite(g, ICON_SETTINGS, x + 4, y + 4, 16, 16);
@@ -318,7 +327,8 @@ public final class SorcererScreen extends Screen {
             Ability ability = tiles.get(i);
             int x = tx + i * (TILE + 3);
             if (x + TILE > lx1) break;
-            boolean unlocked = category == AbilityCategory.INNATE_TECHNIQUE || data.sharedUnlocked().contains(ability.id());
+            boolean ofTechnique = category == AbilityCategory.INNATE_TECHNIQUE;
+            boolean unlocked = ofTechnique ? !ClientLoadout.isLocked(data, ability) : data.sharedUnlocked().contains(ability.id());
             CombatPanelLayer.slotFrame(g, x, ty, ability.id().equals(pinned) || (mouseX >= x && mouseX < x + TILE && mouseY >= ty && mouseY < ty + TILE));
             if (unlocked) {
                 if (!GuiDraw.abilityIcon(g, ability, x + TILE_INSET, ty + TILE_INSET)) {
@@ -332,7 +342,15 @@ public final class SorcererScreen extends Screen {
                     g.pose().popPose();
                 }
             } else {
+                if (ofTechnique) GuiDraw.greyedAbilityIcon(g, ability, x + TILE_INSET, ty + TILE_INSET);
                 GuiDraw.sprite(g, GuiDraw.LOCK, x + (TILE - 11) / 2, ty + (TILE - 11) / 2, 11, 11);
+                if (ofTechnique) { // the level it needs, where the bar's slots have their number
+                    String level = Integer.toString(ClientLoadout.lockedLevel(data, ability));
+                    g.pose().pushPose();
+                    g.pose().translate(0, 0, 200);
+                    g.drawString(font, level, x + TILE - font.width(level), ty + TILE - 8, 0xFFD8D2E0, true);
+                    g.pose().popPose();
+                }
             }
             hits.add(new Hit(Kind.TILE, x, ty, TILE, TILE, i, ability.id(), unlocked));
         }
@@ -419,10 +437,17 @@ public final class SorcererScreen extends Screen {
             y += GuiDraw.text(g, font, Component.translatable("gui.kegare.loadout.locked"), x, y, 1.25f, GuiDraw.GRAY) + 3;
             return y + GuiDraw.wrapped(g, font, Component.translatable("gui.kegare.loadout.locked.desc"), x, y, w, GuiDraw.DARK_GRAY);
         }
-        y += GuiDraw.text(g, font, ability.displayName(), x, y, 1.25f, GuiDraw.WHITE) + 2;
+        // Locked by Refinement: the same card, greyed out, with a padlock and the level it needs.
+        int requires = data == null ? -1 : ClientLoadout.lockedLevel(data, ability);
+        boolean refinementLocked = requires >= 0;
+        if (refinementLocked) GuiDraw.sprite(g, GuiDraw.LOCK, x, y, 11, 11);
+        y += GuiDraw.text(g, font, ability.displayName(), refinementLocked ? x + 13 : x, y, 1.25f, refinementLocked ? GuiDraw.GRAY : GuiDraw.WHITE) + 2;
+        if (refinementLocked) {
+            y += GuiDraw.wrapped(g, font, Component.translatable("message.kegare.cast.refinement_locked", requires), x, y, w, GuiDraw.RED) + 1;
+        }
         y += GuiDraw.wrapped(g, font, Component.translatable("gui.kegare.loadout.kind",
                 Component.translatable(AbilityLookup.category(ability.id()).translationKey()),
-                Component.translatable(ability.castType().translationKey())), x, y, w, GuiDraw.GRAY) + 1;
+                Component.translatable(ability.castType().translationKey())), x, y, w, refinementLocked ? GuiDraw.DARK_GRAY : GuiDraw.GRAY) + 1;
         SorcererInfoPayload.AbilityInfo abilityInfo = abilityInfo(ability.id());
         SyncPayload.AbilityCost cost = CostTooltip.cost(ability.id());
         float costNow = cost != null ? cost.cost() : abilityInfo != null ? abilityInfo.cost() : 0f;
@@ -431,19 +456,21 @@ public final class SorcererScreen extends Screen {
         Component stats = (ability.castType() == CastType.CHANNELED || ability.castType() == CastType.TOGGLE) && upkeep > 0
                 ? Component.translatable("gui.kegare.sorcerer.ability.stats_upkeep", GuiDraw.amount(round(costNow)), GuiDraw.amount(round(upkeep)), cooldown)
                 : Component.translatable("gui.kegare.sorcerer.ability.stats", GuiDraw.amount(round(costNow)), cooldown);
-        y += GuiDraw.wrapped(g, font, stats, x, y, w, GuiDraw.MALICE);
-        if (data != null && !SharedAbilities.isShared(ability.id())) { // surroundings (innate technique abilities only)
+        y += GuiDraw.wrapped(g, font, stats, x, y, w, refinementLocked ? GuiDraw.DARK_GRAY : GuiDraw.MALICE);
+        if (data != null && !refinementLocked && !SharedAbilities.isShared(ability.id())) { // surroundings (innate technique abilities only)
             CostEnvironment env = data.environment();
             for (CostEnvironment.Factor f : env.factors()) {
                 y += GuiDraw.wrapped(g, font, Component.translatable("gui.kegare.cost.factor", GuiDraw.multiplier(f.multiplier()),
                         Component.translatable(f.translationKey())), x, y, w, f.multiplier() < 1f ? GuiDraw.AQUA : GuiDraw.RED);
             }
         }
-        for (DetailLines lines : DETAIL_LINES) {
-            for (Component line : lines.lines(ability)) y += GuiDraw.wrapped(g, font, line, x, y, w, GuiDraw.MALICE);
+        if (!refinementLocked) {
+            for (DetailLines lines : DETAIL_LINES) {
+                for (Component line : lines.lines(ability)) y += GuiDraw.wrapped(g, font, line, x, y, w, GuiDraw.MALICE);
+            }
         }
         y += 4;
-        y += GuiDraw.wrapped(g, font, GuiDraw.description(ability.descriptionId()), x, y, w, 0xFFD8D2E0) + 4;
+        y += GuiDraw.wrapped(g, font, GuiDraw.description(ability.descriptionId()), x, y, w, refinementLocked ? GuiDraw.GRAY : 0xFFD8D2E0) + 4;
 
         // Its special.
         Optional<Ability> special = ability.special();
@@ -451,9 +478,17 @@ public final class SorcererScreen extends Screen {
             Ability sp = special.get();
             SorcererInfoPayload.SpecialInfo spInfo = abilityInfo != null ? abilityInfo.special().orElse(null) : null;
             // The special's own icon when it has art (with the R badge on its corner), else just the badge.
-            boolean icon = GuiDraw.abilityIcon(g, sp, x, y - 2);
-            if (icon) GuiDraw.specialBadge(g, x + 9, y + 7, true);
-            else GuiDraw.specialBadge(g, x, y - 1, true);
+            int spRequires = data == null ? -1 : ClientLoadout.lockedLevel(data, sp);
+            boolean spLocked = spRequires >= 0;
+            boolean icon = spLocked ? GuiDraw.greyedAbilityIcon(g, sp, x, y - 2) : GuiDraw.abilityIcon(g, sp, x, y - 2);
+            if (spLocked) { // the padlock on the icon, and the R badge greyed out as it is on the bar
+                g.pose().pushPose();
+                g.pose().translate(0, 0, 100);
+                GuiDraw.sprite(g, GuiDraw.LOCK, x + 2, y, 11, 11);
+                g.pose().popPose();
+            }
+            if (icon) GuiDraw.specialBadge(g, x + 9, y + 7, !spLocked);
+            else GuiDraw.specialBadge(g, x, y - 1, !spLocked);
             int ix = icon ? 20 : 12;
             Component line = spInfo != null && spInfo.upkeepPerSecond() > 0
                     ? Component.translatable("gui.kegare.sorcerer.special.line_upkeep", sp.displayName(), Component.translatable(sp.castType().translationKey()),
@@ -461,7 +496,10 @@ public final class SorcererScreen extends Screen {
                     : Component.translatable("gui.kegare.sorcerer.special.line", sp.displayName(), Component.translatable(sp.castType().translationKey()),
                             GuiDraw.amount(spInfo != null ? spInfo.cost() : 0f));
             int top = y;
-            y += GuiDraw.wrapped(g, font, line, x + ix, y, w - ix, spInfo == null || spInfo.available() ? GuiDraw.GOLD : GuiDraw.GRAY);
+            y += GuiDraw.wrapped(g, font, line, x + ix, y, w - ix, !spLocked && (spInfo == null || spInfo.available()) ? GuiDraw.GOLD : GuiDraw.GRAY);
+            if (spLocked) {
+                y += GuiDraw.wrapped(g, font, Component.translatable("message.kegare.cast.refinement_locked", spRequires), x + ix, y, w - ix, GuiDraw.RED);
+            }
             y += GuiDraw.wrapped(g, font, GuiDraw.description(sp.descriptionId()), x + ix, y, w - ix, GuiDraw.DARK_GRAY);
             for (Requirement requirement : sp.requirements()) {
                 boolean met = spInfo != null && spInfo.available();
@@ -475,13 +513,80 @@ public final class SorcererScreen extends Screen {
         }
 
         // Where it is.
-        if (data != null) {
+        if (data != null && !refinementLocked) {
             int slot = data.loadout().indexOf(Optional.of(ability.id()));
             boolean ultimate = technique.ultimate().map(u -> u.id().equals(ability.id())).orElse(false);
             Component where = ultimate ? Component.translatable("gui.kegare.loadout.ultimate_fixed")
                     : slot >= 0 ? Component.translatable("gui.kegare.loadout.in_slot", slot + 1)
                     : Component.translatable("gui.kegare.loadout.not_slotted");
             y += GuiDraw.wrapped(g, font, where, x, y, w, slot >= 0 ? GuiDraw.GOLD : GuiDraw.DARK_GRAY);
+        }
+        return y;
+    }
+
+    /** Grade, Assessment against what the next step asks for, Refinement on the current technique, and Insight. All private. */
+    private int renderProgress(GuiGraphics g, @Nullable InnateTechnique technique, @Nullable SyncPayload data, int x, int y, int w) {
+        if (data == null) return y;
+        ProgressionSnapshot p = data.progression();
+        Grade grade = Grade.byOrdinal(p.grade());
+        Optional<Grade> next = grade.next();
+
+        y += GuiDraw.text(g, font, Component.translatable(grade.translationKey()), x, y, 1.25f, GuiDraw.GOLD) + 3;
+        if (next.isEmpty()) {
+            y += GuiDraw.wrapped(g, font, Component.translatable("gui.kegare.sorcerer.progress.top"), x, y, w, GuiDraw.GRAY);
+        } else {
+            Component nextName = Component.translatable(next.get().translationKey());
+            if (p.gradeXpNeeded() > 0) {
+                GuiDraw.progress(g, x, y, w, 6, p.gradeXp() / p.gradeXpNeeded(), GuiDraw.GOLD & 0xFFFFFF);
+                y += 8;
+                y += GuiDraw.wrapped(g, font, Component.translatable("gui.kegare.sorcerer.progress.xp", Mth.floor(p.gradeXp()), Mth.floor(p.gradeXpNeeded()), nextName), x, y, w, GuiDraw.GRAY);
+            } else {
+                y += GuiDraw.wrapped(g, font, Component.translatable("gui.kegare.sorcerer.progress.assessment_only", nextName), x, y, w, GuiDraw.GRAY);
+            }
+        }
+        if (p.assessment().isPresent()) y = renderAssessment(g, p.assessment().get(), x, y + 3, w);
+        y += 5;
+
+        y += GuiDraw.text(g, font, Component.translatable("gui.kegare.sorcerer.progress.refinement"), x, y, 1f, 0xFFD8D2E0) + 1;
+        if (data.severed() || technique == null) {
+            y += GuiDraw.wrapped(g, font, Component.translatable(data.severed() ? "gui.kegare.sorcerer.progress.refinement.severed" : "gui.kegare.sorcerer.progress.refinement.none"), x, y, w, GuiDraw.DARK_GRAY);
+        } else {
+            boolean top = p.refinementXpNeeded() <= 0;
+            GuiDraw.progress(g, x, y, w, 6, top ? 1f : p.refinementXp() / p.refinementXpNeeded(), technique.maliceColor());
+            y += 8;
+            y += GuiDraw.wrapped(g, font, top ? Component.translatable("gui.kegare.sorcerer.progress.refinement.top", p.refinement())
+                    : Component.translatable("gui.kegare.sorcerer.progress.refinement.level", p.refinement(), p.maxRefinement(), Mth.floor(p.refinementXp()), Mth.floor(p.refinementXpNeeded())), x, y, w, GuiDraw.GRAY);
+        }
+        y += GuiDraw.wrapped(g, font, Component.translatable("gui.kegare.sorcerer.progress.peak", p.peakRefinement()), x, y, w, GuiDraw.DARK_GRAY) + 5;
+
+        y += GuiDraw.text(g, font, Component.translatable("gui.kegare.sorcerer.progress.insight"), x, y, 1f, 0xFFD8D2E0) + 1;
+        return y + GuiDraw.wrapped(g, font, Component.translatable("gui.kegare.sorcerer.progress.insight.values",
+                Component.translatable(InsightCategory.DOMINION.translationKey()), p.dominion(),
+                Component.translatable(InsightCategory.WARD.translationKey()), p.ward(),
+                Component.translatable(InsightCategory.OUTPUT.translationKey()), p.output()), x, y, w, GuiDraw.GRAY);
+    }
+
+    /** Assessment against the requirement, each line green once it's met. Two columns where the box is wide enough. */
+    private int renderAssessment(GuiGraphics g, ProgressionSnapshot.Assessment a, int x, int y, int w) {
+        y += GuiDraw.text(g, font, Component.translatable("gui.kegare.sorcerer.progress.assessment"), x, y, 1f, 0xFFD8D2E0) + 1;
+        List<Component> lines = new ArrayList<>();
+        List<Boolean> met = new ArrayList<>();
+        lines.add(Component.translatable("gui.kegare.sorcerer.progress.assessment.average", Math.round(a.average()), Math.round(a.averageNeeded())));
+        met.add(a.fights() > 0 && a.average() + 1.0e-4f >= a.averageNeeded());
+        lines.add(Component.translatable("gui.kegare.sorcerer.progress.assessment.fights", a.fights(), a.fightsNeeded()));
+        met.add(a.fights() >= a.fightsNeeded());
+        lines.add(Component.translatable("gui.kegare.sorcerer.progress.assessment.opponents", a.opponents(), a.opponentsNeeded()));
+        met.add(a.opponents() >= a.opponentsNeeded());
+        if (!a.severed()) { // they skip this one
+            lines.add(Component.translatable("gui.kegare.sorcerer.progress.assessment.peak", a.peak(), a.peakNeeded()));
+            met.add(a.peak() >= a.peakNeeded());
+        }
+        int column = w / 2;
+        boolean twoColumns = lines.stream().allMatch(line -> font.width(line) <= column - 2);
+        int perRow = twoColumns ? 2 : 1;
+        for (int i = 0; i < lines.size(); i++) {
+            g.drawString(font, lines.get(i), x + (i % perRow) * column, y, met.get(i) ? 0xFF7CFC8A : GuiDraw.GRAY, true);
+            if (i % perRow == perRow - 1 || i == lines.size() - 1) y += font.lineHeight + 1;
         }
         return y;
     }
@@ -639,9 +744,12 @@ public final class SorcererScreen extends Screen {
             Ability ability = technique == null ? null : r.ultimate() ? technique.ultimate().orElse(null) : ClientLoadout.abilities().get(r.index());
             lines.add(ability != null ? ability.displayName()
                     : Component.translatable(r.ultimate() ? "gui.kegare.sorcerer.ability.ultimate_locked" : "hud.kegare.empty_slot"));
+            SyncPayload data = ClientData.get();
+            int requires = ability != null && data != null ? ClientLoadout.lockedLevel(data, ability) : -1;
             String hint = !r.ultimate() ? (ability != null ? "gui.kegare.loadout.slot_hint" : "gui.kegare.loadout.empty_slot_hint")
                     : ability != null ? "gui.kegare.loadout.ultimate_fixed" : "gui.kegare.sorcerer.ability.ultimate_locked.desc";
-            lines.add(Component.translatable(hint).withStyle(ChatFormatting.DARK_GRAY));
+            lines.add(requires >= 0 ? Component.translatable("message.kegare.cast.refinement_locked", requires).withStyle(ChatFormatting.RED)
+                    : Component.translatable(hint).withStyle(ChatFormatting.DARK_GRAY));
             g.renderComponentTooltip(font, lines, mouseX, mouseY);
             return;
         }
@@ -743,7 +851,7 @@ public final class SorcererScreen extends Screen {
             onClose();
             return true;
         }
-        if (keyCode >= GLFW.GLFW_KEY_1 && keyCode < GLFW.GLFW_KEY_1 + View.values().length) { // 1-4: the views
+        if (keyCode >= GLFW.GLFW_KEY_1 && keyCode < GLFW.GLFW_KEY_1 + View.values().length) { // 1-5: the views
             setView(View.values()[keyCode - GLFW.GLFW_KEY_1]);
             return true;
         }

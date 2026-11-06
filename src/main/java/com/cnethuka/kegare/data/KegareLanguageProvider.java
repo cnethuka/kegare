@@ -455,6 +455,41 @@ public final class KegareLanguageProvider extends LanguageProvider {
         add("gui.kegare.sorcerer.title", "Sorcerer");
         add("gui.kegare.sorcerer.view.technique", INNATE_TECHNIQUE);
         add("gui.kegare.sorcerer.view.settings", "Settings");
+        add("gui.kegare.sorcerer.view.progress", "Progress");
+        add("gui.kegare.sorcerer.progress.top", "The top of the ladder.");
+        add("gui.kegare.sorcerer.progress.xp", "%s / %s XP to %s");
+        add("gui.kegare.sorcerer.progress.assessment_only", "%s comes by Assessment alone.");
+        add("gui.kegare.sorcerer.progress.assessment", "Assessment");
+        add("gui.kegare.sorcerer.progress.assessment.average", "Average %s / %s");
+        add("gui.kegare.sorcerer.progress.assessment.fights", "Fights %s / %s");
+        add("gui.kegare.sorcerer.progress.assessment.opponents", "Opponents %s / %s");
+        add("gui.kegare.sorcerer.progress.assessment.peak", "Peak %s / %s");
+        add("gui.kegare.sorcerer.progress.refinement", "Refinement");
+        add("gui.kegare.sorcerer.progress.refinement.level", "Level %s / %s: %s / %s XP");
+        add("gui.kegare.sorcerer.progress.refinement.top", "Level %s: the top.");
+        add("gui.kegare.sorcerer.progress.refinement.severed", "The Severed have none.");
+        add("gui.kegare.sorcerer.progress.refinement.none", "No " + INNATE_TECHNIQUE + ".");
+        add("gui.kegare.sorcerer.progress.peak", "Peak Refinement: %s");
+        add("gui.kegare.sorcerer.progress.insight", "Insight");
+        add("gui.kegare.sorcerer.progress.insight.values", "%s %s  %s %s  %s %s");
+        for (com.cnethuka.kegare.progression.Grade grade : com.cnethuka.kegare.progression.Grade.values()) {
+            add(grade.translationKey(), switch (grade) {
+                case GRADE_4 -> "Grade 4";
+                case GRADE_3 -> "Grade 3";
+                case SEMI_GRADE_2 -> "Semi-Grade 2";
+                case GRADE_2 -> "Grade 2";
+                case SEMI_GRADE_1 -> "Semi-Grade 1";
+                case GRADE_1 -> "Grade 1";
+                case SPECIAL_GRADE -> "Special Grade";
+            });
+        }
+        add("insight.kegare.dominion", DOMINION);
+        add("insight.kegare.ward", "Ward");
+        add("insight.kegare.output", "Output");
+        add("toast.kegare.promotion", "Promoted");
+        add("toast.kegare.unlocked", "Unlocked");
+        add("toast.kegare.unlocked.special", "Special unlocked");
+        add("toast.kegare.unlocked.ultimate", "Ultimate unlocked");
         add("gui.kegare.settings.technique_select", "In Technique Mode, pick abilities with");
         add("gui.kegare.settings.number_keys", "Number keys");
         add("gui.kegare.settings.scroll_wheel", "Scroll wheel");

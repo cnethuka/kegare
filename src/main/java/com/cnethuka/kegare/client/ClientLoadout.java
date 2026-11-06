@@ -32,6 +32,15 @@ public final class ClientLoadout {
                 || ability.special().map(special -> data.activeToggles().contains(special.id())).orElse(false);
     }
 
+    /** The Refinement level this part of their technique needs, or -1 if it isn't locked. */
+    public static int lockedLevel(SyncPayload data, Ability ability) {
+        return data.progression().lockedLevel(ability.id());
+    }
+
+    public static boolean isLocked(SyncPayload data, Ability ability) {
+        return lockedLevel(data, ability) >= 0;
+    }
+
     public static int size() {
         SyncPayload data = ClientData.get();
         return data == null || TechniqueMode.current() == null ? 0 : data.loadout().size();
