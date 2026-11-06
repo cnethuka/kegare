@@ -76,19 +76,19 @@ public final class MeleeConfig {
                 .defineInRange("cost", 20.0, 0.0, 100000.0);
         b.pop();
 
-        b.comment("The physical version for Severed players: no Malice cost, so everything Malice would limit has its own number.").push("severed");
-        SEVERED_DASH_COOLDOWN = b.comment("Seconds between dashes.").defineInRange("dashCooldown", 4.0, 0.0, 600.0);
-        SEVERED_DASH_DISTANCE = b.comment("Blocks covered.").defineInRange("dashDistance", 3.5, 0.5, 32.0);
-        SEVERED_PERFECT_WINDOW = b.comment("Seconds of perfect parry window.").defineInRange("perfectWindow", 0.25, 0.0, 10.0);
+        b.comment("The physical version for Severed players, who trade all their Malice for superhuman abilities: stronger than standard, with no Malice cost, so everything Malice would limit has its own number.").push("severed");
+        SEVERED_DASH_COOLDOWN = b.comment("Seconds between dashes.").defineInRange("dashCooldown", 2.5, 0.0, 600.0);
+        SEVERED_DASH_DISTANCE = b.comment("Blocks covered.").defineInRange("dashDistance", 6.0, 0.5, 32.0);
+        SEVERED_PERFECT_WINDOW = b.comment("Seconds of perfect parry window.").defineInRange("perfectWindow", 0.3, 0.0, 10.0);
         SEVERED_GUARD_MELEE_REDUCTION = b.comment("Melee damage taken off while holding past the window.")
-                .defineInRange("guardMeleeReduction", 0.3, 0.0, 1.0);
+                .defineInRange("guardMeleeReduction", 0.5, 0.0, 1.0);
         SEVERED_GUARD_TECHNIQUE_REDUCTION = b.comment("Technique damage taken off while holding: nothing to reinforce with.")
                 .defineInRange("guardTechniqueReduction", 0.0, 0.0, 1.0);
-        SEVERED_GUARD_MAX = b.comment("Seconds a guard can be held, since there's no Malice to run out of.").defineInRange("guardMaxSeconds", 2.5, 0.05, 600.0);
-        SEVERED_RECOVERY = b.comment("Seconds after a guard ends before you can parry again.").defineInRange("recovery", 1.25, 0.0, 60.0);
+        SEVERED_GUARD_MAX = b.comment("Seconds a guard can be held, since there's no Malice to run out of.").defineInRange("guardMaxSeconds", 4.0, 0.05, 600.0);
+        SEVERED_RECOVERY = b.comment("Seconds after a guard ends before you can parry again.").defineInRange("recovery", 0.75, 0.0, 60.0);
         SEVERED_STRIKE_WINDOW = b.comment("Seconds to land the hit.").defineInRange("strikeWindow", 1.5, 0.05, 60.0);
-        SEVERED_STRIKE_BONUS = b.comment("Extra damage.").defineInRange("strikeDamageBonus", 0.35, 0.0, 10.0);
-        SEVERED_STRIKE_KNOCKBACK = b.comment("Extra knockback strength.").defineInRange("strikeKnockback", 0.4, 0.0, 10.0);
+        SEVERED_STRIKE_BONUS = b.comment("Extra damage.").defineInRange("strikeDamageBonus", 0.75, 0.0, 10.0);
+        SEVERED_STRIKE_KNOCKBACK = b.comment("Extra knockback strength, more than the standard Strike's.").defineInRange("strikeKnockback", 0.9, 0.0, 10.0);
         b.pop();
 
         b.pop();

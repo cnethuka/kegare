@@ -666,6 +666,31 @@ class MeleeLayerTest {
 
     // ---------------------------------------------------------------- Severed
 
+    private static double defaultOf(String key) {
+        net.neoforged.neoforge.common.ModConfigSpec.ConfigValue<?> value = com.cnethuka.kegare.config.KegareServerConfig.SPEC.getValues().get("melee." + key);
+        return ((Number) value.getDefault()).doubleValue();
+    }
+
+    /** Severed trade all their Malice for superhuman abilities, so their numbers beat standard. Read from the defaults, so a local toml can't change this. */
+    @Test
+    void severedDefaultsAreStrongerThanStandard() {
+        assertEquals(6.0, defaultOf("severed.dashDistance"), 1e-9);
+        assertEquals(2.5, defaultOf("severed.dashCooldown"), 1e-9);
+        assertEquals(0.3, defaultOf("severed.perfectWindow"), 1e-9);
+        assertEquals(0.5, defaultOf("severed.guardMeleeReduction"), 1e-9);
+        assertEquals(0.0, defaultOf("severed.guardTechniqueReduction"), 1e-9);
+        assertEquals(4.0, defaultOf("severed.guardMaxSeconds"), 1e-9);
+        assertEquals(0.75, defaultOf("severed.recovery"), 1e-9);
+        assertEquals(0.75, defaultOf("severed.strikeDamageBonus"), 1e-9);
+        assertTrue(defaultOf("severed.dashDistance") > defaultOf("dash.distance"));
+        assertTrue(defaultOf("severed.dashCooldown") < defaultOf("dash.cooldown"));
+        assertEquals(defaultOf("parry.perfectWindow"), defaultOf("severed.perfectWindow"), 1e-9);
+        assertTrue(defaultOf("severed.guardMeleeReduction") > defaultOf("parry.guardMeleeReduction"));
+        assertTrue(defaultOf("severed.recovery") < defaultOf("parry.recovery"));
+        assertTrue(defaultOf("severed.strikeDamageBonus") > defaultOf("reinforced_strike.damageBonus"));
+        assertTrue(defaultOf("severed.strikeKnockback") > defaultOf("reinforced_strike.knockback"), "more knockback than standard");
+    }
+
     @Test
     void severedPlayersGetAPhysicalVersionWithNoMalice(MinecraftServer server) throws Exception {
         TestServer.onServerThread(server, () -> {

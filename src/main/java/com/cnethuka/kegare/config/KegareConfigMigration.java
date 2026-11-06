@@ -19,7 +19,7 @@ import net.neoforged.neoforge.common.ModConfigSpec;
  */
 public final class KegareConfigMigration {
     /** The version these numbers are for. A file with no {@code configVersion} reads as 1, from before there was one. */
-    public static final int CURRENT_VERSION = 2;
+    public static final int CURRENT_VERSION = 3;
 
     /** Version 2, the Malice rescale: every value it changed, and its default before that. The new value is always the spec's default. */
     static final Map<String, Number> RESCALE_OLD_DEFAULTS = Map.ofEntries(
@@ -83,6 +83,25 @@ public final class KegareConfigMigration {
             entry("reverse_malice_technique.upkeepPerSecond", 24.0)
     );
 
+    /** Version 3, Severed melee made stronger than standard: every value it changed, and its default before that. */
+    static final Map<String, Number> SEVERED_MELEE_OLD_DEFAULTS = Map.ofEntries(
+            entry("melee.severed.dashCooldown", 4.0),
+            entry("melee.severed.dashDistance", 3.5),
+            entry("melee.severed.perfectWindow", 0.25),
+            entry("melee.severed.guardMeleeReduction", 0.3),
+            entry("melee.severed.guardMaxSeconds", 2.5),
+            entry("melee.severed.recovery", 1.25),
+            entry("melee.severed.strikeDamageBonus", 0.35),
+            entry("melee.severed.strikeKnockback", 0.4)
+    );
+
+    /** One migration: a file below {@code version} goes through it. */
+    record Step(int version, Map<String, Number> oldDefaults, String what) {}
+
+    static final List<Step> STEPS = List.of(
+            new Step(2, RESCALE_OLD_DEFAULTS, "the rescaled Malice numbers (new tiers, costs and regen)"),
+            new Step(3, SEVERED_MELEE_OLD_DEFAULTS, "the stronger Severed melee numbers"));
+
     enum Action { NONE, MOVE_TO_NEW_DEFAULT, KEEP_HAND_EDITED }
 
     static Action decide(double value, double oldDefault, double newDefault) {
@@ -98,9 +117,18 @@ public final class KegareConfigMigration {
         if (config.getFullPath() == null) return; // a copy sent by a server, which has migrated its own file
         if (KegareServerConfig.CONFIG_VERSION.get() >= CURRENT_VERSION) return;
 
+        int version = KegareServerConfig.CONFIG_VERSION.get();
+        for (Step step : STEPS) {
+            if (version < step.version()) apply(step);
+        }
+        KegareServerConfig.CONFIG_VERSION.set(CURRENT_VERSION);
+        KegareServerConfig.SPEC.save();
+    }
+
+    private static void apply(Step step) {
         int moved = 0;
         List<String> kept = new ArrayList<>();
-        for (Map.Entry<String, Number> old : RESCALE_OLD_DEFAULTS.entrySet()) {
+        for (Map.Entry<String, Number> old : step.oldDefaults().entrySet()) {
             ModConfigSpec.ConfigValue<?> value = KegareServerConfig.SPEC.getValues().get(old.getKey());
             double current = ((Number) value.get()).doubleValue();
             double newDefault = ((Number) value.getDefault()).doubleValue();
@@ -113,12 +141,10 @@ public final class KegareConfigMigration {
                 case NONE -> {}
             }
         }
-        KegareServerConfig.CONFIG_VERSION.set(CURRENT_VERSION);
-        KegareServerConfig.SPEC.save();
-        if (moved > 0) Kegare.LOGGER.info("kegare-server.toml: moved {} values to the rescaled Malice numbers", moved);
+        if (moved > 0) Kegare.LOGGER.info("kegare-server.toml: moved {} values to {}", moved, step.what());
         if (!kept.isEmpty()) {
             kept.sort(null);
-            Kegare.LOGGER.warn("kegare-server.toml: left {} hand-edited values alone. Check them against the rescaled Malice numbers (new tiers, costs x4): {}", kept.size(), kept);
+            Kegare.LOGGER.warn("kegare-server.toml: left {} hand-edited values alone. Check them against {}: {}", kept.size(), step.what(), kept);
         }
     }
 

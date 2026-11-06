@@ -1557,7 +1557,7 @@ A real hit from any entity in the window ends it; your own swings, shots, areas 
 **Reinforced Strike** (no key, no slot). After a perfect parry or clean dodge, the next melee hit on a real target within 1.5 s does 50% more with extra knockback and costs 20 Malice by itself.
 Without the Malice the hit stays normal and the Strike waits until it expires. Earning it again restarts the clock; it never stacks. Bosses take the damage and aren't moved. Tell: gold motes at the shins (`melee/strike_ready`) and **Reinforced** on the owner's HUD.
 
-**Severed** have no Malice, so `[melee.severed]` is a physical version with no costs and its own numbers: dash 3.5 blocks every 4 s; perfect window 0.25 s; guard 30% off melee and nothing off techniques, held at most 2.5 s (no Malice to run out of); recovery 1.25 s; Strike +35% with less knockback. **Starting values, up for review.**
+**Severed** trade all their Malice for superhuman abilities, so their melee is stronger than standard, with no costs. `[melee.severed]` has their own numbers: dash 6 blocks every 2.5 s; perfect window 0.3 s; guard 50% off melee and nothing off techniques, held at most 4 s (no Malice to run out of); recovery 0.75 s; Strike +75% with more knockback than standard (0.9 against 0.6). A config file from before these numbers moves to them unless a value was changed by hand (`KegareConfigMigration`, version 3).
 
 **Impact moments** (`MeleeImpact`): `DASH_BURST`, `CLEAN_DODGE`, `PARRY_PERFECT`, `GUARD_HIT`, `STAGGER`, `STRIKE_HIT`, fired on the server tick the effect is applied. Sounds and effects hang off them, and `MeleeImpact.listen` is where the Impact System hooks in. No screen shake, hit-stop or shaders yet.
 

@@ -61,4 +61,19 @@ class KegareConfigMigrationTest {
         assertEquals(1500, newDefault("malice.tiers.high.base"));
         assertEquals(10_000, newDefault("malice.tiers.vast.base"));
     }
+
+    @Test
+    void theSeveredMeleeStepCoversValuesThatReallyChanged() {
+        assertEquals(8, KegareConfigMigration.SEVERED_MELEE_OLD_DEFAULTS.size());
+        for (Map.Entry<String, Number> old : KegareConfigMigration.SEVERED_MELEE_OLD_DEFAULTS.entrySet()) {
+            assertNotEquals(old.getValue().doubleValue(), newDefault(old.getKey()), old.getKey());
+        }
+    }
+
+    @Test
+    void eachStepRunsOnceInOrderUpToTheCurrentVersion() {
+        var steps = KegareConfigMigration.STEPS;
+        for (int i = 1; i < steps.size(); i++) assertTrue(steps.get(i - 1).version() < steps.get(i).version());
+        assertEquals(KegareConfigMigration.CURRENT_VERSION, steps.get(steps.size() - 1).version());
+    }
 }
