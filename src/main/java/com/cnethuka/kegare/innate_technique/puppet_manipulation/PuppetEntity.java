@@ -483,6 +483,15 @@ public class PuppetEntity extends PathfinderMob implements Puppet {
         return !isPossessed() && super.isPushable();
     }
 
+    /**
+     * Hidden inside its possessor, it touches nobody. Its tick only stops on the server: on the client it still runs, and vanilla
+     * has mobs shove the players they overlap there, so a puppet trailing a step behind pushed its possessor along endlessly.
+     */
+    @Override
+    protected void pushEntities() {
+        if (!isPossessed()) super.pushEntities();
+    }
+
     @Override
     protected boolean shouldDropLoot() {
         return false;

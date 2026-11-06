@@ -102,6 +102,42 @@ class PossessionTest {
         });
     }
 
+    /**
+     * The possession slide: a hidden puppet trails just behind its possessor on the client, and vanilla lets any mob on the
+     * client shove the players it overlaps, so it pushed them along for as long as it kept up. A possessed puppet pushes nothing.
+     * The server's copy has noPhysics set, which isn't synced, so it's cleared here to stand for the client's.
+     */
+    @Test
+    void aPossessedPuppetPushesNothing(MinecraftServer server) throws Exception {
+        TestServer.onServerThread(server, () -> {
+            ServerLevel level = setUp(server);
+            ServerPlayer p = owner(server, level, "possess_push");
+            net.minecraft.world.entity.animal.Cow cow = new net.minecraft.world.entity.animal.Cow(net.minecraft.world.entity.EntityType.COW, level);
+            try {
+                PuppetEntity puppet = puppetInFront(server, p, PuppetConfig.ticks(PuppetConfig.CREATION_HALF_CHARGE));
+                cow.moveTo(puppet.getX() + 0.2, puppet.getY(), puppet.getZ(), 0f, 0f);
+                level.addFreshEntity(cow);
+
+                Possession.possess(p, puppet);
+                assertTrue(puppet.isPossessed(), "setup: inside them");
+                puppet.noPhysics = false;
+                cow.setDeltaMovement(Vec3.ZERO);
+                puppet.pushEntities();
+                assertEquals(Vec3.ZERO, cow.getDeltaMovement(), "hidden inside its possessor, it shoves nobody");
+
+                Possession.release(p, Possession.Return.RETURNED);
+                assertFalse(puppet.isPossessed(), "setup: out again");
+                cow.moveTo(puppet.getX() + 0.2, puppet.getY(), puppet.getZ(), 0f, 0f);
+                cow.setDeltaMovement(Vec3.ZERO);
+                puppet.pushEntities();
+                assertTrue(cow.getDeltaMovement().horizontalDistance() > 0, "back out, it's a body like any other");
+            } finally {
+                cow.discard();
+                cleanUp(server, level, p);
+            }
+        });
+    }
+
     @Test
     void snapBacks(MinecraftServer server) throws Exception {
         TestServer.onServerThread(server, () -> {

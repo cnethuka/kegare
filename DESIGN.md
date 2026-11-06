@@ -1082,6 +1082,8 @@ icon armor stand; ultimate locked (its Dominion comes later). All numbers in `[p
 | ↳ **Stand-In** (R) | INSTANT | 80 | shared | For `duration` (8 s) one puppet (looked at, else nearest) grows to your size over 0.4 s and copies you: the same step each tick (on its own feet, so it still falls and bumps into things), facing, crouch, swings, held items, armor and name tag, with no glow or outline: it looks exactly like you. Then it shrinks back and gives it all back. Only ever its OWNER's look; one Stand-In per owner at a time; it never attacks, and nothing it borrowed can drop. |
 
 **Possession** (`Possession`, `PossessionData` saved on the player as `kegare:possession`):
+- **The hidden puppet touches nothing.** It isn't pickable or pushable and doesn't push (`PuppetEntity.pushEntities`). Its tick stops only on the server, and
+  vanilla has mobs shove overlapping players on the client, so without that a puppet trailing a step behind pushes its possessor along endlessly.
 - The player **becomes the puppet**: they take its place, its size (a `scale` modifier) and its health (a max-health
   modifier; it doesn't heal). Their inventory is stashed in the record (no items; nothing can be picked up and no
   container opened). Weak melee only (empty hands). **No casting:** a `CastManager` interceptor
