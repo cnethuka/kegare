@@ -477,19 +477,14 @@ public final class SorcererScreen extends Screen {
         if (special.isPresent()) {
             Ability sp = special.get();
             SorcererInfoPayload.SpecialInfo spInfo = abilityInfo != null ? abilityInfo.special().orElse(null) : null;
-            // The special's own icon when it has art (with the R badge on its corner), else just the badge.
             int spRequires = data == null ? -1 : ClientLoadout.lockedLevel(data, sp);
             boolean spLocked = spRequires >= 0;
-            boolean icon = spLocked ? GuiDraw.greyedAbilityIcon(g, sp, x, y - 2) : GuiDraw.abilityIcon(g, sp, x, y - 2);
-            if (spLocked) { // the padlock on the icon, and the R badge greyed out as it is on the bar
-                g.pose().pushPose();
-                g.pose().translate(0, 0, 100);
-                GuiDraw.sprite(g, GuiDraw.LOCK, x + 2, y, 11, 11);
-                g.pose().popPose();
-            }
-            if (icon) GuiDraw.specialBadge(g, x + 9, y + 7, !spLocked);
-            else GuiDraw.specialBadge(g, x, y - 1, !spLocked);
-            int ix = icon ? 20 : 12;
+            // The special's own icon when it has art (with the R badge on its corner), else just the badge; a padlock while it's locked.
+            boolean icon = !spLocked && GuiDraw.abilityIcon(g, sp, x, y - 2);
+            if (spLocked) GuiDraw.sprite(g, GuiDraw.LOCK, x, y - 1, 11, 11);
+            else if (icon) GuiDraw.specialBadge(g, x + 9, y + 7, true);
+            else GuiDraw.specialBadge(g, x, y - 1, true);
+            int ix = spLocked ? 13 : icon ? 20 : 12;
             Component line = spInfo != null && spInfo.upkeepPerSecond() > 0
                     ? Component.translatable("gui.kegare.sorcerer.special.line_upkeep", sp.displayName(), Component.translatable(sp.castType().translationKey()),
                             GuiDraw.amount(spInfo.cost()), GuiDraw.amount(spInfo.upkeepPerSecond()))
