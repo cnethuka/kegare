@@ -56,14 +56,14 @@ public final class Unlocks {
         return data(player).unlocked.contains(id);
     }
 
-    /** The Refinement this player needs for this unlock right now, with their matching Insight taken off. */
+    /** The Refinement this player needs for this unlock right now, with what their matching Insight is allowed to take off gone. */
     public static int refinementNeeded(Player player, UnlockRequirements requirements) {
-        return requirements.effectiveRefinement(category -> Insight.get(player, category), ProgressionConfig.INSIGHT_REFINEMENT_RATE.get());
+        return requirements.effectiveRefinement(category -> Insight.get(player, category), ProgressionConfig.INSIGHT_REFINEMENT_RATE.get(), ProgressionConfig.INSIGHT_REFINEMENT_CAP.get());
     }
 
     private static boolean met(ServerPlayer player, UnlockRequirements requirements) {
         return requirements.met(GradeService.grade(player), RefinementService.level(player),
-                category -> Insight.get(player, category), ProgressionConfig.INSIGHT_REFINEMENT_RATE.get());
+                category -> Insight.get(player, category), ProgressionConfig.INSIGHT_REFINEMENT_RATE.get(), ProgressionConfig.INSIGHT_REFINEMENT_CAP.get());
     }
 
     /** Grade, Refinement or Insight changed, or they just logged in. */

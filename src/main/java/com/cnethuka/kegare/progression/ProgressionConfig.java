@@ -77,6 +77,7 @@ public final class ProgressionConfig {
 
     // Unlocks
     public static ModConfigSpec.DoubleValue INSIGHT_REFINEMENT_RATE;
+    public static ModConfigSpec.DoubleValue INSIGHT_REFINEMENT_CAP;
 
     // Insight
     static final Map<InsightSource, ModConfigSpec.EnumValue<InsightCategory>> INSIGHT_CATEGORY = new java.util.EnumMap<>(InsightSource.class);
@@ -223,6 +224,8 @@ public final class ProgressionConfig {
         b.comment("The framework for shared and system unlocks, separate from a technique's own abilities.").push("unlocks");
         INSIGHT_REFINEMENT_RATE = b.comment("Refinement levels matching Insight takes off an unlock's requirement, per point of Insight. It rounds down, so by default 10 Insight is 1 level.")
                 .defineInRange("refinementLoweredPerInsight", 0.1, 0.0, 100.0);
+        INSIGHT_REFINEMENT_CAP = b.comment("The most Insight can take off, as a share of the requirement, rounded down. It speeds an unlock up but never removes the requirement: 1 stays 1 even at 1.0.")
+                .defineInRange("refinementLoweredCap", 0.5, 0.0, 1.0);
         b.pop();
 
         b.comment("The shared hit path: what counts as landing an ability on a real target.").push("landing");

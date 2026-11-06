@@ -1419,11 +1419,14 @@ For shared and system unlocks, separate from a technique's own abilities.
 - `Unlocks.register(id, requirements)`, with `UnlockRequirements.builder()`: `.grade(minimum)`, `.refinement(minimum)`,
   `.insight(category, minimum)`, `.loweredBy(category)`, `.tiedToTechnique()`. Check with `Unlocks.has(player, id)`; hear of changes with
   `Unlocks.addListener`.
-- **Insight lowers the Refinement needed** for an entry that names a `loweredBy` category: `refinementLoweredPerInsight` (0.1) levels per point,
-  rounded down, so 10 Insight is 1 level.
+- **Insight lowers the Refinement needed, but can't remove it,** for an entry that names a `loweredBy` category: `refinementLoweredPerInsight` (0.1)
+  levels per point, rounded down, so 10 Insight is 1 level. It takes off at most `refinementLoweredCap` (0.5) of the requirement, also rounded down:
+  10 needs at least 5, 5 needs 3, 2 needs 1, and 1 stays 1. A requirement of 1 or more never reaches 0 whatever the cap is set to.
 - **Re-evaluated whenever Grade, Refinement or Insight changes,** and on login.
 - **The flag is on each entry.** `tiedToTechnique` entries are per technique and are lost on reroll. Others stay once earned, even if an admin
-  later lowers the Grade. A Severed player has no Refinement, so can reach a Refinement-gated entry only if Insight lowers it to 0.
+  later lowers the Grade.
+- **A Severed player can't reach a Refinement-gated entry.** They have no Refinement and Insight can't make up for all of it. Anything they should
+  be able to earn is registered by Grade and Insight alone.
 - **Nothing real is registered yet.** Dominions and later unlocks plug in when built. Tests use a
   test-only entry.
 

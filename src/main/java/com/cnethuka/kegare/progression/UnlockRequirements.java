@@ -18,14 +18,21 @@ public record UnlockRequirements(Grade grade, int refinement, Map<InsightCategor
         return new Builder();
     }
 
-    /** The Refinement needed once Insight has lowered it. {@code rate} is levels per point of matching Insight. */
-    public int effectiveRefinement(ToIntFunction<InsightCategory> insightOf, double rate) {
-        if (loweredBy == null) return refinement;
-        return Math.max(0, refinement - (int) Math.floor(insightOf.applyAsInt(loweredBy) * rate));
+    /**
+     * The Refinement needed once Insight has lowered it. Insight speeds an unlock up but never removes the requirement: it takes off at
+     * most {@code cap} of it, rounded down, and a requirement of 1 or more stays at 1 or more whatever {@code cap} is.
+     *
+     * @param rate levels per point of matching Insight
+     * @param cap the most it can take off, as a share of the requirement
+     */
+    public int effectiveRefinement(ToIntFunction<InsightCategory> insightOf, double rate, double cap) {
+        if (loweredBy == null || refinement <= 0) return refinement;
+        int lowered = (int) Math.floor(Math.min(insightOf.applyAsInt(loweredBy) * rate, refinement * cap));
+        return Math.max(1, refinement - Math.max(0, lowered));
     }
 
-    public boolean met(Grade playerGrade, int playerRefinement, ToIntFunction<InsightCategory> insightOf, double rate) {
-        if (!playerGrade.atLeast(grade) || playerRefinement < effectiveRefinement(insightOf, rate)) return false;
+    public boolean met(Grade playerGrade, int playerRefinement, ToIntFunction<InsightCategory> insightOf, double rate, double cap) {
+        if (!playerGrade.atLeast(grade) || playerRefinement < effectiveRefinement(insightOf, rate, cap)) return false;
         for (Map.Entry<InsightCategory, Integer> needed : insight.entrySet()) {
             if (insightOf.applyAsInt(needed.getKey()) < needed.getValue()) return false;
         }
