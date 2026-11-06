@@ -178,7 +178,7 @@ public final class RmtFxAuthoring {
         b.setMaxParticles(2);
         b.setStartLifetime(NumberFunction.constant(30));
         b.setStartSpeed(NumberFunction.constant(0));
-        b.setStartSize(uniform(NumberFunction.constant(0.3f)));
+        b.setStartSize(uniform(NumberFunction.constant(0.34f)));
         b.shape.setScale(new NumberFunction3(0, 0, 0));
         b.emission.setEmissionRate(NumberFunction.constant(0));
         b.emission.getBursts().add(burst(0, 1));
@@ -187,14 +187,14 @@ public final class RmtFxAuthoring {
         b.noise.setEnable(true);
         b.noise.setFrequency(0.4f);
         b.noise.setPosition(uniform(NumberFunction.constant(0.05f)));
-        material(body, glow(0.3f, 1f, 0.45f, 1.1f));
+        material(body, glow(0.25f, 1f, 0.4f, 1.0f));
 
         ParticleEmitter core = emitter("core", true, 30);
         ParticleConfig c = core.config;
         c.setMaxParticles(2);
         c.setStartLifetime(NumberFunction.constant(30));
         c.setStartSpeed(NumberFunction.constant(0));
-        c.setStartSize(uniform(NumberFunction.constant(0.13f)));
+        c.setStartSize(uniform(NumberFunction.constant(0.11f)));
         c.shape.setScale(new NumberFunction3(0, 0, 0));
         c.emission.setEmissionRate(NumberFunction.constant(0));
         c.emission.getBursts().add(burst(0, 1));
@@ -203,14 +203,14 @@ public final class RmtFxAuthoring {
         c.noise.setEnable(true);
         c.noise.setFrequency(0.4f);
         c.noise.setPosition(uniform(NumberFunction.constant(0.05f)));
-        material(core, glow(1f, 1f, 1f, 1.5f));
+        material(core, glow(1f, 1f, 1f, 1.2f));
 
         ParticleEmitter halo = emitter("halo", true, 40);
         ParticleConfig h = halo.config;
         h.setMaxParticles(2);
         h.setStartLifetime(NumberFunction.constant(40));
         h.setStartSpeed(NumberFunction.constant(0));
-        h.setStartSize(uniform(NumberFunction.constant(0.8f)));
+        h.setStartSize(uniform(NumberFunction.constant(0.85f)));
         h.shape.setScale(new NumberFunction3(0, 0, 0));
         h.emission.setEmissionRate(NumberFunction.constant(0));
         h.emission.getBursts().add(burst(0, 1));
@@ -223,8 +223,8 @@ public final class RmtFxAuthoring {
         m.setMaxParticles(40);
         m.setStartLifetime(range(16, 24));
         m.setStartSpeed(NumberFunction.constant(0));
-        m.setStartSize(uniform(range(0.025f, 0.05f)));
-        Sphere shell = sphere(0.33f);
+        m.setStartSize(uniform(range(0.022f, 0.045f)));
+        Sphere shell = sphere(0.34f);
         shell.setRadiusThickness(0f);
         m.shape.setShape(shell);
         m.emission.setEmissionRate(NumberFunction.constant(1.2f));
@@ -239,9 +239,9 @@ public final class RmtFxAuthoring {
         p.setMaxParticles(40);
         p.setStartLifetime(range(14, 24));
         p.setStartSpeed(NumberFunction.constant(0));
-        p.setStartSize(uniform(range(0.02f, 0.045f)));
+        p.setStartSize(uniform(range(0.016f, 0.034f)));
         p.shape.setShape(sphere(0.08f));
-        p.emission.setEmissionRate(NumberFunction.constant(1.1f));
+        p.emission.setEmissionRate(NumberFunction.constant(0.8f));
         gravity(p, 0.03f);
         fadeOut(p, WHITE, GREEN);
         material(sparks, glow(1f, 1f, 1f, 1.4f));
