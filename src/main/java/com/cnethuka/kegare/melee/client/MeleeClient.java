@@ -43,6 +43,8 @@ public final class MeleeClient {
         MeleeDashPayload.setClientHandler(DRIVE::start);
         // Only the target's own camera is that close to it. An attacker in your face still sees it land.
         ClientVisuals.setNearCameraDistance(MeleeIds.FX_STRIKE_IMPACT, 1.0);
+        ClientVisuals.setNearCameraDistance(MeleeIds.FX_STRIKE_IMPACT_PHYSICAL, 1.0);
+        ClientVisuals.setNearCameraDistance(MeleeIds.FX_STRIKE_BURST, 1.0);
         ClientVisuals.setFirstPersonVariant(MeleeIds.FX_DASH_TRAIL, MeleeIds.FX_DASH_TRAIL_SELF);
         ClientVisuals.setFirstPersonVariant(MeleeIds.FX_PARRY_SPARK, MeleeIds.FX_PARRY_SPARK_SELF);
         ClientVisuals.setFirstPersonVariant(MeleeIds.FX_GUARD_HIT, MeleeIds.FX_GUARD_HIT_SELF);
@@ -65,7 +67,8 @@ public final class MeleeClient {
         VanillaFallback.register(MeleeIds.FX_PARRY_SPARK_SELF, new VanillaFallback.Spec(ParticleTypes.CRIT, 1, 5, 0.2, 0.2));
         VanillaFallback.register(MeleeIds.FX_GUARD_HIT_SELF, new VanillaFallback.Spec(ParticleTypes.CRIT, 1, 2, 0.15, 0.1));
         VanillaFallback.register(MeleeIds.FX_STRIKE_IMPACT, new VanillaFallback.Spec(ParticleTypes.ENCHANTED_HIT, 1, 18, 0.3, 0.3));
-        VanillaFallback.register(MeleeIds.FX_STRIKE_READY, new VanillaFallback.Spec(ParticleTypes.WAX_ON, 1, 2, 0.35, 0.0));
+        VanillaFallback.register(MeleeIds.FX_STRIKE_BURST, new VanillaFallback.Spec(ParticleTypes.ENCHANTED_HIT, 1, 8, 0.4, 0.2));
+        VanillaFallback.register(MeleeIds.FX_STRIKE_IMPACT_PHYSICAL, new VanillaFallback.Spec(ParticleTypes.POOF, 1, 14, 0.3, 0.12));
     }
 
     private static void onHud(MeleeHudPayload payload) {

@@ -306,8 +306,8 @@ All timestamps use **level game time**. They persist across restarts and are ide
   - The client counts down cooldowns locally from game time.
 - Swap (§3.19) adds two cosmetic S→C payloads: `Disguises.StatePayload` (the disguise map, to everyone) and
   `SwapLink.Payload` (effects drawn along a line).
-- The melee layer (§3.22) has its own payloads: `MeleeIntentPayload` (C→S, requests only), `MeleeDashPayload` and `MeleeHudPayload` (S→C, to their owner).
-- Network version `14` (since the melee layer). Bump it when payload formats change; mismatched clients are refused.
+- The melee layer (§3.22) has its own payloads: `MeleeIntentPayload` (C→S, requests only), `MeleeDashPayload` and `MeleeHudPayload` (S→C, to their owner), `MeleeTellPayload` (S→C, per viewer: what a ready fist looks like to them). `VisualPayload` carries an optional tint.
+- Network version `15` (since the ready fist). Bump it when payload formats change; mismatched clients are refused.
 
 ### 3.6 HUD
 **Rule: the combat HUD does not exist until the player asks for it** (art in `gen_art.py` → `textures/gui/combat/`).
@@ -1555,16 +1555,24 @@ A real hit from any entity in the window ends it; your own swings, shots, areas 
 **Melee, as far as this layer cares** (`MeleeHits`): the player, mob and no-aggro attack damage types, dealt directly by the attacker, outside a cast. Technique: any `kegare` damage type, or anything `Attribution` puts on an ability.
 
 **Reinforced Strike** (no key, no slot). After a perfect parry or clean dodge, the next melee hit on a real target within 1.5 s does 50% more with extra knockback and costs 20 Malice by itself.
-Without the Malice the hit stays normal and the Strike waits until it expires. Earning it again restarts the clock; it never stacks. Bosses take the damage and aren't moved. Tell: gold motes at the shins (`melee/strike_ready`) and **Reinforced** on the owner's HUD.
+Without the Malice the hit stays normal and the Strike waits until it expires. Earning it again restarts the clock; it never stacks. Bosses take the damage and aren't moved. **Reinforced** shows on the owner's HUD, and the attacking hand shows it to everyone (below).
+
+**The ready fist** (`MeleeTell`, `client/FistTell`). While a Strike is ready, Malice runs round the attacking hand, seen by everyone and in first person: a thin glowing shell over the hand and forearm, wisps flowing off the fist, and a burst in the same color when the Strike lands. A player's Malice color is their Innate Technique's (`InnateTechnique.maliceColor`), so a new one gets it by itself; `MeleeTell.bright` draws the same hue at full brightness because Innate colors can run dark and a dark glow isn't one.
+- *Shell:* `art/blockbench/fist_shell.bbmodel` (`tools/blockbench/build_fist_shell.py`) exported to `models/fx/fist_shell_regular.obj` and `fist_shell_slim.obj`, drawn from the player model's own arm by `FistTellLayer`, so it follows every animation, either main hand, regular or slim. It fades out toward the elbow. It's a layer because PAL's first-person mode lets only `PlayerItemInHandLayer` subclasses through on the local player; when vanilla's hands are drawn instead, `FistTell.onRenderHand` draws it in the off-hand pass, after the arm, because it writes no depth. Holding an item there, it's a ghost arm where the bare arm would be.
+- *Tint:* one effect, tinted at runtime. Effects are authored white; `PhotonEffects.tint` sets the start color of every emitter named `tint*` on that instance. Effects come in full (wisps), Reduced (fewer) and Vanilla (dust, none in first person); the shell shows at all three. An invisible player shows nothing.
+- *Disguises:* the server sends everyone but the wearer the look of the face they're wearing (`seenByOthers`), and the wearer their own. Nothing in the packet carries the real color. A Severed face shows the physical tell; a face that has gone gets the neutral default color, never the real one. `seenByOthers` is the one place a future deception would hook in.
+- *Severed* have no Malice to show, so theirs is physical and doesn't glow: a strained, darkened forearm (`fist_strain.png`, lit like the skin), steam off the fist (`melee/fist_steam`) readable at 7 blocks day and night, and dust and grit on a landed Strike (`melee/strike_impact_physical`).
+- *Colors of the impacts:* the Strike impact takes the Innate color: it's what was on the fist going off, and gold under an Innate burst reads as two separate effects. The parry stays gold: it's the same cue whoever parried, and pale blue and lavender go thin against the sky.
+- *Information:* the color says which Innate you have before you've cast anything. §1 keeps techniques out of secret identity, so that's allowed, but it's a deliberate exception to silent PvP information, and it's only ever shown after a parry or dodge.
 
 **Severed** trade all their Malice for superhuman abilities, so their melee is stronger than standard, with no costs. `[melee.severed]` has their own numbers: dash 6 blocks every 2.5 s; perfect window 0.3 s; guard 50% off melee and nothing off techniques, held at most 4 s (no Malice to run out of); recovery 0.75 s; Strike +75% with more knockback than standard (0.9 against 0.6). A config file from before these numbers moves to them unless a value was changed by hand (`KegareConfigMigration`, version 3).
 
 **Impact moments** (`MeleeImpact`): `DASH_BURST`, `CLEAN_DODGE`, `PARRY_PERFECT`, `GUARD_HIT`, `STAGGER`, `STRIKE_HIT`, fired on the server tick the effect is applied. Sounds and effects hang off them, and `MeleeImpact.listen` is where the Impact System hooks in. No screen shake, hit-stop or shaders yet.
 
 **Visuals.** Animations: `tools/anims/melee.py` → `player_animations/melee.json` (four dash directions, `parry_guard`, `parry_perfect`, `parry_recovery`, `stagger`, `reinforced_strike`). A reaction's key pose is on its first frames, because the server has already applied the hit when it starts. Raised arms fill the first-person view, so parry and stagger throw arms out and not up.
-Effects (`MeleeFxAuthoring`, `fx/melee/`): dash burst on the ground left behind, afterimages and a wake along the dash, parry spark and guard hit riding the defender's look (a point at the contact is too near both fighters' cameras to draw), with quieter versions on the player's own first-person screen, and Strike impact on the target. The parry's crescent is a Blockbench model, `art/blockbench/parry_arc.bbmodel` (`tools/blockbench/build_parry_arc.py`) exported to `models/fx/parry_arc.obj` and drawn by Photon's Model render mode. The model holds its shape from every side and takes the gold cleanly, where Photon's stock SLASH sprite turns to every camera, keeps a blue edge and whites out the first-person view.
+Effects (`MeleeFxAuthoring`, `fx/melee/`): dash burst on the ground left behind, afterimages and a wake along the dash, parry spark and guard hit riding the defender's look (a point at the contact is too near both fighters' cameras to draw), with quieter versions on the player's own first-person screen, and Strike impact on the target (`strike_impact`, `strike_burst`, tinted). The parry's crescent is a Blockbench model, `art/blockbench/parry_arc.bbmodel` (`tools/blockbench/build_parry_arc.py`) exported to `models/fx/parry_arc.obj` and drawn by Photon's Model render mode. The model holds its shape from every side and takes the gold cleanly, where Photon's stock SLASH sprite turns to every camera, keeps a blue edge and whites out the first-person view.
 
-**Tests:** `MeleeLayerTest` (in-game JUnit), `DoubleTapTest`, `DashMotionTest`, `MeleeAnimationsTest`.
+**Tests:** `MeleeLayerTest`, `MeleeTellTest` (in-game JUnit), `DoubleTapTest`, `DashMotionTest`, `MeleeAnimationsTest`.
 
 ---
 

@@ -17,6 +17,11 @@ made them the first time, by driving a running Blockbench through `cdp.py`; run 
 `string_animations.bbmodel` has its own plain mannequin rig (PAL's bone names and pivots, no skin), so nothing of the
 Emotecraft template is in the repo.
 
+## The fist shell
+
+`art/blockbench/fist_shell.bbmodel` is the ready fist's shell (DESIGN.md §3.22). `build_fist_shell.py` writes the project and both
+OBJs (`models/fx/fist_shell_regular.obj`, `fist_shell_slim.obj`): regular and slim differ only in width. Hand at y=0, faded out by y=6.6 px.
+
 ## Files
 
 - `build_rig.py`: the preview rig, with PAL's bone names and pivots.

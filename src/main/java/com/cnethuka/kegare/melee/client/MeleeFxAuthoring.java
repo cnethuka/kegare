@@ -4,6 +4,7 @@ import static com.cnethuka.kegare.client.visual.FxKit.*;
 
 import com.cnethuka.kegare.Kegare;
 import com.cnethuka.kegare.melee.MeleeIds;
+import com.lowdragmc.lowdraglib2.math.HDRColor;
 import com.lowdragmc.photon.client.fx.FX;
 import com.lowdragmc.photon.client.gameobject.emitter.data.material.kila.KilaMaterial;
 import com.lowdragmc.photon.client.gameobject.emitter.data.material.kila.KilaPresets;
@@ -22,14 +23,14 @@ import net.minecraft.resources.ResourceLocation;
 import org.joml.Vector3f;
 
 /**
- * DEV TOOL ({@code /kegare debug fx export}). The shared melee layer's effects. No technique's colors: they belong to everyone.
- * Dash is air and pale white (Kinetic Manipulation), Parry is white on gold, and a Strike is hot gold going orange (both
- * Reinforcement). All short and small: they say what happened, at a glance, and get out of the way.
+ * DEV TOOL ({@code /kegare debug fx export}). The shared melee layer's effects.
+ * Dash is air and pale white (Kinetic Manipulation), Parry is white on gold (Reinforcement). A ready fist and its Strike are the
+ * exception, authored white and tinted at runtime with the Malice color the server says to show. All short and small: they say what
+ * happened, at a glance, and get out of the way.
  */
 public final class MeleeFxAuthoring {
     private static final int WHITE = 0xFFFFFFFF;
     private static final int AIR = 0xFFD8EAF5;
-    private static final int GOLD = 0xFFFFD24A;
 
     private MeleeFxAuthoring() {}
 
@@ -43,7 +44,12 @@ public final class MeleeFxAuthoring {
         out.put(MeleeIds.FX_GUARD_HIT, MeleeFxAuthoring::guardHit);
         out.put(MeleeIds.FX_GUARD_HIT_SELF, MeleeFxAuthoring::guardHitSelf);
         out.put(MeleeIds.FX_STRIKE_IMPACT, MeleeFxAuthoring::strikeImpact);
-        out.put(MeleeIds.FX_STRIKE_READY, MeleeFxAuthoring::strikeReady);
+        out.put(MeleeIds.FX_STRIKE_BURST, MeleeFxAuthoring::strikeBurst);
+        out.put(MeleeIds.FX_STRIKE_IMPACT_PHYSICAL, MeleeFxAuthoring::strikeImpactPhysical);
+        out.put(MeleeIds.FX_FIST_WISPS, MeleeFxAuthoring::fistWisps);
+        out.put(MeleeIds.FX_FIST_WISPS_SELF, MeleeFxAuthoring::fistWispsSelf);
+        out.put(MeleeIds.FX_FIST_STEAM, MeleeFxAuthoring::fistSteam);
+        out.put(MeleeIds.FX_FIST_STEAM_SELF, MeleeFxAuthoring::fistSteamSelf);
         return out;
     }
 
@@ -211,37 +217,148 @@ public final class MeleeFxAuthoring {
         return fx(self(sparks("sparks", 6, 2f, 4f, 3, 6, 0.012f, 2.5f, 0xFFE8E8E8, 0x00B0B0B0, 0.95f, 0.9f, 0.8f, 1f)));
     }
 
-    /** A Reinforced Strike lands: heavier and slower than a parry, gold going to orange, with a burst of force outward. */
+    /**
+     * A Reinforced Strike lands: heavier and slower than a parry, with a burst of force outward. Authored white with a white core: the
+     * {@code tint} emitters are given the color of the glow that was on the fist.
+     */
     private static FX strikeImpact() {
-        ParticleEmitter shock = single("shock", 7, 2.3f);
+        ParticleEmitter shock = single("tint_shock", 7, 2.3f);
         ParticleConfig s = shock.config;
         s.renderer.setRenderMode(ParticleRendererSetting.Mode.Billboard);
         grow(s, 0.25f);
-        fadeOut(s, 0xC0FFE6A0, 0x00FF9A2E);
-        material(shock, recolor(KilaPresets.SHOCKWAVE.create(), 1f, 0.75f, 0.3f, 1.6f));
-        return fx(flash("flash", 5, 1.9f, 0xFFFFF0C0, 0x00FF9A2E, 1f, 0.72f, 0.28f, 2.2f), shock,
-                sparks("sparks", 34, 4f, 9.5f, 8, 15, 0.065f, 3.5f, GOLD, 0x00FF7A1E, 1f, 0.68f, 0.22f, 2.2f));
+        fadeOut(s, 0xC0FFFFFF, 0x00C0C0C0);
+        material(shock, recolor(KilaPresets.SHOCKWAVE.create(), 1f, 1f, 1f, 1.6f));
+        return fx(flash("tint_flash", 5, 1.9f, 0xFFFFFFFF, 0x00C8C8C8, 1f, 1f, 1f, 2.0f), flash("core", 3, 0.7f, 0xF0FFFFFF, 0x00FFFFFF, 1f, 1f, 1f, 1.6f), shock,
+                sparks("tint_sparks", 34, 4f, 9.5f, 8, 15, 0.065f, 3.5f, WHITE, 0x00C0C0C0, 1f, 1f, 1f, 2.2f));
     }
 
-    /** A Strike is ready: gold motes rising round the feet and shins. Below the first-person view, and easy to spot on someone else. */
-    private static FX strikeReady() {
-        ParticleEmitter motes = emitter("motes", true, 20);
-        ParticleConfig c = motes.config;
+    /** Malice let go on contact, in the color of the glow that was on the fist: heavy streaks thrown out past the impact's own sparks. */
+    private static FX strikeBurst() {
+        ParticleEmitter body = burstEmitter("tint_body", 8, 8);
+        ParticleConfig b = body.config;
+        b.setSimulationSpace(ParticleConfig.Space.World);
+        b.setStartLifetime(range(6, 10));
+        b.setStartSpeed(range(1.2f, 2.8f));
+        b.setStartSize(uniform(range(0.3f, 0.55f)));
+        b.shape.setShape(sphere(0.15f));
+        fadeOut(b, 0xB0FFFFFF, 0x00FFFFFF);
+        KilaMaterial soft = KilaPresets.SMOKE.create();
+        soft.color = new HDRColor(1f, 1f, 1f, 0.9f, 1.2f);
+        soft.worldLight = false;
+        material(body, soft);
+        return fx(body, sparks("tint_streaks", 16, 2.5f, 6f, 6, 11, 0.08f, 5f, WHITE, 0x00D0D0D0, 1f, 1f, 1f, 2.4f));
+    }
+
+    /** A soft, alpha-blended material that takes the world's light: smoke, dust and steam. It doesn't glow. */
+    private static KilaMaterial physical(float r, float g, float b, float a) {
+        KilaMaterial m = KilaPresets.SMOKE.create();
+        m.color = new HDRColor(r, g, b, a, 1f);
+        m.worldLight = true;
+        return m;
+    }
+
+    /** A Severed player's Strike: nothing glows. A burst of dust, with grit thrown out of it. */
+    private static FX strikeImpactPhysical() {
+        ParticleEmitter dust = burstEmitter("dust", 16, 16);
+        ParticleConfig c = dust.config;
         c.setSimulationSpace(ParticleConfig.Space.World);
-        c.setMaxParticles(30);
-        c.setStartLifetime(range(9, 14));
-        c.setStartSpeed(NumberFunction.constant(0f));
-        c.setStartSize(uniform(range(0.06f, 0.11f)));
-        c.emission.setEmissionRate(NumberFunction.constant(3f));
-        Sphere edge = sphere(0.42f);
-        edge.setRadiusThickness(0f);
-        c.shape.setShape(edge);
-        c.shape.setScale(new NumberFunction3(1f, 0f, 1f));
+        c.setStartLifetime(range(10, 18));
+        c.setStartSpeed(range(1.5f, 3.6f));
+        c.setStartSize(uniform(range(0.4f, 0.8f)));
+        c.shape.setShape(sphere(0.2f));
+        c.colorOverLifetime.setEnable(true);
+        c.colorOverLifetime.setColor(gradient(0xC0FFFFFF, 0x80E0E0E0, 0x00C0C0C0));
+        grow(c, 0.4f);
+        material(dust, physical(0.62f, 0.55f, 0.46f, 0.95f));
+        ParticleEmitter grit = burstEmitter("grit", 26, 26);
+        ParticleConfig g = grit.config;
+        g.setSimulationSpace(ParticleConfig.Space.World);
+        g.setStartLifetime(range(8, 15));
+        g.setStartSpeed(range(4f, 9f));
+        g.setStartSize(uniform(range(0.04f, 0.08f)));
+        g.shape.setShape(sphere(0.08f));
+        g.renderer.setRenderMode(ParticleRendererSetting.Mode.StretchedBillboard);
+        g.renderer.setLengthScale(2.5f);
+        fadeOut(g, 0xFFFFFFFF, 0x00FFFFFF);
+        material(grit, physical(0.24f, 0.2f, 0.17f, 1f));
+        return fx(dust, grit);
+    }
+
+    /** Thin streaks coming off the fist and up, authored white for the runtime tint. */
+    private static ParticleEmitter wisps(String name, float rate, int max, float sizeMin, float sizeMax, float radius, float intensity) {
+        ParticleEmitter e = emitter(name, true, 20);
+        ParticleConfig c = e.config;
+        c.setSimulationSpace(ParticleConfig.Space.World);
+        c.setMaxParticles(max);
+        c.setStartLifetime(range(6, 10));
+        c.setStartSpeed(range(0.2f, 0.55f));
+        c.setStartSize(uniform(range(sizeMin, sizeMax)));
+        c.emission.setEmissionRate(NumberFunction.constant(rate));
+        c.shape.setShape(sphere(radius));
         c.velocityOverLifetime.setEnable(true);
-        c.velocityOverLifetime.setLinear(new NumberFunction3(0, 1.3f, 0));
-        fadeInOut(c, GOLD, 0x00FF9A2E);
-        material(motes, glow(1f, 0.76f, 0.3f, 1.8f));
-        motes.transform().localPosition(new Vector3f(0, 0.1f, 0));
-        return fx(groundRing("ring", 8, 1.5f, 0xA0FFD24A, 0x00FF9A2E, 1f, 0.8f, 0.35f, 1.3f), motes);
+        c.velocityOverLifetime.setLinear(new NumberFunction3(0, 0.8f, 0));
+        c.renderer.setRenderMode(ParticleRendererSetting.Mode.StretchedBillboard);
+        c.renderer.setLengthScale(6f);
+        fadeInOut(c, WHITE, 0x00D0D0D0);
+        material(e, glow(1f, 1f, 1f, intensity));
+        return e;
+    }
+
+    /** A little soft body behind the streaks, alpha-blended: additive light alone washes out against a bright sky. */
+    private static ParticleEmitter wispBody(String name, float rate, int max, float size, float radius) {
+        ParticleEmitter e = emitter(name, true, 20);
+        ParticleConfig c = e.config;
+        c.setSimulationSpace(ParticleConfig.Space.World);
+        c.setMaxParticles(max);
+        c.setStartLifetime(range(6, 10));
+        c.setStartSpeed(NumberFunction.constant(0.1f));
+        c.setStartSize(uniform(range(size * 0.6f, size)));
+        c.emission.setEmissionRate(NumberFunction.constant(rate));
+        c.shape.setShape(sphere(radius));
+        c.velocityOverLifetime.setEnable(true);
+        c.velocityOverLifetime.setLinear(new NumberFunction3(0, 0.55f, 0));
+        fadeInOut(c, 0xA0FFFFFF, 0x00FFFFFF);
+        KilaMaterial m = KilaPresets.SMOKE.create();
+        m.color = new HDRColor(1f, 1f, 1f, 0.9f, 1.2f);
+        m.worldLight = false;
+        material(e, m);
+        return e;
+    }
+
+    /** A Strike is ready: Malice flowing off the fist. On someone else, it's what you read from across a fight. */
+    private static FX fistWisps() {
+        return fx(wispBody("tint_body", 1f, 12, 0.22f, 0.1f), wisps("tint_wisps", 2.2f, 26, 0.022f, 0.045f, 0.14f, 2.1f));
+    }
+
+    /** The same on your own fist in first person: right by the camera, so a few thin ones. */
+    private static FX fistWispsSelf() {
+        return fx(wisps("tint_wisps", 0.8f, 10, 0.008f, 0.016f, 0.07f, 1.6f));
+    }
+
+    private static ParticleEmitter steam(String name, float rate, int max, float sizeMin, float sizeMax, float radius, int peak) {
+        ParticleEmitter e = emitter(name, true, 20);
+        ParticleConfig c = e.config;
+        c.setSimulationSpace(ParticleConfig.Space.World);
+        c.setMaxParticles(max);
+        c.setStartLifetime(range(9, 15));
+        c.setStartSpeed(NumberFunction.constant(0.15f));
+        c.setStartSize(uniform(range(sizeMin, sizeMax)));
+        c.emission.setEmissionRate(NumberFunction.constant(rate));
+        c.shape.setShape(sphere(radius));
+        c.velocityOverLifetime.setEnable(true);
+        c.velocityOverLifetime.setLinear(new NumberFunction3(0, 1f, 0));
+        fadeInOut(c, peak, 0x00FFFFFF);
+        grow(c, 0.45f);
+        material(e, physical(0.93f, 0.93f, 0.91f, 0.95f));
+        return e;
+    }
+
+    /** A Severed player's ready fist: no Malice, so no glow. Steam off an overworked arm, which reads from across a fight and goes dark at night like anything else. */
+    private static FX fistSteam() {
+        return fx(steam("steam", 1.5f, 30, 0.26f, 0.5f, 0.1f, 0xB0FFFFFF));
+    }
+
+    private static FX fistSteamSelf() {
+        return fx(steam("steam", 0.5f, 10, 0.07f, 0.13f, 0.06f, 0x50FFFFFF));
     }
 }

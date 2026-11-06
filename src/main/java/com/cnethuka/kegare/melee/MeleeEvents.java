@@ -84,7 +84,13 @@ public final class MeleeEvents {
         if (event.getEntity() instanceof ServerPlayer player) {
             PacketDistributor.sendToPlayer(player, MeleeHudPayload.NONE);
             PacketDistributor.sendToPlayer(player, MeleeDashPayload.STOP);
+            PacketDistributor.sendToPlayer(player, new MeleeTellPayload(player.getId(), MeleeTell.Look.NONE));
         }
+    }
+
+    @SubscribeEvent
+    static void onStartTracking(PlayerEvent.StartTracking event) {
+        if (event.getEntity() instanceof ServerPlayer tracker) MeleeTell.onStartTracking(tracker, event.getTarget());
     }
 
     @SubscribeEvent

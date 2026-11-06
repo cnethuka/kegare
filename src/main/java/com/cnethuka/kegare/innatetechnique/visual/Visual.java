@@ -10,12 +10,22 @@ import net.minecraft.resources.ResourceLocation;
  *
  * @param anchor where an entity-attached effect sits on its entity
  * @param linger loops only: fade out instead of vanishing when stopped (see {@link #lingering})
+ * @param tint   ARGB multiplied over the effect's emitters whose names start with {@code tint}, or 0 for the effect as it was authored
  */
-public record Visual(Optional<ResourceLocation> animation, Optional<ResourceLocation> effect, Anchor anchor, boolean linger) {
+public record Visual(Optional<ResourceLocation> animation, Optional<ResourceLocation> effect, Anchor anchor, boolean linger, int tint) {
     public static final Visual NONE = new Visual(Optional.empty(), Optional.empty(), Anchor.EYES);
 
     public Visual(Optional<ResourceLocation> animation, Optional<ResourceLocation> effect, Anchor anchor) {
-        this(animation, effect, anchor, false);
+        this(animation, effect, anchor, false, 0);
+    }
+
+    public Visual(Optional<ResourceLocation> animation, Optional<ResourceLocation> effect, Anchor anchor, boolean linger) {
+        this(animation, effect, anchor, linger, 0);
+    }
+
+    /** The same effect in another color: one effect, authored white, for every Innate Technique's color. */
+    public Visual tinted(int argb) {
+        return new Visual(animation, effect, anchor, linger, argb);
     }
 
     /** Where the effect's origin is on the entity, and whether it turns with the entity's look. */

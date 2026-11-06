@@ -22,6 +22,13 @@ public final class VanillaFallback {
      * @param directional particles fly along the anchor's look direction at {@code speed} (cones, breath)
      */
     public record Spec(ParticleOptions particle, int perTick, int burst, double spread, double speed, boolean directional) {
+        /** The same in a color: dust is the one vanilla particle that takes any. {@code argb} 0 leaves it alone. */
+        Spec tinted(int argb) {
+            if (argb == 0) return this;
+            return new Spec(new net.minecraft.core.particles.DustParticleOptions(new org.joml.Vector3f((argb >> 16 & 0xFF) / 255f, (argb >> 8 & 0xFF) / 255f, (argb & 0xFF) / 255f), 1f),
+                    perTick, burst, spread, speed, directional);
+        }
+
         public Spec(ParticleOptions particle, int perTick, int burst, double spread, double speed) {
             this(particle, perTick, burst, spread, speed, false);
         }

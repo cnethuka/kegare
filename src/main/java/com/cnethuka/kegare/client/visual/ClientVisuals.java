@@ -82,8 +82,9 @@ public final class ClientVisuals {
             VfxQuality quality = KegareClientConfig.VFX_QUALITY.get();
             FXEffectExecutor executor = quality == VfxQuality.VANILLA ? null
                     : PhotonEffects.onEntity(effect, entity, visual.anchor(), quality == VfxQuality.REDUCED, false);
+            PhotonEffects.tint(executor, visual.tint());
             if (executor == null) {
-                VanillaFallback.Spec spec = VanillaFallback.spec(effect);
+                VanillaFallback.Spec spec = VanillaFallback.spec(effect).tinted(visual.tint());
                 VanillaFallback.spawn(entity.level(), anchorPos(entity, visual.anchor()), entity.getLookAngle(), spec, spec.burst());
             }
         });
@@ -106,6 +107,7 @@ public final class ClientVisuals {
             VfxQuality quality = KegareClientConfig.VFX_QUALITY.get();
             if (quality != VfxQuality.VANILLA) {
                 executor = PhotonEffects.onEntity(visual.effect().get(), entity, visual.anchor(), quality == VfxQuality.REDUCED, !trail);
+                PhotonEffects.tint(executor, visual.tint());
                 if (growTicks > 0) PhotonEffects.scale(executor, GROW_FROM);
                 if (lifetimeTicks > 0) PhotonEffects.persistLifetime(executor, lifetimeTicks);
             }
@@ -159,8 +161,9 @@ public final class ClientVisuals {
             if (nearFirstPersonCamera(pos, NEAR_CAMERA_OVERRIDES.getOrDefault(effect, NEAR_CAMERA))) return;
             FXEffectExecutor executor = quality == VfxQuality.VANILLA ? null
                     : PhotonEffects.at(effect, level, pos, quality == VfxQuality.REDUCED);
+            PhotonEffects.tint(executor, visual.tint());
             if (executor == null) {
-                VanillaFallback.Spec spec = VanillaFallback.spec(effect);
+                VanillaFallback.Spec spec = VanillaFallback.spec(effect).tinted(visual.tint());
                 VanillaFallback.spawn(level, pos, new Vec3(0, 1, 0), spec, spec.burst());
             }
         });
@@ -195,6 +198,11 @@ public final class ClientVisuals {
 
         public void scale(float scale) {
             PhotonEffects.scale(executor, scale);
+        }
+
+        /** Its {@code tint...} emitters in this color, for what they emit from now on. */
+        public void tint(int argb) {
+            PhotonEffects.tint(executor, argb);
         }
 
         /** @param immediately remove what is visible now; otherwise it fades out over its particles' lifetimes */

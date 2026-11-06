@@ -63,6 +63,12 @@ public final class VisualService {
         send(entity, new VisualPayload(VisualPayload.Action.PLAY_ONCE, entity.getId(), "", visual, Vec3.ZERO, 0));
     }
 
+    /** One moment that looks different to the player it's on than to everyone else (see {@code MeleeTell}). */
+    public static void playOnce(ServerPlayer owner, Visual own, Visual others) {
+        PacketDistributor.sendToPlayer(owner, new VisualPayload(VisualPayload.Action.PLAY_ONCE, owner.getId(), "", own, Vec3.ZERO, 0));
+        PacketDistributor.sendToPlayersTrackingEntity(owner, new VisualPayload(VisualPayload.Action.PLAY_ONCE, owner.getId(), "", others, Vec3.ZERO, 0));
+    }
+
     public static void startLoop(Entity entity, String key, Visual visual, int growTicks) {
         startLoop(entity, key, visual, growTicks, 0);
     }
@@ -90,6 +96,14 @@ public final class VisualService {
         if (visual.isEmpty()) return;
         PacketDistributor.sendToPlayersNear(level, null, pos.x, pos.y, pos.z, POSITION_RANGE,
                 new VisualPayload(VisualPayload.Action.PLAY_AT, -1, "", visual, pos, 0));
+    }
+
+    /** An effect at a position that looks different to {@code owner} than to everyone else in range. */
+    public static void playAt(ServerLevel level, Vec3 pos, ServerPlayer owner, Visual own, Visual others) {
+        if (!others.isEmpty()) PacketDistributor.sendToPlayersNear(level, owner, pos.x, pos.y, pos.z, POSITION_RANGE, new VisualPayload(VisualPayload.Action.PLAY_AT, -1, "", others, pos, 0));
+        if (!own.isEmpty() && owner.level() == level && owner.position().closerThan(pos, POSITION_RANGE)) {
+            PacketDistributor.sendToPlayer(owner, new VisualPayload(VisualPayload.Action.PLAY_AT, -1, "", own, pos, 0));
+        }
     }
 
     /** A player started tracking {@code target}: send them its running loops (they missed the starts). */

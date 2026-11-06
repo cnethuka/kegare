@@ -32,7 +32,12 @@ public final class MeleeLayer {
         VisualHooks.registerEffect(MeleeIds.FX_GUARD_HIT);
         VisualHooks.registerEffect(MeleeIds.FX_GUARD_HIT_SELF);
         VisualHooks.registerEffect(MeleeIds.FX_STRIKE_IMPACT);
-        VisualHooks.registerEffect(MeleeIds.FX_STRIKE_READY);
+        VisualHooks.registerEffect(MeleeIds.FX_STRIKE_BURST);
+        VisualHooks.registerEffect(MeleeIds.FX_STRIKE_IMPACT_PHYSICAL);
+        VisualHooks.registerEffect(MeleeIds.FX_FIST_WISPS);
+        VisualHooks.registerEffect(MeleeIds.FX_FIST_WISPS_SELF);
+        VisualHooks.registerEffect(MeleeIds.FX_FIST_STEAM);
+        VisualHooks.registerEffect(MeleeIds.FX_FIST_STEAM_SELF);
     }
 
     public static MeleeState state(ServerPlayer player) {
@@ -59,7 +64,7 @@ public final class MeleeLayer {
         state.guarding = false;
         state.strikeUntil = 0;
         VisualService.stopLoop(player, MeleeIds.GUARD_LOOP);
-        VisualService.stopLoop(player, MeleeIds.STRIKE_LOOP);
+        MeleeTell.sync(player, state, false);
         syncHud(player);
     }
 

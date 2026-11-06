@@ -25,10 +25,18 @@ public final class MeleeIds {
     public static final ResourceLocation FX_GUARD_HIT = Kegare.id("melee/guard_hit");
     public static final ResourceLocation FX_GUARD_HIT_SELF = Kegare.id("melee/guard_hit_self");
     public static final ResourceLocation FX_STRIKE_IMPACT = Kegare.id("melee/strike_impact");
-    public static final ResourceLocation FX_STRIKE_READY = Kegare.id("melee/strike_ready");
+    /** Malice let go when a Strike lands, in the glow's color, on top of the impact. */
+    public static final ResourceLocation FX_STRIKE_BURST = Kegare.id("melee/strike_burst");
+    /** A Severed player's Strike: dust and grit, no glow. */
+    public static final ResourceLocation FX_STRIKE_IMPACT_PHYSICAL = Kegare.id("melee/strike_impact_physical");
+    /** While a Strike is ready: Malice flowing off the fist, tinted with the color it's showing. */
+    public static final ResourceLocation FX_FIST_WISPS = Kegare.id("melee/fist_wisps");
+    public static final ResourceLocation FX_FIST_WISPS_SELF = Kegare.id("melee/fist_wisps_self");
+    /** The same for a Severed player: steam coming off the fist. It doesn't glow. */
+    public static final ResourceLocation FX_FIST_STEAM = Kegare.id("melee/fist_steam");
+    public static final ResourceLocation FX_FIST_STEAM_SELF = Kegare.id("melee/fist_steam_self");
 
     static final String GUARD_LOOP = "kegare:melee_guard";
-    static final String STRIKE_LOOP = "kegare:melee_strike_ready";
     /** The perfect-parry reaction's length: the guard pose comes back after it if they're still holding. */
     public static final int PARRY_PERFECT_TICKS = 9;
 

@@ -10,6 +10,7 @@ import com.lowdragmc.photon.client.fx.FXHelper;
 import com.lowdragmc.photon.client.fx.FXRuntime;
 import com.lowdragmc.photon.client.gameobject.IFXObject;
 import com.lowdragmc.photon.client.gameobject.emitter.data.number.Constant;
+import com.lowdragmc.photon.client.gameobject.emitter.data.number.color.Color;
 import com.lowdragmc.photon.client.gameobject.emitter.particle.ParticleEmitter;
 import java.util.Collection;
 import java.util.Set;
@@ -175,6 +176,24 @@ final class PhotonEffects {
             if (executor != null && executor.getRuntime() != null) executor.getRuntime().getRoot().updateScale(new Vector3f(scale));
         } catch (Throwable t) {
             Kegare.LOGGER.debug("Couldn't scale a Photon effect", t);
+        }
+    }
+
+    /**
+     * The same effect in another color: {@code argb} multiplied over every emitter named {@code tint...}, on this copy of it alone. Authored
+     * white, they come out exactly that color, so one effect does for every Innate Technique. Photon reads it as each particle is born.
+     */
+    static void tint(@Nullable FXEffectExecutor executor, int argb) {
+        if (argb == 0) return;
+        try {
+            if (executor == null || executor.getRuntime() == null) return;
+            for (IFXObject object : executor.getRuntime().getObjects().values()) {
+                if (object instanceof ParticleEmitter emitter && emitter.getName() != null && emitter.getName().startsWith("tint")) {
+                    emitter.runtime().startColor.set(new Color(argb));
+                }
+            }
+        } catch (Throwable t) {
+            Kegare.LOGGER.debug("Couldn't tint a Photon effect", t);
         }
     }
 

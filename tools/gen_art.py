@@ -2130,6 +2130,48 @@ def puppet_glow() -> "Image.Image":
     return img
 
 
+def fist_shell() -> "Image.Image":
+    """A ready fist's Malice shell (entity texture, tinted with the Malice color, scrolling along the arm): streaks running up the
+    arm over a faint constant body, white with the strength in alpha, wrapping seamlessly both ways."""
+    size = 64
+    img = Image.new("RGBA", (size, size), (255, 255, 255, 0))
+    tau = 2 * math.pi
+    for y in range(size):
+        for x in range(size):
+            v = 0.0
+            # whole periods across the tile, so it wraps round the arm and along it
+            for fx, wobble, phase, power, strength in ((3, 0.9, 0.0, 7, 1.0), (5, 0.6, 1.9, 9, 0.85), (8, 0.4, 4.1, 12, 0.6)):
+                wob = wobble * math.sin(tau * y / size + phase) + 0.35 * wobble * math.sin(2 * tau * y / size + phase * 2)
+                s = 0.5 + 0.5 * math.sin(tau * fx * x / size + wob)
+                gap = 0.55 + 0.45 * math.sin(tau * (y / size * 2 + phase) + 1.3 * math.sin(tau * x / size * fx))
+                v = max(v, strength * s ** power * gap)
+            a = 0.3 + 0.7 * min(1.0, v * 1.4)
+            img.putpixel((x, y), (255, 255, 255, int(255 * a)))
+    return img
+
+
+def fist_strain() -> "Image.Image":
+    """A Severed player's ready fist (entity texture, lit by the world, never glowing): a forearm under strain. Dark, bruised skin
+    with veins standing out, wrapping seamlessly both ways."""
+    size = 64
+    img = Image.new("RGBA", (size, size), (0, 0, 0, 0))
+    tau = 2 * math.pi
+    layers = noise_stack(seed=907, px=size, py=size, cells=(8, 4))
+    for y in range(size):
+        for x in range(size):
+            vein = 0.0
+            for fx, wobble, phase, width in ((2, 2.4, 0.4, 0.09), (3, 1.8, 2.3, 0.07), (5, 1.2, 4.4, 0.05)):
+                wob = wobble * math.sin(tau * y / size + phase) + 0.5 * wobble * math.sin(3 * tau * y / size + phase * 1.7)
+                s = abs(math.sin(math.pi * fx * x / size + wob * 0.5))
+                vein = max(vein, max(0.0, 1.0 - s / width))
+            mottle = fbm(layers, x, y)
+            base = (54 + int(26 * mottle), 26 + int(14 * mottle), 28 + int(14 * mottle))
+            high = (20, 8, 12)
+            r, g, b = (int(base[i] + (high[i] - base[i]) * vein) for i in range(3))
+            img.putpixel((x, y), (r, g, b, int(255 * (0.62 + 0.38 * vein))))
+    return img
+
+
 def main() -> None:
     sprites = build()
     borders = {"panel": 12,
@@ -2157,6 +2199,8 @@ def main() -> None:
     save(icon(ICON_GLACIAL_LANCE, ICE), "item/glacial_lance.png")
     save(swap_anchor_item(), "item/swap_anchor.png")
     save(puppet_glow(), "entity/puppet_glow.png")
+    save(fist_shell(), "entity/fist_shell.png")
+    save(fist_strain(), "entity/fist_strain.png")
     save(string_braid(), "item/string_braid.png")
     for kind in ("follow", "stay", "guard", "go"):
         save(order_glyph(kind), f"gui/puppet_order/{kind}.png")

@@ -6,6 +6,7 @@ import com.cnethuka.kegare.innatetechnique.visual.VisualService;
 import com.cnethuka.kegare.malice.MaliceService;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.phys.Vec3;
 
 /**
  * Reinforcement, spent: no key and no slot. A perfect parry or a clean dodge readies it, and the next melee hit in time lands
@@ -16,10 +17,9 @@ public final class ReinforcedStrike {
 
     static void earn(ServerPlayer player, MeleeState state) {
         MeleeNumbers numbers = MeleeNumbers.of(player);
-        boolean wasReady = isReady(player, state);
         state.strikeUntil = player.level().getGameTime() + numbers.strikeTicks();
         state.strikeTicks = numbers.strikeTicks();
-        if (!wasReady) VisualService.startLoop(player, MeleeIds.STRIKE_LOOP, Visual.effect(MeleeIds.FX_STRIKE_READY, Visual.Anchor.FEET), 0);
+        MeleeTell.sync(player, state, true);
         MeleeLayer.syncHud(player);
     }
 
@@ -32,13 +32,15 @@ public final class ReinforcedStrike {
     }
 
     static void tick(ServerPlayer player, MeleeState state) {
-        if (state.strikeUntil > 0 && !isReady(player, state)) clear(player, state);
+        if (state.strikeUntil == 0) return;
+        if (isReady(player, state)) MeleeTell.sync(player, state, true); // a disguise can begin or end while it's ready
+        else clear(player, state);
     }
 
     static void clear(ServerPlayer player, MeleeState state) {
         if (state.strikeUntil == 0) return;
         state.strikeUntil = 0;
-        VisualService.stopLoop(player, MeleeIds.STRIKE_LOOP);
+        MeleeTell.sync(player, state, false);
         MeleeLayer.syncHud(player);
     }
 
@@ -57,7 +59,9 @@ public final class ReinforcedStrike {
             target.hurtMarked = true;
         }
         VisualService.playOnce(attacker, Visual.animation(MeleeIds.ANIM_REINFORCED_STRIKE));
-        MeleeImpact.STRIKE_HIT.fire(attacker.serverLevel(), target.position().add(0, target.getBbHeight() * 0.6, 0), target);
+        Vec3 at = target.position().add(0, target.getBbHeight() * 0.6, 0);
+        MeleeTell.playStrikeImpact(attacker, at);
+        MeleeImpact.STRIKE_HIT.fire(attacker.serverLevel(), at, target);
         return damage * (float) (1.0 + numbers.strikeBonus());
     }
 }

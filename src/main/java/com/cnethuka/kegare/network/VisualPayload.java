@@ -59,6 +59,7 @@ public record VisualPayload(Action action, int entityId, String key, Visual visu
         buf.writeOptional(visual.effect(), FriendlyByteBuf::writeResourceLocation);
         buf.writeEnum(visual.anchor());
         buf.writeBoolean(visual.linger());
+        buf.writeInt(visual.tint());
         buf.writeDouble(pos.x);
         buf.writeDouble(pos.y);
         buf.writeDouble(pos.z);
@@ -74,8 +75,9 @@ public record VisualPayload(Action action, int entityId, String key, Visual visu
         Optional<ResourceLocation> effect = buf.readOptional(FriendlyByteBuf::readResourceLocation);
         Visual.Anchor anchor = buf.readEnum(Visual.Anchor.class);
         boolean linger = buf.readBoolean();
+        int tint = buf.readInt();
         Vec3 pos = new Vec3(buf.readDouble(), buf.readDouble(), buf.readDouble());
-        return new VisualPayload(action, entityId, key, new Visual(animation, effect, anchor, linger), pos, buf.readVarInt(), buf.readVarInt());
+        return new VisualPayload(action, entityId, key, new Visual(animation, effect, anchor, linger, tint), pos, buf.readVarInt(), buf.readVarInt());
     }
 
     @Override

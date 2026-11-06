@@ -28,7 +28,7 @@ public enum MeleeImpact {
     GUARD_HIT(SoundEvents.SHIELD_BLOCK, 0.8f, 1.2f),
     /** An attacker was staggered. */
     STAGGER(SoundEvents.ANVIL_LAND, 0.25f, 1.9f),
-    /** A Reinforced Strike landed: {@code at} is the target. */
+    /** A Reinforced Strike landed: {@code at} is the target, {@code who} too. Its effect depends on who's looking, so {@link MeleeTell} plays it. */
     STRIKE_HIT(SoundEvents.PLAYER_ATTACK_CRIT, 1.3f, 0.65f);
 
     @FunctionalInterface
@@ -61,9 +61,9 @@ public enum MeleeImpact {
         switch (this) {
             case DASH_BURST -> VisualService.playAt(level, at, Visual.effect(MeleeIds.FX_DASH_BURST, Visual.Anchor.FEET));
             // Ride the defender's guard, not a point in the world: the point is too near both fighters' cameras to be drawn.
+            // Gold for everyone, tried against the Innate color: it's the same cue whoever parried, and blue or lavender went thin against the sky.
             case PARRY_PERFECT -> VisualService.playOnce(who, Visual.effect(MeleeIds.FX_PARRY_SPARK, Visual.Anchor.EYES));
             case GUARD_HIT -> VisualService.playOnce(who, Visual.effect(MeleeIds.FX_GUARD_HIT, Visual.Anchor.EYES));
-            case STRIKE_HIT -> VisualService.playAt(level, at, Visual.effect(MeleeIds.FX_STRIKE_IMPACT, Visual.Anchor.BODY));
             default -> { }
         }
         LISTENERS.forEach(listener -> listener.onImpact(this, level, at, who));

@@ -23,6 +23,9 @@ public final class MeleeState {
     // Reinforced Strike
     long strikeUntil;
     int strikeTicks;
+    // What the tell last looked like, to the player themself and to everyone else
+    MeleeTell.Look tellOwn = MeleeTell.Look.NONE;
+    MeleeTell.Look tellOthers = MeleeTell.Look.NONE;
     // What the owner's HUD last showed
     @Nullable MeleeHudPayload sent;
 
