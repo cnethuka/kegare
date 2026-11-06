@@ -94,7 +94,9 @@ public final class ProgressionEvents {
 
     @SubscribeEvent
     static void onServerTick(ServerTickEvent.Post event) {
-        if (event.getServer().overworld() != null) FightTracker.tick(event.getServer());
+        if (event.getServer().overworld() == null) return; // no worlds loaded (e.g. the in-game JUnit test server)
+        FightTracker.tick(event.getServer());
+        TechniqueUnlocks.watchConfig(event.getServer());
     }
 
     @SubscribeEvent

@@ -1,8 +1,11 @@
 package com.cnethuka.kegare.innatetechnique;
 
+import com.cnethuka.kegare.progression.UnlockTable;
 import com.cnethuka.kegare.registry.KegareRegistries;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import javax.annotation.Nullable;
 import net.minecraft.Util;
@@ -32,6 +35,10 @@ public class InnateTechnique {
     private final int maliceColor;
     @Nullable
     private final ResourceLocation signatureAnimation;
+    private final boolean defaultUnlockLevels;
+    private final Map<ResourceLocation, Integer> unlockLevelOverrides;
+    @Nullable
+    private Map<ResourceLocation, Integer> unlockLevels;
 
     protected InnateTechnique(Builder builder) {
         if (builder.abilities.isEmpty()) throw new IllegalArgumentException("An innate technique needs at least one ability");
@@ -43,6 +50,8 @@ public class InnateTechnique {
         this.ultimateLocked = builder.ultimate == null && builder.ultimateLocked;
         this.maliceColor = builder.maliceColor & 0xFFFFFF;
         this.signatureAnimation = builder.signatureAnimation;
+        this.defaultUnlockLevels = builder.defaultUnlockLevels;
+        this.unlockLevelOverrides = Map.copyOf(builder.unlockLevelOverrides);
     }
 
     public static Builder builder(InnateTechniqueRarity rarity) {
@@ -113,6 +122,34 @@ public class InnateTechnique {
         return out;
     }
 
+    /** Whether this technique says what its abilities unlock at. Datagen fails if a non-test technique doesn't. */
+    public final boolean hasUnlockLevels() {
+        return testContent || defaultUnlockLevels || !unlockLevelOverrides.isEmpty();
+    }
+
+    /**
+     * The Refinement level that unlocks this ability, special or ultimate, as the definition has it (config can override
+     * it: {@link com.cnethuka.kegare.progression.TechniqueUnlocks#requiredLevel}). Test content is all unlocked.
+     */
+    public final int unlockLevel(Ability ability) {
+        if (testContent) return 0;
+        if (unlockLevels == null) {
+            Map<ResourceLocation, Integer> levels = new HashMap<>();
+            for (int i = 0; i < abilities.size(); i++) {
+                levels.put(abilities.get(i).id(), UnlockTable.ability(i));
+                int index = i;
+                abilities.get(i).special().ifPresent(s -> levels.put(s.id(), UnlockTable.special(index)));
+            }
+            if (ultimate != null) {
+                levels.put(ultimate.id(), UnlockTable.ULTIMATE);
+                ultimate.special().ifPresent(s -> levels.put(s.id(), UnlockTable.ULTIMATE));
+            }
+            levels.putAll(unlockLevelOverrides);
+            unlockLevels = levels;
+        }
+        return unlockLevels.getOrDefault(ability.id(), 0);
+    }
+
     /** Test/placeholder content; excluded from rolls when {@code roll.includeTestInnateTechniques=false}. */
     public final boolean isTestContent() {
         return testContent;
@@ -162,6 +199,8 @@ public class InnateTechnique {
         private int maliceColor = DEFAULT_MALICE_COLOR;
         @Nullable
         private ResourceLocation signatureAnimation;
+        private boolean defaultUnlockLevels;
+        private final Map<ResourceLocation, Integer> unlockLevelOverrides = new HashMap<>();
 
         private Builder(InnateTechniqueRarity rarity) {
             this.rarity = rarity;
@@ -198,6 +237,18 @@ public class InnateTechnique {
         /** The player animation (an ID in {@code player_animations/}) the roll reveal plays on the player model. Default: none, a still model. */
         public Builder signatureAnimation(ResourceLocation animation) {
             this.signatureAnimation = animation;
+            return this;
+        }
+
+        /** Refinement unlocks follow {@link UnlockTable}, by the order the abilities were added. Every real technique sets this or {@link #unlockLevel}. */
+        public Builder defaultUnlockLevels() {
+            this.defaultUnlockLevels = true;
+            return this;
+        }
+
+        /** One ability, special or ultimate unlocks at this Refinement level instead of where the table puts it. */
+        public Builder unlockLevel(Ability ability, int level) {
+            this.unlockLevelOverrides.put(ability.id(), level);
             return this;
         }
 

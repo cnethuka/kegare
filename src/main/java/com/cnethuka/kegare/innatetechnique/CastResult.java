@@ -21,6 +21,8 @@ public enum CastResult {
     BLOCKED("message.kegare.cast.blocked"),
     /** A {@link Requirement} is unmet (e.g. a special needs a trait or an active toggle): fizzles, costs nothing. */
     REQUIREMENT_UNMET("message.kegare.cast.requirement"),
+    /** Not unlocked yet: fizzles, costs nothing, no cooldown. */
+    REFINEMENT_LOCKED("message.kegare.cast.refinement_locked"),
     CHARGE_TOO_SHORT("message.kegare.cast.charge_too_short");
 
     private final String translationKey;

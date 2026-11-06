@@ -102,6 +102,7 @@ public final class CastManager {
     /** Shared checks. Every innate technique (base casts and specials alike) goes through these. */
     public static CastResult validate(ServerPlayer player, AbilityContext ctx) {
         Ability ability = ctx.ability();
+        if (!com.cnethuka.kegare.progression.TechniqueUnlocks.isUnlocked(player, ability)) return CastResult.REFINEMENT_LOCKED;
         if (state(player).casting != null) return CastResult.BUSY;
         if (CombatHelper.isStunned(player)) return CastResult.STUNNED;
         if (InnateTechniqueService.cooldownRemaining(player, ability) > 0) return CastResult.ON_COOLDOWN;
@@ -457,6 +458,8 @@ public final class CastManager {
             case BLOCKED -> ability != null ? ability.blockedMessage(player) : Component.translatable(result.translationKey(), name);
             case REQUIREMENT_UNMET -> Component.translatable(result.translationKey(), name,
                     ability == null ? Component.empty() : unmetRequirement(player, ability).map(Requirement::description).orElse(Component.empty()));
+            case REFINEMENT_LOCKED -> Component.translatable(result.translationKey(),
+                    ability == null ? 0 : com.cnethuka.kegare.progression.TechniqueUnlocks.requiredLevel(player, ability));
             default -> Component.translatable(result.translationKey(), name);
         };
         player.displayClientMessage(message, true);

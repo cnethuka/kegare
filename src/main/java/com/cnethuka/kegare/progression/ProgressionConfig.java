@@ -1,9 +1,18 @@
 package com.cnethuka.kegare.progression;
 
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.OptionalInt;
+import net.minecraft.resources.ResourceLocation;
 import net.neoforged.neoforge.common.ModConfigSpec;
 
 /** Every progression number: section {@code [progression]} of {@code kegare-server.toml}. Times are in seconds. */
 public final class ProgressionConfig {
+    public static ModConfigSpec.BooleanValue REQUIRE_REFINEMENT;
+    public static ModConfigSpec.ConfigValue<List<? extends String>> UNLOCK_OVERRIDES;
+    private static List<? extends String> parsedFrom;
+    private static Map<ResourceLocation, Integer> parsedOverrides = Map.of();
     // Fights
     public static ModConfigSpec.DoubleValue FIGHT_TIMEOUT;
     public static ModConfigSpec.DoubleValue WIN_SHARE;
@@ -73,6 +82,9 @@ public final class ProgressionConfig {
     /** Called from KegareServerConfig while it builds the spec. */
     public static void define(ModConfigSpec.Builder b) {
         b.comment("Grade, Assessment, Refinement and Insight. None of this changes damage, costs or Malice capacity.").push("progression");
+        REQUIRE_REFINEMENT = b.comment("Abilities, specials and ultimates of an innate technique unlock through Refinement. False: everything is",
+                        "unlocked, for testing and casual servers. Refinement is still earned, and shared abilities keep their own rules.")
+                .define("requireRefinementForAbilities", true);
 
         b.comment("Shared fight tracking. A fight is between two players, and everything below reads from it.").push("fights");
         FIGHT_TIMEOUT = b.comment("A fight ends after this long with no damage between the two players (or on a death or a logout).")
@@ -172,6 +184,9 @@ public final class ProgressionConfig {
                         "12 minutes into fighting mobs, or 4 fighting players, and level 9 (the full kit) several sessions in.")
                 .defineInRange("xpBase", 30.0, 0.01, 1_000_000.0);
         REFINEMENT_XP_EXPONENT = b.defineInRange("xpExponent", 1.6, 0.0, 10.0);
+        UNLOCK_OVERRIDES = b.comment("Overrides the level an ability, special or ultimate unlocks at, as ability=level.",
+                        "Example: [\"kegare:frost_field=1\", \"kegare:total_swap=5\"]")
+                .defineListAllowEmpty("unlockLevelOverrides", List.of(), () -> "kegare:ability=0", ProgressionConfig::validOverride);
         REFINEMENT_BASE_XP = b.comment("XP for landing a base ability or the ultimate.").defineInRange("baseXp", 1.0, 0.0, 10_000.0);
         REFINEMENT_SPECIAL_XP = b.comment("XP for landing a special.").defineInRange("specialXp", 2.5, 0.0, 10_000.0);
         REFINEMENT_PLAYER_MULTIPLIER = b.comment("Hits on players count this many times a hit on a mob. Mobs still count, so a player can practice alone.")
@@ -197,6 +212,38 @@ public final class ProgressionConfig {
         b.pop();
 
         b.pop();
+    }
+
+    private static boolean validOverride(Object entry) {
+        return entry instanceof String s && parseOverride(s) != null;
+    }
+
+    private static Map.Entry<ResourceLocation, Integer> parseOverride(String entry) {
+        int split = entry.lastIndexOf('=');
+        if (split <= 0) return null;
+        ResourceLocation id = ResourceLocation.tryParse(entry.substring(0, split).trim());
+        if (id == null) return null;
+        try {
+            return Map.entry(id, Math.max(0, Integer.parseInt(entry.substring(split + 1).trim())));
+        } catch (NumberFormatException e) {
+            return null;
+        }
+    }
+
+    /** The configured level for this ability, if the server overrides it. Parsed once per config load. */
+    static OptionalInt unlockOverride(ResourceLocation ability) {
+        List<? extends String> current = UNLOCK_OVERRIDES.get();
+        if (current != parsedFrom) {
+            Map<ResourceLocation, Integer> parsed = new HashMap<>();
+            for (String entry : current) {
+                Map.Entry<ResourceLocation, Integer> override = parseOverride(entry);
+                if (override != null) parsed.put(override.getKey(), override.getValue());
+            }
+            parsedOverrides = parsed;
+            parsedFrom = current;
+        }
+        Integer level = parsedOverrides.get(ability);
+        return level == null ? OptionalInt.empty() : OptionalInt.of(level);
     }
 
     private static Gate gate(ModConfigSpec.Builder b, String name, double average, int fights, int opponents, int peak) {

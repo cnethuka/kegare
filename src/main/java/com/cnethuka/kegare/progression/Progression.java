@@ -14,6 +14,7 @@ public final class Progression {
         // Assessment first: a fight is rated against the Grades the two players held while it was on.
         FightTracker.addListener(AssessmentService::onFightEnded);
         FightTracker.addListener(GradeService::onFightEnded);
+        RefinementService.addLevelListener(TechniqueUnlocks::onLevelChanged);
     }
 
     public static Grade getGrade(ServerPlayer player) {

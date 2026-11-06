@@ -352,6 +352,7 @@ public final class KegareLanguageProvider extends LanguageProvider {
         add("message.kegare.cast.ultimate_locked", "Locked. Your " + DOMINION + " comes later.");
         add("message.kegare.cast.no_special", "%s has no special.");
         add("message.kegare.cast.requirement", "%s requires %s.");
+        add("message.kegare.cast.refinement_locked", "Requires Refinement %s.");
         add("requirement.kegare.trait", "the %s trait");
         add("requirement.kegare.toggle_active", "%s to be active");
         add("message.kegare.cast.busy", "Already casting.");
@@ -627,5 +628,10 @@ public final class KegareLanguageProvider extends LanguageProvider {
             if (!written.contains(trait.descriptionId() + ".desc")) missing.add(trait.descriptionId() + ".desc");
         }
         if (!missing.isEmpty()) throw new IllegalStateException("Missing lang entries: " + missing.stream().distinct().toList());
+        for (InnateTechnique innateTechnique : KegareRegistries.INNATE_TECHNIQUE) {
+            if (!innateTechnique.hasUnlockLevels()) {
+                throw new IllegalStateException(innateTechnique.id() + " doesn't set its Refinement unlock levels: call defaultUnlockLevels() or unlockLevel(...) in its definition");
+            }
+        }
     }
 }

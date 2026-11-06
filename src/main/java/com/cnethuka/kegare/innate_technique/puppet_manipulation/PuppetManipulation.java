@@ -43,6 +43,7 @@ public final class PuppetManipulation {
                     .ability(CURIO_BURST)
                     .ability(UNDERSTUDY)
                     .ability(STRINGS)
+                    .defaultUnlockLevels()
                     .lockedUltimate()
                     .maliceColor(MALICE_COLOR)
                     .signatureAnimation(PuppetIds.ANIM_CREATE_RELEASE)

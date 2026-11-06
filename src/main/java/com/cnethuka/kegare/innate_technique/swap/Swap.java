@@ -43,6 +43,7 @@ public final class Swap {
                     .ability(AWARENESS)
                     .ability(ANCHOR)
                     .ability(EXCHANGE)
+                    .defaultUnlockLevels()
                     .ultimate(TOTAL_SWAP)
                     .maliceColor(MALICE_COLOR)
                     .signatureAnimation(SwapIds.ANIM_SWAP_SNAP)

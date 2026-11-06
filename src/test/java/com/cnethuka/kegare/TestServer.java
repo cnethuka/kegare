@@ -88,6 +88,9 @@ public final class TestServer {
 
     /** The testframework's server defines FLAT dimensions but never loads them; create them as startup does. */
     public static void ensureOverworld(MinecraftServer server) {
+        // Tests of an ability's own behaviour start from a fresh player, who has every ability unlocked here. The tests
+        // of the unlocks themselves turn this back on (see WithLocks).
+        com.cnethuka.kegare.progression.ProgressionConfig.REQUIRE_REFINEMENT.set(false);
         if (server.overworld() != null) return;
         try {
             Method createLevels = MinecraftServer.class.getDeclaredMethod("createLevels", ChunkProgressListener.class);

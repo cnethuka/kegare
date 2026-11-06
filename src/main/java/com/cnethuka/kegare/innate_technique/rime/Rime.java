@@ -42,6 +42,7 @@ public final class Rime {
                     .ability(GLACIAL_LANCE)
                     .ability(FROST_FIELD)
                     .ability(RIME_SHELL)
+                    .defaultUnlockLevels()
                     .lockedUltimate()
                     .maliceColor(MALICE_COLOR)
                     .signatureAnimation(RimeIds.ANIM_FROST_SHARD_CAST)

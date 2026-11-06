@@ -8,6 +8,7 @@ import com.cnethuka.kegare.innatetechnique.InnateTechnique;
 import com.cnethuka.kegare.innatetechnique.InnateTechniqueService;
 import com.cnethuka.kegare.malice.MaliceService;
 import com.cnethuka.kegare.network.PlayerSync;
+import com.cnethuka.kegare.progression.TechniqueUnlocks;
 import com.cnethuka.kegare.registry.KegareAttachments;
 import java.util.HashSet;
 import java.util.List;
@@ -23,12 +24,13 @@ import net.minecraft.world.entity.player.Player;
  * The player's loadout: what each regular ability slot holds (server-authoritative; the client only sends edit
  * requests). Rules:
  * <ul>
- *   <li>one slot per ability of the current innate technique, filled with them in order by default;</li>
+ *   <li>one slot per UNLOCKED ability of the current innate technique, filled with them in order by default;</li>
  *   <li>a slot holds one of those abilities, an unlocked shared ability, or nothing;</li>
+ *   <li>a newly unlocked ability goes into the first empty slot, if there is one;</li>
  *   <li>nothing appears twice (placing an ability that is already slotted moves it);</li>
  *   <li>the ultimate (V) is not a loadout slot and can never change;</li>
  *   <li>no edits in combat or mid-cast; a toggle taken off the bar switches off;</li>
- *   <li>changing the innate technique (reroll, admin, rebirth) resets it to the new default; shared unlocks stay.</li>
+ *   <li>changing the innate technique (reroll, admin, rebirth) resets it to the new technique's level 0 kit; shared unlocks stay.</li>
  * </ul>
  */
 public final class LoadoutService {
@@ -66,7 +68,9 @@ public final class LoadoutService {
     private static Ability resolve(Player player, ResourceLocation id) {
         Optional<InnateTechnique> technique = InnateTechniqueService.current(player);
         if (technique.isPresent()) {
-            for (Ability a : technique.get().abilities()) if (a.id().equals(id)) return a;
+            for (Ability a : technique.get().abilities()) {
+                if (a.id().equals(id)) return !(player instanceof ServerPlayer sp) || TechniqueUnlocks.isUnlocked(sp, a) ? a : null;
+            }
         }
         Optional<Ability> shared = SharedAbilities.get(id);
         return shared.isPresent() && SharedAbilityService.isUnlocked(player, id) ? shared.get() : null;
@@ -76,7 +80,7 @@ public final class LoadoutService {
     public static final int SLOTS = 9;
 
     /**
-     * The default layout: the innate technique's abilities in order, then empty slots up to {@link #SLOTS} (room for
+     * The default layout: the innate technique's unlocked abilities in order, then empty slots up to {@link #SLOTS} (room for
      * shared abilities and whatever comes later). Runs whenever the innate technique changes.
      */
     public static void reset(ServerPlayer player) {
@@ -85,12 +89,16 @@ public final class LoadoutService {
         data.slots.clear();
         Optional<InnateTechnique> technique = InnateTechniqueService.current(player);
         technique.ifPresent(t -> {
-            for (Ability a : t.abilities()) if (data.slots.size() < SLOTS) data.slots.add(Optional.of(a.id()));
+            for (Ability a : t.abilities()) {
+                if (data.slots.size() < SLOTS && TechniqueUnlocks.isUnlocked(player, a)) data.slots.add(Optional.of(a.id()));
+            }
             while (data.slots.size() < SLOTS) data.slots.add(Optional.empty());
         });
         data.builtFor = technique.map(InnateTechnique::id).orElse(null);
         data.known.clear();
-        technique.ifPresent(t -> t.abilities().forEach(a -> data.known.add(a.id())));
+        technique.ifPresent(t -> t.abilities().forEach(a -> {
+            if (TechniqueUnlocks.isUnlocked(player, a)) data.known.add(a.id());
+        }));
         switchOffRemoved(player, before);
         InnateTechniqueService.clampSelection(player);
         PlayerSync.markDirty(player);
@@ -99,7 +107,8 @@ public final class LoadoutService {
     /**
      * Login repair: a layout built for another innate technique is rebuilt. One of the wrong size (bars from before
      * there were nine slots had one per ability) keeps its entries and is padded or trimmed to {@link #SLOTS}.
-     * Entries that no longer resolve (locked or removed abilities) and duplicates are emptied.
+     * Entries that no longer resolve (locked or removed abilities) and duplicates are emptied. A locked ability is
+     * offered a slot again when it unlocks.
      */
     public static void validate(ServerPlayer player) {
         LoadoutData data = get(player);
@@ -130,6 +139,10 @@ public final class LoadoutService {
             List<Ability> abilities = technique.get().abilities();
             for (int i = 0; i < abilities.size(); i++) {
                 ResourceLocation id = abilities.get(i).id();
+                if (!TechniqueUnlocks.isUnlocked(player, abilities.get(i))) {
+                    data.known.remove(id);
+                    continue;
+                }
                 if (!data.known.add(id) || data.slots.contains(Optional.of(id))) continue;
                 int slot = i < data.slots.size() && data.slots.get(i).isEmpty() ? i : data.slots.indexOf(Optional.<ResourceLocation>empty());
                 if (slot < 0) continue;
@@ -171,8 +184,10 @@ public final class LoadoutService {
             case SET -> {
                 if (abilityId.isEmpty()) return LoadoutResult.UNAVAILABLE;
                 ResourceLocation id = abilityId.get();
-                boolean technique = InnateTechniqueService.current(player).get().abilities().stream().anyMatch(a -> a.id().equals(id));
-                if (!technique) {
+                Optional<Ability> ofTechnique = InnateTechniqueService.current(player).get().abilities().stream().filter(a -> a.id().equals(id)).findFirst();
+                if (ofTechnique.isPresent()) {
+                    if (!TechniqueUnlocks.isUnlocked(player, ofTechnique.get())) return LoadoutResult.LOCKED;
+                } else {
                     if (!SharedAbilities.isShared(id)) return LoadoutResult.UNAVAILABLE;
                     if (!SharedAbilityService.isUnlocked(player, id)) return LoadoutResult.LOCKED;
                 }
@@ -187,6 +202,35 @@ public final class LoadoutService {
         switchOffRemoved(player, before);
         PlayerSync.markDirty(player);
         return LoadoutResult.OK;
+    }
+
+    /** A newly unlocked ability goes into the first empty slot, if there is one and it isn't there already. */
+    public static void offer(ServerPlayer player, Ability ability) {
+        LoadoutData data = get(player);
+        data.known.add(ability.id());
+        if (data.slots.contains(Optional.of(ability.id()))) return;
+        int slot = data.slots.indexOf(Optional.<ResourceLocation>empty());
+        if (slot < 0) return;
+        data.slots.set(slot, Optional.of(ability.id()));
+        PlayerSync.markDirty(player);
+    }
+
+    /**
+     * Refinement went down: whatever is locked now comes off the bar and stops, specials included. A later unlock offers
+     * it a slot again.
+     */
+    public static void removeLocked(ServerPlayer player) {
+        Optional<InnateTechnique> technique = InnateTechniqueService.current(player);
+        if (technique.isEmpty()) return;
+        LoadoutData data = get(player);
+        for (Ability a : technique.get().everyAbility()) {
+            if (TechniqueUnlocks.isUnlocked(player, a)) continue;
+            CastManager.switchOff(player, a, EndReason.CANCELLED);
+            var casting = CastManager.state(player).casting();
+            if (casting != null && casting.ability() == a) CastManager.interrupt(player);
+            removeEverywhere(player, a.id());
+            data.known.remove(a.id());
+        }
     }
 
     /** Takes an ability off every slot (e.g. a shared ability being locked again). */
