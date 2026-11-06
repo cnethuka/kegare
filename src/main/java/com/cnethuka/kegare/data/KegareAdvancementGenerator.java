@@ -61,6 +61,13 @@ public final class KegareAdvancementGenerator implements AdvancementProvider.Adv
                 Items.GLISTERING_MELON_SLICE, AdvancementType.GOAL, true);
         child(saver, greenLight, KegareAdvancements.ITS_BEEN_A_WHILE, "its_been_a_while", Items.TOTEM_OF_UNDYING, AdvancementType.CHALLENGE, true);
 
+        // Progression: hidden and silent, since Grade is private.
+        child(saver, awakening, KegareAdvancements.MOVING_UP, "moving_up", Items.IRON_NUGGET, AdvancementType.TASK, true);
+        child(saver, awakening, KegareAdvancements.PROVEN, "proven", Items.IRON_INGOT, AdvancementType.GOAL, true);
+        child(saver, awakening, KegareAdvancements.RECOGNIZED, "recognized", Items.GOLD_INGOT, AdvancementType.CHALLENGE, true);
+        child(saver, awakening, KegareAdvancements.OUTSIDE_THE_LADDER, "outside_the_ladder", Items.NETHERITE_INGOT, AdvancementType.CHALLENGE, true);
+        child(saver, awakening, KegareAdvancements.FULL_KIT, "full_kit", Items.BUNDLE, AdvancementType.GOAL, true);
+
         // ---- Six Eyes tab: secret identity, so silent; children hidden, root visible (documented exception) ----
         AdvancementHolder clearSight = root(saver, KegareAdvancements.CLEAR_SIGHT, "clear_sight", "granted", Items.SPYGLASS,
                 SIX_EYES_BACKGROUND, AdvancementType.CHALLENGE, false); // visible root: SECRET_VISIBLE_ROOTS

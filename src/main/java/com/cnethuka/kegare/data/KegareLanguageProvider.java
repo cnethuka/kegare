@@ -388,6 +388,11 @@ public final class KegareLanguageProvider extends LanguageProvider {
         advancement("overflowing", "Overflowing", "Be born in the Vast " + MALICE + " tier.");
         advancement("running_on_empty", "Running on Empty", "Run out of " + MALICE + " in the middle of a fight.");
         add("advancements.kegare.innate_technique_root.description", "Roll this " + INNATE_TECHNIQUE + " for the first time.");
+        advancement("moving_up", "Moving Up", "Reach Grade 3");
+        advancement("proven", "Proven", "Reach Grade 2");
+        advancement("recognized", "Recognized", "Reach Grade 1");
+        advancement("outside_the_ladder", "Outside the Ladder", "Reach Special Grade");
+        advancement("full_kit", "Full Kit", "Unlock every ability and special of a technique");
         advancement("clear_sight", "Clear Sight", "Be born with " + SIX_EYES + ".");
         // Rime tab (kegare:innate_technique/rime/...)
         advancement("rime.shatter", "Shatter", "Freeze a player solid");

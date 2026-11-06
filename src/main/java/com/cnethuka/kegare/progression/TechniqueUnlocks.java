@@ -1,5 +1,6 @@
 package com.cnethuka.kegare.progression;
 
+import com.cnethuka.kegare.advancement.KegareAdvancements;
 import com.cnethuka.kegare.innatetechnique.Ability;
 import com.cnethuka.kegare.innatetechnique.InnateTechnique;
 import com.cnethuka.kegare.innatetechnique.InnateTechniqueService;
@@ -91,6 +92,22 @@ public final class TechniqueUnlocks {
             if (!a.isSpecial() && technique.abilities().contains(a)) LoadoutService.offer(player, a);
             ProgressionToasts.abilityUnlocked(player, a);
         }
+    }
+
+    /**
+     * Full Kit: their Refinement has reached every ability and special of a real technique. The ultimate doesn't count, since
+     * two techniques can't have one until Dominions exist. Judged by the level itself, so casual servers with the requirement
+     * off have to earn it the same way.
+     */
+    static void checkFullKit(ServerPlayer player) {
+        InnateTechnique technique = InnateTechniqueService.current(player).orElse(null);
+        if (technique == null || technique.isTestContent()) return;
+        int level = RefinementService.level(player);
+        for (Ability a : technique.abilities()) {
+            if (level < requiredLevel(technique, a)) return;
+            if (a.special().isPresent() && level < requiredLevel(technique, a.special().get())) return;
+        }
+        KegareAdvancements.award(player, KegareAdvancements.FULL_KIT);
     }
 
     /** The config can change with players online: bring every bar into line when requireRefinementForAbilities flips. */

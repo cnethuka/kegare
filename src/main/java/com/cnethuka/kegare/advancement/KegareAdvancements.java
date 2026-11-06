@@ -23,6 +23,12 @@ public final class KegareAdvancements {
     // Reverse Malice Technique (Base tab, hidden and silent: they reveal that a player can heal)
     public static final ResourceLocation A_GREEN_LIGHT = Kegare.id("a_green_light");
     public static final ResourceLocation ITS_BEEN_A_WHILE = Kegare.id("its_been_a_while");
+    // Progression (Base tab, hidden and silent: Grade is private)
+    public static final ResourceLocation MOVING_UP = Kegare.id("moving_up");
+    public static final ResourceLocation PROVEN = Kegare.id("proven");
+    public static final ResourceLocation RECOGNIZED = Kegare.id("recognized");
+    public static final ResourceLocation OUTSIDE_THE_LADDER = Kegare.id("outside_the_ladder");
+    public static final ResourceLocation FULL_KIT = Kegare.id("full_kit");
     // Six Eyes tab (root: clear_sight)
     public static final ResourceLocation CLEAR_SIGHT = Kegare.id("clear_sight");
     public static final ResourceLocation THE_CYCLE_CONTINUES = Kegare.id("the_cycle_continues");
@@ -52,12 +58,14 @@ public final class KegareAdvancements {
     /**
      * Not secret, but never announced to chat: they reveal PvP information. overflowing reveals Malice capacity;
      * chosen_by_fate reveals a Legendary innate technique; a_green_light and its_been_a_while reveal that a player
-     * can heal (Reverse Malice Technique).
+     * can heal (Reverse Malice Technique); the progression ones reveal a player's Grade, or how far along their technique is.
      */
-    public static final Set<ResourceLocation> SILENT = Set.of(OVERFLOWING, CHOSEN_BY_FATE, A_GREEN_LIGHT, ITS_BEEN_A_WHILE);
+    public static final Set<ResourceLocation> SILENT = Set.of(OVERFLOWING, CHOSEN_BY_FATE, A_GREEN_LIGHT, ITS_BEEN_A_WHILE,
+            MOVING_UP, PROVEN, RECOGNIZED, OUTSIDE_THE_LADDER, FULL_KIT);
 
     /** Silent AND hidden until earned (datagen enforces both): nobody should even learn they exist from the tab. */
-    public static final Set<ResourceLocation> SILENT_HIDDEN = Set.of(A_GREEN_LIGHT, ITS_BEEN_A_WHILE);
+    public static final Set<ResourceLocation> SILENT_HIDDEN = Set.of(A_GREEN_LIGHT, ITS_BEEN_A_WHILE,
+            MOVING_UP, PROVEN, RECOGNIZED, OUTSIDE_THE_LADDER, FULL_KIT);
 
     private KegareAdvancements() {}
 
