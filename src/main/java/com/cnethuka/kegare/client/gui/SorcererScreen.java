@@ -588,14 +588,19 @@ public final class SorcererScreen extends Screen {
             line = Component.translatable(inHand ? "gui.kegare.sorcerer.hint.in_hand" : "gui.kegare.sorcerer.hint");
             color = inHand ? GuiDraw.GOLD : 0xFF6B6276;
         }
-        float scale = font.width(line) > pw - 24 ? 0.75f : 1f;
-        GuiDraw.centered(g, font, line, px + pw / 2, y, scale, color);
-
         // Reset, at the right end of the status row (the nine-slot bar leaves no room beside it).
         Component reset = Component.translatable("gui.kegare.loadout.reset_short");
         int bw = font.width(reset) + 10;
         int bx = px + pw - 10 - bw;
         int by = wellY1 + 1;
+
+        // The line: centered on the panel while that clears Reset, else in the space left of it.
+        int left = px + 6, right = bx - 3;
+        float scale = font.width(line) > right - left ? 0.75f : 1f;
+        int center = px + pw / 2;
+        if (center + Mth.ceil(font.width(line) * scale / 2f) > right) center = (left + right) / 2;
+        GuiDraw.centered(g, font, line, center, y, scale, color);
+
         boolean hover = mouseX >= bx && mouseX < bx + bw && mouseY >= by && mouseY < by + BUTTON_H;
         GuiDraw.sprite(g, hover ? BUTTON_LIT : BUTTON, bx, by, bw, BUTTON_H);
         GuiDraw.centered(g, font, reset, bx + bw / 2, by + 4, 1f, hover ? GuiDraw.WHITE : GuiDraw.GRAY);

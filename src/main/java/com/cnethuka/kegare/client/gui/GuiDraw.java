@@ -287,6 +287,10 @@ public final class GuiDraw {
         return space >= EMBLEM_TEXTURE_SIZE ? space / EMBLEM_TEXTURE_SIZE * EMBLEM_TEXTURE_SIZE : Math.max(8, space);
     }
 
+    /** A card's name: the text size on a small card, and how much of its width the frame takes. */
+    private static final float CARD_SMALL_TEXT = 0.75f;
+    private static final int CARD_TEXT_INSET = 10;
+
     /**
      * An innate technique card: rarity frame, emblem, name (up to two lines) and rarity. The rarity line is left out
      * when it wouldn't fit inside the frame (tiny cards); the frame itself already shows the rarity.
@@ -297,9 +301,9 @@ public final class GuiDraw {
         int color = innateTechnique.rarity().color();
         sprite(g, cardSprite(innateTechnique.rarity()), x, y, w, h);
 
-        float scale = w >= 76 ? 1f : 0.75f;
+        float scale = w >= 76 && widestWord(font, innateTechnique) + CARD_TEXT_INSET <= w ? 1f : CARD_SMALL_TEXT;
         int lineHeight = (int) (10 * scale);
-        List<FormattedCharSequence> lines = font.split(innateTechnique.displayName(), (int) ((w - 10) / scale));
+        List<FormattedCharSequence> lines = font.split(innateTechnique.displayName(), (int) ((w - CARD_TEXT_INSET) / scale));
         int nameLines = Math.min(2, lines.size());
         Component rarity = Component.translatable(innateTechnique.rarity().translationKey());
         boolean showRarity = font.width(rarity) * scale <= w - 12;
@@ -318,6 +322,22 @@ public final class GuiDraw {
         if (showRarity) centered(g, font, rarity.getVisualOrderText(), x + w / 2, bottom, scale, 0xFF000000 | color);
 
         if (dim > 0f) g.fill(x, y, x + w, y + h, 300, ((int) (Mth.clamp(dim, 0f, 1f) * 190) << 24));
+    }
+
+    /**
+     * The narrowest card with room for every word of these names on a line of its own. Any narrower and {@link #card} has to break
+     * a word, and the end of it falls off the two lines a name gets.
+     */
+    public static int minCardWidth(Font font, Iterable<InnateTechnique> techniques) {
+        int widest = 0;
+        for (InnateTechnique technique : techniques) widest = Math.max(widest, widestWord(font, technique));
+        return Mth.ceil(widest * CARD_SMALL_TEXT) + CARD_TEXT_INSET;
+    }
+
+    private static int widestWord(Font font, InnateTechnique technique) {
+        int widest = 0;
+        for (String word : technique.displayName().getString().split(" ")) widest = Math.max(widest, font.width(word));
+        return widest;
     }
 
     // ---------------------------------------------------------------- text

@@ -120,7 +120,7 @@ public final class RevealScreen extends Screen {
         subtitleY = titleY + (int) (font.lineHeight * titleScale) + 10; // room for the divider
         stripY = subtitleY + 20;
         cardH = Mth.clamp((int) (height * (height < 300 ? 0.30f : 0.34f)), 64, 130);
-        cardW = (int) (cardH * 0.72f);
+        cardW = Math.max((int) (cardH * 0.72f), GuiDraw.minCardWidth(font, strip)); // a long word gets its whole width on a short screen
         spacing = cardW + Math.max(4, cardW / 8);
         resultY = stripY + cardH + 12;
         button = addRenderableWidget(new InkButton(width / 2 - 50, height - 26, 100, 20, buttonLabel(), b -> advance()));

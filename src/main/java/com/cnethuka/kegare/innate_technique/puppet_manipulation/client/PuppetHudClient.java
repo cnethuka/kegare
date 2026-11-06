@@ -25,7 +25,7 @@ import net.minecraft.resources.ResourceLocation;
  * Puppet Manipulation on the combat panel (Technique Mode): "Puppets: X/15" above the meter's left end (gold at the cap),
  * and the current Directive order as a small glyph on Directive's slot (top left; the key is bottom right and the R
  * badge top right). Strings' stage: while a string waits, its slot shows what the keys would do right now, and a line
- * under the crosshair gives those costs (in and out of Technique Mode); with Strings selected and no string out, "Fire: 5"
+ * under the crosshair gives those costs (in and out of Technique Mode); with Strings selected and no string out, "Fire: 20"
  * above the meter's right end. The Sorcerer screen lists the stage and every cost.
  */
 final class PuppetHudClient {
@@ -49,7 +49,8 @@ final class PuppetHudClient {
         if (!hud.holds()) return;
         boolean full = hud.puppets() >= hud.maxPuppets();
         g.drawString(font, Component.translatable("hud.kegare.puppets", hud.puppets(), hud.maxPuppets()), x0 + 8, y0 - 3, full ? 0xFFFFD24A : LAVENDER, true);
-        if (hud.strings().stage() == 0 && stringsSelected()) {
+        // Not on the Sorcerer screen's tray: Reset sits there in a small window, and that screen lists the cost anyway.
+        if (hud.strings().stage() == 0 && stringsSelected() && Minecraft.getInstance().screen == null) {
             Component fire = Component.translatable("hud.kegare.strings.fire", GuiDraw.amount(hud.strings().fireCost()));
             g.drawString(font, fire, x0 + CombatPanelLayer.W - 8 - font.width(fire), y0 - 3, LAVENDER, true);
         }

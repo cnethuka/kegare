@@ -452,6 +452,8 @@ a result back; they only send requests the server re-validates. All text comes f
   Legendary adds sparkle particles and a challenge + totem sound.
 - Each card shows the emblem, name and rarity. The result also shows its one-line `.desc`.
 - Background: tiled smoky ink, darkening in steps toward the edges, with a darker track for the cards.
+- Card width follows the screen's height, but never drops below what the strip's longest word needs on one line
+  (`GuiDraw.minCardWidth`): "Manipulation" on a 240-high GUI.
 - **Skip** (button, Esc, Enter or Space) jumps to the result; pressing again closes.
 - `reveal.animation=false` shows the result instantly.
 - Disconnecting mid-spin changes nothing: the result was saved before the payload was sent.
@@ -491,7 +493,8 @@ a result back; they only send requests the server re-validates. All text comes f
   "Regen paused" each take a second line and the model gives up the height; shrinking them would land the font on fractions of a
   pixel and close up the zeros.
 - **Bottom:** the HUD's combat panel itself (`CombatPanelLayer.drawPanel`), live, as the loadout bar (§3.16). Above
-  it is a status line (hint, "Now click a slot on your bar", or the server's refusal), with "Reset" at its right end.
+  it is a status line (hint, "Now click a slot on your bar", or the server's refusal), with "Reset" at its right end. The line is
+  centered on the panel while that clears Reset, and centered in the space left of Reset when it doesn't.
 - **Severed:** the Severed emblem and text, no category tabs and no bar.
 - **Severed** players still get Traits, Pity and Settings.
 - **Keys:** 1–4 or Tab switch views, K or Esc close.
@@ -1049,7 +1052,7 @@ Order glyphs `gui/puppet_order/{follow,stay,guard,go}.png`.
 
 **Strings' stage on the HUD** (`PuppetHud.StringsHud`, checked every tick while a string waits, since its next stage
 depends on what you look at):
-- Strings selected, no string out: "Fire: 20" above the meter's right end.
+- Strings selected, no string out: "Fire: 20" above the meter's right end (on the HUD only: the Sorcerer screen lists it).
 - A string waiting: the slot shows what the cast key would do now (`gui/ability/strings_reel`, `strings_tie`), with R's
   (`strings_zip`, `strings_leash`) small in its corner and a lavender outline. Under the crosshair, in and out of Technique
   Mode: "[C] Reel In 48 · [R] Zip 40 · 6s".
