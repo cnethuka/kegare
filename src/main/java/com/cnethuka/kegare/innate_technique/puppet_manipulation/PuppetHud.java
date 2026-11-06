@@ -19,7 +19,7 @@ public final class PuppetHud {
 
     /** Forces a resend on the next check. */
     static void markDirty(ServerPlayer player) {
-        player.getData(PuppetRegistry.HUD_STATE.get()).last = null;
+        player.getData(PuppetRegistry.HUD_STATE.get()).dirty = true;
     }
 
     /** Something the HUD shows just changed: send it now, not at the next regular check. */
@@ -31,21 +31,32 @@ public final class PuppetHud {
     /** Every 10 ticks for holders (and anyone still possessing): send if anything changed. */
     static void check(ServerPlayer player) {
         if (player instanceof FakePlayer || player.connection == null) return;
+        update(player, now -> PacketDistributor.sendToPlayer(player, now));
+    }
+
+    /** {@link #check} with the sending passed in, so a test can see what goes out. */
+    static void update(ServerPlayer player, Consumer<Payload> send) {
         boolean holds = PuppetManipulation.holds(player);
         boolean possessing = Possession.isPossessing(player);
         State state = player.getData(PuppetRegistry.HUD_STATE.get());
-        if (!holds && !possessing && state.last == null) return;
+        // Nothing of theirs is on screen, so there's nothing to clear: the usual case, for everyone who never held it.
+        if (!holds && !possessing && state.last == null) {
+            state.dirty = false;
+            return;
+        }
         PossessionData d = Possession.data(player);
         Payload now = new Payload(holds, Puppets.count(player), PuppetConfig.MAX_PUPPETS.get(), player.getData(PuppetRegistry.OWNER.get()).order().ordinal(),
                 possessing, possessing ? d.realHealth : 0f, possessing ? d.realMaxHealth : 0f, Strings.hud(player));
-        if (now.equals(state.last)) return;
-        state.last = now;
-        PacketDistributor.sendToPlayer(player, now);
+        if (!state.dirty && now.equals(state.last)) return;
+        state.dirty = false;
+        state.last = holds || possessing ? now : null; // the update that clears it is the last one they need
+        send.accept(now);
     }
 
-    /** What was last sent (runtime attachment). */
+    /** What was last sent, while there's something of theirs on screen (runtime attachment). */
     public static final class State {
         Payload last;
+        boolean dirty;
     }
 
     /**
