@@ -261,7 +261,7 @@ All timestamps use **level game time**. They persist across restarts and are ide
   - The client counts down cooldowns locally from game time.
 - Swap (§3.19) adds two cosmetic S→C payloads: `Disguises.StatePayload` (the disguise map, to everyone) and
   `SwapLink.Payload` (effects drawn along a line).
-- Network version `7` (since Puppet Manipulation's payloads). Bump it when payload formats change; mismatched clients are refused.
+- Network version `8` (since Puppet Manipulation's HUD counts against the cap). Bump it when payload formats change; mismatched clients are refused.
 
 ### 3.6 HUD
 **Rule: the combat HUD does not exist until the player asks for it** (art in `gen_art.py` → `textures/gui/combat/`).
@@ -917,8 +917,10 @@ icon armor stand; ultimate locked (its Dominion comes later). All numbers in `[p
   1.35× and keeps pace with a sprint, and one more than `followTeleportDistance` (24) behind appears beside its owner.
 - **Kuru kuru:** standing still for `spinDelay` (0.5 s) it spins (`puppet_idle_spin`, arms out). Decided on the server
   and synced, so every viewer agrees. Never while possessed or standing in.
-- **No limit**, only lag protection: `safetyCap` (50) per player, counting puppets in unloaded chunks too. At the cap,
-  Puppet Creation fizzles for free ("You can't hold more than 50 puppets.").
+- **The cap:** `maxPuppets` (15) per player, counting puppets in unloaded chunks too (`PuppetSavedData`). At the cap,
+  Puppet Creation fizzles for free ("You can't hold more than 15 puppets."). A puppet that dies, dissolves or detonates
+  frees its slot at once. Lowering the config never removes puppets: a player over the new cap keeps theirs but can't
+  make more until below it.
 - Lasts until killed: it survives its owner's death and logout. While the owner is offline (or dead, or in another
   dimension) it stands idle and never attacks.
 - **Rerolling away** (reroll, rebirth, admin) dissolves EVERY puppet the player owns into Malice-colored threads
@@ -963,8 +965,9 @@ icon armor stand; ultimate locked (its Dominion comes later). All numbers in `[p
 - **HUD** (`PuppetHud` payload, sent only when it changes): "Possessing" and the body's health under the crosshair, in
   and out of Technique Mode (`StatusLayer.addExtra`).
 
-**Combat panel** (Technique Mode): your puppet count on Puppet Creation's slot and the current order's glyph on
-Directive's (top left of each; `CombatPanelLayer.addSlotDecorator`, new; the Sorcerer screen's tray shows them too).
+**Combat panel** (Technique Mode): "Puppets: X/15" above the meter's left end, gold at the cap
+(`CombatPanelLayer.addPanelDecorator`), and the current order's glyph on Directive's slot (`addSlotDecorator`). The
+Sorcerer screen's tray shows them too.
 Order glyphs `gui/puppet_order/{follow,stay,guard,go}.png`.
 
 **Mob vs player boundary (§4):** puppets fight and damage mobs (Guard, Focus, Curio Burst); bosses take the damage but

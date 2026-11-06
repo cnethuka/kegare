@@ -22,9 +22,9 @@ public final class Puppets {
         return PuppetSavedData.get(owner.server).count(owner.getUUID());
     }
 
-    /** At the safety cap (lag protection): Puppet Creation fizzles for free. */
+    /** At (or, after the config was lowered, over) the cap: Puppet Creation fizzles for free. */
     public static boolean atCap(ServerPlayer owner) {
-        return count(owner) >= PuppetConfig.SAFETY_CAP.get();
+        return count(owner) >= PuppetConfig.MAX_PUPPETS.get();
     }
 
     /** Makes a puppet of {@code owner} at {@code tier} next to them (a free spot at their side), plays its forming. */

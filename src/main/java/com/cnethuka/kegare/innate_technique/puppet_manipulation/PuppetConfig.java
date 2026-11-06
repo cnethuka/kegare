@@ -8,7 +8,7 @@ public final class PuppetConfig {
     public static ModConfigSpec.DoubleValue SCALE;
     public static ModConfigSpec.DoubleValue MOVEMENT_SPEED;
     public static ModConfigSpec.DoubleValue MELEE_DAMAGE;
-    public static ModConfigSpec.IntValue SAFETY_CAP;
+    public static ModConfigSpec.IntValue MAX_PUPPETS;
     public static ModConfigSpec.DoubleValue FOLLOW_DISTANCE;
     public static ModConfigSpec.DoubleValue FOLLOW_TELEPORT_DISTANCE;
     public static ModConfigSpec.DoubleValue SPIN_DELAY;
@@ -68,8 +68,9 @@ public final class PuppetConfig {
                 "Following puppets left behind run at 1.35x that to catch up, which keeps pace with a sprint.")
                 .defineInRange("movementSpeed", 0.42, 0.01, 2.0);
         MELEE_DAMAGE = b.comment("Damage of a puppet's punch (and of a possessed puppet's).").defineInRange("meleeDamage", 1.0, 0.0, 100.0);
-        SAFETY_CAP = b.comment("Lag protection only, not a balance limit: the most puppets one player can have at once (loaded or not).",
-                "At the cap, Puppet Creation fizzles for free.").defineInRange("safetyCap", 50, 1, 10_000);
+        MAX_PUPPETS = b.comment("The most puppets one player can have at once, counting ones in unloaded chunks. At the cap, Puppet Creation",
+                "fizzles for free; a puppet that dies, dissolves or detonates frees its slot. Lowering this never removes puppets:",
+                "a player over the new cap keeps theirs but can't make more until below it.").defineInRange("maxPuppets", 15, 1, 10_000);
         FOLLOW_DISTANCE = b.comment("Following puppets walk back to their owner once they are this far away (blocks).")
                 .defineInRange("followDistance", 3.0, 1.0, 32.0);
         FOLLOW_TELEPORT_DISTANCE = b.comment("Following puppets left this far behind (blocks) catch up at once, like tamed pets.")

@@ -125,7 +125,8 @@ class PuppetAdvancementsTest {
                 assertTrue(has(server, owner, PuppetAdvancements.DECOY), "Decoy");
                 owner.moveTo(8.5, ground, 8.5, -90f, 0f);
 
-                // Kuru Kuru: ten puppets spinning at once.
+                // Kuru Kuru: ten puppets spinning at once, reachable under the default cap.
+                assertTrue(PuppetAdvancements.KURU_KURU_PUPPETS <= PuppetConfig.MAX_PUPPETS.getDefault(), "Kuru Kuru fits under the cap");
                 DirectiveAbility.give(owner, PuppetOrder.STAY, null);
                 List<PuppetEntity> ten = new ArrayList<>();
                 InnateTechniqueService.select(owner, 0);

@@ -154,7 +154,7 @@ public final class KegareLanguageProvider extends LanguageProvider {
         add("ability.kegare.puppet_creation", "Puppet Creation");
         add("ability.kegare.puppet_creation.desc", "Hold to charge, release to make a half-size puppet of yourself beside you. "
                 + "A tap (10 Malice) makes a weak one: 2 health, a faint glow. Half a charge (25) a steady one: 4 health. A full "
-                + "charge (45) a strong one: 8 health, a bright glow and an outline. Puppets last until killed.");
+                + "charge (45) a strong one: 8 health, a bright glow and an outline. Puppets last until killed; you can hold 15 at once.");
         add("ability.kegare.directive", "Directive");
         add("ability.kegare.directive.desc", "Give every puppet within 32 blocks the next order: Follow, Stay, Guard (attack whoever "
                 + "damages you, player or mob) or Go (walk to the block you're looking at, then stay). New puppets take the current order.");
@@ -197,6 +197,7 @@ public final class KegareLanguageProvider extends LanguageProvider {
         add("message.kegare.possess.snapped_back.too_far", "Too far from your body. You snap back.");
         add("message.kegare.possess.snapped_back.death", "You return to your body.");
         add("message.kegare.possess.snapped_back.dimension_change", "You return to your body.");
+        add("hud.kegare.puppets", "Puppets: %s/%s");
         add("hud.kegare.possessing", "Possessing");
         add("hud.kegare.shell_health", "Body %s");
         add("message.kegare.puppet.cap", "You can't hold more than %s puppets.");

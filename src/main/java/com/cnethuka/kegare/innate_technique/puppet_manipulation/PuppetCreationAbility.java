@@ -10,8 +10,8 @@ import net.minecraft.server.level.ServerPlayer;
 
 /**
  * Puppet Creation (CHARGED): hold to charge Malice into a puppet, release to make it beside you. The charge picks its
- * {@link PuppetTier}: a tap, half or full, each with its own cost and health. No limit but the server's safety cap; at
- * the cap it fizzles for free.
+ * {@link PuppetTier}: a tap, half or full, each with its own cost and health. At the cap ({@code maxPuppets}) it fizzles
+ * for free.
  */
 public final class PuppetCreationAbility extends PuppetAbility {
     private static final AbilityVisuals VISUALS = AbilityVisuals.builder()
@@ -37,7 +37,7 @@ public final class PuppetCreationAbility extends PuppetAbility {
 
     @Override
     public Component blockedMessage(ServerPlayer player) {
-        return Component.translatable("message.kegare.puppet.cap", PuppetConfig.SAFETY_CAP.get());
+        return Component.translatable("message.kegare.puppet.cap", PuppetConfig.MAX_PUPPETS.get());
     }
 
     @Override

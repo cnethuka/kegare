@@ -98,6 +98,18 @@ public final class CombatPanelLayer implements LayeredDraw.Layer {
         DECORATORS.add(decorator);
     }
 
+    /** Something an innate technique draws on the panel itself, given its top-left corner (e.g. a count of its own). */
+    @FunctionalInterface
+    public interface PanelDecorator {
+        void decorate(GuiGraphics g, Font font, int x0, int y0);
+    }
+
+    private static final List<PanelDecorator> PANEL_DECORATORS = new java.util.concurrent.CopyOnWriteArrayList<>();
+
+    public static void addPanelDecorator(PanelDecorator decorator) {
+        PANEL_DECORATORS.add(decorator);
+    }
+
     /** True while the panel is up (and so the hotbar is drawn as a column instead). */
     public static boolean shown() {
         Minecraft mc = Minecraft.getInstance();
@@ -153,7 +165,9 @@ public final class CombatPanelLayer implements LayeredDraw.Layer {
         drawMeter(g, font, data, color, x0, y0);
         drawFreeze(g, data, now, x0, y0);
         drawCastProgress(g, technique, data, now, x0, y0);
-        return drawTray(g, font, data, technique, abilities, now, x0, y0, dropTarget);
+        List<SlotRect> slots = drawTray(g, font, data, technique, abilities, now, x0, y0, dropTarget);
+        for (PanelDecorator decorator : PANEL_DECORATORS) decorator.decorate(g, font, x0, y0);
+        return slots;
     }
 
     // ---------------------------------------------------------------- meter

@@ -11,7 +11,7 @@ import net.neoforged.neoforge.network.PacketDistributor;
 import net.neoforged.neoforge.network.handling.IPayloadContext;
 
 /**
- * The owner's own HUD numbers: how many puppets they have and the current Directive order (on the combat panel), and
+ * The owner's own HUD numbers: their puppets against the cap and the current Directive order (on the combat panel), and
  * while possessing, the shell's health (under the crosshair, in or out of Technique Mode). Sent only when they change.
  */
 public final class PuppetHud {
@@ -30,7 +30,7 @@ public final class PuppetHud {
         State state = player.getData(PuppetRegistry.HUD_STATE.get());
         if (!holds && !possessing && state.last == null) return;
         PossessionData d = Possession.data(player);
-        Payload now = new Payload(holds, Puppets.count(player), player.getData(PuppetRegistry.OWNER.get()).order().ordinal(),
+        Payload now = new Payload(holds, Puppets.count(player), PuppetConfig.MAX_PUPPETS.get(), player.getData(PuppetRegistry.OWNER.get()).order().ordinal(),
                 possessing, possessing ? d.realHealth : 0f, possessing ? d.realMaxHealth : 0f);
         if (now.equals(state.last)) return;
         state.last = now;
@@ -47,11 +47,11 @@ public final class PuppetHud {
      * @param order      {@link PuppetOrder} ordinal
      * @param shellHealth the body's (real) health while possessing
      */
-    public record Payload(boolean holds, int puppets, int order, boolean possessing, float shellHealth, float shellMaxHealth)
+    public record Payload(boolean holds, int puppets, int maxPuppets, int order, boolean possessing, float shellHealth, float shellMaxHealth)
             implements CustomPacketPayload {
         public static final Type<Payload> TYPE = new Type<>(Kegare.id("puppet_hud"));
         public static final StreamCodec<FriendlyByteBuf, Payload> STREAM_CODEC = StreamCodec.ofMember(Payload::write, Payload::read);
-        public static final Payload NONE = new Payload(false, 0, 0, false, 0f, 0f);
+        public static final Payload NONE = new Payload(false, 0, 0, 0, false, 0f, 0f);
 
         /** Set by the client entry point; null on a dedicated server. */
         private static Consumer<Payload> clientHandler;
@@ -63,6 +63,7 @@ public final class PuppetHud {
         private void write(FriendlyByteBuf buf) {
             buf.writeBoolean(holds);
             buf.writeVarInt(puppets);
+            buf.writeVarInt(maxPuppets);
             buf.writeVarInt(order);
             buf.writeBoolean(possessing);
             buf.writeFloat(shellHealth);
@@ -70,7 +71,7 @@ public final class PuppetHud {
         }
 
         private static Payload read(FriendlyByteBuf buf) {
-            return new Payload(buf.readBoolean(), buf.readVarInt(), buf.readVarInt(), buf.readBoolean(), buf.readFloat(), buf.readFloat());
+            return new Payload(buf.readBoolean(), buf.readVarInt(), buf.readVarInt(), buf.readVarInt(), buf.readBoolean(), buf.readFloat(), buf.readFloat());
         }
 
         @Override

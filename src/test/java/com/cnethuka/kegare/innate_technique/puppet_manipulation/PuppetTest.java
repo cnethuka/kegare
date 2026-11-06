@@ -72,20 +72,78 @@ class PuppetTest {
                 assertEquals(PuppetTier.FULL.health(), full.getMaxHealth(), 1e-6);
                 assertEquals(3, Puppets.count(owner), "all three counted");
 
-                // The safety cap: creation fizzles for free (nothing paid, no cooldown, no puppet).
-                int cap = PuppetConfig.SAFETY_CAP.get();
-                PuppetConfig.SAFETY_CAP.set(3);
+                // Lowering the cap below what they hold: nobody loses a puppet, but no new ones until below it.
+                int cap = PuppetConfig.MAX_PUPPETS.get();
+                PuppetConfig.MAX_PUPPETS.set(2);
                 try {
+                    assertEquals(3, puppetsOf(level, owner).size(), "over the lowered cap: all three stay");
+                    assertCapFizzles(owner, 3);
+                    // One dies: still at the cap of 2, so still no.
+                    tap.hurt(level.damageSources().genericKill(), 1000f);
+                    tap.tick();
+                    assertEquals(2, Puppets.count(owner), "its slot is freed");
+                    assertCapFizzles(owner, 2);
+                    // One detonates: below the cap, so a new one can be made.
+                    CurioBursts.detonate(half, owner);
+                    assertEquals(1, Puppets.count(owner), "a detonated puppet frees its slot");
                     InnateTechniqueService.clearCooldowns(owner);
                     MaliceService.refill(owner);
-                    before = malice(owner);
-                    CastManager.handleIntent(owner, CastIntent.CAST_PRESS);
-                    assertNull(CastManager.state(owner).casting(), "can't even start charging at the cap");
-                    assertEquals(before, malice(owner), 1e-6, "nothing paid");
-                    assertEquals(0, InnateTechniqueService.cooldownRemaining(owner, PuppetManipulation.PUPPET_CREATION), "no cooldown");
-                    assertEquals(3, puppetsOf(level, owner).size(), "no fourth puppet");
+                    create(server, owner, 0);
+                    assertEquals(2, Puppets.count(owner), "below the cap again: a new one");
+                    assertCapFizzles(owner, 2);
                 } finally {
-                    PuppetConfig.SAFETY_CAP.set(cap);
+                    PuppetConfig.MAX_PUPPETS.set(cap);
+                }
+            } finally {
+                cleanUp(server, level, owner);
+            }
+        });
+    }
+
+    @Test
+    void theCapCountsUnloadedPuppetsAndFreesSlots(MinecraftServer server) throws Exception {
+        TestServer.onServerThread(server, () -> {
+            TestServer.ensureOverworld(server);
+            ServerLevel level = server.overworld();
+            loadArena(level);
+            ServerPlayer owner = owner(server, level, "puppet_cap");
+            try {
+                assertEquals(15, PuppetConfig.MAX_PUPPETS.getDefault(), "the default cap");
+                int cap = PuppetConfig.MAX_PUPPETS.get();
+                PuppetConfig.MAX_PUPPETS.set(3);
+                try {
+                    PuppetEntity first = create(server, owner, 0);
+                    InnateTechniqueService.clearCooldowns(owner);
+                    create(server, owner, 0);
+                    InnateTechniqueService.clearCooldowns(owner);
+                    PuppetEntity far = create(server, owner, 0);
+                    InnateTechniqueService.clearCooldowns(owner);
+                    assertCapFizzles(owner, 3);
+
+                    // Its chunk unloads: it's still theirs, so it still counts.
+                    net.minecraft.nbt.CompoundTag saved = new net.minecraft.nbt.CompoundTag();
+                    far.save(saved);
+                    far.remove(Entity.RemovalReason.UNLOADED_TO_CHUNK);
+                    assertEquals(2, puppetsOf(level, owner).size(), "setup: only two are loaded");
+                    assertEquals(3, Puppets.count(owner), "the unloaded one still counts");
+                    assertCapFizzles(owner, 3);
+
+                    // One of the loaded ones dissolves: a slot is free.
+                    Puppets.dissolve(first);
+                    assertEquals(2, Puppets.count(owner), "dissolving frees a slot");
+                    MaliceService.refill(owner);
+                    create(server, owner, 0);
+                    assertEquals(3, Puppets.count(owner));
+                    assertCapFizzles(owner, 3);
+
+                    // The unloaded one loads again: still current, still theirs, not counted twice.
+                    PuppetEntity back = (PuppetEntity) EntityType.create(saved, level).orElseThrow();
+                    level.addFreshEntity(back);
+                    back.tick();
+                    assertTrue(back.isAlive(), "a current puppet survives loading");
+                    assertEquals(3, Puppets.count(owner), "and isn't counted twice");
+                } finally {
+                    PuppetConfig.MAX_PUPPETS.set(cap);
                 }
             } finally {
                 cleanUp(server, level, owner);
@@ -176,6 +234,18 @@ class PuppetTest {
     }
 
     // ---------------------------------------------------------------- helpers
+
+    /** At the cap the press fizzles for free: nothing charging, nothing paid, no cooldown, no new puppet. */
+    static void assertCapFizzles(ServerPlayer owner, int expected) {
+        InnateTechniqueService.clearCooldowns(owner);
+        MaliceService.refill(owner);
+        double before = malice(owner);
+        CastManager.handleIntent(owner, CastIntent.CAST_PRESS);
+        assertNull(CastManager.state(owner).casting(), "can't even start charging at the cap");
+        assertEquals(before, malice(owner), 1e-6, "nothing paid");
+        assertEquals(0, InnateTechniqueService.cooldownRemaining(owner, PuppetManipulation.PUPPET_CREATION), "no cooldown");
+        assertEquals(expected, Puppets.count(owner), "no new puppet");
+    }
 
     static ServerPlayer owner(MinecraftServer server, ServerLevel level, String name) {
         ServerPlayer owner = TestServer.player(server, name);
