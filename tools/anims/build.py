@@ -8,9 +8,10 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent))
 import kit  # noqa: E402
+import melee  # noqa: E402
 import puppet_manipulation  # noqa: E402
 
-SETS = {"puppet_manipulation": puppet_manipulation.ANIMS}
+SETS = {"puppet_manipulation": puppet_manipulation.ANIMS, "melee": melee.ANIMS}
 VIEWS = ("three_quarter", "side", "front")
 
 
