@@ -86,6 +86,7 @@ class AssessmentTest {
             Fight fight = varied(a, b);
             double low = AssessmentService.score(new FightReport(a, b, fight, FightOutcome.SURVIVED));
             BirthService.rebirth(a, OptionalInt.of(5000));
+            TraitService.removeAll(a, Trait.RemoveReason.ADMIN); // a birth can roll Six Eyes, and the next step adds it
             InnateTechniqueService.setInnateTechnique(a, Rime.RIME.get());
             assertEquals(low, AssessmentService.score(new FightReport(a, b, fight, FightOutcome.SURVIVED)), EPS, "capacity isn't an input");
             com.cnethuka.kegare.trait.TraitSuccession.release(server, KegareTraits.SIX_EYES.get());
