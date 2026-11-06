@@ -650,10 +650,10 @@ Package `com.cnethuka.kegare.innate_technique.rime`. **Rarity: RARE.** All numbe
   | Mimic (Awareness) | own hand-across-the-face animation, its own evoker-spell sound, and a teal flicker on the caster (`mimic_flicker`) that everyone nearby sees; the trick is the disguise afterwards, not a hidden cast |
   | Send Off (Anchor) | own two-handed shove; the target vanishes onto the glowing anchor |
   | Momentum Exchange (Exchange) | own arms-up sweep, a burst on both players, a lower teleport sound |
-  | Possess (Puppet Creation) | own cast (two fingers to the temple, then the hand flung at the puppet), a soul-escape sound at the body and a lavender thread shooting to the puppet; afterwards the empty body stands slack, a thread running from it to the puppet |
-  | Focus (Directive) | own pointing pose (arm thrust out, the other hand drawn back), a bell at the target and a lavender mark on it for 2 s (a ring tightening round it, a bead over its head) |
-  | Chain Burst (Curio Burst) | own both-hands-overhead cast, a rising whistle at the target, then the blasts going off one after another |
-  | Stand-In (Understudy) | own presenting bow; the puppet grows in a rising column of lavender motes with a mirror sound (and shrinks back the same way) |
+  | Possess (Puppet Creation) | the puppet jolts awake, arms flung wide (`possess_cast`), a soul-escape sound at the body and a lavender thread shooting to the puppet; afterwards the empty body stands slack, a thread running from it to the puppet |
+  | Focus (Directive) | own wind-up and a hard point at the target, held, the other hand yanked back (`focus_point`); a bell at the target and a lavender mark on it for 2 s (a ring tightening round it, a bead over its head) |
+  | Chain Burst (Curio Burst) | own cast: hands gathered, flung up into a wide Y, then slammed down and out (`chain_burst_cast`); a rising whistle at the target, then the blasts going off one after another |
+  | Stand-In (Understudy) | own stage bow, then a hand presenting the double (`stand_in_cast`); the puppet grows in a rising column of lavender motes with a mirror sound (and shrinks back the same way) |
 - **Shared cooldown:** `cooldownKey()` is the base ability's ID, so casting either the base or the special starts the
   one cooldown and both show it on the base slot. The length defaults to the base's `cooldownTicks` (a special may
   override it).
@@ -970,11 +970,27 @@ Order glyphs `gui/puppet_order/{follow,stay,guard,go}.png`.
 are never disabled or pushed (Curio Burst's push and a puppet punch's knockback skip them). Possess and Understudy only ever involve your own
 puppets; Stand-In copies only the owner's look.
 
-**Visuals.** PAL animations (`player_animations/puppet_manipulation.json`, written by `tools/gen_puppet_anims.py`):
-`puppet_create_charge` (loop), `puppet_create_release`, `possess_cast`, `possess_return`, `directive_cast`,
-`focus_point`, `curio_burst_cast`, `chain_burst_cast`, `understudy_cast`, `stand_in_cast`, and `puppet_idle_spin` on the
-puppet. PAL animates players only, so `PuppetPoses` reads the same file and samples the spin's keyframes for the
-puppet model (whole-body turn, arms and head). Photon effects (`PuppetFxAuthoring` → `fx/puppet_manipulation/`),
+**Visuals.** PAL animations (`player_animations/puppet_manipulation.json`, in Blockbench's own Bedrock format, written by
+`tools/anims/`; see `tools/blockbench/README.md`). A puppeteer's body language:
+
+| Animation | What it does |
+|---|---|
+| `puppet_create_charge` | Loop: hands at the chest weaving strings in turns, head bowed over them. Fades in once, then loops from its loop point. |
+| `puppet_create_release` | Strings drawn in, then flung out to the right; the head turns to where the puppet appears. |
+| `possess_cast` | On the possessed puppet: limp, then jolts awake, arms flung wide. |
+| `possess_return` | Back in the body: starts from the empty body's slack pose exactly, a gasp, head snapping up, arms flinching, settling. |
+| `directive_cast` | A conductor's cue: hand up over the shoulder, a cut down and across, a sharp downward point. |
+| `focus_point` | Wind-up, a hard point at the target, held; the other hand yanks a string taut. |
+| `curio_burst_cast` | Reach toward the puppet, a tense beat, the fist yanked back as it goes off. |
+| `chain_burst_cast` | Hands gathered, flung up into a wide Y (not overhead: that would block the first-person view), slammed down and out. |
+| `understudy_cast` | As you land in the puppet's place: a magician's reveal, arms flung open. |
+| `stand_in_cast` | A stage bow, one hand across the waist, the other behind the back, then rising to present the double. |
+| `puppet_idle_spin` | On the puppet: a full turn every 0.9 s at constant speed, arms out and bobbing, head tipping side to side. |
+
+Casts leave the legs to the game, so they work on the move, and (unless the gesture needs the head) leave the head
+looking where the player aims. They fade in from and out to whatever the player was doing (`beginTick`, `endTick`), and
+looping phases honour a loop point the file declares (`PlayerAnimations`). PAL animates players only, so `PuppetPoses`
+reads the same file and samples the spin's keyframes for the puppet model. Photon effects (`PuppetFxAuthoring` → `fx/puppet_manipulation/`),
 lavender with threads as the motif, each with a lavender-dust vanilla fallback:
 - `puppet_form` (threads wound in round a new puppet, a seam ring), `puppet_dissolve` (threads drifting away);
 - `possess_link` (one bead of the thread), `directive_pulse` (rings spreading on the ground at each puppet that heard);
@@ -1011,7 +1027,8 @@ the shell hit, backlash, distance, a dimension change and rerolling while posses
 bosses as fair targets, an offline owner), `CurioBurstTest` (damage by tier and falloff, who is spared, bosses hurt but
 not pushed, the free fizzle, the chain's order and timing), `UnderstudyTest` (the swap and its `SwapTargetEvent`, a
 blocked swap, Stand-In's growth, mirroring, borrowed look, no drops, the return), `PuppetAdvancementsTest` (all eight,
-and mobs not counting where they shouldn't).
+and mobs not counting where they shouldn't), `PuppetAnimationsTest` (PAL's own loader reads every animation the code
+plays, the charge's loop point and the fades; the puppet's sampling of the spin and of both keyframe styles).
 
 ## 4. Extension points (how later content plugs in)
 

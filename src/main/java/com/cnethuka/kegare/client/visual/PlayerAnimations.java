@@ -56,13 +56,24 @@ public final class PlayerAnimations {
                 return;
             }
             var raw = PlayerRawAnimationBuilder.begin()
-                    .then(animation, loop ? Animation.LoopType.LOOP : Animation.LoopType.PLAY_ONCE)
+                    .then(animation, loop ? loopType(animation) : Animation.LoopType.PLAY_ONCE)
                     .build();
             controller.triggerAnimation(raw);
             CURRENT.put(player.getUUID(), animation);
         } catch (Throwable t) {
             warnOnce(animation, t.toString());
         }
+    }
+
+    /**
+     * How a looping phase repeats: from the loop point the animation's file declares ({@code loopTick}: an intro that
+     * plays once, then the loop), else from its start.
+     */
+    private static Animation.LoopType loopType(ResourceLocation animation) {
+        Animation.LoopType own = PlayerAnimResources.getAnimation(animation).loopType();
+        boolean hasLoopPoint = own != Animation.LoopType.DEFAULT && own != Animation.LoopType.PLAY_ONCE
+                && own != Animation.LoopType.HOLD_ON_LAST_FRAME && own != Animation.LoopType.LOOP;
+        return hasLoopPoint ? own : Animation.LoopType.LOOP;
     }
 
     /** Stops {@code animation} if it is what this layer is playing on the player. */

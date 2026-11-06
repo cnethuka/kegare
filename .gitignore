@@ -42,3 +42,6 @@ repo/
 # Second dev client (two-player testing)
 run-client2/
 run-client-*/
+
+# Python
+__pycache__/

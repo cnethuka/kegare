@@ -33,7 +33,7 @@ public class PuppetModel extends PlayerModel<PuppetEntity> {
         });
     }
 
-    /** Degrees on the model's own axes (see tools/gen_puppet_anims.py): x negative = arm forward, z positive = right arm out. */
+    /** Degrees on the model's own axes (see tools/anims/puppet_manipulation.py): x negative = arm forward, z positive = right arm out. */
     private static void apply(Vector3f degrees, ModelPart part) {
         if (degrees == null) return;
         part.xRot = (float) Math.toRadians(degrees.x);
