@@ -794,7 +794,7 @@ Package `com.cnethuka.kegare.innate_technique.rime`. **Rarity: RARE.** All numbe
 - **Hooks specials use:** `Ability.canRelease(ctx)` (CHARGED: checked at release before paying; false fizzles
   for free with `blockedMessage`), `CastManager.switchOff(player, toggle, reason)` (end a toggle from code, e.g.
   `EndReason.CONSUMED`), and lingering visual loops (§3.14, Ice Path).
-- **Requirements** (`Requirement`): `Requirement.trait(trait)`, `Requirement.toggleActive(ability)` or
+- **Requirements** (`Requirement`): `Requirement.trait(trait)` (said as "a rare trait", never by name, §1), `Requirement.toggleActive(ability)` or
   `Requirement.of(test, description)`.
   - Unmet at the press → `"<special> requires <description>."`, nothing paid, no cooldown.
   - Re-checked at a charge's release (a lapse fizzles for free). A channel or toggle ends when one lapses.

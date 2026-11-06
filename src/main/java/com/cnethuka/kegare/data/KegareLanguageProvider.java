@@ -281,7 +281,7 @@ public final class KegareLanguageProvider extends LanguageProvider {
         add("ability.kegare.test_blink", "[Test] Blink");
         add("ability.kegare.test_blink.desc", "Special of Dash: teleport a short way forward. Needs Aura switched on.");
         add("ability.kegare.test_updraft", "[Test] Updraft");
-        add("ability.kegare.test_updraft.desc", "Special of Hover: hold to charge, release to shoot straight up. Needs the " + SIX_EYES + " trait.");
+        add("ability.kegare.test_updraft.desc", "Special of Hover: hold to charge, release to shoot straight up. Needs a rare trait.");
 
         // Traits
         add("trait.kegare.six_eyes", SIX_EYES);
@@ -353,7 +353,7 @@ public final class KegareLanguageProvider extends LanguageProvider {
         add("message.kegare.cast.no_special", "%s has no special.");
         add("message.kegare.cast.requirement", "%s requires %s.");
         add("message.kegare.cast.refinement_locked", "Requires Refinement %s.");
-        add("requirement.kegare.trait", "the %s trait");
+        add("requirement.kegare.trait", "a rare trait");
         add("requirement.kegare.toggle_active", "%s to be active");
         add("message.kegare.cast.busy", "Already casting.");
         add("message.kegare.cast.stunned", "Stunned! (%ss)");

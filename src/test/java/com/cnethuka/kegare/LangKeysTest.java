@@ -52,18 +52,19 @@ class LangKeysTest {
     }
 
     /**
-     * DESIGN §1: what's said in chat must never name a unique trait or the Shrine. Every trait name in the lang file is
-     * checked against every message, and the code against passing a trait's name along; the birth line is the one that does,
-     * and it skips unique traits. Op commands are the documented exception.
+     * DESIGN §1: messages and cards must never name a unique trait or the Shrine. Every trait name in the lang file is
+     * checked against every message and ability card, and the code against passing a trait's name along; the birth line is
+     * the one that does, and it skips unique traits. Op commands are the documented exception.
      */
     @Test
-    void chatNeverNamesAUniqueTraitOrTheShrine() throws IOException {
+    void messagesAndCardsNeverNameAUniqueTraitOrTheShrine() throws IOException {
         Map<String, String> lang = new TreeMap<>();
         Matcher entry = Pattern.compile("^\\s*\"([^\"]+)\"\\s*:\\s*\"((?:[^\"\\\\]|\\\\.)*)\"", Pattern.MULTILINE).matcher(Files.readString(LANG));
         while (entry.find()) lang.put(entry.group(1), entry.group(2));
 
         assertEquals("The eyes have closed.", lang.get("message.kegare.trait.lost"));
         assertEquals("The eyes have opened.", lang.get("message.kegare.trait.inherited"));
+        assertEquals("a rare trait", lang.get("requirement.kegare.trait"));
 
         Set<String> secret = new TreeSet<>(Set.of("shrine"));
         lang.forEach((key, value) -> {
@@ -72,20 +73,21 @@ class LangKeysTest {
         assertTrue(secret.contains("six eyes"), "setup: found the trait names");
         Set<String> named = new TreeSet<>();
         lang.forEach((key, value) -> {
-            if (!key.startsWith("message.") && !key.startsWith("death.") && !key.startsWith("hud.")) return;
+            if (!key.startsWith("message.") && !key.startsWith("death.") && !key.startsWith("hud.") && !key.startsWith("requirement.")
+                    && !key.startsWith("ability.") && !key.startsWith("innate_technique.")) return;
             String lower = value.toLowerCase(java.util.Locale.ROOT);
             for (String name : secret) if (lower.contains(name)) named.add(key);
         });
-        assertEquals(Set.of(), named, "messages that name a secret");
+        assertEquals(Set.of(), named, "text that names a secret");
 
-        Pattern passesName = Pattern.compile("\"message\\.kegare\\.([a-z0-9_.]+)\"[^;]*?[tT]rait\\.displayName\\(\\)");
+        Pattern passesName = Pattern.compile("\"((?:message|requirement)\\.kegare\\.[a-z0-9_.]+)\"[^;]*?[tT]rait\\.get\\(\\)\\.displayName\\(\\)|\"((?:message|requirement)\\.kegare\\.[a-z0-9_.]+)\"[^;]*?[tT]rait\\.displayName\\(\\)");
         Set<String> passed = new TreeSet<>();
         try (Stream<Path> files = Files.walk(SOURCES)) {
             for (Path file : files.filter(p -> p.toString().endsWith(".java")).toList()) {
                 Matcher m = passesName.matcher(Files.readString(file));
-                while (m.find()) passed.add(m.group(1));
+                while (m.find()) passed.add(m.group(1) != null ? m.group(1) : m.group(2));
             }
         }
-        assertEquals(Set.of("birth.trait"), passed, "only the birth line takes a trait's name");
+        assertEquals(Set.of("message.kegare.birth.trait"), passed, "only the birth line takes a trait's name");
     }
 }

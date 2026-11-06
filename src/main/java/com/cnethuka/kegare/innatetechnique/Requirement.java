@@ -13,17 +13,17 @@ import net.minecraft.server.level.ServerPlayer;
  * and channels/toggles end when one lapses.
  * <p>
  * {@link #description()} must be safe on the client (the Sorcerer screen lists it) and read naturally in both
- * "Splinter requires %s." and "Requires %s", e.g. "the Six Eyes trait" or "Rime Shell to be active".
+ * "Splinter requires %s." and "Requires %s", e.g. "a rare trait" or "Rime Shell to be active".
  */
 public interface Requirement {
     boolean isMet(ServerPlayer player);
 
     Component description();
 
-    /** The caster holds this trait. */
+    /** The caster holds this trait. Said as "a rare trait": what's on a card and in a message never names one (DESIGN §1). */
     static Requirement trait(Supplier<? extends Trait> trait) {
         return of(player -> TraitService.has(player, trait.get()),
-                () -> Component.translatable("requirement.kegare.trait", trait.get().displayName()));
+                () -> Component.translatable("requirement.kegare.trait"));
     }
 
     /** This TOGGLE ability of the caster's is switched on. */
