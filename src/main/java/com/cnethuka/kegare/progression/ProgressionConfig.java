@@ -75,6 +75,10 @@ public final class ProgressionConfig {
     public static ModConfigSpec.DoubleValue REFINEMENT_DECAY_FLOOR;
     private static final ModConfigSpec.DoubleValue[] GRADE_MULTIPLIER = new ModConfigSpec.DoubleValue[Grade.values().length];
 
+    // Insight
+    static final Map<InsightSource, ModConfigSpec.EnumValue<InsightCategory>> INSIGHT_CATEGORY = new java.util.EnumMap<>(InsightSource.class);
+    private static final Map<InsightSource, ModConfigSpec.IntValue> INSIGHT_AMOUNT = new java.util.EnumMap<>(InsightSource.class);
+
     private record Gate(ModConfigSpec.DoubleValue average, ModConfigSpec.IntValue fights, ModConfigSpec.IntValue opponents, ModConfigSpec.IntValue peak) {}
 
     private ProgressionConfig() {}
@@ -203,6 +207,16 @@ public final class ProgressionConfig {
         b.pop();
         b.pop();
 
+        b.comment("Insight: each source pays once per player, ever, into one of DOMINION, WARD or OUTPUT. It's kept on reroll and death.",
+                "hit_by_technique pays once per technique, first_legendary_fight once ever. The other sources wait for systems that don't exist yet.").push("insight");
+        for (InsightSource source : InsightSource.values()) {
+            b.push(source.id());
+            INSIGHT_CATEGORY.put(source, b.comment("Which kind of Insight this pays into.").defineEnum("category", source.defaultCategory));
+            INSIGHT_AMOUNT.put(source, b.comment("How much it pays.").defineInRange("amount", source.defaultAmount, 0, 100_000));
+            b.pop();
+        }
+        b.pop();
+
         b.comment("The shared hit path: what counts as landing an ability on a real target.").push("landing");
         LANDING_REPEAT = b.comment("Seconds before the same ability can land on the same target again: one volley or channel isn't twenty landings.")
                 .defineInRange("repeat", 1.0, 0.0, 60.0);
@@ -262,6 +276,14 @@ public final class ProgressionConfig {
         Gate gate = GATES[grade.ordinal()];
         return new AssessmentRules.Requirement(gate.average.get(), gate.fights.get(), gate.opponents.get(),
                 Math.min(gate.peak.get(), REFINEMENT_MAX_LEVEL.get()));
+    }
+
+    static InsightCategory insightCategory(InsightSource source) {
+        return INSIGHT_CATEGORY.get(source).get();
+    }
+
+    static int insightAmount(InsightSource source) {
+        return INSIGHT_AMOUNT.get(source).get();
     }
 
     static double gradeMultiplier(Grade grade) {

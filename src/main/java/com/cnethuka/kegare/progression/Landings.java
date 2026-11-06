@@ -60,7 +60,10 @@ public final class Landings {
         if (state.lastLanding.size() > 256) state.lastLanding.clear();
         state.lastLanding.put(key, now);
         engaged(caster, target);
-        if (target instanceof ServerPlayer player) FightTracker.landed(caster, player, ability.id().toString(), ability.isSpecial());
+        if (target instanceof ServerPlayer player) {
+            FightTracker.landed(caster, player, ability.id().toString(), ability.isSpecial());
+            InnateTechniqueService.current(caster).ifPresent(technique -> InsightHooks.hitByTechnique(player, technique));
+        }
         RefinementService.onLanded(caster, target, ability);
     }
 
