@@ -1310,7 +1310,7 @@ reach Special Grade. Assessment is private and never lowers Grade.
 - **Rerolling can't flatter it.** Peak Refinement survives a reroll, so the kit is the current technique's at that level (`TechniqueUnlocks.scoringKit`),
   or what's unlocked if that's more. Below their peak, combining also asks for three different moves, not just three combos. Grade 1 takes Peak 5, and from
   there alternating any two moves below their peak scores at most 52.5, under its 60. Someone at their peak isn't affected: a fresh player
-  alternating their two level 0 moves still scores 100, and a player really at level 5 or 6 alternating one ability and one special still scores 60.8. A rerolled Peak 10 player can reach Grade 1's
+  alternating their two level 0 moves still scores 100, and a player really at level 5 or 6 alternating one ability and one special still scores 60.8. The three-moves rule is for players below their Peak only. A rerolled Peak 10 player can reach Grade 1's
   minimum from level 1 with three moves (70), and Special Grade's from level 3 (91.7).
 - **Repeating one move scores low:** past `spamFreeShare` (50% of your landings) one move lowers Technique use, down to 40% of it
   (`spamPenalty`) when it's every landing. The other three parts don't look at variety, so a perfect one-move fight can still reach
