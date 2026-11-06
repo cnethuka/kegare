@@ -73,6 +73,10 @@ public final class KegareAttachments {
             () -> AttachmentType.builder(() -> new com.cnethuka.kegare.progression.AssessmentData())
                     .serialize(com.cnethuka.kegare.progression.AssessmentData.CODEC).copyOnDeath().build());
 
+    public static final Supplier<AttachmentType<com.cnethuka.kegare.progression.RefinementData>> REFINEMENT = ATTACHMENT_TYPES.register("refinement",
+            () -> AttachmentType.builder(() -> new com.cnethuka.kegare.progression.RefinementData())
+                    .serialize(com.cnethuka.kegare.progression.RefinementData.CODEC).copyOnDeath().build());
+
     public static final Supplier<AttachmentType<com.cnethuka.kegare.progression.Landings.State>> LANDING_STATE = ATTACHMENT_TYPES.register("landing_state",
             () -> AttachmentType.builder(() -> new com.cnethuka.kegare.progression.Landings.State()).build());
 

@@ -32,6 +32,7 @@ public final class InnateTechniqueService {
         Optional<InnateTechnique> old = current(player);
         CastManager.stopAll(player, EndReason.INNATE_TECHNIQUE_CHANGED);
         get(player).setInnateTechnique(innateTechnique == null ? null : innateTechnique.id());
+        com.cnethuka.kegare.progression.RefinementService.onTechniqueChanged(player); // before the new loadout: it's built for level 0
         LoadoutService.reset(player); // the new technique's default layout; shared unlocks are kept
         old.ifPresent(t -> t.onRemoved(player));
         if (innateTechnique != null) innateTechnique.onAssigned(player);

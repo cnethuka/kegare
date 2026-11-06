@@ -61,6 +61,7 @@ public final class Landings {
         state.lastLanding.put(key, now);
         engaged(caster, target);
         if (target instanceof ServerPlayer player) FightTracker.landed(caster, player, ability.id().toString(), ability.isSpecial());
+        RefinementService.onLanded(caster, target, ability);
     }
 
     /** Runs a delayed effect as part of the cast it came from, so what it hits lands for that ability. */

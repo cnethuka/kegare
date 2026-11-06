@@ -74,6 +74,7 @@ public final class TestServer {
 
     /** Takes every test player out of the overworld again, so one test's players never get in the way of the next. */
     public static void removePlayers(MinecraftServer server) {
+        if (server.overworld() == null) return; // nothing in this test touched the world
         for (ServerPlayer p : java.util.List.copyOf(server.overworld().players())) {
             server.overworld().removePlayerImmediately(p, net.minecraft.world.entity.Entity.RemovalReason.DISCARDED);
         }

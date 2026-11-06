@@ -90,16 +90,12 @@ public final class AssessmentService {
     public static AssessmentRules.Status status(ServerPlayer player, Grade target) {
         AssessmentRules.Requirement requirement = requirement(target);
         if (requirement == null) return null;
-        return AssessmentRules.evaluate(get(player).history, requirement, peakRefinement(player), MaliceService.isSevered(player));
+        return AssessmentRules.evaluate(get(player).history, requirement, RefinementService.peak(player), MaliceService.isSevered(player));
     }
 
     public static boolean requirementMet(ServerPlayer player, Grade target) {
         AssessmentRules.Status status = status(player, target);
         return status != null && status.met();
-    }
-
-    private static int peakRefinement(ServerPlayer player) {
-        return Integer.MAX_VALUE;
     }
 
     /** Admin: forget every fight. */

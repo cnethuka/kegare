@@ -141,6 +141,7 @@ class AssessmentTest {
         TestServer.onServerThread(server, () -> {
             TestServer.ensureOverworld(server);
             ServerPlayer p = sorcerer(server, "no_wins", 100); // Low Malice on purpose
+            RefinementService.setLevel(p, 10); // Peak has its own test
             UUID one = opponent("one");
             UUID two = opponent("two");
             UUID three = opponent("three");
@@ -167,6 +168,39 @@ class AssessmentTest {
             AssessmentService.addFight(p, 95, three);
             AssessmentService.addFight(p, 95, one);
             assertEquals(Grade.SPECIAL_GRADE, Progression.getGrade(p), "Assessment only, from a Low Malice player");
+        });
+    }
+
+    @Test
+    void peakRefinementGatesPromotionAndSurvivesAReroll(MinecraftServer server) throws Exception {
+        TestServer.onServerThread(server, () -> {
+            TestServer.ensureOverworld(server);
+            ServerPlayer p = sorcerer(server, "peak_gate", 1000);
+            GradeService.set(p, Grade.SEMI_GRADE_2);
+            GradeService.addXp(p, 1000);
+            for (int i = 0; i < 5; i++) AssessmentService.addFight(p, 60, opponent(i % 2 == 0 ? "one" : "two"));
+            assertEquals(Grade.SEMI_GRADE_2, Progression.getGrade(p), "low Peak Refinement is the only thing missing");
+            RefinementService.setLevel(p, 2);
+            assertEquals(Grade.GRADE_2, Progression.getGrade(p), "reaching it promotes at once");
+
+            InnateTechniqueService.setInnateTechnique(p, com.cnethuka.kegare.innate_technique.swap.Swap.SWAP.get());
+            assertEquals(0, RefinementService.level(p), "the reroll reset Refinement");
+            assertEquals(2, RefinementService.peak(p), "but Peak Refinement stayed");
+            assertEquals(Grade.GRADE_2, Progression.getGrade(p));
+        });
+    }
+
+    @Test
+    void aSeveredPlayerSkipsPeakRefinement(MinecraftServer server) throws Exception {
+        TestServer.onServerThread(server, () -> {
+            TestServer.ensureOverworld(server);
+            ServerPlayer p = TestServer.damageable(server, "peak_severed");
+            server.overworld().addNewPlayer(p);
+            BirthService.rebirth(p, OptionalInt.of(0));
+            GradeService.set(p, Grade.GRADE_1);
+            for (int i = 0; i < 20; i++) AssessmentService.addFight(p, 95, opponent("s" + i % 3));
+            assertEquals(Grade.SPECIAL_GRADE, Progression.getGrade(p));
+            assertEquals(0, RefinementService.peak(p));
         });
     }
 

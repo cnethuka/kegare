@@ -55,6 +55,17 @@ public final class ProgressionConfig {
     public static ModConfigSpec.DoubleValue LANDING_REPEAT;
     public static ModConfigSpec.DoubleValue NO_TARGET_WINDOW;
 
+    // Refinement
+    public static ModConfigSpec.IntValue REFINEMENT_MAX_LEVEL;
+    public static ModConfigSpec.DoubleValue REFINEMENT_XP_BASE;
+    public static ModConfigSpec.DoubleValue REFINEMENT_XP_EXPONENT;
+    public static ModConfigSpec.DoubleValue REFINEMENT_BASE_XP;
+    public static ModConfigSpec.DoubleValue REFINEMENT_SPECIAL_XP;
+    public static ModConfigSpec.DoubleValue REFINEMENT_PLAYER_MULTIPLIER;
+    public static ModConfigSpec.DoubleValue REFINEMENT_DECAY;
+    public static ModConfigSpec.DoubleValue REFINEMENT_DECAY_FLOOR;
+    private static final ModConfigSpec.DoubleValue[] GRADE_MULTIPLIER = new ModConfigSpec.DoubleValue[Grade.values().length];
+
     private record Gate(ModConfigSpec.DoubleValue average, ModConfigSpec.IntValue fights, ModConfigSpec.IntValue opponents, ModConfigSpec.IntValue peak) {}
 
     private ProgressionConfig() {}
@@ -154,6 +165,29 @@ public final class ProgressionConfig {
         b.pop();
         b.pop();
 
+        b.comment("Refinement: per technique, reset by a reroll. Earned only by landing the current technique's abilities on real targets.",
+                "It only unlocks things: it never changes damage, cost or cooldown.").push("refinement");
+        REFINEMENT_MAX_LEVEL = b.comment("The top level.").defineInRange("maxLevel", 10, 1, 1000);
+        REFINEMENT_XP_BASE = b.comment("Level L costs xpBase * L^xpExponent XP. By default that puts level 2 (the third ability) about",
+                        "12 minutes into fighting mobs, or 4 fighting players, and level 9 (the full kit) several sessions in.")
+                .defineInRange("xpBase", 30.0, 0.01, 1_000_000.0);
+        REFINEMENT_XP_EXPONENT = b.defineInRange("xpExponent", 1.6, 0.0, 10.0);
+        REFINEMENT_BASE_XP = b.comment("XP for landing a base ability or the ultimate.").defineInRange("baseXp", 1.0, 0.0, 10_000.0);
+        REFINEMENT_SPECIAL_XP = b.comment("XP for landing a special.").defineInRange("specialXp", 2.5, 0.0, 10_000.0);
+        REFINEMENT_PLAYER_MULTIPLIER = b.comment("Hits on players count this many times a hit on a mob. Mobs still count, so a player can practice alone.")
+                .defineInRange("playerMultiplier", 3.0, 0.0, 1000.0);
+        REFINEMENT_DECAY = b.comment("Each earlier landing on the same target within grade.rollingWindow multiplies this one's XP by this.")
+                .defineInRange("targetDecay", 0.97, 0.0, 1.0);
+        REFINEMENT_DECAY_FLOOR = b.comment("The least diminishing returns can multiply a landing's XP by.")
+                .defineInRange("targetDecayFloor", 0.2, 0.0, 1.0);
+        b.comment("Multiplies Refinement XP by Grade, so an experienced sorcerer re-learns faster after a reroll.").push("grade_multiplier");
+        double[] multipliers = {1.0, 1.1, 1.25, 1.5, 1.75, 2.0, 2.5};
+        for (Grade grade : Grade.values()) {
+            GRADE_MULTIPLIER[grade.ordinal()] = b.defineInRange(grade.id(), multipliers[grade.ordinal()], 0.0, 1000.0);
+        }
+        b.pop();
+        b.pop();
+
         b.comment("The shared hit path: what counts as landing an ability on a real target.").push("landing");
         LANDING_REPEAT = b.comment("Seconds before the same ability can land on the same target again: one volley or channel isn't twenty landings.")
                 .defineInRange("repeat", 1.0, 0.0, 60.0);
@@ -179,7 +213,12 @@ public final class ProgressionConfig {
     /** What a Grade's Assessment asks for. Only for Grades that take one. */
     static AssessmentRules.Requirement requirement(Grade grade) {
         Gate gate = GATES[grade.ordinal()];
-        return new AssessmentRules.Requirement(gate.average.get(), gate.fights.get(), gate.opponents.get(), gate.peak.get());
+        return new AssessmentRules.Requirement(gate.average.get(), gate.fights.get(), gate.opponents.get(),
+                Math.min(gate.peak.get(), REFINEMENT_MAX_LEVEL.get()));
+    }
+
+    static double gradeMultiplier(Grade grade) {
+        return GRADE_MULTIPLIER[grade.ordinal()].get();
     }
 
     public static long ticks(ModConfigSpec.DoubleValue seconds) {
