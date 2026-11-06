@@ -27,12 +27,14 @@ public final class PuppetManipulation {
     public static final DirectiveAbility DIRECTIVE = new DirectiveAbility();
     public static final CurioBurstAbility CURIO_BURST = new CurioBurstAbility();
     public static final UnderstudyAbility UNDERSTUDY = new UnderstudyAbility();
+    public static final StringsAbility STRINGS = new StringsAbility();
 
     // Specials (R), each sharing its base ability's cooldown.
     public static final PossessAbility POSSESS = new PossessAbility();
     public static final FocusAbility FOCUS = new FocusAbility();
     public static final ChainBurstAbility CHAIN_BURST = new ChainBurstAbility();
     public static final StandInAbility STAND_IN = new StandInAbility();
+    public static final ZipLeashAbility ZIP_LEASH = new ZipLeashAbility();
 
     public static final DeferredHolder<InnateTechnique, InnateTechnique> PUPPET_MANIPULATION = INNATE_TECHNIQUES.register("puppet_manipulation",
             () -> new InnateTechnique(InnateTechnique.builder(InnateTechniqueRarity.EPIC)
@@ -40,6 +42,7 @@ public final class PuppetManipulation {
                     .ability(DIRECTIVE)
                     .ability(CURIO_BURST)
                     .ability(UNDERSTUDY)
+                    .ability(STRINGS)
                     .lockedUltimate()
                     .maliceColor(MALICE_COLOR)
                     .tabIcon(Items.ARMOR_STAND)) {
@@ -48,6 +51,7 @@ public final class PuppetManipulation {
                 public void onRemoved(ServerPlayer player) {
                     if (holds(player)) return;
                     Possession.release(player, Possession.Return.TECHNIQUE_CHANGED);
+                    Strings.cut(player);
                     Puppets.dissolveAll(player.server, player.getUUID());
                 }
             });

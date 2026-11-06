@@ -184,6 +184,22 @@ public final class KegareLanguageProvider extends LanguageProvider {
         add("ability.kegare.stand_in.desc", "For 8 seconds one puppet (the one you look at, else your nearest) grows to your size and "
                 + "copies you: your moves, your held items and armor, your name. It looks exactly like you. Then it shrinks back.");
         add("message.kegare.understudy.refused", "Something stops the swap.");
+        add("ability.kegare.strings", "Strings");
+        add("ability.kegare.strings.desc", "Fire a string at the player, mob or puppet you're looking at (up to 24 blocks). It holds for 8 seconds, "
+                + "or until stretched beyond 32 blocks. Press again to Reel In: pull it to you. Look at someone else and press to Tie them together: "
+                + "they're pulled into each other, collide, and stay within 3 blocks of each other for 4 seconds.");
+        add("ability.kegare.zip_leash", "Zip / Leash");
+        add("ability.kegare.zip_leash.desc", "With a string attached: Zip pulls you to its target. Look at someone else to Leash: both stay within "
+                + "6 blocks of you for 5 seconds, and you're slowed while they do. Leashed targets can still attack and cast.");
+        add("message.kegare.strings.no_target", "Nothing to attach a string to.");
+        add("message.kegare.strings.no_string", "No string attached.");
+        add("message.kegare.strings.immovable", "It won't budge.");
+        add("message.kegare.strings.refused", "The string won't pull.");
+        add("message.kegare.strings.snapped", "The string snapped.");
+        add("message.kegare.strings.slack", "The string went slack.");
+        add("death.attack.kegare.strings_tie", "%1$s was tangled up in %2$s's strings");
+        add("death.attack.kegare.strings_tie.item", "%1$s was tangled up in %2$s's strings");
+        add("death.attack.kegare.strings_tie.player", "%1$s was tangled up in strings while fighting %2$s");
         add("entity.kegare.puppet", "Puppet");
         add("ability.kegare.possess", "Possess");
         add("ability.kegare.possess.desc", "Move into the puppet you're looking at (or your nearest one) and become it: its size, "

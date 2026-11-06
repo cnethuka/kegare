@@ -620,7 +620,7 @@ public class PuppetEntity extends PathfinderMob implements Puppet {
 
         @Override
         public boolean canUse() {
-            if (!follows() || isStandIn() || getTarget() != null) return false;
+            if (!follows() || isStandIn() || getTarget() != null || Strings.holds(PuppetEntity.this)) return false;
             owner = owner();
             double near = PuppetConfig.FOLLOW_DISTANCE.get();
             return owner != null && distanceToSqr(owner) > near * near;
@@ -628,7 +628,7 @@ public class PuppetEntity extends PathfinderMob implements Puppet {
 
         @Override
         public boolean canContinueToUse() {
-            if (!follows() || isStandIn() || getTarget() != null || owner == null || owner != owner()) return false;
+            if (!follows() || isStandIn() || getTarget() != null || owner == null || owner != owner() || Strings.holds(PuppetEntity.this)) return false;
             double stop = PuppetConfig.FOLLOW_DISTANCE.get() * 0.6;
             return distanceToSqr(owner) > stop * stop;
         }

@@ -54,6 +54,29 @@ public final class PuppetConfig {
     public static ModConfigSpec.DoubleValue STAND_IN_DURATION;
     public static ModConfigSpec.DoubleValue STAND_IN_GROW;
 
+    // strings (INSTANT, two stages) and zip_leash (special of strings, INSTANT)
+    public static ModConfigSpec.DoubleValue STRINGS_FIRE_COST;
+    public static ModConfigSpec.DoubleValue STRINGS_REEL_COST;
+    public static ModConfigSpec.DoubleValue STRINGS_TIE_COST;
+    public static ModConfigSpec.DoubleValue STRINGS_ZIP_COST;
+    public static ModConfigSpec.DoubleValue STRINGS_LEASH_COST;
+    public static ModConfigSpec.DoubleValue STRINGS_COOLDOWN;
+    public static ModConfigSpec.DoubleValue STRINGS_FIRE_COOLDOWN;
+    public static ModConfigSpec.DoubleValue STRINGS_RANGE;
+    public static ModConfigSpec.DoubleValue STRINGS_LIFE;
+    public static ModConfigSpec.DoubleValue STRINGS_SNAP_RANGE;
+    public static ModConfigSpec.DoubleValue STRINGS_PULL_SPEED;
+    public static ModConfigSpec.DoubleValue STRINGS_PULL_TIMEOUT;
+    public static ModConfigSpec.DoubleValue STRINGS_ARRIVE;
+    public static ModConfigSpec.DoubleValue STRINGS_COLLIDE;
+    public static ModConfigSpec.DoubleValue STRINGS_TIE_DAMAGE;
+    public static ModConfigSpec.DoubleValue STRINGS_TETHER_DISTANCE;
+    public static ModConfigSpec.DoubleValue STRINGS_TETHER_DURATION;
+    public static ModConfigSpec.DoubleValue STRINGS_TETHER_SPEED;
+    public static ModConfigSpec.DoubleValue STRINGS_LEASH_DISTANCE;
+    public static ModConfigSpec.DoubleValue STRINGS_LEASH_DURATION;
+    public static ModConfigSpec.DoubleValue STRINGS_LEASH_SLOW;
+
     private PuppetConfig() {}
 
     /** Called from KegareServerConfig while it builds the spec. */
@@ -157,6 +180,36 @@ public final class PuppetConfig {
         STAND_IN_COST = b.defineInRange("cost", 20.0, 0.0, 100_000.0);
         STAND_IN_DURATION = b.defineInRange("duration", 8.0, 0.5, 600.0);
         STAND_IN_GROW = b.comment("How long growing (and shrinking back) takes.").defineInRange("grow", 0.4, 0.0, 5.0);
+        b.pop();
+
+        b.comment("Fire a string at the player, mob or puppet you're looking at, then use it: Reel In (cast key) or Zip (R), or, looking",
+                "at a different target, Tie (cast key) or Leash (R). Bosses can be attached to but are never moved.").push("strings");
+        STRINGS_FIRE_COST = b.comment("Stage 1: firing the string.").defineInRange("fireCost", 5.0, 0.0, 100_000.0);
+        STRINGS_REEL_COST = b.defineInRange("reelCost", 12.0, 0.0, 100_000.0);
+        STRINGS_TIE_COST = b.defineInRange("tieCost", 20.0, 0.0, 100_000.0);
+        STRINGS_ZIP_COST = b.defineInRange("zipCost", 10.0, 0.0, 100_000.0);
+        STRINGS_LEASH_COST = b.defineInRange("leashCost", 25.0, 0.0, 100_000.0);
+        STRINGS_COOLDOWN = b.comment("Starts at stage 2, or when a string snaps or expires without one.").defineInRange("cooldown", 10.0, 0.0, 3600.0);
+        STRINGS_FIRE_COOLDOWN = b.comment("After firing: just long enough that a double press doesn't fire and pull at once.")
+                .defineInRange("fireCooldown", 0.25, 0.0, 60.0);
+        STRINGS_RANGE = b.comment("How far away (blocks) a target can be: for firing, and for a Tie or Leash's second target.")
+                .defineInRange("range", 24.0, 1.0, 256.0);
+        STRINGS_LIFE = b.comment("How long an attached string waits for its second stage.").defineInRange("life", 8.0, 0.5, 600.0);
+        STRINGS_SNAP_RANGE = b.comment("Stretched beyond this (blocks), a string snaps.").defineInRange("snapRange", 32.0, 1.0, 512.0);
+        STRINGS_PULL_SPEED = b.comment("Reel In, Zip and a Tie's first pull, blocks per tick.").defineInRange("pullSpeed", 1.2, 0.1, 5.0);
+        STRINGS_PULL_TIMEOUT = b.comment("A pull gives up after this long (a wall in the way).").defineInRange("pullTimeout", 2.0, 0.1, 30.0);
+        STRINGS_ARRIVE = b.comment("Reel In and Zip stop this close (blocks).").defineInRange("arriveDistance", 2.0, 0.5, 16.0);
+        STRINGS_COLLIDE = b.comment("A Tie's two targets collide this close (blocks).").defineInRange("collideDistance", 1.2, 0.1, 16.0);
+        STRINGS_TIE_DAMAGE = b.comment("The collision's damage, to each of them. Default: a weak puppet (2 health) survives it.")
+                .defineInRange("tieDamage", 1.5, 0.0, 1000.0);
+        STRINGS_TETHER_DISTANCE = b.comment("After colliding, a Tie's targets stay within this (blocks) of each other.")
+                .defineInRange("tetherDistance", 3.0, 0.5, 32.0);
+        STRINGS_TETHER_DURATION = b.defineInRange("tetherDuration", 4.0, 0.1, 600.0);
+        STRINGS_TETHER_SPEED = b.comment("How hard a Tie or Leash drags back, in blocks per tick, a block past its limit (twice that two past, up to pullSpeed).",
+                "Above a sprint (0.28), or it could be outrun.").defineInRange("dragSpeed", 0.4, 0.05, 5.0);
+        STRINGS_LEASH_DISTANCE = b.comment("A Leash's targets stay within this (blocks) of you.").defineInRange("leashDistance", 6.0, 0.5, 32.0);
+        STRINGS_LEASH_DURATION = b.defineInRange("leashDuration", 5.0, 0.1, 600.0);
+        STRINGS_LEASH_SLOW = b.comment("Your speed lost while leashing, as a fraction.").defineInRange("leashSlow", 0.35, 0.0, 1.0);
         b.pop();
 
         b.pop();

@@ -103,6 +103,7 @@ public final class Possession {
     /** Moves the player's consciousness into {@code puppet} (one of theirs, in their level). */
     public static void possess(ServerPlayer player, PuppetEntity puppet) {
         if (isPossessing(player)) return;
+        Strings.cut(player); // you can't hold a string from outside your body
         ServerLevel level = player.serverLevel();
         PossessionData d = data(player);
 

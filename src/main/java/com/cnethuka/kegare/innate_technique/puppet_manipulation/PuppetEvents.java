@@ -39,7 +39,9 @@ public final class PuppetEvents {
     /** Logging out: back in the body first (before the player is saved). */
     @SubscribeEvent(priority = EventPriority.HIGHEST)
     static void onLogout(PlayerEvent.PlayerLoggedOutEvent event) {
-        if (event.getEntity() instanceof ServerPlayer player) Possession.release(player, Possession.Return.LOGOUT);
+        if (!(event.getEntity() instanceof ServerPlayer player)) return;
+        Strings.cut(player);
+        Possession.release(player, Possession.Return.LOGOUT);
     }
 
     /**
@@ -98,6 +100,7 @@ public final class PuppetEvents {
     @SubscribeEvent
     static void onServerTick(net.neoforged.neoforge.event.tick.ServerTickEvent.Post event) {
         CurioBursts.tick(event.getServer());
+        Strings.tick(event.getServer());
         if (event.getServer().getTickCount() % 20 == 0 && event.getServer().overworld() != null) {
             PuppetAdvancements.checkSpinning(event.getServer());
         }
@@ -127,5 +130,6 @@ public final class PuppetEvents {
         Possession.clear();
         CurioBursts.clear();
         StandInAbility.clear();
+        Strings.clear();
     }
 }

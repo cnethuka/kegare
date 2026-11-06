@@ -38,6 +38,12 @@ public final class PuppetTargeting {
                 && !(e instanceof PuppetEntity p && p.isPossessed()) && !(e instanceof PuppetShellEntity));
     }
 
+    /** What a string can attach to under the crosshair: {@link #lookedAtLiving}, but not armor stands. */
+    public static Optional<LivingEntity> lookedAtStringTarget(ServerPlayer owner, double range) {
+        return look(owner, LivingEntity.class, range, e -> e != owner && e.isAlive() && !e.isSpectator() && !(e instanceof net.minecraft.world.entity.decoration.ArmorStand)
+                && !(e instanceof PuppetEntity p && p.isPossessed()) && !(e instanceof PuppetShellEntity));
+    }
+
     /** Where the crosshair meets a block within {@code range}, if anywhere. */
     public static Optional<BlockHitResult> lookedAtBlock(ServerPlayer owner, double range) {
         Vec3 eye = owner.getEyePosition();

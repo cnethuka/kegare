@@ -1,6 +1,7 @@
 {
   "replace": false,
   "values": [
-    "kegare:curio_burst"
+    "kegare:curio_burst",
+    "kegare:strings_tie"
   ]
 }
