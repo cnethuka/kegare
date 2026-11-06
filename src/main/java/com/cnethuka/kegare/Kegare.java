@@ -2,6 +2,7 @@ package com.cnethuka.kegare;
 
 import com.mojang.logging.LogUtils;
 import com.cnethuka.kegare.config.KegareClientConfig;
+import com.cnethuka.kegare.config.KegareConfigMigration;
 import com.cnethuka.kegare.config.KegareServerConfig;
 import com.cnethuka.kegare.data.KegareDataGen;
 import com.cnethuka.kegare.network.KegareNetwork;
@@ -46,6 +47,7 @@ public final class Kegare {
         modBus.addListener(KegareNetwork::register);
         modBus.addListener(KegareDataGen::gather);
 
+        modBus.addListener(KegareConfigMigration::onConfigLoading);
         container.registerConfig(ModConfig.Type.SERVER, KegareServerConfig.SPEC);
         container.registerConfig(ModConfig.Type.CLIENT, KegareClientConfig.SPEC);
     }

@@ -366,6 +366,12 @@ Malice is always shown as whole numbers (floored, like the HUD); the stored valu
   `reveal.debugForceFakeOut` and `reveal.seenTechniques` are also on the Sorcerer screen's Settings page (§3.12), which
   saves them at once.
 - Both are editable in-game via Mods → Kegare → Config. Labels are generated into the lang file.
+- **Migrations (`KegareConfigMigration`).** NeoForge keeps every value in an existing file and only adds missing keys, so a changed
+  default never reaches a file that already exists. `kegare-server.toml` has a `configVersion` (a file without one reads as 1). On load, a
+  file behind `CURRENT_VERSION` is fixed once: a value still at its old default moves to the new one, and a value that's neither was changed
+  by hand, so it stays and the server log lists it. **Version 2** is the Malice rescale (the tiers, and every cost and upkeep x4). It doesn't
+  touch players' saved data, so anyone already born keeps the capacity they rolled. A later change to a shipped default that needs the same
+  treatment adds its own table and bumps `CURRENT_VERSION`.
 
 ### 3.10 Data generation and art
 - `./gradlew runData` generates lang, the item model, tags (`kegare:talismans`), the talisman recipe

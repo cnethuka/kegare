@@ -12,6 +12,9 @@ import net.neoforged.neoforge.common.ModConfigSpec;
 public final class KegareServerConfig {
     public static final ModConfigSpec SPEC;
 
+    /** What this file has been migrated through ({@link KegareConfigMigration}). */
+    public static final ModConfigSpec.IntValue CONFIG_VERSION;
+
     // ---- Malice ----
     public static final ModConfigSpec.DoubleValue REGEN_PAUSE_SECONDS;
     public static final ModConfigSpec.DoubleValue CAPACITY_VARIATION_PERCENT;
@@ -78,6 +81,7 @@ public final class KegareServerConfig {
 
     static {
         ModConfigSpec.Builder b = new ModConfigSpec.Builder();
+        CONFIG_VERSION = b.comment("Which one-time fixes this file has been through. Leave it alone.").defineInRange("configVersion", 1, 1, Integer.MAX_VALUE);
 
         b.comment("Malice (cursed energy). Capacity is rolled once at birth and never changes.").push("malice");
         REGEN_PAUSE_SECONDS = b.comment("Regen pauses for this many seconds after the player deals or takes damage.")

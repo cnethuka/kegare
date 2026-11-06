@@ -420,6 +420,7 @@
   "kegare.configuration.combat": "Combat",
   "kegare.configuration.combatTagSeconds": "Combat Tag Seconds",
   "kegare.configuration.common": "Common",
+  "kegare.configuration.configVersion": "Config Version",
   "kegare.configuration.cooldown": "Cooldown",
   "kegare.configuration.cost": "Cost",
   "kegare.configuration.costWithoutShell": "Cost Without Shell",
