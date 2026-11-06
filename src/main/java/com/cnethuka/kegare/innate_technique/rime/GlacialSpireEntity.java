@@ -87,6 +87,7 @@ public class GlacialSpireEntity extends Entity {
         float damage = RimeConfig.SPIRE_DAMAGE.get().floatValue();
         int stacks = RimeConfig.SPIRE_FREEZE_STACKS.get();
         AABB area = new AABB(getX() - radius, getY() - 0.5, getZ() - radius, getX() + radius, getY() + RimeConfig.SPIRE_HEIGHT.get(), getZ() + radius);
+        com.cnethuka.kegare.melee.CleanDodge.areaWentOff(level, owner, area::intersects);
         for (LivingEntity target : level.getEntitiesOfClass(LivingEntity.class, area, e -> e.isAlive() && !e.isSpectator()
                 && (owner == null || e != owner) && horizontalDistance(e) <= radius + e.getBbWidth() / 2)) {
             if (target.hurt(RimeDamage.source(level, this, owner), damage)) FreezeService.addStacks(target, stacks, owner);

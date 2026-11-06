@@ -17,6 +17,7 @@ public final class KegareClientConfig {
     public static final ModConfigSpec.BooleanValue FIRST_PERSON_ANIMATIONS;
     public static final ModConfigSpec.BooleanValue ANIMATION_FADES;
     public static final ModConfigSpec.EnumValue<VfxQuality> VFX_QUALITY;
+    public static final ModConfigSpec.IntValue DASH_DOUBLE_TAP_MILLIS;
     public static final ModConfigSpec.EnumValue<TechniqueSelect> TECHNIQUE_SELECT;
 
     /** In Technique Mode (G), which control picks abilities. The other one stays on the hotbar. Out of the mode both are vanilla. */
@@ -59,6 +60,8 @@ public final class KegareClientConfig {
         TECHNIQUE_SELECT = b.comment("In Technique Mode (G): NUMBER_KEYS = number keys pick abilities and the scroll wheel stays on "
                         + "the hotbar; SCROLL_WHEEL = the other way round. Also on the Sorcerer screen's Settings page.")
                 .defineEnum("techniqueSelect", TechniqueSelect.NUMBER_KEYS);
+        DASH_DOUBLE_TAP_MILLIS = b.comment("Most milliseconds between the two taps of the sprint key (Ctrl) that make a dash. 0 = off: use the Dash key instead.")
+                .defineInRange("dashDoubleTapMillis", 300, 0, 1000);
         b.pop();
         b.push("visuals");
         FIRST_PERSON_ANIMATIONS = b.comment("Show your own ability animations (arms) in first person.")

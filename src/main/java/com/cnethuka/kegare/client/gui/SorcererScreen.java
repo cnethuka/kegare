@@ -626,6 +626,8 @@ public final class SorcererScreen extends Screen {
 
     private static final String[] SELECT_VALUES = {"gui.kegare.settings.number_keys", "gui.kegare.settings.scroll_wheel"};
     private static final String[] VFX_VALUES = {"gui.kegare.settings.vfx.full", "gui.kegare.settings.vfx.reduced", "gui.kegare.settings.vfx.vanilla"};
+    private static final String[] DOUBLE_TAP_VALUES = {"gui.kegare.settings.off", "gui.kegare.settings.dash_double_tap.200", "gui.kegare.settings.dash_double_tap.300", "gui.kegare.settings.dash_double_tap.400"};
+    private static final int[] DOUBLE_TAP_MILLIS = {0, 200, 300, 400};
     private static final String[] ON_OFF = {"gui.kegare.settings.on", "gui.kegare.settings.off"};
 
     private int renderSettings(GuiGraphics g, int x, int y, int w, int mouseX, int mouseY) {
@@ -633,12 +635,23 @@ public final class SorcererScreen extends Screen {
         y = optionRow(g, 0, "gui.kegare.settings.technique_select", SELECT_VALUES, select.ordinal(), x, y, w, mouseX, mouseY);
         y += GuiDraw.wrapped(g, font, Component.translatable(select == TechniqueSelect.NUMBER_KEYS
                 ? "gui.kegare.settings.technique_select.number_keys" : "gui.kegare.settings.technique_select.scroll_wheel"), x, y, w, GuiDraw.DARK_GRAY) + 8;
+        y = optionRow(g, 7, "gui.kegare.settings.dash_double_tap", DOUBLE_TAP_VALUES, doubleTapOption(), x, y, w, mouseX, mouseY);
         y = optionRow(g, 1, "gui.kegare.settings.vfx", VFX_VALUES, KegareClientConfig.VFX_QUALITY.get().ordinal(), x, y, w, mouseX, mouseY) + 5;
         y = optionRow(g, 2, "gui.kegare.settings.first_person", ON_OFF, KegareClientConfig.FIRST_PERSON_ANIMATIONS.get() ? 0 : 1, x, y, w, mouseX, mouseY) + 5;
         y = optionRow(g, 4, "gui.kegare.settings.animation_fades", ON_OFF, KegareClientConfig.ANIMATION_FADES.get() ? 0 : 1, x, y, w, mouseX, mouseY) + 5;
         y = optionRow(g, 3, "gui.kegare.settings.reveal", ON_OFF, KegareClientConfig.REVEAL_ANIMATION.get() ? 0 : 1, x, y, w, mouseX, mouseY) + 5;
         y = optionRow(g, 5, "gui.kegare.settings.reveal_always_full", ON_OFF, KegareClientConfig.REVEAL_ALWAYS_FULL.get() ? 0 : 1, x, y, w, mouseX, mouseY) + 5;
         return optionRow(g, 6, "gui.kegare.settings.reveal_reduced_motion", ON_OFF, KegareClientConfig.REVEAL_REDUCED_MOTION.get() ? 0 : 1, x, y, w, mouseX, mouseY);
+    }
+
+    /** The button nearest what's in the file, which can hold any value. */
+    private static int doubleTapOption() {
+        int millis = KegareClientConfig.DASH_DOUBLE_TAP_MILLIS.get();
+        int best = 0;
+        for (int i = 0; i < DOUBLE_TAP_MILLIS.length; i++) {
+            if (Math.abs(DOUBLE_TAP_MILLIS[i] - millis) < Math.abs(DOUBLE_TAP_MILLIS[best] - millis)) best = i;
+        }
+        return best;
     }
 
     /** A label, then one button per value (the current one lit gold). Returns the y below the row. */
@@ -672,6 +685,7 @@ public final class SorcererScreen extends Screen {
             case 4 -> KegareClientConfig.ANIMATION_FADES.set(value == 0);
             case 5 -> KegareClientConfig.REVEAL_ALWAYS_FULL.set(value == 0);
             case 6 -> KegareClientConfig.REVEAL_REDUCED_MOTION.set(value == 0);
+            case 7 -> KegareClientConfig.DASH_DOUBLE_TAP_MILLIS.set(DOUBLE_TAP_MILLIS[value]);
             default -> {
                 return;
             }

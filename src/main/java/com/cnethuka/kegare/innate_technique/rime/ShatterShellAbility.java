@@ -46,6 +46,7 @@ public final class ShatterShellAbility extends RimeSpecial {
         double knockback = RimeConfig.SHATTER_KNOCKBACK.get();
         int stacks = RimeConfig.SHATTER_FREEZE_STACKS.get();
         int players = 0;
+        com.cnethuka.kegare.melee.CleanDodge.areaWentOff(p.serverLevel(), p, com.cnethuka.kegare.melee.CleanDodge.sphere(p.position(), radius));
         for (LivingEntity target : p.level().getEntitiesOfClass(LivingEntity.class, p.getBoundingBox().inflate(radius),
                 e -> e != p && e.isAlive() && !e.isSpectator() && e.distanceToSqr(p) <= radius * radius)) {
             if (CombatHelper.isBoss(target)) continue; // never knocked back, never frozen (DESIGN §4)

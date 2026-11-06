@@ -1,0 +1,32 @@
+package com.cnethuka.kegare.melee;
+
+import javax.annotation.Nullable;
+import net.minecraft.world.phys.AABB;
+import net.minecraft.world.phys.Vec3;
+
+/** Runtime only (attachment {@code kegare:melee}), all in level game time. Gone on death and logout, like a cast in progress. */
+public final class MeleeState {
+    // Dash
+    long dashReadyAt;
+    @Nullable Vec3 dashDirection;
+    double dashDistance;
+    int dashTicksLeft;
+    // Clean dodge: where they were, until when
+    @Nullable AABB ghost;
+    long ghostUntil;
+    // Parry
+    boolean guarding;
+    long guardStart;
+    long recoveryUntil;
+    boolean parriedThisGuard;
+    long guardLoopAt;
+    // Reinforced Strike
+    long strikeUntil;
+    int strikeTicks;
+    // What the owner's HUD last showed
+    @Nullable MeleeHudPayload sent;
+
+    public boolean isGuarding() {
+        return guarding;
+    }
+}

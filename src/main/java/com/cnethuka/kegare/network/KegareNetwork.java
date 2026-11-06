@@ -12,7 +12,7 @@ import net.neoforged.neoforge.network.registration.PayloadRegistrar;
  * decided and saved; screens are cosmetic.
  */
 public final class KegareNetwork {
-    public static final String VERSION = "13";
+    public static final String VERSION = "14";
 
     private KegareNetwork() {}
 
@@ -24,7 +24,13 @@ public final class KegareNetwork {
         registrar.playToServer(SorcererRequestPayload.TYPE, SorcererRequestPayload.STREAM_CODEC, SorcererRequestPayload::handle);
         registrar.playToServer(TalismanConfirmPayload.TYPE, TalismanConfirmPayload.STREAM_CODEC, TalismanConfirmPayload::handle);
         registrar.playToServer(LoadoutEditPayload.TYPE, LoadoutEditPayload.STREAM_CODEC, LoadoutEditPayload::handle);
+        registrar.playToServer(com.cnethuka.kegare.melee.MeleeIntentPayload.TYPE, com.cnethuka.kegare.melee.MeleeIntentPayload.STREAM_CODEC,
+                com.cnethuka.kegare.melee.MeleeIntentPayload::handle);
         // server -> client (state and decided results)
+        registrar.playToClient(com.cnethuka.kegare.melee.MeleeDashPayload.TYPE, com.cnethuka.kegare.melee.MeleeDashPayload.STREAM_CODEC,
+                com.cnethuka.kegare.melee.MeleeDashPayload::handle);
+        registrar.playToClient(com.cnethuka.kegare.melee.MeleeHudPayload.TYPE, com.cnethuka.kegare.melee.MeleeHudPayload.STREAM_CODEC,
+                com.cnethuka.kegare.melee.MeleeHudPayload::handle);
         registrar.playToClient(SyncPayload.TYPE, SyncPayload.STREAM_CODEC, SyncPayload::handle);
         registrar.playToClient(RevealPayload.TYPE, RevealPayload.STREAM_CODEC, RevealPayload::handle);
         registrar.playToClient(SorcererInfoPayload.TYPE, SorcererInfoPayload.STREAM_CODEC, SorcererInfoPayload::handle);

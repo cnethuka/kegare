@@ -4,6 +4,7 @@ import com.cnethuka.kegare.innatetechnique.Ability;
 import com.cnethuka.kegare.innatetechnique.AbilityContext;
 import com.cnethuka.kegare.innatetechnique.CastType;
 import com.cnethuka.kegare.innatetechnique.visual.AbilityVisuals;
+import com.cnethuka.kegare.melee.CleanDodge;
 import java.util.List;
 import java.util.Optional;
 import net.minecraft.server.level.ServerPlayer;
@@ -12,7 +13,9 @@ import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.level.ClipContext;
 import net.minecraft.world.phys.AABB;
+import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
 
 /** CHANNELED: a cone of frost in front of you while held. Slows, and adds a freeze stack every second. */
@@ -46,6 +49,7 @@ public final class FrostFieldAbility extends RimeAbility {
         boolean slowTick = ctx.activeTicks() % SLOW_REFRESH_TICKS == 0;
         boolean stackTick = ctx.activeTicks() % 20 == 0;
         if (!slowTick && !stackTick) return;
+        CleanDodge.areaWentOff(player.serverLevel(), player, box -> inCone(player, box));
         int amplifier = RimeConfig.FIELD_SLOWNESS_AMPLIFIER.get();
         int stacks = RimeConfig.FIELD_FREEZE_STACKS_PER_SECOND.get();
         for (LivingEntity target : targets(player)) {
@@ -55,6 +59,17 @@ public final class FrostFieldAbility extends RimeAbility {
         if (ctx.activeTicks() % 10 == 0) {
             player.level().playSound(null, player.getX(), player.getY(), player.getZ(), SoundEvents.POWDER_SNOW_STEP, SoundSource.PLAYERS, 0.6f, 0.8f);
         }
+    }
+
+    /** A box where the cone reaches: in range and inside its half-angle, with nothing solid between. */
+    private static boolean inCone(ServerPlayer player, AABB box) {
+        double range = RimeConfig.FIELD_RANGE.get();
+        Vec3 eye = player.getEyePosition();
+        Vec3 to = box.getCenter().subtract(eye);
+        double dist = to.length();
+        if (dist > range + box.getXsize() / 2 || dist < 1.0e-3) return false;
+        if (to.normalize().dot(player.getLookAngle()) < Math.cos(Math.toRadians(RimeConfig.FIELD_HALF_ANGLE.get()))) return false;
+        return player.level().clip(new ClipContext(eye, box.getCenter(), ClipContext.Block.COLLIDER, ClipContext.Fluid.NONE, player)).getType() == HitResult.Type.MISS;
     }
 
     /** Living things in the cone: within range, inside the half-angle of your look, and in line of sight. */

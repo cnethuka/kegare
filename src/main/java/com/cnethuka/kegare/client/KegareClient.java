@@ -25,6 +25,7 @@ public final class KegareClient {
         modBus.addListener(KegareClient::registerReloadListeners);
         VisualClientEvents.init(modBus);
         com.cnethuka.kegare.innate_technique.rime.client.RimeClient.init(modBus);
+        com.cnethuka.kegare.melee.client.MeleeClient.init();
         com.cnethuka.kegare.rmt.client.RmtClient.init();
         com.cnethuka.kegare.innate_technique.swap.client.SwapClient.init(modBus);
         com.cnethuka.kegare.innate_technique.puppet_manipulation.client.PuppetClient.init(modBus);

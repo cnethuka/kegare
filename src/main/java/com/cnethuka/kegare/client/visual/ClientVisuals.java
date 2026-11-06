@@ -78,7 +78,7 @@ public final class ClientVisuals {
         visual.animation().ifPresent(animation -> {
             if (entity instanceof AbstractClientPlayer player) PlayerAnimations.play(player, animation, false);
         });
-        visual.effect().ifPresent(effect -> {
+        visual.effect().map(effect -> firstPersonVariant(entity, effect)).ifPresent(effect -> {
             VfxQuality quality = KegareClientConfig.VFX_QUALITY.get();
             FXEffectExecutor executor = quality == VfxQuality.VANILLA ? null
                     : PhotonEffects.onEntity(effect, entity, visual.anchor(), quality == VfxQuality.REDUCED, false);
@@ -131,13 +131,32 @@ public final class ClientVisuals {
 
     /** Positional effects closer than this to a first-person camera are skipped (they would block the view). */
     private static final double NEAR_CAMERA = 2.0;
+    private static final Map<ResourceLocation, Double> NEAR_CAMERA_OVERRIDES = new HashMap<>();
+
+    private static final Map<ResourceLocation, ResourceLocation> FIRST_PERSON_VARIANTS = new HashMap<>();
+
+    /** An effect riding a player that would fill their own screen: in first person, they see {@code variant} instead. Everyone else sees {@code effect}. */
+    public static void setFirstPersonVariant(ResourceLocation effect, ResourceLocation variant) {
+        FIRST_PERSON_VARIANTS.put(effect, variant);
+    }
+
+    private static ResourceLocation firstPersonVariant(Entity entity, ResourceLocation effect) {
+        Minecraft mc = Minecraft.getInstance();
+        if (entity != mc.player || !mc.options.getCameraType().isFirstPerson()) return effect;
+        return FIRST_PERSON_VARIANTS.getOrDefault(effect, effect);
+    }
+
+    /** An effect that has to be seen from closer than usual (a hit landing on someone at arm's length). */
+    public static void setNearCameraDistance(ResourceLocation effect, double distance) {
+        NEAR_CAMERA_OVERRIDES.put(effect, distance);
+    }
 
     public static void playAt(ClientLevel level, Vec3 pos, Visual visual) {
         visual.effect().ifPresent(effect -> {
             VfxQuality quality = KegareClientConfig.VFX_QUALITY.get();
             // On your own body in first person (you got hit, you broke free): anything there, even small particles,
             // would sit right in front of your eyes. Skip it; you still get the hurt flash, overlays, HUD and sound.
-            if (nearFirstPersonCamera(pos)) return;
+            if (nearFirstPersonCamera(pos, NEAR_CAMERA_OVERRIDES.getOrDefault(effect, NEAR_CAMERA))) return;
             FXEffectExecutor executor = quality == VfxQuality.VANILLA ? null
                     : PhotonEffects.at(effect, level, pos, quality == VfxQuality.REDUCED);
             if (executor == null) {
@@ -237,10 +256,10 @@ public final class ClientVisuals {
         PlayerAnimations.clear();
     }
 
-    private static boolean nearFirstPersonCamera(Vec3 pos) {
+    private static boolean nearFirstPersonCamera(Vec3 pos, double distance) {
         Minecraft mc = Minecraft.getInstance();
         if (!mc.options.getCameraType().isFirstPerson()) return false;
-        return mc.gameRenderer.getMainCamera().getPosition().distanceToSqr(pos) < NEAR_CAMERA * NEAR_CAMERA;
+        return mc.gameRenderer.getMainCamera().getPosition().distanceToSqr(pos) < distance * distance;
     }
 
     private static Vec3 anchorPos(Entity entity, Visual.Anchor anchor) {

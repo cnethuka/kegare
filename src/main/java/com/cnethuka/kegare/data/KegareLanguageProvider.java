@@ -64,6 +64,16 @@ public final class KegareLanguageProvider extends LanguageProvider {
         add("key.categories.kegare", "Kegare");
         add("key.kegare.special", "Special (of the selected ability)");
         add("key.kegare.technique_mode", "Technique Mode");
+        add("key.kegare.parry", "Parry");
+        add("key.kegare.dash", "Dash");
+        add("message.kegare.melee.no_malice", "Not enough Malice to %s.");
+        add("hud.kegare.melee.strike", "Reinforced");
+        add("hud.kegare.melee.dash", "Dash");
+        add("hud.kegare.melee.recovery", "Recovering");
+        add("gui.kegare.settings.dash_double_tap", "Double-tap sprint to Dash");
+        add("gui.kegare.settings.dash_double_tap.200", "Fast");
+        add("gui.kegare.settings.dash_double_tap.300", "Normal");
+        add("gui.kegare.settings.dash_double_tap.400", "Slow");
         add("key.kegare.cast", "Cast Ability");
         add("key.kegare.ultimate", "Ultimate");
         add("key.kegare.sorcerer", "Sorcerer Screen");

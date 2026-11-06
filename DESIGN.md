@@ -306,7 +306,8 @@ All timestamps use **level game time**. They persist across restarts and are ide
   - The client counts down cooldowns locally from game time.
 - Swap (§3.19) adds two cosmetic S→C payloads: `Disguises.StatePayload` (the disguise map, to everyone) and
   `SwapLink.Payload` (effects drawn along a line).
-- Network version `12` (since the Assessment's Technique use joined progression's snapshot on `SyncPayload`). Bump it when payload formats change; mismatched clients are refused.
+- The melee layer (§3.22) has its own payloads: `MeleeIntentPayload` (C→S, requests only), `MeleeDashPayload` and `MeleeHudPayload` (S→C, to their owner).
+- Network version `14` (since the melee layer). Bump it when payload formats change; mismatched clients are refused.
 
 ### 3.6 HUD
 **Rule: the combat HUD does not exist until the player asks for it** (art in `gen_art.py` → `textures/gui/combat/`).
@@ -339,6 +340,7 @@ All timestamps use **level game time**. They persist across restarts and are ide
     slots show only their number. Grade and XP are never on the combat HUD;
   - accents along the tray and crest in the technique's Malice color.
 - The selected ability's name shows above hearts/food for 2 s after picking it (`kegare:combat_name`).
+- The melee layer's cues sit under the crosshair, in and out of Technique Mode and for Severed players too, only while there's something to show: **Reinforced** (gold, a Strike is ready), **Dash** and **Recovering** with thin countdown bars (§3.22).
 - Severed players never get the panel (G does nothing). Everything is hidden when F1 hides the GUI and in spectator
   mode. Client config `hud.enabled` turns all of it off.
 
@@ -416,13 +418,13 @@ Malice is always shown as whole numbers (floored, like the HUD); the stored valu
 - **Server TOML** (`config/kegare-server.toml`, where NeoForge 21.1 keeps server configs; synced to clients and
   hot-reloaded when edited) holds **every balance number**.
   - Sections: `malice` (with `tiers`), `traits`, `roll` (with `weights`, and `includeTestInnateTechniques`),
-    `combat`, `rime` (§3.14), `swap` (§3.19), `reverse_malice_technique` (§3.17), `progression` (§3.21), `test_abilities`.
+    `combat`, `rime` (§3.14), `swap` (§3.19), `melee` (§3.22), `reverse_malice_technique` (§3.17), `progression` (§3.21), `test_abilities`.
   - The `traits` section includes:
     - `sixEyesBirthChance`
     - `sixEyesTransferMode` (RANDOM | KILLER)
     - `sixEyesTransferDelaySeconds` (30)
     - `uniqueTraitInactiveDays` (0 = off; fractions allowed)
-- **Client TOML:** `hud.enabled`, `input.techniqueSelect` (NUMBER_KEYS | SCROLL_WHEEL, §3.5),
+- **Client TOML:** `hud.enabled`, `input.techniqueSelect` (NUMBER_KEYS | SCROLL_WHEEL, §3.5), `input.dashDoubleTapMillis` (§3.22),
   `visuals.firstPersonAnimations`, `visuals.animationFades`, `visuals.vfxQuality`, and for the roll reveal (§3.12)
   `reveal.animation` (scenes on/off), `reveal.alwaysFull`, `reveal.reducedMotion`, `reveal.fakeOutChance` (0.2),
   `reveal.debugForceFakeOut` and `reveal.seenTechniques`. All but `hud.enabled`, `reveal.fakeOutChance`,
@@ -675,6 +677,8 @@ closing it or disconnecting at any point changes nothing.
   (you got hit, you broke free) is skipped. Even small particles there would cover the screen; you still get the
   hurt flash, overlays, HUD and sound. Your own entity-attached loops are authored away from the camera: Rime's
   charge sits a block ahead, the cone starts in front of you, and the shell is invisible from inside.
+- **Near the camera:** a positional effect closer than 2 blocks to a first-person camera isn't drawn, or it would sit in front of your eyes. `ClientVisuals.setNearCameraDistance` lowers that for one effect (Reinforced Strike's impact, 1 block: only the target is that close).
+- **On your own screen:** `ClientVisuals.setFirstPersonVariant` swaps an effect riding a player for a quieter one, for that player in first person only (the dash's trail, the parry's spark and the guard's hit).
 - **Failures never crash:** a missing or broken `.fx` falls back to vanilla particles (`VanillaFallback`, per-effect
   lookalikes), and a missing animation is skipped. Each one is logged once. Effects are preloaded at client setup.
 - **Client config (`visuals`):**
@@ -1511,6 +1515,57 @@ For shared and system unlocks, separate from a technique's own abilities.
 **Tests:** pure maths in `FightTest`, `GradeMathTest`, `AssessmentScoringTest`; in-game JUnit in `FightTrackerTest`, `GradeTest`, `AssessmentTest`,
 `LandingsTest`, `RefinementTest`, `TechniqueUnlocksTest`, `InsightTest`, `UnlocksTest`, `ProgressionSnapshotTest`, `ProgressionAdvancementsTest`.
 
+### 3.22 The melee layer (package `melee`)
+
+Dash, Parry and Reinforced Strike, for every player, in and out of Technique Mode. They aren't techniques: no slots, no casting, no Refinement or Assessment
+gates, and counters to techniques have nothing to act on. Low Malice is what limits them, and RMT doesn't touch them.
+Dash is Kinetic Manipulation; Parry and Strike are Reinforcement, which "can distribute stress and absorb energy; it cannot delete the reaction": hence the guard's
+recovery. Numbers: `[melee]` in `kegare-server.toml` (`MeleeConfig`), resolved per player by `MeleeNumbers`. State: the runtime attachment `kegare:melee`
+(`MeleeState`, in level game time, gone on death and logout, like a cast in progress).
+
+**Who can use it** (`MeleeRules`): alive, born, not a spectator, not stunned or frozen, and not possessing a puppet (the body isn't yours to reinforce; a Strike
+ready when you possess is dropped).
+
+**Dash** (double-tap sprint, or a rebindable key with nothing bound by default).
+- About 4 blocks the way you're moving, or forward with no keys held; 3 s cooldown; 25 Malice. No invulnerability.
+- The double tap (`DoubleTap`) follows the sprint key if it's rebound, in a window set by client config `input.dashDoubleTapMillis` (300; 0 = off), also on the Settings page.
+- The client only says which movement keys are held (clamped on arrival). The server checks everything and sweeps the player's box through the world (`Dash.clearDistance`; a
+  step counts as passable), so it never aims past a wall. Less than 0.5 blocks of room refuses it for free, with no cooldown. It's not allowed on a mount or while gliding.
+- **Who moves the player:** the server allows the dash and tells the owner once (`MeleeDashPayload`), and `client/DashDrive` sets velocity each tick, measuring how far it's actually got.
+  The game's own collision stops it, so it can't clip. Velocity pushed from the server each tick would land anywhere from 3 to 5 blocks, because two pushes in one client tick lose
+  one. A dash covers 4.33 blocks in the open and stops flush against a wall. A stun stops it (`MeleeDashPayload.STOP`). It adds nothing to fall handling: dashing doesn't save you from a fall.
+
+**Clean dodge** (`CleanDodge`). A dash leaves a "ghost": the box the player had when they left. For 0.5 s, the first thing that would have hit the ghost and wouldn't hit the player now counts, and earns a Strike:
+- a **melee swing**, polled each tick: anyone just starting a swing whose reach gets the ghost (a player's look ray to their reach, stopped by blocks; a mob's reach box);
+- a **projectile**, polled each tick: its next two ticks of flight cross the ghost (stopped by blocks), and don't cross the player;
+- an **ability area**: area abilities call `CleanDodge.areaWentOff(level, owner, covers)` with the same test they use on targets (Curio Burst, Glacial Spire, Shatter Shell, Frost Field).
+
+A real hit from any entity in the window ends it; your own swings, shots, areas and puppets don't count. A new area ability adds the one call. Mobs seldom qualify on melee: their AI only swings at a target already in reach.
+
+**Parry** (hold X, rebindable). All timed on the server from when the press arrived.
+- **First 0.3 s, the perfect window (free):** a melee hit is cancelled, the attacker staggered (0.5 s of Slowness III, a player's attack cooldown restarted, nothing done to their abilities; a mob's own attack cooldown has
+  just started anyway), and a Strike earned. Techniques and projectiles are never parried.
+- **After that, the guard:** 40% off melee, draining 16 Malice/s; it drops when the Malice runs out. Holding needs 10 Malice to begin (not spent).
+- **The whole time:** 10% off technique damage. Plain arrows get nothing.
+- **Letting go:** 1 s recovery with no parry. Casting, attacking, dashing, a stun or running out of Malice also bring it down. A guard that caught nothing plays the exposed recovery animation.
+- Stunned players can't parry. A guard can't start during a charge or a channel.
+- **Bosses (§4):** can't be staggered, so their hits in the window aren't cancelled: the guard takes its 40%, no Strike. It isn't directional and doesn't slow you: both are tuning options.
+- A modified client can't get a second window without sitting out the recovery; one that never lets go only drains itself (a Severed guard has a time limit).
+
+**Melee, as far as this layer cares** (`MeleeHits`): the player, mob and no-aggro attack damage types, dealt directly by the attacker, outside a cast. Technique: any `kegare` damage type, or anything `Attribution` puts on an ability.
+
+**Reinforced Strike** (no key, no slot). After a perfect parry or clean dodge, the next melee hit on a real target within 1.5 s does 50% more with extra knockback and costs 20 Malice by itself.
+Without the Malice the hit stays normal and the Strike waits until it expires. Earning it again restarts the clock; it never stacks. Bosses take the damage and aren't moved. Tell: gold motes at the shins (`melee/strike_ready`) and **Reinforced** on the owner's HUD.
+
+**Severed** have no Malice, so `[melee.severed]` is a physical version with no costs and its own numbers: dash 3.5 blocks every 4 s; perfect window 0.25 s; guard 30% off melee and nothing off techniques, held at most 2.5 s (no Malice to run out of); recovery 1.25 s; Strike +35% with less knockback. **Starting values, up for review.**
+
+**Impact moments** (`MeleeImpact`): `DASH_BURST`, `CLEAN_DODGE`, `PARRY_PERFECT`, `GUARD_HIT`, `STAGGER`, `STRIKE_HIT`, fired on the server tick the effect is applied. Sounds and effects hang off them, and `MeleeImpact.listen` is where the Impact System hooks in. No screen shake, hit-stop or shaders yet.
+
+**Visuals.** Animations: `tools/anims/melee.py` → `player_animations/melee.json` (four dash directions, `parry_guard`, `parry_perfect`, `parry_recovery`, `stagger`, `reinforced_strike`). A reaction's key pose is on its first frames, because the server has already applied the hit when it starts. Raised arms fill the first-person view, so parry and stagger throw arms out and not up.
+Effects (`MeleeFxAuthoring`, `fx/melee/`): dash burst on the ground left behind, afterimages and a wake along the dash, parry spark and guard hit riding the defender's look (a point at the contact is too near both fighters' cameras to draw), with quieter versions on the player's own first-person screen, and Strike impact on the target. The parry's crescent is a Blockbench model, `art/blockbench/parry_arc.bbmodel` (`tools/blockbench/build_parry_arc.py`) exported to `models/fx/parry_arc.obj` and drawn by Photon's Model render mode. The model holds its shape from every side and takes the gold cleanly, where Photon's stock SLASH sprite turns to every camera, keeps a blue edge and whites out the first-person view.
+
+**Tests:** `MeleeLayerTest` (in-game JUnit), `DoubleTapTest`, `DashMotionTest`, `MeleeAnimationsTest`.
+
 ---
 
 ## 4. Extension points (how later content plugs in)
@@ -1524,6 +1579,7 @@ For shared and system unlocks, separate from a technique's own abilities.
 - **Advancements:** "learning" ones (first use; task frame) may count mobs. "Mastery" ones (goal or challenge frame,
   proving PvP skill) count PLAYER targets only (and player attackers, where someone else's hit is the condition).
 - Where things stand:
+  - The melee layer follows it (§3.22): parries stagger and Strikes knock back mobs too; bosses are never staggered or moved, and their hits are only reduced.
   - Swap follows it (§3.19): Positions, Switchback, Send Off, Exchange and Momentum Exchange take mobs; Awareness,
     Mimic and Total Swap are players only; bosses are never targets; its advancements split as the rule says.
   - Rime follows it (§3.14): its abilities hit mobs; bosses take the damage but get no Freeze stacks, no launch and

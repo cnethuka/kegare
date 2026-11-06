@@ -18,6 +18,10 @@ public final class KegareKeys {
     public static final KeyMapping CAST = key("key.kegare.cast", GLFW.GLFW_KEY_C);
     public static final KeyMapping ULTIMATE = key("key.kegare.ultimate", GLFW.GLFW_KEY_V);
     public static final KeyMapping SORCERER = key("key.kegare.sorcerer", GLFW.GLFW_KEY_K);
+    /** Hold to parry, then guard (DESIGN §3.22). */
+    public static final KeyMapping PARRY = key("key.kegare.parry", GLFW.GLFW_KEY_X);
+    /** Dash on a key of its own. Nothing by default: the default is double-tapping sprint. */
+    public static final KeyMapping DASH = new KeyMapping("key.kegare.dash", KeyConflictContext.IN_GAME, InputConstants.UNKNOWN, CATEGORY);
 
     private KegareKeys() {}
 
@@ -31,5 +35,7 @@ public final class KegareKeys {
         event.register(CAST);
         event.register(ULTIMATE);
         event.register(SORCERER);
+        event.register(PARRY);
+        event.register(DASH);
     }
 }

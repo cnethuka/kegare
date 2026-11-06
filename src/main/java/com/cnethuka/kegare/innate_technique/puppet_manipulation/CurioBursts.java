@@ -72,6 +72,7 @@ public final class CurioBursts {
                 0.6f + 0.25f * tier.ordinal(), 1.5f - 0.2f * tier.ordinal());
         level.playSound(null, center.x, center.y, center.z, SoundEvents.WOOL_BREAK, SoundSource.PLAYERS, 1.0f, 0.8f);
 
+        com.cnethuka.kegare.melee.CleanDodge.areaWentOff(level, owner, com.cnethuka.kegare.melee.CleanDodge.sphere(center, radius));
         List<LivingEntity> hurt = new ArrayList<>();
         for (LivingEntity target : level.getEntitiesOfClass(LivingEntity.class, new AABB(center, center).inflate(radius),
                 e -> e.isAlive() && !e.isSpectator() && !spared(e, owner))) {
