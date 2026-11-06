@@ -8,8 +8,13 @@ import com.cnethuka.kegare.network.IntentPayload;
 import com.cnethuka.kegare.network.SelectAbilityPayload;
 import com.cnethuka.kegare.network.SorcererRequestPayload;
 import com.cnethuka.kegare.network.SyncPayload;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Optional;
+import java.util.function.BooleanSupplier;
 import net.minecraft.client.KeyMapping;
 import net.minecraft.client.Minecraft;
+import net.minecraft.core.GlobalPos;
 import net.minecraft.util.Mth;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.bus.api.EventPriority;
@@ -18,13 +23,13 @@ import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.client.event.ClientPlayerNetworkEvent;
 import net.neoforged.neoforge.client.event.ClientTickEvent;
 import net.neoforged.neoforge.client.event.InputEvent;
-import net.neoforged.neoforge.client.event.ScreenEvent;
 import net.neoforged.neoforge.network.PacketDistributor;
 
 /**
  * Turns input into requests. Nothing here decides an outcome; the server validates every intent and selection.
  * <ul>
- *   <li>R: the selected ability's special (press / release). V: the ultimate. K: Sorcerer screen.</li>
+ *   <li>R: the selected ability's special (press / release). V: the ultimate. Both in Technique Mode only.
+ *       K: Sorcerer screen.</li>
  *   <li>C (Cast, rebindable): base-casts the selected ability, in or out of Technique Mode.</li>
  *   <li>G toggles Technique Mode. In it, ONE control picks abilities and the other stays on the hotbar
  *       ({@link TechniqueSelect}: number keys by default, or the scroll wheel). Out of it, number keys and scroll are
@@ -36,8 +41,20 @@ public final class ClientInput {
     private static boolean castHeld;
     private static boolean specialHeld;
     private static boolean ultimateHeld;
+    /** Set while a replaced player waits to be compared with the new one; see {@link #onPlayerReplaced}. */
+    private static Optional<GlobalPos> deathBeforeReplaced;
+    private static final List<BooleanSupplier> SPECIAL_KEY_NEEDED = new ArrayList<>();
 
     private ClientInput() {}
+
+    /** While this holds, R works outside Technique Mode too: for something R has to end, never for casting. */
+    public static void addSpecialKeyNeeded(BooleanSupplier needed) {
+        SPECIAL_KEY_NEEDED.add(needed);
+    }
+
+    private static boolean specialKeyAllowed() {
+        return TechniqueMode.isActive() || SPECIAL_KEY_NEEDED.stream().anyMatch(BooleanSupplier::getAsBoolean);
+    }
 
     /**
      * Before vanilla handles keys this tick. In Technique Mode with {@link TechniqueSelect#NUMBER_KEYS} the number keys
@@ -62,13 +79,18 @@ public final class ClientInput {
         }
         RevealQueue.tick(mc);
 
-        // Technique Mode ends when abilities go away: death, Severed, no innate technique.
-        if (TechniqueMode.isActive() && !TechniqueMode.abilitiesAvailable()) TechniqueMode.exit();
+        if (deathBeforeReplaced != null) {
+            if (!deathBeforeReplaced.equals(mc.player.getLastDeathLocation())) TechniqueMode.exit();
+            deathBeforeReplaced = null;
+        }
+        TechniqueMode.tick();
         while (KegareKeys.TECHNIQUE_MODE.consumeClick()) TechniqueMode.toggle();
 
         castHeld = edge(consumeAndCheck(KegareKeys.CAST), castHeld, CastIntent.CAST_PRESS, CastIntent.CAST_RELEASE);
-        specialHeld = edge(consumeAndCheck(KegareKeys.SPECIAL), specialHeld, CastIntent.SPECIAL_PRESS, CastIntent.SPECIAL_RELEASE);
-        ultimateHeld = edge(consumeAndCheck(KegareKeys.ULTIMATE), ultimateHeld, CastIntent.ULTIMATE_PRESS, CastIntent.ULTIMATE_RELEASE);
+        specialHeld = edge(CastKeys.down(consumeAndCheck(KegareKeys.SPECIAL), specialHeld, specialKeyAllowed()),
+                specialHeld, CastIntent.SPECIAL_PRESS, CastIntent.SPECIAL_RELEASE);
+        ultimateHeld = edge(CastKeys.down(consumeAndCheck(KegareKeys.ULTIMATE), ultimateHeld, TechniqueMode.isActive()),
+                ultimateHeld, CastIntent.ULTIMATE_PRESS, CastIntent.ULTIMATE_RELEASE);
         while (KegareKeys.SORCERER.consumeClick()) PacketDistributor.sendToServer(SorcererRequestPayload.INSTANCE);
     }
 
@@ -97,10 +119,16 @@ public final class ClientInput {
         }
     }
 
-    /** Opening any screen leaves Technique Mode. */
+    /**
+     * A respawn from dying ends Technique Mode; a dimension change makes a new player too, and the mode carries on. A new death
+     * location tells them apart, and the new player only has it once the packet is handled, so the next tick compares them.
+     * {@link TechniqueMode#tick} can't catch this one: with instant respawn no tick may see the dead player. Dying twice on one
+     * block under instant respawn does look like a dimension change, and only keeps the mode on.
+     */
     @SubscribeEvent
-    static void onScreenOpening(ScreenEvent.Opening event) {
-        TechniqueMode.exit();
+    static void onPlayerReplaced(ClientPlayerNetworkEvent.Clone event) {
+        if (event.getOldPlayer().isDeadOrDying()) TechniqueMode.exit();
+        else deathBeforeReplaced = event.getOldPlayer().getLastDeathLocation();
     }
 
     private static void selectSlot(int slot) {
@@ -136,6 +164,7 @@ public final class ClientInput {
         castHeld = false;
         specialHeld = false;
         ultimateHeld = false;
+        deathBeforeReplaced = null;
         TechniqueMode.exit();
     }
 

@@ -266,9 +266,9 @@ All timestamps use **level game time**. They persist across restarts and are ide
 - The pity math is plain Java (`PityRoller`, `MaliceRoller`) and unit-tested (`./gradlew test`).
 
 ### 3.5 Input and networking
-- **Keys** (all rebindable): **R** special of the selected ability (hold for CHARGED/CHANNELED specials, §3.15),
-  **G** Technique Mode, **C** cast (the selected ability's base cast, in or out of Technique Mode; hold it for
-  CHARGED/CHANNELED), **V** ultimate, **K** Sorcerer screen. There is no next/previous-ability key and no ability
+- **Keys** (all rebindable): **R** special of the selected ability, in Technique Mode only (hold for CHARGED/CHANNELED
+  specials, §3.15), **G** Technique Mode, **C** cast (the selected ability's base cast, in or out of Technique Mode; hold
+  it for CHARGED/CHANNELED), **V** ultimate, in Technique Mode only, **K** Sorcerer screen. There is no next/previous-ability key and no ability
   menu (the hold-Z radial was removed: Technique Mode does that job).
 - **Right-click is always vanilla**, in and out of Technique Mode: it uses the held item (shield, bow, food) and never
   casts. **C** is the cast key.
@@ -280,8 +280,13 @@ All timestamps use **level game time**. They persist across restarts and are ide
     - `SCROLL_WHEEL`: the scroll wheel picks abilities (skipping empty slots) and number keys pick hotbar slots;
   - the combat panel takes the hotbar's place and the hotbar becomes a column on the left (§3.6).
 
-  It ends when you press G again, open any screen, die, or become Severed (or lose your innate technique). G does
-  nothing for Severed players.
+  It ends when you press G again, die, or become Severed (or lose your innate technique), and on logout. G does
+  nothing for Severed players. Nothing else ends it: chat, any other screen, a command and a dimension change leave the
+  mode and the panel as they were. Input and the HUD read one state (`TechniqueMode.isActive`), and it lives on the
+  client only: the server has no copy to fall out of step, and turning it on is free, so nothing rides on enforcing it.
+
+  With it off, R and V do nothing. Two things aren't casts and keep working: letting go of R or V after the mode ended
+  under a held key (the cast that began gets its usual release), and R to return from a possession (§3.20).
 - The Cast key always exists (it was R before R became the special key).
 - Selecting an ability is a `SelectAbilityPayload` request the server validates; a key tap shorter than a tick still
   counts as a press.

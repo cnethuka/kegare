@@ -1,5 +1,6 @@
 package com.cnethuka.kegare.innate_technique.puppet_manipulation.client;
 
+import com.cnethuka.kegare.client.ClientInput;
 import com.cnethuka.kegare.client.StatusLayer;
 import com.cnethuka.kegare.client.gui.GuiDraw;
 import com.cnethuka.kegare.client.visual.ClientVisuals;
@@ -62,6 +63,7 @@ public final class PossessionClient {
             payload.entries().forEach(e -> POSSESSING.put(e.player(), e));
         });
         PuppetHud.Payload.setClientHandler(payload -> hud = payload);
+        ClientInput.addSpecialKeyNeeded(() -> hud.possessing()); // R is the way back, with Technique Mode on or off
         modBus.addListener(PossessionClient::addLayers);
         NeoForge.EVENT_BUS.addListener(PossessionClient::onClientTick);
         NeoForge.EVENT_BUS.addListener(PossessionClient::onNameTag);
