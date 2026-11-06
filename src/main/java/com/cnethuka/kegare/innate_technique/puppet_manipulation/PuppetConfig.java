@@ -132,7 +132,7 @@ public final class PuppetConfig {
         b.pop();
         b.pop();
 
-        b.comment("Give every puppet in range the next order: Follow, Stay, Guard (attack whoever damages you), Go (walk to the",
+        b.comment("Give every puppet in range the next order: Follow, Stay, Guard (attack whoever damages you and whatever you damage), Go (walk to the",
                 "block you're looking at).").push("directive");
         DIRECTIVE_COST = b.defineInRange("cost", 20.0, 0.0, 100_000.0);
         DIRECTIVE_COOLDOWN = b.defineInRange("cooldown", 1.0, 0.0, 3600.0);

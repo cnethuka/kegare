@@ -11,6 +11,7 @@ import com.cnethuka.kegare.TestServer;
 import com.cnethuka.kegare.innatetechnique.CastIntent;
 import com.cnethuka.kegare.innatetechnique.CastManager;
 import com.cnethuka.kegare.innatetechnique.InnateTechniqueService;
+import com.cnethuka.kegare.progression.RefinementService;
 import com.cnethuka.kegare.malice.MaliceService;
 import java.util.List;
 import net.minecraft.core.BlockPos;
@@ -29,6 +30,153 @@ import org.junit.jupiter.api.extension.ExtendWith;
 /** Puppet Manipulation, part 2: Directive's four orders (and what each does) and Focus, on players' and mobs' targets. */
 @ExtendWith(EphemeralTestServerProvider.class)
 class DirectiveTest {
+    private static Cow cow(ServerLevel level, double x, int y, double z) {
+        Cow cow = new Cow(EntityType.COW, level);
+        cow.moveTo(x, y, z, 0f, 0f);
+        level.addFreshEntity(cow);
+        return cow;
+    }
+
+    private static void hitBy(ServerPlayer player, net.minecraft.world.entity.LivingEntity target) {
+        target.invulnerableTime = 0;
+        assertTrue(target.hurt(player.damageSources().playerAttack(player), 1f), "setup: the hit landed");
+    }
+
+    @Test
+    void guardsGoForWhatTheirOwnerDamages(MinecraftServer server) throws Exception {
+        TestServer.onServerThread(server, () -> {
+            ServerLevel level = PossessionTest.setUp(server);
+            int ground = level.getHeight(Heightmap.Types.MOTION_BLOCKING, 0, 0);
+            ServerPlayer owner = PossessionTest.damageable(server, "guard_owner");
+            level.addNewPlayer(owner);
+            PossessionTest.prepare(owner);
+            owner.moveTo(0.5, ground, 0.5, -90f, 0f);
+            ServerPlayer enemy = PossessionTest.damageable(server, "guard_enemy");
+            level.addNewPlayer(enemy);
+            enemy.moveTo(3.5, ground, 3.5, 0f, 0f);
+            Cow first = cow(level, 2.5, ground, 0.5);
+            Cow second = cow(level, -1.5, ground, 0.5);
+            WitherBoss wither = EntityType.WITHER.create(level);
+            wither.moveTo(3.5, ground, -3.5, 0f, 0f);
+            wither.setNoAi(true);
+            level.addFreshEntity(wither);
+            net.minecraft.world.entity.decoration.ArmorStand stand = new net.minecraft.world.entity.decoration.ArmorStand(level, 0.5, ground, 3.5);
+            level.addFreshEntity(stand);
+            try {
+                PuppetEntity a = PuppetTest.create(server, owner, 0);
+                InnateTechniqueService.clearCooldowns(owner);
+                PuppetEntity b = PuppetTest.create(server, owner, 0);
+                InnateTechniqueService.clearCooldowns(owner);
+
+                hitBy(owner, first);
+                assertNull(a.getTarget(), "only Guard does this: they're following");
+
+                DirectiveAbility.give(owner, PuppetOrder.GUARD, null);
+                hitBy(owner, first);
+                assertSame(first, a.getTarget(), "a mob the owner hit");
+                assertSame(first, b.getTarget(), "both of them");
+
+                hitBy(owner, second);
+                assertSame(first, a.getTarget(), "one already chasing something keeps at it");
+
+                a.setTarget(null);
+                b.setTarget(null);
+                enemy.invulnerableTime = 0;
+                assertTrue(enemy.hurt(owner.damageSources().playerAttack(owner), 1f), "setup: the hit landed");
+                assertSame(enemy, a.getTarget(), "a player the owner hit");
+
+                // A technique of the owner's counts, however it was delivered.
+                a.setTarget(null);
+                b.setTarget(null);
+                second.invulnerableTime = 0;
+                assertTrue(second.hurt(CurioBursts.source(level, b, owner), 1f), "setup: the blast landed");
+                assertSame(second, a.getTarget(), "their Curio Burst counts as them");
+
+                // A puppet's own punch doesn't call the others over, and other people's hits are none of their business.
+                a.setTarget(null);
+                b.setTarget(null);
+                first.invulnerableTime = 0;
+                assertTrue(first.hurt(level.damageSources().mobAttack(b), 1f), "setup: the punch landed");
+                assertNull(a.getTarget(), "a puppet's punch isn't the owner's doing");
+                hitBy(enemy, second);
+                assertNull(a.getTarget(), "someone else's hit isn't either");
+
+                // Never their own, or a dummy.
+                b.invulnerableTime = 0;
+                b.hurt(owner.damageSources().playerAttack(owner), 1f);
+                assertNull(a.getTarget(), "hitting your own puppet gives the others no ideas");
+                Puppets.ownerDealtDamage(owner, stand);
+                assertNull(a.getTarget(), "an armor stand isn't a target");
+                Puppets.ownerDealtDamage(owner, owner);
+                assertNull(a.getTarget(), "nor are you");
+
+                // §4: a boss can be targeted and hurt, and is never moved.
+                hitBy(owner, wither);
+                assertSame(wither, a.getTarget(), "a boss the owner hit");
+                wither.setDeltaMovement(net.minecraft.world.phys.Vec3.ZERO);
+                float health = wither.getHealth();
+                a.moveTo(wither.getX() - 1.0, ground, wither.getZ(), -90f, 0f);
+                wither.invulnerableTime = 0;
+                assertTrue(a.doHurtTarget(wither), "the punch lands");
+                assertTrue(wither.getHealth() < health, "and hurts it");
+                assertEquals(net.minecraft.world.phys.Vec3.ZERO, wither.getDeltaMovement(), "but never pushes it");
+            } finally {
+                first.discard();
+                second.discard();
+                wither.discard();
+                stand.discard();
+                enemy.discard();
+                PossessionTest.cleanUp(server, level, owner);
+            }
+        });
+    }
+
+    @Test
+    void whatAGuardLandsEarnsItsOwnerRefinementUnderTheUsualRules(MinecraftServer server) throws Exception {
+        TestServer.onServerThread(server, () -> {
+            ServerLevel level = PossessionTest.setUp(server);
+            int ground = level.getHeight(Heightmap.Types.MOTION_BLOCKING, 0, 0);
+            ServerPlayer owner = PossessionTest.damageable(server, "guard_refinement");
+            level.addNewPlayer(owner);
+            PossessionTest.prepare(owner);
+            owner.moveTo(0.5, ground, 0.5, -90f, 0f);
+            Cow target = cow(level, 2.5, ground, 0.5);
+            Cow other = cow(level, -1.5, ground, 0.5);
+            try {
+                assertEquals(0, RefinementService.level(owner), "a fresh Puppet player");
+                PuppetEntity guard = PuppetTest.create(server, owner, 0);
+                DirectiveAbility.give(owner, PuppetOrder.GUARD, null);
+                hitBy(owner, target);
+                assertEquals(0.0, RefinementService.get(owner).xp(), 1.0e-6, "a bare-handed hit earns nothing");
+                assertSame(target, guard.getTarget());
+
+                guard.moveTo(target.getX() - 1.0, ground, target.getZ(), -90f, 0f);
+                target.invulnerableTime = 0;
+                assertTrue(guard.doHurtTarget(target), "setup: the punch landed");
+                double one = RefinementService.get(owner).xp();
+                assertTrue(one > 0, "the guard's punch earned Refinement");
+
+                target.invulnerableTime = 0;
+                assertTrue(guard.doHurtTarget(target), "setup: the second punch landed");
+                assertEquals(one, RefinementService.get(owner).xp(), 1.0e-6, "the repeat limit: no landing twice within a second");
+
+                TestServer.advanceGameTime(server, (int) com.cnethuka.kegare.progression.ProgressionConfig.ticks(com.cnethuka.kegare.progression.ProgressionConfig.LANDING_REPEAT) + 1);
+                target.invulnerableTime = 0;
+                assertTrue(guard.doHurtTarget(target), "setup: the third punch landed");
+                double two = RefinementService.get(owner).xp();
+                assertTrue(two > one && two - one < one, "the same target is worth less each time: " + one + " then " + (two - one));
+
+                other.invulnerableTime = 0;
+                assertTrue(guard.doHurtTarget(other), "setup: the punch on a fresh target landed");
+                assertEquals(one, RefinementService.get(owner).xp() - two, 1.0e-6, "a new target is worth full value");
+            } finally {
+                target.discard();
+                other.discard();
+                PossessionTest.cleanUp(server, level, owner);
+            }
+        });
+    }
+
     @Test
     void ordersAndFocus(MinecraftServer server) throws Exception {
         TestServer.onServerThread(server, () -> {

@@ -161,7 +161,7 @@ public final class KegareLanguageProvider extends LanguageProvider {
                 + "charge (180) a strong one: 8 health, a bright glow and an outline. Puppets last until killed; you can hold 15 at once.");
         add("ability.kegare.directive", "Directive");
         add("ability.kegare.directive.desc", "Give every puppet within 32 blocks the next order: Follow, Stay, Guard (attack whoever "
-                + "damages you, player or mob) or Go (walk to the block you're looking at, then stay). New puppets take the current order.");
+                + "damages you and whatever you damage, player or mob) or Go (walk to the block you're looking at, then stay). New puppets take the current order.");
         add("ability.kegare.focus", "Focus");
         add("ability.kegare.focus.desc", "Every puppet in range swarms the player or mob you're looking at, until it dies or gets away; "
                 + "then they go back to their order.");

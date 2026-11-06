@@ -85,6 +85,18 @@ public final class PuppetEvents {
         }
     }
 
+    /**
+     * Guard: what a Puppet Manipulation player damages, their guarding puppets go for. A puppet's own punch isn't its owner's
+     * doing, or one stray hit would call every idle guard over. A Curio Burst is: the owner set it off.
+     */
+    @SubscribeEvent
+    static void onOwnerDealtDamage(net.neoforged.neoforge.event.entity.living.LivingDamageEvent.Post event) {
+        if (event.getNewDamage() <= 0 || !(event.getEntity().level() instanceof net.minecraft.server.level.ServerLevel level)
+                || event.getSource().getEntity() instanceof PuppetEntity) return;
+        com.cnethuka.kegare.progression.Attribution.Hit hit = com.cnethuka.kegare.progression.Attribution.of(event.getSource(), level.getServer());
+        if (hit != null) Puppets.ownerDealtDamage(hit.attacker(), event.getEntity());
+    }
+
     /** A puppet doesn't heal (natural regeneration would mend it for free). */
     @SubscribeEvent
     static void onHeal(LivingHealEvent event) {

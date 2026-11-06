@@ -118,9 +118,21 @@ public final class Puppets {
      * already chasing something keep at it.
      */
     static void ownerAttacked(ServerPlayer owner, net.minecraft.world.entity.LivingEntity attacker) {
-        if (attacker == owner) return;
+        if (attacker != owner) guardsGoFor(owner, attacker);
+    }
+
+    /**
+     * Guard: the owner damaged something real (player or mob, by hand or by technique); their guarding puppets in range go
+     * for it too. Bosses count (§4: they take the damage and are never moved). What the puppets then land earns the owner
+     * Refinement down the normal hit path, under its usual repeat limit and per-target decay.
+     */
+    static void ownerDealtDamage(ServerPlayer owner, net.minecraft.world.entity.LivingEntity target) {
+        if (PuppetManipulation.holds(owner) && com.cnethuka.kegare.progression.Attribution.isRealTarget(owner, target)) guardsGoFor(owner, target);
+    }
+
+    private static void guardsGoFor(ServerPlayer owner, net.minecraft.world.entity.LivingEntity target) {
         for (PuppetEntity puppet : near(owner, PuppetConfig.DIRECTIVE_RANGE.get())) {
-            if (puppet.order() == PuppetOrder.GUARD && puppet.getTarget() == null) puppet.attack(attacker);
+            if (puppet.order() == PuppetOrder.GUARD && puppet.getTarget() == null) puppet.attack(target);
         }
     }
 
