@@ -121,6 +121,7 @@ public final class GradeService {
         data.xp = 0.0;
         PlayerSync.markDirty(player);
         if (up) for (PromotionListener listener : LISTENERS) listener.onPromoted(player, grade);
+        else Unlocks.evaluate(player); // an admin lowered it: what's tied to its technique is checked again
     }
 
     /** Admin: back to a fresh Grade 4 with no history. */

@@ -41,6 +41,7 @@ public final class Insight {
         InsightData data = data(player);
         data.values.put(category, Math.max(0, data.value(category) + amount));
         PlayerSync.markDirty(player);
+        Unlocks.evaluate(player);
     }
 
     /** Admin: back to nothing, and every first can pay again. */

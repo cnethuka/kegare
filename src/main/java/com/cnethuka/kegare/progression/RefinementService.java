@@ -99,6 +99,7 @@ public final class RefinementService {
         data.xp = 0.0;
         data.hits.clear();
         PlayerSync.markDirty(player);
+        Unlocks.onTechniqueChanged(player);
     }
 
     private static void changed(ServerPlayer player, int from, int to) {

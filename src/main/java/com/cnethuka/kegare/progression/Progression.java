@@ -16,6 +16,8 @@ public final class Progression {
         FightTracker.addListener(GradeService::onFightEnded);
         FightTracker.addStartListener(InsightHooks::onFightStarted);
         RefinementService.addLevelListener(TechniqueUnlocks::onLevelChanged);
+        RefinementService.addLevelListener((player, from, to) -> Unlocks.evaluate(player));
+        GradeService.addPromotionListener((player, grade) -> Unlocks.evaluate(player));
     }
 
     public static Grade getGrade(ServerPlayer player) {

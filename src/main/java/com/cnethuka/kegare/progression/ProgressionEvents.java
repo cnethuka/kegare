@@ -88,6 +88,13 @@ public final class ProgressionEvents {
     }
 
     @SubscribeEvent
+    static void onLogin(PlayerEvent.PlayerLoggedInEvent event) {
+        if (!(event.getEntity() instanceof ServerPlayer player)) return;
+        GradeService.tryPromote(player); // the config may have changed while they were away
+        Unlocks.evaluate(player);
+    }
+
+    @SubscribeEvent
     static void onLogout(PlayerEvent.PlayerLoggedOutEvent event) {
         if (event.getEntity() instanceof ServerPlayer player) FightTracker.onLogout(player);
     }
