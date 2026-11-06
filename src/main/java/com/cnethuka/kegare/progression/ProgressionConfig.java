@@ -157,13 +157,15 @@ public final class ProgressionConfig {
         TECHNIQUE_SPECIALS = b.comment("Distinct specials landed.").defineInRange("specials", 25.0, 0.0, 1000.0);
         TECHNIQUE_MIXING = b.comment("Landing both a base ability and a special.").defineInRange("mixing", 10.0, 0.0, 1000.0);
         TECHNIQUE_COMBOS = b.comment("Combining different abilities within comboWindow.").defineInRange("combos", 25.0, 0.0, 1000.0);
-        DISTINCT_FULL_SHARE = b.comment("Land this share (rounded up) of the abilities, and of the specials, you have unlocked for full marks.")
+        DISTINCT_FULL_SHARE = b.comment("Land this share (rounded up) of the abilities, and of the specials, in your kit for full marks.",
+                        "Your kit is your technique's at your Peak Refinement level, or what you have unlocked if that's more.")
                 .defineInRange("distinctFullShare", 0.6, 0.01, 1.0);
         SPAM_FREE_SHARE = b.comment("One move can be this share of your landings before it starts to lower the score.")
                 .defineInRange("spamFreeShare", 0.5, 0.0, 1.0);
         SPAM_PENALTY = b.comment("What Technique use loses when one move is every landing (0.6 = down to 40%).")
                 .defineInRange("spamPenalty", 0.6, 0.0, 1.0);
-        COMBO_TARGET = b.comment("Different abilities landed back to back, for full marks on combining.")
+        COMBO_TARGET = b.comment("Different abilities landed back to back, for full marks on combining.",
+                        "Below your Peak Refinement level it also takes this many different moves.")
                 .defineInRange("comboTarget", 3, 1, 1000);
         COMBO_WINDOW = b.comment("Seconds between two landings for them to count as combined.").defineInRange("comboWindow", 4.0, 0.0, 60.0);
         SEVERED_FULL_MOVES = b.comment("Severed players: different melee moves (a weapon, crit or sprint) for full marks on variety.")
