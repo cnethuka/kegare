@@ -1,5 +1,6 @@
 package com.cnethuka.kegare.config;
 
+import java.util.List;
 import net.neoforged.neoforge.common.ModConfigSpec;
 
 /** Client-only preferences (HUD and screens). No gameplay values here. */
@@ -8,6 +9,11 @@ public final class KegareClientConfig {
 
     public static final ModConfigSpec.BooleanValue HUD_ENABLED;
     public static final ModConfigSpec.BooleanValue REVEAL_ANIMATION;
+    public static final ModConfigSpec.BooleanValue REVEAL_ALWAYS_FULL;
+    public static final ModConfigSpec.BooleanValue REVEAL_REDUCED_MOTION;
+    public static final ModConfigSpec.DoubleValue REVEAL_FAKE_OUT_CHANCE;
+    public static final ModConfigSpec.BooleanValue REVEAL_DEBUG_FORCE_FAKE_OUT;
+    public static final ModConfigSpec.ConfigValue<List<? extends String>> REVEAL_SEEN_TECHNIQUES;
     public static final ModConfigSpec.BooleanValue FIRST_PERSON_ANIMATIONS;
     public static final ModConfigSpec.BooleanValue ANIMATION_FADES;
     public static final ModConfigSpec.EnumValue<VfxQuality> VFX_QUALITY;
@@ -37,7 +43,17 @@ public final class KegareClientConfig {
         HUD_ENABLED = b.define("enabled", true);
         b.pop();
         b.push("reveal");
-        REVEAL_ANIMATION = b.comment("Play the roll reveal spin. Off = show the result instantly.").define("animation", true);
+        REVEAL_ANIMATION = b.comment("Play the roll reveal's scenes. Off = show the result instantly.").define("animation", true);
+        REVEAL_ALWAYS_FULL = b.comment("Play every roll's full reveal. Off = a technique you've already seen plays the short version (rarity, then name).")
+                .define("alwaysFull", false);
+        REVEAL_REDUCED_MOTION = b.comment("Tone the reveal's screen flashes right down and turn its screen shake off.")
+                .define("reducedMotion", false);
+        REVEAL_FAKE_OUT_CHANCE = b.comment("Chance (0-1) that a Legendary's flame starts purple and flares to gold halfway through.")
+                .defineInRange("fakeOutChance", 0.2, 0.0, 1.0);
+        REVEAL_DEBUG_FORCE_FAKE_OUT = b.comment("Debug: every Legendary reveal plays the fake-out.")
+                .define("debugForceFakeOut", false);
+        REVEAL_SEEN_TECHNIQUES = b.comment("Innate techniques whose full reveal has played on this client. Remove one (or all) to see it again.")
+                .defineListAllowEmpty("seenTechniques", List.of(), () -> "kegare:rime", id -> id instanceof String);
         b.pop();
         b.push("input");
         TECHNIQUE_SELECT = b.comment("In Technique Mode (G): NUMBER_KEYS = number keys pick abilities and the scroll wheel stays on "

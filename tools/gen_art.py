@@ -316,40 +316,6 @@ def panel() -> Image.Image:
     return img
 
 
-def card(metal: list, accent, seed: int, ornate: int) -> Image.Image:
-    """Rarity card. ornate: 0 = plain corners .. 3 = gold-leaf flourishes and gems.
-    Every ornament stays inside the 12px nine-slice corners (edges and centre tile, so anything there repeats)."""
-    w, h, border = 36, 48, 12
-    tx, ty = w - 2 * border, h - 2 * border
-    body = noise_stack(seed + 9, tx, ty, (4, 2))
-
-    def interior(x: int, y: int):
-        t = 0.55 - (y / h) * 0.35 + (fbm(body, x, y) - 0.5) * 0.3
-        return dither(PLUM, t, x, y)
-
-    def corners(img: Image.Image) -> None:
-        if ornate == 0:
-            return
-        hi, mid = metal[-1], metal[4]
-        for (cx, cy, sx, sy) in ((5, 5, 1, 1), (w - 6, 5, -1, 1), (5, h - 6, 1, -1), (w - 6, h - 6, -1, -1)):
-            # hand-drawn L bracket with a curl
-            arm = 3 + ornate  # the curl ends at cx + arm <= 11, inside the corner
-            for i in range(arm):
-                put(img, cx + sx * i, cy, mid if i else hi)
-                put(img, cx, cy + sy * i, mid if i else hi)
-            put(img, cx + sx * arm, cy + sy, hi)
-            put(img, cx + sx, cy + sy * arm, hi)
-            if ornate >= 2:
-                put(img, cx + sx, cy + sy, accent)
-            if ornate >= 3:
-                put(img, cx + sx * 2, cy + sy * 2, accent)
-                put(img, cx + sx * 2, cy + sy, metal[5])
-                put(img, cx + sx, cy + sy * 2, metal[5])
-
-    return frame(w, h, 3, metal, interior, seed=seed, tile_x=tx, tile_y=ty, rim=metal[-1] if ornate >= 2 else None,
-                 corner_ornament=corners, glints=ornate >= 1)
-
-
 def tab(selected: bool) -> Image.Image:
     w, h, border = 24, 16, 5
     r = ramp("#2a1f33", "#33263e", "#3d2e4a", "#463554", "#4f3c5e") if selected else PLUM
@@ -1793,6 +1759,260 @@ def string_braid() -> Image.Image:
     return img
 
 
+# ---------------------------------------------------------------------------------------------------- the roll reveal
+
+def reveal_talisman() -> Image.Image:
+    """The ofuda that burns in the Omen scene: 40x80 of aged paper, ink bands and script, and a red seal. RevealScreen burns it
+    column by column, so nothing here knows about fire."""
+    w, h = 40, 80
+    img = new(w, h)
+    n = noise_stack(901, w, h, (20, 10, 5))
+    edge = random.Random(903)
+    left = [3 + (edge.random() < 0.3) for _ in range(h)]
+    right = [w - 4 - (edge.random() < 0.3) for _ in range(h)]
+    top = [2 + (edge.random() < 0.25) for _ in range(w)]
+    bottom = [h - 3 - (edge.random() < 0.45) - (edge.random() < 0.2) for _ in range(w)]
+    for y in range(h):
+        for x in range(w):
+            if not (left[y] <= x <= right[y] and top[x] <= y <= bottom[x]):
+                continue
+            d = min(x - left[y], right[y] - x, y - top[x], bottom[x] - y)
+            t = 0.62 + (fbm(n, x, y) - 0.5) * 1.1 - (0.3 if d == 0 else 0.14 if d == 1 else 0.0)
+            put(img, x, y, dither(PAPER, t, x, y))
+    ink = [hexc("#2b2129"), hexc("#1c1a1f"), hexc("#141216")]
+    for y0 in (7, 10, 69, 72):  # ink bands, dry-brushed
+        brush(img, [(7, y0), (32, y0 + (1 if y0 % 2 else 0))], 0.9 if y0 in (7, 72) else 0.55, ink, seed=905 + y0, taper=(0.06, 0.06), dry=0.2, wobble=0.3)
+    # the script: three stacked marks above the seal, three below
+    strokes = [
+        ([(13, 15), (27, 15)], 1.0), ([(20, 13), (20, 24)], 1.2), ([(14, 20), (19, 24)], 0.8), ([(26, 20), (21, 24)], 0.8),
+        ([(12, 28), (28, 27)], 0.9), ([(16, 25), (15, 31)], 0.7), ([(24, 25), (25, 31)], 0.7),
+        ([(13, 51), (27, 50)], 1.0), ([(20, 49), (20, 58)], 1.1), ([(14, 55), (26, 54)], 0.8),
+        ([(15, 60), (25, 60)], 0.8), ([(13, 66), (20, 60)], 0.8), ([(27, 66), (20, 60)], 0.8),
+    ]
+    for i, (pts, width) in enumerate(strokes):
+        brush(img, pts, width, ink, seed=921 + i, taper=(0.2, 0.3), dry=0.12, wobble=0.35)
+    # the seal
+    ring(img, 20, 40, 7.2, 1.5, [SEAL[0], SEAL[1], SEAL[2]], seed=941, wobble=0.25, dry=0.1)
+    for y in range(35, 46):
+        for x in range(15, 26):
+            if math.hypot(x - 20, y - 40) <= 3.3:
+                put(img, x, y, SEAL[2] if (x * 3 + y) % 5 else SEAL[3])
+    brush(img, [(15, 35), (25, 45)], 0.55, [SEAL[1], SEAL[2]], seed=943, taper=(0.3, 0.3))
+    brush(img, [(25, 35), (15, 45)], 0.55, [SEAL[1], SEAL[2]], seed=947, taper=(0.3, 0.3))
+    return outline(img, hexc("#2b2129"))
+
+
+def reveal_flames(frames: int = 8) -> list[Image.Image]:
+    """Flame frames, 48x64, looping: noise scrolling upward through a teardrop, which it eats away toward the top, so the fire
+    stands up in tongues. White and greys only: the Omen tints it with the rarity's color and draws it additively."""
+    w, h = 48, 64
+    layers = noise_stack(911, w, h, (6, 3, 2))
+    out = []
+    for f in range(frames):
+        phase = f / frames
+        img = new(w, h)
+        for y in range(h):
+            up = (h - 1 - y) / (h - 1)  # 0 at the base, 1 at the tip
+            for x in range(w):
+                u = abs(x - (w - 1) / 2) / (w / 2)
+                body = max(0.0, 1 - u ** 1.5 - up ** 1.25 * (0.55 + 0.45 * u))
+                sway = 3.5 * up * math.sin(up * 4.5 - phase * math.tau)
+                n = fbm(layers, x + sway, y + phase * h)
+                v = body * 1.65 - (1 - n) * (0.52 + 0.95 * up)
+                if v < 0.03:
+                    continue
+                if v > 0.86:
+                    c = (255, 255, 255, 255)
+                elif v > 0.60:
+                    c = (226, 226, 226, 255)
+                elif v > 0.36:
+                    c = (172, 172, 172, 240)
+                elif v > 0.17:
+                    c = (112, 112, 112, 205)
+                else:
+                    c = (62, 62, 62, 140)
+                put(img, x, y, c)
+        out.append(img)
+    return out
+
+
+def reveal_glow() -> Image.Image:
+    """A soft white disc in hard steps (64x64). Tinted and drawn additively behind things."""
+    size = 64
+    img = new(size, size)
+    for y in range(size):
+        for x in range(size):
+            d = math.hypot(x - 31.5, y - 31.5) / 32
+            if d >= 1:
+                continue
+            a = (1 - d) ** 2
+            a = math.floor(a * 18) / 18
+            put(img, x, y, (255, 255, 255, int(a * 255)))
+    return img
+
+
+def reveal_ring() -> Image.Image:
+    """A thin shockwave ring (128x128), white. It's drawn large, so it needs the extra pixels."""
+    size = 128
+    img = new(size, size)
+    for y in range(size):
+        for x in range(size):
+            d = abs(math.hypot(x - 63.5, y - 63.5) - 60)
+            if d < 3:
+                put(img, x, y, (255, 255, 255, 255 if d < 1 else 130 if d < 2 else 45))
+    return img
+
+
+def reveal_ray() -> Image.Image:
+    """One light ray (16x128), its narrow bright end at the top: fans out and fades along its length. White."""
+    w, h = 16, 128
+    img = new(w, h)
+    for y in range(h):
+        half = 0.8 + 6.6 * (y / (h - 1))
+        for x in range(w):
+            d = abs(x - 7.5) / half
+            if d >= 1:
+                continue
+            a = (1 - d) * (1 - y / h) ** 1.4
+            put(img, x, y, (255, 255, 255, int(math.floor(a * 16) / 16 * 255)))
+    return img
+
+
+def _point_in(poly: list[tuple[float, float]], x: float, y: float) -> bool:
+    inside = False
+    for i in range(len(poly)):
+        (x0, y0), (x1, y1) = poly[i], poly[(i + 1) % len(poly)]
+        if (y0 > y) != (y1 > y) and x < (x1 - x0) * (y - y0) / (y1 - y0) + x0:
+            inside = not inside
+    return inside
+
+
+def reveal_star() -> Image.Image:
+    """A five-pointed star, 16x16, in white and greys with an ink outline, lit from the top-left. Tinted with the rarity's color."""
+    size = 16
+    img = new(size, size)
+    cx, cy = 7.5, 8.2
+    r_out, r_in = 7.4, 3.0
+    poly = []
+    for i in range(10):
+        a = -math.pi / 2 + i * math.pi / 5
+        r = r_out if i % 2 == 0 else r_in
+        poly.append((cx + math.cos(a) * r, cy + math.sin(a) * r))
+    for y in range(size):
+        for x in range(size):
+            if not _point_in(poly, x, y):
+                continue
+            v = int(min(255, 206 + 60 * ((cx - x) + (cy - y)) / (2 * r_out)))
+            put(img, x, y, (v, v, v, 255))
+    return outline(img)
+
+
+def reveal_star_small() -> Image.Image:
+    """The same star, 9x9 and placed by hand, for the name card's row."""
+    grid = [
+        "....W....",
+        "....W....",
+        "...WWW...",
+        "WWWWWWWWG",
+        ".WWWWWGG.",
+        "..WWWGG..",
+        "..WWGGG..",
+        ".WWG.GGG.",
+        ".G.....G.",
+    ]
+    return from_grid(grid, {"W": (255, 255, 255, 255), "G": (205, 205, 205, 255)})
+
+
+def reveal_eye(frames: int = 6) -> list[Image.Image]:
+    """The blue eye of the Six Eyes scene (72x36), closed to fully open. Painted in its own colors, never tinted."""
+    w, h = 72, 36
+    cx, cy = 35.5, 18.5
+    iris_ramp = ramp("#072a78", "#0f5ad0", "#1f8fff", "#39c0ff", "#8fe6ff", "#e6fbff")
+    lash = hexc("#eaf7ff")
+    out = []
+    for f in range(frames):
+        o = (f / (frames - 1)) ** 0.9
+        img = new(w, h)
+        def upper(u: float) -> float:
+            return cy - 0.8 - o * 12.5 * max(0.0, 1 - abs(u) ** 2.1) ** 0.85 + 2.2 * u * u
+        def lower(u: float) -> float:
+            return cy + 0.8 + o * 8.0 * max(0.0, 1 - abs(u) ** 2.4) ** 0.9 + 2.2 * u * u
+        for y in range(h):
+            for x in range(w):
+                u = (x - cx) / 31
+                if abs(u) >= 1:
+                    continue
+                top, bot = upper(u), lower(u)
+                if top <= y <= bot:
+                    # the white of the eye, in the lid's shadow near the top and toward the corners
+                    shade = 1.0 - 0.34 * abs(u) ** 2.4 - 0.62 * max(0.0, 1 - (y - top) / 3.6)
+                    v = max(0.22, shade)
+                    c = (int(232 * v), int(242 * v), int(255 * v), 255)
+                    d = math.hypot(x - cx, (y - cy + 1) * 1.04)
+                    if d <= 11.2 and o > 0.02:
+                        if d <= 2.7:
+                            c = hexc("#04102e")
+                        elif d <= 3.7:
+                            c = hexc("#e6fbff")
+                        else:
+                            t = 1 - (d - 3.7) / 7.5
+                            spoke = 0.13 * math.sin(math.atan2(y - cy, x - cx) * 12)
+                            c = pick(iris_ramp, t + spoke)
+                            if y - top < 2.6:
+                                c = pick(iris_ramp, (t + spoke) * 0.45)
+                    put(img, x, y, c)
+        # the lids: an ink line, then the pale lash line over the upper lid
+        for x in range(w):
+            u = (x - cx) / 31
+            if abs(u) >= 1:
+                continue
+            t = int(round(upper(u)))
+            b = int(round(lower(u)))
+            put(img, x, t, INK)
+            put(img, x, t - 1, lash)
+            put(img, x, b, hexc("#5f88b5"))
+        # long lashes, fanning out from the upper lid
+        for i in (-4, -3, -2, -1, 1, 2, 3, 4):
+            u = (i - (0.5 if i > 0 else -0.5)) / 4.6
+            bx = cx + u * 31
+            by = upper(u) - 1
+            angle = -math.pi / 2 + u * 1.05
+            length = (8.5 - abs(i) * 0.75) * (0.3 + 0.7 * o)
+            for step in range(int(length * 2)):
+                d = step / 2
+                sweep = d * d * 0.07 * (1 if u >= 0 else -1)
+                put(img, int(round(bx + math.cos(angle) * d + sweep)), int(round(by + math.sin(angle) * d)), lash)
+        if o > 0.3:  # the glint
+            for (gx, gy, a) in ((31, 13, 255), (32, 13, 255), (31, 14, 255), (32, 14, 200), (30, 13, 130), (31, 12, 130), (40, 22, 170)):
+                put(img, gx, gy, (255, 255, 255, a))
+        out.append(img)
+    return out
+
+
+def reveal_ash() -> Image.Image:
+    """What's left of the talisman when you're born Severed: a low heap of grey ash (48x18), with a few scraps of charred paper."""
+    w, h = 48, 18
+    img = new(w, h)
+    grey = ramp("#1f1f22", "#35353a", "#505057", "#6e6e76", "#90909a", "#b4b4bd")
+    n = noise_stack(951, w, h, (12, 6, 3))
+    for x in range(w):
+        u = abs(x - 23.5) / 23.5
+        crest = h - 1 - (h - 5) * (1 - u ** 2.8) * (0.42 + 0.95 * fbm(n, x, 2))
+        for y in range(h):
+            if y < crest:
+                continue
+            depth = (y - crest) / max(1.0, h - crest)
+            t = 0.75 - 0.75 * depth + (fbm(n, x, y) - 0.5) * 0.8
+            put(img, x, y, dither(grey, t, x, y))
+    rng = random.Random(953)
+    for _ in range(9):
+        x, y = rng.randrange(6, 42), rng.randrange(7, 15)
+        if opaque(img, x, y):
+            put(img, x, y, hexc("#141216"))
+            put(img, x + 1, y, hexc("#2a2024"))
+    return outline(img, hexc("#0e0d10"))
+
+
 def save(img: Image.Image, relative: str) -> Path:
     path = TEXTURES / relative
     path.parent.mkdir(parents=True, exist_ok=True)
@@ -1824,10 +2044,6 @@ def sprite(img: Image.Image, name: str, border=None) -> None:
 def build() -> dict[str, Image.Image]:
     out = {}
     out["panel"] = panel()
-    out["card_common"] = card(SILVER, SILVER[-1], 201, 0)
-    out["card_rare"] = card(STEEL, STEEL[-1], 203, 1)
-    out["card_epic"] = card(MALICE, MALICE[-1], 205, 2)
-    out["card_legendary"] = card(GOLD, hexc("#ff5a4e"), 207, 3)
     out["tab"] = tab(False)
     out["tab_selected"] = tab(True)
     out["sparkle"] = sparkle()
@@ -1854,6 +2070,17 @@ def build() -> dict[str, Image.Image]:
     out["view_settings"] = icon(ICON_VIEW_SETTINGS, SILVER)
     out["env_cold_mini"] = env_mini(True)
     out["env_hot_mini"] = env_mini(False)
+    out["reveal/talisman"] = reveal_talisman()
+    for i, img in enumerate(reveal_flames()):
+        out[f"reveal/flame_{i}"] = img
+    out["reveal/glow"] = reveal_glow()
+    out["reveal/ring"] = reveal_ring()
+    out["reveal/ray"] = reveal_ray()
+    out["reveal/star"] = reveal_star()
+    out["reveal/star_small"] = reveal_star_small()
+    for i, img in enumerate(reveal_eye()):
+        out[f"reveal/eye_{i}"] = img
+    out["reveal/ash"] = reveal_ash()
     return out
 
 
@@ -1885,7 +2112,7 @@ def puppet_glow() -> "Image.Image":
 
 def main() -> None:
     sprites = build()
-    borders = {"panel": 12, "card_common": 12, "card_rare": 12, "card_epic": 12, "card_legendary": 12,
+    borders = {"panel": 12,
                "tab": 5, "tab_selected": 5, "divider": (10, 0, 10, 0),
                "button": 4, "button_highlighted": 4, "button_disabled": 4, "menu_frame": 10, "menu_well": 4}
     for name, img in sprites.items():

@@ -44,6 +44,7 @@ public final class Rime {
                     .ability(RIME_SHELL)
                     .lockedUltimate()
                     .maliceColor(MALICE_COLOR)
+                    .signatureAnimation(RimeIds.ANIM_FROST_SHARD_CAST)
                     .tabIcon(Items.BLUE_ICE)));
 
     private Rime() {}

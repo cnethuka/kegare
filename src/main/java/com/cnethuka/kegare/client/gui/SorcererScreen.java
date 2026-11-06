@@ -184,7 +184,7 @@ public final class SorcererScreen extends Screen {
         lx1 = rcx - 5;
         trayX = px + (pw - CombatPanelLayer.W) / 2;
         trayY = py + ph - 9 - CombatPanelLayer.H;
-        wellY0 = py + 58;
+        wellY0 = py + 66;
         wellY1 = bar ? trayY - 13 : py + ph - 11;
     }
 
@@ -300,16 +300,17 @@ public final class SorcererScreen extends Screen {
         int color = 0xFF000000 | technique.rarity().color();
         Component name = technique.displayName();
         GuiDraw.text(g, font, name, tx, ey + 1, font.width(name) * 1.25f <= lx1 - tx ? 1.25f : 1f, color);
+        GuiDraw.text(g, font, technique.epithet(), tx, ey + 12, 1f, GuiDraw.mix(color & 0xFFFFFF, 0xFFFFFF, 0.45f) | 0xFF000000);
         Component sub = view == View.TECHNIQUE
                 ? Component.translatable("gui.kegare.sorcerer.header.category", Component.translatable(technique.rarity().translationKey()),
                         Component.translatable(category.translationKey()))
                 : Component.translatable(view.key);
-        GuiDraw.text(g, font, sub, tx, ey + 13, 1f, view == View.TECHNIQUE ? GuiDraw.GRAY : GuiDraw.GOLD);
+        GuiDraw.text(g, font, sub, tx, ey + 22, 1f, view == View.TECHNIQUE ? GuiDraw.GRAY : GuiDraw.GOLD);
         if (view != View.TECHNIQUE || data == null) return;
 
         // The category's abilities.
         List<Ability> tiles = category == AbilityCategory.INNATE_TECHNIQUE ? technique.abilities() : SharedAbilities.all();
-        int ty = ey + 23;
+        int ty = ey + 32;
         if (tiles.isEmpty()) {
             GuiDraw.text(g, font, Component.translatable("gui.kegare.loadout.category_empty"), tx, ty + 7, 1f, GuiDraw.DARK_GRAY);
         }
@@ -531,7 +532,9 @@ public final class SorcererScreen extends Screen {
         y = optionRow(g, 1, "gui.kegare.settings.vfx", VFX_VALUES, KegareClientConfig.VFX_QUALITY.get().ordinal(), x, y, w, mouseX, mouseY) + 5;
         y = optionRow(g, 2, "gui.kegare.settings.first_person", ON_OFF, KegareClientConfig.FIRST_PERSON_ANIMATIONS.get() ? 0 : 1, x, y, w, mouseX, mouseY) + 5;
         y = optionRow(g, 4, "gui.kegare.settings.animation_fades", ON_OFF, KegareClientConfig.ANIMATION_FADES.get() ? 0 : 1, x, y, w, mouseX, mouseY) + 5;
-        return optionRow(g, 3, "gui.kegare.settings.reveal", ON_OFF, KegareClientConfig.REVEAL_ANIMATION.get() ? 0 : 1, x, y, w, mouseX, mouseY);
+        y = optionRow(g, 3, "gui.kegare.settings.reveal", ON_OFF, KegareClientConfig.REVEAL_ANIMATION.get() ? 0 : 1, x, y, w, mouseX, mouseY) + 5;
+        y = optionRow(g, 5, "gui.kegare.settings.reveal_always_full", ON_OFF, KegareClientConfig.REVEAL_ALWAYS_FULL.get() ? 0 : 1, x, y, w, mouseX, mouseY) + 5;
+        return optionRow(g, 6, "gui.kegare.settings.reveal_reduced_motion", ON_OFF, KegareClientConfig.REVEAL_REDUCED_MOTION.get() ? 0 : 1, x, y, w, mouseX, mouseY);
     }
 
     /** A label, then one button per value (the current one lit gold). Returns the y below the row. */
@@ -563,6 +566,8 @@ public final class SorcererScreen extends Screen {
             case 2 -> KegareClientConfig.FIRST_PERSON_ANIMATIONS.set(value == 0);
             case 3 -> KegareClientConfig.REVEAL_ANIMATION.set(value == 0);
             case 4 -> KegareClientConfig.ANIMATION_FADES.set(value == 0);
+            case 5 -> KegareClientConfig.REVEAL_ALWAYS_FULL.set(value == 0);
+            case 6 -> KegareClientConfig.REVEAL_REDUCED_MOTION.set(value == 0);
             default -> {
                 return;
             }

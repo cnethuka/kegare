@@ -45,6 +45,7 @@ public final class PuppetManipulation {
                     .ability(STRINGS)
                     .lockedUltimate()
                     .maliceColor(MALICE_COLOR)
+                    .signatureAnimation(PuppetIds.ANIM_CREATE_RELEASE)
                     .tabIcon(Items.ARMOR_STAND)) {
                 /** Rerolled (or reborn, or set by an admin) away from it: every puppet dissolves, loaded or not. */
                 @Override

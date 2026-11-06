@@ -30,6 +30,8 @@ public class InnateTechnique {
     private final ItemLike tabIcon;
     private final boolean ultimateLocked;
     private final int maliceColor;
+    @Nullable
+    private final ResourceLocation signatureAnimation;
 
     protected InnateTechnique(Builder builder) {
         if (builder.abilities.isEmpty()) throw new IllegalArgumentException("An innate technique needs at least one ability");
@@ -40,6 +42,7 @@ public class InnateTechnique {
         this.tabIcon = builder.tabIcon;
         this.ultimateLocked = builder.ultimate == null && builder.ultimateLocked;
         this.maliceColor = builder.maliceColor & 0xFFFFFF;
+        this.signatureAnimation = builder.signatureAnimation;
     }
 
     public static Builder builder(InnateTechniqueRarity rarity) {
@@ -70,6 +73,11 @@ public class InnateTechnique {
      */
     public final int maliceColor() {
         return maliceColor;
+    }
+
+    /** The player animation the roll reveal shows on the player model, if this technique has one. Client display only. */
+    public final Optional<ResourceLocation> signatureAnimation() {
+        return Optional.ofNullable(signatureAnimation);
     }
 
     /** No ultimate yet, but one is planned (its Dominion comes later): the ultimate slot shows as locked. */
@@ -128,6 +136,15 @@ public class InnateTechnique {
         return Component.translatable(descriptionId()).withColor(rarity.color());
     }
 
+    /** Lang key of the epithet, the short line the reveal types out and the Sorcerer screen shows under the name. Datagen requires one. */
+    public final String epithetId() {
+        return descriptionId() + ".epithet";
+    }
+
+    public final Component epithet() {
+        return Component.translatable(epithetId());
+    }
+
     /** Hook: this innate technique was just assigned to the player. */
     public void onAssigned(ServerPlayer player) {}
 
@@ -143,6 +160,8 @@ public class InnateTechnique {
         private ItemLike tabIcon = Items.ENCHANTED_BOOK;
         private boolean ultimateLocked;
         private int maliceColor = DEFAULT_MALICE_COLOR;
+        @Nullable
+        private ResourceLocation signatureAnimation;
 
         private Builder(InnateTechniqueRarity rarity) {
             this.rarity = rarity;
@@ -173,6 +192,12 @@ public class InnateTechnique {
         /** RGB (0xRRGGBB) of the Malice bar for holders of this innate technique. Default: Malice purple. */
         public Builder maliceColor(int rgb) {
             this.maliceColor = rgb & 0xFFFFFF;
+            return this;
+        }
+
+        /** The player animation (an ID in {@code player_animations/}) the roll reveal plays on the player model. Default: none, a still model. */
+        public Builder signatureAnimation(ResourceLocation animation) {
+            this.signatureAnimation = animation;
             return this;
         }
 

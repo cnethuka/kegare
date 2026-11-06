@@ -3,9 +3,7 @@ package com.cnethuka.kegare.client.gui;
 import com.cnethuka.kegare.Kegare;
 import com.cnethuka.kegare.innatetechnique.Ability;
 import com.cnethuka.kegare.innatetechnique.InnateTechnique;
-import com.cnethuka.kegare.innatetechnique.InnateTechniqueRarity;
 import com.mojang.blaze3d.systems.RenderSystem;
-import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import javax.annotation.Nullable;
@@ -39,11 +37,6 @@ public final class GuiDraw {
     public static final ResourceLocation LOCK = Kegare.id("lock");
     public static final ResourceLocation FREEZE_PIP = Kegare.id("freeze_pip");
     public static final ResourceLocation FREEZE_PIP_EMPTY = Kegare.id("freeze_pip_empty");
-    private static final ResourceLocation[] CARDS = new ResourceLocation[InnateTechniqueRarity.values().length];
-
-    static {
-        for (InnateTechniqueRarity r : InnateTechniqueRarity.values()) CARDS[r.ordinal()] = Kegare.id("card_" + r.serializedName());
-    }
 
     private static final ResourceLocation INK_BACKGROUND = Kegare.id("textures/gui/reveal_bg.png");
     private static final int INK_BACKGROUND_SIZE = 128;
@@ -113,14 +106,6 @@ public final class GuiDraw {
         g.setColor(((rgb >> 16) & 0xFF) / 255f, ((rgb >> 8) & 0xFF) / 255f, (rgb & 0xFF) / 255f, alpha);
         g.blitSprite(sprite, x, y, w, h);
         g.setColor(1f, 1f, 1f, 1f);
-    }
-
-    /** Soft glow: stacked translucent rectangles around a box. */
-    public static void glow(GuiGraphics g, int x, int y, int w, int h, int rgb, float strength) {
-        for (int i = 1; i <= 6; i++) {
-            int alpha = (int) (Mth.clamp(strength, 0f, 1f) * 120 * (1f - i / 7f));
-            g.fill(x - i * 2, y - i * 2, x + w + i * 2, y + h + i * 2, (alpha << 24) | (rgb & 0xFFFFFF));
-        }
     }
 
     /** Full-screen, opaque smoky ink (tiled) that darkens in steps toward the edges. */
@@ -251,10 +236,6 @@ public final class GuiDraw {
 
     // ---------------------------------------------------------------- innate techniques
 
-    public static ResourceLocation cardSprite(InnateTechniqueRarity rarity) {
-        return CARDS[rarity.ordinal()];
-    }
-
     /**
      * The innate technique's emblem in an ink frame. Art is 48x48; sizes that are a multiple of 48 stay crisp.
      * Without art: its advancement tab item on a dark well.
@@ -276,68 +257,10 @@ public final class GuiDraw {
         g.pose().popPose();
     }
 
-    /** The emblem plus a 1px rim in the rarity color (for headers outside a card). */
+    /** The emblem plus a 1px rim in the rarity color. */
     public static void framedEmblem(GuiGraphics g, InnateTechnique innateTechnique, int x, int y, int size) {
         g.renderOutline(x - 2, y - 2, size + 4, size + 4, 0xFF000000 | innateTechnique.rarity().color());
         emblem(g, innateTechnique, x, y, size);
-    }
-
-    /** Largest crisp emblem size (a multiple of 48) that fits, or the space itself if under 48. */
-    public static int emblemSize(int space) {
-        return space >= EMBLEM_TEXTURE_SIZE ? space / EMBLEM_TEXTURE_SIZE * EMBLEM_TEXTURE_SIZE : Math.max(8, space);
-    }
-
-    /** A card's name: the text size on a small card, and how much of its width the frame takes. */
-    private static final float CARD_SMALL_TEXT = 0.75f;
-    private static final int CARD_TEXT_INSET = 10;
-
-    /**
-     * An innate technique card: rarity frame, emblem, name (up to two lines) and rarity. The rarity line is left out
-     * when it wouldn't fit inside the frame (tiny cards); the frame itself already shows the rarity.
-     *
-     * @param dim 0 = full brightness, 1 = fully darkened (non-result cards after the spin lands)
-     */
-    public static void card(GuiGraphics g, Font font, InnateTechnique innateTechnique, int x, int y, int w, int h, float dim) {
-        int color = innateTechnique.rarity().color();
-        sprite(g, cardSprite(innateTechnique.rarity()), x, y, w, h);
-
-        float scale = w >= 76 && widestWord(font, innateTechnique) + CARD_TEXT_INSET <= w ? 1f : CARD_SMALL_TEXT;
-        int lineHeight = (int) (10 * scale);
-        List<FormattedCharSequence> lines = font.split(innateTechnique.displayName(), (int) ((w - CARD_TEXT_INSET) / scale));
-        int nameLines = Math.min(2, lines.size());
-        Component rarity = Component.translatable(innateTechnique.rarity().translationKey());
-        boolean showRarity = font.width(rarity) * scale <= w - 12;
-        int bottom = showRarity ? y + h - 6 - (int) (9 * scale) : y + h - 5; // rarity line, or the frame
-        int top = y + 7;
-        int size = emblemSize(Math.min(w - 16, (bottom - top) - nameLines * lineHeight - 4));
-        int block = size + 4 + nameLines * lineHeight;
-        int ey = top + Math.max(0, (bottom - 2 - top - block) / 2);
-        emblem(g, innateTechnique, x + (w - size) / 2, ey, size);
-
-        int lineY = ey + size + 4;
-        for (int i = 0; i < nameLines; i++) {
-            centered(g, font, lines.get(i), x + w / 2, lineY, scale, WHITE);
-            lineY += lineHeight;
-        }
-        if (showRarity) centered(g, font, rarity.getVisualOrderText(), x + w / 2, bottom, scale, 0xFF000000 | color);
-
-        if (dim > 0f) g.fill(x, y, x + w, y + h, 300, ((int) (Mth.clamp(dim, 0f, 1f) * 190) << 24));
-    }
-
-    /**
-     * The narrowest card with room for every word of these names on a line of its own. Any narrower and {@link #card} has to break
-     * a word, and the end of it falls off the two lines a name gets.
-     */
-    public static int minCardWidth(Font font, Iterable<InnateTechnique> techniques) {
-        int widest = 0;
-        for (InnateTechnique technique : techniques) widest = Math.max(widest, widestWord(font, technique));
-        return Mth.ceil(widest * CARD_SMALL_TEXT) + CARD_TEXT_INSET;
-    }
-
-    private static int widestWord(Font font, InnateTechnique technique) {
-        int widest = 0;
-        for (String word : technique.displayName().getString().split(" ")) widest = Math.max(widest, font.width(word));
-        return widest;
     }
 
     // ---------------------------------------------------------------- text
@@ -345,7 +268,7 @@ public final class GuiDraw {
     /** Centered text at a scale (1 = normal). */
     public static void centered(GuiGraphics g, Font font, FormattedCharSequence text, int centerX, int y, float scale, int color) {
         g.pose().pushPose();
-        g.pose().translate(0, 0, 200); // above item icons (z~150), below card dimming (z 300)
+        g.pose().translate(0, 0, 200); // above item icons (z~150)
         g.pose().scale(scale, scale, 1f);
         g.drawString(font, text, (int) (centerX / scale - font.width(text) / 2f), (int) (y / scale), color, true);
         g.pose().popPose();

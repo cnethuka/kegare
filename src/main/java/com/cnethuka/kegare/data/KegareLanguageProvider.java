@@ -23,7 +23,8 @@ import net.neoforged.neoforge.common.data.LanguageProvider;
 /**
  * Generates {@code assets/kegare/lang/en_us.json}. This is the ONLY place player-facing names live.
  * Rename a display term by changing the constant below and rerunning {@code ./gradlew runData}.
- * Fails datagen if a registered innate technique, ability or trait has no name or one-line description ({@code .desc}).
+ * Fails datagen if a registered innate technique, ability or trait has no name or one-line description ({@code .desc}), or a
+ * non-test innate technique has no epithet ({@code .epithet}).
  */
 public final class KegareLanguageProvider extends LanguageProvider {
     // ---- Display terms. Code IDs match them: malice / innate_technique / dominion / severed. ----
@@ -86,6 +87,7 @@ public final class KegareLanguageProvider extends LanguageProvider {
 
         // Rime
         add("innate_technique.kegare.rime", "Rime");
+        add("innate_technique.kegare.rime.epithet", "Breath Turned to Glass");
         add("innate_technique.kegare.rime.desc", MALICE + " made into ice: shards, a lance, a freezing gale and a shell of frost. "
                 + "Five Freeze stacks freeze a target solid. Cheaper in the cold, dearer in the heat.");
         add("ability.kegare.frost_shard", "Frost Shard");
@@ -111,6 +113,7 @@ public final class KegareLanguageProvider extends LanguageProvider {
 
         // Swap
         add("innate_technique.kegare.swap", "Swap");
+        add("innate_technique.kegare.swap.epithet", "Nothing Stays Where It Was");
         add("innate_technique.kegare.swap.desc", "Trade with whoever you're looking at: places, faces, fortunes and falls. "
                 + "Players always count; most of it works on mobs too.");
         add("ability.kegare.positions", "Positions");
@@ -149,6 +152,7 @@ public final class KegareLanguageProvider extends LanguageProvider {
         add("message.kegare.swap.switchback_refused", "Something stops the swap back.");
         // Puppet Manipulation
         add("innate_technique.kegare.puppet_manipulation", "Puppet Manipulation");
+        add("innate_technique.kegare.puppet_manipulation.epithet", "Strings Without a Stage");
         add("innate_technique.kegare.puppet_manipulation.desc", "Charge Malice into little copies of yourself. "
                 + "Command them, ride inside them, set them off, or let one stand in for you.");
         add("ability.kegare.puppet_creation", "Puppet Creation");
@@ -260,6 +264,10 @@ public final class KegareLanguageProvider extends LanguageProvider {
         add("innate_technique.kegare.test_flux.desc", "Placeholder: lift and flow. Hover in place or run with a speed aura.");
         add("innate_technique.kegare.test_prism.desc", "Placeholder: an Epic test card. Burst, hover and a shockwave ultimate.");
         add("innate_technique.kegare.test_apex.desc", "Placeholder: every cast type in one, plus a shockwave ultimate.");
+        add("innate_technique.kegare.test_kinetic.epithet", "[Test]");
+        add("innate_technique.kegare.test_flux.epithet", "[Test]");
+        add("innate_technique.kegare.test_prism.epithet", "[Test]");
+        add("innate_technique.kegare.test_apex.epithet", "[Test]");
         add("ability.kegare.test_dash", "[Test] Dash");
         add("ability.kegare.test_burst", "[Test] Burst");
         add("ability.kegare.test_hover", "[Test] Hover");
@@ -433,12 +441,14 @@ public final class KegareLanguageProvider extends LanguageProvider {
         add("gui.kegare.reveal.hard_pity", "%s · Fate relented on roll %s");
         add("gui.kegare.reveal.trait", "Rare trait: %s");
         add("gui.kegare.reveal.trait_private", "Only you know this.");
+        add("gui.kegare.reveal.six_eyes", "Nothing Is Hidden From You");
         add("gui.kegare.reveal.no_innate_technique", "No " + INNATE_TECHNIQUE + " answered your call.");
+        add("gui.kegare.reveal.severed.heaven", "Heaven Gave You Nothing");
         add("gui.kegare.reveal.severed.title", "Born without " + MALICE);
         add("gui.kegare.reveal.severed.subtitle", SEVERED);
         add("gui.kegare.reveal.severed.desc", "Not a drop of " + MALICE + " flows through you. No " + INNATE_TECHNIQUE + " will ever answer.");
-        add("gui.kegare.reveal.skip", "Skip");
-        add("gui.kegare.reveal.continue", "Continue");
+        add("gui.kegare.reveal.skip", "Click to skip");
+        add("gui.kegare.reveal.continue", "Click to continue");
 
         // ---- GUI: Sorcerer screen ----
         add("gui.kegare.sorcerer.title", "Sorcerer");
@@ -455,7 +465,9 @@ public final class KegareLanguageProvider extends LanguageProvider {
         add("gui.kegare.settings.vfx.vanilla", "Vanilla");
         add("gui.kegare.settings.first_person", "Your own animations in first person");
         add("gui.kegare.settings.animation_fades", "Blend animations in and out");
-        add("gui.kegare.settings.reveal", "Roll reveal spin");
+        add("gui.kegare.settings.reveal", "Roll reveal animation");
+        add("gui.kegare.settings.reveal_always_full", "Always play a technique's full reveal");
+        add("gui.kegare.settings.reveal_reduced_motion", "Reveal: fewer flashes, no shake");
         add("gui.kegare.settings.on", "On");
         add("gui.kegare.settings.off", "Off");
         add("gui.kegare.sorcerer.header.category", "%s · %s");
@@ -598,6 +610,7 @@ public final class KegareLanguageProvider extends LanguageProvider {
         for (InnateTechnique innateTechnique : KegareRegistries.INNATE_TECHNIQUE) {
             if (!written.contains(innateTechnique.descriptionId())) missing.add(innateTechnique.descriptionId());
             if (!written.contains(innateTechnique.descriptionId() + ".desc")) missing.add(innateTechnique.descriptionId() + ".desc");
+            if (!innateTechnique.isTestContent() && !written.contains(innateTechnique.epithetId())) missing.add(innateTechnique.epithetId());
             List<Ability> abilities = new ArrayList<>(innateTechnique.abilities());
             innateTechnique.ultimate().ifPresent(abilities::add);
             for (Ability ability : abilities) {

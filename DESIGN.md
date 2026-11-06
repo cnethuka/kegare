@@ -29,7 +29,8 @@ config keys, lang keys and command names.
 - **"Kegare" is the mod name.** It is reserved as the name of the future hostile spirit mobs, and is never used for
   the energy.
 - **Safety nets:**
-  - Datagen fails if any registered innate technique, ability or trait has no lang entry.
+  - Datagen fails if any registered innate technique, ability or trait has no lang entry, or if a non-test innate
+    technique has no epithet (§3.3).
   - `LangKeysTest` fails if code uses a message/command/HUD/key lang key that isn't in `en_us.json`.
 - **Known exception:** config comments (`kegare-server.toml`, and the config screen tooltips that fall back to them)
   are written in code.
@@ -173,6 +174,14 @@ All timestamps use **level game time**. They persist across restarts and are ide
     HUD and the Sorcerer screen, and the Technique Mode glow. Display only: definitions are registry-synced, so the
     client looks it up from the synced innate technique ID, and it changes the moment the technique does (reroll,
     admin, rebirth). Rime uses deep blue `#1E3A8A`; the test techniques keep the default.
+  - an **epithet** (lang key `innate_technique.<namespace>.<id>.epithet`, read with `epithet()`): one short line that
+    says what the technique feels like, shown under its name on the Sorcerer screen and typed out in the Epic and
+    Legendary reveals (§3.12). **Every non-test innate technique sets one; datagen fails without it.** Test techniques
+    use "[Test]". Rime: "Breath Turned to Glass". Swap: "Nothing Stays Where It Was". Puppet Manipulation: "Strings
+    Without a Stage".
+  - an optional **signature animation** (`Builder.signatureAnimation(id)`, a PAL animation, read with
+    `signatureAnimation()`): what the player model does beside the emblem on the reveal's name card. Without one the model
+    just stands there. Rime: `frost_shard_cast`. Swap: `swap_snap`. Puppet Manipulation: `puppet_create_release`.
   - the hooks `onAssigned` / `onRemoved`
 - `Ability` interface: `cost`, `cooldownTicks`, `castType`, `upkeepPerSecond`, min/max charge, max channel,
   `canCast`, `execute`, `tick`, `onEnd`, plus `special`, `cooldownKey` and `requirements` (§3.15). Costs take the
@@ -349,9 +358,12 @@ Malice is always shown as whole numbers (floored, like the HUD); the stored valu
     - `sixEyesTransferMode` (RANDOM | KILLER)
     - `sixEyesTransferDelaySeconds` (30)
     - `uniqueTraitInactiveDays` (0 = off; fractions allowed)
-- **Client TOML:** `hud.enabled`, `reveal.animation` (spin on/off), `input.techniqueSelect` (NUMBER_KEYS |
-  SCROLL_WHEEL, §3.5), `visuals.firstPersonAnimations`, `visuals.animationFades`, `visuals.vfxQuality`. All but `hud.enabled` are also on the
-  Sorcerer screen's Settings page (§3.12), which saves them at once.
+- **Client TOML:** `hud.enabled`, `input.techniqueSelect` (NUMBER_KEYS | SCROLL_WHEEL, §3.5),
+  `visuals.firstPersonAnimations`, `visuals.animationFades`, `visuals.vfxQuality`, and for the roll reveal (§3.12)
+  `reveal.animation` (scenes on/off), `reveal.alwaysFull`, `reveal.reducedMotion`, `reveal.fakeOutChance` (0.2),
+  `reveal.debugForceFakeOut` and `reveal.seenTechniques`. All but `hud.enabled`, `reveal.fakeOutChance`,
+  `reveal.debugForceFakeOut` and `reveal.seenTechniques` are also on the Sorcerer screen's Settings page (§3.12), which
+  saves them at once.
 - Both are editable in-game via Mods → Kegare → Config. Labels are generated into the lang file.
 
 ### 3.10 Data generation and art
@@ -364,13 +376,14 @@ Malice is always shown as whole numbers (floored, like the HUD); the stored valu
     ink outline on everything, ordered (Bayer) dithering between hand-picked color ramps, mottled metal, rim light,
     and tapered brush strokes with wobble and dry-brush gaps.
   - **Every asset is original,** and no third-party file is in this repo.
-  - **Nine-slice sprites** (`textures/gui/sprites/`, each with a `.mcmeta`): `panel`, `card_common`, `card_rare`,
-    `card_epic`, `card_legendary` (iron, blue steel, amethyst, gold leaf; corner ornaments grow with rarity),
+  - **Nine-slice sprites** (`textures/gui/sprites/`, each with a `.mcmeta`): `panel`,
     `tab`/`tab_selected`, `button`/`button_highlighted`/`button_disabled`
     (drawn by `InkButton`, a vanilla button with Kegare's sprites), and `divider` (a brush stroke, 3-slice).
     In 1.21.1 the edges and centre **tile**, they do not stretch, so the generator makes them seamless along the
     tile period and keeps every ornament inside the corners.
-  - **Plain sprites:** `sparkle`, `severed_emblem`.
+  - **Plain sprites:** `sparkle`, `severed_emblem`, and the roll reveal's in `sprites/reveal/`: `talisman`, `flame_0`-`7`
+    (a looping flame), `eye_0`-`5` (an eye opening), `glow`, `ring`, `ray`, `star`, `star_small`, `ash`.
+    The flames, glow, ring, ray and stars are greyscale, tinted in code by rarity.
   - **Textures:** the talisman item, `gui/malice_bar.png`, the combat panel's `gui/combat/*`, and
     `gui/reveal_bg.png` (128×128 seamless smoke, tiled behind the reveal by `GuiDraw.inkBackground`).
     - `malice_bar.png` is 32×30: rows 0–9 the empty bar, rows 10–19 the fill's shading in greyscale, rows 20–29 a
@@ -379,7 +392,7 @@ Malice is always shown as whole numbers (floored, like the HUD); the stored valu
       untinted on top, so any color keeps its gloss and stays readable.
 - **Art for content (optional, with fallbacks).** New content should ship with:
   - an **emblem** per innate technique: `<namespace>:textures/gui/emblem/<path>.png`, 48×48. It is shown
-    on reveal cards, the Sorcerer screen and the talisman prompt. Without one, the tab icon item is drawn instead.
+    on the reveal's name card, the Sorcerer screen and the talisman prompt. Without one, the tab icon item is drawn instead.
   - an **icon** per ability: `<namespace>:textures/gui/ability/<path>.png`, 16×16. It is shown in the combat
     panel's slots and the Sorcerer screen. Without one, the slot number is drawn instead.
   - Whether the art exists is looked up once per texture, and the answer is forgotten on resource reload, so
@@ -441,33 +454,65 @@ a result back; they only send requests the server re-validates. All text comes f
 
 | Screen | Opens when | Data | Sends |
 |---|---|---|---|
-| Roll reveal (`RevealScreen`) | the server finished a roll: Awakening, Reawakening, admin reroll, replacement | `RevealPayload`, sent only to that player | nothing |
+| Roll reveal (`RevealScreen`, `RevealScript`, `RevealLayout`) | the server finished a roll: Awakening, Reawakening, admin reroll, replacement | `RevealPayload`, sent only to that player | nothing |
 | Sorcerer (`SorcererScreen`) | key **K** | `SorcererInfoPayload`, computed by the server, plus the live sync (loadout, Malice, cooldowns) | the open request (again whenever the sync shows an unlock, reroll or trait change); loadout edit requests (§3.16) |
 | Talisman confirm (`TalismanConfirmScreen`) | using a Purification Talisman (nothing consumed yet) | `TalismanPromptPayload` | a confirm request |
 
-**Roll reveal**
-- The spin is gacha-style: cards (weighted like real rolls) scroll past, ease out over about 4s, and land on the
-  result the server already picked.
-- Each rarity has its own card frame and glow: Common iron, Rare blue steel, Epic amethyst, Legendary gold leaf.
-  Legendary adds sparkle particles and a challenge + totem sound.
-- Each card shows the emblem, name and rarity. The result also shows its one-line `.desc`.
-- Background: tiled smoky ink, darkening in steps toward the edges, with a darker track for the cards.
-- Card width follows the screen's height, but never drops below what the strip's longest word needs on one line
-  (`GuiDraw.minCardWidth`): "Manipulation" on a 240-high GUI.
-- **Skip** (button, Esc, Enter or Space) jumps to the result; pressing again closes.
-- `reveal.animation=false` shows the result instantly.
-- Disconnecting mid-spin changes nothing: the result was saved before the payload was sent.
-- The **birth** reveal adds Malice capacity and tier, or a separate **Severed** reveal ("Born without Malice"), plus
-  birth traits. Those are shown only to that player (e.g. Six Eyes, "Only you know this") and never broadcast.
-- **No spoilers:** the background is opaque, so chat and HUD stay hidden. Toasts such as *Chosen by Fate* are held
-  until the reveal closes. The server no longer plays the Legendary sound; the client plays it when the card lands.
+**Roll reveal** (`RevealScreen` draws it. `RevealScript` holds the timeline and `RevealLayout` the sizes, both plain Java and
+unit-tested.)
+
+A cinematic run of scenes, longer the rarer the result. The result was decided and saved before the screen opened, so
+closing it or disconnecting at any point changes nothing.
+
+| Rarity | Length | Scenes |
+|---|---|---|
+| Common | ~3s | Omen, Rarity, Name |
+| Rare | ~5s | Omen, Rarity, Stars, Name |
+| Epic | ~7s | Omen, Rarity, Stars, Epithet, Name |
+| Legendary | ~10s | Omen, Rarity, Stars, Epithet, Name, with a screen flash, gold light rays and the fanfare |
+
+- **Omen:** a talisman burns in the middle of a dark screen. The flame's color hints at the rarity: grey, blue, purple, gold.
+  **Fake-out:** on a Legendary, a `reveal.fakeOutChance` chance (20%) that the flame starts purple and flares to gold
+  halfway through. `reveal.debugForceFakeOut` forces it, for testing.
+- **Rarity:** the rarity word slams in, in rarity color.
+- **Stars:** 1 to 4 stars (Common 1, Rare 2, Epic 3, Legendary 4) drop in one at a time, with a chime each. Common has no
+  Stars scene, so its star is only on the name card's row.
+- **Epithet** (§3.3): typed out slowly on a dark background.
+- **Name:** the name large, across the emblem, with particles in the technique's Malice color. The stars and rarity, the
+  one-line `.desc` and the ability icons then fade in. `RevealLayout.rowStep` closes the icon row up as needed, so 1 to 9
+  abilities fit at every GUI scale.
+  - **The player model** stands beside the emblem, playing the technique's signature animation (§3.3) every few seconds. PAL works
+    in a GUI because it hooks the player's tick and renderer, not the world pass, so this is the real local player, client-only, and
+    it stops when the card goes away. `RevealScreen.renderModel` copies vanilla's GUI entity call but passes the real partial tick
+    (vanilla passes 1, which steps PAL's animation at 20 fps).
+- **Birth reveals** add a **Malice** scene after the name: the capacity counts up (up to 5 digits) and the tier lands. Both stay
+  on the end card.
+- **Severed:** the talisman burns out to grey ash, then "Heaven Gave You Nothing", then "Born without Malice". Always the same.
+- **Six Eyes** (a birth trait) adds a scene after the technique: a blue eye opens, "Nothing Is Hidden From You", then "Only you know
+  this." The end card repeats those two lines and doesn't name the trait. Other birth traits get a line on the end card. All of it
+  is shown only to that player and never broadcast.
+- **Short version:** the first time this client rolls a technique, the full reveal plays. Later rolls of that technique play Rarity
+  then Name, and keep a Legendary's flash, rays and fanfare. The seen list is client-side (`reveal.seenTechniques`), so it's per
+  install, not per player. `reveal.alwaysFull` plays the full reveal every time. Birth's Malice scene and the Six Eyes scene still play
+  on the short version.
+- **Skip:** Esc, Space, Enter or a click jumps to the end card; again closes. There are no buttons. A press within 280ms of the
+  screen opening or the end being reached is ignored, so a double-press can't throw the result away unseen.
+- `reveal.animation=false` shows the end card at once.
+- **Reduced motion:** `reveal.reducedMotion` (on the Settings page), or vanilla's Hide Lightning Flashes, tones the flashes down to
+  15%, turns the shake off and stops the rays turning.
+- **Sound:** every cue is a UI sound on the roller's client (`SimpleSoundInstance.forUI`), so nobody in the world hears it. They're
+  all vanilla sounds. The server plays no sound for a roll, a Legendary's included.
+- **Layout:** the scenes are drawn on a canvas at a whole-number multiple of GUI units (`RevealLayout.canvasScale`), never smaller than
+  320x240, so they look the same at every GUI scale and only have to fit 320x240.
+- **No spoilers:** the background is opaque, so chat and HUD stay hidden. Toasts such as *Chosen by Fate* are held until the reveal
+  closes.
 - Reveals queue up and open only when no other screen is open, e.g. after the world finishes loading on first join.
 
 **Sorcerer screen** (one window)
 - **Frame:** a riveted plum nine-slice (`menu_frame`) with dark inset wells (`menu_well`) inside it.
 - **Left edge:** ability category tabs (`menu_tab`): Innate, Malice and Melee, each with its own icon (§3.16).
 - **Right edge:** view buttons: Innate Technique, Traits (an eye) and Pity (a star).
-- **Header:** the framed emblem, the name in rarity color, "rarity · category", then the selected category's
+- **Header:** the framed emblem, the name in rarity color, the epithet (§3.3), "rarity · category", then the selected category's
   abilities as tiles (the HUD's slot frames). A gold number marks the slot each tile is on, and locked shared
   abilities show a padlock.
 - **Details box** (the large well) shows whatever ability is hovered (a tile or a bar slot). Clicking a tile keeps
@@ -487,7 +532,8 @@ a result back; they only send requests the server re-validates. All text comes f
   - total rolls
   - **Settings** (a gear): client options as button rows, the current value lit gold, saved to the client config
     at once: which control picks abilities in Technique Mode (number keys or scroll wheel, §3.5), ability effects
-    (Full / Reduced / Vanilla), your own animations in first person, the roll reveal spin.
+    (Full / Reduced / Vanilla), your own animations in first person, the roll reveal animation, always playing the full
+    reveal, and reduced motion in the reveal.
 - **Right column:** the player model (follows the mouse), Malice current / capacity with the bar in the technique's
   Malice color, the tier, and regen per second (or "Regen paused"). In a window too narrow for them (640x480), the amount and
   "Regen paused" each take a second line and the model gives up the height; shrinking them would land the font on fractions of a
@@ -1164,8 +1210,8 @@ counting unloaded puppets, lowering the config.
   - The boss check is shared: `CombatHelper.isBoss` (`c:bosses`), used by Rime, `SwapTargeting` and Curio Burst.
 
 - **New innate technique:** create a `DeferredRegister<InnateTechnique>` on
-  `KegareRegistries.INNATE_TECHNIQUE_KEY`, build abilities with `BaseAbility`, add the lang names, and put the
-  numbers in config. Nothing in the base changes.
+  `KegareRegistries.INNATE_TECHNIQUE_KEY`, build abilities with `BaseAbility`, add the lang names and an **epithet**
+  (datagen fails without one), set a signature animation, and put the numbers in config. Nothing in the base changes.
 - **Shared abilities:** build the ability, `SharedAbilities.register` it at mod construction, unlock it with
   `SharedAbilityService.unlock` (§3.16).
 - **Specials:** override `special()` on the base ability and build the special on `SpecialAbility` (§3.15).
