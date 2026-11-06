@@ -9,6 +9,14 @@ Animation Library (PAL) reads natively. Blockbench is the viewer: every pose is 
 
 The Python files are the source of truth. Don't hand-edit the JSON: the next build overwrites it.
 
+## Strings' art is different: the .bbmodel files are the source
+
+Strings' cord, knot and five animations live in `art/blockbench/` as ordinary Blockbench projects. Open them, edit them, and
+export over the same file names (paths in DESIGN.md §3.20). `build_string_models.py` and `build_string_animations.py` only
+made them the first time, by driving a running Blockbench through `cdp.py`; run them again and they overwrite your work.
+`string_animations.bbmodel` has its own plain mannequin rig (PAL's bone names and pivots, no skin), so nothing of the
+Emotecraft template is in the repo.
+
 ## Files
 
 - `build_rig.py`: the preview rig, with PAL's bone names and pivots.

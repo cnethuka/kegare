@@ -33,6 +33,7 @@ public final class PuppetClient {
         NeoForge.EVENT_BUS.addListener((ClientPlayerNetworkEvent.LoggingOut e) -> SIGHT.clear());
         PuppetEntity.setOutlineHook(PuppetClient::outlined);
         PossessionClient.init(modBus);
+        StringsClient.init(modBus);
         VanillaFallback.register(PuppetIds.FX_PUPPET_FORM, new VanillaFallback.Spec(LAVENDER_DUST, 1, 24, 0.35, 0.05));
         VanillaFallback.register(PuppetIds.FX_PUPPET_DISSOLVE, new VanillaFallback.Spec(LAVENDER_DUST, 1, 30, 0.35, 0.12));
         VanillaFallback.register(PuppetIds.FX_POSSESS_LINK, new VanillaFallback.Spec(LAVENDER_DUST, 1, 2, 0.04, 0.0));
@@ -43,6 +44,9 @@ public final class PuppetClient {
         VanillaFallback.register(PuppetIds.FX_CURIO_BURST_EXPLOSION_FULL, new VanillaFallback.Spec(ParticleTypes.EXPLOSION, 1, 7, 1.1, 0.0));
         VanillaFallback.register(PuppetIds.FX_STAND_IN_GROW, new VanillaFallback.Spec(LAVENDER_DUST, 1, 30, 0.6, 0.08));
         VanillaFallback.register(PuppetIds.FX_UNDERSTUDY_SWAP, new VanillaFallback.Spec(ParticleTypes.PORTAL, 1, 24, 0.5, 0.5));
+        VanillaFallback.register(PuppetIds.FX_STRINGS_ATTACH, new VanillaFallback.Spec(LAVENDER_DUST, 1, 8, 0.12, 0.05));
+        VanillaFallback.register(PuppetIds.FX_STRINGS_SNAP, new VanillaFallback.Spec(LAVENDER_DUST, 1, 14, 0.2, 0.12));
+        VanillaFallback.register(PuppetIds.FX_STRINGS_TENSION, new VanillaFallback.Spec(LAVENDER_DUST, 1, 1, 0.02, 0.0));
     }
 
     private static void registerRenderers(EntityRenderersEvent.RegisterRenderers event) {

@@ -69,6 +69,9 @@ public final class PuppetManipulation {
         VisualHooks.registerEffect(PuppetIds.FX_FOCUS_MARK);
         VisualHooks.registerEffect(PuppetIds.FX_STAND_IN_GROW);
         VisualHooks.registerEffect(PuppetIds.FX_UNDERSTUDY_SWAP);
+        VisualHooks.registerEffect(PuppetIds.FX_STRINGS_ATTACH);
+        VisualHooks.registerEffect(PuppetIds.FX_STRINGS_SNAP);
+        VisualHooks.registerEffect(PuppetIds.FX_STRINGS_TENSION);
         for (PuppetTier tier : PuppetTier.values()) VisualHooks.registerEffect(CurioBursts.effect(tier));
     }
 

@@ -47,6 +47,9 @@ public final class PuppetFxAuthoring {
         out.put(PuppetIds.FX_CURIO_BURST_EXPLOSION_FULL, () -> curioBurst(1.45f));
         out.put(PuppetIds.FX_STAND_IN_GROW, PuppetFxAuthoring::standInGrow);
         out.put(PuppetIds.FX_UNDERSTUDY_SWAP, PuppetFxAuthoring::understudySwap);
+        out.put(PuppetIds.FX_STRINGS_ATTACH, PuppetFxAuthoring::stringsAttach);
+        out.put(PuppetIds.FX_STRINGS_SNAP, PuppetFxAuthoring::stringsSnap);
+        out.put(PuppetIds.FX_STRINGS_TENSION, PuppetFxAuthoring::stringsTension);
         return out;
     }
 
@@ -272,6 +275,55 @@ public final class PuppetFxAuthoring {
         shrink(flash.config);
         material(flash, lavGlow(1.0f));
         return fx(column, ring, flash);
+    }
+
+    /** A knot grips: fibers kicked out from the spot, and a quick pinch of light. */
+    private static FX stringsAttach() {
+        ParticleEmitter fibers = burstEmitter("fibers", 12, 14);
+        ParticleConfig c = fibers.config;
+        c.setStartLifetime(range(5, 9));
+        c.setStartSpeed(range(1.2f, 2.6f));
+        c.setStartSize(uniform(range(0.03f, 0.055f)));
+        c.shape.setShape(sphere(0.08f));
+        fadeOut(c, PALE, 0x00A78BFA);
+        material(fibers, lavGlow(1.5f));
+
+        ParticleEmitter pinch = single("pinch", 5, 0.55f);
+        fadeOut(pinch.config, LIGHT, 0x00C4B5FD);
+        shrink(pinch.config);
+        material(pinch, lavGlow(1.1f));
+        return fx(fibers, pinch);
+    }
+
+    /** A string gives way: frayed fibers flung out, curling down under their own weight. */
+    private static FX stringsSnap() {
+        ParticleEmitter fibers = burstEmitter("fibers", 22, 26);
+        ParticleConfig c = fibers.config;
+        c.setStartLifetime(range(10, 18));
+        c.setStartSpeed(range(1.8f, 4.6f));
+        c.setStartSize(uniform(range(0.025f, 0.05f)));
+        c.shape.setShape(sphere(0.12f));
+        fadeOut(c, LIGHT, 0x007C3AED);
+        gravity(c, 0.6f);
+        material(fibers, lavGlow(1.3f));
+
+        ParticleEmitter flick = single("flick", 4, 0.4f);
+        fadeOut(flick.config, PALE, 0x00C4B5FD);
+        material(flick, lavGlow(1.2f));
+        return fx(fibers, flick);
+    }
+
+    /** Under tension: a faint glint on the cord, fading almost at once. Spawned often and along the string, so keep it small. */
+    private static FX stringsTension() {
+        ParticleEmitter glint = burstEmitter("glint", 2, 3);
+        ParticleConfig c = glint.config;
+        c.setStartLifetime(range(3, 6));
+        c.setStartSpeed(range(0.02f, 0.12f));
+        c.setStartSize(uniform(range(0.03f, 0.05f)));
+        c.shape.setShape(sphere(0.03f));
+        fadeOut(c, PALE, 0x00A78BFA);
+        material(glint, lavGlow(1.2f));
+        return fx(glint);
     }
 
     /** Owner and puppet trade places: motes drawn in to each spot, a thin vertical seam, a flash. */

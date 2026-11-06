@@ -261,7 +261,7 @@ All timestamps use **level game time**. They persist across restarts and are ide
   - The client counts down cooldowns locally from game time.
 - Swap (§3.19) adds two cosmetic S→C payloads: `Disguises.StatePayload` (the disguise map, to everyone) and
   `SwapLink.Payload` (effects drawn along a line).
-- Network version `8` (since Puppet Manipulation's HUD counts against the cap). Bump it when payload formats change; mismatched clients are refused.
+- Network version `9` (since Strings' state payload). Bump it when payload formats change; mismatched clients are refused.
 
 ### 3.6 HUD
 **Rule: the combat HUD does not exist until the player asks for it** (art in `gen_art.py` → `textures/gui/combat/`).
@@ -655,6 +655,17 @@ Package `com.cnethuka.kegare.innate_technique.rime`. **Rarity: RARE.** All numbe
   | Focus (Directive) | own wind-up and a hard point at the target, held, the other hand yanked back (`focus_point`); a bell at the target and a lavender mark on it for 2 s (a ring tightening round it, a bead over its head) |
   | Chain Burst (Curio Burst) | own cast: hands gathered, flung up into a wide Y, then slammed down and out (`chain_burst_cast`); a rising whistle at the target, then the blasts going off one after another |
   | Stand-In (Understudy) | own stage bow, then a hand presenting the double (`stand_in_cast`); the puppet grows in a rising column of lavender motes with a mirror sound (and shrinks back the same way) |
+  | Zip (Strings, R) | yanked off the ground: the string arm up and ahead, body and legs trailing behind it (`strings_zip`); the string runs taut and shimmers, and YOU are the one moving, with a bobber reel at a higher pitch than Reel In's |
+  | Leash (Strings, R) | two leads in two fists: yanked back low and wide, leaning back, held (`strings_leash`); a second string shoots from the caster and a knot grips the second target, and two taut strings run from the slowed caster for 5 s |
+
+  Strings' base casts have tells of their own too, because the string itself is the tell:
+
+  | Base cast | Tell |
+  |---|---|
+  | Strings, firing | one hand cocked back and thrown straight out (`strings_fire`), a bobber throw; the string shoots from the hand in 3 ticks, and its knot grips with a burst of fibers (`strings_attach`) and a leash-knot sound. Anyone can see who is holding a string on whom, and that it's waiting: it hangs slack |
+  | Reel In | hand over hand, leaning back against the weight (`strings_reel`); the string snaps straight and shimmers (`strings_tension`), a low bobber reel at the target |
+  | Tie | arms flung wide, then slammed together until the wrists cross (`strings_tie`); the string jumps to run between the two targets, not from the caster; a thud and fibers when they meet |
+  | A string snapping or running out | fibers flung from both ends and the middle (`strings_snap`), and a leash-knot break if it snapped |
 - **Shared cooldown:** `cooldownKey()` is the base ability's ID, so casting either the base or the special starts the
   one cooldown and both show it on the base slot. The length defaults to the base's `cooldownTicks` (a special may
   override it).

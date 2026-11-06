@@ -1677,6 +1677,23 @@ def freeze_pip(full: bool) -> Image.Image:
 
 # ---------------------------------------------------------------------------------------------------- output
 
+def string_braid() -> Image.Image:
+    """Strings' cord and knot (art/blockbench/string_*.bbmodel use it). 32x32, on the block atlas. The top half tiles along u:
+    two strands crossing in a herringbone, near-white on the crown of each strand and deep violet where they dive under.
+    The bottom half is the knot: the same cord wound tight, in close bands. Drawn full-bright, so its shading is painted in."""
+    tones = [hexc("#f5f3ff"), hexc("#ddd6fe"), hexc("#c4b5fd"), hexc("#c4b5fd"), hexc("#a78bfa"), hexc("#a78bfa"), hexc("#7c3aed"), hexc("#5b21b6")]
+    img = Image.new("RGBA", (32, 32), CLEAR)
+    for y in range(16):
+        for x in range(32):
+            over = ((x // 4) + (y // 4)) % 2 == 0
+            img.putpixel((x, y), tones[((x + y) if over else (x - y)) % 8])
+    for y in range(16, 32):
+        for x in range(32):
+            band = (y + (x // 8)) % 4
+            img.putpixel((x, y), (tones[0], tones[1], tones[4], tones[7])[band])
+    return img
+
+
 def save(img: Image.Image, relative: str) -> Path:
     path = TEXTURES / relative
     path.parent.mkdir(parents=True, exist_ok=True)
@@ -1794,6 +1811,7 @@ def main() -> None:
     save(icon(ICON_GLACIAL_LANCE, ICE), "item/glacial_lance.png")
     save(swap_anchor_item(), "item/swap_anchor.png")
     save(puppet_glow(), "entity/puppet_glow.png")
+    save(string_braid(), "item/string_braid.png")
     for kind in ("follow", "stay", "guard", "go"):
         save(order_glyph(kind), f"gui/puppet_order/{kind}.png")
 

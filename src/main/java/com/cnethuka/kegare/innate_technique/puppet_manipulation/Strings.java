@@ -4,6 +4,8 @@ import com.cnethuka.kegare.Kegare;
 import com.cnethuka.kegare.combat.CombatHelper;
 import com.cnethuka.kegare.innatetechnique.CastManager;
 import com.cnethuka.kegare.innatetechnique.InnateTechniqueService;
+import com.cnethuka.kegare.innatetechnique.visual.Visual;
+import com.cnethuka.kegare.innatetechnique.visual.VisualService;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -16,7 +18,11 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.MinecraftServer;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.sounds.SoundEvent;
+import net.minecraft.sounds.SoundEvents;
+import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.damagesource.DamageType;
 import net.minecraft.world.entity.LivingEntity;
@@ -128,6 +134,25 @@ public final class Strings {
         Active a = new Active(caster, target);
         a.endTick = caster.level().getGameTime() + PuppetConfig.ticks(PuppetConfig.STRINGS_LIFE);
         ACTIVE.put(caster.getUUID(), a);
+        VisualService.playOnce(caster, Visual.animation(PuppetIds.ANIM_STRINGS_FIRE));
+        grip(target);
+        sound(caster, SoundEvents.FISHING_BOBBER_THROW, 0.8f, 1.5f);
+        StringsSync.broadcast(caster.server);
+    }
+
+    /** A knot takes hold of {@code target}. */
+    private static void grip(LivingEntity target) {
+        if (!(target.level() instanceof ServerLevel level)) return;
+        VisualService.playAt(level, chest(target), Visual.effect(PuppetIds.FX_STRINGS_ATTACH, Visual.Anchor.BODY));
+        sound(target, SoundEvents.LEASH_KNOT_PLACE, 0.9f, 1.3f);
+    }
+
+    private static void sound(LivingEntity at, SoundEvent sound, float volume, float pitch) {
+        at.level().playSound(null, at.getX(), at.getY(), at.getZ(), sound, SoundSource.PLAYERS, volume, pitch);
+    }
+
+    private static Vec3 chest(LivingEntity e) {
+        return e.position().add(0, e.getBbHeight() * 0.62, 0);
     }
 
     // ---------------------------------------------------------------- stage 2
@@ -159,21 +184,47 @@ public final class Strings {
             case REEL_IN -> {
                 a.phase = Phase.REEL_IN;
                 a.endTick = now + PuppetConfig.ticks(PuppetConfig.STRINGS_PULL_TIMEOUT);
+                VisualService.playOnce(caster, Visual.animation(PuppetIds.ANIM_STRINGS_REEL));
+                sound(a.first, SoundEvents.FISHING_BOBBER_RETRIEVE, 1.0f, 0.8f);
             }
             case ZIP -> {
                 a.phase = Phase.ZIP;
                 a.endTick = now + PuppetConfig.ticks(PuppetConfig.STRINGS_PULL_TIMEOUT);
+                VisualService.playOnce(caster, Visual.animation(PuppetIds.ANIM_STRINGS_ZIP));
+                sound(caster, SoundEvents.FISHING_BOBBER_RETRIEVE, 1.0f, 1.3f);
             }
             case TIE -> {
                 a.phase = Phase.TIE_PULL;
                 a.endTick = now + PuppetConfig.ticks(PuppetConfig.STRINGS_PULL_TIMEOUT);
+                VisualService.playOnce(caster, Visual.animation(PuppetIds.ANIM_STRINGS_TIE));
+                grip(other);
+                sound(caster, SoundEvents.FISHING_BOBBER_RETRIEVE, 1.0f, 0.6f);
             }
             case LEASH -> {
                 a.phase = Phase.LEASH;
                 a.endTick = now + PuppetConfig.ticks(PuppetConfig.STRINGS_LEASH_DURATION);
                 slow(caster, true);
+                VisualService.playOnce(caster, Visual.animation(PuppetIds.ANIM_STRINGS_LEASH));
+                grip(other);
             }
         }
+        StringsSync.broadcast(caster.server);
+    }
+
+    /** Every string in {@code level}, for the clients there. */
+    static List<StringsSync.Entry> entries(ServerLevel level) {
+        List<StringsSync.Entry> out = new ArrayList<>();
+        for (Active a : ACTIVE.values()) {
+            if (a.caster.level() != level) continue;
+            float limit = switch (a.phase) {
+                case ATTACHED -> PuppetConfig.STRINGS_SNAP_RANGE.get().floatValue();
+                case TETHER -> PuppetConfig.STRINGS_TETHER_DISTANCE.get().floatValue();
+                case LEASH -> PuppetConfig.STRINGS_LEASH_DISTANCE.get().floatValue();
+                case REEL_IN, ZIP, TIE_PULL -> 0f;
+            };
+            out.add(new StringsSync.Entry(a.caster.getId(), a.first.getId(), a.second == null ? -1 : a.second.getId(), a.phase, limit));
+        }
+        return out;
     }
 
     /** Fires the event; bosses are moved by nothing, but it fires for them too so listeners see every target. */
@@ -230,6 +281,7 @@ public final class Strings {
                     if (a.secondMoves) land(a.second, 0.0);
                     a.phase = Phase.TETHER;
                     a.endTick = a.caster.level().getGameTime() + PuppetConfig.ticks(PuppetConfig.STRINGS_TETHER_DURATION);
+                    StringsSync.broadcast(a.caster.server);
                 } else {
                     // Each covers its share of the gap, so they meet at the collision distance, not inside each other.
                     double share = (distance - collideAt) / (a.firstMoves && a.secondMoves ? 2.0 : 1.0) + 0.01;
@@ -283,6 +335,12 @@ public final class Strings {
         DamageSource source = source(a.caster);
         a.first.hurt(source, damage);
         a.second.hurt(source, damage);
+        if (a.first.level() instanceof ServerLevel level) {
+            Vec3 at = chest(a.first).add(chest(a.second)).scale(0.5);
+            VisualService.playAt(level, at, Visual.effect(PuppetIds.FX_STRINGS_ATTACH, Visual.Anchor.BODY));
+            level.playSound(null, at.x, at.y, at.z, SoundEvents.PLAYER_ATTACK_KNOCKBACK, SoundSource.PLAYERS, 0.9f, 0.8f);
+            level.playSound(null, at.x, at.y, at.z, SoundEvents.WOOL_HIT, SoundSource.PLAYERS, 1.0f, 0.7f);
+        }
     }
 
     public static DamageSource source(ServerPlayer caster) {
@@ -339,11 +397,34 @@ public final class Strings {
         ServerPlayer caster = a.caster;
         ACTIVE.remove(caster.getUUID(), a);
         if (a.phase == Phase.LEASH) slow(caster, false);
+        fray(a, how);
+        StringsSync.broadcast(caster.server);
         if (!caster.isAlive() || caster.isRemoved() || caster.hasDisconnected()) return;
         // A string that never got its second stage: the cooldown starts now (after one, it's already running).
         if (a.phase == Phase.ATTACHED && how != End.CUT) InnateTechniqueService.startCooldown(caster, PuppetManipulation.STRINGS);
         if (how == End.SNAPPED) caster.displayClientMessage(Component.translatable("message.kegare.strings.snapped"), true);
         if (how == End.SLACK) caster.displayClientMessage(Component.translatable("message.kegare.strings.slack"), true);
+    }
+
+    /**
+     * The tell of a string giving way: fibers at both ends and halfway along. Snapping is louder than running out; a pull that
+     * got there, or one cut by the caster, just stops.
+     */
+    private static void fray(Active a, End how) {
+        boolean ranOut = how == End.SLACK || how == End.DONE && (a.phase == Phase.TETHER || a.phase == Phase.LEASH);
+        if (how != End.SNAPPED && !ranOut) return;
+        LivingEntity from = a.phase == Phase.TETHER || a.phase == Phase.TIE_PULL ? a.first : a.caster;
+        List<LivingEntity> ends = a.phase == Phase.TETHER || a.phase == Phase.TIE_PULL ? List.of(a.second) : a.second != null ? List.of(a.first, a.second) : List.of(a.first);
+        for (LivingEntity end : ends) {
+            if (!(end.level() instanceof ServerLevel level) || end.level() != from.level()) continue;
+            Visual snap = Visual.effect(PuppetIds.FX_STRINGS_SNAP, Visual.Anchor.BODY);
+            Vec3 p0 = chest(from);
+            Vec3 p1 = chest(end);
+            VisualService.playAt(level, p0, snap);
+            VisualService.playAt(level, p1, snap);
+            VisualService.playAt(level, p0.add(p1).scale(0.5), snap);
+            sound(end, how == End.SNAPPED ? SoundEvents.LEASH_KNOT_BREAK : SoundEvents.WOOL_BREAK, how == End.SNAPPED ? 1.0f : 0.6f, 1.2f);
+        }
     }
 
     /** Ends the caster's string now, no cooldown: a new one replaces it, they possess a puppet, log out, or reroll away. */

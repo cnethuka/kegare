@@ -21,6 +21,12 @@ public final class PuppetIds {
     public static final ResourceLocation ANIM_CHAIN_BURST_CAST = Kegare.id("chain_burst_cast");
     public static final ResourceLocation ANIM_UNDERSTUDY_CAST = Kegare.id("understudy_cast");
     public static final ResourceLocation ANIM_STAND_IN_CAST = Kegare.id("stand_in_cast");
+    // Strings' five (art/blockbench/string_animations.bbmodel -> player_animations/puppet_strings.json): each its own tell.
+    public static final ResourceLocation ANIM_STRINGS_FIRE = Kegare.id("strings_fire");
+    public static final ResourceLocation ANIM_STRINGS_REEL = Kegare.id("strings_reel");
+    public static final ResourceLocation ANIM_STRINGS_ZIP = Kegare.id("strings_zip");
+    public static final ResourceLocation ANIM_STRINGS_TIE = Kegare.id("strings_tie");
+    public static final ResourceLocation ANIM_STRINGS_LEASH = Kegare.id("strings_leash");
     /** On the puppet itself: PAL animates players only, so {@code PuppetPoses} samples this one for the puppet model. */
     public static final ResourceLocation ANIM_PUPPET_IDLE_SPIN = Kegare.id("puppet_idle_spin");
 
@@ -36,6 +42,12 @@ public final class PuppetIds {
     public static final ResourceLocation FX_CURIO_BURST_EXPLOSION_FULL = fx("curio_burst_explosion_full");
     public static final ResourceLocation FX_STAND_IN_GROW = fx("stand_in_grow");
     public static final ResourceLocation FX_UNDERSTUDY_SWAP = fx("understudy_swap");
+    /** Where a knot grips: a small burst of fibers. */
+    public static final ResourceLocation FX_STRINGS_ATTACH = fx("strings_attach");
+    /** A string snapping or running out: fibers flying. */
+    public static final ResourceLocation FX_STRINGS_SNAP = fx("strings_snap");
+    /** Sparks along a string under tension (spawned on each client, see StringsClient). */
+    public static final ResourceLocation FX_STRINGS_TENSION = fx("strings_tension");
 
     private PuppetIds() {}
 

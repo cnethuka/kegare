@@ -33,6 +33,7 @@ public final class PuppetEvents {
         if (!(event.getEntity() instanceof ServerPlayer player)) return;
         Possession.restoreOnLogin(player); // the server stopped mid-possession: everything comes back
         PossessionLinks.sendTo(player);
+        StringsSync.sendTo(player);
         PuppetHud.markDirty(player);
     }
 
@@ -65,6 +66,12 @@ public final class PuppetEvents {
         if (event.getEntity() instanceof ServerPlayer player && Possession.isPossessing(player)) {
             Possession.release(player, Possession.Return.DIMENSION_CHANGE);
         }
+    }
+
+    /** Arriving in a dimension: the strings there (the entity IDs of the last one's mean nothing here). */
+    @SubscribeEvent
+    static void onChangedDimension(PlayerEvent.PlayerChangedDimensionEvent event) {
+        if (event.getEntity() instanceof ServerPlayer player) StringsSync.sendTo(player);
     }
 
     /** Guard: whoever damages a Puppet Manipulation player has their guarding puppets to deal with. */

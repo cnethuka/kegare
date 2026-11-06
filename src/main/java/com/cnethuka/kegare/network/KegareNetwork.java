@@ -12,7 +12,7 @@ import net.neoforged.neoforge.network.registration.PayloadRegistrar;
  * decided and saved; screens are cosmetic.
  */
 public final class KegareNetwork {
-    public static final String VERSION = "8";
+    public static final String VERSION = "9";
 
     private KegareNetwork() {}
 
@@ -40,6 +40,9 @@ public final class KegareNetwork {
         registrar.playToClient(com.cnethuka.kegare.innate_technique.puppet_manipulation.PuppetHud.Payload.TYPE,
                 com.cnethuka.kegare.innate_technique.puppet_manipulation.PuppetHud.Payload.STREAM_CODEC,
                 com.cnethuka.kegare.innate_technique.puppet_manipulation.PuppetHud.Payload::handle);
+        registrar.playToClient(com.cnethuka.kegare.innate_technique.puppet_manipulation.StringsSync.Payload.TYPE,
+                com.cnethuka.kegare.innate_technique.puppet_manipulation.StringsSync.Payload.STREAM_CODEC,
+                com.cnethuka.kegare.innate_technique.puppet_manipulation.StringsSync.Payload::handle);
         registrar.playToClient(com.cnethuka.kegare.innate_technique.puppet_manipulation.PossessionLinks.StatePayload.TYPE,
                 com.cnethuka.kegare.innate_technique.puppet_manipulation.PossessionLinks.StatePayload.STREAM_CODEC,
                 com.cnethuka.kegare.innate_technique.puppet_manipulation.PossessionLinks.StatePayload::handle);
