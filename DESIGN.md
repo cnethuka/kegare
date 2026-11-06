@@ -88,21 +88,30 @@ All timestamps use **level game time**. They persist across restarts and are ide
 ## 3. Systems
 
 ### 3.1 Malice (fixed at birth)
-- **First join** rolls a tier once. Weights and bases come from config:
+- **First join** rolls a tier once. Weights, bases and regen come from config (`[malice.tiers.<tier>]`):
 
-  | Tier | Weight | Base capacity |
-  |---|---|---|
-  | Zero | 2 | 0 |
-  | Low | 25 | ~60 |
-  | Average | 45 | ~100 |
-  | High | 20 | ~150 |
-  | Vast | 8 | ~250 |
+  | Tier | Weight | Base capacity | Rolls between | Regen per second (`regenPercentPerSecond`) |
+  |---|---|---|---|---|
+  | Zero | 2 | 0 | 0 | none |
+  | Low | 30 | ~250 | 225–275 | 3% of capacity (7.5/s at base) |
+  | Average | 45 | ~600 | 540–660 | 2% (12/s) |
+  | High | 20 | ~1500 | 1350–1650 | 1.5% (22.5/s) |
+  | Vast | 3 | ~10000 | 9000–11000 | 0.75% (75/s) |
 
-  Non-zero tiers get a uniform ±`capacityVariation` (10) offset and never land on 0.
+  Non-zero tiers get a uniform offset of up to ±`capacityVariationPercent` (10%) of their own base, and never land on 0.
+- **The scale:** every ability's cost, upkeep and special cost, Possess's backlash included, is set so that Low
+  buys about six Frost Shards, or two and a half seconds of RMT. Higher tiers buy far more, on purpose. All of it is in
+  config.
 - **Capacity never changes.** Death, rerolls and items leave it alone. The only exceptions are admin debug
-  (`/kegare setcapacity`, `/kegare rebirth`).
-- **Reserve** (`current`) is spent by abilities and regenerates `regenPercentPerSecond` (2%) of capacity per second.
+  (`/kegare setcapacity`, `/kegare rebirth`). A capacity set by hand takes the regen of the tier with the nearest base.
+- **Reserve** (`current`) is spent by abilities and regenerates at its tier's percentage of capacity per second.
   Regen pauses for `regenPauseSeconds` (5s) after dealing or taking damage.
+- **New defaults don't reach an existing config.** NeoForge keeps whatever an existing `kegare-server.toml` holds and only adds
+  missing keys, so a changed default only reaches it through a migration (§3.9). Delete the file
+  to get the defaults, then `/kegare rebirth` to re-roll a player's capacity.
+- **Tests:** `MaliceRollerTest` (the tier roll against the weights, every offset of each tier's range, never 0),
+  `MaliceRulesTest` (regen arithmetic), `MaliceScaleTest` (the shipped defaults, Low's budget, regen by tier on a player, the combat
+  pause).
 - **Respawn** refills the reserve to capacity.
 - **Severed** = born with 0 capacity. The player gets no innate technique, can't reroll, and the HUD is hidden.
   Only the flag is stored; their superhuman body comes from it (§3.27).
@@ -262,7 +271,8 @@ All timestamps use **level game time**. They persist across restarts and are ide
 - S→C `SyncPayload` (owner only) carries: Malice, capacity, tier, severed, innate technique, selected slot,
   cooldowns, active toggles, current charge/channel, traits.
   - It is sent at most once per tick, and only when something visible changed (Malice syncs when its whole number
-    changes).
+    changes). While regenerating that's 7.5 times a second for Low and 12 for Average, and every tick for High and Vast; a
+    Puppet Manipulation player's is 408 bytes, so at most about 8 KB/s, and none once the reserve is full.
   - The client counts down cooldowns locally from game time.
 - Swap (§3.19) adds two cosmetic S→C payloads: `Disguises.StatePayload` (the disguise map, to everyone) and
   `SwapLink.Payload` (effects drawn along a line).
@@ -290,6 +300,8 @@ All timestamps use **level game time**. They persist across restarts and are ide
     once. The current amount sits on the **centre plate**, cyan with a snowflake when the surroundings make casting
     cheaper, orange with a flame when dearer. A thin line under the cells fills while charging (gold) and drains
     while channeling (cyan);
+    The number on the centre plate stays full size up to five digits (Vast reaches 11000); only a custom config goes wider, and
+    that shrinks to 75%.
   - **tray**: the nine loadout slots (§3.16; 20 px, a 1 px rim round the icon, 2 px apart), then the 24 px ultimate
     in its iron-and-gold frame (a padlock while locked). Each slot: icon, number key (big, bottom-right), cooldown sweep with seconds left, a white flash
     when it comes off cooldown, and a small **R** plate (gold letter if the ability has a special, dull if not). The
@@ -475,7 +487,9 @@ a result back; they only send requests the server re-validates. All text comes f
     at once: which control picks abilities in Technique Mode (number keys or scroll wheel, §3.5), ability effects
     (Full / Reduced / Vanilla), your own animations in first person, the roll reveal spin.
 - **Right column:** the player model (follows the mouse), Malice current / capacity with the bar in the technique's
-  Malice color, the tier, and regen per second (or "Regen paused").
+  Malice color, the tier, and regen per second (or "Regen paused"). In a window too narrow for them (640x480), the amount and
+  "Regen paused" each take a second line and the model gives up the height; shrinking them would land the font on fractions of a
+  pixel and close up the zeros.
 - **Bottom:** the HUD's combat panel itself (`CombatPanelLayer.drawPanel`), live, as the loadout bar (§3.16). Above
   it is a status line (hint, "Now click a slot on your bar", or the server's refusal), with "Reset" at its right end.
 - **Severed:** the Severed emblem and text, no category tabs and no bar.
@@ -553,20 +567,20 @@ Package `com.cnethuka.kegare.innate_technique.rime`. **Rarity: RARE.** All numbe
 
 | Ability | Type | What it does (defaults) |
 |---|---|---|
-| **Frost Shard** | INSTANT | A fast ice projectile (2.2 blocks/tick, 1.5 s flight). 3 damage, Slowness I for 1.5 s, 1 Freeze stack. Cost 10, cooldown 1 s. |
-| **Glacial Lance** | CHARGED | Hold up to 2 s; a tap shorter than 0.4 s fizzles (no cost, no cooldown). A bigger, slower lance (1.4 blocks/tick) for 4 to 12 damage by charge, Slowness II for 3 s, 2 Freeze stacks. Cost 25, cooldown 6 s. |
-| **Frost Field** | CHANNELED | A cone in front of you while held (6 blocks, 35° half-angle, line of sight). Slowness II on everyone in it, +1 Freeze stack per second. Cost 8, then 12 Malice/s; max 5 s; cooldown 5 s after it ends. |
-| **Rime Shell** | TOGGLE | 30% damage reduction; anyone who hits you in melee gets Slowness II for 2 s. Cost 10, then 4 Malice/s; cooldown 8 s after switching off. Like every toggle it keeps running while you are stunned or frozen. |
+| **Frost Shard** | INSTANT | A fast ice projectile (2.2 blocks/tick, 1.5 s flight). 3 damage, Slowness I for 1.5 s, 1 Freeze stack. Cost 40, cooldown 1 s. |
+| **Glacial Lance** | CHARGED | Hold up to 2 s; a tap shorter than 0.4 s fizzles (no cost, no cooldown). A bigger, slower lance (1.4 blocks/tick) for 4 to 12 damage by charge, Slowness II for 3 s, 2 Freeze stacks. Cost 100, cooldown 6 s. |
+| **Frost Field** | CHANNELED | A cone in front of you while held (6 blocks, 35° half-angle, line of sight). Slowness II on everyone in it, +1 Freeze stack per second. Cost 32, then 48 Malice/s; max 5 s; cooldown 5 s after it ends. |
+| **Rime Shell** | TOGGLE | 30% damage reduction; anyone who hits you in melee gets Slowness II for 2 s. Cost 40, then 16 Malice/s; cooldown 8 s after switching off. Like every toggle it keeps running while you are stunned or frozen. |
 
 - **Specials (R)**, one per ability (framework §3.15). Each shares its base ability's cooldown; the "cooldown" below
   is how long that shared cooldown runs after the special. Numbers in `[rime.<special>]`.
 
   | Special (of) | Type | What it does (defaults) |
   |---|---|---|
-  | **Splinter** (Frost Shard) | INSTANT | Three smaller shards in a fan, 9° apart (`spreadAngle`), 2 blocks/tick, 1 s flight. 2 damage and +1 Freeze stack each. Shards of one cast skip the hurt cooldown a sibling left, so all three can land on one target (other attacks still respect it). Real projectiles (`SplinterShardEntity`), damage type `kegare:rime`. Cost 14, cooldown 3 s. |
-  | **Glacial Spire** (Glacial Lance) | CHARGED | Hold up to 2 s (a tap under 0.3 s fizzles) while aiming at the ground within 20 blocks. Aiming at a wall picks the floor in front of it; no ground in range at release fizzles for free ("Glacial Spire needs ground within 20 blocks."). While charging, only the caster sees a ring of frost dust where it will rise. On release a marker entity (`GlacialSpireEntity`, never saved, no blocks) shows a frost warning circle (radius 1.5) for 0.75 s, with a curtain of glints rising from its edge past head height so a player standing in it sees the warning while looking straight ahead, then an ice spike erupts: 6 damage, +2 Freeze stacks, and everyone on it (up to 2.5 blocks above the ground) is launched upward at 0.6 to 1.2 blocks/tick by charge. The spike stands 1.25 s, then shatters. Cost 30, cooldown 8 s. |
-  | **Ice Path** (Frost Field) | CHANNELED | Hold R: you slide the way you look at 0.65 blocks/tick (step height +0.5 so you ride up blocks; no fall damage while sliding) over an ice trail laid under your feet. Anyone else within 0.9 blocks of the trail gets Slowness II until it melts, 4 s after each bit was laid. The trail is server-side points (`IcePaths`, a level attachment), never blocks. Cost 8, then 10 Malice/s; max 3 s; cooldown 6 s after it ends. |
-  | **Shatter Shell** (Rime Shell) | INSTANT | Burst outward: everyone within 4.5 blocks is knocked back (1.4) and gets +2 Freeze stacks. With Rime Shell on, the shell is used up (`EndReason.CONSUMED`) and it costs 8; with no shell up it costs 22. The HUD and Sorcerer screen show whichever applies right now. Cooldown 8 s. |
+  | **Splinter** (Frost Shard) | INSTANT | Three smaller shards in a fan, 9° apart (`spreadAngle`), 2 blocks/tick, 1 s flight. 2 damage and +1 Freeze stack each. Shards of one cast skip the hurt cooldown a sibling left, so all three can land on one target (other attacks still respect it). Real projectiles (`SplinterShardEntity`), damage type `kegare:rime`. Cost 56, cooldown 3 s. |
+  | **Glacial Spire** (Glacial Lance) | CHARGED | Hold up to 2 s (a tap under 0.3 s fizzles) while aiming at the ground within 20 blocks. Aiming at a wall picks the floor in front of it; no ground in range at release fizzles for free ("Glacial Spire needs ground within 20 blocks."). While charging, only the caster sees a ring of frost dust where it will rise. On release a marker entity (`GlacialSpireEntity`, never saved, no blocks) shows a frost warning circle (radius 1.5) for 0.75 s, with a curtain of glints rising from its edge past head height so a player standing in it sees the warning while looking straight ahead, then an ice spike erupts: 6 damage, +2 Freeze stacks, and everyone on it (up to 2.5 blocks above the ground) is launched upward at 0.6 to 1.2 blocks/tick by charge. The spike stands 1.25 s, then shatters. Cost 120, cooldown 8 s. |
+  | **Ice Path** (Frost Field) | CHANNELED | Hold R: you slide the way you look at 0.65 blocks/tick (step height +0.5 so you ride up blocks; no fall damage while sliding) over an ice trail laid under your feet. Anyone else within 0.9 blocks of the trail gets Slowness II until it melts, 4 s after each bit was laid. The trail is server-side points (`IcePaths`, a level attachment), never blocks. Cost 32, then 40 Malice/s; max 3 s; cooldown 6 s after it ends. |
+  | **Shatter Shell** (Rime Shell) | INSTANT | Burst outward: everyone within 4.5 blocks is knocked back (1.4) and gets +2 Freeze stacks. With Rime Shell on, the shell is used up (`EndReason.CONSUMED`) and it costs 32; with no shell up it costs 88. The HUD and Sorcerer screen show whichever applies right now. Cooldown 8 s. |
 
 - **No ultimate yet.** The V slot shows a padlock in the HUD and the Sorcerer screen, and pressing V says it is locked
   (`InnateTechnique.Builder.lockedUltimate()`). Rime's Dominion comes later.
@@ -768,7 +782,7 @@ Package `rmt`. The first **shared** ability (§3.16), ID `kegare:reverse_malice_
   full second held (`healPerSecond`); release to stop. Never above max health; once there is nothing left to heal
   the channel ends by itself ("Fully healed."). At full health it is refused before anything is paid ("You aren't
   hurt.").
-- **Expensive:** 10 Malice to start, then **24 Malice/s**, about double a typical attack's cost. Shared abilities take
+- **Expensive:** 40 Malice to start, then **96 Malice/s**, about double a typical attack's cost. Shared abilities take
   no innate technique's surroundings modifier.
 - **Ends** like every channel: release, out of Malice, `maxDuration` (0 = none), a stun or a freeze (interrupted);
   plus fully healed. The **15 s cooldown** starts when it ends.
@@ -851,15 +865,15 @@ Both ends get `swap_depart`/`swap_arrive` and the enderman-teleport sound, plus 
 
 | Ability | Type | Cost | Cooldown | Effect |
 |---|---|---|---|---|
-| **Positions** | INSTANT | 12 | 8 s | Swap positions AND facing with the target. |
-| ↳ **Switchback** (R) | INSTANT | 22 | shared | The same swap, then a swap back after `returnDelay` (3 s). The swap back fires `SwapTargetEvent` again; it is called off if either dies, logs out (or the mob is gone) or changes dimension. Both wear the `switchback_timer` ring from the cast until then. |
-| **Awareness** | INSTANT | 20 | 20 s | A 5 s disguise swap: everyone else sees the caster as the target and the target as the caster. |
-| ↳ **Mimic** (R) | INSTANT | 24 | shared | One way: the caster looks like the target for 8 s; the target stays as themselves. |
-| **Anchor** | INSTANT, two stages | throw 8 / recall 10 | throw 0.5 s / after use 12 s | First cast throws an anchor (pearl-like, passes through creatures, sticks to the first block it hits, times out after 20 s, never saved). Second cast swaps the caster onto it (out from walls, under ceilings, nudged out of blocks) and uses it up. |
-| ↳ **Send Off** (R) | INSTANT | 18 | shared | Needs an anchor out: the targeted player or mob is swapped onto it instead of the caster; uses it up. No anchor: "You have no anchor out.", free. |
-| **Exchange** | INSTANT | 15 | 15 s | The caster gives its worst negative effect (highest level, then longest) to the target and takes the target's strongest positive one, duration and amplifier carried over. Either half may be missing; nothing at all: "Nothing to exchange.", free. Infinite effects never move. |
-| ↳ **Momentum Exchange** (R) | INSTANT | 18 | shared | Swap velocity vectors (what each client last reported, `getKnownMovement`) AND fall distance with the target; both velocities are sent to both clients. |
-| **Total Swap** (V, ultimate, no special) | INSTANT | 60 | 120 s | Positions + the Awareness disguise + health percentage: each gets the other's share of their OWN max health (4/20 and 18/20 become 18 and 4). The target must be at least `minDistance` (4) blocks away. |
+| **Positions** | INSTANT | 48 | 8 s | Swap positions AND facing with the target. |
+| ↳ **Switchback** (R) | INSTANT | 88 | shared | The same swap, then a swap back after `returnDelay` (3 s). The swap back fires `SwapTargetEvent` again; it is called off if either dies, logs out (or the mob is gone) or changes dimension. Both wear the `switchback_timer` ring from the cast until then. |
+| **Awareness** | INSTANT | 80 | 20 s | A 5 s disguise swap: everyone else sees the caster as the target and the target as the caster. |
+| ↳ **Mimic** (R) | INSTANT | 96 | shared | One way: the caster looks like the target for 8 s; the target stays as themselves. |
+| **Anchor** | INSTANT, two stages | throw 32 / recall 40 | throw 0.5 s / after use 12 s | First cast throws an anchor (pearl-like, passes through creatures, sticks to the first block it hits, times out after 20 s, never saved). Second cast swaps the caster onto it (out from walls, under ceilings, nudged out of blocks) and uses it up. |
+| ↳ **Send Off** (R) | INSTANT | 72 | shared | Needs an anchor out: the targeted player or mob is swapped onto it instead of the caster; uses it up. No anchor: "You have no anchor out.", free. |
+| **Exchange** | INSTANT | 60 | 15 s | The caster gives its worst negative effect (highest level, then longest) to the target and takes the target's strongest positive one, duration and amplifier carried over. Either half may be missing; nothing at all: "Nothing to exchange.", free. Infinite effects never move. |
+| ↳ **Momentum Exchange** (R) | INSTANT | 72 | shared | Swap velocity vectors (what each client last reported, `getKnownMovement`) AND fall distance with the target; both velocities are sent to both clients. |
+| **Total Swap** (V, ultimate, no special) | INSTANT | 240 | 120 s | Positions + the Awareness disguise + health percentage: each gets the other's share of their OWN max health (4/20 and 18/20 become 18 and 4). The target must be at least `minDistance` (4) blocks away. |
 
 The HUD and Sorcerer screen show Anchor's current stage cost (throw or recall).
 
@@ -934,9 +948,9 @@ icon armor stand; ultimate locked (its Dominion comes later). All numbers in `[p
 
   | Tier | Charge | Cost | Health | Glow |
   |---|---|---|---|---|
-  | Tap | released before `halfCharge` (0.6 s) | 10 | 2 | faint |
-  | Half | before `fullCharge` (1.5 s) | 25 | 4 | normal |
-  | Full | full charge | 45 | 8 | bright, plus an outline in the glow color |
+  | Tap | released before `halfCharge` (0.6 s) | 40 | 2 | faint |
+  | Half | before `fullCharge` (1.5 s) | 100 | 4 | normal |
+  | Full | full charge | 180 | 8 | bright, plus an outline in the glow color |
 
   The glow is a shell of drifting threads just outside the body (`PuppetGlowLayer`, additive, texture
   `entity/puppet_glow.png`) in the owner's Malice color. The Full outline uses vanilla's outline pass, but only while
@@ -962,16 +976,16 @@ icon armor stand; ultimate locked (its Dominion comes later). All numbers in `[p
 
 | Ability | Type | Cost | Cooldown | Effect |
 |---|---|---|---|---|
-| **Puppet Creation** | CHARGED | 10 / 25 / 45 by tier | 2 s | Hold to charge, release to make a puppet beside you (a free spot at your right, left, back or front). The tier comes from the charge; the cost is the tier's (`Ability#releaseCost`: a CHARGED ability's cost may depend on the charge; pressing checks the cheapest). New puppets take your current Directive order. |
-| ↳ **Possess** (R) | INSTANT | 15 | shared | Move into the puppet you're looking at, or your nearest one (within 32). See **Possession** below. |
-| **Directive** | INSTANT | 5 | 1 s | Every puppet within `range` (32) takes the next order: **Follow → Stay → Guard → Go** → Follow. Guard follows too, and goes for whoever damages you (player or mob). Go walks to the block you're looking at, then stays; with no block in sight the cycle skips it. "Puppets: Guard (2 heard you)". The order is saved on you (`kegare:puppet_owner`) and a new order calls off any chase. |
-| ↳ **Focus** (R) | INSTANT | 10 | shared | Every puppet in range swarms the player or mob you're looking at, until it dies or gets away; then back to their order. Needs a target and at least one puppet in range, else free. |
-| **Curio Burst** | INSTANT | 8 | 4 s | Detonate the puppet you're looking at (`CurioBursts`): 4 / 7 / 12 damage by tier at the centre, half at the edge of a 2.5 / 3 / 4 block radius, and a push away (0.6). Damage type `kegare:curio_burst`, credited to you, tagged `is_explosion` (Blast Protection helps) and `no_knockback` (the only push is the blast's). Never hurts you, your puppets or your empty body; breaks no blocks. No puppet in sight: free. |
-| ↳ **Chain Burst** (R) | INSTANT | 16 | shared | Every puppet of yours within `radius` (8) of what you're looking at (player, mob or puppet) detonates, nearest first, `delay` (0.25 s) apart. Queued blasts drop if you log out. |
-| **Understudy** | INSTANT | 10 | 6 s | Swap places with the puppet you're looking at (within 32). Fires `SwapTargetEvent` with the puppet as the target first: a future deflection that cancels it blocks this too (Malice spent, no cooldown, "Something stops the swap."). |
-| **Strings** | INSTANT, two stages | 5 to fire; then 12 (Reel In) or 20 (Tie) | 10 s, from stage 2 or when it snaps or expires | See **Strings** below. |
-| ↳ **Zip / Leash** (R) | INSTANT | 10 (Zip) or 25 (Leash); free with no string | shared | See **Strings** below. |
-| ↳ **Stand-In** (R) | INSTANT | 20 | shared | For `duration` (8 s) one puppet (looked at, else nearest) grows to your size over 0.4 s and copies you: the same step each tick (on its own feet, so it still falls and bumps into things), facing, crouch, swings, held items, armor and name tag, with no glow or outline: it looks exactly like you. Then it shrinks back and gives it all back. Only ever its OWNER's look; one Stand-In per owner at a time; it never attacks, and nothing it borrowed can drop. |
+| **Puppet Creation** | CHARGED | 40 / 100 / 180 by tier | 2 s | Hold to charge, release to make a puppet beside you (a free spot at your right, left, back or front). The tier comes from the charge; the cost is the tier's (`Ability#releaseCost`: a CHARGED ability's cost may depend on the charge; pressing checks the cheapest). New puppets take your current Directive order. |
+| ↳ **Possess** (R) | INSTANT | 60 | shared | Move into the puppet you're looking at, or your nearest one (within 32). See **Possession** below. |
+| **Directive** | INSTANT | 20 | 1 s | Every puppet within `range` (32) takes the next order: **Follow → Stay → Guard → Go** → Follow. Guard follows too, and goes for whoever damages you (player or mob). Go walks to the block you're looking at, then stays; with no block in sight the cycle skips it. "Puppets: Guard (2 heard you)". The order is saved on you (`kegare:puppet_owner`) and a new order calls off any chase. |
+| ↳ **Focus** (R) | INSTANT | 40 | shared | Every puppet in range swarms the player or mob you're looking at, until it dies or gets away; then back to their order. Needs a target and at least one puppet in range, else free. |
+| **Curio Burst** | INSTANT | 32 | 4 s | Detonate the puppet you're looking at (`CurioBursts`): 4 / 7 / 12 damage by tier at the centre, half at the edge of a 2.5 / 3 / 4 block radius, and a push away (0.6). Damage type `kegare:curio_burst`, credited to you, tagged `is_explosion` (Blast Protection helps) and `no_knockback` (the only push is the blast's). Never hurts you, your puppets or your empty body; breaks no blocks. No puppet in sight: free. |
+| ↳ **Chain Burst** (R) | INSTANT | 64 | shared | Every puppet of yours within `radius` (8) of what you're looking at (player, mob or puppet) detonates, nearest first, `delay` (0.25 s) apart. Queued blasts drop if you log out. |
+| **Understudy** | INSTANT | 40 | 6 s | Swap places with the puppet you're looking at (within 32). Fires `SwapTargetEvent` with the puppet as the target first: a future deflection that cancels it blocks this too (Malice spent, no cooldown, "Something stops the swap."). |
+| **Strings** | INSTANT, two stages | 20 to fire; then 48 (Reel In) or 80 (Tie) | 10 s, from stage 2 or when it snaps or expires | See **Strings** below. |
+| ↳ **Zip / Leash** (R) | INSTANT | 40 (Zip) or 100 (Leash); free with no string | shared | See **Strings** below. |
+| ↳ **Stand-In** (R) | INSTANT | 80 | shared | For `duration` (8 s) one puppet (looked at, else nearest) grows to your size over 0.4 s and copies you: the same step each tick (on its own feet, so it still falls and bumps into things), facing, crouch, swings, held items, armor and name tag, with no glow or outline: it looks exactly like you. Then it shrinks back and gives it all back. Only ever its OWNER's look; one Stand-In per owner at a time; it never attacks, and nothing it borrowed can drop. |
 
 **Possession** (`Possession`, `PossessionData` saved on the player as `kegare:possession`):
 - The player **becomes the puppet**: they take its place, its size (a `scale` modifier) and its health (a max-health
@@ -988,7 +1002,7 @@ icon armor stand; ultimate locked (its Dominion comes later). All numbers in `[p
   - R again;
   - **the shell takes any damage:** snap back at once, and the hit lands on the real body;
   - **the puppet dies** (lethal damage while possessing kills the puppet, not the player): snap back with
-    **backlash**: Nausea (4 s), a stun through the shared stun system (1 s), and 20 Malice lost;
+    **backlash**: Nausea (4 s), a stun through the shared stun system (1 s), and 80 Malice lost;
   - more than `maxDistance` (64) from the shell;
   - logout (before the player is saved), death (a real death, e.g. `/kill`, returns them first and goes ahead in the
     body), a dimension change (before travelling) or losing the technique.
@@ -1005,8 +1019,8 @@ icon armor stand; ultimate locked (its Dominion comes later). All numbers in `[p
 
   | Key | Same target, or nothing | A different valid target (within `range`) |
   |---|---|---|
-  | Cast | **Reel In** (12): pull the target to you, stopping `arriveDistance` (2) short | **Tie** (20): both are pulled into each other at `pullSpeed` (1.2 blocks/tick); at `collideDistance` (1.2) both stop and take `tieDamage` (1.5, `kegare:strings_tie`, credited to you, no knockback; a weak puppet's 2 health survives it). Then they stay within `tetherDistance` (3) of each other for `tetherDuration` (4 s) |
-  | R | **Zip** (10): pull yourself to the target | **Leash** (25): both stay within `leashDistance` (6) of you for `leashDuration` (5 s), and you lose `leashSlow` (35%) of your speed while they do. They can still attack and cast |
+  | Cast | **Reel In** (48): pull the target to you, stopping `arriveDistance` (2) short | **Tie** (80): both are pulled into each other at `pullSpeed` (1.2 blocks/tick); at `collideDistance` (1.2) both stop and take `tieDamage` (1.5, `kegare:strings_tie`, credited to you, no knockback; a weak puppet's 2 health survives it). Then they stay within `tetherDistance` (3) of each other for `tetherDuration` (4 s) |
+  | R | **Zip** (40): pull yourself to the target | **Leash** (100): both stay within `leashDistance` (6) of you for `leashDuration` (5 s), and you lose `leashSlow` (35%) of your speed while they do. They can still attack and cast |
 
 - **Holding:** past a tether or leash's limit, a target is dragged back at `dragSpeed` (0.4 blocks/tick, faster the further past, up to `pullSpeed`), so it can't be outrun. A Tie's string runs between its two targets, so you can walk away from it, and it drags both ways. A pull gives up after `pullTimeout` (2 s; a wall in the way). A Tie that times out skips the collision but still tethers.
 - **Pulls** are velocity, not teleports: every tick on the server, sent to a player's client (`hurtMarked`), which is what actually moves them. A client lags a tick or two, so pulls ease off over their last stretch rather than overshoot.
@@ -1035,10 +1049,10 @@ Order glyphs `gui/puppet_order/{follow,stay,guard,go}.png`.
 
 **Strings' stage on the HUD** (`PuppetHud.StringsHud`, checked every tick while a string waits, since its next stage
 depends on what you look at):
-- Strings selected, no string out: "Fire: 5" above the meter's right end.
+- Strings selected, no string out: "Fire: 20" above the meter's right end.
 - A string waiting: the slot shows what the cast key would do now (`gui/ability/strings_reel`, `strings_tie`), with R's
   (`strings_zip`, `strings_leash`) small in its corner and a lavender outline. Under the crosshair, in and out of Technique
-  Mode: "[C] Reel In 12 · [R] Zip 10 · 6s".
+  Mode: "[C] Reel In 48 · [R] Zip 40 · 6s".
 - Sorcerer screen (`SorcererScreen.addDetailLines`): the stage now, then both stage-2 costs on each key. It quotes the
   full cooldown and Zip's cost whatever the stage (`Ability#shownCooldownTicks` and `#shownCost`): R with no string is
   free, and firing only has a moment's lockout.

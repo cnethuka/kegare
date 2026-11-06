@@ -12,6 +12,11 @@ public final class MaliceRules {
         return Math.floor(before) >= 1 && after < 1;
     }
 
+    /** How much of the reserve comes back each tick, at {@code percentPerSecond} of {@code capacity} per second. */
+    public static double regenPerTick(int capacity, double percentPerSecond) {
+        return capacity * percentPerSecond / 100.0 / 20.0;
+    }
+
     /** Overflowing: born in the Vast tier. */
     public static boolean isOverflowing(MaliceTier tier) {
         return tier == MaliceTier.VAST;

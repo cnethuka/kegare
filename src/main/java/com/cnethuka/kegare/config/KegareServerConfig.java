@@ -13,12 +13,13 @@ public final class KegareServerConfig {
     public static final ModConfigSpec SPEC;
 
     // ---- Malice ----
-    public static final ModConfigSpec.DoubleValue REGEN_PERCENT_PER_SECOND;
     public static final ModConfigSpec.DoubleValue REGEN_PAUSE_SECONDS;
-    public static final ModConfigSpec.IntValue CAPACITY_VARIATION;
+    public static final ModConfigSpec.DoubleValue CAPACITY_VARIATION_PERCENT;
     private static final ModConfigSpec.IntValue[] TIER_WEIGHTS = new ModConfigSpec.IntValue[MaliceTier.values().length];
     /** Index by tier ordinal. {@code null} for {@link MaliceTier#ZERO} (always 0). */
     private static final ModConfigSpec.IntValue[] TIER_BASES = new ModConfigSpec.IntValue[MaliceTier.values().length];
+    /** Index by tier ordinal. {@code null} for {@link MaliceTier#ZERO} (nothing to regenerate). */
+    private static final ModConfigSpec.DoubleValue[] TIER_REGEN = new ModConfigSpec.DoubleValue[MaliceTier.values().length];
 
     // ---- traits ----
     public static final ModConfigSpec.DoubleValue SIX_EYES_BIRTH_CHANCE;
@@ -79,20 +80,21 @@ public final class KegareServerConfig {
         ModConfigSpec.Builder b = new ModConfigSpec.Builder();
 
         b.comment("Malice (cursed energy). Capacity is rolled once at birth and never changes.").push("malice");
-        REGEN_PERCENT_PER_SECOND = b.comment("Reserve regenerated per second, as a percent of capacity.")
-                .defineInRange("regenPercentPerSecond", 2.0, 0.0, 100.0);
         REGEN_PAUSE_SECONDS = b.comment("Regen pauses for this many seconds after the player deals or takes damage.")
                 .defineInRange("regenPauseSeconds", 5.0, 0.0, 600.0);
-        CAPACITY_VARIATION = b.comment("Random +/- variation applied to non-zero tier capacities at birth.")
-                .defineInRange("capacityVariation", 10, 0, 10_000);
-        b.comment("Birth tiers. weight = relative roll chance, base = capacity before variation.").push("tiers");
-        int[] defaultWeights = {2, 25, 45, 20, 8};
-        int[] defaultBases = {0, 60, 100, 150, 250};
+        CAPACITY_VARIATION_PERCENT = b.comment("A non-zero tier's capacity at birth: its base, plus or minus up to this percent of the base. Never reaches 0.")
+                .defineInRange("capacityVariationPercent", 10.0, 0.0, 100.0);
+        b.comment("Birth tiers. weight = relative roll chance, base = capacity before variation,",
+                "regenPercentPerSecond = reserve regenerated per second, as a percent of capacity.").push("tiers");
+        int[] defaultWeights = {2, 30, 45, 20, 3};
+        int[] defaultBases = {0, 250, 600, 1500, 10_000};
+        double[] defaultRegen = {0.0, 3.0, 2.0, 1.5, 0.75};
         for (MaliceTier tier : MaliceTier.values()) {
             b.push(tier.serializedName());
             TIER_WEIGHTS[tier.ordinal()] = b.defineInRange("weight", defaultWeights[tier.ordinal()], 0, 1_000_000);
             if (tier != MaliceTier.ZERO) {
                 TIER_BASES[tier.ordinal()] = b.defineInRange("base", defaultBases[tier.ordinal()], 1, 1_000_000);
+                TIER_REGEN[tier.ordinal()] = b.defineInRange("regenPercentPerSecond", defaultRegen[tier.ordinal()], 0.0, 100.0);
             }
             b.pop();
         }
@@ -143,14 +145,14 @@ public final class KegareServerConfig {
 
         b.comment("TEST CONTENT: numbers for the placeholder test abilities. Delete with the test innate techniques.").push("test_abilities");
         b.push("dash");
-        DASH_COST = b.defineInRange("cost", 10.0, 0.0, 100_000.0);
+        DASH_COST = b.defineInRange("cost", 40.0, 0.0, 100_000.0);
         DASH_COOLDOWN = b.comment("Seconds.").defineInRange("cooldown", 3.0, 0.0, 3600.0);
         DASH_STRENGTH = b.comment("Horizontal launch speed (blocks/tick).").defineInRange("strength", 1.4, 0.0, 10.0);
         DASH_LIFT = b.comment("Vertical launch speed (blocks/tick).").defineInRange("lift", 0.25, 0.0, 10.0);
         b.pop();
 
         b.push("burst");
-        BURST_COST = b.defineInRange("cost", 15.0, 0.0, 100_000.0);
+        BURST_COST = b.defineInRange("cost", 60.0, 0.0, 100_000.0);
         BURST_COOLDOWN = b.comment("Seconds.").defineInRange("cooldown", 6.0, 0.0, 3600.0);
         BURST_MIN_CHARGE = b.comment("Seconds of charge needed before release fires.").defineInRange("minCharge", 0.25, 0.0, 60.0);
         BURST_MAX_CHARGE = b.comment("Seconds to reach full charge.").defineInRange("maxCharge", 1.5, 0.05, 60.0);
@@ -161,8 +163,8 @@ public final class KegareServerConfig {
         b.pop();
 
         b.push("hover");
-        HOVER_COST = b.comment("Cost to start the channel.").defineInRange("cost", 5.0, 0.0, 100_000.0);
-        HOVER_UPKEEP = b.comment("Drain per second while channeling.").defineInRange("upkeepPerSecond", 8.0, 0.0, 100_000.0);
+        HOVER_COST = b.comment("Cost to start the channel.").defineInRange("cost", 20.0, 0.0, 100_000.0);
+        HOVER_UPKEEP = b.comment("Drain per second while channeling.").defineInRange("upkeepPerSecond", 32.0, 0.0, 100_000.0);
         HOVER_MAX_DURATION = b.comment("Seconds.").defineInRange("maxDuration", 5.0, 0.05, 3600.0);
         HOVER_COOLDOWN = b.comment("Seconds, starts when the channel ends.").defineInRange("cooldown", 4.0, 0.0, 3600.0);
         HOVER_LEVITATION_LEVEL = b.comment("Levitation amplifier (0 = Levitation I).").defineInRange("levitationAmplifier", 0, 0, 10);
@@ -170,19 +172,19 @@ public final class KegareServerConfig {
         b.pop();
 
         b.push("aura");
-        AURA_COST = b.comment("Cost to switch on.").defineInRange("cost", 5.0, 0.0, 100_000.0);
-        AURA_UPKEEP = b.comment("Drain per second while active.").defineInRange("upkeepPerSecond", 3.0, 0.0, 100_000.0);
+        AURA_COST = b.comment("Cost to switch on.").defineInRange("cost", 20.0, 0.0, 100_000.0);
+        AURA_UPKEEP = b.comment("Drain per second while active.").defineInRange("upkeepPerSecond", 12.0, 0.0, 100_000.0);
         AURA_COOLDOWN = b.comment("Seconds, starts when switched off.").defineInRange("cooldown", 2.0, 0.0, 3600.0);
         AURA_SPEED_LEVEL = b.comment("Speed amplifier while active (0 = Speed I).").defineInRange("speedAmplifier", 0, 0, 10);
         b.pop();
 
         b.comment("Special of Dash (R). Needs Aura switched on. Shares Dash's cooldown.").push("blink");
-        BLINK_COST = b.defineInRange("cost", 8.0, 0.0, 100_000.0);
+        BLINK_COST = b.defineInRange("cost", 32.0, 0.0, 100_000.0);
         BLINK_DISTANCE = b.comment("Max teleport distance in blocks (stops short of walls).").defineInRange("distance", 8.0, 0.5, 64.0);
         b.pop();
 
         b.comment("Special of Hover (R, hold to charge). Needs the trait in DESIGN.md. Shares Hover's cooldown.").push("updraft");
-        UPDRAFT_COST = b.defineInRange("cost", 12.0, 0.0, 100_000.0);
+        UPDRAFT_COST = b.defineInRange("cost", 48.0, 0.0, 100_000.0);
         UPDRAFT_MIN_CHARGE = b.comment("Seconds of charge needed before release fires.").defineInRange("minCharge", 0.25, 0.0, 60.0);
         UPDRAFT_MAX_CHARGE = b.comment("Seconds to reach full charge.").defineInRange("maxCharge", 1.0, 0.05, 60.0);
         UPDRAFT_MIN_LAUNCH = b.comment("Upward speed at no charge (blocks/tick).").defineInRange("minLaunch", 0.6, 0.0, 10.0);
@@ -190,7 +192,7 @@ public final class KegareServerConfig {
         b.pop();
 
         b.push("shockwave");
-        SHOCKWAVE_COST = b.defineInRange("cost", 60.0, 0.0, 100_000.0);
+        SHOCKWAVE_COST = b.defineInRange("cost", 240.0, 0.0, 100_000.0);
         SHOCKWAVE_COOLDOWN = b.comment("Seconds.").defineInRange("cooldown", 30.0, 0.0, 3600.0);
         SHOCKWAVE_RADIUS = b.defineInRange("radius", 8.0, 0.0, 64.0);
         SHOCKWAVE_KNOCKBACK = b.defineInRange("knockback", 2.0, 0.0, 10.0);
@@ -213,6 +215,12 @@ public final class KegareServerConfig {
         int[] out = new int[TIER_BASES.length];
         for (int i = 0; i < out.length; i++) out[i] = TIER_BASES[i] == null ? 0 : TIER_BASES[i].get();
         return out;
+    }
+
+    /** Reserve regenerated per second, as a percent of capacity. {@link MaliceTier#ZERO} has none. */
+    public static double regenPercent(MaliceTier tier) {
+        ModConfigSpec.DoubleValue value = TIER_REGEN[tier.ordinal()];
+        return value == null ? 0.0 : value.get();
     }
 
     public static int[] rarityWeights() {

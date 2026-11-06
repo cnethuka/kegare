@@ -49,7 +49,7 @@ public record SorcererInfoPayload(
 
     public static SorcererInfoPayload of(ServerPlayer player) {
         MaliceData malice = MaliceService.get(player);
-        double percent = KegareServerConfig.REGEN_PERCENT_PER_SECOND.get();
+        double percent = KegareServerConfig.regenPercent(malice.tier());
 
         Optional<InnateTechnique> innateTechnique = InnateTechniqueService.current(player);
         List<AbilityInfo> abilities = new ArrayList<>();

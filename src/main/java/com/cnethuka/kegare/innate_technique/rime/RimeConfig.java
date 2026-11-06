@@ -111,7 +111,7 @@ public final class RimeConfig {
         b.comment("Rime (RARE innate technique): ice projectiles, a frost cone and an ice shell. Times are in seconds.").push("rime");
 
         b.push("frost_shard");
-        SHARD_COST = b.defineInRange("cost", 10.0, 0.0, 100_000.0);
+        SHARD_COST = b.defineInRange("cost", 40.0, 0.0, 100_000.0);
         SHARD_COOLDOWN = b.defineInRange("cooldown", 1.0, 0.0, 3600.0);
         SHARD_DAMAGE = b.defineInRange("damage", 3.0, 0.0, 1000.0);
         SHARD_SPEED = b.comment("Blocks per tick.").defineInRange("speed", 2.2, 0.1, 10.0);
@@ -122,7 +122,7 @@ public final class RimeConfig {
         b.pop();
 
         b.push("glacial_lance");
-        LANCE_COST = b.defineInRange("cost", 25.0, 0.0, 100_000.0);
+        LANCE_COST = b.defineInRange("cost", 100.0, 0.0, 100_000.0);
         LANCE_COOLDOWN = b.defineInRange("cooldown", 6.0, 0.0, 3600.0);
         LANCE_MIN_CHARGE = b.comment("Release before this and it fizzles (no cost, no cooldown).").defineInRange("minCharge", 0.4, 0.0, 60.0);
         LANCE_MAX_CHARGE = b.comment("Full charge.").defineInRange("maxCharge", 2.0, 0.05, 60.0);
@@ -136,8 +136,8 @@ public final class RimeConfig {
         b.pop();
 
         b.push("frost_field");
-        FIELD_COST = b.comment("Cost to start the channel.").defineInRange("cost", 8.0, 0.0, 100_000.0);
-        FIELD_UPKEEP = b.comment("Drain per second while channeling.").defineInRange("upkeepPerSecond", 12.0, 0.0, 100_000.0);
+        FIELD_COST = b.comment("Cost to start the channel.").defineInRange("cost", 32.0, 0.0, 100_000.0);
+        FIELD_UPKEEP = b.comment("Drain per second while channeling.").defineInRange("upkeepPerSecond", 48.0, 0.0, 100_000.0);
         FIELD_COOLDOWN = b.comment("Starts when the channel ends.").defineInRange("cooldown", 5.0, 0.0, 3600.0);
         FIELD_MAX_DURATION = b.defineInRange("maxDuration", 5.0, 0.05, 3600.0);
         FIELD_RANGE = b.comment("Cone length in blocks.").defineInRange("range", 6.0, 0.5, 64.0);
@@ -147,8 +147,8 @@ public final class RimeConfig {
         b.pop();
 
         b.push("rime_shell");
-        SHELL_COST = b.comment("Cost to switch on.").defineInRange("cost", 10.0, 0.0, 100_000.0);
-        SHELL_UPKEEP = b.comment("Drain per second while on.").defineInRange("upkeepPerSecond", 4.0, 0.0, 100_000.0);
+        SHELL_COST = b.comment("Cost to switch on.").defineInRange("cost", 40.0, 0.0, 100_000.0);
+        SHELL_UPKEEP = b.comment("Drain per second while on.").defineInRange("upkeepPerSecond", 16.0, 0.0, 100_000.0);
         SHELL_COOLDOWN = b.comment("Starts when switched off.").defineInRange("cooldown", 8.0, 0.0, 3600.0);
         SHELL_DAMAGE_REDUCTION = b.comment("Fraction of incoming damage removed (0.3 = 30%).").defineInRange("damageReduction", 0.3, 0.0, 1.0);
         SHELL_ATTACKER_SLOWNESS_SECONDS = b.comment("Slowness for anyone who hits you in melee.").defineInRange("attackerSlownessSeconds", 2.0, 0.0, 60.0);
@@ -158,7 +158,7 @@ public final class RimeConfig {
         // ---- Specials (R while the base ability is selected). Each shares its base ability's cooldown; "cooldown"
         // here is how long that shared cooldown runs after the special is used.
         b.comment("Special of Frost Shard (INSTANT): three smaller shards in a fan.").push("splinter");
-        SPLINTER_COST = b.defineInRange("cost", 14.0, 0.0, 100_000.0);
+        SPLINTER_COST = b.defineInRange("cost", 56.0, 0.0, 100_000.0);
         SPLINTER_COOLDOWN = b.comment("Shared with Frost Shard.").defineInRange("cooldown", 3.0, 0.0, 3600.0);
         SPLINTER_SPREAD = b.comment("Degrees between neighbouring shards (the fan spans twice this).").defineInRange("spreadAngle", 9.0, 0.0, 60.0);
         SPLINTER_DAMAGE = b.comment("Per shard. All three can hit the same target.").defineInRange("damage", 2.0, 0.0, 1000.0);
@@ -168,7 +168,7 @@ public final class RimeConfig {
         b.pop();
 
         b.comment("Special of Glacial Lance (CHARGED): an ice spike erupts from the ground where you aim.").push("glacial_spire");
-        SPIRE_COST = b.defineInRange("cost", 30.0, 0.0, 100_000.0);
+        SPIRE_COST = b.defineInRange("cost", 120.0, 0.0, 100_000.0);
         SPIRE_COOLDOWN = b.comment("Shared with Glacial Lance.").defineInRange("cooldown", 8.0, 0.0, 3600.0);
         SPIRE_MIN_CHARGE = b.comment("Release before this and it fizzles (no cost, no cooldown).").defineInRange("minCharge", 0.3, 0.0, 60.0);
         SPIRE_MAX_CHARGE = b.comment("Full charge.").defineInRange("maxCharge", 2.0, 0.05, 60.0);
@@ -184,8 +184,8 @@ public final class RimeConfig {
         b.pop();
 
         b.comment("Special of Frost Field (CHANNELED): slide fast over a temporary ice trail.").push("ice_path");
-        PATH_COST = b.comment("Cost to start the channel.").defineInRange("cost", 8.0, 0.0, 100_000.0);
-        PATH_UPKEEP = b.comment("Drain per second while sliding.").defineInRange("upkeepPerSecond", 10.0, 0.0, 100_000.0);
+        PATH_COST = b.comment("Cost to start the channel.").defineInRange("cost", 32.0, 0.0, 100_000.0);
+        PATH_UPKEEP = b.comment("Drain per second while sliding.").defineInRange("upkeepPerSecond", 40.0, 0.0, 100_000.0);
         PATH_COOLDOWN = b.comment("Shared with Frost Field; starts when the slide ends.").defineInRange("cooldown", 6.0, 0.0, 3600.0);
         PATH_MAX_DURATION = b.defineInRange("maxDuration", 3.0, 0.05, 3600.0);
         PATH_SPEED = b.comment("Slide speed in blocks per tick (sprinting is about 0.28).").defineInRange("slideSpeed", 0.65, 0.05, 3.0);
@@ -195,8 +195,8 @@ public final class RimeConfig {
         b.pop();
 
         b.comment("Special of Rime Shell (INSTANT): burst outward, knocking back and freezing everyone near.").push("shatter_shell");
-        SHATTER_COST = b.comment("Cost while Rime Shell is on (the shell is used up).").defineInRange("cost", 8.0, 0.0, 100_000.0);
-        SHATTER_COST_NO_SHELL = b.comment("Cost with no shell up.").defineInRange("costWithoutShell", 22.0, 0.0, 100_000.0);
+        SHATTER_COST = b.comment("Cost while Rime Shell is on (the shell is used up).").defineInRange("cost", 32.0, 0.0, 100_000.0);
+        SHATTER_COST_NO_SHELL = b.comment("Cost with no shell up.").defineInRange("costWithoutShell", 88.0, 0.0, 100_000.0);
         SHATTER_COOLDOWN = b.comment("Shared with Rime Shell.").defineInRange("cooldown", 8.0, 0.0, 3600.0);
         SHATTER_RADIUS = b.defineInRange("radius", 4.5, 0.5, 32.0);
         SHATTER_KNOCKBACK = b.defineInRange("knockback", 1.4, 0.0, 10.0);

@@ -53,13 +53,12 @@ public final class MaliceService {
         setCurrent(player, get(player).capacity());
     }
 
-    /** Called every server tick: regenerates a % of capacity per second unless paused by recent combat. */
+    /** Called every server tick: regenerates a % of capacity per second (by tier) unless paused by recent combat. */
     public static void tickRegen(ServerPlayer player) {
         MaliceData malice = get(player);
         if (!malice.isBorn() || malice.isSevered() || malice.current() >= malice.capacity()) return;
         if (CombatHelper.isRegenPaused(player)) return;
-        double perTick = malice.capacity() * KegareServerConfig.REGEN_PERCENT_PER_SECOND.get() / 100.0 / 20.0;
-        setCurrent(player, malice.current() + perTick);
+        setCurrent(player, malice.current() + MaliceRules.regenPerTick(malice.capacity(), KegareServerConfig.regenPercent(malice.tier())));
     }
 
     /** Birth roll. The ONLY normal way capacity is ever set. */
@@ -67,7 +66,7 @@ public final class MaliceService {
         MaliceRoller.Result result = MaliceRoller.roll(
                 KegareServerConfig.tierWeights(),
                 KegareServerConfig.tierBases(),
-                KegareServerConfig.CAPACITY_VARIATION.get(),
+                KegareServerConfig.CAPACITY_VARIATION_PERCENT.get(),
                 player.getRandom()::nextInt);
         applyCapacity(player, result.tier(), result.capacity());
         return result;

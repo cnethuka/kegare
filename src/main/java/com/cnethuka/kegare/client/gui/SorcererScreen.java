@@ -342,12 +342,28 @@ public final class SorcererScreen extends Screen {
     private void renderRightColumn(GuiGraphics g, @Nullable InnateTechnique technique, int mouseX, int mouseY) {
         int top = py + 11, bottom = wellY1;
         GuiDraw.sprite(g, WELL, rcx, top, rcw, bottom - top);
-        int modelH = Mth.clamp(bottom - top - 64, 56, 96);
+        int x = rcx + 6, w = rcw - 12;
+        // Live from the sync (the info payload is a snapshot from when the screen opened).
+        SyncPayload live = ClientData.get();
+        float current = live != null ? live.current() : info.current();
+        int capacity = live != null ? live.capacity() : info.capacity();
+        int tier = live != null ? live.tier() : info.tier();
+        Component amount = Component.translatable("gui.kegare.sorcerer.side.amount", Mth.floor(current), capacity);
+        Component regen = info.regenPaused() ? Component.translatable("gui.kegare.sorcerer.side.regen_paused")
+                : Component.translatable("gui.kegare.sorcerer.side.regen", GuiDraw.amount(Math.round(info.regenPerSecond() * 10f) / 10f));
+        // Text may run a little past the bar, up to 2px short of the well's edge. In a small window even that's too narrow for large
+        // numbers. Shrinking them would close up the zeros (the scale wouldn't land on whole pixels), so they take a second line
+        // instead, and the player model gives up the height.
+        int textW = rcw - 8;
+        boolean stackAmount = font.width(amount) > textW;
+        boolean wrapRegen = font.width(regen) > textW;
+        int extraLines = (stackAmount ? 1 : 0) + (wrapRegen ? 1 : 0);
+        int modelH = Mth.clamp(bottom - top - 64 - extraLines * 10, 44, 96);
         if (minecraft != null && minecraft.player != null) {
             InventoryScreen.renderEntityInInventoryFollowsMouse(g, rcx + 3, top + 3, rcx + rcw - 3, top + modelH, modelH * 2 / 5, 0.0625f,
                     mouseX, mouseY, minecraft.player);
         }
-        int x = rcx + 6, w = rcw - 12, y = top + modelH + 2;
+        int y = top + modelH + 2;
         if (info.severed()) {
             GuiDraw.wrapped(g, font, Component.translatable("gui.kegare.sorcerer.malice.severed_short"), x, y, w, GuiDraw.RED);
             return;
@@ -355,21 +371,20 @@ public final class SorcererScreen extends Screen {
         int color = technique != null ? technique.maliceColor() : InnateTechnique.DEFAULT_MALICE_COLOR;
         GuiDraw.text(g, font, Component.translatable("gui.kegare.sorcerer.side.malice"), x, y, 1f, GuiDraw.GRAY);
         y += 10;
-        // Live from the sync (the info payload is a snapshot from when the screen opened).
-        SyncPayload live = ClientData.get();
-        float current = live != null ? live.current() : info.current();
-        int capacity = live != null ? live.capacity() : info.capacity();
-        int tier = live != null ? live.tier() : info.tier();
-        GuiDraw.text(g, font, Component.translatable("gui.kegare.sorcerer.side.amount", Mth.floor(current), capacity), x, y, 1f, GuiDraw.WHITE);
+        if (stackAmount) {
+            GuiDraw.text(g, font, Component.translatable("gui.kegare.sorcerer.side.amount_stacked", Mth.floor(current)), x, y, 1f, GuiDraw.WHITE);
+            y += 10;
+            GuiDraw.text(g, font, Component.literal(Integer.toString(capacity)), x, y, 1f, GuiDraw.WHITE);
+        } else {
+            GuiDraw.text(g, font, amount, x, y, 1f, GuiDraw.WHITE);
+        }
         y += 10;
         GuiDraw.maliceBar(g, x, y, w, capacity <= 0 ? 0f : current / capacity, color, -1f);
         y += GuiDraw.BAR_HEIGHT + 3;
         GuiDraw.text(g, font, Component.translatable(MaliceTier.values()[Mth.clamp(tier, 0, MaliceTier.values().length - 1)].translationKey()),
                 x, y, 1f, GuiDraw.MALICE);
         y += 10;
-        Component regen = info.regenPaused() ? Component.translatable("gui.kegare.sorcerer.side.regen_paused")
-                : Component.translatable("gui.kegare.sorcerer.side.regen", GuiDraw.amount(Math.round(info.regenPerSecond() * 10f) / 10f));
-        GuiDraw.text(g, font, regen, x, y, 1f, info.regenPaused() ? GuiDraw.RED : GuiDraw.GRAY);
+        GuiDraw.wrapped(g, font, regen, x, y, textW, info.regenPaused() ? GuiDraw.RED : GuiDraw.GRAY);
     }
 
     // ---------------------------------------------------------------- the big box

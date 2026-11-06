@@ -14,14 +14,16 @@ public final class MaliceRoller {
     /**
      * @param tierWeights relative weight per {@link MaliceTier} ordinal (negative treated as 0)
      * @param tierBases   capacity base per {@link MaliceTier} ordinal ({@link MaliceTier#ZERO} is ignored, always 0)
-     * @param variation   non-zero tiers get a uniform {@code [-variation, +variation]} offset
+     * @param variationPercent non-zero tiers get a uniform offset of up to this percent of their base, either way
      */
-    public static Result roll(int[] tierWeights, int[] tierBases, int variation, IntUnaryOperator random) {
+    public static Result roll(int[] tierWeights, int[] tierBases, double variationPercent, IntUnaryOperator random) {
         MaliceTier tier = pickTier(tierWeights, random);
         if (tier == MaliceTier.ZERO) return new Result(MaliceTier.ZERO, 0);
+        int base = tierBases[tier.ordinal()];
+        int variation = (int) Math.round(base * variationPercent / 100.0);
         int offset = variation > 0 ? random.applyAsInt(variation * 2 + 1) - variation : 0;
         // Non-zero tiers never land on 0: zero capacity is reserved for the ZERO tier (Severed).
-        return new Result(tier, Math.max(1, tierBases[tier.ordinal()] + offset));
+        return new Result(tier, Math.max(1, base + offset));
     }
 
     static MaliceTier pickTier(int[] tierWeights, IntUnaryOperator random) {

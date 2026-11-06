@@ -62,29 +62,29 @@ public final class SwapConfig {
         b.pop();
 
         b.comment("Swap positions and facing with the player you're looking at.").push("positions");
-        POSITIONS_COST = b.defineInRange("cost", 12.0, 0.0, 100_000.0);
+        POSITIONS_COST = b.defineInRange("cost", 48.0, 0.0, 100_000.0);
         POSITIONS_COOLDOWN = b.defineInRange("cooldown", 8.0, 0.0, 3600.0);
         b.pop();
 
         b.comment("Special of Positions: the same swap, then an automatic swap back.").push("switchback");
-        SWITCHBACK_COST = b.defineInRange("cost", 22.0, 0.0, 100_000.0);
+        SWITCHBACK_COST = b.defineInRange("cost", 88.0, 0.0, 100_000.0);
         SWITCHBACK_DELAY = b.comment("Seconds until the swap back.").defineInRange("returnDelay", 3.0, 0.05, 600.0);
         b.pop();
 
         b.comment("Disguise swap: everyone else sees you as the target and the target as you. Visual only.").push("awareness");
-        AWARENESS_COST = b.defineInRange("cost", 20.0, 0.0, 100_000.0);
+        AWARENESS_COST = b.defineInRange("cost", 80.0, 0.0, 100_000.0);
         AWARENESS_COOLDOWN = b.defineInRange("cooldown", 20.0, 0.0, 3600.0);
         AWARENESS_DURATION = b.defineInRange("duration", 5.0, 0.05, 600.0);
         b.pop();
 
         b.comment("Special of Awareness: one-way; only you look like the target.").push("mimic");
-        MIMIC_COST = b.defineInRange("cost", 24.0, 0.0, 100_000.0);
+        MIMIC_COST = b.defineInRange("cost", 96.0, 0.0, 100_000.0);
         MIMIC_DURATION = b.defineInRange("duration", 8.0, 0.05, 600.0);
         b.pop();
 
         b.comment("First cast throws an anchor that sticks where it lands; the second swaps you with it.").push("anchor");
-        ANCHOR_THROW_COST = b.defineInRange("throwCost", 8.0, 0.0, 100_000.0);
-        ANCHOR_RECALL_COST = b.comment("The second cast (swap with the anchor).").defineInRange("recallCost", 10.0, 0.0, 100_000.0);
+        ANCHOR_THROW_COST = b.defineInRange("throwCost", 32.0, 0.0, 100_000.0);
+        ANCHOR_RECALL_COST = b.comment("The second cast (swap with the anchor).").defineInRange("recallCost", 40.0, 0.0, 100_000.0);
         ANCHOR_THROW_COOLDOWN = b.comment("After throwing (so a double press doesn't recall at once).").defineInRange("throwCooldown", 0.5, 0.0, 3600.0);
         ANCHOR_COOLDOWN = b.comment("After the anchor is used (recall or Send Off).").defineInRange("cooldown", 12.0, 0.0, 3600.0);
         ANCHOR_LIFETIME = b.comment("The anchor disappears this long after it is thrown.").defineInRange("lifetime", 20.0, 0.05, 3600.0);
@@ -92,20 +92,20 @@ public final class SwapConfig {
         b.pop();
 
         b.comment("Special of Anchor: swap the player you're looking at with your anchor (uses it up).").push("send_off");
-        SEND_OFF_COST = b.defineInRange("cost", 18.0, 0.0, 100_000.0);
+        SEND_OFF_COST = b.defineInRange("cost", 72.0, 0.0, 100_000.0);
         b.pop();
 
         b.comment("Give the target your worst negative effect, take their strongest positive one.").push("exchange");
-        EXCHANGE_COST = b.defineInRange("cost", 15.0, 0.0, 100_000.0);
+        EXCHANGE_COST = b.defineInRange("cost", 60.0, 0.0, 100_000.0);
         EXCHANGE_COOLDOWN = b.defineInRange("cooldown", 15.0, 0.0, 3600.0);
         b.pop();
 
         b.comment("Special of Exchange: swap velocity and fall distance with the target.").push("momentum_exchange");
-        MOMENTUM_COST = b.defineInRange("cost", 18.0, 0.0, 100_000.0);
+        MOMENTUM_COST = b.defineInRange("cost", 72.0, 0.0, 100_000.0);
         b.pop();
 
         b.comment("Ultimate: swap positions, disguises (as Awareness) and health percentage.").push("total_swap");
-        TOTAL_SWAP_COST = b.defineInRange("cost", 60.0, 0.0, 100_000.0);
+        TOTAL_SWAP_COST = b.defineInRange("cost", 240.0, 0.0, 100_000.0);
         TOTAL_SWAP_COOLDOWN = b.defineInRange("cooldown", 120.0, 0.0, 3600.0);
         TOTAL_SWAP_MIN_DISTANCE = b.comment("The target must be at least this far away (blocks).").defineInRange("minDistance", 4.0, 0.0, 128.0);
         b.pop();

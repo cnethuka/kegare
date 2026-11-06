@@ -203,7 +203,9 @@ public final class CombatPanelLayer implements LayeredDraw.Layer {
         CostEnvironment env = data.environment();
         int textColor = env.icon() == CostEnvironment.Icon.COLD ? 0xFF8FE3FF : env.icon() == CostEnvironment.Icon.HOT ? 0xFFFFA45C : 0xFFFFFFFF;
         String amount = Integer.toString(Mth.floor(data.current()));
-        float scale = font.width(amount) > 28 ? 0.75f : 1f;
+        // Five digits (Vast: up to 11000) fit the plate at full size, clear of the glyph. Only a custom config goes wider, and only
+        // that shrinks: at 75% a font's pixels no longer land on screen pixels, and the holes in the zeros close up.
+        float scale = font.width(amount) > 30 ? 0.75f : 1f;
         GuiDraw.centered(g, font, Component.literal(amount), x0 + W / 2, y0 + CELL_Y + (scale < 1f ? 2 : 0), scale, textColor);
         if (env.icon() != CostEnvironment.Icon.NONE) {
             GuiDraw.sprite(g, env.icon() == CostEnvironment.Icon.COLD ? ENV_COLD : ENV_HOT, x0 + W / 2 + 16, y0 + 9, 5, 5);

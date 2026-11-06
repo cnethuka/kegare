@@ -108,7 +108,7 @@ public final class PuppetConfig {
         CREATION_HALF_CHARGE = b.comment("Charge (seconds) for a half-strength puppet.").defineInRange("halfCharge", 0.6, 0.05, 60.0);
         CREATION_FULL_CHARGE = b.comment("Charge (seconds) for a full-strength puppet (also the full charge bar).")
                 .defineInRange("fullCharge", 1.5, 0.1, 60.0);
-        double[] costs = {10.0, 25.0, 45.0};
+        double[] costs = {40.0, 100.0, 180.0};
         double[] health = {2.0, 4.0, 8.0};
         for (PuppetTier tier : PuppetTier.values()) {
             b.push(tier.serializedName());
@@ -120,7 +120,7 @@ public final class PuppetConfig {
 
         b.comment("Special of Puppet Creation: move your consciousness into a puppet (the one you look at, else your nearest).",
                 "You become it; your body stays behind as a defenceless shell. R again returns.").push("possess");
-        POSSESS_COST = b.defineInRange("cost", 15.0, 0.0, 100_000.0);
+        POSSESS_COST = b.defineInRange("cost", 60.0, 0.0, 100_000.0);
         POSSESS_RANGE = b.comment("How far away (blocks) the puppet can be.").defineInRange("range", 32.0, 1.0, 256.0);
         POSSESS_MAX_DISTANCE = b.comment("Wander further than this (blocks) from your shell and you snap back.")
                 .defineInRange("maxDistance", 64.0, 4.0, 1024.0);
@@ -128,26 +128,26 @@ public final class PuppetConfig {
         BACKLASH_NAUSEA = b.comment("Nausea, seconds.").defineInRange("nausea", 4.0, 0.0, 60.0);
         BACKLASH_STUN = b.comment("Stun (the shared stun: no casting, charges and channels interrupted), seconds.")
                 .defineInRange("stun", 1.0, 0.0, 30.0);
-        BACKLASH_MALICE = b.comment("Malice lost.").defineInRange("malice", 20.0, 0.0, 100_000.0);
+        BACKLASH_MALICE = b.comment("Malice lost.").defineInRange("malice", 80.0, 0.0, 100_000.0);
         b.pop();
         b.pop();
 
         b.comment("Give every puppet in range the next order: Follow, Stay, Guard (attack whoever damages you), Go (walk to the",
                 "block you're looking at).").push("directive");
-        DIRECTIVE_COST = b.defineInRange("cost", 5.0, 0.0, 100_000.0);
+        DIRECTIVE_COST = b.defineInRange("cost", 20.0, 0.0, 100_000.0);
         DIRECTIVE_COOLDOWN = b.defineInRange("cooldown", 1.0, 0.0, 3600.0);
         DIRECTIVE_RANGE = b.comment("Puppets this close (blocks) hear Directive and Focus; also how far Go can point.")
                 .defineInRange("range", 32.0, 1.0, 256.0);
         b.pop();
 
         b.comment("Special of Directive: every puppet in range swarms the player or mob you're looking at.").push("focus");
-        FOCUS_COST = b.defineInRange("cost", 10.0, 0.0, 100_000.0);
+        FOCUS_COST = b.defineInRange("cost", 40.0, 0.0, 100_000.0);
         FOCUS_TARGET_RANGE = b.comment("How far away (blocks) the target can be.").defineInRange("targetRange", 32.0, 1.0, 256.0);
         b.pop();
 
         b.comment("Detonate the puppet you're looking at. Damage and radius grow with its charge tier; full damage at the",
                 "centre, half at the edge. Never hurts you or your puppets; breaks no blocks.").push("curio_burst");
-        CURIO_COST = b.defineInRange("cost", 8.0, 0.0, 100_000.0);
+        CURIO_COST = b.defineInRange("cost", 32.0, 0.0, 100_000.0);
         CURIO_COOLDOWN = b.defineInRange("cooldown", 4.0, 0.0, 3600.0);
         CURIO_RANGE = b.comment("How far away (blocks) the puppet can be.").defineInRange("range", 32.0, 1.0, 256.0);
         double[] damage = {4.0, 7.0, 12.0};
@@ -163,32 +163,32 @@ public final class PuppetConfig {
 
         b.comment("Special of Curio Burst: every puppet of yours near what you're looking at detonates, one after another.")
                 .push("chain_burst");
-        CHAIN_COST = b.defineInRange("cost", 16.0, 0.0, 100_000.0);
+        CHAIN_COST = b.defineInRange("cost", 64.0, 0.0, 100_000.0);
         CHAIN_RADIUS = b.comment("Puppets this close (blocks) to the target go off.").defineInRange("radius", 8.0, 1.0, 64.0);
         CHAIN_DELAY = b.comment("Between one detonation and the next, seconds.").defineInRange("delay", 0.25, 0.0, 5.0);
         b.pop();
 
         b.comment("Swap places with the puppet you're looking at (fires SwapTargetEvent: a technique that blocks swaps blocks it).")
                 .push("understudy");
-        UNDERSTUDY_COST = b.defineInRange("cost", 10.0, 0.0, 100_000.0);
+        UNDERSTUDY_COST = b.defineInRange("cost", 40.0, 0.0, 100_000.0);
         UNDERSTUDY_COOLDOWN = b.defineInRange("cooldown", 6.0, 0.0, 3600.0);
         UNDERSTUDY_RANGE = b.comment("How far away (blocks) the puppet can be. Stand-In uses it too.").defineInRange("range", 32.0, 1.0, 256.0);
         b.pop();
 
         b.comment("Special of Understudy: one puppet (the one you look at, else your nearest) grows to your size and copies your",
                 "movements, held items, armor and name: it looks exactly like you. Then it shrinks back.").push("stand_in");
-        STAND_IN_COST = b.defineInRange("cost", 20.0, 0.0, 100_000.0);
+        STAND_IN_COST = b.defineInRange("cost", 80.0, 0.0, 100_000.0);
         STAND_IN_DURATION = b.defineInRange("duration", 8.0, 0.5, 600.0);
         STAND_IN_GROW = b.comment("How long growing (and shrinking back) takes.").defineInRange("grow", 0.4, 0.0, 5.0);
         b.pop();
 
         b.comment("Fire a string at the player, mob or puppet you're looking at, then use it: Reel In (cast key) or Zip (R), or, looking",
                 "at a different target, Tie (cast key) or Leash (R). Bosses can be attached to but are never moved.").push("strings");
-        STRINGS_FIRE_COST = b.comment("Stage 1: firing the string.").defineInRange("fireCost", 5.0, 0.0, 100_000.0);
-        STRINGS_REEL_COST = b.defineInRange("reelCost", 12.0, 0.0, 100_000.0);
-        STRINGS_TIE_COST = b.defineInRange("tieCost", 20.0, 0.0, 100_000.0);
-        STRINGS_ZIP_COST = b.defineInRange("zipCost", 10.0, 0.0, 100_000.0);
-        STRINGS_LEASH_COST = b.defineInRange("leashCost", 25.0, 0.0, 100_000.0);
+        STRINGS_FIRE_COST = b.comment("Stage 1: firing the string.").defineInRange("fireCost", 20.0, 0.0, 100_000.0);
+        STRINGS_REEL_COST = b.defineInRange("reelCost", 48.0, 0.0, 100_000.0);
+        STRINGS_TIE_COST = b.defineInRange("tieCost", 80.0, 0.0, 100_000.0);
+        STRINGS_ZIP_COST = b.defineInRange("zipCost", 40.0, 0.0, 100_000.0);
+        STRINGS_LEASH_COST = b.defineInRange("leashCost", 100.0, 0.0, 100_000.0);
         STRINGS_COOLDOWN = b.comment("Starts at stage 2, or when a string snaps or expires without one.").defineInRange("cooldown", 10.0, 0.0, 3600.0);
         STRINGS_FIRE_COOLDOWN = b.comment("After firing: just long enough that a double press doesn't fire and pull at once.")
                 .defineInRange("fireCooldown", 0.25, 0.0, 60.0);
