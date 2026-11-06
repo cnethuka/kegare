@@ -78,7 +78,11 @@ public final class SwapTargeting {
      * @param message the action-bar line for a refusal, or null for the usual one
      */
     public static boolean allowed(ServerPlayer caster, Entity target, Ability ability, @Nullable Component message) {
-        if (!NeoForge.EVENT_BUS.post(new SwapTargetEvent(caster, target, ability)).isCanceled()) return true;
+        if (!NeoForge.EVENT_BUS.post(new SwapTargetEvent(caster, target, ability)).isCanceled()) {
+            // Swap deals no damage, so this is where its abilities land.
+            if (target instanceof LivingEntity living) com.cnethuka.kegare.progression.Landings.land(caster, living, ability);
+            return true;
+        }
         caster.displayClientMessage(message != null ? message : Component.translatable("message.kegare.swap.refused"), true);
         SwapAdvancements.award(caster, SwapAdvancements.NOT_ALLOWED);
         return false;

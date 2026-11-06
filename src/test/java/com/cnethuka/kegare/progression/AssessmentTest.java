@@ -1,0 +1,183 @@
+package com.cnethuka.kegare.progression;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
+import com.cnethuka.kegare.TestServer;
+import com.cnethuka.kegare.innate_technique.rime.Rime;
+import com.cnethuka.kegare.innatetechnique.InnateTechniqueService;
+import com.cnethuka.kegare.malice.MaliceService;
+import com.cnethuka.kegare.player.BirthService;
+import com.cnethuka.kegare.trait.KegareTraits;
+import com.cnethuka.kegare.trait.Trait;
+import com.cnethuka.kegare.trait.TraitService;
+import java.util.OptionalInt;
+import java.util.UUID;
+import net.minecraft.server.MinecraftServer;
+import net.minecraft.server.level.ServerPlayer;
+import net.neoforged.testframework.junit.EphemeralTestServerProvider;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+
+/** Assessment on real fights: what it reads, what it can never read, and promotion with zero wins. */
+@ExtendWith(EphemeralTestServerProvider.class)
+class AssessmentTest {
+    private static final double EPS = 1.0e-6;
+
+    @AfterEach
+    void cleanUp(MinecraftServer server) throws Exception {
+        TestServer.onServerThread(server, () -> {
+            FightTracker.clear();
+            TestServer.removePlayers(server);
+        });
+    }
+
+    private static ServerPlayer sorcerer(MinecraftServer server, String name, int capacity) {
+        ServerPlayer p = TestServer.damageable(server, name);
+        server.overworld().addNewPlayer(p);
+        BirthService.rebirth(p, OptionalInt.of(capacity));
+        TraitService.removeAll(p, Trait.RemoveReason.ADMIN);
+        InnateTechniqueService.setInnateTechnique(p, Rime.RIME.get());
+        p.setHealth(p.getMaxHealth());
+        return p;
+    }
+
+    private static UUID opponent(String name) {
+        return UUID.nameUUIDFromBytes(name.getBytes());
+    }
+
+    /** A varied fight built directly: the same inputs every time. */
+    private static Fight varied(ServerPlayer a, ServerPlayer b) {
+        Fight fight = new Fight(a.getUUID(), b.getUUID(), 0);
+        fight.landed(a.getUUID(), Rime.FROST_SHARD.id().toString(), false, 20);
+        fight.landed(a.getUUID(), Rime.GLACIAL_LANCE.id().toString(), false, 40);
+        fight.landed(a.getUUID(), Rime.SPLINTER.id().toString(), true, 60);
+        fight.spend(a.getUUID(), 200);
+        fight.damage(a.getUUID(), 16, 300);
+        fight.damage(b.getUUID(), 10, 320);
+        return fight;
+    }
+
+    @Test
+    void killsAndWinsDontChangeTheScore(MinecraftServer server) throws Exception {
+        TestServer.onServerThread(server, () -> {
+            TestServer.ensureOverworld(server);
+            ServerPlayer a = sorcerer(server, "wins_a", 1000);
+            ServerPlayer b = sorcerer(server, "wins_b", 1000);
+            Fight fight = varied(a, b);
+            double base = AssessmentService.score(new FightReport(a, b, fight, FightOutcome.SURVIVED));
+            for (FightOutcome outcome : FightOutcome.values()) {
+                assertEquals(base, AssessmentService.score(new FightReport(a, b, fight, outcome)), EPS, outcome + " can't move the score");
+            }
+        });
+    }
+
+    @Test
+    void capacityAndSixEyesDontChangeTheScore(MinecraftServer server) throws Exception {
+        TestServer.onServerThread(server, () -> {
+            TestServer.ensureOverworld(server);
+            ServerPlayer a = sorcerer(server, "capacity_a", 100);
+            ServerPlayer b = sorcerer(server, "capacity_b", 1000);
+            Fight fight = varied(a, b);
+            double low = AssessmentService.score(new FightReport(a, b, fight, FightOutcome.SURVIVED));
+            BirthService.rebirth(a, OptionalInt.of(5000));
+            InnateTechniqueService.setInnateTechnique(a, Rime.RIME.get());
+            assertEquals(low, AssessmentService.score(new FightReport(a, b, fight, FightOutcome.SURVIVED)), EPS, "capacity isn't an input");
+            com.cnethuka.kegare.trait.TraitSuccession.release(server, KegareTraits.SIX_EYES.get());
+            assertEquals(TraitService.AddResult.ADDED, TraitService.add(a, KegareTraits.SIX_EYES.get(), Trait.AddReason.ADMIN), "setup");
+            assertEquals(low, AssessmentService.score(new FightReport(a, b, fight, FightOutcome.SURVIVED)), EPS, "and neither are the Six Eyes");
+            TraitService.removeAll(a, Trait.RemoveReason.ADMIN);
+        });
+    }
+
+    @Test
+    void aSeveredPlayerIsScoredOnMelee(MinecraftServer server) throws Exception {
+        TestServer.onServerThread(server, () -> {
+            TestServer.ensureOverworld(server);
+            ServerPlayer severed = TestServer.damageable(server, "melee_a");
+            server.overworld().addNewPlayer(severed);
+            BirthService.rebirth(severed, OptionalInt.of(0));
+            ServerPlayer b = sorcerer(server, "melee_b", 1000);
+            Fight plain = new Fight(severed.getUUID(), b.getUUID(), 0);
+            Fight mixed = new Fight(severed.getUUID(), b.getUUID(), 0);
+            String[] moves = {"sword", "sword_critical", "axe", "axe_sprint", "sword", "fist"};
+            for (int i = 0; i < moves.length; i++) {
+                plain.melee(severed.getUUID(), "fist", i * 20L);
+                mixed.melee(severed.getUUID(), moves[i], i * 20L);
+                plain.damage(severed.getUUID(), 2, i * 20L);
+                mixed.damage(severed.getUUID(), 2, i * 20L);
+            }
+            double spammed = AssessmentService.score(new FightReport(severed, b, plain, FightOutcome.SURVIVED));
+            double varied = AssessmentService.score(new FightReport(severed, b, mixed, FightOutcome.SURVIVED));
+            assertTrue(varied > spammed + 30, "variety is most of it: " + varied + " vs " + spammed);
+        });
+    }
+
+    @Test
+    void onlyQualifyingFightsAreScored(MinecraftServer server) throws Exception {
+        TestServer.onServerThread(server, () -> {
+            TestServer.ensureOverworld(server);
+            ServerPlayer a = sorcerer(server, "qualify_a", 1000);
+            ServerPlayer b = sorcerer(server, "qualify_b", 1000);
+            Fight tooShort = new Fight(a.getUUID(), b.getUUID(), 0);
+            tooShort.damage(a.getUUID(), 10, 100);
+            tooShort.damage(b.getUUID(), 10, 100);
+            assertFalse(AssessmentService.qualifies(tooShort, a.getUUID(), b.getUUID()), "five seconds");
+            Fight oneSided = new Fight(a.getUUID(), b.getUUID(), 0);
+            oneSided.damage(a.getUUID(), 20, 400);
+            oneSided.damage(b.getUUID(), 1, 400);
+            assertFalse(AssessmentService.qualifies(oneSided, a.getUUID(), b.getUUID()), "only one of them really fought");
+            Fight real = new Fight(a.getUUID(), b.getUUID(), 0);
+            real.damage(a.getUUID(), 4, 200);
+            real.damage(b.getUUID(), 4, 200);
+            assertTrue(AssessmentService.qualifies(real, a.getUUID(), b.getUUID()));
+        });
+    }
+
+    @Test
+    void reachesEveryGradeWithZeroKillsAndZeroWins(MinecraftServer server) throws Exception {
+        TestServer.onServerThread(server, () -> {
+            TestServer.ensureOverworld(server);
+            ServerPlayer p = sorcerer(server, "no_wins", 100); // Low Malice on purpose
+            UUID one = opponent("one");
+            UUID two = opponent("two");
+            UUID three = opponent("three");
+
+            GradeService.set(p, Grade.SEMI_GRADE_2);
+            GradeService.addXp(p, 1000);
+            assertEquals(Grade.SEMI_GRADE_2, Progression.getGrade(p), "XP alone isn't enough");
+            for (int i = 0; i < 4; i++) AssessmentService.addFight(p, 60, one);
+            assertEquals(Grade.SEMI_GRADE_2, Progression.getGrade(p), "four fights isn't five");
+            AssessmentService.addFight(p, 60, one);
+            assertEquals(Grade.SEMI_GRADE_2, Progression.getGrade(p), "five fights but all one opponent");
+            AssessmentService.addFight(p, 60, two);
+            assertEquals(Grade.GRADE_2, Progression.getGrade(p), "now it's met, with no win anywhere");
+
+            GradeService.set(p, Grade.SEMI_GRADE_1);
+            for (int i = 0; i < 8; i++) AssessmentService.addFight(p, 75, i % 2 == 0 ? one : two);
+            AssessmentService.addFight(p, 75, three);
+            AssessmentService.addFight(p, 75, one);
+            assertEquals(Grade.SEMI_GRADE_1, Progression.getGrade(p), "the Assessment is met but the XP isn't");
+            GradeService.addXp(p, 4000);
+            assertEquals(Grade.GRADE_1, Progression.getGrade(p));
+
+            for (int i = 0; i < 18; i++) AssessmentService.addFight(p, 95, i % 2 == 0 ? one : two);
+            AssessmentService.addFight(p, 95, three);
+            AssessmentService.addFight(p, 95, one);
+            assertEquals(Grade.SPECIAL_GRADE, Progression.getGrade(p), "Assessment only, from a Low Malice player");
+        });
+    }
+
+    @Test
+    void aBadRunNeverLowersAGrade(MinecraftServer server) throws Exception {
+        TestServer.onServerThread(server, () -> {
+            TestServer.ensureOverworld(server);
+            ServerPlayer p = sorcerer(server, "bad_run", 1000);
+            GradeService.set(p, Grade.GRADE_2);
+            for (int i = 0; i < 30; i++) AssessmentService.addFight(p, 0, opponent("o" + i));
+            assertEquals(Grade.GRADE_2, Progression.getGrade(p));
+        });
+    }
+}

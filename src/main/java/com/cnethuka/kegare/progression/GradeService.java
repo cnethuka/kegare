@@ -102,12 +102,7 @@ public final class GradeService {
 
     private static boolean canPromote(ServerPlayer player, Grade target) {
         if (target.takesXp() && get(player).xp + 1.0e-9 < xpCost(target)) return false;
-        return !target.takesAssessment() || requirementMet(player, target);
-    }
-
-    /** Part 3 fills this in. */
-    private static boolean requirementMet(ServerPlayer player, Grade target) {
-        return false;
+        return !target.takesAssessment() || AssessmentService.requirementMet(player, target);
     }
 
     private static void promote(ServerPlayer player, Grade target) {

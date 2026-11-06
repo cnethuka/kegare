@@ -42,6 +42,8 @@ public final class RimeEvents {
         }
 
         DamageSource source = event.getSource();
+        // A self-buff with a real target after all: the shell lands when it blocks something's hit.
+        if (source.getEntity() instanceof LivingEntity attacker) com.cnethuka.kegare.progression.Landings.land(player, attacker, Rime.RIME_SHELL);
         boolean melee = source.getEntity() instanceof LivingEntity attacker && source.getDirectEntity() == attacker
                 && !source.is(DamageTypeTags.IS_PROJECTILE) && attacker != player;
         if (melee) {

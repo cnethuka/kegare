@@ -26,6 +26,7 @@ public final class StandInAbility extends PuppetAbility.Special {
 
     @Override public double cost(ServerPlayer p) { return PuppetConfig.STAND_IN_COST.get(); }
     @Override public AbilityVisuals visuals() { return VISUALS; }
+    @Override public boolean hasNoTarget() { return true; } // grows your own puppet
 
     @Override
     public boolean canCast(AbilityContext ctx) {

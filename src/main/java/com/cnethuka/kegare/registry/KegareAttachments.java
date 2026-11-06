@@ -69,6 +69,13 @@ public final class KegareAttachments {
             () -> AttachmentType.builder(() -> new com.cnethuka.kegare.progression.GradeData())
                     .serialize(com.cnethuka.kegare.progression.GradeData.CODEC).copyOnDeath().build());
 
+    public static final Supplier<AttachmentType<com.cnethuka.kegare.progression.AssessmentData>> ASSESSMENT = ATTACHMENT_TYPES.register("assessment",
+            () -> AttachmentType.builder(() -> new com.cnethuka.kegare.progression.AssessmentData())
+                    .serialize(com.cnethuka.kegare.progression.AssessmentData.CODEC).copyOnDeath().build());
+
+    public static final Supplier<AttachmentType<com.cnethuka.kegare.progression.Landings.State>> LANDING_STATE = ATTACHMENT_TYPES.register("landing_state",
+            () -> AttachmentType.builder(() -> new com.cnethuka.kegare.progression.Landings.State()).build());
+
     /** On any entity a cast spawned: which cast (see {@link com.cnethuka.kegare.progression.CastScope}). */
     public static final Supplier<AttachmentType<com.cnethuka.kegare.progression.CastOrigin>> CAST_ORIGIN = ATTACHMENT_TYPES.register("cast_origin",
             () -> AttachmentType.builder(() -> com.cnethuka.kegare.progression.CastOrigin.NONE)

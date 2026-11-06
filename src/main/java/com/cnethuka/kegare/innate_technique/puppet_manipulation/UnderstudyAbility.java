@@ -30,6 +30,7 @@ public final class UnderstudyAbility extends PuppetAbility {
     @Override public double cost(ServerPlayer p) { return PuppetConfig.UNDERSTUDY_COST.get(); }
     @Override public int cooldownTicks(ServerPlayer p) { return PuppetConfig.ticks(PuppetConfig.UNDERSTUDY_COOLDOWN); }
     @Override public AbilityVisuals visuals() { return VISUALS; }
+    @Override public boolean hasNoTarget() { return true; } // swaps you with your own puppet
     @Override public java.util.Optional<com.cnethuka.kegare.innatetechnique.Ability> special() { return java.util.Optional.of(PuppetManipulation.STAND_IN); }
 
     @Override

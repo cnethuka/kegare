@@ -54,6 +54,7 @@ public final class FocusAbility extends PuppetAbility.Special {
         for (PuppetEntity puppet : Puppets.near(owner, PuppetConfig.DIRECTIVE_RANGE.get())) {
             if (puppet.attack(target)) swarming++;
         }
+        if (swarming > 0) com.cnethuka.kegare.progression.Landings.land(owner, target, this); // marking is its hit
         VisualService.playOnce(target, Visual.effect(PuppetIds.FX_FOCUS_MARK, Visual.Anchor.BODY));
         owner.level().playSound(null, target.getX(), target.getY(), target.getZ(), SoundEvents.BELL_BLOCK, SoundSource.PLAYERS, 0.8f, 1.6f);
         owner.displayClientMessage(Component.translatable("message.kegare.focus.swarm", swarming, target.getDisplayName()), true);

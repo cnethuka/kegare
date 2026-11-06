@@ -87,13 +87,11 @@ public final class FightTracker {
         LAST_ACTIVE.put(caster.getUUID(), Pair.of(caster.getUUID(), target.getUUID()));
     }
 
-    /** A plain hit, recorded as the melee moves it was. Only a Severed player's Assessment reads these. */
-    public static void melee(ServerPlayer attacker, ServerPlayer victim, List<String> moves) {
+    /** A plain hit, recorded as the melee move it was. Only a Severed player's Assessment reads these. */
+    public static void melee(ServerPlayer attacker, ServerPlayer victim, String move) {
         if (attacker == victim) return;
         Live live = FIGHTS.get(Pair.of(attacker.getUUID(), victim.getUUID()));
-        if (live == null) return;
-        long now = now(attacker.server);
-        for (String move : moves) live.fight.melee(attacker.getUUID(), move, now);
+        if (live != null) live.fight.melee(attacker.getUUID(), move, now(attacker.server));
     }
 
     /** Malice spent on a technique cast, at base cost. Goes to the fight last active, or waits for the next one. */

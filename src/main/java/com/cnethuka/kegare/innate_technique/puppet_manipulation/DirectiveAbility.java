@@ -34,6 +34,7 @@ public final class DirectiveAbility extends PuppetAbility {
     @Override public double cost(ServerPlayer p) { return PuppetConfig.DIRECTIVE_COST.get(); }
     @Override public int cooldownTicks(ServerPlayer p) { return PuppetConfig.ticks(PuppetConfig.DIRECTIVE_COOLDOWN); }
     @Override public AbilityVisuals visuals() { return VISUALS; }
+    @Override public boolean hasNoTarget() { return true; } // orders your own puppets
     @Override public java.util.Optional<com.cnethuka.kegare.innatetechnique.Ability> special() { return java.util.Optional.of(PuppetManipulation.FOCUS); }
 
     @Override

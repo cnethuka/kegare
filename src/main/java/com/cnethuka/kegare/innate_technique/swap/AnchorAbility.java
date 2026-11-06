@@ -38,6 +38,7 @@ public final class AnchorAbility extends SwapAbility {
     }
 
     @Override public Optional<Ability> special() { return Optional.of(Swap.SEND_OFF); }
+    @Override public boolean hasNoTarget() { return true; } // a throw and a recall: it moves only you
 
     @Override
     public void execute(AbilityContext ctx) {

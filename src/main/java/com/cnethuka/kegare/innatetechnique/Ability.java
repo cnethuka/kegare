@@ -145,6 +145,15 @@ public interface Ability {
     }
 
     /**
+     * True for an ability with nothing to land on (it moves or orders your own things). It then counts for Refinement
+     * and Assessment when used in a real fight, instead of when it hits. Anything that can hit leaves this false: its
+     * landings are found on their own (see {@link com.cnethuka.kegare.progression.Landings}).
+     */
+    default boolean hasNoTarget() {
+        return false;
+    }
+
+    /**
      * Cosmetics per phase (player animations and VFX). Sent to clients when the server acts; never waited on.
      * See {@link com.cnethuka.kegare.innatetechnique.visual.VisualPhase} for when each phase plays.
      */

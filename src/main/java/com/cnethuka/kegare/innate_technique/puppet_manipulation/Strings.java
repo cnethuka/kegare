@@ -159,6 +159,7 @@ public final class Strings {
     /** Attaches a new string (whatever the caster's last one was still doing ends). */
     static void fire(ServerPlayer caster, LivingEntity target) {
         cut(caster);
+        com.cnethuka.kegare.progression.Landings.land(caster, target, PuppetManipulation.STRINGS); // the string took hold
         Active a = new Active(caster, target);
         a.endTick = caster.level().getGameTime() + PuppetConfig.ticks(PuppetConfig.STRINGS_LIFE);
         ACTIVE.put(caster.getUUID(), a);
@@ -262,7 +263,12 @@ public final class Strings {
     private static boolean allowed(ServerPlayer caster, LivingEntity target, StringsVariation variation) {
         boolean refused = NeoForge.EVENT_BUS.post(new StringsTargetEvent(caster, target, variation)).isCanceled();
         // Zip moves the caster, so a boss target is fine there.
-        return !refused && (variation == StringsVariation.ZIP || !CombatHelper.isBoss(target));
+        boolean moves = !refused && (variation == StringsVariation.ZIP || !CombatHelper.isBoss(target));
+        if (moves) {
+            boolean special = variation == StringsVariation.ZIP || variation == StringsVariation.LEASH;
+            com.cnethuka.kegare.progression.Landings.land(caster, target, special ? PuppetManipulation.ZIP_LEASH : PuppetManipulation.STRINGS);
+        }
+        return moves;
     }
 
     // ---------------------------------------------------------------- every tick
@@ -370,8 +376,10 @@ public final class Strings {
         float damage = PuppetConfig.STRINGS_TIE_DAMAGE.get().floatValue();
         if (damage <= 0f) return;
         DamageSource source = source(a.caster);
-        a.first.hurt(source, damage);
-        a.second.hurt(source, damage);
+        com.cnethuka.kegare.progression.Landings.during(a.caster, PuppetManipulation.STRINGS, () -> {
+            a.first.hurt(source, damage);
+            a.second.hurt(source, damage);
+        });
         if (a.first.level() instanceof ServerLevel level) {
             Vec3 at = chest(a.first).add(chest(a.second)).scale(0.5);
             VisualService.playAt(level, at, Visual.effect(PuppetIds.FX_STRINGS_ATTACH, Visual.Anchor.BODY));

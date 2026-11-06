@@ -6,6 +6,7 @@ import com.cnethuka.kegare.combat.CombatHelper;
 import com.cnethuka.kegare.loadout.LoadoutService;
 import com.cnethuka.kegare.network.PlayerSync;
 import com.cnethuka.kegare.progression.CastScope;
+import com.cnethuka.kegare.progression.Landings;
 import com.cnethuka.kegare.registry.KegareAttachments;
 import java.util.List;
 import java.util.Locale;
@@ -139,12 +140,13 @@ public final class CastManager {
         long now = player.level().getGameTime();
         switch (ability.castType()) {
             case INSTANT -> {
-                if (!MaliceService.trySpend(player, ability.cost(player))) return;
+                if (!pay(player, ability, ability.cost(player))) return;
                 state.noCooldown = false;
                 CastScope.run(player, ability, () -> ability.execute(ctx));
                 if (state.noCooldown) { // fizzled after paying (see fizzleKeepingCost): no cooldown, no cast visuals
                     state.noCooldown = false;
                 } else {
+                    wentOff(player, ability);
                     InnateTechniqueService.startCooldown(player, ability);
                     VisualService.ability(player, ability, VisualPhase.CAST);
                 }
@@ -155,22 +157,36 @@ public final class CastManager {
                 VisualService.ability(player, ability, VisualPhase.CHARGE_LOOP, ability.maxChargeTicks(player));
             }
             case CHANNELED -> {
-                if (!MaliceService.trySpend(player, ability.cost(player))) return;
+                if (!pay(player, ability, ability.cost(player))) return;
                 state.casting = new CastState.Active(ability, slot, now);
                 CastScope.run(player, ability, () -> ability.execute(ctx));
+                wentOff(player, ability);
                 VisualService.ability(player, ability, VisualPhase.CAST);
                 VisualService.ability(player, ability, VisualPhase.CHANNEL_LOOP);
             }
             case TOGGLE -> {
-                if (!MaliceService.trySpend(player, ability.cost(player))) return;
+                if (!pay(player, ability, ability.cost(player))) return;
                 state.toggles.put(ability.id(), new CastState.Active(ability, slot, now));
                 CastScope.run(player, ability, () -> ability.execute(ctx));
+                wentOff(player, ability);
                 VisualService.ability(player, ability, VisualPhase.TOGGLE_ON);
                 VisualService.ability(player, ability, VisualPhase.TOGGLE_LOOP);
                 player.displayClientMessage(Component.translatable("message.kegare.toggle.on", ability.displayName()), true);
             }
         }
         PlayerSync.markDirty(player);
+    }
+
+    /** Pays for a cast, and tells the shared hit path what it cost. */
+    private static boolean pay(ServerPlayer player, Ability ability, double amount) {
+        if (!MaliceService.trySpend(player, amount)) return false;
+        Landings.spent(player, ability, amount);
+        return true;
+    }
+
+    /** The cast actually went off: an ability with no target of its own has now done all it will. */
+    private static void wentOff(ServerPlayer player, Ability ability) {
+        if (ability.hasNoTarget()) Landings.usedWithoutTarget(player, ability);
     }
 
     /**
@@ -261,7 +277,7 @@ public final class CastManager {
                     if (unmetRequirement(player, ability).isPresent()) {
                         feedback(player, CastResult.REQUIREMENT_UNMET, ability);
                         endChannel(player, innateTechnique, cast, EndReason.CANCELLED);
-                    } else if (!MaliceService.trySpend(player, ability.upkeepPerSecond(player) / 20.0)) {
+                    } else if (!pay(player, ability, ability.upkeepPerSecond(player) / 20.0)) {
                         endChannel(player, innateTechnique, cast, EndReason.OUT_OF_MALICE);
                     } else {
                         AbilityContext tickCtx = new AbilityContext(player, innateTechnique, ability, cast.slot, 1f, cast.activeTicks);
@@ -281,7 +297,7 @@ public final class CastManager {
             if (unmetRequirement(player, ability).isPresent()) {
                 feedback(player, CastResult.REQUIREMENT_UNMET, ability);
                 endToggle(player, innateTechnique, toggle, EndReason.CANCELLED);
-            } else if (!MaliceService.trySpend(player, ability.upkeepPerSecond(player) / 20.0)) {
+            } else if (!pay(player, ability, ability.upkeepPerSecond(player) / 20.0)) {
                 endToggle(player, innateTechnique, toggle, EndReason.OUT_OF_MALICE);
             } else {
                 AbilityContext tickCtx = new AbilityContext(player, innateTechnique, ability, toggle.slot, 1f, toggle.activeTicks);
@@ -375,13 +391,14 @@ public final class CastManager {
         // Toggle upkeep may have drained the reserve while charging, and a charge may cost more the longer it was
         // held (Ability#releaseCost): re-check at release.
         double cost = ability.releaseCost(player, ctx.charge());
-        if (!MaliceService.trySpend(player, cost)) {
+        if (!pay(player, ability, cost)) {
             ability.onEnd(ctx, EndReason.OUT_OF_MALICE);
             player.displayClientMessage(Component.translatable(CastResult.NOT_ENOUGH_MALICE.translationKey(),
                     Integer.toString((int) Math.ceil(cost - 1.0e-6)), Integer.toString((int) Math.floor(MaliceService.get(player).current()))), true);
             return;
         }
         CastScope.run(player, ability, () -> ability.execute(ctx));
+        wentOff(player, ability);
         ability.onEnd(ctx, EndReason.RELEASED);
         InnateTechniqueService.startCooldown(player, ability);
         VisualService.ability(player, ability, VisualPhase.RELEASE);

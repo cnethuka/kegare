@@ -27,6 +27,36 @@ public final class ProgressionConfig {
     public static ModConfigSpec.DoubleValue WIN_BONUS_PER_GRADE;
     public static ModConfigSpec.DoubleValue WIN_BONUS_MAX;
 
+    // Assessment
+    public static ModConfigSpec.DoubleValue QUALIFY_MIN_LENGTH;
+    public static ModConfigSpec.DoubleValue QUALIFY_MIN_DAMAGE;
+    public static ModConfigSpec.DoubleValue WEIGHT_TECHNIQUE;
+    public static ModConfigSpec.DoubleValue WEIGHT_EFFICIENCY;
+    public static ModConfigSpec.DoubleValue WEIGHT_PERFORMANCE;
+    public static ModConfigSpec.DoubleValue WEIGHT_OPPONENT;
+    public static ModConfigSpec.DoubleValue TECHNIQUE_DISTINCT;
+    public static ModConfigSpec.DoubleValue TECHNIQUE_SPECIALS;
+    public static ModConfigSpec.DoubleValue TECHNIQUE_MIXING;
+    public static ModConfigSpec.DoubleValue TECHNIQUE_COMBOS;
+    public static ModConfigSpec.DoubleValue DISTINCT_FULL_SHARE;
+    public static ModConfigSpec.DoubleValue SPAM_FREE_SHARE;
+    public static ModConfigSpec.DoubleValue SPAM_PENALTY;
+    public static ModConfigSpec.IntValue COMBO_TARGET;
+    public static ModConfigSpec.DoubleValue COMBO_WINDOW;
+    public static ModConfigSpec.DoubleValue EFFICIENCY_FULL;
+    public static ModConfigSpec.DoubleValue PERFORMANCE_FULL_SHARE;
+    public static ModConfigSpec.DoubleValue OPPONENT_EVEN;
+    public static ModConfigSpec.DoubleValue OPPONENT_PER_ABOVE;
+    public static ModConfigSpec.DoubleValue OPPONENT_PER_BELOW;
+    public static ModConfigSpec.DoubleValue OPPONENT_FLOOR;
+    public static ModConfigSpec.IntValue SEVERED_FULL_MOVES;
+    private static final Gate[] GATES = new Gate[Grade.values().length];
+    // The shared hit path
+    public static ModConfigSpec.DoubleValue LANDING_REPEAT;
+    public static ModConfigSpec.DoubleValue NO_TARGET_WINDOW;
+
+    private record Gate(ModConfigSpec.DoubleValue average, ModConfigSpec.IntValue fights, ModConfigSpec.IntValue opponents, ModConfigSpec.IntValue peak) {}
+
     private ProgressionConfig() {}
 
     /** Called from KegareServerConfig while it builds the spec. */
@@ -77,7 +107,79 @@ public final class ProgressionConfig {
         WIN_BONUS_MAX = b.comment("The most win XP can be multiplied by.").defineInRange("winBonusMax", 3.0, 1.0, 100.0);
         b.pop();
 
+        b.comment("Assessment: how well you use your technique. Each qualifying fight gets a 0-100 score; kills and wins add nothing.",
+                "Capacity, rarity and traits are never inputs, so a Low Malice player can reach Special Grade.").push("assessment");
+        QUALIFY_MIN_LENGTH = b.comment("A fight qualifies if it lasts this long, first event to last hit...")
+                .defineInRange("qualifyMinLength", 10.0, 0.0, 3600.0);
+        QUALIFY_MIN_DAMAGE = b.comment("...and both players dealt at least this much damage.")
+                .defineInRange("qualifyMinDamage", 4.0, 0.0, 1000.0);
+        b.comment("What each part of the score is worth. Severed players have no technique or Malice: melee variety takes the",
+                "technique weight, efficiency drops out and the rest is rescaled to 100.").push("weights");
+        WEIGHT_TECHNIQUE = b.comment("Technique use: the main factor.").defineInRange("technique", 50.0, 0.0, 1000.0);
+        WEIGHT_EFFICIENCY = b.comment("Damage dealt per BASE Malice cost of what you cast.").defineInRange("efficiency", 25.0, 0.0, 1000.0);
+        WEIGHT_PERFORMANCE = b.comment("Damage dealt vs damage taken.").defineInRange("performance", 15.0, 0.0, 1000.0);
+        WEIGHT_OPPONENT = b.comment("Fighting above your Grade counts for more; far weaker opponents for almost nothing.").defineInRange("opponent", 10.0, 0.0, 1000.0);
         b.pop();
+        b.comment("How Technique use splits up, always against what you have UNLOCKED. Locked abilities don't lower it.").push("technique");
+        TECHNIQUE_DISTINCT = b.comment("Distinct abilities landed.").defineInRange("distinct", 40.0, 0.0, 1000.0);
+        TECHNIQUE_SPECIALS = b.comment("Distinct specials landed.").defineInRange("specials", 25.0, 0.0, 1000.0);
+        TECHNIQUE_MIXING = b.comment("Landing both a base ability and a special.").defineInRange("mixing", 10.0, 0.0, 1000.0);
+        TECHNIQUE_COMBOS = b.comment("Combining different abilities within comboWindow.").defineInRange("combos", 25.0, 0.0, 1000.0);
+        DISTINCT_FULL_SHARE = b.comment("Land this share (rounded up) of the abilities, and of the specials, you have unlocked for full marks.")
+                .defineInRange("distinctFullShare", 0.6, 0.01, 1.0);
+        SPAM_FREE_SHARE = b.comment("One move can be this share of your landings before it starts to lower the score.")
+                .defineInRange("spamFreeShare", 0.5, 0.0, 1.0);
+        SPAM_PENALTY = b.comment("What Technique use loses when one move is every landing (0.6 = down to 40%).")
+                .defineInRange("spamPenalty", 0.6, 0.0, 1.0);
+        COMBO_TARGET = b.comment("Different abilities landed back to back, for full marks on combining.")
+                .defineInRange("comboTarget", 3, 1, 1000);
+        COMBO_WINDOW = b.comment("Seconds between two landings for them to count as combined.").defineInRange("comboWindow", 4.0, 0.0, 60.0);
+        SEVERED_FULL_MOVES = b.comment("Severed players: different melee moves (a weapon, crit or sprint) for full marks on variety.")
+                .defineInRange("severedFullMoves", 4, 1, 100);
+        b.pop();
+        EFFICIENCY_FULL = b.comment("Damage dealt per base Malice for full marks on efficiency.")
+                .defineInRange("efficiencyFull", 0.08, 0.0001, 100.0);
+        PERFORMANCE_FULL_SHARE = b.comment("Your share of the damage traded for full marks on performance (0.7 = dealing a bit over twice what you take).")
+                .defineInRange("performanceFullShare", 0.7, 0.01, 1.0);
+        OPPONENT_EVEN = b.comment("What an opponent of your own Grade is worth (0..1). Must leave Special Grade reachable with no stronger opponent.")
+                .defineInRange("opponentEven", 0.8, 0.0, 1.0);
+        OPPONENT_PER_ABOVE = b.comment("Added per Grade your opponent is above you.").defineInRange("opponentPerAbove", 0.1, 0.0, 1.0);
+        OPPONENT_PER_BELOW = b.comment("Taken away per Grade your opponent is below you.").defineInRange("opponentPerBelow", 0.3, 0.0, 1.0);
+        OPPONENT_FLOOR = b.comment("The least a far weaker opponent is worth.").defineInRange("opponentFloor", 0.02, 0.0, 1.0);
+        b.comment("What each Grade asks for. peakRefinement: the highest level ever reached on any technique. It survives rerolls and",
+                "Severed players skip it. Asking for more than the top Refinement level means the top level.").push("requirements");
+        GATES[Grade.GRADE_2.ordinal()] = gate(b, "grade_2", 50.0, 5, 2, 2);
+        GATES[Grade.GRADE_1.ordinal()] = gate(b, "grade_1", 70.0, 10, 3, 5);
+        GATES[Grade.SPECIAL_GRADE.ordinal()] = gate(b, "special_grade", 90.0, 20, 3, 10);
+        b.pop();
+        b.pop();
+
+        b.comment("The shared hit path: what counts as landing an ability on a real target.").push("landing");
+        LANDING_REPEAT = b.comment("Seconds before the same ability can land on the same target again: one volley or channel isn't twenty landings.")
+                .defineInRange("repeat", 1.0, 0.0, 60.0);
+        NO_TARGET_WINDOW = b.comment("An ability with no target of its own only counts used this long after trading a hit with something real.",
+                        "Used with nobody around, it earns nothing.")
+                .defineInRange("noTargetWindow", 10.0, 0.0, 600.0);
+        b.pop();
+
+        b.pop();
+    }
+
+    private static Gate gate(ModConfigSpec.Builder b, String name, double average, int fights, int opponents, int peak) {
+        b.push(name);
+        Gate gate = new Gate(
+                b.comment("Average score needed...").defineInRange("average", average, 0.0, 100.0),
+                b.comment("...over this many of your most recent qualifying fights...").defineInRange("fights", fights, 1, 64),
+                b.comment("...against at least this many different opponents, so one friend can't carry it.").defineInRange("opponents", opponents, 1, 64),
+                b.comment("Peak Refinement needed.").defineInRange("peakRefinement", peak, 0, 1000));
+        b.pop();
+        return gate;
+    }
+
+    /** What a Grade's Assessment asks for. Only for Grades that take one. */
+    static AssessmentRules.Requirement requirement(Grade grade) {
+        Gate gate = GATES[grade.ordinal()];
+        return new AssessmentRules.Requirement(gate.average.get(), gate.fights.get(), gate.opponents.get(), gate.peak.get());
     }
 
     public static long ticks(ModConfigSpec.DoubleValue seconds) {

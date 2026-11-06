@@ -36,6 +36,7 @@ public final class IcePathAbility extends RimeSpecial {
     @Override public int cooldownTicks(ServerPlayer p) { return RimeConfig.ticks(RimeConfig.PATH_COOLDOWN); }
     @Override public int maxChannelTicks(ServerPlayer p) { return Math.max(1, RimeConfig.ticks(RimeConfig.PATH_MAX_DURATION)); }
     @Override public AbilityVisuals visuals() { return VISUALS; }
+    @Override public boolean hasNoTarget() { return true; } // a slide: it moves only you
 
     @Override
     public void execute(AbilityContext ctx) {

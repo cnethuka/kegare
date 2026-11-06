@@ -129,7 +129,9 @@ public final class CurioBursts {
                 it.remove();
             }
         }
-        for (Pending p : due) detonate(p.puppet, p.owner);
+        for (Pending p : due) {
+            com.cnethuka.kegare.progression.Landings.during(p.owner, PuppetManipulation.CHAIN_BURST, () -> detonate(p.puppet, p.owner));
+        }
     }
 
     static int queued() {

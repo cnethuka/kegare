@@ -11,6 +11,8 @@ public final class Progression {
 
     /** Wires the systems that listen to fights and promotions. Called once, at mod construction. */
     public static void init() {
+        // Assessment first: a fight is rated against the Grades the two players held while it was on.
+        FightTracker.addListener(AssessmentService::onFightEnded);
         FightTracker.addListener(GradeService::onFightEnded);
     }
 

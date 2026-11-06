@@ -63,6 +63,9 @@ public final class PuppetManipulation {
         INNATE_TECHNIQUES.register(modBus);
         PuppetRegistry.register(modBus);
         CastManager.addInterceptor(Possession::intercept); // possessing: R returns, nothing else casts
+        // A possessed puppet's punch is the player's own melee, so nothing else ties it to Possess.
+        com.cnethuka.kegare.progression.Attribution.addAttributor((attacker, source) ->
+                Possession.isPossessing(attacker) && source.getDirectEntity() == attacker ? POSSESS : null);
         VisualHooks.registerEffect(PuppetIds.FX_PUPPET_FORM);
         VisualHooks.registerEffect(PuppetIds.FX_PUPPET_DISSOLVE);
         VisualHooks.registerEffect(PuppetIds.FX_POSSESS_LINK);
