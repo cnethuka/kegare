@@ -552,7 +552,8 @@ public final class SorcererScreen extends Screen {
             y += GuiDraw.wrapped(g, font, top ? Component.translatable("gui.kegare.sorcerer.progress.refinement.top", p.refinement())
                     : Component.translatable("gui.kegare.sorcerer.progress.refinement.level", p.refinement(), p.maxRefinement(), Mth.floor(p.refinementXp()), Mth.floor(p.refinementXpNeeded())), x, y, w, GuiDraw.GRAY);
         }
-        y += GuiDraw.wrapped(g, font, Component.translatable("gui.kegare.sorcerer.progress.peak", p.peakRefinement()), x, y, w, GuiDraw.DARK_GRAY) + 5;
+        if (!data.severed()) y += GuiDraw.wrapped(g, font, Component.translatable("gui.kegare.sorcerer.progress.peak", p.peakRefinement()), x, y, w, GuiDraw.DARK_GRAY);
+        y += 5;
 
         y += GuiDraw.text(g, font, Component.translatable("gui.kegare.sorcerer.progress.insight"), x, y, 1f, 0xFFD8D2E0) + 1;
         return y + GuiDraw.wrapped(g, font, Component.translatable("gui.kegare.sorcerer.progress.insight.values",

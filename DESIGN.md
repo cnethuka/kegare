@@ -2,8 +2,8 @@
 
 A cursed-energy combat framework for **NeoForge 21.1.x / Minecraft 1.21.1 / Java 21**, built mainly for **PvP with friends**.
 It covers the base systems (§3.1–3.13) and the content built on them: specials (§3.15), the loadout (§3.16), Reverse
-Malice Technique (§3.17–3.18), and the innate techniques Rime (§3.14), Swap (§3.19) and Puppet Manipulation (§3.20).
-Mobs (the Kegare), dominions and lore come later (§5).
+Malice Technique (§3.17–3.18), the innate techniques Rime (§3.14), Swap (§3.19), Puppet Manipulation (§3.20) and Time Manipulation (§3.26), and
+progression (§3.21). Mobs (the Kegare), dominions and lore come later (§5).
 
 - Mod ID: `kegare` · Package: `com.cnethuka.kegare` · Build: ModDevGradle MDK
 - Everything is server-authoritative. Clients send key intents and render what the server syncs.
@@ -63,8 +63,9 @@ game never names a bearer, heir or killer of a secret holder.
   announcement, even though they aren't secret identities. They live in `KegareAdvancements.SILENT`, and datagen
   enforces it.
   - Current: `overflowing` (reveals Malice capacity), `chosen_by_fate` (reveals a Legendary roll), and
-    `a_green_light` / `its_been_a_while` (reveal that a player can heal). The last two are also **hidden** until
-    earned (`KegareAdvancements.SILENT_HIDDEN`, enforced by datagen).
+    `a_green_light` / `its_been_a_while` (reveal that a player can heal), and `moving_up`, `proven`, `recognized`,
+    `outside_the_ladder`, `full_kit` (Grade and Refinement are private, §3.21). The heal ones and the progression ones are
+    also **hidden** until earned (`KegareAdvancements.SILENT_HIDDEN`, enforced by datagen).
   - Innate technique tab roots are silent for the same reason (§3.11).
 
 ---
@@ -78,8 +79,15 @@ game never names a bearer, heir or killer of a secret holder.
 | `kegare:innate_technique` | yes | yes | innate technique ID, selected slot, cooldowns (ability ID → end tick + duration) |
 | `kegare:roll` | yes | yes | rolls since last Legendary (pity), total rolls |
 | `kegare:combat` | yes | **no** | last-combat tick, stunned-until tick (game time) |
+| `kegare:grade` | yes | yes | Grade, XP toward the next step, fights per opponent in the rolling window, this window's mob XP (§3.21) |
+| `kegare:assessment` | yes | yes | recent qualifying fights: score, opponent, tick (§3.21) |
+| `kegare:refinement` | yes | yes | level and XP (current technique), Peak Refinement, landings per target in the rolling window (§3.21) |
+| `kegare:insight` | yes | yes | Dominion, Ward and Output values, the first-time keys already paid (§3.21) |
+| `kegare:unlocks` | yes | yes | IDs held in the unlock framework (§3.21) |
 | `kegare:cast_state` | no | no | runtime: active charge/channel, active toggles |
 | `kegare:sync_state` | no | no | runtime: "needs sync" flag |
+| `kegare:landing_state` | no | no | runtime: when each ability last landed on each target, who the player last traded hits with |
+| `kegare:cast_origin` | no | no | on an entity a cast spawned: the ability behind it, so its hits land for that ability |
 
 World-level: `UniqueTraitSavedData` (`data/kegare_unique_traits.dat` in the overworld). See 3.2.
 
@@ -196,6 +204,8 @@ All timestamps use **level game time**. They persist across restarts and are ide
   | TOGGLE | press → validate → pay activation → `execute` → each tick pay upkeep/20 + `tick` → press again / out of Malice → `onEnd` → cooldown. Stuns don't end toggles |
 
 - Shared checks in `CastManager.tryCast` / `validate`:
+  - **unlocked by Refinement, checked first** (`TechniqueUnlocks.isUnlocked`, §3.21): a locked ability, special or ultimate
+    fizzles with "Requires Refinement X.", no cost and no cooldown
   - alive and not Severed
   - has an innate technique
   - not busy (one charge/channel at a time)
@@ -208,7 +218,11 @@ All timestamps use **level game time**. They persist across restarts and are ide
   Malice spent but starts no cooldown and plays no cast visuals (Swap uses it when `SwapTargetEvent` is cancelled,
   §3.19).
 - Charges, channels and toggles are runtime-only and end on death, logout and innate technique change.
-- **TEST CONTENT** (`innatetechnique/test/`, config `[test_abilities]`):
+- **Every cast runs inside a `CastScope`** (execute, tick and end), which is what traces a hit, an effect or a spawned
+  entity back to its ability. It's how every technique gets Refinement and Assessment with no code of its own (§3.21).
+- **Unlock levels:** every non-test technique calls `Builder.defaultUnlockLevels()` and/or `Builder.unlockLevel(ability, level)`;
+  datagen fails without one (§3.21).
+- **TEST CONTENT** (`innatetechnique/test/`, config `[test_abilities]`, everything unlocked):
 
   | Innate technique | Rarity | Abilities |
   |---|---|---|
@@ -277,16 +291,17 @@ All timestamps use **level game time**. They persist across restarts and are ide
   - `SorcererRequestPayload`: open the Sorcerer screen
   - `TalismanConfirmPayload`: confirm a reroll
 - S→C GUI payloads carry results that are already decided and saved: `RevealPayload`, `SorcererInfoPayload`,
-  `TalismanPromptPayload` (§3.12).
+  `TalismanPromptPayload` (§3.12), `ProgressionToastPayload` (§3.21, to the earner only).
 - S→C `SyncPayload` (owner only) carries: Malice, capacity, tier, severed, innate technique, selected slot,
-  cooldowns, active toggles, current charge/channel, traits.
+  cooldowns, active toggles, current charge/channel, traits, and a `ProgressionSnapshot` (Grade, XP, Assessment against
+  its requirement, Refinement, Peak Refinement, Insight, §3.21).
   - It is sent at most once per tick, and only when something visible changed (Malice syncs when its whole number
     changes). While regenerating that's 7.5 times a second for Low and 12 for Average, and every tick for High and Vast; a
     Puppet Manipulation player's is 408 bytes, so at most about 8 KB/s, and none once the reserve is full.
   - The client counts down cooldowns locally from game time.
 - Swap (§3.19) adds two cosmetic S→C payloads: `Disguises.StatePayload` (the disguise map, to everyone) and
   `SwapLink.Payload` (effects drawn along a line).
-- Network version `10` (since Strings' stage on the HUD payload). Bump it when payload formats change; mismatched clients are refused.
+- Network version `11` (since progression's snapshot on `SyncPayload` and its toast payload). Bump it when payload formats change; mismatched clients are refused.
 
 ### 3.6 HUD
 **Rule: the combat HUD does not exist until the player asks for it** (art in `gen_art.py` → `textures/gui/combat/`).
@@ -313,10 +328,10 @@ All timestamps use **level game time**. They persist across restarts and are ide
     The number on the centre plate stays full size up to five digits (Vast reaches 11000); only a custom config goes wider, and
     that shrinks to 75%.
   - **tray**: the nine loadout slots (§3.16; 20 px, a 1 px rim round the icon, 2 px apart), then the 24 px ultimate
-    in its iron-and-gold frame (a padlock while locked). Each slot: icon, number key (big, bottom-right), cooldown sweep with seconds left, a white flash
-    when it comes off cooldown, and a small **R** plate (gold letter if the ability has a special, dull if not). The
+    in its iron-and-gold frame (a padlock while locked: no Dominion yet, or Refinement hasn't reached it, §3.21). Each slot: icon, number key (big, bottom-right), cooldown sweep with seconds left, a white flash
+    when it comes off cooldown, and a small **R** plate (gold letter if the ability has a special and it's unlocked, dull if not). The
     selected slot is lit gold; active toggles get a green outline, the casting ability a gold one. Empty loadout
-    slots show only their number;
+    slots show only their number. Grade and XP are never on the combat HUD;
   - accents along the tray and crest in the technique's Malice color.
 - The selected ability's name shows above hearts/food for 2 s after picking it (`kegare:combat_name`).
 - Severed players never get the panel (G does nothing). Everything is hidden when F1 hides the GUI and in spectator
@@ -346,6 +361,13 @@ All timestamps use **level game time**. They persist across restarts and are ide
 | `stun <player> <seconds>` | Extra, for testing stun; 0 clears |
 | `swap unswappable <player> <true\|false>` | Debug for Swap (§3.19): cancels `SwapTargetEvent` for swaps targeting this player (a stand-in for a future immunity) |
 | `strings unmovable <player> <true\|false>` | Debug for Strings (§3.20): cancels `StringsTargetEvent` for this player (a stand-in for a future immunity) |
+| `grade get <player>` / `grade set <player> <grade>` | Show or set a Grade (§3.21). An admin can lower it; nothing else can |
+| `grade addxp <player> <amount>` | Add Grade XP, which promotes if the step needs only XP |
+| `assessment get <player>` | Recent scores, and where they stand against the next requirement |
+| `assessment addfight <player> <score> <opponent>` | Add a scored fight to the history. An online player's name uses their real UUID; any other name is hashed into a stable one |
+| `refinement get <player>` / `refinement set <player> <level>` | Show or set Refinement, clamped to the top level. Lowering it takes newly locked abilities off the bar |
+| `insight get <player>` / `insight add <player> <category> <amount>` | Show all three Insight values, or add to one |
+| `progression reset <player>` | Wipe Grade, Assessment, Refinement, Peak Refinement, Insight and framework unlocks. Advancements stay |
 
 Malice is always shown as whole numbers (floored, like the HUD); the stored value keeps its fraction.
 
@@ -353,7 +375,7 @@ Malice is always shown as whole numbers (floored, like the HUD); the stored valu
 - **Server TOML** (`config/kegare-server.toml`, where NeoForge 21.1 keeps server configs; synced to clients and
   hot-reloaded when edited) holds **every balance number**.
   - Sections: `malice` (with `tiers`), `traits`, `roll` (with `weights`, and `includeTestInnateTechniques`),
-    `combat`, `rime` (§3.14), `swap` (§3.19), `reverse_malice_technique` (§3.17), `test_abilities`.
+    `combat`, `rime` (§3.14), `swap` (§3.19), `reverse_malice_technique` (§3.17), `progression` (§3.21), `test_abilities`.
   - The `traits` section includes:
     - `sixEyesBirthChance`
     - `sixEyesTransferMode` (RANDOM | KILLER)
@@ -422,6 +444,11 @@ Each tab has its own root.
 | *Running on Empty* | task | yes | visible Malice (floored, like the HUD) drops to 0 while in combat |
 | *A Green Light* | goal | hidden, **silent** (reveals a player can heal) | unlocked Reverse Malice Technique (took in the green orb, §3.18) |
 | *It's been a while, huh?* (under A Green Light) | challenge | hidden, **silent** | started a Reverse Malice Technique cast at 6 HP or less, within 10 s of being hit by a player |
+| *Moving Up* | task | hidden, **silent** (Grade is private, §3.21) | reached Grade 3 |
+| *Proven* | goal | hidden, **silent** | reached Grade 2 |
+| *Recognized* | challenge | hidden, **silent** | reached Grade 1 |
+| *Outside the Ladder* | challenge | hidden, **silent** | reached Special Grade |
+| *Full Kit* | goal | hidden, **silent** | Refinement reached the level that unlocks every ability and special of the current technique (the ultimate doesn't count) |
 
 **Six Eyes tab** (root `clear_sight`). Everything here is **silent**, and every advancement except the root is
 **hidden** (secret-identity rule and its visible-root exception, §1):
@@ -518,10 +545,11 @@ closing it or disconnecting at any point changes nothing.
 **Sorcerer screen** (one window)
 - **Frame:** a riveted plum nine-slice (`menu_frame`) with dark inset wells (`menu_well`) inside it.
 - **Left edge:** ability category tabs (`menu_tab`): Innate, Malice and Melee, each with its own icon (§3.16).
-- **Right edge:** view buttons: Innate Technique, Traits (an eye) and Pity (a star).
+- **Right edge:** view buttons: Innate Technique, Background (a loop, §3.31), Progress (rising bars), Traits (an eye), Pity (a star) and Settings.
 - **Header:** the framed emblem, the name in rarity color, the epithet (§3.3), "rarity · category", then the selected category's
   abilities as tiles (the HUD's slot frames). A gold number marks the slot each tile is on, and locked shared
-  abilities show a padlock.
+  abilities show a padlock. A technique ability that Refinement hasn't reached is a greyed tile with a padlock and its
+  required level; it can't be picked up (§3.21).
 - **Details box** (the large well) shows whatever ability is hovered (a tile or a bar slot). Clicking a tile keeps
   it there. It lists:
   - category and cast type;
@@ -530,9 +558,10 @@ closing it or disconnecting at any point changes nothing.
   - the special block (§3.15);
   - where it sits on the bar.
 
-  With nothing hovered, it shows the technique's description and how to edit the bar. Locked abilities show
-  "???". The mouse wheel scrolls the box when the text is taller than it, with a thin scrollbar. The box also holds
-  the Traits view (name, a unique tag, description), the Pity view and the Settings view:
+  With nothing hovered, it shows the technique's description and how to edit the bar. Locked shared abilities show
+  "???". A locked technique ability or special keeps its name and text, greyed, with a padlock and "Requires Refinement X."
+  in red, so a player can read what they're working toward. The mouse wheel scrolls the box when the text is taller than it, with a thin scrollbar. The box also holds
+  the Progress view (below), the Traits view (name, a unique tag, description), the Pity view and the Settings view:
   - the count, with a progress bar toward hard pity
   - "Soft pity starts in N rolls", or the active Legendary weight
   - "Legendary guaranteed in N rolls" (`PityRoller.rollsUntilSoftPity` / `rollsUntilHardPity`, unit-tested)
@@ -549,8 +578,12 @@ closing it or disconnecting at any point changes nothing.
   it is a status line (hint, "Now click a slot on your bar", or the server's refusal), with "Reset" at its right end. The line is
   centered on the panel while that clears Reset, and centered in the space left of Reset when it doesn't.
 - **Severed:** the Severed emblem and text, no category tabs and no bar.
-- **Severed** players still get Traits, Pity and Settings.
-- **Keys:** 1–4 or Tab switch views, K or Esc close.
+- **Progress view** (§3.21): the Grade name, an XP bar to the next step, and the current Assessment against its requirement where
+  one applies (average, fights, opponents, Peak Refinement; each turns green when met, and at Grade 1 the XP line gives way to
+  Assessment alone). Then the current technique's Refinement level and bar, Peak Refinement, and the three Insight values. It scrolls in
+  small windows like the rest of the box.
+- **Severed** players still get Progress (no Refinement or Peak Refinement), Traits, Pity and Settings.
+- **Keys:** 1–6 or Tab switch views, K or Esc close.
 
 **Talisman confirm:** *"Reroll your Innate Technique? Current: X. Pity: Y/50."*, with the current emblem.
 - **Reroll** sends a request. The server re-checks that the talisman is still in that hand, combat and Severed
@@ -783,17 +816,21 @@ separate bar is filled from any of them.
     unlocks in attachment `kegare:shared_abilities`, saved, kept on death). Reverse Malice Technique is the first
     (§3.17). Later categories (martial arts, cursed tools...) slot in as more enum values.
 - **The loadout** (attachment `kegare:loadout`, saved, kept on death; `LoadoutService`):
-  - **nine** regular slots (`LoadoutService.SLOTS`, number keys 1–9). By default the innate technique's abilities
-    fill the first ones in order (Rime and Swap: 4) and the rest stay empty, ready for shared abilities (Reverse
-    Malice Technique) and whatever comes later;
+  - **nine** regular slots (`LoadoutService.SLOTS`, number keys 1–9). By default the abilities the player has unlocked
+    (§3.21; at Refinement 0, the first two) fill the first ones in order and the rest stay empty, ready for later
+    unlocks, shared abilities (Reverse Malice Technique) and whatever comes later;
+  - **a new unlock goes into the first empty slot,** if there is one (`LoadoutService.offer`). If the bar is full it just
+    becomes available to place;
+  - **lowering Refinement** (an admin command) takes newly locked abilities off the bar and stops them
+    (`LoadoutService.removeLocked`). The slots are left empty, and a later unlock offers them a slot again;
   - bars saved before there were nine slots (one per ability) keep their order and are padded on login;
   - each slot holds one of those abilities, an unlocked shared ability, or nothing ("Empty slot"; casting it says
     so and costs nothing);
   - nothing is slotted twice: placing an ability that is already on the bar moves it (whatever was in the target
     goes where it came from), so a technique ability taken off the bar can always be put back;
   - the ultimate (V) is **not** a loadout slot and can never change;
-  - changing the innate technique (reroll, admin, rebirth) resets the loadout to the new default; shared unlocks
-    stay;
+  - changing the innate technique (reroll, admin, rebirth) resets the loadout to the new technique's level 0 kit; shared
+    unlocks stay, unlocked but off the bar, and Refinement doesn't gate them;
   - on login a layout built for another technique (or the wrong size) is rebuilt, and entries that no longer
     resolve (locked again, removed by an update) or repeat are emptied.
 - **Everything reads the loadout**, never the technique's fixed list: the cast key and R (`CastManager` resolves the
@@ -812,7 +849,8 @@ separate bar is filled from any of them.
   - not Severed and has an innate technique;
   - a real regular slot (the ultimate's position → "The ultimate slot can't be changed.");
   - **not in combat** ("You can't change your loadout mid-fight.") and not mid-cast ("Finish casting first.");
-  - the ability belongs to the current innate technique, or is a shared ability the player has **unlocked**;
+  - the ability belongs to the current innate technique and Refinement has reached it (§3.21), or is a shared ability the
+    player has **unlocked** ("You haven't unlocked that ability.");
   - no duplicates.
 
   A refusal shows on the action bar and on the Sorcerer screen's status line (`LoadoutResultPayload`). A toggle
@@ -1193,6 +1231,215 @@ four advancements), `StringsArtTest` (the exported models and animations are one
 repo, no two variations look alike). `PuppetTest` also covers the cap: the free fizzle, a slot freed by death and detonation,
 counting unloaded puppets, lowering the config.
 
+### 3.21 Progression (package `progression`)
+What a player builds up over time: **Grade**, **Assessment**, **Refinement** and **Insight**, plus a registry for what they
+unlock. **None of it changes damage, costs, cooldowns or Malice capacity.** Every number is in `[progression]` of
+`kegare-server.toml`. The server decides everything; the client only displays synced values.
+
+| | Belongs to | On reroll | On death | Seen by |
+|---|---|---|---|---|
+| Grade | the player | kept | kept | its owner only |
+| Assessment | the player | kept | kept | its owner only |
+| Refinement | the current technique | **reset to 0** | kept | its owner only |
+| Peak Refinement | the player | kept | kept | its owner only |
+| Insight | the player | kept | kept | its owner only |
+| Technique-tied framework unlocks | the current technique | **lost** | kept | its owner only |
+| Grade and Insight framework unlocks | the player | kept | kept | its owner only |
+
+`/kegare rebirth` clears the technique, so it counts as a reroll here: Refinement resets, and everything else stays.
+`/kegare progression reset` is the full wipe.
+
+#### Fight tracking (`FightTracker`, `Attribution`)
+The one record of who damaged whom, how much and when. Grade, Assessment and Insight all read from it.
+- A fight is between two players. It ends after `fights.timeout` (30 s) with no damage between them, or on a death or a logout.
+- **Win:** the opponent dies during the fight and you dealt at least `fights.winShare` (25%) of the damage they took from
+  players in it. If they die and you fall short of that, it counts as surviving. **Wins only affect XP, never Assessment.**
+- **Never counted:** damage to yourself, your own puppets or shell, and environmental damage with no attacker.
+- `Attribution` decides who is really behind a hit: a puppet's punch is its owner's, a projectile's is its caster's.
+- A landing that deals no damage (a swap, a string) opens a fight too. A hit's counted damage is capped at the victim's max
+  health. Windows and timers use overworld game time.
+
+#### Grade
+Ladder: Grade 4 → Grade 3 → Semi-Grade 2 → Grade 2 → Semi-Grade 1 → Grade 1 → Special Grade. Everyone starts at Grade 4.
+**Grade never goes down** (only an admin command can lower it) and **never changes Malice capacity.**
+
+| Step into | XP (`grade.xp_to`) | Assessment |
+|---|---|---|
+| Grade 3 | 200 | no |
+| Semi-Grade 2 | 500 | no |
+| Grade 2 | 1000 | **yes** |
+| Semi-Grade 1 | 2000 | no |
+| Grade 1 | 4000 | **yes** |
+| Special Grade | none | **yes: Assessment only, never XP alone** |
+
+**There are no trials anywhere on the ladder. No promotion requires killing or beating anyone, at any rank, player or
+boss.** Promotion depends on how well the player uses their technique.
+
+- **Earning XP** (mostly PvP): `xpPerDamage` 2 per point dealt to a player, `xpWin` 40, `xpLoss` 15 (losing still teaches),
+  `xpSurvive` 20 for a fight nobody died in (you must both deal and take `surviveMinDamage`, 1: a tap isn't a fight). If you log
+  out you keep only the damage XP. A fight with no damage gives nothing. Severed players earn Grade normally.
+- **Mobs** give `xpPerMobDamage` 0.1 per point, up to `mobXpPerWindow` 40 per window, so solo players progress slowly and a
+  farm can't replace fighting.
+- **Diminishing returns:** each earlier fight against the same player in the rolling hour (`rollingWindow`) multiplies a fight's XP
+  by `fightDecay` 0.6, down to `fightDecayFloor` 0.05.
+- **Far weaker opponents:** a fight's whole XP loses `weakerPerGrade` 35% per Grade the opponent is below you, down to `weakerFloor` 2%.
+- **Stronger opponents:** the win XP (only) gains `winBonusPerGrade` 50% per Grade they are above you, up to `winBonusMax` ×3.
+- XP past a step carries over, capped at the next step's cost. There is no XP at Grade 1 or above.
+- **Visibility:** only the player sees their own Grade. It's synced to its owner only, and promotions are private with no chat line.
+- **API:** `Progression.getGrade(player)`, server side, for later systems.
+
+#### Assessment (how well you use your technique)
+Each **qualifying** PvP fight gets a 0-100 score: it lasted `qualifyMinLength` (10 s, first event to last hit) and both players dealt
+`qualifyMinDamage` (4). **Kills and wins add nothing,** so a player can reach Special Grade without ever winning a fight:
+`AssessmentScoring` isn't even handed who won or died. **Capacity, rarity and traits are never inputs,** so a Low Malice player can
+reach Special Grade. Assessment is private and never lowers Grade.
+
+| Part | Weight | What it rates |
+|---|---|---|
+| Technique use | 50 | Below, against what the player has **unlocked**: locked abilities can't lower it |
+| Efficiency | 25 | Damage dealt per **base** Malice cost of what you cast (full marks at `efficiencyFull`, 0.08) |
+| Performance | 15 | Your share of the damage traded (full marks at `performanceFullShare`, 70%) |
+| Opponent | 10 | `opponentEven` 0.8 for your own Grade, +0.1 per Grade above, −0.3 per Grade below, down to 0.02. **A stronger opponent is never required:** an even fight can score 98 |
+
+- **Technique use** splits into distinct abilities landed (40), distinct specials landed (25), landing both a base and a special (10) and
+  combining (25: different abilities landed back to back within `comboWindow`, 4 s, three for full marks). Landing 60%
+  (`distinctFullShare`, rounded up) of what's unlocked earns full marks on variety. With no special unlocked yet the special parts drop
+  out and their weight goes to the rest.
+- **Repeating one move scores low:** past `spamFreeShare` (50% of your landings) one move lowers Technique use, down to 40% of it
+  (`spamPenalty`) when it's every landing. The other three parts don't look at variety, so a perfect one-move fight can still reach
+  about 49. That's under Grade 2's 50, but only just, so keep it in mind when changing the weights.
+- **Efficiency uses base cost,** so capacity and Six Eyes discounts never inflate it. `Landings.baseCost` divides out what the
+  surroundings changed. **Any future discount must be divided out there too.** It counts all damage dealt, melee included (Swap's abilities
+  deal almost none), plus upkeep as spend and casts in the `openingCastSeconds` (5 s) before a fight. Nothing cast scores 0. Shared
+  abilities (RMT) are left out.
+- **Severed players** have no technique or Malice: melee variety takes Technique use's weight (distinct moves, by weapon and by crit,
+  sprint or ranged, `severedFullMoves` 4 for full marks, plus combining), Efficiency drops out and the rest is rescaled to 100. They can
+  reach Special Grade.
+
+**Your Assessment is the average of your recent qualifying fights,** which needs a minimum number of different opponents so one friend
+can't carry it:
+
+| Grade | Average | Over the last | Different opponents | Peak Refinement |
+|---|---|---|---|---|
+| Grade 2 | 50+ | 5 fights | 2+ | 2 |
+| Grade 1 | 70+ | 10 fights | 3+ | 5 |
+| Special Grade | 90+ | 20 fights | 3+ | 10 (the top level) |
+
+**Peak Refinement** is the highest level ever reached on any technique. It survives rerolls, so rerolling doesn't block promotion. Severed
+players skip it. Promotion is tried after every qualifying fight, XP change and new Refinement level, and on login.
+
+#### Refinement (per technique, resets on reroll)
+Levels 0-10 (`refinement.maxLevel`). It **only unlocks things**: it never changes damage, cost or cooldown. Severed players have none.
+
+- **Curve:** level L costs `xpBase × L^xpExponent` (30 × L^1.6): 30, 91, 174, 276, 394, 527, 675, 836, 1009, 1194. Level 2, the third ability, takes
+  121 XP in total, and level 9, the full kit, takes 4012.
+- **Per landing:** `baseXp` 1 for a base ability or ultimate, `specialXp` 2.5 for a special; ×`playerMultiplier` 3 on players (mobs still
+  count, so a player can practice alone); ×`targetDecay` 0.97 per earlier landing on that target in the rolling window, down to 0.2;
+  × the Grade multiplier.
+- **Grade multiplier** (`grade_multiplier`): Grade 4 ×1, Grade 3 ×1.1, Semi-Grade 2 ×1.25, Grade 2 ×1.5, Semi-Grade 1 ×1.75, Grade 1 ×2,
+  Special Grade ×2.5. An experienced sorcerer re-learns faster after a reroll.
+- **Earned only by landing the CURRENT technique's abilities on real targets.** Casting into the air gives nothing, and neither do your
+  own puppets and shell. Armor stands aren't real targets.
+- **Rerolling resets it to 0;** Peak Refinement stays.
+
+**The shared path (`Landings`): a new technique needs no Refinement code unless an ability has no target.** `CastManager` runs every execute,
+tick and end in a `CastScope`, and entities spawned there carry a `CastOrigin`.
+
+| How it lands | Abilities |
+|---|---|
+| Automatic: damage traced to a cast, or to an entity one spawned | Frost Shard, Glacial Lance, Splinter, Glacial Spire, Curio Burst; Puppet Creation through its puppets' hits |
+| Automatic: an effect or knockback put on someone else during a cast | Frost Field, Shatter Shell |
+| A shared check or the ability calls `Landings.land` (it lands without hurting) | Positions, Switchback, Awareness, Mimic, Send Off, Exchange, Momentum Exchange, Total Swap (all through `SwapTargeting`); Strings, Zip and Leash; Focus |
+| `Landings.during` runs a delayed effect under its cast | Chain Burst's later bursts, Tie's collisions |
+| The technique says whose hit it was (`Attribution.addAttributor`) | Possess: melee while inside a puppet |
+| `Ability.hasNoTarget()`: counts only within `landing.noTargetWindow` (10 s) of trading a hit with something real | Ice Path, Anchor, Directive, Understudy, Stand-In |
+
+Two don't fit that pattern. **Rime Shell** is a toggled self-buff, so it lands on whatever it blocks (`RimeEvents`). **Reverse Malice Technique** is
+shared and targets its caster, so it never lands: no Refinement, not in Technique use, and its Malice is left out of Efficiency.
+
+The same ability landing on the same target counts once per `landing.repeat` (1 s), so one volley or channel isn't twenty landings.
+
+#### Extension technique unlocks
+Abilities, specials and the ultimate of an innate technique unlock through Refinement. Each technique defines the level in its definition
+(`UnlockTable`, `Builder.defaultUnlockLevels()`, `Builder.unlockLevel`), and `refinement.unlockLevelOverrides` overrides any of them from the
+config (`["kegare:frost_field=1"]`). **Datagen fails if a non-test technique sets none.**
+
+| Level | Default | Rime | Swap | Puppet Manipulation |
+|---|---|---|---|---|
+| 0 | abilities 1 and 2 | Frost Shard, Glacial Lance | Positions, Awareness | Puppet Creation, Directive |
+| 1 | special of 1 | Splinter | Switchback | Possess |
+| 2 | ability 3 | Frost Field | Anchor | Curio Burst |
+| 3 | special of 2 | Glacial Spire | Mimic | Focus |
+| 4 | ability 4 | Rime Shell | Exchange | Understudy |
+| 5 | special of 3 | Ice Path | Send Off | Chain Burst |
+| 6 | ability 5 | | | Strings (with Reel In and Tie) |
+| 7 | special of 4 | Shatter Shell | Momentum Exchange | Stand-In |
+| 8 | ultimate | locked until Dominions | Total Swap | locked until Dominions |
+| 9 | special of 5 | | | Zip and Leash |
+
+Test techniques have everything unlocked. A level past `maxLevel` means `maxLevel`; abilities past the fifth wait for level 10 unless set; an
+ultimate's special comes with the ultimate.
+
+- Casting a locked ability or special **fizzles at no cost and no cooldown**, with "Requires Refinement X."
+- Locked abilities can't be placed in the loadout. **Shared abilities like RMT are not gated by Refinement** and keep their own unlock rules.
+- A new unlock brings a small private toast and goes into the first empty loadout slot, if there is one.
+- On reroll the loadout resets to the new technique's level 0 kit. Shared abilities stay unlocked.
+- Lowering Refinement through an admin command takes newly locked abilities off the loadout.
+- `requireRefinementForAbilities` (default true): false unlocks everything, for testing and casual servers. Flipping it live re-validates
+  everyone online. Refinement is still earned.
+- Players from before progression log in at Refinement 0 and drop to the level 0 kit.
+
+#### Insight (player, kept on reroll and death)
+Three separate categories: **DOMINION, WARD, OUTPUT**. `Insight.recordFirst(player, firstKey, category, amount)` pays each `firstKey` once per
+player, ever, saved per player. Which category each source pays into, and how much, is in `progression.insight`.
+
+| Source (`InsightHooks`) | Default | Pays once per | Status |
+|---|---|---|---|
+| `hit_by_technique` | Ward 1 | technique (any landing on you, damaging or not) | wired |
+| `first_legendary_fight` | Output 5 | ever | wired |
+| `survived_standstill` | Ward 5 | ever | wired |
+| `hit_by_maximum_output` | Output 5 | technique | hook only |
+| `caught_in_dominion` | Dominion 5 | technique | hook only |
+| `clashed_with_dominion` | Dominion 5 | technique | hook only |
+| `book_chapter` | Dominion 2 | chapter of a later system | hook only |
+
+The hook-only ones wait for systems that don't exist yet: those systems call the `InsightHooks` method. **Insight does not change extension
+technique unlock levels.** It lowers only framework requirements (below).
+
+#### Unlock framework (`Unlocks`)
+For shared and system unlocks, separate from a technique's own abilities.
+- `Unlocks.register(id, requirements)`, with `UnlockRequirements.builder()`: `.grade(minimum)`, `.refinement(minimum)`,
+  `.insight(category, minimum)`, `.loweredBy(category)`, `.tiedToTechnique()`. Check with `Unlocks.has(player, id)`; hear of changes with
+  `Unlocks.addListener`.
+- **Insight lowers the Refinement needed** for an entry that names a `loweredBy` category: `refinementLoweredPerInsight` (0.1) levels per point,
+  rounded down, so 10 Insight is 1 level.
+- **Re-evaluated whenever Grade, Refinement or Insight changes,** and on login.
+- **The flag is on each entry.** `tiedToTechnique` entries are per technique and are lost on reroll. Others stay once earned, even if an admin
+  later lowers the Grade. A Severed player has no Refinement, so can reach a Refinement-gated entry only if Insight lowers it to 0.
+- **Nothing real is registered yet.** Dominions and later unlocks plug in when built. Tests use a
+  test-only entry.
+
+#### What the player sees
+- **Sorcerer screen:** the Progress view, and greyed locked tiles and cards (§3.12).
+- **HUD:** empty slots stay empty, a locked special's R plate is dull, and the ultimate slot shows a padlock until it's unlocked (§3.6). No Grade or XP
+  on the combat HUD.
+- **Toasts** (`ProgressionToast`, sent to the earner only): one on promotion and one on each unlock, held during the roll reveal like other toasts.
+  A promotion that earns an advancement also shows that advancement's own toast, to the same player. Levels with nothing to unlock show none.
+- **Saved** with attachments (§2), copied on death. Synced to the owner only, in `SyncPayload`, never with an attachment's own `.sync`.
+- **Advancements** (§3.11): silent and hidden. Every existing technique advancement can still be earned, because each is awarded by using an ability
+  that a level from 0 to 9 unlocks; none needs a Dominion. Swap's Total Swap ones wait for level 8.
+
+#### Rules for every future technique
+- **It gets Refinement through the shared path.** It writes no Refinement code of its own, unless an ability has no target (`hasNoTarget`) or lands
+  without hurting (`Landings.land`).
+- **It sets unlock levels for its abilities, specials and ultimate.**
+- **It registers any other unlocks through the framework** (`Unlocks.register`), never with its own check.
+
+**Tests:** pure maths in `FightTest`, `GradeMathTest`, `AssessmentScoringTest`; in-game JUnit in `FightTrackerTest`, `GradeTest`, `AssessmentTest`,
+`LandingsTest`, `RefinementTest`, `TechniqueUnlocksTest`, `InsightTest`, `UnlocksTest`, `ProgressionSnapshotTest`, `ProgressionAdvancementsTest`.
+
+---
+
 ## 4. Extension points (how later content plugs in)
 
 **Rule (every innate technique): the MOB vs PLAYER boundary.**
@@ -1218,7 +1465,15 @@ counting unloaded puppets, lowering the config.
 
 - **New innate technique:** create a `DeferredRegister<InnateTechnique>` on
   `KegareRegistries.INNATE_TECHNIQUE_KEY`, build abilities with `BaseAbility`, add the lang names and an **epithet**
-  (datagen fails without one), set a signature animation, and put the numbers in config. Nothing in the base changes.
+  (datagen fails without one), set a signature animation, **set unlock levels for its abilities, specials and ultimate**
+  (datagen fails without them too), and put the numbers in config. Nothing in the base changes.
+- **Refinement and Assessment:** every technique gets them through the shared path (`CastScope`, `Landings`, §3.21). Add code only where
+  an ability lands without hurting (`Landings.land`), hits later (`Landings.during`), attacks through something else
+  (`Attribution.addAttributor`) or has no target (`hasNoTarget`). A cost discount must be divided out in `Landings.baseCost`.
+- **Other unlocks:** later ones register through `Unlocks.register` (§3.21), and the first-time sources they
+  bring call `InsightHooks`.
+- **Reading progression:** `Progression.getGrade(player)` on the server. Never send one player's
+  Grade or Assessment to another.
 - **Shared abilities:** build the ability, `SharedAbilities.register` it at mod construction, unlock it with
   `SharedAbilityService.unlock` (§3.16).
 - **Specials:** override `special()` on the base ability and build the special on `SpecialAbility` (§3.15).
@@ -1243,6 +1498,8 @@ counting unloaded puppets, lowering the config.
   Remove the test content.
 - **Rime's Dominion** (its ultimate; the slot is locked until then).
 - **Dominions:** expansion, guaranteed-hit rules, clashes, counters, burnout.
+- **What progression waits for (§3.21):** later unlocks, Dominions among them, register through `Unlocks`, their first-time sources call
+  `InsightHooks`, and later systems that need a player's Grade read `Progression.getGrade`.
 - **Malice-neutralizing tools:** weapons and items that bypass, drain or cancel Malice. Possibly Severed-focused
   gear.
 - **PvE:** the **Kegare** (hostile spirit mobs), spawning, structures, progression.

@@ -30,6 +30,9 @@ file of each one. Minecraft refuses to start and names the missing mod if one is
   - **Puppet Manipulation** (Epic): half-size puppets of yourself to command, possess, detonate or use as a double, plus
     Strings to pull and tie targets. See DESIGN.md §3.20.
 - **Loadout:** nine ability slots and a fixed ultimate. See DESIGN.md §3.16.
+- **Progression:** a private Grade ladder earned mostly in PvP, and promoted by how well you use your technique rather than by
+  winning; Refinement, which unlocks a technique's abilities as you land them; and Insight from first-time encounters. It
+  changes no damage, costs or capacity. See DESIGN.md §3.21.
 - **Reverse Malice Technique:** a shared healing ability, found through a green orb only its finder can see. See
   DESIGN.md §3.17–3.18.
 - Test innate techniques (`[Test] …`) stay available while `roll.includeTestInnateTechniques = true`.
@@ -55,5 +58,6 @@ pick abilities while the scroll wheel stays on the hotbar, or the other way roun
 **K** Sorcerer screen. Right-click is always vanilla. See DESIGN.md §3.5.
 
 Admin/debug commands (op): `/kegare info`, `setmalice`, `setcapacity`, `setinnatetechnique`,
-`reroll [innate_technique]`, `setpity`, `trait add|remove|release|status`, `rebirth [capacity]`, `stun`.
+`reroll [innate_technique]`, `setpity`, `trait add|remove|release|status`, `rebirth [capacity]`, `stun`, `grade`,
+`assessment`, `refinement`, `insight`, `progression reset`.
 The optional arguments force a result, which is handy for testing the reveal screens. See DESIGN.md §3.8.
