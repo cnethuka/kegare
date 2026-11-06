@@ -454,6 +454,7 @@ public final class KegareLanguageProvider extends LanguageProvider {
         add("gui.kegare.settings.vfx.reduced", "Reduced");
         add("gui.kegare.settings.vfx.vanilla", "Vanilla");
         add("gui.kegare.settings.first_person", "Your own animations in first person");
+        add("gui.kegare.settings.animation_fades", "Blend animations in and out");
         add("gui.kegare.settings.reveal", "Roll reveal spin");
         add("gui.kegare.settings.on", "On");
         add("gui.kegare.settings.off", "Off");

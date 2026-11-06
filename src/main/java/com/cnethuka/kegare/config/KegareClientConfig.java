@@ -9,6 +9,7 @@ public final class KegareClientConfig {
     public static final ModConfigSpec.BooleanValue HUD_ENABLED;
     public static final ModConfigSpec.BooleanValue REVEAL_ANIMATION;
     public static final ModConfigSpec.BooleanValue FIRST_PERSON_ANIMATIONS;
+    public static final ModConfigSpec.BooleanValue ANIMATION_FADES;
     public static final ModConfigSpec.EnumValue<VfxQuality> VFX_QUALITY;
     public static final ModConfigSpec.EnumValue<TechniqueSelect> TECHNIQUE_SELECT;
 
@@ -46,6 +47,8 @@ public final class KegareClientConfig {
         b.push("visuals");
         FIRST_PERSON_ANIMATIONS = b.comment("Show your own ability animations (arms) in first person.")
                 .define("firstPersonAnimations", true);
+        ANIMATION_FADES = b.comment("Blend ability animations, yours and other players', in and out over a few ticks. Off: they snap on and off.")
+                .define("animationFades", true);
         VFX_QUALITY = b.comment("Ability effects: FULL (Photon), REDUCED (Photon, about half the particles) or VANILLA (vanilla particles only).")
                 .defineEnum("vfxQuality", VfxQuality.FULL);
         b.pop();

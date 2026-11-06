@@ -515,6 +515,7 @@ public final class SorcererScreen extends Screen {
                 ? "gui.kegare.settings.technique_select.number_keys" : "gui.kegare.settings.technique_select.scroll_wheel"), x, y, w, GuiDraw.DARK_GRAY) + 8;
         y = optionRow(g, 1, "gui.kegare.settings.vfx", VFX_VALUES, KegareClientConfig.VFX_QUALITY.get().ordinal(), x, y, w, mouseX, mouseY) + 5;
         y = optionRow(g, 2, "gui.kegare.settings.first_person", ON_OFF, KegareClientConfig.FIRST_PERSON_ANIMATIONS.get() ? 0 : 1, x, y, w, mouseX, mouseY) + 5;
+        y = optionRow(g, 4, "gui.kegare.settings.animation_fades", ON_OFF, KegareClientConfig.ANIMATION_FADES.get() ? 0 : 1, x, y, w, mouseX, mouseY) + 5;
         return optionRow(g, 3, "gui.kegare.settings.reveal", ON_OFF, KegareClientConfig.REVEAL_ANIMATION.get() ? 0 : 1, x, y, w, mouseX, mouseY);
     }
 
@@ -546,6 +547,7 @@ public final class SorcererScreen extends Screen {
             case 1 -> KegareClientConfig.VFX_QUALITY.set(VfxQuality.values()[value]);
             case 2 -> KegareClientConfig.FIRST_PERSON_ANIMATIONS.set(value == 0);
             case 3 -> KegareClientConfig.REVEAL_ANIMATION.set(value == 0);
+            case 4 -> KegareClientConfig.ANIMATION_FADES.set(value == 0);
             default -> {
                 return;
             }

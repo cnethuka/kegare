@@ -651,6 +651,27 @@ class StringsTest {
         });
     }
 
+    /** Strings Attached counts Chain Burst as well: it's the same detonation. */
+    @Test
+    void chainBurstEarnsStringsAttachedToo(MinecraftServer server) throws Exception {
+        arena(server, "strings_chain", (level, caster) -> {
+            server.setPvpAllowed(true);
+            ServerPlayer a = player(server, level, "strings_chain_a", 12.5, Y, 0.5);
+            try {
+                PuppetEntity tied = puppet(server, caster, 9.5, 2.5);
+                tie(server, caster, tied, a, CastIntent.CAST_PRESS);
+                assertEquals(Strings.Phase.TETHER, Strings.phase(caster));
+                InnateTechniqueService.clearCooldowns(caster);
+                InnateTechniqueService.select(caster, 2);
+                press(caster, tied, CastIntent.SPECIAL_PRESS);
+                assertFalse(tied.isAlive(), "the nearest puppet goes off at once");
+                assertTrue(has(server, caster, PuppetAdvancements.STRINGS_ATTACHED), "Strings Attached");
+            } finally {
+                PuppetTest.cleanUp(server, level, a);
+            }
+        });
+    }
+
     private static boolean has(MinecraftServer server, ServerPlayer player, net.minecraft.resources.ResourceLocation id) {
         return TestServer.hasAdvancement(server, player, id);
     }

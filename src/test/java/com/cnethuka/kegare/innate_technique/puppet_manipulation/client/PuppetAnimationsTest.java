@@ -1,6 +1,7 @@
 package com.cnethuka.kegare.innate_technique.puppet_manipulation.client;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -47,13 +48,36 @@ class PuppetAnimationsTest {
             assertTrue(animation.boneAnimations().size() >= 3, id + " moves the body");
         }
         Animation charge = loaded.get(PuppetIds.ANIM_CREATE_CHARGE.getPath());
-        assertNotEquals(Animation.LoopType.LOOP, charge.loopType(), "the charge's fade-in plays once, then it loops from its loop point");
+        assertNotEquals(Animation.LoopType.LOOP, charge.loopType(), "the charge's lead-in from rest plays once, then it loops from its loop point");
         assertNotEquals(Animation.LoopType.PLAY_ONCE, charge.loopType());
         assertEquals(Animation.LoopType.LOOP, loaded.get(PuppetIds.ANIM_PUPPET_IDLE_SPIN.getPath()).loopType());
         assertEquals(Animation.LoopType.PLAY_ONCE, loaded.get(PuppetIds.ANIM_DIRECTIVE_CAST.getPath()).loopType());
-        Object beginTick = loaded.get(PuppetIds.ANIM_DIRECTIVE_CAST.getPath()).data().getNullable("beginTick");
-        assertTrue(beginTick instanceof Number, "casts fade in from whatever the player was doing: " + beginTick);
-        assertEquals(3.0, ((Number) beginTick).doubleValue(), 1e-6);
+    }
+
+    /**
+     * Fades live in code (PlayerAnimations), so the client config can switch every one of them off. A file that declared its
+     * own would blend twice with them on, and still blend with them off.
+     */
+    @Test
+    void noFileCarriesItsOwnFades() throws IOException {
+        Path folder = Path.of(System.getProperty("kegare.projectDir", "."), "src/main/resources/assets/kegare/player_animations");
+        try (var files = Files.list(folder)) {
+            for (Path path : files.toList()) {
+                String text = Files.readString(path);
+                assertFalse(text.contains("beginTick") || text.contains("endTick"), path.getFileName() + " declares its own fades");
+            }
+        }
+    }
+
+    /** What was a file-level fade is now plain rest keys, at the same times: the pose leaves rest and comes back as it did. */
+    @Test
+    void aCastLeavesRestAndReturnsToIt() throws IOException {
+        JsonObject directive = file().getAsJsonObject("animations").getAsJsonObject(PuppetIds.ANIM_DIRECTIVE_CAST.getPath());
+        JsonObject frames = directive.getAsJsonObject("bones").getAsJsonObject("right_arm").getAsJsonObject("rotation");
+        assertEquals(0f, frames.getAsJsonObject("0.0").getAsJsonArray("post").get(0).getAsFloat(), 1e-6, "starts at rest");
+        assertTrue(frames.has("0.15"), "the first pose, 3 ticks in");
+        assertTrue(frames.has("0.42"), "the last pose");
+        assertEquals(0f, frames.getAsJsonObject("0.72").getAsJsonArray("post").get(0).getAsFloat(), 1e-6, "ends at rest");
     }
 
     @Test

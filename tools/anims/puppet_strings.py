@@ -1,8 +1,9 @@
 """Strings' five player animations, as first poses for Blockbench (see tools/blockbench/build_string_animations.py).
 
 Unlike tools/anims/puppet_manipulation.py this is NOT the source of truth: art/blockbench/string_animations.bbmodel is. These
-poses only fill that project the first time. Every animation starts and ends on rest keys and has no fades, because a plain
-Blockbench export can't carry PAL's beginTick/endTick; legs are left to the game except on Zip, which is airborne.
+poses only fill that project the first time. Every animation starts and ends on rest keys, and the game blends it in and out
+in code (PlayerAnimations), since a plain Blockbench export can't carry fades. Legs are left to the game except on Zip, which is
+airborne.
 
 The tell of each (DESIGN §3.15): one hand thrown out (fire); hand over hand (Reel In); one arm up and ahead, trailing like a
 kite (Zip); arms flung wide, then wrists crossed (Tie); both fists low and wide, leaning back (Leash).

@@ -8,8 +8,11 @@ import com.zigythebird.playeranim.animation.PlayerRawAnimationBuilder;
 import com.zigythebird.playeranim.api.PlayerAnimationAccess;
 import com.zigythebird.playeranim.api.PlayerAnimationFactory;
 import com.zigythebird.playeranimcore.animation.Animation;
+import com.zigythebird.playeranimcore.animation.RawAnimation;
+import com.zigythebird.playeranimcore.animation.layered.modifier.AbstractFadeModifier;
 import com.zigythebird.playeranimcore.api.firstPerson.FirstPersonConfiguration;
 import com.zigythebird.playeranimcore.api.firstPerson.FirstPersonMode;
+import com.zigythebird.playeranimcore.easing.EasingType;
 import com.zigythebird.playeranimcore.enums.PlayState;
 import java.util.Map;
 import java.util.Set;
@@ -23,11 +26,18 @@ import net.minecraft.resources.ResourceLocation;
  * Kegare's player animation layer (Player Animation Library by ZigyTheBird). Animations live in
  * {@code assets/<namespace>/player_animations/*.json} (Blockbench/GeckoLib format); an animation's ID is the
  * namespace plus the animation's name inside the file. A missing animation logs a warning once and is skipped.
+ * <p>
+ * <b>Fades live here, not in the files</b>, because a Blockbench export can't carry them: every animation blends in from
+ * whatever the player was doing and back out to it, through PAL's fade modifiers. Client config {@code visuals.animationFades}
+ * turns them off. A channel an animation doesn't key keeps the vanilla pose either way.
  */
 public final class PlayerAnimations {
     public static final ResourceLocation LAYER = Kegare.id("abilities");
     /** PAL priorities: 1500+ is for important gameplay animations. */
     private static final int PRIORITY = 1600;
+    /** How long each blend takes. Short: a cast has to read the moment it goes off (the tell, DESIGN §3.15). */
+    private static final int FADE_TICKS = 3;
+    private static final EasingType FADE_EASING = EasingType.EASE_IN_OUT_SINE;
 
     private static final Set<ResourceLocation> WARNED = ConcurrentHashMap.newKeySet();
     /** What this layer last started per player, so stopping one loop never cuts a newer animation. */
@@ -58,7 +68,15 @@ public final class PlayerAnimations {
             var raw = PlayerRawAnimationBuilder.begin()
                     .then(animation, loop ? loopType(animation) : Animation.LoopType.PLAY_ONCE)
                     .build();
-            controller.triggerAnimation(raw);
+            controller.removeAllModifiers(); // whatever is left of the last animation's fades
+            if (KegareClientConfig.ANIMATION_FADES.get()) {
+                // From the animation being replaced if there is one, else from the vanilla pose.
+                controller.replaceAnimationWithFade(AbstractFadeModifier.standardFadeIn(FADE_TICKS, FADE_EASING), raw, true);
+                // A play-once hands back to the vanilla pose over its last ticks. A loop never reaches an end: see stopAll.
+                if (!loop) controller.addModifierLast(AbstractFadeModifier.standardFadeOut(FADE_TICKS, FADE_EASING));
+            } else {
+                controller.triggerAnimation(raw);
+            }
             CURRENT.put(player.getUUID(), animation);
         } catch (Throwable t) {
             warnOnce(animation, t.toString());
@@ -85,7 +103,15 @@ public final class PlayerAnimations {
         CURRENT.remove(player.getUUID());
         try {
             PlayerAnimationController controller = controller(player);
-            if (controller != null) controller.stopTriggeredAnimation();
+            if (controller == null) return;
+            controller.removeAllModifiers();
+            if (KegareClientConfig.ANIMATION_FADES.get() && controller.isActive()) {
+                // Stopped part way (a loop ending, a cast cut short): blends from the pose it's in to an empty animation,
+                // which keys nothing, so that's the vanilla pose. It's over when the blend is.
+                controller.replaceAnimationWithFade(AbstractFadeModifier.standardFadeIn(FADE_TICKS, FADE_EASING), RawAnimation.begin().thenWait(FADE_TICKS), false);
+            } else {
+                controller.stopTriggeredAnimation();
+            }
         } catch (Throwable t) {
             Kegare.LOGGER.debug("Couldn't stop animations on {}", player.getScoreboardName(), t);
         }

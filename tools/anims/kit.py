@@ -21,8 +21,9 @@ the vanilla value for its whole length; a channel it leaves out keeps the vanill
 - The head's rotation is left to the player's look unless an animation asks for it (look=False): casts that aim
   keep the head on the target. Its position still follows the hip.
 - Legs are left out (walking and running carry on during a cast).
-- Casts fade in from and out to whatever the player was doing (PAL's beginTick / endTick), instead of snapping to a
-  rest pose: the first key sits at the end of the fade-in, the last key where the fade-out starts.
+- Blending in from and out to whatever the player was doing happens in code (PlayerAnimations, through PAL's fade
+  modifiers), because a Blockbench export can't carry it. So files have no beginTick / endTick: a pose leaves rest and
+  returns to it on plain rest keys, and the code's short blend sits on top of those.
 """
 from __future__ import annotations
 
@@ -188,8 +189,8 @@ class Anim:
                  look: bool = True, fade_in: int = 0, fade_out: int = 0, loop_from: float | None = None):
         """
         :param look: leave the head's rotation to the player's look (its position still follows the hip)
-        :param fade_in: ticks to fade in from the current (vanilla) pose; the first key must sit at fade_in / 20 s
-        :param fade_out: ticks to fade back to the vanilla pose after the last key; the length is last key + fade
+        :param fade_in: ticks from a rest key at the start to the first pose; the first key must sit at fade_in / 20 s
+        :param fade_out: ticks from the last pose to a rest key at the end; the length is last key + fade
         :param loop_from: loop back to this time (seconds) instead of the start (an intro, then the loop)
         """
         self.name, self.length, self.loop, self.lerp, self.note = name, length, loop, lerp, note
@@ -203,7 +204,7 @@ class Anim:
 
     def to_pal(self) -> dict:
         """PAL / Blockbench Bedrock JSON for this animation. Bones that never move are left out (so the vanilla
-        pose shows through); a bone that moves gets a keyframe at every key."""
+        pose shows through); a bone that moves gets a keyframe at every key, plus the rest keys of fade_in and fade_out."""
         baked = [(k, k.pose.baked()) for k in self.keys]
         bones = {}
         for b in BONES:
@@ -216,32 +217,22 @@ class Anim:
                 if all(all(abs(x) < 1e-6 for x in v) for v in values):
                     continue
                 frames = {}
+                if self.fade_in:
+                    frames["0.0"] = {"post": [0, 0, 0], "lerp_mode": "catmullrom"}
                 for (k, bk) in baked:
                     v = bk[b][idx]
                     frames[f"{k.t:g}" if k.t else "0.0"] = {"post": [round(x, 3) for x in v], "lerp_mode": k.lerp}
+                if self.fade_out:
+                    frames[f"{self.length:g}"] = {"post": [0, 0, 0], "lerp_mode": "catmullrom"}
                 bones.setdefault(b, {})[chan] = frames
         out = {"animation_length": self.length, "loop": self.loop, "bones": bones}
         if self.loop_from is not None:
             out["loopTick"] = self.loop_from  # seconds, despite the name
-        extra = {}
-        if self.fade_in:
-            extra["beginTick"] = self.fade_in
-        if self.fade_out:
-            extra["endTick"] = round(self.keys[-1].t * 20)
-        if extra:
-            out["player_animation_library"] = extra
         return out
 
     def to_preview(self) -> dict:
-        """The same animation for Blockbench, which knows no fades: rest keys stand in for them."""
+        """The same animation for Blockbench, which has no loop points."""
         pal = self.to_pal()
-        for chans in pal["bones"].values():
-            for frames in chans.values():
-                if self.fade_in and "0.0" not in frames:
-                    frames["0.0"] = {"post": [0, 0, 0], "lerp_mode": "catmullrom"}
-                if self.fade_out:
-                    frames[f"{self.length:g}"] = {"post": [0, 0, 0], "lerp_mode": "catmullrom"}
-        pal.pop("player_animation_library", None)
         pal.pop("loopTick", None)
         return pal
 

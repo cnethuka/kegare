@@ -100,7 +100,7 @@ class StringsArtTest {
         }
     }
 
-    /** A plain Blockbench export carries no fades, so every channel has to start and end at rest or the pose would snap. */
+    /** The game blends these in and out in code, and that can be switched off: every channel starts and ends at rest so it never jumps to a mid-pose. */
     @Test
     void everyAnimationStartsAndEndsAtRest() throws IOException {
         JsonObject animations = json("src/main/resources/assets/kegare/player_animations/puppet_strings.json").getAsJsonObject("animations");
