@@ -699,7 +699,7 @@ Package `com.cnethuka.kegare.innate_technique.rime`. **Rarity: RARE.** All numbe
 |---|---|---|
 | **Frost Shard** | INSTANT | A fast ice projectile (2.2 blocks/tick, 1.5 s flight). 3 damage, Slowness I for 1.5 s, 1 Freeze stack. Cost 40, cooldown 1 s. |
 | **Glacial Lance** | CHARGED | Hold up to 2 s; a tap shorter than 0.4 s fizzles (no cost, no cooldown). A bigger, slower lance (1.4 blocks/tick) for 4 to 12 damage by charge, Slowness II for 3 s, 2 Freeze stacks. Cost 100, cooldown 6 s. |
-| **Frost Field** | CHANNELED | A cone in front of you while held (6 blocks, 35° half-angle, line of sight). Slowness II on everyone in it, +1 Freeze stack per second. Cost 32, then 48 Malice/s; max 5 s; cooldown 5 s after it ends. |
+| **Frost Field** | CHANNELED | A cone in front of you while held (6 blocks, 35° half-angle, line of sight). Slowness II on everyone in it, +1 Freeze stack per second. Cost 32, then 48 Malice/s; max 5 s; cooldown 5 s after it ends. Its effect (`frost_field_cone`) is as wide as that cone: fog that thickens with distance, so it stays clear at the caster's end, plus streaks and flakes. Nobody is blinded, since seeing through it is part of the fight. |
 | **Rime Shell** | TOGGLE | 30% damage reduction; anyone who hits you in melee gets Slowness II for 2 s. Cost 40, then 16 Malice/s; cooldown 8 s after switching off. Like every toggle it keeps running while you are stunned or frozen. |
 
 - **Specials (R)**, one per ability (framework §3.15). Each shares its base ability's cooldown; the "cooldown" below

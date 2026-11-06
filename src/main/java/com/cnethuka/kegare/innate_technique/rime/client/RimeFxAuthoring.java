@@ -266,45 +266,69 @@ public final class RimeFxAuthoring {
         return fx(flash, ring, innerRing, shards, mist);
     }
 
-    /** Frost Field: a cone of frost gusting forward from in front of the caster (+X), with fluttering flakes. */
+    /**
+     * Frost Field: a cone of frost gusting forward from in front of the caster (+X), as wide as the area it really covers.
+     * Three layers so it reads at any distance: bright fog gives the cone its shape from far off (and doesn't turn grey
+     * against the sky), fast streaks give it its direction, and flakes give it a texture up close. Each starts small and
+     * clear at the caster, so from first person it opens out without hiding what you're aiming at.
+     */
     private static FX frostFieldCone() {
         Vector3f origin = new Vector3f(0.55f, -0.25f, 0f);
         // Photon's cone emits along local +Y; turn it to +X (forward).
         Quaternionf forward = new Quaternionf().rotateZ((float) (-Math.PI / 2));
+        float halfAngle = 35f; // RimeConfig.FIELD_HALF_ANGLE's default
 
         ParticleEmitter gust = emitter("gust", true, 20);
         ParticleConfig c = gust.config;
         c.setSimulationSpace(ParticleConfig.Space.World);
-        c.setMaxParticles(140);
+        c.setMaxParticles(110);
         c.setStartLifetime(range(14, 20));
-        c.setStartSpeed(range(5.5f, 7.5f));
-        c.setStartSize(uniform(range(0.12f, 0.2f)));
+        c.setStartSpeed(range(5f, 7f));
+        c.setStartSize(uniform(range(0.55f, 0.9f)));
         c.emission.setEmissionRate(NumberFunction.constant(5f));
-        c.shape.setShape(cone(28f, 0.12f));
+        c.shape.setShape(cone(halfAngle, 0.15f));
         c.colorOverLifetime.setEnable(true);
-        c.colorOverLifetime.setColor(gradient(0x00F2FDFF, 0xAAF2FDFF, 0x66C2EEFA, 0x0079C8EC));
-        grow(c, 0.4f);
-        material(gust, mist());
+        c.colorOverLifetime.setColor(gradient(0x00FFFFFF, 0x14F2FDFF, 0x60D8F4FF, 0x0079C8EC));
+        grow(c, 0.25f);
+        KilaMaterial fog = mist();
+        fog.color = new HDRColor(0.9f, 0.97f, 1f, 0.85f, 1.4f);
+        material(gust, fog);
         gust.transform().localPosition(new Vector3f(origin));
         gust.transform().localRotation(new Quaternionf(forward));
+
+        ParticleEmitter streaks = emitter("streaks", true, 20);
+        ParticleConfig t = streaks.config;
+        t.setSimulationSpace(ParticleConfig.Space.World);
+        t.setMaxParticles(70);
+        t.setStartLifetime(range(8, 13));
+        t.setStartSpeed(range(8f, 11f));
+        t.setStartSize(uniform(range(0.05f, 0.08f)));
+        t.emission.setEmissionRate(NumberFunction.constant(5f));
+        t.shape.setShape(cone(halfAngle, 0.12f));
+        t.renderer.setRenderMode(ParticleRendererSetting.Mode.StretchedBillboard);
+        t.renderer.setLengthScale(5f);
+        fadeOut(t, WHITE, CYAN);
+        material(streaks, glow(0.6f, 0.9f, 1f, 1.6f));
+        streaks.transform().localPosition(new Vector3f(origin));
+        streaks.transform().localRotation(new Quaternionf(forward));
 
         ParticleEmitter flakes = emitter("flakes", true, 20);
         ParticleConfig f = flakes.config;
         f.setSimulationSpace(ParticleConfig.Space.World);
         f.setMaxParticles(120);
         f.setStartLifetime(range(10, 16));
-        f.setStartSpeed(range(6f, 9f));
-        f.setStartSize(uniform(range(0.04f, 0.09f)));
-        f.emission.setEmissionRate(NumberFunction.constant(4f));
-        f.shape.setShape(cone(32f, 0.1f));
+        f.setStartSpeed(range(5f, 8f));
+        f.setStartSize(uniform(range(0.05f, 0.1f)));
+        f.emission.setEmissionRate(NumberFunction.constant(5f));
+        f.shape.setShape(cone(halfAngle, 0.1f));
         f.noise.setEnable(true);
         f.noise.setFrequency(1.5f);
         f.noise.setPosition(uniform(NumberFunction.constant(0.08f)));
         fadeOut(f, WHITE, CYAN);
-        material(flakes, glow(0.5f, 0.85f, 1f, 1.3f));
+        material(flakes, glow(0.5f, 0.85f, 1f, 1.1f));
         flakes.transform().localPosition(new Vector3f(origin));
         flakes.transform().localRotation(new Quaternionf(forward));
-        return fx(gust, flakes);
+        return fx(gust, streaks, flakes);
     }
 
     /** Rime Shell: a faint, glassy ice bubble (invisible from the inside) with flakes circling it. */
