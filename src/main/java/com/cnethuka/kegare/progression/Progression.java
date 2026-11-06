@@ -22,6 +22,15 @@ public final class Progression {
         Unlocks.addListener(ProgressionToasts::unlocked);
     }
 
+    /** Admin: Grade, XP, Assessment, Refinement, Peak Refinement, Insight, firsts and unlocks all back to nothing. */
+    public static void reset(ServerPlayer player) {
+        GradeService.reset(player);
+        AssessmentService.reset(player);
+        RefinementService.reset(player); // takes what's now locked off the loadout
+        Insight.reset(player);
+        Unlocks.reset(player);
+    }
+
     public static Grade getGrade(ServerPlayer player) {
         return GradeService.grade(player);
     }

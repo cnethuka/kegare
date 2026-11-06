@@ -76,7 +76,7 @@ public final class KegareCommand {
     }
 
     public static void register(CommandDispatcher<CommandSourceStack> dispatcher) {
-        dispatcher.register(Commands.literal("kegare")
+        var root = Commands.literal("kegare")
                 .requires(source -> source.hasPermission(2))
                 .then(Commands.literal("info")
                         .executes(c -> info(c.getSource(), c.getSource().getPlayerOrException()))
@@ -178,7 +178,9 @@ public final class KegareCommand {
                         .then(Commands.argument("player", EntityArgument.player())
                                 .then(Commands.argument("seconds", DoubleArgumentType.doubleArg(0, 3600))
                                         .executes(c -> stun(c.getSource(), EntityArgument.getPlayer(c, "player"),
-                                                DoubleArgumentType.getDouble(c, "seconds")))))));
+                                                DoubleArgumentType.getDouble(c, "seconds"))))));
+        ProgressionCommands.register(root);
+        dispatcher.register(root);
     }
 
     private static int stringsUnmovable(CommandSourceStack source, ServerPlayer player, boolean on) {

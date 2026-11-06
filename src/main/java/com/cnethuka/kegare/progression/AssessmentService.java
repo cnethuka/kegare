@@ -99,6 +99,12 @@ public final class AssessmentService {
     }
 
     /** Admin: forget every fight. */
+    /** The latest scores, oldest first. For admins only: Assessment is private. */
+    public static java.util.List<Double> recentScores(ServerPlayer player, int count) {
+        java.util.List<AssessmentRules.Entry> history = get(player).history;
+        return history.subList(Math.max(0, history.size() - count), history.size()).stream().map(entry -> entry.score()).toList();
+    }
+
     public static void reset(ServerPlayer player) {
         get(player).history.clear();
         PlayerSync.markDirty(player);
