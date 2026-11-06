@@ -11,8 +11,8 @@ import net.minecraft.client.Minecraft;
 /**
  * Client-only Technique Mode state (key G). While it is on the combat panel takes the hotbar's place
  * ({@link CombatPanelLayer}; the hotbar becomes a column, {@link CombatHotbarLayer}), the control chosen by
- * {@link TechniqueSelect} picks abilities while the other stays on the hotbar, and right-click base-casts instead of
- * using the held item. Purely input and display: the server still validates every request.
+ * {@link TechniqueSelect} picks abilities while the other stays on the hotbar. Right-click stays vanilla. Purely input
+ * and display: the server still validates every request.
  */
 public final class TechniqueMode {
     private static boolean active;

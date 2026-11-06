@@ -12,7 +12,7 @@ public final class KegareKeys {
 
     /** Casts the selected ability's special (hold for CHARGED/CHANNELED specials). */
     public static final KeyMapping SPECIAL = key("key.kegare.special", GLFW.GLFW_KEY_R);
-    /** Toggles Technique Mode (the combat panel; number keys or scroll pick abilities, right-click casts). */
+    /** Toggles Technique Mode (the combat panel; number keys or scroll pick abilities). */
     public static final KeyMapping TECHNIQUE_MODE = key("key.kegare.technique_mode", GLFW.GLFW_KEY_G);
     /** Casts the selected ability's base version, in or out of Technique Mode (hold for CHARGED/CHANNELED). */
     public static final KeyMapping CAST = key("key.kegare.cast", GLFW.GLFW_KEY_C);

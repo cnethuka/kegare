@@ -27,8 +27,8 @@ import net.neoforged.neoforge.network.PacketDistributor;
  *   <li>R: the selected ability's special (press / release). V: the ultimate. K: Sorcerer screen.</li>
  *   <li>C (Cast, rebindable): base-casts the selected ability, in or out of Technique Mode.</li>
  *   <li>G toggles Technique Mode. In it, ONE control picks abilities and the other stays on the hotbar
- *       ({@link TechniqueSelect}: number keys by default, or the scroll wheel), and right-click base-casts too,
- *       without using the held item. Out of it, number keys, scroll and right-click are all vanilla.</li>
+ *       ({@link TechniqueSelect}: number keys by default, or the scroll wheel). Out of it, number keys and scroll are
+ *       vanilla. Right-click is always vanilla: it uses the held item and never casts.</li>
  * </ul>
  */
 @EventBusSubscriber(modid = Kegare.MODID, value = Dist.CLIENT)
@@ -36,21 +36,17 @@ public final class ClientInput {
     private static boolean castHeld;
     private static boolean specialHeld;
     private static boolean ultimateHeld;
-    /** A right-click shorter than a tick, caught before vanilla consumes it (Technique Mode). */
-    private static boolean useClicked;
 
     private ClientInput() {}
 
     /**
-     * Before vanilla handles keys this tick. In Technique Mode right-click is ours, and with {@link TechniqueSelect#NUMBER_KEYS}
-     * the number keys pick abilities instead of hotbar slots (numbers past the last ability do nothing).
+     * Before vanilla handles keys this tick. In Technique Mode with {@link TechniqueSelect#NUMBER_KEYS} the number keys
+     * pick abilities instead of hotbar slots (numbers past the last ability do nothing).
      */
     @SubscribeEvent
     static void onClientTickPre(ClientTickEvent.Pre event) {
         Minecraft mc = Minecraft.getInstance();
-        if (mc.player == null || !TechniqueMode.isActive()) return;
-        while (mc.options.keyUse.consumeClick()) useClicked = true; // ours, not the held item's
-        if (TechniqueMode.select() != TechniqueSelect.NUMBER_KEYS) return;
+        if (mc.player == null || !TechniqueMode.isActive() || TechniqueMode.select() != TechniqueSelect.NUMBER_KEYS) return;
         KeyMapping[] hotbar = mc.options.keyHotbarSlots;
         for (int i = 0; i < hotbar.length; i++) {
             while (hotbar[i].consumeClick()) selectSlot(i);
@@ -70,23 +66,10 @@ public final class ClientInput {
         if (TechniqueMode.isActive() && !TechniqueMode.abilitiesAvailable()) TechniqueMode.exit();
         while (KegareKeys.TECHNIQUE_MODE.consumeClick()) TechniqueMode.toggle();
 
-        // Base cast: the Cast key (C) in either scheme; in Technique Mode right-click casts too.
-        boolean castDown = consumeAndCheck(KegareKeys.CAST)
-                || (TechniqueMode.isActive() && (mc.options.keyUse.isDown() || useClicked));
-        useClicked = false;
-        castHeld = edge(castDown, castHeld, CastIntent.CAST_PRESS, CastIntent.CAST_RELEASE);
+        castHeld = edge(consumeAndCheck(KegareKeys.CAST), castHeld, CastIntent.CAST_PRESS, CastIntent.CAST_RELEASE);
         specialHeld = edge(consumeAndCheck(KegareKeys.SPECIAL), specialHeld, CastIntent.SPECIAL_PRESS, CastIntent.SPECIAL_RELEASE);
         ultimateHeld = edge(consumeAndCheck(KegareKeys.ULTIMATE), ultimateHeld, CastIntent.ULTIMATE_PRESS, CastIntent.ULTIMATE_RELEASE);
         while (KegareKeys.SORCERER.consumeClick()) PacketDistributor.sendToServer(SorcererRequestPayload.INSTANCE);
-    }
-
-    /** In Technique Mode right-click casts; it never uses the held item. */
-    @SubscribeEvent
-    static void onInteraction(InputEvent.InteractionKeyMappingTriggered event) {
-        if (TechniqueMode.isActive() && event.isUseItem()) {
-            event.setCanceled(true);
-            event.setSwingHand(false);
-        }
     }
 
     /** With {@link TechniqueSelect#SCROLL_WHEEL}, scroll picks abilities in Technique Mode (otherwise it stays on the hotbar). */
@@ -153,7 +136,6 @@ public final class ClientInput {
         castHeld = false;
         specialHeld = false;
         ultimateHeld = false;
-        useClicked = false;
         TechniqueMode.exit();
     }
 

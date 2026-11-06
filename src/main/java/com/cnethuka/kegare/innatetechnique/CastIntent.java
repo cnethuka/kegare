@@ -5,7 +5,7 @@ package com.cnethuka.kegare.innatetechnique;
  * The server decides everything else (innate technique, ability, cost, cooldown, stun).
  */
 public enum CastIntent {
-    /** The selected ability's base version (right-click in Technique Mode, or the Cast key). */
+    /** The selected ability's base version (the Cast key). */
     CAST_PRESS,
     CAST_RELEASE,
     /** The selected ability's special (R). */

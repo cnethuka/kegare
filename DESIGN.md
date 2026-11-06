@@ -232,19 +232,20 @@ All timestamps use **level game time**. They persist across restarts and are ide
   **G** Technique Mode, **C** cast (the selected ability's base cast, in or out of Technique Mode; hold it for
   CHARGED/CHANNELED), **V** ultimate, **K** Sorcerer screen. There is no next/previous-ability key and no ability
   menu (the hold-Z radial was removed: Technique Mode does that job).
-- **Technique Mode** (**G** toggles it). Out of it, number keys, scroll and right-click are all vanilla. While it is on:
+- **Right-click is always vanilla**, in and out of Technique Mode: it uses the held item (shield, bow, food) and never
+  casts. **C** is the cast key.
+- **Technique Mode** (**G** toggles it). Out of it, number keys and scroll are vanilla. While it is on:
   - **one control picks abilities and the other stays on the hotbar** (client config `input.techniqueSelect`, also
     on the Sorcerer screen's Settings page):
     - `NUMBER_KEYS` (default): number keys **1–9** pick the loadout's nine slots (an empty one too) and the scroll
       wheel moves through the hotbar;
     - `SCROLL_WHEEL`: the scroll wheel picks abilities (skipping empty slots) and number keys pick hotbar slots;
-  - **right-click base-casts** too (like C) and never uses the held item (hold it for CHARGED/CHANNELED);
   - the combat panel takes the hotbar's place and the hotbar becomes a column on the left (§3.6).
 
   It ends when you press G again, open any screen, die, or become Severed (or lose your innate technique). G does
   nothing for Severed players.
 - The Cast key always exists (it was R before R became the special key).
-- Selecting an ability is a `SelectAbilityPayload` request the server validates; a sub-tick right-click tap still
+- Selecting an ability is a `SelectAbilityPayload` request the server validates; a key tap shorter than a tick still
   counts as a press.
 - C→S payloads are **requests only**, and the server validates each one:
   - `IntentPayload`: which key went down or up (`CastIntent`)
@@ -661,7 +662,7 @@ Package `com.cnethuka.kegare.innate_technique.rime`. **Rarity: RARE.** All numbe
   ability, then its special:
   - no special → `"<ability> has no special."`, nothing paid;
   - otherwise the same shared checks as a base cast (busy, stun, cooldown, requirements, cost, `canCast`), and the
-    same lifecycle. Only R's release ends an R charge/channel (right-click/C releases don't).
+    same lifecycle. Only R's release ends an R charge/channel (C's release doesn't).
 - **Hooks specials use:** `Ability.canRelease(ctx)` (CHARGED: checked at release before paying; false fizzles
   for free with `blockedMessage`), `CastManager.switchOff(player, toggle, reason)` (end a toggle from code, e.g.
   `EndReason.CONSUMED`), and lingering visual loops (§3.14, Ice Path).
@@ -734,7 +735,7 @@ Package `rmt`. The first **shared** ability (§3.16), ID `kegare:reverse_malice_
 - **Locked by default.** Found through the green orb (§3.18); `/kegare shared unlock|lock` for admins. Severed
   players can never unlock it (`SharedAbilityService.unlock` refuses) or cast it (the cast pipeline refuses Severed
   players for everything).
-- **CHANNELED:** hold the cast key (C, or right-click in Technique Mode) to heal **2 HP** at the end of every
+- **CHANNELED:** hold the cast key (C) to heal **2 HP** at the end of every
   full second held (`healPerSecond`); release to stop. Never above max health; once there is nothing left to heal
   the channel ends by itself ("Fully healed."). At full health it is refused before anything is paid ("You aren't
   hurt.").
