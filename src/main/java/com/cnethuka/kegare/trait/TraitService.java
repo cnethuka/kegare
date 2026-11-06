@@ -107,7 +107,7 @@ public final class TraitService {
                 Kegare.LOGGER.info("Removing revoked trait {} from {}", id, name);
                 removeId(player, id, Trait.RemoveReason.REVOKED);
                 Trait trait = KegareRegistries.TRAIT.get(id);
-                if (trait != null) player.sendSystemMessage(Component.translatable("message.kegare.trait.lost", trait.displayName()).withStyle(ChatFormatting.DARK_GRAY));
+                if (trait != null) player.sendSystemMessage(Component.translatable("message.kegare.trait.lost").withStyle(ChatFormatting.DARK_GRAY));
             }
         }
 

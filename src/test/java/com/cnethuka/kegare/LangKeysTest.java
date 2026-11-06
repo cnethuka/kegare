@@ -1,11 +1,14 @@
 package com.cnethuka.kegare;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Map;
 import java.util.Set;
+import java.util.TreeMap;
 import java.util.TreeSet;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -46,5 +49,43 @@ class LangKeysTest {
         }
         assertTrue(used.size() > 50, "expected to find the mod's lang keys, found only " + used.size());
         assertTrue(missing.isEmpty(), "Lang keys used in code but missing from en_us.json:\n  " + String.join("\n  ", missing));
+    }
+
+    /**
+     * DESIGN §1: what's said in chat must never name a unique trait or the Shrine. Every trait name in the lang file is
+     * checked against every message, and the code against passing a trait's name along; the birth line is the one that does,
+     * and it skips unique traits. Op commands are the documented exception.
+     */
+    @Test
+    void chatNeverNamesAUniqueTraitOrTheShrine() throws IOException {
+        Map<String, String> lang = new TreeMap<>();
+        Matcher entry = Pattern.compile("^\\s*\"([^\"]+)\"\\s*:\\s*\"((?:[^\"\\\\]|\\\\.)*)\"", Pattern.MULTILINE).matcher(Files.readString(LANG));
+        while (entry.find()) lang.put(entry.group(1), entry.group(2));
+
+        assertEquals("The eyes have closed.", lang.get("message.kegare.trait.lost"));
+        assertEquals("The eyes have opened.", lang.get("message.kegare.trait.inherited"));
+
+        Set<String> secret = new TreeSet<>(Set.of("shrine"));
+        lang.forEach((key, value) -> {
+            if (key.startsWith("trait.kegare.") && !key.endsWith(".desc")) secret.add(value.toLowerCase(java.util.Locale.ROOT));
+        });
+        assertTrue(secret.contains("six eyes"), "setup: found the trait names");
+        Set<String> named = new TreeSet<>();
+        lang.forEach((key, value) -> {
+            if (!key.startsWith("message.") && !key.startsWith("death.") && !key.startsWith("hud.")) return;
+            String lower = value.toLowerCase(java.util.Locale.ROOT);
+            for (String name : secret) if (lower.contains(name)) named.add(key);
+        });
+        assertEquals(Set.of(), named, "messages that name a secret");
+
+        Pattern passesName = Pattern.compile("\"message\\.kegare\\.([a-z0-9_.]+)\"[^;]*?[tT]rait\\.displayName\\(\\)");
+        Set<String> passed = new TreeSet<>();
+        try (Stream<Path> files = Files.walk(SOURCES)) {
+            for (Path file : files.filter(p -> p.toString().endsWith(".java")).toList()) {
+                Matcher m = passesName.matcher(Files.readString(file));
+                while (m.find()) passed.add(m.group(1));
+            }
+        }
+        assertEquals(Set.of("birth.trait"), passed, "only the birth line takes a trait's name");
     }
 }

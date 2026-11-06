@@ -42,7 +42,7 @@ public final class TraitSuccession {
             Trait trait = KegareRegistries.TRAIT.get(id);
             if (trait == null || !trait.isLostOnPvpDeath()) continue;
             TraitService.remove(victim, trait, Trait.RemoveReason.LOST_IN_PVP);
-            victim.sendSystemMessage(Component.translatable("message.kegare.trait.lost", trait.displayName()).withStyle(ChatFormatting.DARK_GRAY));
+            victim.sendSystemMessage(Component.translatable("message.kegare.trait.lost").withStyle(ChatFormatting.DARK_GRAY));
             trait.onBearerKilledByPlayer(victim, killer);
             Kegare.LOGGER.info("{} lost {} to {}", victim.getGameProfile().getName(), id, killer.getGameProfile().getName());
             if (trait.isInheritable()) begin(victim.server, trait, victim.getUUID(), killer.getUUID());
@@ -61,7 +61,7 @@ public final class TraitSuccession {
             TraitRules.SeveredAction action = TraitRules.whenSevered(trait.requiresMalice(), trait.isUnique(), trait.isInheritable());
             if (action == TraitRules.SeveredAction.KEEP) continue;
             TraitService.remove(player, trait, Trait.RemoveReason.SEVERED);
-            player.sendSystemMessage(Component.translatable("message.kegare.trait.lost", trait.displayName()).withStyle(ChatFormatting.DARK_GRAY));
+            player.sendSystemMessage(Component.translatable("message.kegare.trait.lost").withStyle(ChatFormatting.DARK_GRAY));
             Kegare.LOGGER.info("{} became Severed and lost {}", player.getGameProfile().getName(), id);
             if (action == TraitRules.SeveredAction.TRANSFER) begin(player.server, trait, player.getUUID(), null);
         }
@@ -79,7 +79,7 @@ public final class TraitSuccession {
         ServerPlayer online = server.getPlayerList().getPlayer(holder.get());
         if (online != null) {
             TraitService.remove(online, trait, Trait.RemoveReason.RELEASED);
-            online.sendSystemMessage(Component.translatable("message.kegare.trait.lost", trait.displayName()).withStyle(ChatFormatting.DARK_GRAY));
+            online.sendSystemMessage(Component.translatable("message.kegare.trait.lost").withStyle(ChatFormatting.DARK_GRAY));
         } else {
             saved.release(trait.id(), holder.get());
             saved.revoke(holder.get(), trait.id());
@@ -136,7 +136,7 @@ public final class TraitSuccession {
     private static void assign(MinecraftServer server, Trait trait, ServerPlayer heir) {
         if (TraitService.add(heir, trait, Trait.AddReason.INHERITED) != TraitService.AddResult.ADDED) return;
         Kegare.LOGGER.info("{} passed to {}", trait.id(), heir.getGameProfile().getName());
-        heir.sendSystemMessage(Component.translatable("message.kegare.trait.inherited", trait.displayName()).withStyle(ChatFormatting.LIGHT_PURPLE));
+        heir.sendSystemMessage(Component.translatable("message.kegare.trait.inherited").withStyle(ChatFormatting.LIGHT_PURPLE));
         String broadcast = trait.successionBroadcastKey();
         if (broadcast != null) {
             server.getPlayerList().broadcastSystemMessage(

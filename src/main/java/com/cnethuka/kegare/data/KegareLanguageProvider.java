@@ -286,8 +286,8 @@ public final class KegareLanguageProvider extends LanguageProvider {
         // Traits
         add("trait.kegare.six_eyes", SIX_EYES);
         add("trait.kegare.six_eyes.desc", "Eyes that see through everything. Only one bearer at a time. (No effects yet.)");
-        add("message.kegare.trait.lost", "You have lost %s.");
-        add("message.kegare.trait.inherited", "You have inherited %s.");
+        add("message.kegare.trait.lost", "The eyes have closed.");
+        add("message.kegare.trait.inherited", "The eyes have opened.");
         add("message.kegare.trait.six_eyes.succession", "The eyes have closed... and opened elsewhere.");
 
         // HUD

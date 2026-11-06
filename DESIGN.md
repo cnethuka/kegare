@@ -126,7 +126,7 @@ All timestamps use **level game time**. They persist across restarts and are ide
 - **Severed** = born with 0 capacity. The player gets no innate technique, can't reroll, and the HUD is hidden.
   Only the flag is stored; their superhuman body comes from it (§3.27).
 - **Becoming Severed** (birth or rebirth roll of 0, `/kegare setcapacity <player> 0`, or any future path):
-  - Every `requiresMalice` trait is stripped (*"You have lost …"*).
+  - Every `requiresMalice` trait is stripped (*"The eyes have closed."*).
   - Unique inheritable ones (six_eyes) go through the **normal transfer** (30s, then an eligible heir).
   - Other Malice-based traits are removed; a unique non-inheritable one is released.
   - This is enforced in one place: `MaliceService.applyCapacity` is the only code that can change capacity or the
@@ -1221,7 +1221,7 @@ count anything; mastery (goal, challenge) ones need a player on the other side.
 the owner offline, rerolling away including a puppet saved in an unloaded chunk, same-technique reassignment keeping
 them), `PossessionTest` (possess and return with health, size, inventory and position; no casting, no healing, no spin;
 the shell hit, backlash, distance, a dimension change and rerolling while possessing; a real death; the crash restore),
-`DirectiveTest` (every order, Go walking, Stay and Follow, Guard on a mob, Guard on what its owner damages and the Refinement it earns, the reach, Focus on a mob and on a player,
+`PuppetHudTest` (what the HUD is sent and when, and the update that clears it after a reroll), `DirectiveTest` (every order, Go walking, Stay and Follow, Guard on a mob, Guard on what its owner damages and the Refinement it earns, the reach, Focus on a mob and on a player,
 bosses as fair targets, an offline owner), `CurioBurstTest` (damage by tier and falloff, who is spared, bosses hurt but
 not pushed, the free fizzle, the chain's order and timing), `UnderstudyTest` (the swap and its `SwapTargetEvent`, a
 blocked swap, Stand-In's growth, mirroring, borrowed look, no drops, the return), `PuppetAdvancementsTest` (the first eight,
