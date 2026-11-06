@@ -11,6 +11,9 @@ import com.cnethuka.kegare.TestServer;
 import com.cnethuka.kegare.innatetechnique.CastIntent;
 import com.cnethuka.kegare.innatetechnique.CastManager;
 import com.cnethuka.kegare.innatetechnique.InnateTechniqueService;
+import com.cnethuka.kegare.progression.GradeService;
+import com.cnethuka.kegare.progression.Landings;
+import com.cnethuka.kegare.progression.ProgressionConfig;
 import com.cnethuka.kegare.progression.RefinementService;
 import com.cnethuka.kegare.malice.MaliceService;
 import java.util.List;
@@ -172,6 +175,118 @@ class DirectiveTest {
             } finally {
                 target.discard();
                 other.discard();
+                PossessionTest.cleanUp(server, level, owner);
+            }
+        });
+    }
+
+    /** A punch that lands and hurts, from next to the target, on a target topped up so it lasts. */
+    private static void punch(PuppetEntity puppet, net.minecraft.world.entity.LivingEntity target) {
+        target.setHealth(target.getMaxHealth());
+        target.invulnerableTime = 0;
+        puppet.moveTo(target.getX() - 1.0, target.getY(), target.getZ(), -90f, 0f);
+        assertTrue(puppet.doHurtTarget(target), "setup: the punch landed");
+        assertTrue(target.getHealth() < target.getMaxHealth(), "setup: and hurt");
+    }
+
+    @Test
+    void anIdleOwnerEarnsNothingFromTheirPuppets(MinecraftServer server) throws Exception {
+        TestServer.onServerThread(server, () -> {
+            ServerLevel level = PossessionTest.setUp(server);
+            int ground = level.getHeight(Heightmap.Types.MOTION_BLOCKING, 0, 0);
+            ServerPlayer owner = PossessionTest.damageable(server, "idle_owner");
+            level.addNewPlayer(owner);
+            PossessionTest.prepare(owner);
+            owner.moveTo(0.5, ground, 0.5, -90f, 0f);
+            Cow target = cow(level, 2.5, ground, 0.5);
+            Cow other = cow(level, -1.5, ground, 0.5);
+            net.minecraft.world.entity.decoration.ArmorStand stand = new net.minecraft.world.entity.decoration.ArmorStand(level, 0.5, ground, 3.5);
+            level.addFreshEntity(stand);
+            int repeat = (int) ProgressionConfig.ticks(ProgressionConfig.LANDING_REPEAT) + 1;
+            int window = (int) ProgressionConfig.ticks(ProgressionConfig.OWNER_ACTIVE_WINDOW);
+            try {
+                assertEquals(30.0, ProgressionConfig.OWNER_ACTIVE_WINDOW.get(), "the default");
+                PuppetEntity guard = PuppetTest.create(server, owner, 0);
+                InnateTechniqueService.clearCooldowns(owner);
+                PuppetEntity spare = PuppetTest.create(server, owner, 0);
+                DirectiveAbility.give(owner, PuppetOrder.GUARD, null);
+
+                // They've done nothing yet.
+                punch(guard, target);
+                assertEquals(0.0, RefinementService.get(owner).xp(), 1.0e-6, "no hit of their own yet");
+                assertEquals(0.0, GradeService.get(owner).xp(), 1.0e-6, "no Grade XP either");
+
+                // A hit by hand opens the window, right up to its end.
+                hitBy(owner, other);
+                long hitAt = level.getGameTime();
+                double xp = RefinementService.get(owner).xp();
+                double grade = GradeService.get(owner).xp();
+                TestServer.advanceGameTime(server, repeat);
+                punch(guard, target);
+                assertTrue(RefinementService.get(owner).xp() > xp, "within the window it earns");
+                assertTrue(GradeService.get(owner).xp() > grade, "Grade XP too");
+                TestServer.advanceGameTime(server, window - (int) (level.getGameTime() - hitAt));
+                xp = RefinementService.get(owner).xp();
+                punch(guard, target);
+                assertTrue(RefinementService.get(owner).xp() > xp, "right to its last tick");
+
+                // Past it, the puppet still fights and they earn nothing.
+                TestServer.advanceGameTime(server, repeat);
+                xp = RefinementService.get(owner).xp();
+                grade = GradeService.get(owner).xp();
+                punch(guard, target);
+                assertEquals(xp, RefinementService.get(owner).xp(), 1.0e-6, "idle: no Refinement");
+                assertEquals(grade, GradeService.get(owner).xp(), 1.0e-6, "idle: no Grade XP");
+
+                // Left to itself it really does go on fighting.
+                hitBy(owner, other); // sets the target going...
+                guard.setTarget(null);
+                guard.attack(target);
+                TestServer.advanceGameTime(server, window + repeat); // ...and they stop
+                target.setHealth(target.getMaxHealth());
+                float health = target.getHealth();
+                xp = RefinementService.get(owner).xp();
+                for (int i = 0; i < 200 && target.getHealth() >= health; i++) {
+                    tick(server, guard);
+                    target.invulnerableTime = 0;
+                }
+                assertTrue(target.getHealth() < health, "the guard kept at it on its own");
+                assertEquals(xp, RefinementService.get(owner).xp(), 1.0e-6, "and earned them nothing");
+
+                // None of these are their landing a hit or an ability on something real.
+                TestServer.advanceGameTime(server, window + repeat);
+                owner.invulnerableTime = 0;
+                assertTrue(owner.hurt(level.damageSources().mobAttack(other), 1f), "setup: being hit");
+                spare.invulnerableTime = 0;
+                spare.hurt(owner.damageSources().playerAttack(owner), 1f);
+                Landings.land(owner, stand, PuppetManipulation.CURIO_BURST);
+                Landings.land(owner, spare, PuppetManipulation.CURIO_BURST);
+                punch(guard, target);
+                Landings.usedWithoutTarget(owner, PuppetManipulation.DIRECTIVE);
+                assertTrue(RefinementService.get(owner).xp() > xp, "an ability with no target earns for itself, used in a fight");
+                TestServer.advanceGameTime(server, repeat);
+                xp = RefinementService.get(owner).xp();
+                punch(guard, target);
+                assertEquals(xp, RefinementService.get(owner).xp(), 1.0e-6, "but being hit, hitting your own and that don't make you active");
+
+                // An ability they land does, including one that goes off through a puppet.
+                Landings.land(owner, other, PuppetManipulation.CURIO_BURST);
+                TestServer.advanceGameTime(server, repeat);
+                xp = RefinementService.get(owner).xp();
+                punch(guard, target);
+                assertTrue(RefinementService.get(owner).xp() > xp, "an ability landed on something real");
+
+                TestServer.advanceGameTime(server, window + repeat);
+                other.invulnerableTime = 0;
+                assertTrue(other.hurt(CurioBursts.source(level, spare, owner), 1f), "setup: the blast landed");
+                TestServer.advanceGameTime(server, repeat);
+                xp = RefinementService.get(owner).xp();
+                punch(guard, target);
+                assertTrue(RefinementService.get(owner).xp() > xp, "their Curio Burst is their own doing");
+            } finally {
+                target.discard();
+                other.discard();
+                stand.discard();
                 PossessionTest.cleanUp(server, level, owner);
             }
         });

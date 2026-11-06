@@ -46,12 +46,15 @@ public final class ProgressionEvents {
         Attribution.Hit hit = Attribution.of(event.getSource(), level.getServer());
         if (hit == null || !Attribution.isRealTarget(hit.attacker(), victim)) return;
         ServerPlayer attacker = hit.attacker();
+        boolean onItsOwn = event.getSource().getEntity() instanceof OwnedEntity owned && owned.actsOnItsOwn();
+        if (!onItsOwn) Landings.landedOwnHit(attacker);
         Landings.engaged(attacker, victim);
         double counted = Math.min(amount, victim.getMaxHealth()); // what a single absurd hit is worth
         if (victim instanceof ServerPlayer target) FightTracker.damage(attacker, target, counted);
-        else GradeService.onMobDamage(attacker, counted);
+        else if (!onItsOwn || Landings.isActive(attacker)) GradeService.onMobDamage(attacker, counted);
         if (hit.ability() != null) {
-            Landings.land(attacker, victim, hit.ability());
+            if (onItsOwn) Landings.landOnItsOwn(attacker, victim, hit.ability());
+            else Landings.land(attacker, victim, hit.ability());
         } else if (victim instanceof ServerPlayer target) {
             FightTracker.melee(attacker, target, MeleeMoves.of(attacker, event.getSource(), Landings.wasCritical(attacker)));
         }

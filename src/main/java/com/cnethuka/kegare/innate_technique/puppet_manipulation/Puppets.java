@@ -124,7 +124,7 @@ public final class Puppets {
     /**
      * Guard: the owner damaged something real (player or mob, by hand or by technique); their guarding puppets in range go
      * for it too. Bosses count (§4: they take the damage and are never moved). What the puppets then land earns the owner
-     * Refinement down the normal hit path, under its usual repeat limit and per-target decay.
+     * Refinement down the normal hit path, under its usual repeat limit and per-target decay, while the owner keeps fighting.
      */
     static void ownerDealtDamage(ServerPlayer owner, net.minecraft.world.entity.LivingEntity target) {
         if (PuppetManipulation.holds(owner) && com.cnethuka.kegare.progression.Attribution.isRealTarget(owner, target)) guardsGoFor(owner, target);

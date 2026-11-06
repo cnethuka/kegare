@@ -27,6 +27,7 @@ import net.minecraft.world.entity.LivingEntity;
  *       (see {@link #usedWithoutTarget}), so casting it into the air earns nothing.</li>
  * </ul>
  * Only the caster's CURRENT technique counts, so shared abilities like RMT and a projectile from before a reroll don't.
+ * What acts on its own ({@link OwnedEntity#actsOnItsOwn}) only earns while its owner is fighting too ({@link #isActive}).
  */
 public final class Landings {
     /** Per player, runtime only. */
@@ -36,6 +37,7 @@ public final class Landings {
         private LivingEntity engaged;
         private long engagedTick;
         private long criticalTick = -1;
+        private long ownLandingTick = -1;
     }
 
     private Landings() {}
@@ -48,9 +50,37 @@ public final class Landings {
         return player.server.overworld().getGameTime();
     }
 
-    /** {@code ability} landed on {@code target}. Ignored unless it's a real target and an ability of their current technique. */
+    /** {@code ability} of theirs landed on {@code target}. Ignored unless it's a real target and an ability of their current technique. */
     public static void land(ServerPlayer caster, LivingEntity target, Ability ability) {
-        if (!Attribution.isRealTarget(caster, target) || !isTechniqueAbility(caster, ability)) return;
+        if (!counts(caster, target, ability)) return;
+        landedOwnHit(caster);
+        record(caster, target, ability, true);
+    }
+
+    /**
+     * Something of theirs landed this on its own (a puppet's punch). It's on the fight's record like any landing, but it only
+     * earns Refinement while they're fighting too. An idle owner earns nothing from it.
+     */
+    public static void landOnItsOwn(ServerPlayer owner, LivingEntity target, Ability ability) {
+        if (counts(owner, target, ability)) record(owner, target, ability, isActive(owner));
+    }
+
+    /** They landed a hit or an ability of their own on something real. */
+    static void landedOwnHit(ServerPlayer player) {
+        state(player).ownLandingTick = now(player);
+    }
+
+    /** They've landed a hit or an ability of their own on something real within {@code ownerActiveWindow}. */
+    public static boolean isActive(ServerPlayer player) {
+        long last = state(player).ownLandingTick;
+        return last >= 0 && now(player) - last <= ProgressionConfig.ticks(ProgressionConfig.OWNER_ACTIVE_WINDOW);
+    }
+
+    private static boolean counts(ServerPlayer caster, LivingEntity target, Ability ability) {
+        return Attribution.isRealTarget(caster, target) && isTechniqueAbility(caster, ability);
+    }
+
+    private static void record(ServerPlayer caster, LivingEntity target, Ability ability, boolean earns) {
         State state = state(caster);
         long now = now(caster);
         String key = ability.id() + "/" + target.getUUID();
@@ -64,7 +94,7 @@ public final class Landings {
             FightTracker.landed(caster, player, ability.id().toString(), ability.isSpecial());
             InnateTechniqueService.current(caster).ifPresent(technique -> InsightHooks.hitByTechnique(player, technique));
         }
-        RefinementService.onLanded(caster, target, ability);
+        if (earns) RefinementService.onLanded(caster, target, ability);
     }
 
     /** Runs a delayed effect as part of the cast it came from, so what it hits lands for that ability. */
@@ -74,12 +104,12 @@ public final class Landings {
 
     /**
      * An ability with no target went off. In a real fight it counts as landing on whoever that fight is with; with
-     * nobody around it earns nothing.
+     * nobody around it earns nothing. It wasn't landed on anyone, so it doesn't make them {@linkplain #isActive active}.
      */
     public static void usedWithoutTarget(ServerPlayer caster, Ability ability) {
         State state = state(caster);
         if (state.engaged == null || now(caster) - state.engagedTick > ProgressionConfig.ticks(ProgressionConfig.NO_TARGET_WINDOW)) return;
-        land(caster, state.engaged, ability);
+        if (counts(caster, state.engaged, ability)) record(caster, state.engaged, ability, true);
     }
 
     /** {@code player} and {@code other} just traded a hit. */

@@ -102,6 +102,7 @@ class LandingsTest {
             assertTrue(puppet.hasData(com.cnethuka.kegare.registry.KegareAttachments.CAST_ORIGIN), "what a cast spawns is tagged");
             assertTrue(enemy.hurt(enemy.damageSources().mobAttack(puppet), 2f), "setup");
             assertEquals(List.of(PuppetManipulation.PUPPET_CREATION.id().toString()), landed(owner, enemy));
+            assertEquals(0.0, RefinementService.get(owner).xp(), 1.0e-6, "on the fight's record, but the owner has done nothing to earn from it");
 
             puppet.invulnerableTime = 0;
             puppet.hurt(owner.damageSources().playerAttack(owner), 1f);

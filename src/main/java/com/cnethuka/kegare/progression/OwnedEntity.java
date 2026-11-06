@@ -11,4 +11,9 @@ import javax.annotation.Nullable;
 public interface OwnedEntity {
     @Nullable
     UUID ownerId();
+
+    /** It picks its own fights (a puppet), so a hit of its own isn't its owner doing anything: see {@link Landings#landOnItsOwn}. */
+    default boolean actsOnItsOwn() {
+        return false;
+    }
 }

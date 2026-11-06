@@ -16,6 +16,11 @@ public interface Puppet extends com.cnethuka.kegare.progression.OwnedEntity {
     @Nullable
     UUID ownerId();
 
+    @Override
+    default boolean actsOnItsOwn() {
+        return true;
+    }
+
     /** RGB of its owner's Malice color when it was made (its glow). */
     int maliceColor();
 

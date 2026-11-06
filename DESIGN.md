@@ -1072,7 +1072,7 @@ icon armor stand; ultimate locked (its Dominion comes later). All numbers in `[p
 |---|---|---|---|---|
 | **Puppet Creation** | CHARGED | 40 / 100 / 180 by tier | 2 s | Hold to charge, release to make a puppet beside you (a free spot at your right, left, back or front). The tier comes from the charge; the cost is the tier's (`Ability#releaseCost`: a CHARGED ability's cost may depend on the charge; pressing checks the cheapest). New puppets take your current Directive order. |
 | ↳ **Possess** (R) | INSTANT | 60 | shared | Move into the puppet you're looking at, or your nearest one (within 32). See **Possession** below. |
-| **Directive** | INSTANT | 20 | 1 s | Every puppet within `range` (32) takes the next order: **Follow → Stay → Guard → Go** → Follow. Guard follows too, and goes for whoever damages you and whatever you damage, by hand or by technique (player or mob; a puppet already chasing something keeps at it, and a puppet's own punch doesn't call the others over). What it lands earns you Refinement down the normal hit path, under the usual repeat limit and per-target decay. Go walks to the block you're looking at, then stays; with no block in sight the cycle skips it. "Puppets: Guard (2 heard you)". The order is saved on you (`kegare:puppet_owner`) and a new order calls off any chase. |
+| **Directive** | INSTANT | 20 | 1 s | Every puppet within `range` (32) takes the next order: **Follow → Stay → Guard → Go** → Follow. Guard follows too, and goes for whoever damages you and whatever you damage, by hand or by technique (player or mob; a puppet already chasing something keeps at it, and a puppet's own punch doesn't call the others over). What it lands earns you Refinement down the normal hit path, under the usual repeat limit and per-target decay, but only while you keep fighting too (`ownerActiveWindow`, §3.21). Once you go idle it keeps fighting and you earn nothing from it. Go walks to the block you're looking at, then stays; with no block in sight the cycle skips it. "Puppets: Guard (2 heard you)". The order is saved on you (`kegare:puppet_owner`) and a new order calls off any chase. |
 | ↳ **Focus** (R) | INSTANT | 40 | shared | Every puppet in range swarms the player or mob you're looking at, until it dies or gets away; then back to their order. Needs a target and at least one puppet in range, else free. |
 | **Curio Burst** | INSTANT | 32 | 4 s | Detonate the puppet you're looking at (`CurioBursts`): 4 / 7 / 12 damage by tier at the centre, half at the edge of a 2.5 / 3 / 4 block radius, and a push away (0.6). Damage type `kegare:curio_burst`, credited to you, tagged `is_explosion` (Blast Protection helps) and `no_knockback` (the only push is the blast's). Never hurts you, your puppets or your empty body; breaks no blocks. No puppet in sight: free. |
 | ↳ **Chain Burst** (R) | INSTANT | 64 | shared | Every puppet of yours within `radius` (8) of what you're looking at (player, mob or puppet) detonates, nearest first, `delay` (0.25 s) apart. Queued blasts drop if you log out. |
@@ -1221,7 +1221,7 @@ count anything; mastery (goal, challenge) ones need a player on the other side.
 the owner offline, rerolling away including a puppet saved in an unloaded chunk, same-technique reassignment keeping
 them), `PossessionTest` (possess and return with health, size, inventory and position; no casting, no healing, no spin;
 the shell hit, backlash, distance, a dimension change and rerolling while possessing; a real death; the crash restore),
-`PuppetHudTest` (what the HUD is sent and when, and the update that clears it after a reroll), `DirectiveTest` (every order, Go walking, Stay and Follow, Guard on a mob, Guard on what its owner damages and the Refinement it earns, the reach, Focus on a mob and on a player,
+`PuppetHudTest` (what the HUD is sent and when, and the update that clears it after a reroll), `DirectiveTest` (every order, Go walking, Stay and Follow, Guard on a mob, Guard on what its owner damages, the Refinement it earns and how an idle owner earns none, the reach, Focus on a mob and on a player,
 bosses as fair targets, an offline owner), `CurioBurstTest` (damage by tier and falloff, who is spared, bosses hurt but
 not pushed, the free fizzle, the chain's order and timing), `UnderstudyTest` (the swap and its `SwapTargetEvent`, a
 blocked swap, Stand-In's growth, mirroring, borrowed look, no drops, the return), `PuppetAdvancementsTest` (the first eight,
@@ -1353,6 +1353,10 @@ Levels 0-10 (`refinement.maxLevel`). It **only unlocks things**: it never change
   Special Grade ×2.5. An experienced sorcerer re-learns faster after a reroll.
 - **Earned only by landing the CURRENT technique's abilities on real targets.** Casting into the air gives nothing, and neither do your
   own puppets and shell. Armor stands aren't real targets.
+- **An idle owner earns nothing from their puppets.** A puppet's own hit (`OwnedEntity.actsOnItsOwn`) earns Refinement, and Grade XP on a mob, only within
+  `ownerActiveWindow` (30 s) of the owner personally landing a hit or an ability on a real target (`Landings.isActive`). A Curio Burst is their own doing and counts;
+  being hit doesn't, and neither does an ability with no target, since it wasn't landed on anyone. The puppet keeps fighting either way, and on a player its hits stay on
+  that fight's record.
 - **Rerolling resets it to 0;** Peak Refinement stays.
 
 **The shared path (`Landings`): a new technique needs no Refinement code unless an ability has no target.** `CastManager` runs every execute,

@@ -62,6 +62,7 @@ public final class ProgressionConfig {
     private static final Gate[] GATES = new Gate[Grade.values().length];
     // The shared hit path
     public static ModConfigSpec.DoubleValue LANDING_REPEAT;
+    public static ModConfigSpec.DoubleValue OWNER_ACTIVE_WINDOW;
     public static ModConfigSpec.DoubleValue NO_TARGET_WINDOW;
 
     // Refinement
@@ -234,6 +235,9 @@ public final class ProgressionConfig {
         NO_TARGET_WINDOW = b.comment("An ability with no target of its own only counts used this long after trading a hit with something real.",
                         "Used with nobody around, it earns nothing.")
                 .defineInRange("noTargetWindow", 10.0, 0.0, 600.0);
+        OWNER_ACTIVE_WINDOW = b.comment("A puppet's own hits earn its owner Refinement and Grade XP only this long after the owner personally landed a hit or an ability on a real target.",
+                        "The puppet keeps fighting either way: an idle owner just earns nothing from it.")
+                .defineInRange("ownerActiveWindow", 30.0, 0.0, 3600.0);
         b.pop();
 
         b.pop();
