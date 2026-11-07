@@ -50,6 +50,32 @@
       Animator.preview();
       return out;
     },
+    // Hangs a mesh off a bone, the way the game draws something held: {name, bone, positions (blocks), uvs, texture (data URL),
+    // position (pixels from the bone's pivot), rotation (degrees, X then Y then Z), scale}. Resolves once its texture is in.
+    attach(spec) {
+      const bone = Group.all.find(g => g.name === spec.bone);
+      if (!bone || !bone.mesh) return Promise.resolve(false);
+      const old = bone.mesh.getObjectByName(spec.name);
+      if (old) bone.mesh.remove(old);
+      if (!spec.positions) return Promise.resolve(true);
+      return new Promise(resolve => new THREE.TextureLoader().load(spec.texture, tex => {
+        tex.magFilter = THREE.NearestFilter; tex.minFilter = THREE.NearestFilter; tex.flipY = false;
+        tex.colorSpace = THREE.SRGBColorSpace || tex.colorSpace;
+        const geo = new THREE.BufferGeometry();
+        geo.setAttribute('position', new THREE.Float32BufferAttribute(spec.positions, 3));
+        geo.setAttribute('uv', new THREE.Float32BufferAttribute(spec.uvs, 2));
+        geo.computeVertexNormals();
+        const holder = new THREE.Object3D();
+        holder.name = spec.name;
+        holder.position.set(...spec.position);
+        holder.rotation.order = 'XYZ';
+        holder.rotation.set(...spec.rotation.map(d => d * Math.PI / 180));
+        holder.scale.setScalar(16 * spec.scale);
+        holder.add(new THREE.Mesh(geo, new THREE.MeshBasicMaterial({map: tex})));
+        bone.mesh.add(holder);
+        resolve(true);
+      }));
+    },
     rest(views) {
       Animation.selected && Animation.selected.unselect && Animation.selected.unselect();
       Canvas.updateAllBones && Canvas.updateAllBones();

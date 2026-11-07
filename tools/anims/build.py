@@ -8,14 +8,22 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent))
 import kit  # noqa: E402
+import glacial_lance  # noqa: E402
 import melee  # noqa: E402
 import puppet_manipulation  # noqa: E402
 
-SETS = {"puppet_manipulation": puppet_manipulation.ANIMS, "melee": melee.ANIMS}
+SETS = {"puppet_manipulation": puppet_manipulation.ANIMS, "melee": melee.ANIMS, "glacial_lance": glacial_lance.ANIMS}
+# What a set's preview holds: (bone, OBJ, texture, objects, grip). The game draws the same thing from the same numbers.
+HELD = {"glacial_lance": ("right_arm", "src/main/resources/assets/kegare/models/fx/glacial_lance.obj",
+                          "src/main/resources/assets/kegare/textures/entity/glacial_lance.png",
+                          ("grip", "fore", "aft", "head", "tail", "spurs"), glacial_lance.LANCE_GRIP)}
 VIEWS = ("three_quarter", "side", "front")
 
 
 def main(argv):
+    stale = glacial_lance.grip_for(glacial_lance.WOUND, glacial_lance.GRIP_TILT)
+    if tuple(glacial_lance.LANCE_GRIP["rotation"]) != stale:
+        raise SystemExit(f"glacial_lance.LANCE_GRIP's rotation is stale for the wound pose: make it {stale} (and LanceHold.java)")
     for stem, anims in SETS.items():
         path = kit.write(stem, anims)
         print(f"wrote {path.relative_to(kit.ROOT)} ({len(anims)} animations)")
@@ -25,7 +33,11 @@ def main(argv):
         out = kit.ROOT / "run" / "anim_preview"
         out.mkdir(parents=True, exist_ok=True)
         v = Viewer()
-        for anims in SETS.values():
+        for stem, anims in SETS.items():
+            held = HELD.get(stem)
+            if held:
+                bone, obj, texture, objects, grip = held
+                v.attach("held", bone, kit.ROOT / obj, kit.ROOT / texture, objects, grip["position"], grip["rotation"], grip["scale"])
             for a in anims:
                 if only and a.name not in only:
                     continue
@@ -35,6 +47,8 @@ def main(argv):
                 v.sheet(a.name, pv, times, VIEWS, out=out / f"{a.name}.png", scale=0.42, title=f"{a.name}: {a.note}")
                 v.gif(a.name, pv, out / f"{a.name}.gif")
                 print("previewed", a.name)
+            if held:
+                v.detach("held", held[0])
 
 
 if __name__ == "__main__":

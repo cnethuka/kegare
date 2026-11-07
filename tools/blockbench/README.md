@@ -1,4 +1,4 @@
-# Blockbench tooling (Puppet Manipulation's player animations)
+# Blockbench tooling (player animations, Strings, Glacial Lance)
 
 Animations are written pose-to-pose in `tools/anims/<technique>.py` and exported to
 `src/main/resources/assets/kegare/player_animations/<technique>.json` in Blockbench's own Bedrock format, which Player
@@ -22,6 +22,21 @@ Emotecraft template is in the repo.
 `art/blockbench/fist_shell.bbmodel` carries a Severed player's strained forearm (DESIGN.md §3.22); a ready fist's Malice is sprites now, not
 this shell. `build_fist_shell.py` writes the project and both
 OBJs (`models/fx/fist_shell_regular.obj`, `fist_shell_slim.obj`): regular and slim differ only in width. Hand at y=0, faded out by y=6.6 px.
+
+## Glacial Lance: the Python is the source
+
+The Rime rework's style test (DESIGN.md §3.14). `lance_shapes.py` makes the chunks and shards as clusters of convex crystals
+(flat planes, sharp ridges), and `build_glacial_lance.py` lays every face out in a texture atlas and paints it there, sends
+the meshes to the running Blockbench and writes `art/blockbench/glacial_lance.bbmodel`, the OBJ and the textures (paths at
+the top of the script). Blockbench is the viewer here, not the editor: it can't paint a gradient that knows a face's real
+edges, so an edit made in the .bbmodel is lost on the next run.
+
+    python3 -I tools/blockbench/build_glacial_lance.py            # everything
+    python3 -I tools/blockbench/build_glacial_lance.py --preview  # also run/lance_preview/*.png from Blockbench
+
+Its body animations are in `tools/anims/glacial_lance.py`; `build.py --preview` draws the lance in the hand by
+`LANCE_GRIP`, the numbers `LanceHold` uses in game (`GlacialLanceArtTest` checks they match). Blockbench's preview lights
+faces its own way: check the colours in game.
 
 ## Files
 

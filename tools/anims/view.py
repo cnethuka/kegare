@@ -34,6 +34,35 @@ class Viewer:
         doc = {"format_version": "1.8.0", "animations": {name: pal_anim}}
         return self.bb.js(f"kegarePreview.load({json.dumps(doc)}, {json.dumps(name)})")
 
+    def attach(self, name, bone, obj_path, texture_path, objects, position, rotation, scale):
+        """Hangs the named objects of an OBJ (blocks) off a bone, textured, at position/rotation/scale (see preview.js)."""
+        positions, uvs = [], []
+        verts, tex, current = [], [], None
+        for line in Path(obj_path).read_text().splitlines():
+            parts = line.split()
+            if not parts:
+                continue
+            if parts[0] == "o":
+                current = parts[1]
+            elif parts[0] == "v":
+                verts.append([float(x) for x in parts[1:4]])
+            elif parts[0] == "vt":
+                tex.append([float(x) for x in parts[1:3]])
+            elif parts[0] == "f" and current in objects:
+                refs = [p.split("/") for p in parts[1:]]
+                for i in range(1, len(refs) - 1):
+                    for r in (refs[0], refs[i], refs[i + 1]):
+                        positions += verts[int(r[0]) - 1]
+                        u, w = tex[int(r[1]) - 1]
+                        uvs += [u, 1 - w]
+        url = "data:image/png;base64," + base64.b64encode(Path(texture_path).read_bytes()).decode()
+        spec = {"name": name, "bone": bone, "positions": positions, "uvs": uvs, "texture": url,
+                "position": list(position), "rotation": list(rotation), "scale": scale}
+        return self.bb.js(f"kegarePreview.attach({json.dumps(spec)})")
+
+    def detach(self, name, bone):
+        return self.bb.js(f"kegarePreview.attach({json.dumps({'name': name, 'bone': bone})})")
+
     def frames(self, name, times, views):
         rows = self.bb.js(f"kegarePreview.frames({json.dumps(name)}, {json.dumps(list(times))}, {json.dumps(list(views))})")
         return [[_img(u) for u in row] for row in rows]
