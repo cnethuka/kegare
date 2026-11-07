@@ -92,37 +92,40 @@ public final class MeleeFxAuthoring {
 
     /** The push-off: air slapped out from under the feet, left behind where they were. */
     private static FX dashBurst() {
-        ParticleEmitter puffs = burstEmitter("puffs", 12, 12);
+        ParticleEmitter puffs = burstEmitter("puffs", 22, 22);
         ParticleConfig c = puffs.config;
         c.setSimulationSpace(ParticleConfig.Space.World);
-        c.setStartLifetime(range(9, 15));
-        c.setStartSpeed(range(1.2f, 2.6f));
-        c.setStartSize(uniform(range(0.35f, 0.6f)));
+        c.setStartLifetime(range(12, 20));
+        c.setStartSpeed(range(1.6f, 3.4f));
+        c.setStartSize(uniform(range(0.5f, 0.9f)));
         Sphere low = sphere(0.35f);
         low.setRadiusThickness(0f);
         c.shape.setShape(low);
         c.shape.setScale(new NumberFunction3(1f, 0.1f, 1f));
         c.colorOverLifetime.setEnable(true);
-        c.colorOverLifetime.setColor(gradient(0x90FFFFFF, 0x60D8EAF5, 0x00D8EAF5));
+        c.colorOverLifetime.setColor(gradient(0xE0FFFFFF, 0xA0D8EAF5, 0x00D8EAF5));
         grow(c, 0.4f);
         material(puffs, mist());
         puffs.transform().localPosition(new Vector3f(0, 0.15f, 0));
-        return fx(groundRing("ring", 7, 2.4f, 0xB0FFFFFF, 0x00D8EAF5, 0.9f, 0.96f, 1f, 1.1f), puffs);
+        ParticleEmitter lines = sparks("lines", 16, 5f, 10f, 5, 9, 0.05f, 4f, WHITE, 0x00D8EAF5, 0.9f, 0.96f, 1f, 1.8f);
+        lines.config.shape.setScale(new NumberFunction3(1f, 0.1f, 1f));
+        lines.transform().localPosition(new Vector3f(0, 0.25f, 0));
+        return fx(groundRing("ring", 10, 3.6f, 0xF0FFFFFF, 0x00D8EAF5, 0.9f, 0.96f, 1f, 1.6f), puffs, lines);
     }
 
     /** A low wake of kicked-up air, along the ground. */
     private static ParticleEmitter wake() {
-        ParticleEmitter wake = emitter("wake", false, 5);
+        ParticleEmitter wake = emitter("wake", false, 6);
         ParticleConfig w = wake.config;
         w.setSimulationSpace(ParticleConfig.Space.World);
-        w.setMaxParticles(14);
-        w.setStartLifetime(range(8, 13));
+        w.setMaxParticles(24);
+        w.setStartLifetime(range(10, 16));
         w.setStartSpeed(NumberFunction.constant(0.1f));
-        w.setStartSize(uniform(range(0.4f, 0.65f)));
-        w.emission.setEmissionRate(NumberFunction.constant(2f));
+        w.setStartSize(uniform(range(0.55f, 0.85f)));
+        w.emission.setEmissionRate(NumberFunction.constant(3f));
         w.shape.setShape(sphere(0.2f));
         w.colorOverLifetime.setEnable(true);
-        w.colorOverLifetime.setColor(gradient(0x70FFFFFF, 0x00D8EAF5));
+        w.colorOverLifetime.setColor(gradient(0xC0FFFFFF, 0x00D8EAF5));
         grow(w, 0.5f);
         material(wake, mist());
         wake.transform().localPosition(new Vector3f(0, 0.2f, 0));
@@ -131,18 +134,18 @@ public final class MeleeFxAuthoring {
 
     /** While the dash lasts: tall pale afterimages left along the way, so anyone watching can see where it went, and the wake. */
     private static FX dashTrail() {
-        ParticleEmitter after = emitter("afterimages", false, 5);
+        ParticleEmitter after = emitter("afterimages", false, 6);
         ParticleConfig c = after.config;
         c.setSimulationSpace(ParticleConfig.Space.World);
-        c.setMaxParticles(10);
-        c.setStartLifetime(range(5, 7));
+        c.setMaxParticles(16);
+        c.setStartLifetime(range(8, 11));
         c.setStartSpeed(NumberFunction.constant(0f));
-        c.setStartSize(new NumberFunction3(NumberFunction.constant(0.42f), NumberFunction.constant(1.45f), NumberFunction.constant(1f)));
-        c.emission.setEmissionRate(NumberFunction.constant(1.5f));
+        c.setStartSize(new NumberFunction3(NumberFunction.constant(0.5f), NumberFunction.constant(1.6f), NumberFunction.constant(1f)));
+        c.emission.setEmissionRate(NumberFunction.constant(1f));
         c.shape.setScale(new NumberFunction3(0, 0, 0));
         c.renderer.setRenderMode(ParticleRendererSetting.Mode.VerticalBillboard);
-        fadeOut(c, 0x48FFFFFF, 0x00D8EAF5);
-        material(after, glow(0.85f, 0.94f, 1f, 0.7f));
+        fadeOut(c, 0x90FFFFFF, 0x00D8EAF5);
+        material(after, glow(0.85f, 0.94f, 1f, 0.95f));
         after.transform().localPosition(new Vector3f(0, 0.95f, 0));
         return fx(after, wake());
     }
