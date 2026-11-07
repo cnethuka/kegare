@@ -35,6 +35,12 @@
     ],
     "subtitle": "subtitles.kegare.swap.flip"
   },
+  "swap.shove": {
+    "sounds": [
+      "kegare:swap/shove"
+    ],
+    "subtitle": "subtitles.kegare.swap.shove"
+  },
   "swap.snap": {
     "sounds": [
       "kegare:swap/snap"

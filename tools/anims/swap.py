@@ -95,14 +95,16 @@ anchor_recall = (Anim("anchor_recall", 0.6, fade_in=1, fade_out=3,
                  .key(0.3, pose(hip=(-2, 0, 0), right_arm=(-64, -30, 0), left_arm=(-66, 28, 0)))
                  .key(0.45, DROP))
 
-# Send Off: a clap, then both palms shoved straight out at the target, the body leaning in behind them.
+# Send Off: a clap, then both palms shoved out at the target, the body leaning in behind them. The hands go out apart, shoulder-width
+# and about level, so in first person they come up at the bottom corners (drawn in to meet, they would fill the middle). Anchor's
+# recall reaches out at one side and pulls in; this pushes away, both hands at once.
 send_off_cast = (Anim("send_off_cast", 0.7, fade_in=1, fade_out=4,
-                      note="A clap, then both palms shoved straight out at the target, the body leaning in behind them; held, "
-                           "then dropped.")
+                      note="A clap, then both palms shoved out at the target, a shoulder's width apart, the body leaning in behind "
+                           "them; held, then dropped.")
                  .key(0.05, clap(2, -78, 26))
                  .key(0.12, clap(4, -76, 28), "linear")
-                 .key(0.22, pose(hip=(14, 0, 0), hip_pos=(0, -0.4, -0.8), right_arm=(-92, -12, 0), left_arm=(-92, 12, 0)), "linear")
-                 .key(0.4, pose(hip=(12, 0, 0), hip_pos=(0, -0.3, -0.6), right_arm=(-88, -10, 0), left_arm=(-88, 10, 0)))
+                 .key(0.22, pose(hip=(8, 0, 0), right_arm=(-88, 14, 12), left_arm=(-88, -14, -12)), "linear")
+                 .key(0.4, pose(hip=(7, 0, 0), right_arm=(-84, 12, 12), left_arm=(-84, -12, -12)))
                  .key(0.5, DROP))
 
 # Exchange: a clap, then the hands slide past each other, each to the other side (the trade), and part.
@@ -140,7 +142,8 @@ ALL = [positions_clap, switchback_cast, switchback_snap, awareness_cast, mimic_c
        exchange_cast, momentum_cast, total_swap_clap]
 # The rework lands one move at a time: the moves done so far are built from here, the rest still play their old hand-keyed
 # animation from swap_legacy.json (the swap.json before the rework), which goes once every move is done.
-DONE = {"positions_clap", "switchback_cast", "switchback_snap", "awareness_cast", "mimic_cast", "anchor_throw", "anchor_recall"}
+DONE = {"positions_clap", "switchback_cast", "switchback_snap", "awareness_cast", "mimic_cast", "anchor_throw", "anchor_recall",
+        "send_off_cast"}
 ANIMS = [a for a in ALL if a.name in DONE]
 _LEGACY = json.loads((Path(__file__).parent / "swap_legacy.json").read_text())["animations"]
 LEGACY = {name: anim for name, anim in _LEGACY.items() if name not in DONE}

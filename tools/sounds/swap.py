@@ -112,5 +112,18 @@ def token_land() -> list[float]:
     return finish(room(mix((1.0, tick), (0.35, chime)), 0.7, 0.12), 0.7)
 
 
+def shove() -> list[float]:
+    """Send Off: the clap, then both palms pushed out, a short low rush of air swelling and cut off, as if something was sent away."""
+    seconds = 0.5
+    n = int(seconds * RATE)
+    c = _clap_body(59, [0.0, 0.007, 0.014], 1450, 1.1, 0.0032, 0.04, 0.5, seconds=seconds)
+    swell = [0.0] * n
+    start, peak, end = int(0.07 * RATE), int(0.16 * RATE), int(0.24 * RATE)
+    for i in range(start, end):
+        swell[i] = (i - start) / (peak - start) if i < peak else max(0.0, 1 - (i - peak) / (end - peak)) ** 1.5
+    push = mul(lowpass(bandpass(noise(seconds, 61), 520, 0.9), 1600), swell)
+    return finish(room(mix((1.0, c), (0.75, push)), 0.8, 0.12))
+
+
 SOUNDS = {"clap": clap, "double_clap": double_clap, "snap": snap, "cupped_clap": cupped_clap, "big_clap": big_clap, "flip": flip,
-          "flick": flick, "token_land": token_land}
+          "flick": flick, "token_land": token_land, "shove": shove}

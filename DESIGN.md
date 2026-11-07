@@ -1061,7 +1061,7 @@ Package `com.cnethuka.kegare.innate_technique.rime`. **Rarity: RARE.** All numbe
   | Shatter Shell (Rime Shell) | own cast animation, an icy burst, glass and amethyst shattering |
   | Switchback (Positions) | a double clap, seen and heard: its own animation (`switchback_cast`: two claps, then the right hand turned back to the chest) and sound (`swap.double_clap`, at both ends), and the countdown rings go up on both as it's cast |
   | Mimic (Awareness) | its own cupped clap up by the face (animation and `swap.cupped_clap`), and the caster's whole body flashing teal twice (`mimic_flicker`), which everyone nearby sees; the trick is the disguise afterwards, not a hidden cast |
-  | Send Off (Anchor) | own two-handed shove; the target vanishes onto the glowing anchor |
+  | Send Off (Anchor) | a clap and its own two-handed shove (`send_off_cast`, both palms pushed out at the target), with a rush of air heard at the caster (`swap.shove`); the target is gone along a teal line onto the token, a lower clap at both ends |
   | Momentum Exchange (Exchange) | own arms-up sweep, a burst on both players, a lower teleport sound |
   | Possess (Puppet Creation) | the puppet jolts awake, arms flung wide (`possess_cast`), a soul-escape sound at the body and a lavender thread shooting to the puppet; afterwards the empty body stands slack, a thread running from it to the puppet |
   | Focus (Directive) | own wind-up and a hard point at the target, held, the other hand yanked back (`focus_point`); a bell at the target and a lavender mark on it for 2 s (a ring tightening round it, a bead over its head) |
@@ -1311,12 +1311,14 @@ smooth and modern in Swap's teal, nothing heavy, blurry or lingering, never the 
   - `anchor_throw` (Anchor's throw): the token flicked forward underhand, the right hand low and back, then out at the
     right side a little below level. `anchor_recall` (its swap): the right hand reaches out at the right side, as if to
     the token, and is pulled in to meet the left in a clap low before the chest.
+  - `send_off_cast` (Send Off): a clap, then both palms shoved out at the target, a shoulder's width apart and level,
+    the body leaning in behind them; held, then dropped. Anchor's recall reaches out at one side and pulls in, this
+    pushes away with both hands at once. In your own first person the shoved hands come up at the bottom corners.
   - `mimic_cast` (Mimic): a cupped clap up by the right side of the face, the head tipped toward it; then the right
     hand drawn down past the cheek, the face taken. In your own first person the hands are always vanilla's: up by
     the face they'd only sweep across the view.
   - The moves not reworked yet still play their hand-keyed animations, carried as they are from
-    `tools/anims/swap_legacy.json`: `swap_snap` (Total Swap), `send_off_cast`,
-    `exchange_cast`, `momentum_cast`.
+    `tools/anims/swap_legacy.json`: `swap_snap` (Total Swap), `exchange_cast`, `momentum_cast`.
   - In your own first person, a Swap animation shows its hands only while you look about level (no more than 15° down,
     `PlayerAnimations.handsWhileLevel`). They hang from the body, which doesn't tip with the view, so at chest height
     they sit at the bottom corners of a level view; looking further down they'd come up into its middle, so the hands
@@ -1371,8 +1373,9 @@ smooth and modern in Swap's teal, nothing heavy, blurry or lingering, never the 
   - `exchange_transfer`: orbs travelling each way along the line, one per exchanged effect.
   - `momentum_burst` (both players) and `total_swap_burst` (both players).
 - Sounds: Kegare's own (§3.10, `tools/sounds/swap.py`), each with a subtitle, at both ends of the swap:
-  - `swap.clap` ("Hands clap", a crisp clap): Positions, and for now Total Swap and Send Off until they get their
-    own. Anchor's recall claps a shade lower (pitch 0.94), at the caster and the token.
+  - `swap.clap` ("Hands clap", a crisp clap): Positions, and for now Total Swap until it gets its own. Anchor's
+    recall claps a shade lower (pitch 0.94), at the caster and the token; Send Off the same at the target and the token.
+  - `swap.shove` ("Hands shove", the clap and a short low rush of air, cut off): Send Off's cast, at the caster.
   - `swap.double_clap` ("Hands clap twice"): Switchback's cast. `swap.snap` ("Fingers snap"): its swap back.
   - Awareness: `swap.clap` a little higher (pitch 1.12) on both, and `swap.flip` ("Card flips") on both as the
     disguise lands (Total Swap's disguise too).
