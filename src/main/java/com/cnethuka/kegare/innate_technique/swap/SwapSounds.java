@@ -28,6 +28,10 @@ public final class SwapSounds {
     public static final Clap POSITIONS = new Clap(KegareSounds.SWAP_CLAP, 1f, 1f);
     /** Switchback's cast: two claps, a beat apart. */
     public static final Clap SWITCHBACK = new Clap(KegareSounds.SWAP_DOUBLE_CLAP, 1f, 1f);
+    /** Awareness's cast: the clap, a little higher. */
+    public static final Clap AWARENESS = new Clap(KegareSounds.SWAP_CLAP, 0.9f, 1.12f);
+    /** A disguise landing (Awareness, Total Swap): a card riffled over. */
+    public static final Clap CARD_FLIP = new Clap(KegareSounds.SWAP_FLIP, 0.9f, 1f);
     /** Switchback's swap back: a finger snap. */
     public static final Clap SWITCHBACK_BACK = new Clap(KegareSounds.SWAP_SNAP, 1f, 1f);
 

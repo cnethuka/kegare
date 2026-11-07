@@ -19,12 +19,13 @@ public final class SwapIds {
     public static final ResourceLocation ANIM_EXCHANGE_CAST = Kegare.id("exchange_cast");
     public static final ResourceLocation ANIM_MOMENTUM_CAST = Kegare.id("momentum_cast");
 
-    // Photon effects (teal; never Rime's ice blue). What Swap draws itself is in SwapFx.
+    // Effects (teal; never Rime's ice blue). Photon's are authored in SwapFxAuthoring; what Swap draws itself is in SwapFx.
     public static final ResourceLocation FX_SWAP_DEPART = fx("swap_depart");
     public static final ResourceLocation FX_SWAP_ARRIVE = fx("swap_arrive");
     public static final ResourceLocation FX_SWAP_LINK = fx("swap_link");
     public static final ResourceLocation FX_SWITCHBACK_TIMER = fx("switchback_timer");
     public static final ResourceLocation FX_AWARENESS_SHIMMER = fx("awareness_shimmer");
+    public static final ResourceLocation FX_AWARENESS_FLIP = fx("awareness_flip");
     public static final ResourceLocation FX_MIMIC_FLICKER = fx("mimic_flicker");
     public static final ResourceLocation FX_ANCHOR_MARKER = fx("anchor_marker");
     public static final ResourceLocation FX_ANCHOR_TRAIL = fx("anchor_trail");
@@ -35,11 +36,13 @@ public final class SwapIds {
     /** Both ends of every swap, played at a position and naming who moved (the afterimage and the flicker are drawn from them). */
     public static final Visual DEPART = Visual.effect(FX_SWAP_DEPART, Visual.Anchor.BODY);
     public static final Visual ARRIVE = Visual.effect(FX_SWAP_ARRIVE, Visual.Anchor.BODY);
-    /** Switchback: a faint ring on both, from the cast until the swap back. */
+    /** Switchback: the countdown ring on both, from the cast until the swap back (drawn by SwapFx). */
     public static final Visual SWITCHBACK_TIMER = Visual.effect(FX_SWITCHBACK_TIMER, Visual.Anchor.FEET);
     public static final String SWITCHBACK_TIMER_KEY = "kegare:swap/switchback_timer/";
-    /** On a disguised player, sent to that player only (so they know it's on). */
+    /** On a disguised player, sent to that player only (so they know it's on): the corner brackets on their screen (SwapHud). */
     public static final Visual AWARENESS_SHIMMER = Visual.effect(FX_AWARENESS_SHIMMER, Visual.Anchor.BODY);
+    /** A disguise landing on someone, played at them and naming them: the card-flip ripple down the body (drawn by SwapFx). */
+    public static final Visual AWARENESS_FLIP = Visual.effect(FX_AWARENESS_FLIP, Visual.Anchor.BODY);
     public static final String AWARENESS_SHIMMER_KEY = "kegare:swap/awareness_shimmer";
     /** The anchor's glow while it waits. */
     public static final Visual ANCHOR_MARKER = Visual.effect(FX_ANCHOR_MARKER, Visual.Anchor.BODY);

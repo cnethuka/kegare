@@ -5,10 +5,9 @@ import com.cnethuka.kegare.innatetechnique.AbilityContext;
 import com.cnethuka.kegare.innatetechnique.CastManager;
 import com.cnethuka.kegare.innatetechnique.CastType;
 import com.cnethuka.kegare.innatetechnique.visual.AbilityVisuals;
+import com.cnethuka.kegare.innatetechnique.visual.VisualService;
 import java.util.Optional;
 import net.minecraft.server.level.ServerPlayer;
-import net.minecraft.sounds.SoundEvents;
-import net.minecraft.sounds.SoundSource;
 
 /**
  * Awareness (INSTANT): a disguise swap for {@code duration} seconds. Everyone else sees you as the target and the
@@ -35,14 +34,18 @@ public final class AwarenessAbility extends SwapAbility {
             CastManager.fizzleKeepingCost(caster);
             return;
         }
+        SwapSounds.AWARENESS.at(caster);
+        SwapSounds.AWARENESS.at(target);
         disguisePair(caster, target, SwapConfig.ticks(SwapConfig.AWARENESS_DURATION), Disguises.Kind.AWARENESS);
     }
 
-    /** Each looks like the other (Awareness, and Total Swap's disguise). */
+    /** Each looks like the other (Awareness, and Total Swap's disguise): a card flips over on both as the looks change hands. */
     static void disguisePair(ServerPlayer caster, ServerPlayer target, int ticks, Disguises.Kind kind) {
         Disguises.apply(caster, target, ticks, kind, caster);
         Disguises.apply(target, caster, ticks, kind, caster);
-        caster.level().playSound(null, caster.getX(), caster.getY(), caster.getZ(), SoundEvents.ILLUSIONER_MIRROR_MOVE, SoundSource.PLAYERS, 0.8f, 1.2f);
-        target.level().playSound(null, target.getX(), target.getY(), target.getZ(), SoundEvents.ILLUSIONER_MIRROR_MOVE, SoundSource.PLAYERS, 0.8f, 1.2f);
+        for (ServerPlayer p : new ServerPlayer[] {caster, target}) {
+            SwapSounds.CARD_FLIP.at(p);
+            VisualService.playAt(p.serverLevel(), Swapper.bodyPos(p), SwapIds.AWARENESS_FLIP, p.getId());
+        }
     }
 }

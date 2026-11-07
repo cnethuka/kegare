@@ -1290,7 +1290,8 @@ The HUD and Sorcerer screen show Anchor's current stage cost (throw or recall).
   - visible armor and held items, lent from the face for the length of one render (`RenderPlayerEvent`). If the
     face isn't loaded on that client, the slots are drawn empty rather than showing the wearer's own gear.
   - These are client mixins (`kegare.mixins.json`); Swap's only server ones are its tracker accessors.
-- Only disguised players see `awareness_shimmer` (sent to them alone), so they know it's on.
+- Only disguised players see the `awareness_shimmer` loop (sent to them alone, for as long as the disguise lasts), so
+  they know it's on: crisp corner brackets on their own screen (see Visuals).
 - **API** (either side): `Disguises.isDisguised(entity)`, `getRealIdentity(entity)`, `getDisguisedAs(entity)`; server:
   `get(player)`, `wearing(face)`. Anything that must see through disguises asks here.
 
@@ -1303,9 +1304,11 @@ smooth and modern in Swap's teal, nothing heavy, blurry or lingering, never the 
   - `switchback_cast` (Switchback): a double clap, together, a hand's width apart, together again harder; then the right
     hand turns back toward the chest, the come-back. `switchback_snap` (its swap back): the right hand flicked out to the
     side at chest height and snapped down and in.
+  - `awareness_cast` (Awareness): a clap, then the hands turn over and fan open, low and wide, a card shown front and
+    back; held a moment, then dropped.
   - The moves not reworked yet still play their hand-keyed animations, carried as they are from
-    `tools/anims/swap_legacy.json`: `swap_snap` (Total Swap), `awareness_cast`, `mimic_cast`, `anchor_throw`,
-    `anchor_recall`, `send_off_cast`, `exchange_cast`, `momentum_cast`.
+    `tools/anims/swap_legacy.json`: `swap_snap` (Total Swap), `mimic_cast`, `anchor_throw`, `anchor_recall`,
+    `send_off_cast`, `exchange_cast`, `momentum_cast`.
   - In your own first person, a Swap animation shows its hands only while you look about level (no more than 25° down,
     `PlayerAnimations.handsWhileLevel`). They hang from the body, which doesn't tip with the view, so at chest height
     they sit at the bottom corners of a level view; looking further down they'd come up into its middle, so the hands
@@ -1327,10 +1330,18 @@ smooth and modern in Swap's teal, nothing heavy, blurry or lingering, never the 
   starts; gone the moment the swap back comes or it's called off. It's the `switchback_timer` loop, which runs for the
   delay (its `growTicks`; a late viewer gets the time left) and is drawn by the move, not Photon. Reduced: the same.
   Vanilla: a ring of small teal dust specks as each second starts.
+- The **card flip** as a disguise lands (Awareness, Total Swap; `awareness_flip`, played at both and naming them,
+  drawn by `SwapFx`): thin teal slats round the body flip over one after another from the head down, each showing
+  its pale back as it turns, like a card turned over; a third of a second, then gone. Everyone sees it on both;
+  never round your own first-person camera. Reduced: the same. Vanilla: a short run of teal specks down either side
+  of the body.
+- The disguised player's **brackets** (`SwapHud`, the `awareness_shimmer` loop: Awareness, Mimic and Total Swap):
+  thin teal L-brackets one GUI pixel thick in the four corners of their own screen, coming in from the corners as
+  the disguise lands, then breathing slowly; gone the moment it ends. Nothing near the middle of the view, nothing
+  for anyone else, the same at every effects setting (they're HUD, not particles); hidden with the HUD (F1).
 - Photon effects (`SwapFxAuthoring` → `fx/swap/`), teal with Malice violet, with vanilla particle fallbacks:
   - `swap_link`: beads along the line between the two players (`SwapLink` payload; the client places them): Anchor's
     recall and Send Off.
-  - `awareness_shimmer`: on disguised players, for them only.
   - `mimic_flicker`: Mimic's cast, a teal glow flickering twice over the caster with glitch motes, seen by everyone.
   - `anchor_marker` (loops while the anchor waits) and `anchor_trail` (in flight).
   - `exchange_transfer`: orbs travelling each way along the line, one per exchanged effect.
@@ -1339,8 +1350,10 @@ smooth and modern in Swap's teal, nothing heavy, blurry or lingering, never the 
   - `swap.clap` ("Hands clap", a crisp clap): Positions, and for now Total Swap, Anchor's recall and Send Off until
     they get their own.
   - `swap.double_clap` ("Hands clap twice"): Switchback's cast. `swap.snap` ("Fingers snap"): its swap back.
-  - `swap.cupped_clap`, `swap.big_clap` and `swap.flip` are registered for the moves still to come. Exchange and
-    Momentum Exchange still use the enderman teleport, Awareness the illusioner's mirror move, Mimic an evoker spell.
+  - Awareness: `swap.clap` a little higher (pitch 1.12) on both, and `swap.flip` ("Card flips") on both as the
+    disguise lands (Total Swap's disguise too).
+  - `swap.cupped_clap` and `swap.big_clap` are registered for the moves still to come. Exchange and Momentum Exchange
+    still use the enderman teleport, Mimic an evoker spell.
 
 **Art:** emblem `gui/emblem/swap.png`, icons for all nine abilities (`gui/ability/`), the anchor's item sprite
 (`item/swap_anchor.png`). The Sorcerer screen shows a special's icon in its details when it has one.

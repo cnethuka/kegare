@@ -76,6 +76,9 @@ public final class SwapFx {
     /** Switchback's countdown on an entity: the loop's key (its time comes from {@link ClientVisuals#loopTime}). */
     private record Countdown(int entityId, String key) {}
 
+    /** A disguise landing on an entity: the card-flip ripple down its body. */
+    private record Flip(int entityId, long born) {}
+
     /** Photon's part of an effect, played a tick late. */
     private record Later(Vec3 pos, Visual visual, long due) {}
 
@@ -85,8 +88,13 @@ public final class SwapFx {
     private static final Map<Integer, Snap> SNAP = new HashMap<>();
     private static final List<Later> LATER = new ArrayList<>();
     private static final List<Countdown> COUNTDOWNS = new ArrayList<>();
-    /** Vanilla's stand-in for a countdown ring: small teal dust, gone almost at once. */
-    private static final DustParticleOptions COUNTDOWN_DUST = new DustParticleOptions(new Vector3f(0.18f, 0.9f, 0.82f), 0.5f);
+    private static final List<Flip> FLIPS = new ArrayList<>();
+    /** The card-flip ripple: slats down the body, each this many ticks after the one above, each turning over in FLIP_TICKS. */
+    private static final int FLIP_SLATS = 9;
+    private static final float FLIP_STAGGER = 0.7f;
+    private static final float FLIP_TICKS = 3f;
+    /** Vanilla's stand-in for Swap's drawn effects: small teal dust, gone almost at once. */
+    private static final DustParticleOptions SPECK = new DustParticleOptions(new Vector3f(0.18f, 0.9f, 0.82f), 0.5f);
     private static long clock;
     @Nullable private static PlayerModel<AbstractClientPlayer> wide, slim;
 
@@ -184,6 +192,7 @@ public final class SwapFx {
     static void tick(ClientLevel level) {
         clock++;
         tickCountdowns(level);
+        FLIPS.removeIf(f -> clock - f.born() > FLIP_SLATS * FLIP_STAGGER + FLIP_TICKS + 1);
         if (!LATER.isEmpty()) {
             List<Later> due = LATER.stream().filter(l -> l.due() <= clock).toList();
             LATER.removeAll(due);
@@ -230,6 +239,73 @@ public final class SwapFx {
         SNAP.clear();
         LATER.clear();
         COUNTDOWNS.clear();
+        FLIPS.clear();
+    }
+
+    // ---------------------------------------------------------------- Awareness's card flip
+
+    /**
+     * A disguise landed on someone (Awareness, Total Swap): a ripple of thin teal slats round the body, flipping over one after
+     * another from the head down, each showing its pale back as it turns, like a card turned over; a third of a second, then
+     * gone. Everyone sees it on both; never round your own first-person camera. Vanilla: a short run of teal dust down the body.
+     */
+    static void flip(ClientLevel level, Vec3 pos, int entityId) {
+        Entity entity = entityId >= 0 ? level.getEntity(entityId) : null;
+        if (entity == null) return;
+        if (drawn()) {
+            FLIPS.add(new Flip(entityId, clock));
+            return;
+        }
+        if (entity == Minecraft.getInstance().player && Minecraft.getInstance().options.getCameraType().isFirstPerson()) return;
+        // Either side of the body (in its middle they'd be hidden inside it), at the height of each slat.
+        double out = entity.getBbWidth() / 2 + 0.12, yaw = Math.toRadians(entity.getYRot());
+        double sideX = Math.cos(yaw) * out, sideZ = Math.sin(yaw) * out;
+        for (int i = 0; i < FLIP_SLATS; i++) {
+            double y = entity.getY() + entity.getBbHeight() * (1 - (i + 0.5) / FLIP_SLATS);
+            level.addParticle(SPECK, entity.getX() + sideX, y, entity.getZ() + sideZ, 0, 0, 0);
+            level.addParticle(SPECK, entity.getX() - sideX, y, entity.getZ() - sideZ, 0, 0, 0);
+        }
+    }
+
+    private static void renderFlips(PoseStack pose, MultiBufferSource.BufferSource buffers, Vec3 cam, float partial) {
+        Minecraft mc = Minecraft.getInstance();
+        if (mc.level == null) return;
+        boolean firstPerson = mc.options.getCameraType().isFirstPerson();
+        RenderType type = RenderType.entityTranslucentEmissive(WHITE);
+        VertexConsumer out = buffers.getBuffer(type);
+        for (Flip f : FLIPS) {
+            Entity entity = mc.level.getEntity(f.entityId());
+            if (entity == null || firstPerson && entity == mc.player) continue;
+            float age = clock - f.born() + partial;
+            float half = entity.getBbWidth() / 2f + 0.07f, height = entity.getBbHeight(), slat = height / FLIP_SLATS;
+            Vec3 feet = entity.getPosition(partial);
+            float yaw = entity instanceof LivingEntity living ? Mth.rotLerp(partial, living.yBodyRotO, living.yBodyRot) : entity.getYRot();
+            Matrix4f m = pose.last().pose().translate((float) (feet.x - cam.x), (float) (feet.y - cam.y), (float) (feet.z - cam.z), new Matrix4f())
+                    .rotateY(-yaw * Mth.DEG_TO_RAD);
+            for (int i = 0; i < FLIP_SLATS; i++) {
+                float p = (age - i * FLIP_STAGGER) / FLIP_TICKS;
+                if (p < 0f || p > 1f) continue;
+                float open = Math.abs(Mth.cos(p * Mth.PI));         // edge-on halfway through the turn
+                float h = slat * 0.42f * Math.max(open, 0.12f);
+                float y = height - (i + 0.5f) * slat;
+                int rgb = p < 0.5f ? GLOW : PALE;                   // its face, then its back
+                band(out, m, half, y - h, y + h, rgb, 0.9f);
+            }
+        }
+        buffers.endBatch(type);
+    }
+
+    /** A band round a body-sized box, from {@code y0} to {@code y1}: four upright faces {@code half} out from the middle. */
+    private static void band(VertexConsumer out, Matrix4f m, float half, float y0, float y1, int rgb, float alpha) {
+        int a = Math.round(alpha * 255);
+        float[][] corners = {{-half, -half}, {half, -half}, {half, half}, {-half, half}};
+        for (int k = 0; k < 4; k++) {
+            float[] c0 = corners[k], c1 = corners[(k + 1) % 4];
+            vertex(out, m, c0[0], y0, c0[1], rgb, a);
+            vertex(out, m, c1[0], y0, c1[1], rgb, a);
+            vertex(out, m, c1[0], y1, c1[1], rgb, a);
+            vertex(out, m, c0[0], y1, c0[1], rgb, a);
+        }
     }
 
     // ---------------------------------------------------------------- Switchback's countdown
@@ -264,7 +340,7 @@ public final class SwapFx {
             float radius = countdownRadius(entity);
             for (int i = 0; i < 12; i++) {
                 double a = Mth.TWO_PI * i / 12.0;
-                level.addParticle(COUNTDOWN_DUST, entity.getX() + Math.cos(a) * radius, entity.getY() + 0.1, entity.getZ() + Math.sin(a) * radius,
+                level.addParticle(SPECK, entity.getX() + Math.cos(a) * radius, entity.getY() + 0.1, entity.getZ() + Math.sin(a) * radius,
                         0, 0, 0);
             }
         }
@@ -308,9 +384,10 @@ public final class SwapFx {
     // ---------------------------------------------------------------- drawing
 
     static void render(PoseStack pose, Vec3 cam, float partial) {
-        if ((AFTERIMAGES.isEmpty() && RINGS.isEmpty() && COUNTDOWNS.isEmpty()) || !drawn()) return;
+        if ((AFTERIMAGES.isEmpty() && RINGS.isEmpty() && COUNTDOWNS.isEmpty() && FLIPS.isEmpty()) || !drawn()) return;
         MultiBufferSource.BufferSource buffers = Minecraft.getInstance().renderBuffers().bufferSource();
         if (!COUNTDOWNS.isEmpty()) renderCountdowns(pose, buffers, cam, partial);
+        if (!FLIPS.isEmpty()) renderFlips(pose, buffers, cam, partial);
         Minecraft mc = Minecraft.getInstance();
         boolean firstPerson = mc.options.getCameraType().isFirstPerson();
         for (Afterimage a : AFTERIMAGES) {

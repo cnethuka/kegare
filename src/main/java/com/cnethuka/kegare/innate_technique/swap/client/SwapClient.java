@@ -73,7 +73,6 @@ public final class SwapClient {
         VanillaFallback.register(SwapIds.FX_SWAP_DEPART, new VanillaFallback.Spec(TEAL_FLICK, 1, 12, 0.3, 0.02));
         VanillaFallback.register(SwapIds.FX_SWAP_ARRIVE, new VanillaFallback.Spec(TEAL_FLICK, 1, 8, 0.3, 0.02));
         VanillaFallback.register(SwapIds.FX_SWAP_LINK, new VanillaFallback.Spec(TEAL_DUST, 1, 2, 0.05, 0.0));
-        VanillaFallback.register(SwapIds.FX_AWARENESS_SHIMMER, new VanillaFallback.Spec(ParticleTypes.WITCH, 1, 4, 0.6, 0.0));
         VanillaFallback.register(SwapIds.FX_MIMIC_FLICKER, new VanillaFallback.Spec(TEAL_DUST, 1, 24, 0.4, 0.0));
         VanillaFallback.register(SwapIds.FX_ANCHOR_MARKER, new VanillaFallback.Spec(TEAL_DUST, 1, 6, 0.2, 0.0));
         VanillaFallback.register(SwapIds.FX_ANCHOR_TRAIL, new VanillaFallback.Spec(TEAL_DUST, 2, 4, 0.05, 0.0));
@@ -88,6 +87,13 @@ public final class SwapClient {
         NeoForge.EVENT_BUS.addListener(SwapClient::onRenderLevel);
         // Switchback's countdown ring is drawn here (SwapFx), not by Photon: it has to drain in step with the swap back.
         ClientVisuals.drawnByMove(SwapIds.FX_SWITCHBACK_TIMER);
+        // So is the disguised player's own reminder (SwapHud's brackets), and the card flip as a disguise lands (SwapFx).
+        ClientVisuals.drawnByMove(SwapIds.FX_AWARENESS_SHIMMER);
+        SwapHud.init(modBus);
+        ClientVisuals.onPlayAt(SwapIds.FX_AWARENESS_FLIP, (level, pos, entityId, visual) -> {
+            SwapFx.flip(level, pos, entityId);
+            return true;
+        });
         ClientVisuals.listen(new ClientVisuals.Listener() {
             @Override
             public void loopStarted(Entity entity, String key, Visual visual) {

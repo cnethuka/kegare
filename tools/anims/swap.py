@@ -58,14 +58,14 @@ switchback_snap = (Anim("switchback_snap", 0.5, fade_in=1, fade_out=3,
                    .key(0.12, pose(hip=(4, -4, 0), right_arm=(-58, -6, 18)), "linear")
                    .key(0.35, pose(hip=(1, 0, 0), right_arm=(-30, 0, 12))))
 
-# Awareness: a clap, then the hands turn over and open wide at chest height like a card shown both sides: the looks change hands.
+# Awareness: a clap, then the hands turn over and fan open, low and wide, like a card shown both sides: the looks change hands.
 awareness_cast = (Anim("awareness_cast", 0.75, fade_in=1, fade_out=4,
-                       note="A clap, then the hands turn over and fan open wide at chest height, a card shown front and back; held "
-                            "a moment, then dropped.")
+                       note="A clap, then the hands turn over and fan open low and wide, a card shown front and back; held a "
+                            "moment, then dropped.")
                   .key(0.05, clap(4, -84, 26))
                   .key(0.14, clap(6, -82, 28, -0.2), "linear")
-                  .key(0.26, pose(hip=(-4, 0, 0), right_arm=(-80, 30, 48), left_arm=(-80, -30, -48)))
-                  .key(0.42, pose(hip=(-5, 0, 0), right_arm=(-76, 34, 54), left_arm=(-76, -34, -54)))
+                  .key(0.26, pose(hip=(-4, 0, 0), right_arm=(-62, 30, 40), left_arm=(-62, -30, -40)))
+                  .key(0.42, pose(hip=(-5, 0, 0), right_arm=(-56, 34, 46), left_arm=(-56, -34, -46)))
                   .key(0.55, DROP))
 
 # Mimic: hands cupped together up by the right side of the face (a hollow clap there, out of your own view's middle), then the right
@@ -140,7 +140,7 @@ ALL = [positions_clap, switchback_cast, switchback_snap, awareness_cast, mimic_c
        exchange_cast, momentum_cast, total_swap_clap]
 # The rework lands one move at a time: the moves done so far are built from here, the rest still play their old hand-keyed
 # animation from swap_legacy.json (the swap.json before the rework), which goes once every move is done.
-DONE = {"positions_clap", "switchback_cast", "switchback_snap"}
+DONE = {"positions_clap", "switchback_cast", "switchback_snap", "awareness_cast"}
 ANIMS = [a for a in ALL if a.name in DONE]
 _LEGACY = json.loads((Path(__file__).parent / "swap_legacy.json").read_text())["animations"]
 LEGACY = {name: anim for name, anim in _LEGACY.items() if name not in DONE}

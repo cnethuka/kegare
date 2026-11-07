@@ -38,7 +38,6 @@ public final class SwapFxAuthoring {
         out.put(SwapIds.FX_SWAP_DEPART, SwapFxAuthoring::depart);
         out.put(SwapIds.FX_SWAP_ARRIVE, SwapFxAuthoring::arrive);
         out.put(SwapIds.FX_SWAP_LINK, SwapFxAuthoring::link);
-        out.put(SwapIds.FX_AWARENESS_SHIMMER, SwapFxAuthoring::awarenessShimmer);
         out.put(SwapIds.FX_MIMIC_FLICKER, SwapFxAuthoring::mimicFlicker);
         out.put(SwapIds.FX_ANCHOR_MARKER, SwapFxAuthoring::anchorMarker);
         out.put(SwapIds.FX_ANCHOR_TRAIL, SwapFxAuthoring::anchorTrail);
@@ -94,29 +93,6 @@ public final class SwapFxAuthoring {
         fadeOut(c, LIGHT, VIOLET);
         material(sparks, glow(0.5f, 0.5f, 0.95f, 1.2f));
         return fx(bead, sparks);
-    }
-
-
-    /** Only the disguised player sees this: a few faint violet-teal motes drifting up close around them. */
-    private static FX awarenessShimmer() {
-        ParticleEmitter motes = emitter("motes", true, 20);
-        ParticleConfig c = motes.config;
-        c.setSimulationSpace(ParticleConfig.Space.World);
-        c.setMaxParticles(40);
-        c.setStartLifetime(range(18, 28));
-        c.setStartSpeed(NumberFunction.constant(0));
-        c.setStartSize(uniform(range(0.03f, 0.06f)));
-        Sphere around = sphere(0.7f);
-        around.setRadiusThickness(0f);
-        c.shape.setShape(around);
-        c.shape.setScale(new NumberFunction3(1f, 1.3f, 1f));
-        c.emission.setEmissionRate(NumberFunction.constant(1.4f));
-        c.velocityOverLifetime.setEnable(true);
-        c.velocityOverLifetime.setLinear(new NumberFunction3(0, 0.5f, 0));
-        c.colorOverLifetime.setEnable(true);
-        c.colorOverLifetime.setColor(gradient(0x00E9D5FF, 0x88A855F7, 0x665EEAD4, 0x0014B8A6));
-        material(motes, glow(0.55f, 0.55f, 0.95f, 0.9f));
-        return fx(motes);
     }
 
     /**
