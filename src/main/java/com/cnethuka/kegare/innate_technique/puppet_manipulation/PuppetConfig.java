@@ -182,8 +182,8 @@ public final class PuppetConfig {
         STAND_IN_GROW = b.comment("How long growing (and shrinking back) takes.").defineInRange("grow", 0.4, 0.0, 5.0);
         b.pop();
 
-        b.comment("Fire a string at the player, mob or puppet you're looking at, then use it: Reel In (cast key) or Zip (R), or, looking",
-                "at a different target, Tie (cast key) or Leash (R). Bosses can be attached to but are never moved.").push("strings");
+        b.comment("Fire a string at the player, mob or puppet you're looking at, then use it: Reel In (its key again) or Zip (its special), or, looking",
+                "at a different target, Tie (its key again) or Leash (its special). Bosses can be attached to but are never moved.").push("strings");
         STRINGS_FIRE_COST = b.comment("Stage 1: firing the string.").defineInRange("fireCost", 20.0, 0.0, 100_000.0);
         STRINGS_REEL_COST = b.defineInRange("reelCost", 48.0, 0.0, 100_000.0);
         STRINGS_TIE_COST = b.defineInRange("tieCost", 80.0, 0.0, 100_000.0);

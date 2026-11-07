@@ -6,7 +6,6 @@ import com.cnethuka.kegare.client.ClientLoadout;
 import com.cnethuka.kegare.client.CombatPanelLayer;
 import com.cnethuka.kegare.client.KegareKeys;
 import com.cnethuka.kegare.config.KegareClientConfig;
-import com.cnethuka.kegare.config.KegareClientConfig.TechniqueSelect;
 import com.cnethuka.kegare.config.KegareClientConfig.VfxQuality;
 import com.cnethuka.kegare.innatetechnique.Ability;
 import com.cnethuka.kegare.innatetechnique.CastType;
@@ -624,17 +623,12 @@ public final class SorcererScreen extends Screen {
 
     // ---------------------------------------------------------------- settings (client config, saved at once)
 
-    private static final String[] SELECT_VALUES = {"gui.kegare.settings.number_keys", "gui.kegare.settings.scroll_wheel"};
     private static final String[] VFX_VALUES = {"gui.kegare.settings.vfx.full", "gui.kegare.settings.vfx.reduced", "gui.kegare.settings.vfx.vanilla"};
     private static final String[] DOUBLE_TAP_VALUES = {"gui.kegare.settings.off", "gui.kegare.settings.dash_double_tap.200", "gui.kegare.settings.dash_double_tap.300", "gui.kegare.settings.dash_double_tap.400"};
     private static final int[] DOUBLE_TAP_MILLIS = {0, 200, 300, 400};
     private static final String[] ON_OFF = {"gui.kegare.settings.on", "gui.kegare.settings.off"};
 
     private int renderSettings(GuiGraphics g, int x, int y, int w, int mouseX, int mouseY) {
-        TechniqueSelect select = KegareClientConfig.TECHNIQUE_SELECT.get();
-        y = optionRow(g, 0, "gui.kegare.settings.technique_select", SELECT_VALUES, select.ordinal(), x, y, w, mouseX, mouseY);
-        y += GuiDraw.wrapped(g, font, Component.translatable(select == TechniqueSelect.NUMBER_KEYS
-                ? "gui.kegare.settings.technique_select.number_keys" : "gui.kegare.settings.technique_select.scroll_wheel"), x, y, w, GuiDraw.DARK_GRAY) + 8;
         y = optionRow(g, 7, "gui.kegare.settings.dash_double_tap", DOUBLE_TAP_VALUES, doubleTapOption(), x, y, w, mouseX, mouseY);
         y = optionRow(g, 1, "gui.kegare.settings.vfx", VFX_VALUES, KegareClientConfig.VFX_QUALITY.get().ordinal(), x, y, w, mouseX, mouseY) + 5;
         y = optionRow(g, 2, "gui.kegare.settings.first_person", ON_OFF, KegareClientConfig.FIRST_PERSON_ANIMATIONS.get() ? 0 : 1, x, y, w, mouseX, mouseY) + 5;
@@ -678,7 +672,6 @@ public final class SorcererScreen extends Screen {
 
     private void applyOption(int setting, int value) {
         switch (setting) {
-            case 0 -> KegareClientConfig.TECHNIQUE_SELECT.set(TechniqueSelect.values()[value]);
             case 1 -> KegareClientConfig.VFX_QUALITY.set(VfxQuality.values()[value]);
             case 2 -> KegareClientConfig.FIRST_PERSON_ANIMATIONS.set(value == 0);
             case 3 -> KegareClientConfig.REVEAL_ANIMATION.set(value == 0);

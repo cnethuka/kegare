@@ -49,7 +49,7 @@ public final class InnateTechniqueService {
         PlayerSync.markDirty(player);
     }
 
-    /** Selects a loadout slot (number keys or scroll in Technique Mode). Out-of-range requests are ignored. */
+    /** Selects a loadout slot (Technique Mode's number keys, just before they cast). Out-of-range requests are ignored. */
     public static void select(ServerPlayer player, int slot) {
         if (current(player).isEmpty() || slot < 0 || slot >= LoadoutService.size(player)) return;
         get(player).setSelectedSlot(slot);

@@ -2,9 +2,11 @@ package com.cnethuka.kegare.innate_technique.puppet_manipulation.client;
 
 import com.cnethuka.kegare.Kegare;
 import com.cnethuka.kegare.client.ClientData;
+import com.cnethuka.kegare.client.ClientLoadout;
 import com.cnethuka.kegare.client.CombatPanelLayer;
 import com.cnethuka.kegare.client.KegareKeys;
 import com.cnethuka.kegare.client.StatusLayer;
+import com.cnethuka.kegare.client.TechniqueMode;
 import com.cnethuka.kegare.client.gui.GuiDraw;
 import com.cnethuka.kegare.client.gui.SorcererScreen;
 import com.cnethuka.kegare.innate_technique.puppet_manipulation.PuppetHud;
@@ -83,9 +85,13 @@ final class PuppetHudClient {
     /** A string waiting for its second stage: what each key would do now and cost, and how long it has left. */
     private static int stringsStatus(GuiGraphics g, Minecraft mc, int cx, int y) {
         PuppetHud.StringsHud s = PossessionClient.hud().strings();
-        if (s.stage() != 1) return y;
-        Component line = Component.translatable("hud.kegare.strings.attached", KegareKeys.CAST.getTranslatedKeyMessage(), name(s.cast()), GuiDraw.amount(s.cost(s.cast())),
-                KegareKeys.SPECIAL.getTranslatedKeyMessage(), name(s.special()), GuiDraw.amount(s.cost(s.special())), s.secondsLeft());
+        int slot = ClientLoadout.slotOf(PuppetManipulation.STRINGS);
+        if (s.stage() != 1 || slot < 0 || !TechniqueMode.isActive()) return y; // out of the mode, none of these keys do this
+        Component number = ClientLoadout.numberKey(slot);
+        Component special = stringsSelected() ? KegareKeys.SPECIAL.getTranslatedKeyMessage()
+                : Component.translatable("hud.kegare.key_combo", KegareKeys.SPECIAL.getTranslatedKeyMessage(), number);
+        Component line = Component.translatable("hud.kegare.strings.attached", number, name(s.cast()), GuiDraw.amount(s.cost(s.cast())),
+                special, name(s.special()), GuiDraw.amount(s.cost(s.special())), s.secondsLeft());
         GuiDraw.centered(g, mc.font, line, cx, y, 1f, LAVENDER);
         return y + 11;
     }
@@ -107,7 +113,7 @@ final class PuppetHudClient {
         PuppetHud.Payload hud = PossessionClient.hud();
         if (!hud.holds()) return;
         if (ability == PuppetManipulation.STRINGS && hud.strings().stage() == 1) {
-            // A string out: the slot shows what the cast key would do now, with R's in the corner.
+            // A string out: the slot shows what its number key would do now, with R's in the corner.
             RenderSystem.enableBlend();
             g.blit(icon(hud.strings().cast()), x + 2, y + 2, 0f, 0f, 16, 16, 16, 16);
             g.renderOutline(x + 1, y + 1, size - 2, size - 2, LAVENDER);

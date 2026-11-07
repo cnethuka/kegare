@@ -18,8 +18,8 @@ import net.minecraft.util.Mth;
 
 /**
  * Without the combat panel the HUD stays out of the way: only what can't wait shows, small and under the crosshair.
- * Freeze stacks while there are any ("Frozen!" while frozen; Severed players too), and the charge/channel line while
- * casting with the Cast key. Innate techniques can add lines that show in Technique Mode too ({@link #addExtra}).
+ * Freeze stacks while there are any ("Frozen!" while frozen; Severed players too), and the charge/channel line for a cast still
+ * held after Technique Mode ended. Innate techniques can add lines that show in Technique Mode too ({@link #addExtra}).
  */
 public final class StatusLayer implements LayeredDraw.Layer {
     public static final ResourceLocation ID = Kegare.id("status");

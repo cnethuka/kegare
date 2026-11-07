@@ -10,12 +10,10 @@ import org.lwjgl.glfw.GLFW;
 public final class KegareKeys {
     public static final String CATEGORY = "key.categories.kegare";
 
-    /** Casts the selected ability's special (hold for CHARGED/CHANNELED specials). */
+    /** Hold with a number key for that slot's special; on its own, the selected ability's special. Technique Mode's number keys are vanilla's hotbar keys. */
     public static final KeyMapping SPECIAL = key("key.kegare.special", GLFW.GLFW_KEY_R);
-    /** Toggles Technique Mode (the combat panel; number keys or scroll pick abilities). */
+    /** Toggles Technique Mode (the combat panel; number keys cast). */
     public static final KeyMapping TECHNIQUE_MODE = key("key.kegare.technique_mode", GLFW.GLFW_KEY_G);
-    /** Casts the selected ability's base version, in or out of Technique Mode (hold for CHARGED/CHANNELED). */
-    public static final KeyMapping CAST = key("key.kegare.cast", GLFW.GLFW_KEY_C);
     public static final KeyMapping ULTIMATE = key("key.kegare.ultimate", GLFW.GLFW_KEY_V);
     public static final KeyMapping SORCERER = key("key.kegare.sorcerer", GLFW.GLFW_KEY_K);
     /** Hold to parry, then guard (DESIGN §3.22). */
@@ -32,7 +30,6 @@ public final class KegareKeys {
     public static void register(RegisterKeyMappingsEvent event) {
         event.register(SPECIAL);
         event.register(TECHNIQUE_MODE);
-        event.register(CAST);
         event.register(ULTIMATE);
         event.register(SORCERER);
         event.register(PARRY);

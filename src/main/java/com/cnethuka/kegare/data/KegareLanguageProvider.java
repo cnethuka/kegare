@@ -62,7 +62,7 @@ public final class KegareLanguageProvider extends LanguageProvider {
 
         // Keybinds
         add("key.categories.kegare", "Kegare");
-        add("key.kegare.special", "Special (of the selected ability)");
+        add("key.kegare.special", "Special (with a number key)");
         add("key.kegare.technique_mode", "Technique Mode");
         add("key.kegare.parry", "Parry");
         add("key.kegare.dash", "Dash");
@@ -74,7 +74,6 @@ public final class KegareLanguageProvider extends LanguageProvider {
         add("gui.kegare.settings.dash_double_tap.200", "Fast");
         add("gui.kegare.settings.dash_double_tap.300", "Normal");
         add("gui.kegare.settings.dash_double_tap.400", "Slow");
-        add("key.kegare.cast", "Cast Ability");
         add("key.kegare.ultimate", "Ultimate");
         add("key.kegare.sorcerer", "Sorcerer Screen");
 
@@ -238,7 +237,8 @@ public final class KegareLanguageProvider extends LanguageProvider {
         add("gui.kegare.strings.stage.attached", "Now: a string is attached");
         add("gui.kegare.strings.stage.running", "Now: the string is at work");
         add("gui.kegare.strings.then", "Then: Reel In %s or Tie %s");
-        add("gui.kegare.strings.then_special", "Then (R): Zip %s or Leash %s");
+        add("gui.kegare.strings.then_special", "Then, with its special: Zip %s or Leash %s");
+        add("hud.kegare.key_combo", "%s+%s");
         add("hud.kegare.possessing", "Possessing");
         add("hud.kegare.shell_health", "Body %s");
         add("message.kegare.puppet.cap", "You can't hold more than %s puppets.");
@@ -350,6 +350,7 @@ public final class KegareLanguageProvider extends LanguageProvider {
         add("message.kegare.loadout.unavailable", "That ability isn't available to you."); 
         add("message.kegare.cast.ultimate_locked", "Locked. Your " + DOMINION + " comes later.");
         add("message.kegare.cast.no_special", "%s has no special.");
+        add("message.kegare.cast.hold_special", "Hold %s and %s to use %s.");
         add("message.kegare.cast.requirement", "%s requires %s.");
         add("message.kegare.cast.refinement_locked", "Requires Refinement %s.");
         add("requirement.kegare.trait", "a rare trait");
@@ -496,11 +497,6 @@ public final class KegareLanguageProvider extends LanguageProvider {
         add("toast.kegare.unlocked", "Unlocked");
         add("toast.kegare.unlocked.special", "Special unlocked");
         add("toast.kegare.unlocked.ultimate", "Ultimate unlocked");
-        add("gui.kegare.settings.technique_select", "In Technique Mode, pick abilities with");
-        add("gui.kegare.settings.number_keys", "Number keys");
-        add("gui.kegare.settings.scroll_wheel", "Scroll wheel");
-        add("gui.kegare.settings.technique_select.number_keys", "Number keys pick abilities; the scroll wheel stays on your hotbar.");
-        add("gui.kegare.settings.technique_select.scroll_wheel", "The scroll wheel picks abilities; number keys stay on your hotbar.");
         add("gui.kegare.settings.vfx", "Ability effects");
         add("gui.kegare.settings.vfx.full", "Full");
         add("gui.kegare.settings.vfx.reduced", "Reduced");

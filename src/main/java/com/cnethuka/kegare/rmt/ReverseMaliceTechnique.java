@@ -14,7 +14,7 @@ import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
 
 /**
- * Reverse Malice Technique (shared ability, CHANNELED): hold the cast key to heal at the end of every full second;
+ * Reverse Malice Technique (shared ability, CHANNELED): hold its number key to heal at the end of every full second;
  * release to stop. Malice is turned back on the body, so it is costly: a start cost plus a steep drain per second.
  * Like every channel it ends on release, when Malice runs out, on a stun or freeze (the shared cast rules), and here
  * also once there is nothing left to heal; the cooldown starts then. No special: R fizzles. Severed players can never

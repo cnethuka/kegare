@@ -8,11 +8,14 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
+import net.minecraft.client.KeyMapping;
+import net.minecraft.client.Minecraft;
+import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 
 /**
  * The local player's loadout as last synced: one entry per regular slot, {@code null} for an empty slot. The combat
- * panel, the Sorcerer screen and Technique Mode's ability picking all read this, never the innate technique's own list.
+ * panel, the Sorcerer screen and Technique Mode's number keys all read this, never the innate technique's own list.
  */
 public final class ClientLoadout {
     private ClientLoadout() {}
@@ -39,6 +42,17 @@ public final class ClientLoadout {
 
     public static boolean isLocked(SyncPayload data, Ability ability) {
         return lockedLevel(data, ability) >= 0;
+    }
+
+    /** The key that casts this slot, as the player has it bound. */
+    public static Component numberKey(int slot) {
+        KeyMapping[] keys = Minecraft.getInstance().options.keyHotbarSlots;
+        return slot >= 0 && slot < keys.length ? keys[slot].getTranslatedKeyMessage() : Component.literal(Integer.toString(slot + 1));
+    }
+
+    /** Which slot holds this ability, or -1. */
+    public static int slotOf(Ability ability) {
+        return abilities().indexOf(ability);
     }
 
     public static int size() {

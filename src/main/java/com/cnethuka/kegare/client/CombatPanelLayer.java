@@ -275,7 +275,7 @@ public final class CombatPanelLayer implements LayeredDraw.Layer {
         for (int i = 0; i < n; i++) {
             int x = sx + i * (SLOT_SIZE + gap);
             int y = y0 + SLOT_Y;
-            drawSlot(g, font, data, abilities.get(i), x, y, i == data.selectedSlot(), Component.literal(Integer.toString(i + 1)), castingId, now);
+            drawSlot(g, font, data, abilities.get(i), x, y, i == data.selectedSlot(), ClientLoadout.numberKey(i), castingId, now);
             if (i == dropTarget) g.renderOutline(x - 1, y - 1, SLOT_SIZE + 2, SLOT_SIZE + 2, 0xFFFFFFFF);
             rects.add(new SlotRect(i, x, y, SLOT_SIZE, false));
         }
