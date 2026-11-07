@@ -8,7 +8,6 @@ import com.cnethuka.kegare.innate_technique.rime.GlacialLanceEntity;
 import com.cnethuka.kegare.innate_technique.rime.RimeIds;
 import com.cnethuka.kegare.innatetechnique.visual.Visual;
 import com.mojang.blaze3d.vertex.PoseStack;
-import com.mojang.blaze3d.vertex.VertexConsumer;
 import com.mojang.math.Axis;
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -17,10 +16,7 @@ import net.minecraft.client.Camera;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.client.renderer.LevelRenderer;
-import net.minecraft.client.renderer.LightTexture;
 import net.minecraft.client.renderer.MultiBufferSource;
-import net.minecraft.client.renderer.RenderType;
-import net.minecraft.client.renderer.texture.OverlayTexture;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.particles.BlockParticleOption;
@@ -51,19 +47,19 @@ import org.joml.Vector3f;
  * which is still there when the message arrives.
  */
 public final class LanceAftermath {
-    public static final ResourceLocation FROST_MARK = Kegare.id("textures/entity/glacial_lance_frost.png");
+    /** The frost a lance leaves where it comes down: pixel art on the blocks (BlockMarks), from tools/blockbench/build_block_marks.py. */
+    public static final ResourceLocation FROST_MARK = Kegare.id("lance_frost");
     /** How long a lance stays stuck before it shatters. */
     static final int STUCK_TICKS = 20;
     /** How deep a stuck lance's tip goes in. */
     private static final float BURIED = 0.32f;
     private static final int QUIVER_TICKS = 7;
-    /** The frost-mark sheet: 4 x 2 frames, from whole (0) to nearly melted (7). */
-    static final int MARK_FRAMES = 8;
-    private static final int MARK_GROW_TICKS = 4;
-    private static final int MARK_MELT_TICKS = 24;
-    /** Effects closer than this to your own first-person camera are left out: they'd be in your face. */
+    /** The frost spreads out over this many ticks, and melts from the edge in over the last {@link #MARK_MELT_TICKS} of its life. */
+    static final int MARK_GROW_TICKS = 5;
+    static final int MARK_MELT_TICKS = 24;
     /** How far past the feet's hit the middle line is looked along for the block (a shallow throw into the ground meets it later). */
     private static final double MIDDLE_REACH = 2.0;
+    /** Effects closer than this to your own first-person camera are left out: they'd be in your face. */
     private static final double NEAR_SELF = 2.0;
 
     private static final class Shard {
@@ -108,15 +104,8 @@ public final class LanceAftermath {
         }
     }
 
-    /**
-     * A frost mark: a square on one face of the blocks, drawn only over the cells where that face is really there. {@code variant}
-     * turns and mirrors the sheet (eight ways) so two marks side by side don't match.
-     */
-    record Mark(Vec3 centre, Direction face, float radius, int variant, int life, int[] age) {}
-
     private static final List<Shard> SHARDS = new ArrayList<>();
     private static final List<Stuck> STUCK = new ArrayList<>();
-    private static final List<Mark> MARKS = new ArrayList<>();
     private static final RandomSource RANDOM = RandomSource.create();
 
     private LanceAftermath() {}
@@ -258,23 +247,25 @@ public final class LanceAftermath {
         return Math.round(60 + 40 * Mth.clamp(charge, 0f, 1f));
     }
 
+    /**
+     * When a frost mark's texels come and go: how much of the frost it shows grows with the charge (and {@code size}: the patch under
+     * a wall hit is smaller), it spreads out in a few ticks, holds, and melts from the edge in at the end of its life.
+     */
+    static BlockMarks.Timing frostTiming(float charge, float size) {
+        int life = markLife(charge);
+        float reach = Mth.clamp(markRadius(charge) * size / markRadius(1f), 0.05f, 1f);
+        return new BlockMarks.Timing(reach, 0, MARK_GROW_TICKS, life - MARK_GROW_TICKS - MARK_MELT_TICKS, MARK_MELT_TICKS);
+    }
+
     private static void mark(ClientLevel level, Vec3 at, Direction face, float charge, float size) {
-        if (quality() == VfxQuality.VANILLA) return;
-        MARKS.add(new Mark(at, face, markRadius(charge) * size, RANDOM.nextInt(8), markLife(charge), new int[1]));
+        BlockMarks.Pattern frost = BlockMarks.pattern(FROST_MARK);
+        if (frost != null) BlockMarks.stamp(level, frost, at, face, RANDOM.nextInt(8), frostTiming(charge, size));
     }
 
     private static void groundMarkBelow(ClientLevel level, Vec3 from, float charge, float size) {
         BlockHitResult down = level.clip(new ClipContext(from, from.add(0, -4, 0), ClipContext.Block.COLLIDER, ClipContext.Fluid.NONE,
                 CollisionContext.empty()));
         if (down.getType() == HitResult.Type.BLOCK && down.getDirection() == Direction.UP) mark(level, down.getLocation(), Direction.UP, charge, size);
-    }
-
-    /** Which frame of the sheet a mark shows at this age: it spreads out in a few ticks, holds, then melts away from the edge in. */
-    static int markFrame(int age, int life) {
-        if (age < MARK_GROW_TICKS) return Math.max(0, (MARK_FRAMES - 2) - age * (MARK_FRAMES - 2) / MARK_GROW_TICKS);
-        int left = life - age;
-        if (left >= MARK_MELT_TICKS) return 0;
-        return Mth.clamp(1 + (MARK_MELT_TICKS - left) * (MARK_FRAMES - 1) / MARK_MELT_TICKS, 1, MARK_FRAMES - 1);
     }
 
     // ---------------------------------------------------------------------------------------------- per tick
@@ -308,13 +299,11 @@ public final class LanceAftermath {
                 shatter(level, s);
             }
         }
-        MARKS.removeIf(m -> ++m.age()[0] >= m.life());
     }
 
     static void clear() {
         SHARDS.clear();
         STUCK.clear();
-        MARKS.clear();
     }
 
     private static boolean nearOwnCamera(Vec3 at) {
@@ -327,7 +316,7 @@ public final class LanceAftermath {
 
     static void render(RenderLevelStageEvent event) {
         if (event.getStage() != RenderLevelStageEvent.Stage.AFTER_ENTITIES) return;
-        if (SHARDS.isEmpty() && STUCK.isEmpty() && MARKS.isEmpty()) return;
+        if (SHARDS.isEmpty() && STUCK.isEmpty()) return;
         Minecraft mc = Minecraft.getInstance();
         ClientLevel level = mc.level;
         if (level == null) return;
@@ -338,10 +327,6 @@ public final class LanceAftermath {
         PoseStack pose = new PoseStack();
         for (Stuck s : STUCK) drawStuck(pose, buffers, level, cam, s, partial);
         for (Shard s : SHARDS) drawShard(pose, buffers, level, cam, s, partial);
-        if (!MARKS.isEmpty()) {
-            VertexConsumer out = buffers.getBuffer(RenderType.entityCutoutNoCull(FROST_MARK));
-            for (Mark m : MARKS) drawMark(out, level, cam, m);
-        }
         buffers.endLastBatch();
     }
 
@@ -382,67 +367,5 @@ public final class LanceAftermath {
         String name = "shard_" + s.kind;
         LanceMesh.draw(pose.last(), buffers, List.of(name), new float[] {1f}, LevelRenderer.getLightColor(level, BlockPos.containing(at)));
         pose.popPose();
-    }
-
-    private static void drawMark(VertexConsumer out, ClientLevel level, Vec3 cam, Mark m) {
-        int frame = markFrame(m.age()[0], m.life());
-        float u0 = (frame % 4) / 4f, v0 = (frame / 4) / 2f;
-        Direction face = m.face();
-        // The mark's plane: two axes across the face, and the axis it faces along.
-        Direction.Axis normal = face.getAxis();
-        Direction.Axis a = normal == Direction.Axis.Y ? Direction.Axis.X : normal == Direction.Axis.X ? Direction.Axis.Z : Direction.Axis.X;
-        Direction.Axis b = normal == Direction.Axis.Y ? Direction.Axis.Z : Direction.Axis.Y;
-        double plane = m.centre().get(normal) + face.getAxisDirection().getStep() * 0.012;
-        double ca = m.centre().get(a), cb = m.centre().get(b);
-        float r = m.radius();
-        int minA = Mth.floor(ca - r), maxA = Mth.floor(ca + r), minB = Mth.floor(cb - r), maxB = Mth.floor(cb + r);
-        // The block that carries the mark sits behind the face; the cell in front of it must be open.
-        int behind = Mth.floor(m.centre().get(normal) - face.getAxisDirection().getStep() * 0.01);
-        for (int ia = minA; ia <= maxA; ia++) {
-            for (int ib = minB; ib <= maxB; ib++) {
-                BlockPos solid = cell(normal, behind, a, ia, b, ib);
-                BlockPos open = solid.relative(face);
-                if (!level.getBlockState(solid).isFaceSturdy(level, solid, face)) continue;
-                if (level.getBlockState(open).isFaceSturdy(level, open, face.getOpposite())) continue;
-                double a0 = Math.max(ia, ca - r), a1 = Math.min(ia + 1, ca + r), b0 = Math.max(ib, cb - r), b1 = Math.min(ib + 1, cb + r);
-                if (a1 <= a0 || b1 <= b0) continue;
-                // The world's own light, no floor: a floor lifts block light, which is warm, and frost would go brown at night.
-                int light = LevelRenderer.getLightColor(level, open);
-                double[][] corners = {{a0, b0}, {a1, b0}, {a1, b1}, {a0, b1}};
-                for (double[] c : corners) {
-                    // Where this corner falls in the mark (0 to 1 across it), turned and mirrored its own way, in this frame of the sheet.
-                    float x = (float) ((c[0] - ca) / r) * 0.5f + 0.5f, y = (float) ((c[1] - cb) / r) * 0.5f + 0.5f;
-                    if ((m.variant() & 1) != 0) x = 1f - x;
-                    if ((m.variant() & 2) != 0) y = 1f - y;
-                    if ((m.variant() & 4) != 0) {
-                        float swap = x;
-                        x = y;
-                        y = swap;
-                    }
-                    float u = u0 + x / 4f, v = v0 + y / 2f;
-                    Vec3 p = point(normal, plane, a, c[0], b, c[1]);
-                    out.addVertex((float) (p.x - cam.x), (float) (p.y - cam.y), (float) (p.z - cam.z))
-                            .setColor(255, 255, 255, 255).setUv(u, v)
-                            .setOverlay(OverlayTexture.NO_OVERLAY).setLight(light)
-                            .setNormal(face.getStepX(), face.getStepY(), face.getStepZ());
-                }
-            }
-        }
-    }
-
-    private static BlockPos cell(Direction.Axis normal, int n, Direction.Axis a, int ia, Direction.Axis b, int ib) {
-        int[] xyz = new int[3];
-        xyz[normal.ordinal()] = n;
-        xyz[a.ordinal()] = ia;
-        xyz[b.ordinal()] = ib;
-        return new BlockPos(xyz[0], xyz[1], xyz[2]);
-    }
-
-    private static Vec3 point(Direction.Axis normal, double n, Direction.Axis a, double va, Direction.Axis b, double vb) {
-        double[] xyz = new double[3];
-        xyz[normal.ordinal()] = n;
-        xyz[a.ordinal()] = va;
-        xyz[b.ordinal()] = vb;
-        return new Vec3(xyz[0], xyz[1], xyz[2]);
     }
 }

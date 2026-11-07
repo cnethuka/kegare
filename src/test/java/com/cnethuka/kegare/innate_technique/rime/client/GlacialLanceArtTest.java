@@ -102,30 +102,25 @@ class GlacialLanceArtTest {
         }
     }
 
-    /** The glowing edges and the frost marks are cut out, never half see-through: crisp, and nothing to sort. */
+    /** The glowing edges are cut out, never half see-through: crisp, and nothing to sort. */
     @Test
-    void theGlowAndTheFrostAreCutOut() throws IOException {
-        for (String path : new String[] {"entity/glacial_lance_glow.png", "entity/glacial_lance_frost.png"}) {
-            BufferedImage im = image(path);
-            boolean any = false;
-            for (int y = 0; y < im.getHeight(); y++) {
-                for (int x = 0; x < im.getWidth(); x++) {
-                    int alpha = im.getRGB(x, y) >>> 24;
-                    assertTrue(alpha == 0 || alpha == 255, path + " is half see-through at " + x + "," + y);
-                    any |= alpha == 255;
-                }
+    void theGlowIsCutOut() throws IOException {
+        BufferedImage im = image("entity/glacial_lance_glow.png");
+        boolean any = false;
+        for (int y = 0; y < im.getHeight(); y++) {
+            for (int x = 0; x < im.getWidth(); x++) {
+                int alpha = im.getRGB(x, y) >>> 24;
+                assertTrue(alpha == 0 || alpha == 255, "the glow is half see-through at " + x + "," + y);
+                any |= alpha == 255;
             }
-            assertTrue(any, path + " draws something");
         }
-        BufferedImage frost = image("entity/glacial_lance_frost.png");
-        assertEquals(4 * frost.getHeight() / 2, frost.getWidth(), "the frost mark's frames, 4 by 2");
-        assertEquals(8, LanceAftermath.MARK_FRAMES);
+        assertTrue(any, "the glow draws something");
     }
 
-    /** Filtered smooth, not nearest: at this size the texels must never show as a grid. */
+    /** Filtered smooth, not nearest: at this size the texels must never show as a grid. (Its frost on the blocks is the opposite.) */
     @Test
     void theLanceTexturesAreFilteredSmooth() throws IOException {
-        for (String name : new String[] {"glacial_lance", "glacial_lance_glow", "glacial_lance_frost"}) {
+        for (String name : new String[] {"glacial_lance", "glacial_lance_glow"}) {
             JsonObject meta = json("src/main/resources/assets/kegare/textures/entity/" + name + ".png.mcmeta");
             assertTrue(meta.getAsJsonObject("texture").get("blur").getAsBoolean(), name);
         }
@@ -207,35 +202,31 @@ class GlacialLanceArtTest {
 
     // ------------------------------------------------------------------------------------------ what it leaves
 
-    /** A frost mark spreads out in a few ticks, holds whole, then melts frame by frame to nothing at the end of its life. */
+    /**
+     * Its frost spreads out from the middle in a few ticks, holds whole for most of its life, then melts from the edge in, and is all
+     * gone when its life is up.
+     */
     @Test
-    void aFrostMarkSpreadsHoldsAndMelts() {
-        int life = LanceAftermath.markLife(0.5f);
-        assertTrue(LanceAftermath.markFrame(0, life) > 0, "starts small");
-        int whole = 0;
-        int last = Integer.MAX_VALUE;
-        for (int age = 0; age < life; age++) {
-            int frame = LanceAftermath.markFrame(age, life);
-            assertTrue(frame >= 0 && frame < LanceAftermath.MARK_FRAMES, "frame " + frame);
-            if (frame == 0) whole++;
-            if (age < 4) {
-                assertTrue(frame <= last, "spreads out");
-                last = frame;
-            }
-        }
-        assertTrue(whole > life / 2, "whole for most of its life");
-        assertEquals(LanceAftermath.MARK_FRAMES - 1, LanceAftermath.markFrame(life - 1, life), "all but gone at the end");
-        int melting = 0;
-        for (int age = life - 30; age < life; age++) {
-            int frame = LanceAftermath.markFrame(age, life);
-            assertTrue(frame >= melting, "melts one way");
-            melting = frame;
-        }
+    void itsFrostSpreadsHoldsAndMelts() {
+        float charge = 0.5f;
+        int life = LanceAftermath.markLife(charge);
+        BlockMarks.Timing t = LanceAftermath.frostTiming(charge, 1f);
+        int reached = Math.round(t.reach() * 255);
+        assertEquals(0, t.appear(0), "the middle is there at once");
+        assertTrue(t.appear(reached) > t.appear(0) && t.appear(reached) <= LanceAftermath.MARK_GROW_TICKS, "its edge within a few ticks");
+        assertEquals(-1, t.appear(Math.min(255, reached + 8)), "no further than the charge reaches");
+        assertTrue(t.vanish(reached, 0) < t.vanish(0, 0), "the edge melts before the middle");
+        assertTrue(t.vanish(reached, -2) > life / 2, "whole for most of its life");
+        assertTrue(t.vanish(0, 2) <= life + 2, "gone when its life is up");
+        assertTrue(t.end() <= life + 2);
     }
 
-    /** A full charge leaves more of everything: a bigger mark that lasts longer, a bigger burst. */
+    /** A full charge leaves more of everything: frost that reaches further and lasts longer, a bigger burst. */
     @Test
     void aFullChargeLeavesMore() {
+        assertTrue(LanceAftermath.frostTiming(1f, 1f).reach() > LanceAftermath.frostTiming(0f, 1f).reach());
+        assertEquals(1f, LanceAftermath.frostTiming(1f, 1f).reach(), 1e-6f, "a full charge shows all of it");
+        assertTrue(LanceAftermath.frostTiming(1f, 0.7f).reach() < 1f, "the patch below a wall hit is smaller");
         assertTrue(LanceAftermath.markRadius(1f) > LanceAftermath.markRadius(0f));
         assertTrue(LanceAftermath.markLife(1f) > LanceAftermath.markLife(0f));
         assertTrue(LanceAftermath.markLife(0f) >= 60, "a few seconds at least");

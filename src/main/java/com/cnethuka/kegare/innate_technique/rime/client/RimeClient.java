@@ -51,10 +51,13 @@ public final class RimeClient {
         }
         NeoForge.EVENT_BUS.addListener(LanceHold::onRenderHand);
         NeoForge.EVENT_BUS.addListener(LanceAftermath::render);
+        // Frost, cracks and ice on the blocks: pixel art on their own grid, melting away on its own.
+        NeoForge.EVENT_BUS.addListener(BlockMarks::render);
         NeoForge.EVENT_BUS.addListener(RimeClient::onLanceTick);
         NeoForge.EVENT_BUS.addListener((ClientPlayerNetworkEvent.LoggingOut event) -> {
             LanceHold.clear();
             LanceAftermath.clear();
+            BlockMarks.clear();
         });
         // The throw is the whole body: in your own first person, that would swing your own arm and whatever it holds across the view.
         PlayerAnimations.keepVanillaHands(List.of(RimeIds.ANIM_GLACIAL_LANCE_CHARGE, RimeIds.ANIM_GLACIAL_LANCE_RELEASE));
@@ -92,7 +95,10 @@ public final class RimeClient {
     }
 
     private static void registerReloadListeners(RegisterClientReloadListenersEvent event) {
-        event.registerReloadListener((ResourceManagerReloadListener) manager -> LanceMesh.forget());
+        event.registerReloadListener((ResourceManagerReloadListener) manager -> {
+            LanceMesh.forget();
+            BlockMarks.forget();
+        });
     }
 
     private static void onLanceTick(ClientTickEvent.Post event) {
@@ -100,6 +106,7 @@ public final class RimeClient {
         if (mc.level == null || mc.isPaused()) return;
         LanceHold.tick(mc.level);
         LanceAftermath.tick(mc.level);
+        BlockMarks.tick(mc.level);
     }
 
     /** While you charge Glacial Spire, a ring of frost dust shows where it will rise (nobody else sees this). */

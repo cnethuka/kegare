@@ -8,13 +8,13 @@ Writes
     src/main/resources/assets/kegare/models/fx/glacial_lance.obj      one object per chunk and per shard (lance_shapes.py)
     src/main/resources/assets/kegare/textures/entity/glacial_lance.png       the colour, painted face by face
     src/main/resources/assets/kegare/textures/entity/glacial_lance_glow.png  what stays lit in the dark: ridges and cracks
-    src/main/resources/assets/kegare/textures/entity/glacial_lance_frost.png the frost mark it leaves, 8 frames from whole to melted
     src/main/resources/assets/kegare/textures/fx/glacial_lance_trail.png     its trail's line: even along it, a hard core across it
 
 The Python is the source: lance_shapes.py makes the crystals, and this lays every face out flat in a texture atlas at a fixed
 density and paints it there, knowing that face's real edges. So each plane is a clean gradient, navy in the middle to pale frost
 at its ridges, with no grid to see; and the cracks come from one field through the whole lance, so they run on across faces.
-Every texel is opaque. Run it again after changing a shape: the atlas and both textures follow.
+Every texel is opaque. Run it again after changing a shape: the atlas and both textures follow. The frost it leaves on the blocks
+is pixel art at the blocks' own resolution, so it's made with the other block marks, in build_block_marks.py.
 """
 import json
 import math
@@ -214,85 +214,6 @@ def paint(islands, height):
 
 # ---------------------------------------------------------------------------------------------- the frost mark
 
-MARK_FRAME = 512
-FROST_MID = (150, 196, 245)
-
-
-def frost_mark(seed=5):
-    """Frost spiking out from where the lance came down: long jagged spikes with side branches round a broken core, two tones (a
-    mid-ice body with a frost-white heart) and hard edges. Eight frames for the sheet, 4 x 2: frame 0 whole, then melting from the
-    tips in, so the game can spread it in a few ticks and melt it away later just by showing frames, never a soft fade."""
-    import random
-    from PIL import ImageDraw
-    rng = random.Random(seed)
-    size, c, r = MARK_FRAME, MARK_FRAME / 2, MARK_FRAME * 0.48
-    body = Image.new("L", (size, size), 0)
-    heart = Image.new("L", (size, size), 0)
-    db, dh = ImageDraw.Draw(body), ImageDraw.Draw(heart)
-    melt = {}
-
-    def spike(angle, start, length, width, inner):
-        ux, uy = math.cos(angle), math.sin(angle)
-        px, py = -uy, ux
-        bx, by = c + ux * start, c + uy * start
-        for draw, k in ((db, 1.0), (dh, inner)):
-            w = width * k
-            draw.polygon([(bx + px * w, by + py * w), (bx + ux * length * (0.55 + 0.4 * k), by + uy * length * (0.55 + 0.4 * k)),
-                          (bx - px * w, by - py * w)], fill=255)
-
-    # Uneven on purpose: a few long spikes where the force went, many short ones, no two gaps alike, so it reads as ice that burst
-    # outward, not as a snowflake.
-    spikes = 13
-    angles = sorted(2 * math.pi * (i + rng.uniform(-0.42, 0.42)) / spikes for i in range(spikes))
-    for i, a in enumerate(angles):
-        length = r * (0.32 + 0.68 * rng.random() ** 1.6)
-        width = r * rng.uniform(0.03, 0.065) * (0.6 + 0.6 * length / r)
-        bend = rng.uniform(-0.07, 0.07)
-        spike(a + bend, r * 0.05, length, width, 0.42)
-        for _ in range(rng.choice((0, 1, 1, 2, 3))):
-            along = rng.uniform(0.25, 0.7) * length
-            side = rng.choice((-1, 1))
-            ba = a + side * math.radians(rng.uniform(28, 68))
-            sx, sy = math.cos(a) * along, math.sin(a) * along
-            ux, uy = math.cos(ba), math.sin(ba)
-            bl = length * rng.uniform(0.14, 0.34)
-            bw = width * rng.uniform(0.4, 0.6)
-            for draw, k in ((db, 1.0), (dh, 0.4)):
-                draw.polygon([(c + sx - uy * bw * k, c + sy + ux * bw * k), (c + sx + ux * bl * (0.6 + 0.4 * k), c + sy + uy * bl * (0.6 + 0.4 * k)),
-                              (c + sx + uy * bw * k, c + sy - ux * bw * k)], fill=255)
-    # Hairline splinters between the spikes, and chips of frost thrown clear of the core.
-    for _ in range(18):
-        a = rng.uniform(0, 2 * math.pi)
-        spike(a, r * 0.1, r * rng.uniform(0.15, 0.4), r * rng.uniform(0.012, 0.02), 0.0)
-    for _ in range(14):
-        a, d = rng.uniform(0, 2 * math.pi), r * rng.uniform(0.3, 0.8)
-        px, py, s = c + math.cos(a) * d, c + math.sin(a) * d, r * rng.uniform(0.012, 0.03)
-        turn = rng.uniform(0, math.pi)
-        corners = [turn + k * 2.1 + rng.uniform(-0.3, 0.3) for k in range(3)]
-        db.polygon([(px + math.cos(q) * s, py + math.sin(q) * s) for q in corners], fill=255)
-    core = [(c + math.cos(2 * math.pi * k / 11) * r * rng.uniform(0.1, 0.2), c + math.sin(2 * math.pi * k / 11) * r * rng.uniform(0.1, 0.2))
-            for k in range(11)]
-    db.polygon(core, fill=255)
-    dh.polygon([(c + (x - c) * 0.55, c + (y - c) * 0.55) for x, y in core], fill=255)
-
-    bp, hp = body.load(), heart.load()
-    wobble = [rng.uniform(-0.08, 0.08) for _ in range(64)]
-    frames = Image.new("RGBA", (MARK_FRAME * 4, MARK_FRAME * 2), (0, 0, 0, 0))
-    fp = frames.load()
-    for y in range(size):
-        for x in range(size):
-            if not bp[x, y]:
-                continue
-            d = math.hypot(x - c, y - c) / r
-            a = (math.atan2(y - c, x - c) / (2 * math.pi)) % 1.0
-            m = 1.0 - d + wobble[int(a * 64) % 64]  # how long it lasts: the tips go first, the core last
-            colour = (FROST if hp[x, y] else FROST_MID) + (255,)
-            for f in range(8):
-                if m >= f / 8 * 0.92:
-                    fp[(f % 4) * size + x, (f // 4) * size + y] = colour
-    return frames
-
-
 def trail_line(width=64, height=16):
     """The trail's cross-section, the same all along it (its taper and fade come from the effect): a solid white core a quarter of
     the way across, falling off quickly to nothing at the sides."""
@@ -367,7 +288,6 @@ def build(preview=False):
     TEXTURES.mkdir(parents=True, exist_ok=True)
     colour.save(TEXTURES / "glacial_lance.png", optimize=True)
     glow.save(TEXTURES / "glacial_lance_glow.png", optimize=True)
-    frost_mark().save(TEXTURES / "glacial_lance_frost.png", optimize=True)
     (TEXTURES.parent / "fx").mkdir(exist_ok=True)
     trail_line().save(TEXTURES.parent / "fx" / "glacial_lance_trail.png", optimize=True)
     print(f"atlas {ATLAS_WIDTH}x{height}, {len(islands)} faces")

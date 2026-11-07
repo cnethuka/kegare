@@ -1,4 +1,4 @@
-# Blockbench tooling (player animations, Strings, Glacial Lance)
+# Blockbench tooling (player animations, Strings, Glacial Lance, block marks)
 
 Animations are written pose-to-pose in `tools/anims/<technique>.py` and exported to
 `src/main/resources/assets/kegare/player_animations/<technique>.json` in Blockbench's own Bedrock format, which Player
@@ -37,6 +37,15 @@ edges, so an edit made in the .bbmodel is lost on the next run.
 Its body animations are in `tools/anims/glacial_lance.py`; `build.py --preview` draws the lance in the hand by
 `LANCE_GRIP`, the numbers `LanceHold` uses in game (`GlacialLanceArtTest` checks they match). Blockbench's preview lights
 faces its own way: check the colours in game.
+
+## Marks on blocks: pixel art, no Blockbench
+
+Rime's frost, cracks and ice on the world's blocks are pixel art at the blocks' own 16 texels a block, so they need no
+mesh: `build_block_marks.py` draws each pattern with PIL, from a few palette colours, and writes it with its order map to
+`textures/marks/` (the game's `BlockMarks` lays them on the blocks' texel grid). No `.mcmeta`: they stay nearest-filtered.
+
+    python3 -I tools/blockbench/build_block_marks.py            # write them
+    python3 -I tools/blockbench/build_block_marks.py --preview  # also run/marks_preview/<name>.png: on stone, 8x, spreading
 
 ## Files
 

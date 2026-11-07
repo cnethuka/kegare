@@ -766,8 +766,8 @@ Package `com.cnethuka.kegare.innate_technique.rime`. **Rarity: RARE.** All numbe
     `models/fx/glacial_lance.obj` (one object per chunk: `grip`, `fore`, `aft`, `head`, `tail`, `spurs`, and four
     `shard_*`) and its textures in `textures/entity/`: `glacial_lance.png` (1024², every texel opaque: navy in the middle
     of each face to pale frost at its ridges, faint cracks running on across faces), `glacial_lance_glow.png` (cut out,
-    drawn full-bright: the ridges and cracks, so it reads at night) and `glacial_lance_frost.png` (the frost mark, 8
-    frames, cut out). All three are filtered smooth (`.mcmeta` blur); nothing of them is half see-through. `LanceMesh`
+    drawn full-bright: the ridges and cracks, so it reads at night). Both are filtered smooth (`.mcmeta` blur); nothing of
+    them is half see-through. `LanceMesh`
     draws it: a solid pass lit by the world (never below light 5) and the glow pass on top.
   - **Charging** (`LanceHold`, a layer on both player skins): the lance grows out of the right fist in chunks that snap
     into place (out past their size and back over 3 ticks, with `glacial_lance_snap`), so its size reads the charge: a stub
@@ -786,13 +786,25 @@ Package `com.cnethuka.kegare.innate_technique.rime`. **Rarity: RARE.** All numbe
     solid shards (`glacial_lance_stick`, `glacial_lance_shatter`). Drawn on the clients only: no entity, no hitbox.
   - **Hit:** it bursts into solid shards on the target, where its path met the target's box
     (`glacial_lance_impact`: a flash, a ring, glints, mist).
-  - **Frost marks:** both leave a frost mark (on the wall it stuck in, and on the ground below) that spreads, holds and
-    melts over 3 to 5 s. Decals only, never a block change. A full charge makes the burst, shards, marks and trail bigger.
+  - **Frost marks:** both leave frost (on the wall it stuck in, and on the ground below) that spreads out in 5 ticks,
+    holds, and melts from the edge in over the last 24 ticks of 3 to 5 s. It is a block mark (`marks/lance_frost`, see
+    *Marks on blocks* below): pixel art on the blocks' own texels, never a block change. A full charge shows all of the
+    pattern (about 1.5 blocks out); a light one only its inner part. A full charge also makes the burst, shards and trail
+    bigger.
   - The server picks the effect (`GlacialLanceEntity.impactVisual`: a block gets `glacial_lance_stick`, anything else
     `glacial_lance_impact`) and sends it with `VisualService.playAt(..., entityId)`, so every client reads the lance's
     charge, heading and spin from it.
   - **Reduced** plays the effects reduced and draws half the shards; **Vanilla** keeps the lance mesh but swaps every effect for vanilla snowflakes and
     the shards for packed-ice fragments, with no frost marks.
+  - **Marks on blocks** (`BlockMarks`, all Rime moves): anything painted on the world (frost, cracks, ice) is pixel art at
+    16 texels a block with hard pixels, so the block itself looks frozen; what belongs to the technique (the Lance, shards,
+    spikes, crystals, shell plates) stays smooth. `tools/blockbench/build_block_marks.py` draws each pattern (a few palette
+    colours, alpha included, nearest-filtered) and its order (`<name>_order.png`: what forms first and melts last) in
+    `textures/marks/`. Stamping one snaps its centre to the texel grid and lays it on whichever block faces are really there
+    (a sturdy face with nothing sturdy against it), on walls as well as floors; every marked face keeps its own 16 x 16
+    texels, so overlapping marks share texels (stronger colour, longer life) instead of flickering. Drawn translucent in the
+    world's light and shaded like the block face under it; a texel just formed is brighter (the spreading edge) and thins in
+    its last ticks. Client only: no block changes, nothing is sent, all of it melts on its own. Off with **Vanilla**.
   - Specials: animations `splinter_cast`, `glacial_spire_charge` (loop), `glacial_spire_release`, `ice_path_slide`
     (loop, a surfing stance) and `shatter_shell_cast`. Effects `splinter_cast`, `splinter_trail`,
     `glacial_spire_charge` (frost round the lowered hand), `glacial_spire_warning` (the frost circle plus a curtain of rising glints, a loop on the
