@@ -48,7 +48,7 @@ public final class TotalSwapAbility extends SwapAbility {
         float casterShare = caster.getHealth() / caster.getMaxHealth();
         float targetShare = target.getHealth() / target.getMaxHealth();
         if (casterShare < SwapAdvancements.IDENTITY_CRISIS_HEALTH) SwapTracker.identityCrisisStarted(caster);
-        PositionsAbility.swap(caster, target);
+        PositionsAbility.swap(caster, target, SwapSounds.POSITIONS);
         AwarenessAbility.disguisePair(caster, target, SwapConfig.ticks(SwapConfig.AWARENESS_DURATION), Disguises.Kind.TOTAL_SWAP);
         swapHealth(caster, target, casterShare, targetShare);
         VisualService.playOnce(caster, SwapIds.TOTAL_SWAP_BURST);

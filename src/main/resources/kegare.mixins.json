@@ -3,7 +3,11 @@
   "minVersion": "0.8",
   "package": "com.cnethuka.kegare.mixin",
   "compatibilityLevel": "JAVA_21",
-  "mixins": [],
+  "mixins": [
+    "ChunkMapAccessor",
+    "ServerEntityAccessor",
+    "TrackedEntityAccessor"
+  ],
   "client": [
     "client.PlayerInfoMixin",
     "client.PlayerTabOverlayMixin",

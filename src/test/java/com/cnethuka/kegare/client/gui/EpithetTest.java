@@ -47,7 +47,7 @@ class EpithetTest {
     @Test
     void realTechniquesHaveTheirSignatureAnimations(MinecraftServer server) {
         assertEquals("frost_shard_cast", Rime.RIME.get().signatureAnimation().orElseThrow().getPath());
-        assertEquals("swap_snap", Swap.SWAP.get().signatureAnimation().orElseThrow().getPath());
+        assertEquals("positions_clap", Swap.SWAP.get().signatureAnimation().orElseThrow().getPath());
         assertEquals("puppet_create_release", PuppetManipulation.PUPPET_MANIPULATION.get().signatureAnimation().orElseThrow().getPath());
     }
 }

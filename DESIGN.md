@@ -190,7 +190,7 @@ All timestamps use **level game time**. They persist across restarts and are ide
     Without a Stage".
   - an optional **signature animation** (`Builder.signatureAnimation(id)`, a PAL animation, read with
     `signatureAnimation()`): what the player model does beside the emblem on the reveal's name card. Without one the model
-    just stands there. Rime: `frost_shard_cast`. Swap: `swap_snap`. Puppet Manipulation: `puppet_create_release`.
+    just stands there. Rime: `frost_shard_cast`. Swap: `positions_clap`. Puppet Manipulation: `puppet_create_release`.
   - the hooks `onAssigned` / `onRemoved`
 - `Ability` interface: `cost`, `cooldownTicks`, `castType`, `upkeepPerSecond`, min/max charge, max channel,
   `canCast`, `execute`, `tick`, `onEnd`, plus `special`, `cooldownKey` and `requirements` (§3.15). Costs take the
@@ -476,6 +476,14 @@ Malice is always shown as whole numbers (floored, like the HUD); the stored valu
       white shine; 5px caps, a 22px middle that tiles. `GuiDraw.maliceBar` draws it for both the HUD and the
       Sorcerer screen, tinting the fill with the innate technique's Malice color (§3.3) and drawing the shine
       untinted on top, so any color keeps its gloss and stays readable.
+- **Sounds** (Kegare's own, no recordings): `python3 tools/sounds/build.py` synthesizes them from seeded noise and tones
+  (plain Python, written as mono Vorbis `.ogg` through the system's libsndfile, so they're positional) into
+  `assets/kegare/sounds/<technique>/`; `--preview` also writes the candidates to `run/sounds_preview/`. Each one is
+  registered in `sound/KegareSounds` (event `kegare:<technique>.<name>`, its file and its subtitle key); runData writes
+  `sounds.json` from that list (`KegareSoundProvider`) and the subtitle goes in the language provider. `SoundsTest`
+  checks every registered sound has a mono file, a subtitle and an entry, and no file is left unused. A new sound: a
+  function in the technique's `tools/sounds/<technique>.py`, an entry in `KegareSounds.ALL`, its subtitle, then
+  `build.py` and runData.
 - **Art for content (optional, with fallbacks).** New content should ship with:
   - an **emblem** per innate technique: `<namespace>:textures/gui/emblem/<path>.png`, 48×48. It is shown
     on the reveal's name card, the Sorcerer screen and the talisman prompt. Without one, the tab icon item is drawn instead.
@@ -1245,7 +1253,10 @@ the recall, Send Off, both disguises, Exchange, Momentum Exchange and Total Swap
 **Position swaps** (`Swapper`): both move at once, player or mob (`teleportTo`, which also dismounts; sleepers wake;
 a mob's pathing stops; anything that wouldn't fit where it lands is nudged up out of the blocks), and both fall
 distances reset (only Momentum Exchange keeps fall distance, on purpose, and it never moves anyone).
-Both ends get `swap_depart`/`swap_arrive` and the enderman-teleport sound, plus `swap_link` between them.
+Both ends get the move's clap (`SwapSounds`) and `swap_depart`/`swap_arrive` (see Visuals). The move reaches every
+watcher at once: `moveTo` broadcasts the teleport as it happens and moves the entity tracker's base with it (server
+accessor mixins `ChunkMapAccessor`, `TrackedEntityAccessor`, `ServerEntityAccessor`); otherwise the tracker's next
+small step would be measured from the old spot and watchers would see the entity that far past its new one.
 
 **Abilities** (default loadout order) and their specials (R, sharing the base ability's cooldown):
 
@@ -1275,23 +1286,50 @@ The HUD and Sorcerer screen show Anchor's current stage cost (throw or recall).
   - tab-list name (`PlayerTabOverlay#getNameForDisplay` mixin);
   - visible armor and held items, lent from the face for the length of one render (`RenderPlayerEvent`). If the
     face isn't loaded on that client, the slots are drawn empty rather than showing the wearer's own gear.
-  - These are Kegare's first mixins (`kegare.mixins.json`, client only).
+  - These are client mixins (`kegare.mixins.json`); Swap's only server ones are its tracker accessors.
 - Only disguised players see `awareness_shimmer` (sent to them alone), so they know it's on.
 - **API** (either side): `Disguises.isDisguised(entity)`, `getRealIdentity(entity)`, `getDisguisedAs(entity)`; server:
   `get(player)`, `wearing(face)`. Anything that must see through disguises asks here.
 
-**Visuals.** PAL animations (`player_animations/swap.json`): `swap_snap` (Positions, Total Swap),
-`switchback_cast` (a wrist flick back toward the caster), `awareness_cast`, `mimic_cast`, `anchor_throw`, `anchor_recall`, `send_off_cast`, `exchange_cast`, `momentum_cast`.
-Photon effects (`SwapFxAuthoring` → `fx/swap/`), teal with Malice violet, with vanilla particle fallbacks:
-- `swap_depart` and `swap_arrive`: both ends of every swap.
-- `swap_link`: beads along the line between the two players (`SwapLink` payload; the client places them).
-- `switchback_timer`: a ring at both players' feet closing in once a second, from the cast to the swap back.
-- `awareness_shimmer`: on disguised players, for them only.
-- `mimic_flicker`: Mimic's cast, a teal glow flickering twice over the caster with glitch motes, seen by everyone.
-- `anchor_marker` (loops while the anchor waits) and `anchor_trail` (in flight).
-- `exchange_transfer`: orbs travelling each way along the line, one per exchanged effect.
-- `momentum_burst` (both players) and `total_swap_burst` (both players).
-- Sounds: enderman teleport for every swap; Switchback adds a respawn-anchor charge on both, Mimic an evoker spell.
+**Visuals.** Every swap is a clap. The feel is a clean magic trick: a sharp clap and the swap has already happened,
+smooth and modern in Swap's teal, nothing heavy, blurry or lingering, never the enderman's purple.
+- PAL animations, Python-built (`tools/anims/swap.py` → `player_animations/swap.json`), each move clapping its own way:
+  - `positions_clap` (Positions): the hands go straight for each other and meet low in front of the chest, then spring
+    open, palms out; then dropped. The cast is instant and animations blend in over 3 ticks, so the swap lands on the
+    sound and the hands meet a moment after.
+  - The moves not reworked yet still play their hand-keyed animations, carried as they are from
+    `tools/anims/swap_legacy.json`: `swap_snap` (Total Swap), `switchback_cast`, `awareness_cast`, `mimic_cast`,
+    `anchor_throw`, `anchor_recall`, `send_off_cast`, `exchange_cast`, `momentum_cast`.
+  - In your own first person, a Swap animation shows its hands only while you look about level (no more than 25° down,
+    `PlayerAnimations.handsWhileLevel`). They hang from the body, which doesn't tip with the view, so at chest height
+    they sit at the bottom corners of a level view; looking further down they'd come up into its middle, so the hands
+    are vanilla's then.
+- Both ends of every swap (`SwapFx`, drawn by each client from the entity the payload names):
+  - the **afterimage**: a teal figure of a player left where they stood, in the pose they were in (the clap): the
+    body's boxes in flat teal, shaded by the way each face points, lit fully, with the arms this client sees on them
+    (a disguise's included) and nothing of the skin. It flickers out over 7 ticks. Never drawn round your own
+    first-person camera. Players only: a mob gets the ring.
+  - a thin teal **ring** at the feet, widening and thinning over 5 ticks.
+  - `swap_depart`/`swap_arrive` (Photon): a few tiny glints, gone in 3 to 6 ticks. Played a tick late, so the ones
+    you've just landed in are skipped like anything else on your own first-person camera.
+  - The move **snaps**: each client puts a swapped entity straight at its new spot instead of sliding it there over
+    vanilla's 3 ticks, so nobody is seen crossing the gap and the arriving player's camera never sits in the other's
+    head; your own head and body face the new way at once (third person).
+  - Reduced: fewer glints. Vanilla: no afterimage or ring, a few small teal dust specks that are gone at once.
+- Photon effects (`SwapFxAuthoring` → `fx/swap/`), teal with Malice violet, with vanilla particle fallbacks:
+  - `swap_link`: beads along the line between the two players (`SwapLink` payload; the client places them): Anchor's
+    recall and Send Off.
+  - `switchback_timer`: a ring at both players' feet closing in once a second, from the cast to the swap back.
+  - `awareness_shimmer`: on disguised players, for them only.
+  - `mimic_flicker`: Mimic's cast, a teal glow flickering twice over the caster with glitch motes, seen by everyone.
+  - `anchor_marker` (loops while the anchor waits) and `anchor_trail` (in flight).
+  - `exchange_transfer`: orbs travelling each way along the line, one per exchanged effect.
+  - `momentum_burst` (both players) and `total_swap_burst` (both players).
+- Sounds: Kegare's own (§3.10, `tools/sounds/swap.py`), each with a subtitle: `swap.clap` ("Hands clap", a crisp
+  synthesized clap) at both ends of Positions, and for now of Switchback, Total Swap, Anchor's recall and Send Off
+  until they get their own; `swap.double_clap`, `swap.snap`, `swap.cupped_clap`, `swap.big_clap` and `swap.flip` are
+  registered for the moves still to come. Exchange and Momentum Exchange still use the enderman teleport, Awareness the
+  illusioner's mirror move; Switchback adds a respawn-anchor charge on both, Mimic an evoker spell.
 
 **Art:** emblem `gui/emblem/swap.png`, icons for all nine abilities (`gui/ability/`), the anchor's item sprite
 (`item/swap_anchor.png`). The Sorcerer screen shows a special's icon in its details when it has one.

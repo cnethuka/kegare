@@ -36,6 +36,7 @@ public final class Kegare {
         KegareRegistries.register(modBus);
         KegareAttachments.ATTACHMENT_TYPES.register(modBus);
         KegareItems.ITEMS.register(modBus);
+        com.cnethuka.kegare.sound.KegareSounds.SOUND_EVENTS.register(modBus);
         KegareTraits.TRAITS.register(modBus);
         Rime.register(modBus);
         com.cnethuka.kegare.innate_technique.swap.Swap.register(modBus);

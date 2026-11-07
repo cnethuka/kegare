@@ -1,0 +1,38 @@
+{
+  "swap.big_clap": {
+    "sounds": [
+      "kegare:swap/big_clap"
+    ],
+    "subtitle": "subtitles.kegare.swap.big_clap"
+  },
+  "swap.clap": {
+    "sounds": [
+      "kegare:swap/clap"
+    ],
+    "subtitle": "subtitles.kegare.swap.clap"
+  },
+  "swap.cupped_clap": {
+    "sounds": [
+      "kegare:swap/cupped_clap"
+    ],
+    "subtitle": "subtitles.kegare.swap.cupped_clap"
+  },
+  "swap.double_clap": {
+    "sounds": [
+      "kegare:swap/double_clap"
+    ],
+    "subtitle": "subtitles.kegare.swap.double_clap"
+  },
+  "swap.flip": {
+    "sounds": [
+      "kegare:swap/flip"
+    ],
+    "subtitle": "subtitles.kegare.swap.flip"
+  },
+  "swap.snap": {
+    "sounds": [
+      "kegare:swap/snap"
+    ],
+    "subtitle": "subtitles.kegare.swap.snap"
+  }
+}

@@ -17,6 +17,8 @@
   same commit when behaviour or visuals change.
 - `README.md`: required mods, content list, dev commands and keys.
 - `tools/anims/*.py` → `assets/kegare/player_animations/*.json` (`python3 tools/anims/build.py [--preview names]`).
+- `tools/sounds/*.py` → `assets/kegare/sounds/**/*.ogg` (`python3 tools/sounds/build.py [--preview]`), registered in
+  `sound/KegareSounds` (DESIGN §3.10).
 - `tools/blockbench/`: Python model builders (`build_*.py`), block marks, Blockbench setup and the per-asset notes in its README.
 - `art/blockbench/`: `.bbmodel` projects. `tools/gen_art.py`: GUI and item art.
 - Player-facing text: `data/KegareLanguageProvider.java` → `src/generated/.../en_us.json` (never hand-edit generated files).

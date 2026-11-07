@@ -158,6 +158,12 @@ public final class KegareLanguageProvider extends LanguageProvider {
         add("message.kegare.swap.no_target", "No player in sight.");
         add("message.kegare.swap.no_target_any", "Nothing in sight to swap with.");
         add("message.kegare.swap.refused", "Something stops the swap.");
+        add("subtitles.kegare.swap.clap", "Hands clap");
+        add("subtitles.kegare.swap.double_clap", "Hands clap twice");
+        add("subtitles.kegare.swap.snap", "Fingers snap");
+        add("subtitles.kegare.swap.cupped_clap", "Cupped hands clap");
+        add("subtitles.kegare.swap.big_clap", "Thunderous clap");
+        add("subtitles.kegare.swap.flip", "Card flips");
         add("message.kegare.swap.switchback_refused", "Something stops the swap back.");
         // Puppet Manipulation
         add("innate_technique.kegare.puppet_manipulation", "Puppet Manipulation");

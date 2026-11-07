@@ -66,6 +66,8 @@ public final class AnchorAbility extends SwapAbility {
             return;
         }
         Vec3 to = anchor.arrivalFor(caster);
+        SwapSounds.POSITIONS.at(caster);
+        SwapSounds.POSITIONS.at(anchor);
         Swapper.depart(caster);
         Swapper.depart(anchor);
         SwapLink.play(caster.serverLevel(), Swapper.bodyPos(caster), Swapper.bodyPos(anchor));

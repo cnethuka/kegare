@@ -38,7 +38,7 @@ public final class SwitchbackAbility extends SwapAbility.Special {
         Switchback.schedule(caster, target);
         sound(caster);
         sound(target);
-        PositionsAbility.swap(caster, target);
+        PositionsAbility.swap(caster, target, SwapSounds.POSITIONS);
     }
 
     private static void sound(LivingEntity at) {

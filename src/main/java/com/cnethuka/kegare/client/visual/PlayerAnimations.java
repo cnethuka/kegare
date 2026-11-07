@@ -45,6 +45,9 @@ public final class PlayerAnimations {
     /** What this layer last started per player, staying after it's stopped: a stopped animation still has its fade out to play. */
     private static final Map<UUID, ResourceLocation> LATEST = new ConcurrentHashMap<>();
     private static final Set<ResourceLocation> VANILLA_HANDS = ConcurrentHashMap.newKeySet();
+    private static final Set<ResourceLocation> WHILE_LEVEL = ConcurrentHashMap.newKeySet();
+    /** How far down (degrees) you can look and still see a {@link #handsWhileLevel} animation's hands in your own first person. */
+    private static final float LEVEL_PITCH = 25f;
 
     private PlayerAnimations() {}
 
@@ -69,9 +72,18 @@ public final class PlayerAnimations {
         animations.forEach(VANILLA_HANDS::add);
     }
 
+    /**
+     * These show their hands in your own first person only while you look about level. The first-person model's arms hang from the
+     * body, which doesn't tip with the view: hands held in front of the chest sit at the bottom corners of a level view, but looking
+     * down brings them up into its middle. Looking further down than that, the hands are vanilla's until you look up again.
+     */
+    public static void handsWhileLevel(Iterable<ResourceLocation> animations) {
+        animations.forEach(WHILE_LEVEL::add);
+    }
+
     private static boolean keepsVanillaHands(AbstractClientPlayer player) {
         ResourceLocation latest = LATEST.get(player.getUUID());
-        return latest != null && VANILLA_HANDS.contains(latest);
+        return latest != null && (VANILLA_HANDS.contains(latest) || WHILE_LEVEL.contains(latest) && player.getXRot() > LEVEL_PITCH);
     }
 
     /** Whether this layer last started {@code animation} on the player, and it hasn't been stopped. A play-once counts until something replaces it. */

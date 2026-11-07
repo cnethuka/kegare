@@ -46,7 +46,7 @@ public final class Swap {
                     .defaultUnlockLevels()
                     .ultimate(TOTAL_SWAP)
                     .maliceColor(MALICE_COLOR)
-                    .signatureAnimation(SwapIds.ANIM_SWAP_SNAP)
+                    .signatureAnimation(SwapIds.ANIM_POSITIONS_CLAP)
                     .tabIcon(Items.ENDER_PEARL)
                     .build());
 

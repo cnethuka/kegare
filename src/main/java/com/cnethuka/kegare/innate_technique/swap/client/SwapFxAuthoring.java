@@ -49,58 +49,34 @@ public final class SwapFxAuthoring {
         return out;
     }
 
-    /** Where someone left: motes pulled in from a shell around the body, and a flash that collapses to nothing. */
+    /**
+     * Where someone left: a few tiny teal-white glints popping out of the body and gone in a few ticks. The afterimage and the
+     * flicker ring are drawn by SwapFx; this is only the sparkle on them.
+     */
     private static FX depart() {
-        ParticleEmitter pull = burstEmitter("pull", 26, 30);
-        ParticleConfig c = pull.config;
-        c.setStartLifetime(range(7, 10));
-        c.setStartSpeed(range(-3.6f, -2.6f)); // inward
-        c.setStartSize(uniform(range(0.05f, 0.1f)));
-        Sphere shell = sphere(1.0f);
-        shell.setRadiusThickness(0f);
-        c.shape.setShape(shell);
-        c.shape.setScale(new NumberFunction3(0.7f, 1.1f, 0.7f));
-        fadeIn(c, VIOLET, TEAL);
-        material(pull, glow(0.35f, 0.85f, 0.8f, 1.4f));
-
-        ParticleEmitter flash = single("flash", 8, 1.3f);
-        fadeOut(flash.config, PALE, TEAL);
-        shrink(flash.config);
-        material(flash, glow(0.3f, 0.9f, 0.82f, 1.3f));
-
-        ParticleEmitter column = single("column", 9, 1.6f);
-        column.config.renderer.setRenderMode(ParticleRendererSetting.Mode.Horizontal);
-        shrink(column.config);
-        fadeOut(column.config, LIGHT, DEEP);
-        material(column, recolor(KilaPresets.SHOCKWAVE.create(), 0.3f, 0.85f, 0.78f, 1.2f));
-        column.transform().localPosition(new Vector3f(0, -0.85f, 0));
-        return fx(pull, flash, column);
+        return fx(glints("glints", 9, 0.5f, 2.6f));
     }
 
-    /** Where someone arrived: a teal ring spreading on the ground, glints thrown out, a violet-edged flash. */
+    /** Where someone arrived: the same glints, fewer. */
     private static FX arrive() {
-        ParticleEmitter ring = single("ring", 12, 2.4f);
-        ring.config.renderer.setRenderMode(ParticleRendererSetting.Mode.Horizontal);
-        grow(ring.config, 0.2f);
-        fadeOut(ring.config, LIGHT, DEEP);
-        material(ring, recolor(KilaPresets.SHOCKWAVE.create(), 0.3f, 0.9f, 0.8f, 1.4f));
-        ring.transform().localPosition(new Vector3f(0, -0.85f, 0));
+        return fx(glints("glints", 6, 0.45f, 2.2f));
+    }
 
-        ParticleEmitter glints = burstEmitter("glints", 22, 26);
+    /** {@code count} pin-point glints from a body-sized shell, thrown out at up to {@code speed}, 3 to 6 ticks long. */
+    private static ParticleEmitter glints(String name, int count, float radius, float speed) {
+        ParticleEmitter glints = burstEmitter(name, count, count + 2);
         ParticleConfig c = glints.config;
-        c.setStartLifetime(range(8, 14));
-        c.setStartSpeed(range(2.2f, 4.5f));
-        c.setStartSize(uniform(range(0.04f, 0.09f)));
-        c.shape.setShape(sphere(0.35f));
-        gravity(c, 0.25f);
+        c.setStartLifetime(range(3, 6));
+        c.setStartSpeed(range(speed * 0.5f, speed));
+        c.setStartSize(uniform(range(0.035f, 0.06f)));
+        Sphere shell = sphere(radius);
+        shell.setRadiusThickness(0.2f);
+        c.shape.setShape(shell);
+        c.shape.setScale(new NumberFunction3(1f, 1.8f, 1f));
         fadeOut(c, PALE, TEAL);
-        material(glints, recolor(KilaPresets.SPARKS.create(), 0.4f, 0.95f, 0.85f, 1.5f));
-
-        ParticleEmitter flash = single("flash", 7, 1.1f);
-        fadeOut(flash.config, VIOLET_PALE, VIOLET);
-        shrink(flash.config);
-        material(flash, glow(0.66f, 0.4f, 0.97f, 1.2f));
-        return fx(ring, glints, flash);
+        shrink(c);
+        material(glints, glow(0.35f, 0.95f, 0.86f, 1.6f));
+        return glints;
     }
 
     /** One bead of the link drawn between two swapped players (the client lines beads up into a beam). */

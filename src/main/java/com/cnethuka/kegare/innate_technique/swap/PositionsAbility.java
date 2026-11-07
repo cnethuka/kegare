@@ -11,7 +11,7 @@ import net.minecraft.world.entity.LivingEntity;
 
 /** Positions (INSTANT): swap positions and facing with the player or mob you're looking at. Special: Switchback. */
 public final class PositionsAbility extends SwapAbility {
-    private static final AbilityVisuals VISUALS = AbilityVisuals.builder().cast(SwapIds.ANIM_SWAP_SNAP, null).build();
+    private static final AbilityVisuals VISUALS = AbilityVisuals.builder().cast(SwapIds.ANIM_POSITIONS_CLAP, null).build();
 
     PositionsAbility() {
         super("positions", CastType.INSTANT);
@@ -32,12 +32,12 @@ public final class PositionsAbility extends SwapAbility {
             CastManager.fizzleKeepingCost(caster);
             return;
         }
-        swap(caster, target);
+        swap(caster, target, SwapSounds.POSITIONS);
     }
 
-    /** The swap itself (Switchback and Total Swap do the same). */
-    static void swap(ServerPlayer caster, LivingEntity target) {
-        Swapper.swap(caster, target, true);
+    /** The swap itself (Switchback and Total Swap do the same, each with its own clap). */
+    static void swap(ServerPlayer caster, LivingEntity target, SwapSounds.Clap clap) {
+        Swapper.swap(caster, target, true, clap);
         SwapTracker.swapped(caster, target);
         SwapAdvancements.award(caster, SwapAdvancements.SWITCHEROO);
     }

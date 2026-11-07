@@ -60,7 +60,7 @@ public final class Switchback {
             stopTimers(casterId, caster, target);
             if (caster == null || !usable(caster, pending) || !usable(target, pending)) return;
             if (!SwapTargeting.allowed(caster, target, Swap.SWITCHBACK, Component.translatable("message.kegare.swap.switchback_refused"))) return;
-            Swapper.swap(caster, target, true);
+            Swapper.swap(caster, target, true, SwapSounds.POSITIONS);
             SwapTracker.swapped(caster, target);
         });
     }

@@ -6,7 +6,8 @@ import net.minecraft.resources.ResourceLocation;
 
 /** Swap's IDs: player animations (assets/kegare/player_animations/swap.json) and Photon effects (assets/kegare/fx/swap/). */
 public final class SwapIds {
-    // Player Animation Library animations
+    // Player Animation Library animations (tools/anims/swap.py)
+    public static final ResourceLocation ANIM_POSITIONS_CLAP = Kegare.id("positions_clap");
     public static final ResourceLocation ANIM_SWAP_SNAP = Kegare.id("swap_snap");
     public static final ResourceLocation ANIM_SWITCHBACK_CAST = Kegare.id("switchback_cast");
     public static final ResourceLocation ANIM_AWARENESS_CAST = Kegare.id("awareness_cast");
@@ -17,7 +18,7 @@ public final class SwapIds {
     public static final ResourceLocation ANIM_EXCHANGE_CAST = Kegare.id("exchange_cast");
     public static final ResourceLocation ANIM_MOMENTUM_CAST = Kegare.id("momentum_cast");
 
-    // Photon effects (teal and violet; never Rime's ice blue)
+    // Photon effects (teal; never Rime's ice blue). What Swap draws itself is in SwapFx.
     public static final ResourceLocation FX_SWAP_DEPART = fx("swap_depart");
     public static final ResourceLocation FX_SWAP_ARRIVE = fx("swap_arrive");
     public static final ResourceLocation FX_SWAP_LINK = fx("swap_link");
@@ -30,7 +31,7 @@ public final class SwapIds {
     public static final ResourceLocation FX_MOMENTUM_BURST = fx("momentum_burst");
     public static final ResourceLocation FX_TOTAL_SWAP_BURST = fx("total_swap_burst");
 
-    /** Both ends of every swap, played at a position (where someone left, where they arrived). */
+    /** Both ends of every swap, played at a position and naming who moved (the afterimage and the flicker are drawn from them). */
     public static final Visual DEPART = Visual.effect(FX_SWAP_DEPART, Visual.Anchor.BODY);
     public static final Visual ARRIVE = Visual.effect(FX_SWAP_ARRIVE, Visual.Anchor.BODY);
     /** Switchback: a faint ring on both, from the cast until the swap back. */

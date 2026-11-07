@@ -23,6 +23,7 @@ public final class KegareDataGen {
         // Assets
         generator.addProvider(event.includeClient(), new KegareLanguageProvider(output));
         generator.addProvider(event.includeClient(), new KegareItemModelProvider(output, files));
+        generator.addProvider(event.includeClient(), new KegareSoundProvider(output, files));
 
         // Data
         BlockTagsProvider blockTags = generator.addProvider(event.includeServer(), new KegareBlockTagsProvider(output, lookup, files));

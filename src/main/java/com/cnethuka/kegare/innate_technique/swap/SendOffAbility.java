@@ -45,6 +45,8 @@ public final class SendOffAbility extends SwapAbility.Special {
             return;
         }
         Vec3 to = anchor.arrivalFor(target);
+        SwapSounds.POSITIONS.at(target);
+        SwapSounds.POSITIONS.at(anchor);
         Swapper.depart(target);
         Swapper.depart(anchor);
         SwapLink.play(caster.serverLevel(), Swapper.bodyPos(target), Swapper.bodyPos(anchor));

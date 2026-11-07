@@ -1,6 +1,7 @@
 package com.cnethuka.kegare.innate_technique.swap.client;
 
 import com.cnethuka.kegare.client.visual.ClientVisuals;
+import com.cnethuka.kegare.client.visual.PlayerAnimations;
 import com.cnethuka.kegare.client.visual.VanillaFallback;
 import com.cnethuka.kegare.innate_technique.swap.SwapIds;
 import com.cnethuka.kegare.innate_technique.swap.SwapLink;
@@ -20,11 +21,16 @@ import net.minecraft.world.phys.Vec3;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.neoforge.client.event.ClientPlayerNetworkEvent;
 import net.neoforged.neoforge.client.event.ClientTickEvent;
+import net.neoforged.neoforge.client.event.RenderFrameEvent;
+import net.neoforged.neoforge.client.event.RenderLevelStageEvent;
+import net.neoforged.neoforge.client.event.RenderPlayerEvent;
+import com.mojang.blaze3d.vertex.PoseStack;
+import net.minecraft.client.player.AbstractClientPlayer;
 import net.neoforged.neoforge.common.NeoForge;
 
 /**
- * Swap's client side: effects drawn along a line (the swap link, Exchange's travelling orbs) and the disguises
- * ({@link DisguiseClient}).
+ * Swap's client side: what it draws itself ({@link SwapFx}), effects drawn along a line (Exchange's travelling orbs) and the
+ * disguises ({@link DisguiseClient}).
  */
 public final class SwapClient {
     /** Blocks between two beads of a line. */
@@ -53,6 +59,8 @@ public final class SwapClient {
 
     private static final List<Travel> TRAVELLING = new ArrayList<>();
     private static final DustParticleOptions TEAL_DUST = new DustParticleOptions(new Vector3f(0.08f, 0.72f, 0.65f), 1.0f);
+    /** Small teal dust for a swap's two ends: vanilla dust lives longer the bigger it is, and these should be gone at once. */
+    private static final DustParticleOptions TEAL_FLICK = new DustParticleOptions(new Vector3f(0.18f, 0.9f, 0.82f), 0.5f);
 
     private SwapClient() {}
 
@@ -60,9 +68,9 @@ public final class SwapClient {
         SwapLink.Payload.setClientHandler(SwapClient::onLink);
         DisguiseClient.init();
         modBus.addListener(SwapClient::registerRenderers);
-        // Lookalikes used when an effect can't load, or with vfxQuality = VANILLA (teal dust and violet witch sparks).
-        VanillaFallback.register(SwapIds.FX_SWAP_DEPART, new VanillaFallback.Spec(ParticleTypes.PORTAL, 1, 28, 0.5, 0.6));
-        VanillaFallback.register(SwapIds.FX_SWAP_ARRIVE, new VanillaFallback.Spec(TEAL_DUST, 1, 22, 0.6, 0.15));
+        // Lookalikes used when an effect can't load, or with vfxQuality = VANILLA (teal dust; never the enderman's purple).
+        VanillaFallback.register(SwapIds.FX_SWAP_DEPART, new VanillaFallback.Spec(TEAL_FLICK, 1, 12, 0.3, 0.02));
+        VanillaFallback.register(SwapIds.FX_SWAP_ARRIVE, new VanillaFallback.Spec(TEAL_FLICK, 1, 8, 0.3, 0.02));
         VanillaFallback.register(SwapIds.FX_SWAP_LINK, new VanillaFallback.Spec(TEAL_DUST, 1, 2, 0.05, 0.0));
         VanillaFallback.register(SwapIds.FX_SWITCHBACK_TIMER, new VanillaFallback.Spec(TEAL_DUST, 1, 4, 0.6, 0.0));
         VanillaFallback.register(SwapIds.FX_AWARENESS_SHIMMER, new VanillaFallback.Spec(ParticleTypes.WITCH, 1, 4, 0.6, 0.0));
@@ -73,7 +81,49 @@ public final class SwapClient {
         VanillaFallback.register(SwapIds.FX_MOMENTUM_BURST, new VanillaFallback.Spec(TEAL_DUST, 1, 24, 0.4, 0.3));
         VanillaFallback.register(SwapIds.FX_TOTAL_SWAP_BURST, new VanillaFallback.Spec(ParticleTypes.REVERSE_PORTAL, 1, 40, 0.6, 0.3));
         NeoForge.EVENT_BUS.addListener(SwapClient::onClientTick);
+        NeoForge.EVENT_BUS.addListener(SwapClient::onFrame);
+        NeoForge.EVENT_BUS.addListener(SwapClient::onTickPre);
         NeoForge.EVENT_BUS.addListener(SwapClient::onLogout);
+        NeoForge.EVENT_BUS.addListener(SwapClient::onRenderPlayer);
+        NeoForge.EVENT_BUS.addListener(SwapClient::onRenderLevel);
+        // Every Swap animation is a clap in front of the chest: in your own first person, only while you look about level.
+        PlayerAnimations.handsWhileLevel(List.of(SwapIds.ANIM_POSITIONS_CLAP, SwapIds.ANIM_SWAP_SNAP, SwapIds.ANIM_SWITCHBACK_CAST,
+                SwapIds.ANIM_AWARENESS_CAST, SwapIds.ANIM_MIMIC_CAST, SwapIds.ANIM_ANCHOR_THROW, SwapIds.ANIM_ANCHOR_RECALL,
+                SwapIds.ANIM_SEND_OFF_CAST, SwapIds.ANIM_EXCHANGE_CAST, SwapIds.ANIM_MOMENTUM_CAST));
+        // Both ends of every swap: drawn here from the entity the server names, and Photon's glints on top (or the dust) a tick late.
+        ClientVisuals.onPlayAt(SwapIds.FX_SWAP_DEPART, (level, pos, entityId, visual) -> {
+            SwapFx.depart(level, pos, entityId);
+            SwapFx.later(pos, visual);
+            return true;
+        });
+        ClientVisuals.onPlayAt(SwapIds.FX_SWAP_ARRIVE, (level, pos, entityId, visual) -> {
+            SwapFx.arrive(level, pos, entityId);
+            SwapFx.later(pos, visual);
+            return true;
+        });
+    }
+
+    /**
+     * Before the world ticks, so it never takes a step of the slide (which it reads as a stride, legs flung wide), and every frame,
+     * since a move read on a frame between ticks would otherwise show for that frame.
+     */
+    private static void onTickPre(ClientTickEvent.Pre event) {
+        ClientLevel level = Minecraft.getInstance().level;
+        if (level != null) SwapFx.snap(level);
+    }
+
+    private static void onFrame(RenderFrameEvent.Pre event) {
+        ClientLevel level = Minecraft.getInstance().level;
+        if (level != null) SwapFx.snap(level);
+    }
+
+    private static void onRenderPlayer(RenderPlayerEvent.Post event) {
+        if (event.getEntity() instanceof AbstractClientPlayer player) SwapFx.remember(player, event.getRenderer().getModel(), event.getPartialTick());
+    }
+
+    private static void onRenderLevel(RenderLevelStageEvent event) {
+        if (event.getStage() != RenderLevelStageEvent.Stage.AFTER_ENTITIES) return;
+        SwapFx.render(new PoseStack(), event.getCamera().getPosition(), event.getPartialTick().getGameTimeDeltaPartialTick(false));
     }
 
     private static void registerRenderers(EntityRenderersEvent.RegisterRenderers event) {
@@ -95,7 +145,9 @@ public final class SwapClient {
 
     private static void onClientTick(ClientTickEvent.Post event) {
         ClientLevel level = Minecraft.getInstance().level;
-        if (level == null || TRAVELLING.isEmpty()) return;
+        if (level == null) return;
+        SwapFx.tick(level);
+        if (TRAVELLING.isEmpty()) return;
         long now = level.getGameTime();
         for (Iterator<Travel> it = TRAVELLING.iterator(); it.hasNext(); ) {
             Travel t = it.next();
@@ -111,6 +163,7 @@ public final class SwapClient {
 
     private static void onLogout(ClientPlayerNetworkEvent.LoggingOut event) {
         TRAVELLING.clear();
+        SwapFx.clear();
     }
 
     private static int beads(Vec3 from, Vec3 to) {
