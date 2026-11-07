@@ -12,9 +12,9 @@ import net.minecraft.client.renderer.texture.OverlayTexture;
 import net.minecraft.resources.ResourceLocation;
 
 /**
- * The shell over a hand and forearm, read from its Blockbench OBJ export ({@code art/blockbench/fist_shell.bbmodel}). Modeled on an arm
- * hanging down with the hand at y=0; drawn in a player model's arm space, so it follows whatever pose the arm is in. It fades out by
- * height toward the elbow, per vertex, so the texture can scroll along it freely.
+ * The strained forearm of a Severed player's ready fist, read from its Blockbench OBJ export ({@code art/blockbench/fist_shell.bbmodel}).
+ * Modeled on an arm hanging down with the hand at y=0; drawn in a player model's arm space, so it follows whatever pose the arm is in.
+ * It fades out by height toward the elbow, per vertex.
  */
 final class FistShellMesh {
     /** A player arm's cube ends here in its own space: 10 pixels below the pivot. */
@@ -54,28 +54,25 @@ final class FistShellMesh {
         return leftArm ? centre : -centre;
     }
 
+    /** Where the arm's cube ends, in the arm's space. */
+    static float handEnd() {
+        return HAND_END;
+    }
+
     /** The middle of the fist, just past the knuckles, in the arm's space. */
     static float fistY() {
         return HAND_END + 0.5f / 16f;
     }
 
-    /**
-     * @param grow   how much bigger round the arm's axis (1 = as modeled)
-     * @param scroll added to V, so what's in the texture flows along the arm
-     * @param lit    shade it by its real normals (a physical thing), or face it straight at the light (it glows, so sides aren't darker)
-     */
-    void draw(PoseStack.Pose pose, VertexConsumer out, boolean leftArm, float centre, float grow, float scroll, int rgb, float alpha, int light, boolean lit) {
-        int r = rgb >> 16 & 0xFF, g = rgb >> 8 & 0xFF, b = rgb & 0xFF;
+    /** @param grow how much bigger round the arm's axis (1 = as modeled) */
+    void draw(PoseStack.Pose pose, VertexConsumer out, boolean leftArm, float centre, float grow, int light) {
         float mirror = leftArm ? -1f : 1f;
         for (int i = 0; i < vertices.length; i += STRIDE) {
             float y = vertices[i + 1];
             float x = vertices[i] * grow * mirror + centre;
             float z = vertices[i + 2] * grow;
-            int a = Math.round(255f * alpha * fade(y));
-            VertexConsumer vertex = out.addVertex(pose, x, HAND_END - y, z).setColor(r, g, b, a).setUv(vertices[i + 3], vertices[i + 4] + scroll)
-                    .setOverlay(OverlayTexture.NO_OVERLAY).setLight(light);
-            if (lit) vertex.setNormal(pose, vertices[i + 5] * mirror, -vertices[i + 6], vertices[i + 7]);
-            else vertex.setNormal(0f, 1f, 0f);
+            out.addVertex(pose, x, HAND_END - y, z).setColor(255, 255, 255, Math.round(255f * fade(y))).setUv(vertices[i + 3], vertices[i + 4])
+                    .setOverlay(OverlayTexture.NO_OVERLAY).setLight(light).setNormal(pose, vertices[i + 5] * mirror, -vertices[i + 6], vertices[i + 7]);
         }
     }
 
@@ -112,7 +109,7 @@ final class FistShellMesh {
                 }
             }
         } catch (IOException | RuntimeException e) {
-            Kegare.LOGGER.warn("Couldn't read {}; no shell on a ready fist", id, e);
+            Kegare.LOGGER.warn("Couldn't read {}; no strain on a ready fist", id, e);
         }
         float[] vertices = new float[out.size()];
         for (int i = 0; i < vertices.length; i++) vertices[i] = out.get(i);

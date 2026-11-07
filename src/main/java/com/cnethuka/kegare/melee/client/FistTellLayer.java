@@ -13,8 +13,8 @@ import net.minecraft.world.entity.HumanoidArm;
 import org.joml.Vector3f;
 
 /**
- * The shell on a player's attacking arm, drawn from the arm as the model has it, so it follows every animation. It draws nothing of
- * an item layer: it only extends that class because Player Animation Library's first-person pass, which shows your own arms during an
+ * The tell on a player's attacking arm, drawn from the arm as the model has it, so it follows every animation. It draws nothing of an
+ * item layer: it only extends that class because Player Animation Library's first-person pass, which shows your own arms during an
  * animation, draws no other layers on you but items and armor, and a ready fist has to show there too.
  */
 final class FistTellLayer extends PlayerItemInHandLayer<AbstractClientPlayer, PlayerModel<AbstractClientPlayer>> {
@@ -34,8 +34,17 @@ final class FistTellLayer extends PlayerItemInHandLayer<AbstractClientPlayer, Pl
         ModelPart arm = left ? getParentModel().leftArm : getParentModel().rightArm;
         pose.pushPose();
         arm.translateAndRotate(pose);
-        FistTell.drawShell(pose, buffers, look, player.tickCount + partialTick, slim, left, light);
-        FistTell.reportFist(player, pose.last().pose().transformPosition(FistShellMesh.armCentre(slim, left), FistShellMesh.fistY(), 0f, new Vector3f()));
+        Vector3f fist = pose.last().pose().transformPosition(FistShellMesh.armCentre(slim, left), FistShellMesh.fistY(), 0f, new Vector3f());
+        float time = player.tickCount + partialTick;
+        if (FistTell.inWorld(player, fist, partialTick)) {
+            boolean self = FistTell.firstPersonSelf(player);
+            FistTell.drawArm(pose, buffers, look, time, slim, left, light, fist.negate(new Vector3f()).normalize(), new Vector3f(0f, 1f, 0f),
+                    self ? FistFlames.Fit.FIRST_PERSON : FistFlames.Fit.BODY);
+            FistTell.reportFist(player, fist);
+            if (!self) FistTell.drawWisps(player, buffers, partialTick);
+        } else {
+            FistTell.drawArm(pose, buffers, look, time, slim, left, light, new Vector3f(0f, 0f, 1f), new Vector3f(0f, -1f, 0f), FistFlames.Fit.BODY);
+        }
         pose.popPose();
     }
 }

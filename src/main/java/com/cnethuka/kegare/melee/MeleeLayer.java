@@ -34,8 +34,6 @@ public final class MeleeLayer {
         VisualHooks.registerEffect(MeleeIds.FX_STRIKE_IMPACT);
         VisualHooks.registerEffect(MeleeIds.FX_STRIKE_BURST);
         VisualHooks.registerEffect(MeleeIds.FX_STRIKE_IMPACT_PHYSICAL);
-        VisualHooks.registerEffect(MeleeIds.FX_FIST_WISPS);
-        VisualHooks.registerEffect(MeleeIds.FX_FIST_WISPS_SELF);
         VisualHooks.registerEffect(MeleeIds.FX_FIST_STEAM);
         VisualHooks.registerEffect(MeleeIds.FX_FIST_STEAM_SELF);
     }

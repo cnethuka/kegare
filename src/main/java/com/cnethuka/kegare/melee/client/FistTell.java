@@ -45,17 +45,32 @@ import org.joml.Vector3f;
 
 /**
  * A ready Reinforced Strike on a player's attacking hand. The server says what each client should see ({@link MeleeTell}), and this
- * draws it: a shell over the hand and forearm, in the arm's own space so it follows every animation, and an effect flowing off the fist.
- * Glowing in the Malice color, or for the physical tell a strained forearm with steam coming off it.
+ * draws it, in the arm's own space so it follows every animation: Malice burning round the hand and forearm ({@link FistFlames}), or for
+ * the physical tell a strained forearm with steam coming off it.
  * <p>
- * The effect goes where the shell's hand really is, reported each frame from where it was drawn. In first person there are two ways
- * that happens: while an animation shows your own body the layer draws as usual, and otherwise the hand pass does ({@link #onRenderHand}).
+ * Whatever comes off the fist goes where the hand really is, reported each frame from where it was drawn. In first person there are two
+ * ways that happens: while an animation shows your own body the layer draws as usual, and otherwise the hand pass does ({@link #onRenderHand}).
  */
 public final class FistTell {
-    private static final ResourceLocation SHELL = Kegare.id("textures/entity/fist_shell.png");
     private static final ResourceLocation STRAIN = Kegare.id("textures/entity/fist_strain.png");
     /** No report of where the fist is for this long (off screen): go by the body, so nothing's left behind. */
     private static final int STALE_AFTER_TICKS = 3;
+    /** How far off where the player is a fist can be and still be in the world. Further than that, this is a screen drawing them. */
+    private static final double FARTHEST_FIST = 4.0;
+    /** How often a curl comes off the fist: at full effects, at Reduced, and your own in first person. */
+    private static final int WISP_EVERY_TICKS = 4;
+    private static final int WISP_EVERY_TICKS_REDUCED = 8;
+    private static final int WISP_EVERY_TICKS_SELF = 6;
+    private static final float WISP_SIZE = 0.31f;
+    /** Your own, right by the camera, in view space. */
+    private static final float WISP_SIZE_SELF = 0.11f;
+    private static final float WISP_SCALE_SELF = 0.42f;
+    /** In first person with something in hand: from where a bare fist would be to where vanilla puts the grip, in view space. */
+    private static final float GRIP_ACROSS = 0.12f;
+    private static final float GRIP_UP = 0.04f;
+    /** The quads have to clear the corners of the arm's cube, wherever the camera is. */
+    private static final float RADIUS = 3f / 16f;
+    private static final float RADIUS_SLIM = 2.7f / 16f;
 
     private static final class Shown {
         MeleeTell.Look look;
@@ -63,6 +78,10 @@ public final class FistTell {
         @Nullable ResourceLocation effectId;
         @Nullable Vec3 fist;
         int staleTicks;
+        /** A ring of the curls that are off the fist: where each came off, and when. */
+        final Vec3[] wispFrom = new Vec3[(FistFlames.WISP_LIFE_TICKS / WISP_EVERY_TICKS) + 1];
+        final int[] wispBorn = new int[wispFrom.length];
+        int nextWisp;
 
         Shown(MeleeTell.Look look) {
             this.look = look;
@@ -125,29 +144,68 @@ public final class FistTell {
         return shown.look;
     }
 
-    /** The shell, with the pose already in the arm's space. */
-    static void drawShell(PoseStack pose, MultiBufferSource buffers, MeleeTell.Look look, float time, boolean slim, boolean leftArm, int light) {
-        FistShellMesh mesh = FistShellMesh.of(slim);
+    /**
+     * The tell, with the pose already in the arm's space.
+     *
+     * @param toCamera toward the camera, in the axes the pose comes out in
+     * @param up       which way is up, in those axes
+     */
+    static void drawArm(PoseStack pose, MultiBufferSource buffers, MeleeTell.Look look, float time, boolean slim, boolean leftArm, int light,
+                        Vector3f toCamera, Vector3f up, FistFlames.Fit fit) {
         float centre = FistShellMesh.armCentre(slim, leftArm);
-        PoseStack.Pose last = pose.last();
         if (look.kind() == MeleeTell.Kind.GLOW) {
-            int color = MeleeTell.bright(look.color()) & 0xFFFFFF;
-            int pale = mix(color, 0xFFFFFF, 0.5f);
-            float breathe = 0.86f + 0.14f * Mth.sin(time * 0.45f);
-            VertexConsumer out = buffers.getBuffer(RenderType.entityTranslucentEmissive(SHELL));
-            mesh.draw(last, out, leftArm, centre, 1f, time * -0.045f, color, 0.92f * breathe, light, false);
-            mesh.draw(last, out, leftArm, centre, 1.1f, time * -0.075f + 0.37f, pale, 0.62f * breathe, light, false);
+            FistFlames.drawArm(pose.last(), buffers.getBuffer(FistFlames.renderType()), MeleeTell.bright(look.color()) & 0xFFFFFF, time, FistShellMesh.handEnd(), centre,
+                    slim ? RADIUS_SLIM : RADIUS, toCamera, up, leftArm, fit);
         } else {
-            VertexConsumer out = buffers.getBuffer(RenderType.entityTranslucent(STRAIN));
-            mesh.draw(last, out, leftArm, centre, 1.08f, 0f, 0xFFFFFF, 1f, light, true);
+            FistShellMesh.of(slim).draw(pose.last(), buffers.getBuffer(RenderType.entityTranslucent(STRAIN)), leftArm, centre, 1.08f, light);
         }
     }
 
-    private static int mix(int from, int to, float t) {
-        int r = Math.round((from >> 16 & 0xFF) + ((to >> 16 & 0xFF) - (from >> 16 & 0xFF)) * t);
-        int g = Math.round((from >> 8 & 0xFF) + ((to >> 8 & 0xFF) - (from >> 8 & 0xFF)) * t);
-        int b = Math.round((from & 0xFF) + ((to & 0xFF) - (from & 0xFF)) * t);
-        return r << 16 | g << 8 | b;
+    /** The curls off this player's fist, where they came off it, in the world as the camera sees it. */
+    static void drawWisps(Player player, MultiBufferSource buffers, float partialTick) {
+        Shown shown = SHOWN.get(player.getId());
+        if (shown == null || shown.look.kind() != MeleeTell.Kind.GLOW || KegareClientConfig.VFX_QUALITY.get() == VfxQuality.VANILLA) return;
+        Camera camera = Minecraft.getInstance().gameRenderer.getMainCamera();
+        Vec3 from = camera.getPosition();
+        Vector3f right = new Vector3f(camera.getLeftVector()).negate();
+        Vector3f up = new Vector3f(camera.getUpVector());
+        Vector3f at = new Vector3f();
+        int rgb = MeleeTell.bright(shown.look.color()) & 0xFFFFFF;
+        VertexConsumer out = buffers.getBuffer(FistFlames.renderType());
+        float time = player.tickCount + partialTick;
+        for (int i = 0; i < shown.wispFrom.length; i++) {
+            Vec3 start = shown.wispFrom[i];
+            if (start == null) continue;
+            float age = (time - shown.wispBorn[i]) / FistFlames.WISP_LIFE_TICKS;
+            if (age < 0f || age >= 1f) continue;
+            float seed = seed(shown.wispBorn[i]);
+            FistFlames.wispPath(age, seed, at);
+            FistFlames.drawWisp(out, (float) (start.x - from.x) + at.x, (float) (start.y - from.y) + at.y, (float) (start.z - from.z) + at.z,
+                    right, up, WISP_SIZE, age, seed < 0.5f, rgb);
+        }
+    }
+
+    /** Your own curls in first person: they rise off the hand on the screen and stay near it, in view space. */
+    private static void drawWispsSelf(Shown shown, MultiBufferSource buffers, Vector3f fist, float time) {
+        if (KegareClientConfig.VFX_QUALITY.get() == VfxQuality.VANILLA) return;
+        Vector3f right = new Vector3f(1f, 0f, 0f);
+        Vector3f up = new Vector3f(0f, 1f, 0f);
+        Vector3f at = new Vector3f();
+        int rgb = MeleeTell.bright(shown.look.color()) & 0xFFFFFF;
+        VertexConsumer out = buffers.getBuffer(FistFlames.renderType());
+        for (int i = 0; i < shown.wispFrom.length; i++) {
+            if (shown.wispFrom[i] == null) continue;
+            float age = (time - shown.wispBorn[i]) / FistFlames.WISP_LIFE_TICKS;
+            if (age < 0f || age >= 1f) continue;
+            float seed = seed(shown.wispBorn[i]);
+            FistFlames.wispPath(age, seed, at).mul(WISP_SCALE_SELF);
+            FistFlames.drawWisp(out, fist.x + at.x, fist.y + at.y, fist.z + at.z, right, up, WISP_SIZE_SELF, age, seed < 0.5f, rgb);
+        }
+    }
+
+    /** From when it came off, so it stays the same over its life and differs from the one before. */
+    private static float seed(int born) {
+        return Mth.frac(born * 0.6180339f);
     }
 
     /** The world position of the fist the pose is in the arm space of. {@code relative}: as the level draws it, relative to the camera. */
@@ -158,11 +216,23 @@ public final class FistTell {
         shown.staleTicks = 0;
     }
 
+    /** Is this fist being drawn in the world? A screen's preview of a player goes through the same layer, in its own space. */
+    static boolean inWorld(Player player, Vector3f relative, float partialTick) {
+        Vec3 at = Minecraft.getInstance().gameRenderer.getMainCamera().getPosition().add(relative.x, relative.y, relative.z);
+        return at.distanceToSqr(player.getPosition(partialTick)) < FARTHEST_FIST * FARTHEST_FIST;
+    }
+
+    /** Your own first person, where the fire has to stay small. */
+    static boolean firstPersonSelf(Player player) {
+        Minecraft mc = Minecraft.getInstance();
+        return player == mc.player && mc.options.getCameraType().isFirstPerson();
+    }
+
     /**
-     * Vanilla first person: there's no body to draw on, and with something in hand no arm either, so the shell is drawn where
-     * vanilla puts a bare arm (the same moves as {@code ItemInHandRenderer.renderPlayerArm}, swing and all), over the empty hand or
-     * behind the item. It waits for the off hand's turn, which comes after the main arm is down: the shell doesn't write depth, so an arm
-     * drawn after it would paint straight over it. Only the main hand's swing and equip numbers are any use, so they're kept from its turn.
+     * Vanilla first person: there's no body to draw on, and with something in hand no arm either, so the tell is drawn where vanilla
+     * puts a bare arm (the same moves as {@code ItemInHandRenderer.renderPlayerArm}, swing and all), round the empty hand or the grip of
+     * what's held. It waits for the off hand's turn, which comes after the main arm is down. Only the main hand's swing and equip numbers
+     * are any use, so they're kept from its turn.
      */
     private static void onRenderHand(RenderHandEvent event) {
         Minecraft mc = Minecraft.getInstance();
@@ -182,6 +252,7 @@ public final class FistTell {
         PoseStack pose = event.getPoseStack();
         pose.pushPose();
         GuardHand.apply(pose, side, event.getPartialTick());
+        if (!player.getMainHandItem().isEmpty()) pose.translate(side * GRIP_ACROSS, GRIP_UP, 0f); // no arm drawn: round what's held
         pose.translate(side * (-0.3f * Mth.sin(root * Mth.PI) + 0.64000005f), 0.4f * Mth.sin(root * Mth.TWO_PI) - 0.6f - mainHandEquip * 0.6f,
                 -0.4f * Mth.sin(swing * Mth.PI) - 0.71999997f);
         pose.mulPose(Axis.YP.rotationDegrees(side * 45f));
@@ -203,10 +274,13 @@ public final class FistTell {
             arm.translateAndRotate(pose);
             boolean slim = player.getSkin().model() == PlayerSkin.Model.SLIM;
             float time = player.tickCount + event.getPartialTick();
-            drawShell(pose, event.getMultiBufferSource(), look, time, slim, left, event.getPackedLight());
             Vector3f fist = pose.last().pose().transformPosition(FistShellMesh.armCentre(slim, left), FistShellMesh.fistY(), 0f, new Vector3f());
+            drawArm(pose, event.getMultiBufferSource(), look, time, slim, left, event.getPackedLight(), fist.negate(new Vector3f()).normalize(),
+                    new Vector3f(0f, 1f, 0f), FistFlames.Fit.FIRST_PERSON);
+            Shown shown = SHOWN.get(player.getId());
+            if (shown != null && look.kind() == MeleeTell.Kind.GLOW) drawWispsSelf(shown, event.getMultiBufferSource(), fist, time);
             Camera camera = mc.gameRenderer.getMainCamera();
-            reportFist(player, fist.rotate(camera.rotation()));
+            reportFist(player, fist.rotate(camera.rotation(), new Vector3f()));
         }
         pose.popPose();
     }
@@ -234,20 +308,28 @@ public final class FistTell {
             }
             Vec3 fist = shown.fist != null && shown.staleTicks < STALE_AFTER_TICKS ? shown.fist : player.position().add(0, player.getBbHeight() * 0.45, 0);
             shown.staleTicks++;
-            boolean self = player == mc.player && mc.options.getCameraType().isFirstPerson();
-            if (KegareClientConfig.VFX_QUALITY.get() == VfxQuality.VANILLA) {
+            boolean self = firstPersonSelf(player);
+            VfxQuality quality = KegareClientConfig.VFX_QUALITY.get();
+            if (quality == VfxQuality.VANILLA) {
                 shown.stopEffect();
                 if (!self) vanillaParticles(level, shown.look, fist);
                 continue;
             }
-            ResourceLocation wanted = shown.look.kind() == MeleeTell.Kind.GLOW
-                    ? (self ? MeleeIds.FX_FIST_WISPS_SELF : MeleeIds.FX_FIST_WISPS)
-                    : (self ? MeleeIds.FX_FIST_STEAM_SELF : MeleeIds.FX_FIST_STEAM);
+            if (shown.look.kind() == MeleeTell.Kind.GLOW) {
+                shown.stopEffect();
+                int every = self ? WISP_EVERY_TICKS_SELF : quality == VfxQuality.REDUCED ? WISP_EVERY_TICKS_REDUCED : WISP_EVERY_TICKS;
+                if (player.tickCount % every == 0) {
+                    shown.wispFrom[shown.nextWisp] = fist;
+                    shown.wispBorn[shown.nextWisp] = player.tickCount;
+                    shown.nextWisp = (shown.nextWisp + 1) % shown.wispFrom.length;
+                }
+                continue;
+            }
+            ResourceLocation wanted = self ? MeleeIds.FX_FIST_STEAM_SELF : MeleeIds.FX_FIST_STEAM;
             if (shown.effect == null || !wanted.equals(shown.effectId)) {
                 shown.stopEffect();
                 shown.effect = ClientVisuals.startAt(wanted, fist);
                 shown.effectId = wanted;
-                if (shown.effect != null && shown.look.kind() == MeleeTell.Kind.GLOW) shown.effect.tint(MeleeTell.bright(shown.look.color()));
             } else {
                 shown.effect.moveTo(fist);
             }

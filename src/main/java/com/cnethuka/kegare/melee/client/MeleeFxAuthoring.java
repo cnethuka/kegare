@@ -46,8 +46,6 @@ public final class MeleeFxAuthoring {
         out.put(MeleeIds.FX_STRIKE_IMPACT, MeleeFxAuthoring::strikeImpact);
         out.put(MeleeIds.FX_STRIKE_BURST, MeleeFxAuthoring::strikeBurst);
         out.put(MeleeIds.FX_STRIKE_IMPACT_PHYSICAL, MeleeFxAuthoring::strikeImpactPhysical);
-        out.put(MeleeIds.FX_FIST_WISPS, MeleeFxAuthoring::fistWisps);
-        out.put(MeleeIds.FX_FIST_WISPS_SELF, MeleeFxAuthoring::fistWispsSelf);
         out.put(MeleeIds.FX_FIST_STEAM, MeleeFxAuthoring::fistSteam);
         out.put(MeleeIds.FX_FIST_STEAM_SELF, MeleeFxAuthoring::fistSteamSelf);
         return out;
@@ -285,57 +283,6 @@ public final class MeleeFxAuthoring {
         fadeOut(g, 0xFFFFFFFF, 0x00FFFFFF);
         material(grit, physical(0.24f, 0.2f, 0.17f, 1f));
         return fx(dust, grit);
-    }
-
-    /** Thin streaks coming off the fist and up, authored white for the runtime tint. */
-    private static ParticleEmitter wisps(String name, float rate, int max, float sizeMin, float sizeMax, float radius, float intensity) {
-        ParticleEmitter e = emitter(name, true, 20);
-        ParticleConfig c = e.config;
-        c.setSimulationSpace(ParticleConfig.Space.World);
-        c.setMaxParticles(max);
-        c.setStartLifetime(range(6, 10));
-        c.setStartSpeed(range(0.2f, 0.55f));
-        c.setStartSize(uniform(range(sizeMin, sizeMax)));
-        c.emission.setEmissionRate(NumberFunction.constant(rate));
-        c.shape.setShape(sphere(radius));
-        c.velocityOverLifetime.setEnable(true);
-        c.velocityOverLifetime.setLinear(new NumberFunction3(0, 0.8f, 0));
-        c.renderer.setRenderMode(ParticleRendererSetting.Mode.StretchedBillboard);
-        c.renderer.setLengthScale(6f);
-        fadeInOut(c, WHITE, 0x00D0D0D0);
-        material(e, glow(1f, 1f, 1f, intensity));
-        return e;
-    }
-
-    /** A little soft body behind the streaks, alpha-blended: additive light alone washes out against a bright sky. */
-    private static ParticleEmitter wispBody(String name, float rate, int max, float size, float radius) {
-        ParticleEmitter e = emitter(name, true, 20);
-        ParticleConfig c = e.config;
-        c.setSimulationSpace(ParticleConfig.Space.World);
-        c.setMaxParticles(max);
-        c.setStartLifetime(range(6, 10));
-        c.setStartSpeed(NumberFunction.constant(0.1f));
-        c.setStartSize(uniform(range(size * 0.6f, size)));
-        c.emission.setEmissionRate(NumberFunction.constant(rate));
-        c.shape.setShape(sphere(radius));
-        c.velocityOverLifetime.setEnable(true);
-        c.velocityOverLifetime.setLinear(new NumberFunction3(0, 0.55f, 0));
-        fadeInOut(c, 0xA0FFFFFF, 0x00FFFFFF);
-        KilaMaterial m = KilaPresets.SMOKE.create();
-        m.color = new HDRColor(1f, 1f, 1f, 0.9f, 1.2f);
-        m.worldLight = false;
-        material(e, m);
-        return e;
-    }
-
-    /** A Strike is ready: Malice flowing off the fist. On someone else, it's what you read from across a fight. */
-    private static FX fistWisps() {
-        return fx(wispBody("tint_body", 1f, 12, 0.22f, 0.1f), wisps("tint_wisps", 2.2f, 26, 0.022f, 0.045f, 0.14f, 2.1f));
-    }
-
-    /** The same on your own fist in first person: right by the camera, so a few thin ones. */
-    private static FX fistWispsSelf() {
-        return fx(wisps("tint_wisps", 0.8f, 10, 0.008f, 0.016f, 0.07f, 1.6f));
     }
 
     private static ParticleEmitter steam(String name, float rate, int max, float sizeMin, float sizeMax, float radius, int peak) {

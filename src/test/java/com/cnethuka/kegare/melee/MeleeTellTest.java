@@ -160,10 +160,11 @@ class MeleeTellTest {
 
     @Test
     void everyNewEffectIsThere() {
-        for (String name : List.of("fist_wisps", "fist_wisps_self", "fist_steam", "fist_steam_self", "strike_impact", "strike_burst", "strike_impact_physical")) {
+        for (String name : List.of("fist_steam", "fist_steam_self", "strike_impact", "strike_burst", "strike_impact_physical")) {
             assertTrue(Files.isRegularFile(FX.resolve(name + ".fx")), name);
         }
         assertTrue(!Files.exists(FX.resolve("strike_ready.fx")), "the gold motes are gone");
+        assertTrue(!Files.exists(FX.resolve("fist_wisps.fx")), "the fist's curls are drawn with its flames now");
     }
 
     @Test
