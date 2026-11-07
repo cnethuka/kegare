@@ -911,7 +911,9 @@ Package `com.cnethuka.kegare.innate_technique.rime`. **Rarity: RARE.** All numbe
     slows (0.9 blocks either side), so they run together into a band. Each patch's reach and place wander a little, so its
     edges aren't ruled lines, and it's only ever laid turned the four ways that keep the shine on its diagonal. A patch
     forms from the middle out in 3 ticks (bright for its first two), holds, and melts from the edge in over 1.2 s, centred
-    on when the server's trail there expires (the trail time from the config). No block changes.
+    on when the server's trail there expires (the trail time from the config). It glows faintly all over (level 6 of 15,
+    `GLOW_FLOOR`): it slows whoever steps on it, so it reads on dark ground at night, paler than the ground, but lights
+    nothing round it and doesn't look like a light source. No block changes.
   - **The effect:** `ice_path_trail` is only what's thrown up at the feet (world space, left behind): fine ice specks
     kicked out low and the odd glint rising.
   - **The body:** `ice_path_slide` (`tools/anims/ice_path.py`) pushes off, then glides like a skater: feet split, the left
@@ -973,8 +975,9 @@ Package `com.cnethuka.kegare.innate_technique.rime`. **Rarity: RARE.** All numbe
     clumps through it, rime feathering up each face from below and gathering on the edges. It covers the stacks out of the
     most (`freeze.maxStacks`, synced): up from the soles and the hands, the legs and forearms, the hips, then the chest, the
     head last; ragged, by an order map. It creeps to a new stack over about half a second with a rim of rime on its edge,
-    and melts back slower as stacks melt. Drawn on the skin's outer layer, over a jacket or sleeves, lit by the world; not on
-    an invisible player. Armour covers it.
+    and melts back slower as stacks melt. Drawn on the skin's outer layer, over a jacket or sleeves, lit by the world with a
+    faint glow of its own (`FreezeClient.GLOW`, level 6 of 15, as Ice Path's ice) so the stacks can be counted at night
+    without the body looking lit; not on an invisible player. Armour covers it.
   - **Frozen solid:** the glaze thickens to solid pale ice over the whole body, head too, in the `frozen` pose
     (`tools/anims/freeze.py`): seized flinching from the cold, hunched, arms drawn in across the chest, then held with only a
     faint tremble.

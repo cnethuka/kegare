@@ -197,6 +197,12 @@ class FreezeArtTest {
         assertTrue(solid <= 3, "frozen solid at once");
     }
 
+    /** A faint glow, as Ice Path's ice has: the stacks read on a body at night, but the body doesn't look lit. */
+    @Test
+    void itGlowsFaintlyAtNight() {
+        assertTrue(FreezeClient.GLOW >= 4 && FreezeClient.GLOW <= 7, "faint: " + FreezeClient.GLOW);
+    }
+
     @Test
     void everyStackCountHasItsOwnLoop() {
         Set<String> keys = new HashSet<>();

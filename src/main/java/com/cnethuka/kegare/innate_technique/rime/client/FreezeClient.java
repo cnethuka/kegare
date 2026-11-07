@@ -45,7 +45,8 @@ import net.neoforged.neoforge.client.event.EntityRenderersEvent;
  * <li>Frozen solid (the frozen loop): all of it, the whole body glazed in ice.</li>
  * <li>Breaking free ({@code freeze_shatter}): it's gone at once, burst off the body as solid chips of ice.</li>
  * </ul>
- * Drawn on the skin's outer layer (over a jacket or sleeves), lit by the world. Not on an invisible player. Your own first person
+ * Drawn on the skin's outer layer (over a jacket or sleeves), lit by the world with a faint glow of its own ({@link #GLOW}) so it
+ * reads at night. Not on an invisible player. Your own first person
  * draws no body; you have the stacks on the HUD.
  */
 public final class FreezeClient {
@@ -63,6 +64,11 @@ public final class FreezeClient {
     static final int RIME = argb(230, 230, 244, 255), GLAZE = argb(150, 112, 172, 234);
     /** Frozen solid, the glaze thickens to solid pale ice: plainly more than the most frost. */
     static final int SOLID = argb(215, 170, 214, 250);
+    /**
+     * The frost's faint glow (a minimum light, 0 to 15, as block marks' glow): it reads on a body at night, so you can count the
+     * stacks in the dark, without the body looking lit.
+     */
+    static final int GLOW = 6;
     /** Stacks counted up to at most this many, whatever the most is set to. */
     private static final int MOST = 32;
 
@@ -246,7 +252,8 @@ public final class FreezeClient {
                 outer[i].visible = true;
             }
             try {
-                model.renderToBuffer(pose, buffers.getBuffer(RenderType.entityTranslucent(texture)), light, OverlayTexture.NO_OVERLAY, -1);
+                model.renderToBuffer(pose, buffers.getBuffer(RenderType.entityTranslucent(texture)), BlockMarks.lit(light, GLOW),
+                        OverlayTexture.NO_OVERLAY, -1);
             } finally {
                 for (int i = 0; i < 6; i++) {
                     inner[i].visible = was[i];

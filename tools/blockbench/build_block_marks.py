@@ -536,8 +536,9 @@ PATTERNS = {"lance_frost": lance_frost, "spire_crack": spire_crack, "spire_burst
             "shatter_ring": shatter_ring}
 
 
-# A faint glow all over a mark (a minimum light), by name.
-GLOW_FLOOR = {}
+# A faint glow all over a mark (a minimum light): Ice Path's ice slows whoever steps on it, so it has to be seen on dark ground at
+# night, but it must not look like a light source.
+GLOW_FLOOR = {"path_ice": 6, "path_ice_b": 6}
 
 
 def main(args):

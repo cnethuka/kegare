@@ -75,7 +75,7 @@ class BlockMarksTest {
     void glowIsFaintAndOnlyWhereItShouldBe() throws IOException {
         for (String name : patterns()) {
             Path file = marks().resolve(name + "_glow.png");
-            boolean expected = name.equals("spire_crack");
+            boolean expected = name.startsWith("path_ice") || name.equals("spire_crack");
             assertEquals(expected, Files.exists(file), name + (expected ? " has no glow" : " should be lit by the world alone"));
             if (!expected) continue;
             BufferedImage art = ImageIO.read(marks().resolve(name + ".png").toFile());
