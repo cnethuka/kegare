@@ -37,6 +37,7 @@ public final class RimeIds {
     public static final ResourceLocation FX_FROST_FIELD_MIST = fx("frost_field_mist");
     public static final ResourceLocation FX_RIME_SHELL_AURA = fx("rime_shell_aura");
     public static final ResourceLocation FX_RIME_SHELL_AURA_SELF = fx("rime_shell_aura_self");
+    public static final ResourceLocation FX_SHATTER_SHELL_BURST_SELF = fx("shatter_shell_burst_self");
     public static final ResourceLocation FX_FREEZE_SHATTER = fx("freeze_shatter");
     // Specials
     public static final ResourceLocation FX_SPLINTER_CAST = fx("splinter_cast");

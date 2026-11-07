@@ -2,7 +2,6 @@ package com.cnethuka.kegare.innate_technique.rime.client;
 
 import com.cnethuka.kegare.client.visual.ClientVisuals;
 import com.cnethuka.kegare.innate_technique.rime.Rime;
-import com.cnethuka.kegare.innatetechnique.visual.Visual;
 import com.cnethuka.kegare.innatetechnique.visual.VisualPhase;
 import com.cnethuka.kegare.innatetechnique.visual.VisualService;
 import com.mojang.blaze3d.vertex.PoseStack;
@@ -43,7 +42,8 @@ import org.joml.Vector3f;
  * <li>When the shell goes up (its toggle loop starts) the plates form one after another, chest first, each popping out a little
  * past its size and settling.</li>
  * <li>When it comes down they break off where they were drawn and fall away, tumbling and shrinking ({@link #burst} sends them
- * flying instead: Shatter Shell).</li>
+ * flying out to the ring instead: Shatter Shell, ShatterClient; with no shell up, a Shatter Shell bursts a whole set off the body
+ * all the same).</li>
  * </ul>
  * Read off the server's own toggle loop on the player, so it shows exactly while the shell is up.
  */
@@ -68,7 +68,14 @@ public final class ShellClient {
     /** Where each plate was last drawn on each player: its own space to the world's (and the turn of its normals). */
     private record Drawn(Matrix4f toWorld, Matrix3f normals, float scale) {}
 
-    private static final Map<Integer, Map<String, Drawn>> DRAWN = new HashMap<>();
+    /** Where each player's plates were last drawn in the world, and on which game tick. */
+    private record Body(long tick, Map<String, Drawn> plates) {}
+
+    private static final Map<Integer, Body> DRAWN = new HashMap<>();
+    /** Shatter Shells cast with no shell up, by player, and the tick: the next time the body is drawn, a whole set bursts off it. */
+    private static final Map<Integer, Long> PENDING = new HashMap<>();
+    /** How far a burst's plates fly (blocks from the body), set by ShatterClient from the knockback's reach. */
+    private static float burstReach = 4.1f;
 
     /** A plate off the body: where it was, which way it's going, how it turns. */
     private static final class Debris {
@@ -80,8 +87,9 @@ public final class ShellClient {
         final Vector3f spinAxis;
         float spin;
         final float scale;
-        final int life;
         float gravity;
+        boolean burst;
+        int life;
         int age;
 
         Debris(String plate, Drawn drawn, Vector3f centre, Vector3f velocity, float spin, int life, float gravity) {
@@ -117,13 +125,6 @@ public final class ShellClient {
             @Override
             public void loopStopped(Entity entity, String key, float ticks, int growTicks) {
                 if (LOOP.equals(key)) breakOff(entity);
-            }
-
-            @Override
-            public void playedOnce(Entity entity, Visual visual) {
-                if (visual.effect().filter(com.cnethuka.kegare.innate_technique.rime.RimeIds.FX_SHATTER_SHELL_BURST::equals).isPresent()) {
-                    burst(entity);
-                }
             }
         });
     }
@@ -166,18 +167,36 @@ public final class ShellClient {
         public void render(PoseStack pose, MultiBufferSource buffers, int light, AbstractClientPlayer player, float limbSwing,
                            float limbSwingAmount, float partialTick, float ageInTicks, float netHeadYaw, float headPitch) {
             ClientVisuals.LoopTime time = ClientVisuals.loopTime(player, LOOP, partialTick);
+            long now = player.level().getGameTime();
             if (time == null) {
                 DRAWN.remove(player.getId());
+                // A Shatter Shell with no shell up: a whole set bursts off the body as it's drawn, nothing is left on it.
+                if (inWorld && PENDING.remove(player.getId()) != null) {
+                    Map<String, Drawn> whole = place(pose, player, -1f, new ArrayList<>(), new ArrayList<>());
+                    fling(player, whole);
+                }
                 return;
             }
+            List<PoseStack.Pose> poses = new ArrayList<>();
+            List<String> names = new ArrayList<>();
+            Map<String, Drawn> drawn = place(pose, player, time.ticks(), poses, names);
+            LanceMesh.SHELL.draw(buffers, poses, names, light);
+            // Only where it's drawn in the world: the inventory's little figure is drawn with the same layer, in the screen's space.
+            if (inWorld) DRAWN.put(player.getId(), new Body(now, drawn));
+        }
+
+        /**
+         * Every plate formed by {@code ticks} after the shell went up (all of them, full size, if negative), posed on this body:
+         * their poses and names for drawing, and where each sits in the world.
+         */
+        private Map<String, Drawn> place(PoseStack pose, AbstractClientPlayer player, float ticks, List<PoseStack.Pose> poses,
+                                         List<String> names) {
             PlayerModel<AbstractClientPlayer> model = getParentModel();
             ModelPart[] parts = {model.body, model.rightArm, model.leftArm, model.rightLeg, model.leftLeg};
             boolean slim = player.getSkin().model() == PlayerSkin.Model.SLIM;
             Camera camera = Minecraft.getInstance().gameRenderer.getMainCamera();
             Vec3 cam = camera.getPosition();
             Map<String, Drawn> drawn = new HashMap<>();
-            List<PoseStack.Pose> poses = new ArrayList<>();
-            List<String> names = new ArrayList<>();
             int order = 0;
             for (int p = 0; p < PARTS.length; p++) {
                 pose.pushPose();
@@ -188,7 +207,7 @@ public final class ShellClient {
                 if (slim && p == 2) pose.translate(1f / 16f, 0f, 0f);
                 for (int i = 0; i < COUNTS[p]; i++, order++) {
                     String name = PARTS[p] + "_" + i;
-                    float s = formed(order, time.ticks());
+                    float s = ticks < 0f ? 1f : formed(order, ticks);
                     if (s <= 0f) continue;
                     Vector3f c = LanceMesh.SHELL.centre(name);
                     pose.pushPose();
@@ -203,18 +222,20 @@ public final class ShellClient {
                 }
                 pose.popPose();
             }
-            LanceMesh.SHELL.draw(buffers, poses, names, light);
-            // Only where it's drawn in the world: the inventory's little figure is drawn with the same layer, in the screen's space.
-            if (inWorld) DRAWN.put(player.getId(), drawn);
+            return drawn;
         }
     }
 
     // ---------------------------------------------------------------------------------------------- off the body
 
-    /** The shell came down: every plate breaks off where it was last drawn and falls away. */
+    /**
+     * The shell came down: every plate breaks off where it was last drawn and falls away. Only if it was drawn just now: in your own
+     * first person, or out of sight, nothing was, and plates where the body was long ago would be wrong.
+     */
     static void breakOff(Entity player) {
-        Map<String, Drawn> drawn = DRAWN.remove(player.getId());
-        if (drawn == null || drawn.isEmpty()) return;
+        Body body = DRAWN.remove(player.getId());
+        if (body == null || body.plates().isEmpty() || player.level().getGameTime() - body.tick() > 2) return;
+        Map<String, Drawn> drawn = body.plates();
         Vec3 middle = player.position().add(0, player.getBbHeight() * 0.55, 0);
         List<Debris> off = new ArrayList<>();
         for (Map.Entry<String, Drawn> e : drawn.entrySet()) {
@@ -235,23 +256,49 @@ public final class ShellClient {
      * Shatter Shell: the plates that just broke off (the shell is what bursts) fly outward fast and flat instead of falling, out to
      * about {@code reach} blocks from the body's middle.
      */
-    static void burst(Entity player) {
+    static void burst(Entity player, float reach) {
+        burstReach = reach;
         List<Debris> off = JUST_OFF.remove(player.getId());
-        if (off == null) return;
-        for (Debris d : off) {
-            Vector3f flat = new Vector3f(d.velocity.x, 0f, d.velocity.z);
-            if (flat.lengthSquared() < 1e-6f) flat.set(1f, 0f, 0f);
-            d.velocity = flat.normalize().mul(BURST_SPEED * (0.85f + RANDOM.nextFloat() * 0.3f)).add(0f, 0.05f + RANDOM.nextFloat() * 0.08f, 0f);
-            d.gravity = BURST_GRAVITY;
-            d.spin *= 2.5f;
+        if (off == null) {
+            PENDING.put(player.getId(), player.level().getGameTime());
+            return;
         }
+        for (Debris d : off) launch(d);
     }
 
-    /** Shatter Shell's plates: blocks a tick outward at first, slowed by drag, and how hard they fall. */
-    static final float BURST_SPEED = 0.55f, BURST_DRAG = 0.8f, BURST_GRAVITY = 0.03f;
+    /** A whole set off a body with no shell on it (Shatter Shell with none up): broken off and flung at once. */
+    private static void fling(Entity player, Map<String, Drawn> whole) {
+        DRAWN.put(player.getId(), new Body(player.level().getGameTime(), whole));
+        breakOff(player);
+        List<Debris> off = JUST_OFF.remove(player.getId());
+        if (off != null) off.forEach(ShellClient::launch);
+    }
+
+    /** Out flat and fast, slowing, arcing down: it comes to the ground at about the burst's reach as it shrinks away. */
+    private static void launch(Debris d) {
+        Vector3f flat = new Vector3f(d.velocity.x, 0f, d.velocity.z);
+        if (flat.lengthSquared() < 1e-6f) flat.set(1f, 0f, 0f);
+        float speed = burstSpeed(burstReach) * (0.88f + RANDOM.nextFloat() * 0.12f);
+        d.velocity = flat.normalize().mul(speed).add(0f, 0.04f + RANDOM.nextFloat() * 0.06f, 0f);
+        d.gravity = BURST_GRAVITY;
+        d.spin *= 2.5f;
+        d.burst = true;
+        d.life = BURST_TICKS;
+    }
+
+    /** Shatter Shell's plates: how much speed each tick keeps (drag), and how hard they fall (blocks a tick, a tick). */
+    static final float BURST_DRAG = 0.8f, BURST_GRAVITY = 0.009f;
+    /** How long a burst plate lasts, the last {@link #SHRINK_TICKS} shrinking. */
+    static final int BURST_TICKS = 16;
+
+    /** The speed out that carries a plate, under the drag, to {@code reach} blocks: the drag's whole run is {@code v / (1 - drag)}. */
+    static float burstSpeed(float reach) {
+        return Math.max(0.1f, reach - 0.3f) * (1f - BURST_DRAG);
+    }
 
     static void tick(ClientLevel level) {
         JUST_OFF.clear();
+        PENDING.values().removeIf(tick -> level.getGameTime() - tick > 2);
         for (Iterator<Debris> it = DEBRIS.iterator(); it.hasNext(); ) {
             Debris d = it.next();
             if (++d.age >= d.life) it.remove();
@@ -282,8 +329,7 @@ public final class ShellClient {
         MultiBufferSource.BufferSource buffers = mc.renderBuffers().bufferSource();
         for (Debris d : DEBRIS) {
             float t = d.age + partial;
-            boolean burst = d.gravity == BURST_GRAVITY;
-            Vector3f moved = travelled(d.velocity, d.gravity, burst, t);
+            Vector3f moved = travelled(d.velocity, d.gravity, d.burst, t);
             Vector3f c = d.toWorld.transformPosition(new Vector3f(d.centre));
             float left = d.life - t;
             float size = left < SHRINK_TICKS ? Math.max(0f, left / SHRINK_TICKS) : 1f;
@@ -305,6 +351,7 @@ public final class ShellClient {
 
     static void clear() {
         DRAWN.clear();
+        PENDING.clear();
         DEBRIS.clear();
         JUST_OFF.clear();
     }

@@ -65,6 +65,12 @@ Rime Shell's plates: `shell_shapes.py` (23 crested slabs, each in its body part'
 
     python3 -I tools/blockbench/build_rime_shell.py --preview  # also run/shell_preview/*.png
 
+Shatter Shell has no mesh of its own: the plates that fly off are Rime Shell's, its frost ring on the ground is pixel art
+(`shatter_ring`, below), and its shock ring is a smooth texture drawn by the game (`build_shatter_ring.py`, writing
+`textures/fx/shatter_ring.png`). The cast's pose is `tools/anims/shatter_shell.py`.
+
+    python3 -I tools/blockbench/build_shatter_ring.py
+
 ## Marks on blocks: pixel art, no Blockbench
 
 Rime's frost, cracks and ice on the world's blocks are pixel art at the blocks' own 16 texels a block, so they need no

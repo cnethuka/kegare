@@ -757,6 +757,7 @@ Package `com.cnethuka.kegare.innate_technique.rime`. **Rarity: RARE.** All numbe
   multiplier. Hovering an ability on the Sorcerer screen shows its current cost, upkeep and every active factor.
 - **Visuals:** PAL animation `frozen` (loop), in
   `assets/kegare/player_animations/rime.json`; Rime Shell's `rime_shell_toggle` in `rime_shell.json` (`tools/anims/rime_shell.py`);
+  Shatter Shell's `shatter_shell_cast` in `shatter_shell.json` (`tools/anims/shatter_shell.py`);
   Frost Field's `frost_field_channel` (loop) in `frost_field.json`
   (`tools/anims/frost_field.py`); Ice Path's `ice_path_slide` (loop) in `ice_path.json` (`tools/anims/ice_path.py`); Frost Shard's `frost_shard_cast` in `frost_shard.json` (from
   `tools/anims/frost_shard.py`) and Splinter's `splinter_cast` in `splinter.json` (`tools/anims/splinter.py`); Glacial Lance's `glacial_lance_charge` (loop) and `glacial_lance_release` in
@@ -933,6 +934,28 @@ Package `com.cnethuka.kegare.innate_technique.rime`. **Rarity: RARE.** All numbe
     first-person hands stay vanilla.
   - **Reduced** and **Vanilla** draw the same plates (meshes stay, as the Lance's do); Vanilla swaps the flakes for
     snowflakes.
+- **Shatter Shell's look** (in the Lance's style). Everything round the burst shows its reach: the
+  server's `shatter_shell.radius` (synced; 4.5 by default), read on each client, so it matches whatever the knockback is set to.
+  `ShatterClient` plays it as the cast visual (`shatter_shell_burst`) arrives:
+  - **The plates** burst off the body (`ShellClient.burst`): the shell's own plates, broken off where they were, flung out flat
+    and fast, slowing, tumbling, coming down to the ground at about the reach as they shrink away. With no shell up (the 88-cost
+    cast) a whole set bursts off the body all the same. In your own first person none are made (there's no body drawn).
+  - **The shock ring** races out over the ground from the feet to exactly the reach in 5 ticks, easing into it, then fades
+    over half a second: a soft trail of frost behind a bright front, flat on the ground, and a low wall of light at the front
+    (`textures/fx/shatter_ring.png`, drawn full-bright, smooth). Drawn by the game, not Photon, so it's the reach whatever it's
+    set to.
+  - **The frost ring** (block mark `marks/shatter_ring`, pixel art on the blocks' own texels): an unbroken ring of rime with
+    glints and short feathers of frost outward, faint dashed streaks blown out to it from a crust at the feet. It races out
+    with the shock, holds 1.5 s and melts from the edge in over 1.2 s. Drawn for 4.5 blocks; for another reach the game moves
+    the ring out or in, its width kept. Laid on the ground under the feet and a block above and below it, so a step keeps its
+    part. No block changes.
+  - **The effect:** `shatter_shell_burst` is only hard glints flung out flat and a breath of cold mist pushed out low;
+    your own is `shatter_shell_burst_self`, a few glints low round the legs.
+  - **The body:** `shatter_shell_cast` (`tools/anims/shatter_shell.py`): the burst lands the tick it's cast, so there's no
+    wind-up; the body is thrown open on it, arms flung wide and up, chest out, leaning back, held a moment, then dropped back.
+    Your own first-person hands stay vanilla.
+  - **Reduced** plays the effect reduced, the rest the same; **Vanilla** keeps the plates and the shock ring, lays no frost
+    (no marks on blocks), and swaps the effect for snowflakes.
 - **Effect authoring:** the effects are built from Photon's own objects in `RimeFxAuthoring` (building blocks in the
   shared `client.visual.FxKit`) and written with Photon's serializer, the same `.fx` format the editor exports. In a
   dev client, `/kegare debug fx export` rewrites every effect in `FxCatalog` (Rime's and RMT's, and the running game's

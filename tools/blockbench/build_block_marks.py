@@ -380,6 +380,66 @@ def path_ice(seed=41, size=32):
     return c, geodesic_order(c, (cx, cy))
 
 
+def shatter_ring(seed=61, radius=72):
+    """Shatter Shell's ring: where the burst reached, frost blown out over the ground to a clear ring at the edge of the knockback
+    (4.5 blocks by default, 72 texels; the game moves it in or out to the configured radius). A crust of rime round the feet where
+    the shell burst, faint dashed streaks of frost blown out from it, and the ring itself: unbroken, two texels of thick rime with a
+    glint now and then, frost either side, short feathers of frost off it, outward. The order is the straight distance out, so it
+    races out with the shock."""
+    rng = random.Random(seed)
+    margin = 10
+    size = 2 * (radius + margin)
+    c = Canvas(size)
+    cx = cy = size // 2
+    # The crust round the feet.
+    for y in range(cy - 8, cy + 8):
+        for x in range(cx - 8, cx + 8):
+            d = math.hypot(x - cx + 0.5, y - cy + 0.5)
+            if d < 3.5 and rng.random() < 0.7:
+                c.put(x, y, 3 if rng.random() < 0.5 else 2)
+            elif d < 7 and (x + y) % 2 == 0 and rng.random() < 1.1 - d / 7:
+                c.put(x, y, 1)
+    # Streaks blown out: sheen in dashes, a fleck of frost now and then, broken off before the ring.
+    n = 11
+    for k in range(n):
+        h = 2 * math.pi * (k + rng.uniform(-0.35, 0.35)) / n
+        h = min(HEADINGS + [2 * math.pi], key=lambda q: abs(q - h)) % (2 * math.pi)
+        start, end = rng.uniform(10, 22), radius - rng.uniform(5, 22)
+        on = True
+        left = rng.randint(1, 4)
+        for x, y in ray(cx, cy, h, end):
+            left -= 1
+            if left <= 0:
+                on = not on
+                left = rng.randint(2, 5) if on else rng.randint(1, 4)
+            if on and math.hypot(x - cx, y - cy) >= start:
+                c.put(x, y, 2 if rng.random() < 0.12 else 1)
+    # The ring: unbroken, a texel or so in and out, never a ruled circle.
+    wobble = [(rng.uniform(0.25, 0.5), rng.randint(3, 9), rng.uniform(0, 2 * math.pi)) for _ in range(3)]
+    steps = int(2 * math.pi * radius * 3)
+    for i in range(steps):
+        a = 2 * math.pi * i / steps
+        r = radius + sum(amp * math.sin(a * f + ph) for amp, f, ph in wobble)
+        for dr, tone, keep in ((-3.6, 1, 0.3), (-2.6, 1, 0.45), (-1.6, 2, 0.85), (-0.6, 3, 1.0), (0.4, 3, 1.0), (1.4, 2, 0.75),
+                               (2.4, 1, 0.3)):
+            x, y = round(cx - 0.5 + math.cos(a) * (r + dr)), round(cy - 0.5 + math.sin(a) * (r + dr))
+            if keep >= 1.0 or (rng.random() < keep and (tone != 1 or (x + y) % 2 == 0)):
+                c.put(x, y, tone)
+    # Glints along it, and short feathers of frost off it, outward, on the clean slopes.
+    for _ in range(26):
+        a = rng.uniform(0, 2 * math.pi)
+        c.put(round(cx - 0.5 + math.cos(a) * radius), round(cy - 0.5 + math.sin(a) * radius), 4)
+    for k in range(36):
+        a = 2 * math.pi * (k + rng.uniform(-0.3, 0.3)) / 36
+        h = min(HEADINGS + [2 * math.pi], key=lambda q: abs(q - a)) % (2 * math.pi)
+        x0, y0 = round(cx - 0.5 + math.cos(a) * (radius + 1.5)), round(cy - 0.5 + math.sin(a) * (radius + 1.5))
+        for j, (x, y) in enumerate(ray(x0, y0, h, rng.uniform(1.5, 5))):
+            c.put(x, y, 2 if j < 2 else 1)
+    top = (radius + margin) * 1.0
+    order = {(x, y): min(255, round(math.hypot(x - cx + 0.5, y - cy + 0.5) / top * 255)) for x, y in c.filled()}
+    return c, order
+
+
 def white():
     OUT.mkdir(parents=True, exist_ok=True)
     Image.new("RGBA", (4, 4), (255, 255, 255, 255)).save(OUT / "white.png", optimize=True)
@@ -429,7 +489,8 @@ def preview(name, art, when, reaches=(0.37, 0.65, 1.0), steps=(0.25, 0.5, 1.0)):
 
 
 PATTERNS = {"lance_frost": lance_frost, "spire_crack": spire_crack, "spire_burst": spire_burst, "field_frost": field_frost,
-            "field_frost_b": lambda: field_frost(seed=29), "path_ice": path_ice, "path_ice_b": lambda: path_ice(seed=53)}
+            "field_frost_b": lambda: field_frost(seed=29), "path_ice": path_ice, "path_ice_b": lambda: path_ice(seed=53),
+            "shatter_ring": shatter_ring}
 
 
 def main(args):

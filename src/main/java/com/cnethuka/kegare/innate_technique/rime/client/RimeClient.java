@@ -57,10 +57,15 @@ public final class RimeClient {
         ShellClient.init();
         NeoForge.EVENT_BUS.addListener(ShellClient::render);
         ClientVisuals.setFirstPersonVariant(RimeIds.FX_RIME_SHELL_AURA, RimeIds.FX_RIME_SHELL_AURA_SELF);
+        // Shatter Shell: the plates flung out to a ring raced out over the ground to the knockback's reach (ShatterClient); your own
+        // burst kept low.
+        ShatterClient.init();
+        NeoForge.EVENT_BUS.addListener(ShatterClient::render);
+        ClientVisuals.setFirstPersonVariant(RimeIds.FX_SHATTER_SHELL_BURST, RimeIds.FX_SHATTER_SHELL_BURST_SELF);
         for (var effect : List.of(RimeIds.FX_GLACIAL_LANCE_CHARGE, RimeIds.FX_GLACIAL_LANCE_CHARGE_SELF, RimeIds.FX_GLACIAL_LANCE_SNAP,
                 RimeIds.FX_GLACIAL_LANCE_STICK, RimeIds.FX_GLACIAL_LANCE_SHATTER, RimeIds.FX_GLACIAL_SPIRE_CHARGE,
                 RimeIds.FX_GLACIAL_SPIRE_SHATTER, RimeIds.FX_FROST_FIELD_CONE_SELF, RimeIds.FX_FROST_FIELD_MIST,
-                RimeIds.FX_RIME_SHELL_AURA_SELF)) {
+                RimeIds.FX_RIME_SHELL_AURA_SELF, RimeIds.FX_SHATTER_SHELL_BURST_SELF)) {
             VisualHooks.registerEffect(effect);
         }
         NeoForge.EVENT_BUS.addListener(LanceHold::onRenderHand);
@@ -76,12 +81,13 @@ public final class RimeClient {
             FieldClient.clear();
             PathClient.clear();
             ShellClient.clear();
+            ShatterClient.clear();
         });
         // The throw is the whole body: in your own first person, that would swing your own arm and whatever it holds across the view.
         PlayerAnimations.keepVanillaHands(List.of(RimeIds.ANIM_GLACIAL_LANCE_CHARGE, RimeIds.ANIM_GLACIAL_LANCE_RELEASE,
                 RimeIds.ANIM_GLACIAL_SPIRE_CHARGE, RimeIds.ANIM_GLACIAL_SPIRE_RELEASE, RimeIds.ANIM_FROST_SHARD_CAST,
                 RimeIds.ANIM_SPLINTER_CAST, RimeIds.ANIM_FROST_FIELD_CHANNEL, RimeIds.ANIM_ICE_PATH_SLIDE,
-                RimeIds.ANIM_RIME_SHELL_TOGGLE));
+                RimeIds.ANIM_RIME_SHELL_TOGGLE, RimeIds.ANIM_SHATTER_SHELL_CAST));
         // Lookalikes used when an effect can't load, or with vfxQuality = VANILLA.
         VanillaFallback.register(RimeIds.FX_FROST_SHARD_TRAIL, new VanillaFallback.Spec(ParticleTypes.SNOWFLAKE, 2, 6, 0.06, 0.01));
         VanillaFallback.register(RimeIds.FX_FROST_SHARD_IMPACT, new VanillaFallback.Spec(ParticleTypes.SNOWFLAKE, 1, 14, 0.25, 0.12));
@@ -108,6 +114,7 @@ public final class RimeClient {
         VanillaFallback.register(RimeIds.FX_GLACIAL_SPIRE_ERUPT, new VanillaFallback.Spec(ParticleTypes.SNOWFLAKE, 1, 36, 0.8, 0.35));
         VanillaFallback.register(RimeIds.FX_ICE_PATH_TRAIL, new VanillaFallback.Spec(ParticleTypes.SNOWFLAKE, 3, 6, 0.35, 0.01));
         VanillaFallback.register(RimeIds.FX_SHATTER_SHELL_BURST, new VanillaFallback.Spec(ParticleTypes.SNOWFLAKE, 1, 40, 0.6, 0.5));
+        VanillaFallback.register(RimeIds.FX_SHATTER_SHELL_BURST_SELF, new VanillaFallback.Spec(ParticleTypes.SNOWFLAKE, 1, 12, 0.6, 0.5));
     }
 
     private static void registerRenderers(EntityRenderersEvent.RegisterRenderers event) {
@@ -134,6 +141,7 @@ public final class RimeClient {
         FieldClient.tick(mc.level);
         PathClient.tick(mc.level);
         ShellClient.tick(mc.level);
+        ShatterClient.tick();
         BlockMarks.tick(mc.level);
     }
 

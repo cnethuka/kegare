@@ -95,6 +95,7 @@ public final class RimeFxAuthoring {
         out.put(RimeIds.FX_GLACIAL_SPIRE_SHATTER, RimeFxAuthoring::glacialSpireShatter);
         out.put(RimeIds.FX_ICE_PATH_TRAIL, RimeFxAuthoring::icePathTrail);
         out.put(RimeIds.FX_SHATTER_SHELL_BURST, RimeFxAuthoring::shatterShellBurst);
+        out.put(RimeIds.FX_SHATTER_SHELL_BURST_SELF, RimeFxAuthoring::shatterShellBurstSelf);
         return out;
     }
 
@@ -857,44 +858,37 @@ public final class RimeFxAuthoring {
         return fx(spray, glints);
     }
 
-    /** Shatter Shell: the shell bursts into fragments that fly outward, with a flat shockwave the size of its reach. */
+    /**
+     * Shatter Shell: what's soft round the burst. The plates that fly off are solid (ShellClient) and the ring that races out to the
+     * knockback's reach is drawn to the configured reach (ShatterClient): here only hard glints flung out flat and a breath of cold
+     * mist pushed out low. The old Photon shockwave was a fixed size and its cube fragments read as glass.
+     */
     private static FX shatterShellBurst() {
-        ParticleEmitter ring = single("ring", 9, 9.0f);
-        ring.config.renderer.setRenderMode(ParticleRendererSetting.Mode.Horizontal);
-        grow(ring.config, 0.15f);
-        fadeOut(ring.config, PALE, BLUE);
-        material(ring, recolor(KilaPresets.SHOCKWAVE.create(), 0.45f, 0.82f, 1f, 1.4f));
-        ring.transform().localPosition(new Vector3f(0, -0.8f, 0)); // at the feet (the effect sits at mid-body)
+        return shatterShellBurst(false);
+    }
 
-        ParticleEmitter fragments = burstEmitter("fragments", 30, 34);
-        ParticleConfig c = fragments.config;
-        c.setStartLifetime(range(10, 18));
-        c.setStartSpeed(range(7f, 12f));
-        c.setStartSize(uniform(range(0.08f, 0.16f)));
-        c.setStartRotation(new NumberFunction3(range(0, 360), range(0, 360), range(0, 360)));
-        Sphere shell = sphere(1.1f);
-        shell.setRadiusThickness(0f);
-        c.shape.setShape(shell);
-        gravity(c, 1.2f);
-        c.rotationOverLifetime.setEnable(true);
-        c.rotationOverLifetime.setRoll(range(-540, 540));
-        c.colorOverLifetime.setEnable(true);
-        c.colorOverLifetime.setColor(gradient(WHITE, PALE, 0x0079C8EC));
-        c.renderer.setRenderMode(ParticleRendererSetting.Mode.Model);
-        c.renderer.setModel(new MeshData(new ObjModelSource(Photon.id("models/cube.obj"))));
-        material(fragments, KilaPresets.CRYSTAL.create());
+    /** Your own: a few glints low round the legs, flung out under your view; no mist by the camera. */
+    private static FX shatterShellBurstSelf() {
+        return shatterShellBurst(true);
+    }
 
-        ParticleEmitter glints = burstEmitter("glints", 30, 34);
+    private static FX shatterShellBurst(boolean self) {
+        ParticleEmitter glints = burstEmitter("glints", self ? 12 : 30, self ? 14 : 34);
         ParticleConfig g = glints.config;
         g.setStartLifetime(range(8, 14));
         g.setStartSpeed(range(6f, 11f));
         g.setStartSize(uniform(range(0.05f, 0.1f)));
-        Sphere around = sphere(1.0f);
+        Sphere around = sphere(self ? 0.6f : 1.0f);
         around.setRadiusThickness(0f);
         g.shape.setShape(around);
+        g.shape.setScale(new NumberFunction3(1f, 0.35f, 1f)); // flung out flat, as the plates are
         gravity(g, 0.4f);
         fadeOut(g, WHITE, CYAN);
         material(glints, recolor(KilaPresets.SPARKS.create(), 0.55f, 0.88f, 1f, 1.5f));
+        if (self) {
+            glints.transform().localPosition(new Vector3f(0, -0.75f, 0));
+            return fx(glints);
+        }
 
         ParticleEmitter mist = burstEmitter("mist", 8, 8);
         ParticleConfig mc = mist.config;
@@ -910,7 +904,7 @@ public final class RimeFxAuthoring {
         grow(mc, 0.5f);
         material(mist, mist());
         mist.transform().localPosition(new Vector3f(0, -0.6f, 0));
-        return fx(ring, fragments, glints, mist);
+        return fx(glints, mist);
     }
 
 

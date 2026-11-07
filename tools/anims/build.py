@@ -15,13 +15,15 @@ import splinter  # noqa: E402
 import frost_field  # noqa: E402
 import ice_path  # noqa: E402
 import rime_shell  # noqa: E402
+import shatter_shell  # noqa: E402
 import melee  # noqa: E402
 import puppet_manipulation  # noqa: E402
 
 SETS = {"puppet_manipulation": puppet_manipulation.ANIMS, "melee": melee.ANIMS, "glacial_lance": glacial_lance.ANIMS,
         "glacial_spire": glacial_spire.ANIMS, "frost_shard": frost_shard.ANIMS, "splinter": splinter.ANIMS,
         "frost_field": frost_field.ANIMS, "ice_path": ice_path.ANIMS,
-        "rime_shell": rime_shell.ANIMS}
+        "rime_shell": rime_shell.ANIMS,
+        "shatter_shell": shatter_shell.ANIMS}
 # What a set's preview holds: (bone, OBJ, texture, objects, grip). The game draws the same thing from the same numbers.
 HELD = {"glacial_lance": ("right_arm", "src/main/resources/assets/kegare/models/fx/glacial_lance.obj",
                           "src/main/resources/assets/kegare/textures/entity/glacial_lance.png",
