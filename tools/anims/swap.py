@@ -107,14 +107,16 @@ send_off_cast = (Anim("send_off_cast", 0.7, fade_in=1, fade_out=4,
                  .key(0.4, pose(hip=(7, 0, 0), right_arm=(-84, 12, 12), left_arm=(-84, -12, -12)))
                  .key(0.5, DROP))
 
-# Exchange: a clap, then the hands slide past each other, each to the other side (the trade), and part.
-exchange_cast = (Anim("exchange_cast", 0.75, fade_in=1, fade_out=4,
-                      note="A clap, then the hands slide past each other, each to the other's side, the trade; then they part.")
+# Exchange: a clap, then the hands slide past each other, low, each to the other's side (the trade), and part. The crossing is
+# low, below the clap, so in first person the hands pass along the bottom of the view.
+exchange_cast = (Anim("exchange_cast", 0.78, fade_in=1, fade_out=4,
+                      note="A clap, then the hands slide past each other low in front of the waist, each to the other's side, "
+                           "the trade; then they part.")
                  .key(0.05, clap(4, -80, 26))
                  .key(0.13, clap(6, -80, 28, -0.2), "linear")
-                 .key(0.3, pose(hip=(3, 0, 0), right_arm=(-74, -50, 0), left_arm=(-86, 50, 0)))
-                 .key(0.45, apart(-60, 20, 10))
-                 .key(0.55, DROP))
+                 .key(0.3, pose(hip=(4, 0, 0), right_arm=(-58, -44, 0), left_arm=(-68, 44, 0)))
+                 .key(0.45, apart(-56, 20, 12))
+                 .key(0.58, DROP))
 
 # Momentum Exchange: a hard clap with the body thrown forward into it, then the arms flung back behind, the push given away.
 momentum_cast = (Anim("momentum_cast", 0.7, fade_in=1, fade_out=4,
@@ -143,7 +145,7 @@ ALL = [positions_clap, switchback_cast, switchback_snap, awareness_cast, mimic_c
 # The rework lands one move at a time: the moves done so far are built from here, the rest still play their old hand-keyed
 # animation from swap_legacy.json (the swap.json before the rework), which goes once every move is done.
 DONE = {"positions_clap", "switchback_cast", "switchback_snap", "awareness_cast", "mimic_cast", "anchor_throw", "anchor_recall",
-        "send_off_cast"}
+        "send_off_cast", "exchange_cast"}
 ANIMS = [a for a in ALL if a.name in DONE]
 _LEGACY = json.loads((Path(__file__).parent / "swap_legacy.json").read_text())["animations"]
 LEGACY = {name: anim for name, anim in _LEGACY.items() if name not in DONE}

@@ -1317,8 +1317,10 @@ smooth and modern in Swap's teal, nothing heavy, blurry or lingering, never the 
   - `mimic_cast` (Mimic): a cupped clap up by the right side of the face, the head tipped toward it; then the right
     hand drawn down past the cheek, the face taken. In your own first person the hands are always vanilla's: up by
     the face they'd only sweep across the view.
+  - `exchange_cast` (Exchange): a clap, then the hands slide past each other low in front of the waist, each to the
+    other's side, the trade; then they part. In your own first person they stay below the view.
   - The moves not reworked yet still play their hand-keyed animations, carried as they are from
-    `tools/anims/swap_legacy.json`: `swap_snap` (Total Swap), `exchange_cast`, `momentum_cast`.
+    `tools/anims/swap_legacy.json`: `swap_snap` (Total Swap), `momentum_cast`.
   - In your own first person, a Swap animation shows its hands only while you look about level (no more than 15° down,
     `PlayerAnimations.handsWhileLevel`). They hang from the body, which doesn't tip with the view, so at chest height
     they sit at the bottom corners of a level view; looking further down they'd come up into its middle, so the hands
@@ -1369,8 +1371,12 @@ smooth and modern in Swap's teal, nothing heavy, blurry or lingering, never the 
   from where someone was to where they went, there at once and then drawn in toward its far end over 5 ticks, as if
   they went along it; never within 1.5 blocks of your own first-person camera. Anchor's recall (the caster's old spot
   to the token) and Send Off. Reduced: the same. Vanilla: a row of teal specks.
+- Exchange's **link** (`exchange_transfer`, `SwapLink.travel`, drawn by `SwapFx`): a thin straight teal line between
+  the two, there at once, and for each exchanged effect a short pale bead running along it to whoever gets the effect,
+  0.4 s, eased in and out; then the line fades in 3 ticks. When an effect goes each way the two beads cross in the
+  middle. Never within 1.5 blocks of your own first-person camera. Reduced: the same. Vanilla: teal specks along the
+  bead's path.
 - Photon effects (`SwapFxAuthoring` → `fx/swap/`), teal with Malice violet, with vanilla particle fallbacks:
-  - `exchange_transfer`: orbs travelling each way along the line, one per exchanged effect.
   - `momentum_burst` (both players) and `total_swap_burst` (both players).
 - Sounds: Kegare's own (§3.10, `tools/sounds/swap.py`), each with a subtitle, at both ends of the swap:
   - `swap.clap` ("Hands clap", a crisp clap): Positions, and for now Total Swap until it gets its own. Anchor's
@@ -1382,8 +1388,9 @@ smooth and modern in Swap's teal, nothing heavy, blurry or lingering, never the 
   - `swap.cupped_clap` ("Cupped hands clap", hollow): Mimic's cast, at the caster only.
   - `swap.flick` ("Token flicked", a dry click and the token ringing as it spins away): Anchor's throw, at the caster.
     `swap.token_land` ("Token lands", a small tick and a short low chime): where the token sticks.
-  - `swap.big_clap` is registered for the moves still to come. Exchange and Momentum Exchange still use the enderman
-    teleport.
+  - `swap.trade` ("Hands clap, chimes cross", the clap and two soft glassy chimes sliding past each other, one up and
+    one down): Exchange, at both.
+  - `swap.big_clap` is registered for the moves still to come. Momentum Exchange still uses the enderman teleport.
 
 **Art:** emblem `gui/emblem/swap.png`, icons for all nine abilities (`gui/ability/`), Anchor's token
 (`models/fx/swap_anchor.obj`, `textures/entity/swap_anchor*.png`, `art/blockbench/swap_anchor.bbmodel`; above). The

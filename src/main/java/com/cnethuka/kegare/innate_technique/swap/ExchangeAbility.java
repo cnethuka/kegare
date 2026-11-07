@@ -9,8 +9,6 @@ import java.util.Comparator;
 import java.util.Optional;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
-import net.minecraft.sounds.SoundEvents;
-import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.effect.MobEffectCategory;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.entity.LivingEntity;
@@ -25,7 +23,7 @@ public final class ExchangeAbility extends SwapAbility {
     /** Strongest first: higher amplifier, then longer duration. */
     private static final Comparator<MobEffectInstance> STRENGTH =
             Comparator.comparingInt(MobEffectInstance::getAmplifier).thenComparingInt(MobEffectInstance::getDuration);
-    /** Ticks an exchanged effect's orb takes to cross. */
+    /** Ticks an exchanged effect takes to cross (the bead along the line). */
     private static final int TRAVEL_TICKS = 8;
 
     ExchangeAbility() {
@@ -69,8 +67,8 @@ public final class ExchangeAbility extends SwapAbility {
             caster.addEffect(new MobEffectInstance(effect), caster);
             SwapLink.travel(caster.serverLevel(), SwapIds.FX_EXCHANGE_TRANSFER, Swapper.bodyPos(target), Swapper.bodyPos(caster), TRAVEL_TICKS);
         });
-        caster.level().playSound(null, caster.getX(), caster.getY(), caster.getZ(), SoundEvents.ENDERMAN_TELEPORT, SoundSource.PLAYERS, 0.5f, 1.6f);
-        target.level().playSound(null, target.getX(), target.getY(), target.getZ(), SoundEvents.ENDERMAN_TELEPORT, SoundSource.PLAYERS, 0.5f, 1.6f);
+        SwapSounds.EXCHANGE.at(caster);
+        SwapSounds.EXCHANGE.at(target);
     }
 
     @Override boolean takesMobs() { return true; }

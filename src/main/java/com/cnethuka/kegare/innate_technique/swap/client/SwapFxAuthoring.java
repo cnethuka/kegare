@@ -37,7 +37,6 @@ public final class SwapFxAuthoring {
         Map<ResourceLocation, Supplier<FX>> out = new LinkedHashMap<>();
         out.put(SwapIds.FX_SWAP_DEPART, SwapFxAuthoring::depart);
         out.put(SwapIds.FX_SWAP_ARRIVE, SwapFxAuthoring::arrive);
-        out.put(SwapIds.FX_EXCHANGE_TRANSFER, SwapFxAuthoring::exchangeTransfer);
         out.put(SwapIds.FX_MOMENTUM_BURST, SwapFxAuthoring::momentumBurst);
         out.put(SwapIds.FX_TOTAL_SWAP_BURST, SwapFxAuthoring::totalSwapBurst);
         return out;
@@ -71,20 +70,6 @@ public final class SwapFxAuthoring {
         shrink(c);
         material(glints, glow(0.35f, 0.95f, 0.86f, 1.6f));
         return glints;
-    }
-
-    /** One step of an exchanged effect crossing over: a violet-cored orb with a teal halo (beads line up into its path). */
-    private static FX exchangeTransfer() {
-        ParticleEmitter orb = single("orb", 7, 0.42f);
-        fadeOut(orb.config, VIOLET_PALE, VIOLET);
-        shrink(orb.config);
-        material(orb, glow(0.66f, 0.42f, 0.97f, 1.7f));
-
-        ParticleEmitter halo = single("halo", 6, 0.75f);
-        fadeOut(halo.config, 0x885EEAD4, 0x0014B8A6);
-        shrink(halo.config);
-        material(halo, glow(0.3f, 0.9f, 0.8f, 0.9f));
-        return fx(orb, halo);
     }
 
     /** Momentum traded: streaks thrown out sideways, a ring at the waist, a hard flash. */

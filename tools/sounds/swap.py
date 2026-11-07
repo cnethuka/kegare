@@ -125,5 +125,14 @@ def shove() -> list[float]:
     return finish(room(mix((1.0, c), (0.75, push)), 0.8, 0.12))
 
 
+def trade() -> list[float]:
+    """Exchange: the clap, then two soft glassy chimes sliding past each other, one up and one down, as the effects cross."""
+    seconds = 0.55
+    c = _clap_body(71, [0.0, 0.007, 0.014], 1650, 1.1, 0.0032, 0.042, 0.55, seconds=seconds)
+    up = mix((1.0, tone(seconds, 1250, 0.16, start=0.03, sweep=-0.32)), (0.25, tone(seconds, 2500, 0.1, start=0.03, sweep=-0.32)))
+    down = mix((1.0, tone(seconds, 1650, 0.16, start=0.03, sweep=0.24)), (0.25, tone(seconds, 3300, 0.1, start=0.03, sweep=0.24)))
+    return finish(room(mix((1.0, c), (0.24, up), (0.24, down)), 0.8, 0.14))
+
+
 SOUNDS = {"clap": clap, "double_clap": double_clap, "snap": snap, "cupped_clap": cupped_clap, "big_clap": big_clap, "flip": flip,
-          "flick": flick, "token_land": token_land, "shove": shove}
+          "flick": flick, "token_land": token_land, "shove": shove, "trade": trade}

@@ -42,6 +42,8 @@ public final class SwapSounds {
     public static final Clap SEND_OFF = new Clap(KegareSounds.SWAP_SHOVE, 1f, 1f);
     /** Send Off's two ends, the target and the token: the clap, as low as Anchor's recall. */
     public static final Clap SEND_OFF_ENDS = new Clap(KegareSounds.SWAP_CLAP, 0.9f, 0.94f);
+    /** Exchange, at both: the clap and two chimes sliding past each other. */
+    public static final Clap EXCHANGE = new Clap(KegareSounds.SWAP_TRADE, 0.9f, 1f);
     /** A disguise landing (Awareness, Total Swap): a card riffled over. */
     public static final Clap CARD_FLIP = new Clap(KegareSounds.SWAP_FLIP, 0.9f, 1f);
     /** Switchback's swap back: a finger snap. */

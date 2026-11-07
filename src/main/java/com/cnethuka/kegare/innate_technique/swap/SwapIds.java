@@ -28,6 +28,7 @@ public final class SwapIds {
     public static final ResourceLocation FX_AWARENESS_SHIMMER = fx("awareness_shimmer");
     public static final ResourceLocation FX_AWARENESS_FLIP = fx("awareness_flip");
     public static final ResourceLocation FX_MIMIC_FLICKER = fx("mimic_flicker");
+    /** An effect crossing over in an Exchange (SwapLink.travel; drawn by SwapFx: a line and a bead along it). */
     public static final ResourceLocation FX_EXCHANGE_TRANSFER = fx("exchange_transfer");
     public static final ResourceLocation FX_MOMENTUM_BURST = fx("momentum_burst");
     public static final ResourceLocation FX_TOTAL_SWAP_BURST = fx("total_swap_burst");

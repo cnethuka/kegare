@@ -52,5 +52,11 @@
       "kegare:swap/token_land"
     ],
     "subtitle": "subtitles.kegare.swap.token_land"
+  },
+  "swap.trade": {
+    "sounds": [
+      "kegare:swap/trade"
+    ],
+    "subtitle": "subtitles.kegare.swap.trade"
   }
 }

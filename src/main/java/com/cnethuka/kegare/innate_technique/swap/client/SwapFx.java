@@ -73,6 +73,9 @@ public final class SwapFx {
     /** Where someone was taken, from end to end (Anchor's recall, Send Off). */
     private record Link(Vec3 from, Vec3 to, long born) {}
 
+    /** Exchange: one effect crossing from {@code from} to {@code to} (middles) over {@code ticks}. */
+    private record Transfer(Vec3 from, Vec3 to, long born, int ticks) {}
+
     /** An entity about to be moved by a swap: from where, and until when to watch for the move. */
     private record Snap(Vec3 from, long until) {}
 
@@ -97,6 +100,9 @@ public final class SwapFx {
     private static final List<Flip> FLIPS = new ArrayList<>();
     private static final List<Flicker> FLICKERS = new ArrayList<>();
     private static final List<Link> LINKS = new ArrayList<>();
+    private static final List<Transfer> TRANSFERS = new ArrayList<>();
+    /** Ticks Exchange's line takes to fade once its bead has arrived. */
+    private static final int TRANSFER_FADE = 3;
     /** A link is drawn whole and then drawn in toward its far end over this many ticks. */
     private static final int LINK_TICKS = 5;
     /** How far from your own first-person camera a link stops: it ends in the middle of whoever was taken. */
@@ -216,6 +222,8 @@ public final class SwapFx {
         AFTERIMAGES.removeIf(a -> clock - a.born() >= GHOST_ALPHA.length);
         RINGS.removeIf(r -> clock - r.born() > RING_TICKS);
         LINKS.removeIf(l -> clock - l.born() > LINK_TICKS);
+        if (!drawn()) tickTransfers(level);
+        TRANSFERS.removeIf(x -> clock - x.born() > x.ticks() + TRANSFER_FADE);
         POSES.values().removeIf(p -> clock - p.tick() > POSE_KEPT);
         SNAP.values().removeIf(s -> s.until() < clock);
     }
@@ -258,6 +266,7 @@ public final class SwapFx {
         FLIPS.clear();
         FLICKERS.clear();
         LINKS.clear();
+        TRANSFERS.clear();
     }
 
     // ---------------------------------------------------------------- the link
@@ -301,6 +310,71 @@ public final class SwapFx {
             float alpha = 1f - 0.4f * t;
             strip(out, m, a.subtract(cam), b.subtract(cam), Vec3.ZERO, 0.05f * (1f - 0.5f * t), GLOW, alpha * 0.85f);
             strip(out, m, a.subtract(cam), b.subtract(cam), Vec3.ZERO, 0.018f, PALE, alpha);
+        }
+        buffers.endBatch(type);
+    }
+
+    // ---------------------------------------------------------------- Exchange's link
+
+    /**
+     * Exchange: an effect crossing from {@code from} to {@code to} (middles) over {@code ticks}. A thin straight teal line between
+     * the two, there at once, and a short pale bead running along it to whoever gets the effect; once it's there the line fades
+     * in 3 ticks. With an effect going each way the two beads cross in the middle. Never within 1.5 blocks of your own
+     * first-person camera. Vanilla: teal specks where the bead is, a tick at a time.
+     */
+    static void transfer(Vec3 from, Vec3 to, int ticks) {
+        TRANSFERS.add(new Transfer(from, to, clock, Math.max(1, ticks)));
+    }
+
+    /** Where a transfer's bead is, {@code age} ticks in: eased in and out. */
+    private static Vec3 bead(Transfer x, float age) {
+        float t = Mth.clamp(age / x.ticks(), 0f, 1f);
+        return x.from().lerp(x.to(), t * t * (3f - 2f * t));
+    }
+
+    private static void tickTransfers(ClientLevel level) {
+        Minecraft mc = Minecraft.getInstance();
+        boolean firstPerson = mc.options.getCameraType().isFirstPerson();
+        Vec3 cam = mc.gameRenderer.getMainCamera().getPosition();
+        for (Transfer x : TRANSFERS) {
+            long age = clock - x.born();
+            if (age > x.ticks()) continue;
+            for (int i = 0; i < 2; i++) {
+                Vec3 p = bead(x, age - 0.5f * i);
+                if (firstPerson && p.distanceTo(cam) < LINK_CLEAR) continue;
+                level.addParticle(SPECK, p.x, p.y, p.z, 0, 0, 0);
+            }
+        }
+    }
+
+    private static void renderTransfers(PoseStack pose, MultiBufferSource.BufferSource buffers, Vec3 cam, float partial) {
+        boolean firstPerson = Minecraft.getInstance().options.getCameraType().isFirstPerson();
+        RenderType type = RenderType.entityTranslucentEmissive(WHITE);
+        VertexConsumer out = buffers.getBuffer(type);
+        Matrix4f m = pose.last().pose();
+        for (Transfer x : TRANSFERS) {
+            float age = clock - x.born() + partial;
+            float fade = age <= x.ticks() ? 1f : Mth.clamp(1f - (age - x.ticks()) / TRANSFER_FADE, 0f, 1f);
+            Vec3 a = x.from(), b = x.to();
+            Vec3 dir = b.subtract(a);
+            double len = dir.length();
+            if (fade <= 0f || len < 1.0e-3) continue;
+            dir = dir.scale(1.0 / len);
+            double cut0 = 0, cut1 = 0;
+            if (firstPerson) {
+                cut0 = a.distanceTo(cam) < LINK_CLEAR ? LINK_CLEAR : 0;
+                cut1 = b.distanceTo(cam) < LINK_CLEAR ? LINK_CLEAR : 0;
+                if (cut0 + cut1 >= len) continue;
+            }
+            Vec3 a1 = a.add(dir.scale(cut0)), b1 = b.subtract(dir.scale(cut1));
+            strip(out, m, a1.subtract(cam), b1.subtract(cam), Vec3.ZERO, 0.03f, GLOW, 0.75f * fade);
+            if (age > x.ticks()) continue;
+            Vec3 p = bead(x, age);
+            double along = p.subtract(a).dot(dir);
+            if (along < cut0 || along > len - cut1) continue;
+            Vec3 tail = p.subtract(dir.scale(0.32)), head = p.add(dir.scale(0.12));
+            strip(out, m, tail.subtract(cam), head.subtract(cam), Vec3.ZERO, 0.09f, GLOW, 0.9f);
+            strip(out, m, tail.subtract(cam), head.subtract(cam), Vec3.ZERO, 0.04f, PALE, 1f);
         }
         buffers.endBatch(type);
     }
@@ -490,11 +564,13 @@ public final class SwapFx {
     // ---------------------------------------------------------------- drawing
 
     static void render(PoseStack pose, Vec3 cam, float partial) {
-        if ((AFTERIMAGES.isEmpty() && RINGS.isEmpty() && COUNTDOWNS.isEmpty() && FLIPS.isEmpty() && LINKS.isEmpty()) || !drawn()) return;
+        if ((AFTERIMAGES.isEmpty() && RINGS.isEmpty() && COUNTDOWNS.isEmpty() && FLIPS.isEmpty() && LINKS.isEmpty() && TRANSFERS.isEmpty())
+                || !drawn()) return;
         MultiBufferSource.BufferSource buffers = Minecraft.getInstance().renderBuffers().bufferSource();
         if (!COUNTDOWNS.isEmpty()) renderCountdowns(pose, buffers, cam, partial);
         if (!FLIPS.isEmpty()) renderFlips(pose, buffers, cam, partial);
         if (!LINKS.isEmpty()) renderLinks(pose, buffers, cam, partial);
+        if (!TRANSFERS.isEmpty()) renderTransfers(pose, buffers, cam, partial);
         Minecraft mc = Minecraft.getInstance();
         boolean firstPerson = mc.options.getCameraType().isFirstPerson();
         for (Afterimage a : AFTERIMAGES) {

@@ -78,7 +78,6 @@ public final class SwapClient {
         // Lookalikes used when an effect can't load, or with vfxQuality = VANILLA (teal dust; never the enderman's purple).
         VanillaFallback.register(SwapIds.FX_SWAP_DEPART, new VanillaFallback.Spec(TEAL_FLICK, 1, 12, 0.3, 0.02));
         VanillaFallback.register(SwapIds.FX_SWAP_ARRIVE, new VanillaFallback.Spec(TEAL_FLICK, 1, 8, 0.3, 0.02));
-        VanillaFallback.register(SwapIds.FX_EXCHANGE_TRANSFER, new VanillaFallback.Spec(ParticleTypes.WITCH, 1, 3, 0.08, 0.0));
         VanillaFallback.register(SwapIds.FX_MOMENTUM_BURST, new VanillaFallback.Spec(TEAL_DUST, 1, 24, 0.4, 0.3));
         VanillaFallback.register(SwapIds.FX_TOTAL_SWAP_BURST, new VanillaFallback.Spec(ParticleTypes.REVERSE_PORTAL, 1, 40, 0.6, 0.3));
         NeoForge.EVENT_BUS.addListener(SwapClient::onClientTick);
@@ -166,6 +165,10 @@ public final class SwapClient {
         if (level == null) return;
         if (payload.effect().equals(SwapIds.FX_SWAP_LINK)) {
             SwapFx.link(level, payload.from(), payload.to()); // a crisp line, drawn here
+            return;
+        }
+        if (payload.effect().equals(SwapIds.FX_EXCHANGE_TRANSFER)) {
+            SwapFx.transfer(payload.from(), payload.to(), payload.travelTicks()); // a line and a bead along it, drawn here
             return;
         }
         Visual visual = Visual.effect(payload.effect(), Visual.Anchor.BODY);
