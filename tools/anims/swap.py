@@ -78,21 +78,21 @@ mimic_cast = (Anim("mimic_cast", 0.75, fade_in=1, fade_out=4,
               .key(0.34, pose(hip=(2, 8, 1), right_arm=(-96, -24, 12), left_arm=(-58, 22, 0)))
               .key(0.55, pose(hip=(1, 2, 0), right_arm=(-40, -8, 8), left_arm=(-24, 6, -8))))
 
-# Anchor's throw: a token flicked forward off the fingers, underhand: low, then out level at the right side, a little follow-through.
+# Anchor's throw: a token flicked forward off the fingers, underhand: low, then out at the right side, wide of the view's middle.
 anchor_throw = (Anim("anchor_throw", 0.45, fade_in=1, fade_out=3,
-                     note="A token flicked forward underhand: the right hand low and back, then out level at the right side with a "
-                          "little follow-through.")
-                .key(0.05, pose(hip=(4, -6, 0), right_arm=(24, 0, 12), left_arm=(-8, 0, -8)))
-                .key(0.13, pose(hip=(-2, 4, 0), right_arm=(-88, 8, 14), left_arm=(-4, 0, -10)), "linear")
-                .key(0.3, pose(hip=(1, 2, 0), right_arm=(-70, 4, 12), left_arm=(-4, 0, -8))))
+                     note="A token flicked forward underhand: the right hand low and back, then out at the right side, a little "
+                          "below level, with a little follow-through.")
+                .key(0.05, pose(hip=(4, -6, 0), right_arm=(24, 0, 14), left_arm=(-8, 0, -8)))
+                .key(0.13, pose(hip=(-2, 4, 0), right_arm=(-74, 12, 32), left_arm=(-4, 0, -10)), "linear")
+                .key(0.3, pose(hip=(1, 2, 0), right_arm=(-60, 8, 26), left_arm=(-4, 0, -8))))
 
-# Anchor's recall: the right hand reaches toward the anchor, then the left claps onto it as it's pulled back to the chest.
+# Anchor's recall: the right hand reaches out at the right side, then is pulled in and clapped by the left, low before the chest.
 anchor_recall = (Anim("anchor_recall", 0.6, fade_in=1, fade_out=3,
-                      note="The right hand reaches out toward the anchor and is pulled back to the chest, the left hand clapping "
-                           "onto it on the way.")
-                 .key(0.05, pose(hip=(6, 0, 0), right_arm=(-86, -4, 6), left_arm=(-40, 10, -10)))
-                 .key(0.15, pose(hip=(4, 0, 0), hip_pos=(0, -0.2, 0), right_arm=(-76, -30, 0), left_arm=(-80, 28, 0)), "linear")
-                 .key(0.3, pose(hip=(-2, 0, 0), right_arm=(-62, -34, 0), left_arm=(-66, 30, 0)))
+                      note="The right hand reaches out at the right side, as if to the token, and is pulled in to meet the left in "
+                           "a clap low before the chest.")
+                 .key(0.05, pose(hip=(6, 4, 0), right_arm=(-78, 14, 30), left_arm=(-40, 10, -10)))
+                 .key(0.15, clap(4, -80, 28, -0.2), "linear")
+                 .key(0.3, pose(hip=(-2, 0, 0), right_arm=(-64, -30, 0), left_arm=(-66, 28, 0)))
                  .key(0.45, DROP))
 
 # Send Off: a clap, then both palms shoved straight out at the target, the body leaning in behind them.
@@ -140,7 +140,7 @@ ALL = [positions_clap, switchback_cast, switchback_snap, awareness_cast, mimic_c
        exchange_cast, momentum_cast, total_swap_clap]
 # The rework lands one move at a time: the moves done so far are built from here, the rest still play their old hand-keyed
 # animation from swap_legacy.json (the swap.json before the rework), which goes once every move is done.
-DONE = {"positions_clap", "switchback_cast", "switchback_snap", "awareness_cast", "mimic_cast"}
+DONE = {"positions_clap", "switchback_cast", "switchback_snap", "awareness_cast", "mimic_cast", "anchor_throw", "anchor_recall"}
 ANIMS = [a for a in ALL if a.name in DONE]
 _LEGACY = json.loads((Path(__file__).parent / "swap_legacy.json").read_text())["animations"]
 LEGACY = {name: anim for name, anim in _LEGACY.items() if name not in DONE}

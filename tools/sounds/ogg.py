@@ -43,6 +43,36 @@ def write(path: Path, samples: list[float], rate: int, quality: float = 0.7) -> 
     lib.sf_close(handle)
     if written != len(samples):
         raise OSError(f"wrote {written} of {len(samples)} frames to {path}")
+    _fix_serial(path)
+
+
+def _crc(data: bytes) -> int:
+    """Ogg's page checksum: CRC-32, polynomial 0x04c11db7, not reflected, starting from 0."""
+    crc = 0
+    for b in data:
+        crc ^= b << 24
+        for _ in range(8):
+            crc = ((crc << 1) ^ 0x04C11DB7) if crc & 0x80000000 else crc << 1
+            crc &= 0xFFFFFFFF
+    return crc
+
+
+def _fix_serial(path: Path) -> None:
+    """libsndfile gives every stream a random serial number, so the same sound came out different bytes each build. Every page
+    gets one taken from the file's name instead (and its checksum again): the same sound, the same file."""
+    data = bytearray(path.read_bytes())
+    serial = _crc(path.name.encode()).to_bytes(4, "little")
+    i = 0
+    while i < len(data):
+        if data[i:i + 4] != b"OggS":
+            raise OSError(f"{path}: no Ogg page at byte {i}")
+        segments = data[i + 26]
+        size = 27 + segments + sum(data[i + 27:i + 27 + segments])
+        data[i + 14:i + 18] = serial
+        data[i + 22:i + 26] = b"\0\0\0\0"
+        data[i + 22:i + 26] = _crc(bytes(data[i:i + size])).to_bytes(4, "little")
+        i += size
+    path.write_bytes(bytes(data))
 
 
 def channels(path: Path) -> int:

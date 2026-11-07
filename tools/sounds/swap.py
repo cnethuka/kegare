@@ -92,4 +92,25 @@ def flip() -> list[float]:
     return finish(room(x, 0.5, 0.08), 0.7)
 
 
-SOUNDS = {"clap": clap, "double_clap": double_clap, "snap": snap, "cupped_clap": cupped_clap, "big_clap": big_clap, "flip": flip}
+def flick() -> list[float]:
+    """Anchor's throw: a thumb flicking a small token, a dry click, and the token ringing as it spins away (two bright inharmonic
+    partials, a little detuned so they beat, a quarter second)."""
+    seconds = 0.4
+    n = int(seconds * RATE)
+    click = mul(highpass(bandpass(noise(seconds, 47), 2800, 1.6), 1500), bursts(n, [0.0, 0.003], 0.0016))
+    ring = mix((1.0, tone(seconds, 3150, 0.09, start=0.004)), (0.6, tone(seconds, 4880, 0.06, start=0.004)),
+               (0.45, tone(seconds, 3195, 0.08, start=0.004)))
+    return finish(room(mix((0.9, click), (0.32, ring)), 0.6, 0.1), 0.75)
+
+
+def token_land() -> list[float]:
+    """The token sticking where it lands: a small dull tick, and a short low chime that says it's waiting."""
+    seconds = 0.45
+    n = int(seconds * RATE)
+    tick = mul(lowpass(bandpass(noise(seconds, 53), 1300, 1.2), 3000), bursts(n, [0.0], 0.0022))
+    chime = mix((1.0, tone(seconds, 1870, 0.12, start=0.006)), (0.4, tone(seconds, 2805, 0.07, start=0.006)))
+    return finish(room(mix((1.0, tick), (0.35, chime)), 0.7, 0.12), 0.7)
+
+
+SOUNDS = {"clap": clap, "double_clap": double_clap, "snap": snap, "cupped_clap": cupped_clap, "big_clap": big_clap, "flip": flip,
+          "flick": flick, "token_land": token_land}

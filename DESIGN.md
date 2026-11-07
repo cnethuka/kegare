@@ -483,7 +483,8 @@ Malice is always shown as whole numbers (floored, like the HUD); the stored valu
   `sounds.json` from that list (`KegareSoundProvider`) and the subtitle goes in the language provider. `SoundsTest`
   checks every registered sound has a mono file, a subtitle and an entry, and no file is left unused. A new sound: a
   function in the technique's `tools/sounds/<technique>.py`, an entry in `KegareSounds.ALL`, its subtitle, then
-  `build.py` and runData.
+  `build.py` and runData. The writer gives every file a fixed stream serial (libsndfile picks a random one), so a
+  rebuild of an unchanged sound is the same bytes and only changed sounds show in git.
 - **Art for content (optional, with fallbacks).** New content should ship with:
   - an **emblem** per innate technique: `<namespace>:textures/gui/emblem/<path>.png`, 48×48. It is shown
     on the reveal's name card, the Sorcerer screen and the talisman prompt. Without one, the tab icon item is drawn instead.
@@ -1307,13 +1308,16 @@ smooth and modern in Swap's teal, nothing heavy, blurry or lingering, never the 
     side at chest height and snapped down and in.
   - `awareness_cast` (Awareness): a clap, then the hands turn over and fan open, low and wide, a card shown front and
     back; held a moment, then dropped.
+  - `anchor_throw` (Anchor's throw): the token flicked forward underhand, the right hand low and back, then out at the
+    right side a little below level. `anchor_recall` (its swap): the right hand reaches out at the right side, as if to
+    the token, and is pulled in to meet the left in a clap low before the chest.
   - `mimic_cast` (Mimic): a cupped clap up by the right side of the face, the head tipped toward it; then the right
     hand drawn down past the cheek, the face taken. In your own first person the hands are always vanilla's: up by
     the face they'd only sweep across the view.
   - The moves not reworked yet still play their hand-keyed animations, carried as they are from
-    `tools/anims/swap_legacy.json`: `swap_snap` (Total Swap), `anchor_throw`, `anchor_recall`, `send_off_cast`,
+    `tools/anims/swap_legacy.json`: `swap_snap` (Total Swap), `send_off_cast`,
     `exchange_cast`, `momentum_cast`.
-  - In your own first person, a Swap animation shows its hands only while you look about level (no more than 25° down,
+  - In your own first person, a Swap animation shows its hands only while you look about level (no more than 15° down,
     `PlayerAnimations.handsWhileLevel`). They hang from the body, which doesn't tip with the view, so at chest height
     they sit at the bottom corners of a level view; looking further down they'd come up into its middle, so the hands
     are vanilla's then.
@@ -1347,24 +1351,40 @@ smooth and modern in Swap's teal, nothing heavy, blurry or lingering, never the 
   thin teal L-brackets one GUI pixel thick in the four corners of their own screen, coming in from the corners as
   the disguise lands, then breathing slowly; gone the moment it ends. Nothing near the middle of the view, nothing
   for anyone else, the same at every effects setting (they're HUD, not particles); hidden with the HUD (F1).
+- Anchor's **token** (`AnchorRenderer`; the mesh and textures from `tools/blockbench/build_swap_anchor.py`, Python is
+  the source): a small solid teal coin a quarter of a block across, deep teal faces with a bright inlaid ring and a
+  pale diamond, pale rims; the ring, the diamond and the rims stay lit in the dark. Drawn like Rime's ice (smooth mesh,
+  filtered texture, a lit glow pass; it reuses `LanceMesh.Model`) but nothing of Rime's look.
+  - Thrown: it flips end over end the way it's going, with a thin crisp teal line behind it (up to 1.4 blocks, fading
+    toward its far end, turned to face each camera and narrowing to nothing end-on, so the thrower sees only the coin).
+    The line never reaches back past where it was thrown from or into the thrower's head; your own token isn't drawn
+    within 1.2 blocks of your first-person camera.
+  - Waiting: it stands on its edge just off the face it stuck to, turning slowly, and pings every 1.5 s, a thin ring
+    spreading from it in the face's plane. The client finds the face from where it sits (nothing extra is synced).
+  - It's the token itself at every setting. Reduced: the same. Vanilla: no line or ping ring, a teal speck behind it
+    each tick in flight and a ring of specks as it pings.
+- The **link** (`swap_link`, the `SwapLink` payload, drawn by `SwapFx`): a thin straight teal line with a pale core
+  from where someone was to where they went, there at once and then drawn in toward its far end over 5 ticks, as if
+  they went along it; never within 1.5 blocks of your own first-person camera. Anchor's recall (the caster's old spot
+  to the token) and Send Off. Reduced: the same. Vanilla: a row of teal specks.
 - Photon effects (`SwapFxAuthoring` → `fx/swap/`), teal with Malice violet, with vanilla particle fallbacks:
-  - `swap_link`: beads along the line between the two players (`SwapLink` payload; the client places them): Anchor's
-    recall and Send Off.
-  - `anchor_marker` (loops while the anchor waits) and `anchor_trail` (in flight).
   - `exchange_transfer`: orbs travelling each way along the line, one per exchanged effect.
   - `momentum_burst` (both players) and `total_swap_burst` (both players).
 - Sounds: Kegare's own (§3.10, `tools/sounds/swap.py`), each with a subtitle, at both ends of the swap:
-  - `swap.clap` ("Hands clap", a crisp clap): Positions, and for now Total Swap, Anchor's recall and Send Off until
-    they get their own.
+  - `swap.clap` ("Hands clap", a crisp clap): Positions, and for now Total Swap and Send Off until they get their
+    own. Anchor's recall claps a shade lower (pitch 0.94), at the caster and the token.
   - `swap.double_clap` ("Hands clap twice"): Switchback's cast. `swap.snap` ("Fingers snap"): its swap back.
   - Awareness: `swap.clap` a little higher (pitch 1.12) on both, and `swap.flip` ("Card flips") on both as the
     disguise lands (Total Swap's disguise too).
   - `swap.cupped_clap` ("Cupped hands clap", hollow): Mimic's cast, at the caster only.
+  - `swap.flick` ("Token flicked", a dry click and the token ringing as it spins away): Anchor's throw, at the caster.
+    `swap.token_land` ("Token lands", a small tick and a short low chime): where the token sticks.
   - `swap.big_clap` is registered for the moves still to come. Exchange and Momentum Exchange still use the enderman
     teleport.
 
-**Art:** emblem `gui/emblem/swap.png`, icons for all nine abilities (`gui/ability/`), the anchor's item sprite
-(`item/swap_anchor.png`). The Sorcerer screen shows a special's icon in its details when it has one.
+**Art:** emblem `gui/emblem/swap.png`, icons for all nine abilities (`gui/ability/`), Anchor's token
+(`models/fx/swap_anchor.obj`, `textures/entity/swap_anchor*.png`, `art/blockbench/swap_anchor.bbmodel`; above). The
+anchor's item sprite (`item/swap_anchor.png`) stays only as the thrown entity's item stack; it isn't drawn. The Sorcerer screen shows a special's icon in its details when it has one.
 
 **Advancements** (tab root `kegare:innate_technique/swap`, unlocked on first rolling Swap, silent). All hidden,
 silent in chat and awarded from code to Swap holders only. Following §4: the learning (task) ones count mobs too; the

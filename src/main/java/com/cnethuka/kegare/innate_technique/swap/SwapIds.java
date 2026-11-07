@@ -22,13 +22,12 @@ public final class SwapIds {
     // Effects (teal; never Rime's ice blue). Photon's are authored in SwapFxAuthoring; what Swap draws itself is in SwapFx.
     public static final ResourceLocation FX_SWAP_DEPART = fx("swap_depart");
     public static final ResourceLocation FX_SWAP_ARRIVE = fx("swap_arrive");
+    /** The line between where someone was and where they went (SwapLink; drawn by SwapFx). */
     public static final ResourceLocation FX_SWAP_LINK = fx("swap_link");
     public static final ResourceLocation FX_SWITCHBACK_TIMER = fx("switchback_timer");
     public static final ResourceLocation FX_AWARENESS_SHIMMER = fx("awareness_shimmer");
     public static final ResourceLocation FX_AWARENESS_FLIP = fx("awareness_flip");
     public static final ResourceLocation FX_MIMIC_FLICKER = fx("mimic_flicker");
-    public static final ResourceLocation FX_ANCHOR_MARKER = fx("anchor_marker");
-    public static final ResourceLocation FX_ANCHOR_TRAIL = fx("anchor_trail");
     public static final ResourceLocation FX_EXCHANGE_TRANSFER = fx("exchange_transfer");
     public static final ResourceLocation FX_MOMENTUM_BURST = fx("momentum_burst");
     public static final ResourceLocation FX_TOTAL_SWAP_BURST = fx("total_swap_burst");
@@ -44,9 +43,6 @@ public final class SwapIds {
     /** A disguise landing on someone, played at them and naming them: the card-flip ripple down the body (drawn by SwapFx). */
     public static final Visual AWARENESS_FLIP = Visual.effect(FX_AWARENESS_FLIP, Visual.Anchor.BODY);
     public static final String AWARENESS_SHIMMER_KEY = "kegare:swap/awareness_shimmer";
-    /** The anchor's glow while it waits. */
-    public static final Visual ANCHOR_MARKER = Visual.effect(FX_ANCHOR_MARKER, Visual.Anchor.BODY);
-    public static final String ANCHOR_MARKER_KEY = "kegare:swap/anchor_marker";
     public static final Visual MOMENTUM_BURST = Visual.effect(FX_MOMENTUM_BURST, Visual.Anchor.BODY);
     public static final Visual TOTAL_SWAP_BURST = Visual.effect(FX_TOTAL_SWAP_BURST, Visual.Anchor.BODY);
 

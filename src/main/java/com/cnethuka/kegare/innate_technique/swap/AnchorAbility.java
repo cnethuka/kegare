@@ -8,8 +8,6 @@ import com.cnethuka.kegare.innatetechnique.visual.Visual;
 import com.cnethuka.kegare.innatetechnique.visual.VisualService;
 import java.util.Optional;
 import net.minecraft.server.level.ServerPlayer;
-import net.minecraft.sounds.SoundEvents;
-import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.phys.Vec3;
 
 /**
@@ -57,7 +55,7 @@ public final class AnchorAbility extends SwapAbility {
         caster.level().addFreshEntity(anchor);
         Anchors.set(caster, anchor);
         VisualService.playOnce(caster, THROW);
-        caster.level().playSound(null, caster.getX(), caster.getY(), caster.getZ(), SoundEvents.ENDER_PEARL_THROW, SoundSource.PLAYERS, 0.6f, 1.3f);
+        SwapSounds.FLICK.at(caster);
     }
 
     private void recall(ServerPlayer caster, AnchorEntity anchor) {
@@ -66,8 +64,8 @@ public final class AnchorAbility extends SwapAbility {
             return;
         }
         Vec3 to = anchor.arrivalFor(caster);
-        SwapSounds.POSITIONS.at(caster);
-        SwapSounds.POSITIONS.at(anchor);
+        SwapSounds.ANCHOR_RECALL.at(caster);
+        SwapSounds.ANCHOR_RECALL.at(anchor);
         Swapper.depart(caster);
         Swapper.depart(anchor);
         SwapLink.play(caster.serverLevel(), Swapper.bodyPos(caster), Swapper.bodyPos(anchor));

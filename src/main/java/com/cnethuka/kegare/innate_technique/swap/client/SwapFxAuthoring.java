@@ -37,9 +37,6 @@ public final class SwapFxAuthoring {
         Map<ResourceLocation, Supplier<FX>> out = new LinkedHashMap<>();
         out.put(SwapIds.FX_SWAP_DEPART, SwapFxAuthoring::depart);
         out.put(SwapIds.FX_SWAP_ARRIVE, SwapFxAuthoring::arrive);
-        out.put(SwapIds.FX_SWAP_LINK, SwapFxAuthoring::link);
-        out.put(SwapIds.FX_ANCHOR_MARKER, SwapFxAuthoring::anchorMarker);
-        out.put(SwapIds.FX_ANCHOR_TRAIL, SwapFxAuthoring::anchorTrail);
         out.put(SwapIds.FX_EXCHANGE_TRANSFER, SwapFxAuthoring::exchangeTransfer);
         out.put(SwapIds.FX_MOMENTUM_BURST, SwapFxAuthoring::momentumBurst);
         out.put(SwapIds.FX_TOTAL_SWAP_BURST, SwapFxAuthoring::totalSwapBurst);
@@ -74,88 +71,6 @@ public final class SwapFxAuthoring {
         shrink(c);
         material(glints, glow(0.35f, 0.95f, 0.86f, 1.6f));
         return glints;
-    }
-
-    /** One bead of the link drawn between two swapped players (the client lines beads up into a beam). */
-    private static FX link() {
-        ParticleEmitter bead = single("bead", 9, 0.34f);
-        fadeOut(bead.config, PALE, VIOLET);
-        shrink(bead.config);
-        material(bead, glow(0.35f, 0.92f, 0.85f, 1.5f));
-
-        ParticleEmitter sparks = burstEmitter("sparks", 3, 4);
-        ParticleConfig c = sparks.config;
-        c.setStartLifetime(range(6, 10));
-        c.setStartSpeed(range(0.2f, 0.6f));
-        c.setStartSize(uniform(range(0.03f, 0.05f)));
-        c.shape.setShape(sphere(0.12f));
-        fadeOut(c, LIGHT, VIOLET);
-        material(sparks, glow(0.5f, 0.5f, 0.95f, 1.2f));
-        return fx(bead, sparks);
-    }
-
-    /** The anchor waiting: a breathing teal core, a violet halo, motes orbiting it. */
-    private static FX anchorMarker() {
-        ParticleEmitter core = emitter("core", true, 24);
-        ParticleConfig c = core.config;
-        c.setMaxParticles(2);
-        c.setStartLifetime(NumberFunction.constant(24));
-        c.setStartSpeed(NumberFunction.constant(0));
-        c.setStartSize(uniform(NumberFunction.constant(0.45f)));
-        c.shape.setScale(new NumberFunction3(0, 0, 0));
-        c.emission.setEmissionRate(NumberFunction.constant(0));
-        c.emission.getBursts().add(burst(0, 1));
-        c.colorOverLifetime.setEnable(true);
-        c.colorOverLifetime.setColor(gradient(0x995EEAD4, 0xFF14B8A6, 0x995EEAD4));
-        material(core, glow(0.3f, 0.92f, 0.82f, 1.6f));
-
-        ParticleEmitter halo = emitter("halo", true, 36);
-        ParticleConfig h = halo.config;
-        h.setMaxParticles(2);
-        h.setStartLifetime(NumberFunction.constant(36));
-        h.setStartSpeed(NumberFunction.constant(0));
-        h.setStartSize(uniform(NumberFunction.constant(1.0f)));
-        h.shape.setScale(new NumberFunction3(0, 0, 0));
-        h.emission.setEmissionRate(NumberFunction.constant(0));
-        h.emission.getBursts().add(burst(0, 1));
-        h.colorOverLifetime.setEnable(true);
-        h.colorOverLifetime.setColor(gradient(0x22A855F7, 0x55A855F7, 0x22A855F7));
-        material(halo, glow(0.66f, 0.4f, 0.97f, 0.8f));
-
-        ParticleEmitter motes = emitter("motes", true, 20);
-        ParticleConfig m = motes.config;
-        m.setMaxParticles(16);
-        m.setStartLifetime(range(14, 22));
-        m.setStartSpeed(NumberFunction.constant(0));
-        m.setStartSize(uniform(range(0.03f, 0.05f)));
-        Sphere shell = sphere(0.4f);
-        shell.setRadiusThickness(0f);
-        m.shape.setShape(shell);
-        m.emission.setEmissionRate(NumberFunction.constant(0.8f));
-        m.velocityOverLifetime.setEnable(true);
-        m.velocityOverLifetime.setOrbital(new NumberFunction3(0.5f, 2.4f, 0));
-        fadeInOut(m, PALE, TEAL);
-        material(motes, glow(0.4f, 0.95f, 0.85f, 1.2f));
-        return fx(core, halo, motes);
-    }
-
-    /** The anchor in flight: a teal ribbon fading to violet, and a few glints shed behind it. */
-    private static FX anchorTrail() {
-        ParticleEmitter ribbon = FxKit.ribbon("ribbon", 0.18f, 8, gradient(PALE, TEAL, 0x00A855F7),
-                recolor(KilaPresets.ENERGY_TRAIL.create(), 0.3f, 0.9f, 0.8f, 1.5f));
-        ParticleEmitter glints = emitter("glints", true, 20);
-        ParticleConfig c = glints.config;
-        c.setSimulationSpace(ParticleConfig.Space.World);
-        c.setMaxParticles(40);
-        c.setStartLifetime(range(8, 12));
-        c.setStartSpeed(range(0.0f, 0.3f));
-        c.setStartSize(uniform(range(0.04f, 0.08f)));
-        c.emission.setEmissionRate(NumberFunction.constant(2.5f));
-        c.shape.setShape(sphere(0.05f));
-        fadeOut(c, LIGHT, VIOLET);
-        shrink(c);
-        material(glints, glow(0.4f, 0.9f, 0.85f, 1.3f));
-        return fx(ribbon, glints);
     }
 
     /** One step of an exchanged effect crossing over: a violet-cored orb with a teal halo (beads line up into its path). */

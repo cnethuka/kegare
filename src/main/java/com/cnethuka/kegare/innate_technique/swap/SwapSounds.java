@@ -32,6 +32,12 @@ public final class SwapSounds {
     public static final Clap AWARENESS = new Clap(KegareSounds.SWAP_CLAP, 0.9f, 1.12f);
     /** Mimic's cast: a hollow clap of cupped hands, at the caster only (the target stays as themselves). */
     public static final Clap MIMIC = new Clap(KegareSounds.SWAP_CUPPED_CLAP, 1f, 1f);
+    /** Anchor's throw: the token flicked off the thumb, ringing as it spins away. */
+    public static final Clap FLICK = new Clap(KegareSounds.SWAP_FLICK, 0.9f, 1f);
+    /** The token sticking where it lands. */
+    public static final Clap TOKEN_LAND = new Clap(KegareSounds.SWAP_TOKEN_LAND, 0.9f, 1f);
+    /** Anchor's recall: the clap, a shade lower than Positions', at both ends. */
+    public static final Clap ANCHOR_RECALL = new Clap(KegareSounds.SWAP_CLAP, 1f, 0.94f);
     /** A disguise landing (Awareness, Total Swap): a card riffled over. */
     public static final Clap CARD_FLIP = new Clap(KegareSounds.SWAP_FLIP, 0.9f, 1f);
     /** Switchback's swap back: a finger snap. */

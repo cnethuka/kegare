@@ -47,7 +47,7 @@ public final class PlayerAnimations {
     private static final Set<ResourceLocation> VANILLA_HANDS = ConcurrentHashMap.newKeySet();
     private static final Set<ResourceLocation> WHILE_LEVEL = ConcurrentHashMap.newKeySet();
     /** How far down (degrees) you can look and still see a {@link #handsWhileLevel} animation's hands in your own first person. */
-    private static final float LEVEL_PITCH = 25f;
+    private static final float LEVEL_PITCH = 15f;
 
     private PlayerAnimations() {}
 

@@ -32,6 +32,8 @@ public final class KegareSounds {
     public static final DeferredHolder<SoundEvent, SoundEvent> SWAP_CUPPED_CLAP = register("swap.cupped_clap", "swap/cupped_clap");
     public static final DeferredHolder<SoundEvent, SoundEvent> SWAP_BIG_CLAP = register("swap.big_clap", "swap/big_clap");
     public static final DeferredHolder<SoundEvent, SoundEvent> SWAP_FLIP = register("swap.flip", "swap/flip");
+    public static final DeferredHolder<SoundEvent, SoundEvent> SWAP_FLICK = register("swap.flick", "swap/flick");
+    public static final DeferredHolder<SoundEvent, SoundEvent> SWAP_TOKEN_LAND = register("swap.token_land", "swap/token_land");
 
     private KegareSounds() {}
 

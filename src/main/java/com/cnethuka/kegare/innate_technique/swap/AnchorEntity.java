@@ -1,14 +1,10 @@
 package com.cnethuka.kegare.innate_technique.swap;
 
-import com.cnethuka.kegare.innatetechnique.visual.VisualHooks;
-import com.cnethuka.kegare.innatetechnique.visual.VisualService;
 import net.minecraft.core.Direction;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.EntityDataSerializers;
 import net.minecraft.network.syncher.SynchedEntityData;
-import net.minecraft.sounds.SoundEvents;
-import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LivingEntity;
@@ -20,8 +16,8 @@ import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
 
 /**
- * Anchor's marker: thrown like a pearl, passes through creatures, and sticks to the first block it hits. It waits there
- * (glowing) until its caster uses it, or until its lifetime runs out. Never saved.
+ * Anchor's token: thrown like a pearl, passes through creatures, and sticks to the first block it hits. It waits there
+ * (on its edge, turning, pinging; AnchorRenderer) until its caster uses it, or until its lifetime runs out. Never saved.
  */
 public class AnchorEntity extends ThrowableItemProjectile {
     private static final EntityDataAccessor<Boolean> STUCK = SynchedEntityData.defineId(AnchorEntity.class, EntityDataSerializers.BOOLEAN);
@@ -29,7 +25,6 @@ public class AnchorEntity extends ThrowableItemProjectile {
     private int lifetime = 400;
     /** The face of the block it stuck to (UP = it landed on the ground). */
     private Direction face = Direction.UP;
-    private boolean trailStarted;
 
     public AnchorEntity(EntityType<? extends AnchorEntity> type, Level level) {
         super(type, level);
@@ -64,14 +59,8 @@ public class AnchorEntity extends ThrowableItemProjectile {
         } else {
             super.tick();
         }
-        if (level().isClientSide) {
-            if (!trailStarted && !isStuck()) {
-                trailStarted = true;
-                VisualHooks.startTrail(this, SwapIds.FX_ANCHOR_TRAIL);
-            }
-        } else if (isAlive() && tickCount >= lifetime) {
-            Anchors.expire(this);
-        }
+        // Drawn, line and ping, by AnchorRenderer; only the server times it out.
+        if (!level().isClientSide && isAlive() && tickCount >= lifetime) Anchors.expire(this);
     }
 
     /** Creatures don't stop it. */
@@ -89,8 +78,7 @@ public class AnchorEntity extends ThrowableItemProjectile {
         setDeltaMovement(Vec3.ZERO);
         setNoGravity(true);
         entityData.set(STUCK, true);
-        VisualService.startLoop(this, SwapIds.ANCHOR_MARKER_KEY, SwapIds.ANCHOR_MARKER, 0);
-        level().playSound(null, getX(), getY(), getZ(), SoundEvents.AMETHYST_BLOCK_PLACE, SoundSource.PLAYERS, 0.9f, 1.4f);
+        SwapSounds.TOKEN_LAND.at(this);
     }
 
     /**

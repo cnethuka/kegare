@@ -23,6 +23,12 @@
     ],
     "subtitle": "subtitles.kegare.swap.double_clap"
   },
+  "swap.flick": {
+    "sounds": [
+      "kegare:swap/flick"
+    ],
+    "subtitle": "subtitles.kegare.swap.flick"
+  },
   "swap.flip": {
     "sounds": [
       "kegare:swap/flip"
@@ -34,5 +40,11 @@
       "kegare:swap/snap"
     ],
     "subtitle": "subtitles.kegare.swap.snap"
+  },
+  "swap.token_land": {
+    "sounds": [
+      "kegare:swap/token_land"
+    ],
+    "subtitle": "subtitles.kegare.swap.token_land"
   }
 }

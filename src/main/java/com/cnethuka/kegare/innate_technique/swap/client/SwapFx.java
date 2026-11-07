@@ -70,6 +70,9 @@ public final class SwapFx {
 
     private record Ring(Vec3 feet, float radius, long born) {}
 
+    /** Where someone was taken, from end to end (Anchor's recall, Send Off). */
+    private record Link(Vec3 from, Vec3 to, long born) {}
+
     /** An entity about to be moved by a swap: from where, and until when to watch for the move. */
     private record Snap(Vec3 from, long until) {}
 
@@ -93,6 +96,11 @@ public final class SwapFx {
     private static final List<Countdown> COUNTDOWNS = new ArrayList<>();
     private static final List<Flip> FLIPS = new ArrayList<>();
     private static final List<Flicker> FLICKERS = new ArrayList<>();
+    private static final List<Link> LINKS = new ArrayList<>();
+    /** A link is drawn whole and then drawn in toward its far end over this many ticks. */
+    private static final int LINK_TICKS = 5;
+    /** How far from your own first-person camera a link stops: it ends in the middle of whoever was taken. */
+    private static final double LINK_CLEAR = 1.5;
     /** Mimic's flicker, a tick at a time: the body flashes teal twice, then a faint third (each flash long enough to be seen). */
     private static final float[] FLICKER_ALPHA = {0.85f, 0.85f, 0f, 0f, 0.75f, 0.75f, 0f, 0.35f, 0.2f};
     /** The card-flip ripple: slats down the body, each this many ticks after the one above, each turning over in FLIP_TICKS. */
@@ -100,7 +108,7 @@ public final class SwapFx {
     private static final float FLIP_STAGGER = 0.7f;
     private static final float FLIP_TICKS = 3f;
     /** Vanilla's stand-in for Swap's drawn effects: small teal dust, gone almost at once. */
-    private static final DustParticleOptions SPECK = new DustParticleOptions(new Vector3f(0.18f, 0.9f, 0.82f), 0.5f);
+    static final DustParticleOptions SPECK = new DustParticleOptions(new Vector3f(0.18f, 0.9f, 0.82f), 0.5f);
     private static long clock;
     @Nullable private static PlayerModel<AbstractClientPlayer> wide, slim;
 
@@ -207,6 +215,7 @@ public final class SwapFx {
         }
         AFTERIMAGES.removeIf(a -> clock - a.born() >= GHOST_ALPHA.length);
         RINGS.removeIf(r -> clock - r.born() > RING_TICKS);
+        LINKS.removeIf(l -> clock - l.born() > LINK_TICKS);
         POSES.values().removeIf(p -> clock - p.tick() > POSE_KEPT);
         SNAP.values().removeIf(s -> s.until() < clock);
     }
@@ -248,6 +257,65 @@ public final class SwapFx {
         COUNTDOWNS.clear();
         FLIPS.clear();
         FLICKERS.clear();
+        LINKS.clear();
+    }
+
+    // ---------------------------------------------------------------- the link
+
+    /**
+     * A swap's line from {@code from} to {@code to} (middles): a thin straight teal line with a pale core, there at once, then
+     * drawn in toward {@code to} over 5 ticks, as if whoever was taken went along it. Turned to face each camera; never within
+     * 1.5 blocks of your own first-person one. Vanilla: a row of teal specks.
+     */
+    static void link(ClientLevel level, Vec3 from, Vec3 to) {
+        if (drawn()) {
+            LINKS.add(new Link(from, to, clock));
+            return;
+        }
+        int n = Math.max(2, (int) (from.distanceTo(to) * 2.5));
+        for (int i = 0; i <= n; i++) {
+            Vec3 p = from.lerp(to, i / (double) n);
+            level.addParticle(SPECK, p.x, p.y, p.z, 0, 0, 0);
+        }
+    }
+
+    private static void renderLinks(PoseStack pose, MultiBufferSource.BufferSource buffers, Vec3 cam, float partial) {
+        boolean firstPerson = Minecraft.getInstance().options.getCameraType().isFirstPerson();
+        RenderType type = RenderType.entityTranslucentEmissive(WHITE);
+        VertexConsumer out = buffers.getBuffer(type);
+        Matrix4f m = pose.last().pose();
+        for (Link l : LINKS) {
+            float t = Mth.clamp((clock - l.born() + partial) / LINK_TICKS, 0f, 1f);
+            Vec3 a = l.from().lerp(l.to(), t * t), b = l.to();
+            if (firstPerson) {
+                // Cut back from either end that's at your own camera.
+                Vec3 dir = b.subtract(a);
+                double len = dir.length();
+                if (len < 1.0e-3) continue;
+                dir = dir.scale(1.0 / len);
+                double cut0 = a.distanceTo(cam) < LINK_CLEAR ? LINK_CLEAR : 0, cut1 = b.distanceTo(cam) < LINK_CLEAR ? LINK_CLEAR : 0;
+                if (cut0 + cut1 >= len) continue;
+                b = b.subtract(dir.scale(cut1));
+                a = a.add(dir.scale(cut0));
+            }
+            float alpha = 1f - 0.4f * t;
+            strip(out, m, a.subtract(cam), b.subtract(cam), Vec3.ZERO, 0.05f * (1f - 0.5f * t), GLOW, alpha * 0.85f);
+            strip(out, m, a.subtract(cam), b.subtract(cam), Vec3.ZERO, 0.018f, PALE, alpha);
+        }
+        buffers.endBatch(type);
+    }
+
+    /** A straight strip from {@code a} to {@code b}, {@code width} across, turned to face {@code eye} (all in the same space). */
+    static void strip(VertexConsumer out, Matrix4f m, Vec3 a, Vec3 b, Vec3 eye, float width, int rgb, float alpha) {
+        Vec3 dir = b.subtract(a);
+        Vec3 across = dir.cross(eye.subtract(a.add(b).scale(0.5)));
+        if (across.lengthSqr() < 1.0e-8) return;
+        across = across.normalize().scale(width / 2);
+        int al = Math.round(Mth.clamp(alpha, 0f, 1f) * 255);
+        vertex(out, m, (float) (a.x + across.x), (float) (a.y + across.y), (float) (a.z + across.z), rgb, al);
+        vertex(out, m, (float) (a.x - across.x), (float) (a.y - across.y), (float) (a.z - across.z), rgb, al);
+        vertex(out, m, (float) (b.x - across.x), (float) (b.y - across.y), (float) (b.z - across.z), rgb, al);
+        vertex(out, m, (float) (b.x + across.x), (float) (b.y + across.y), (float) (b.z + across.z), rgb, al);
     }
 
     // ---------------------------------------------------------------- Mimic's flicker
@@ -422,10 +490,11 @@ public final class SwapFx {
     // ---------------------------------------------------------------- drawing
 
     static void render(PoseStack pose, Vec3 cam, float partial) {
-        if ((AFTERIMAGES.isEmpty() && RINGS.isEmpty() && COUNTDOWNS.isEmpty() && FLIPS.isEmpty()) || !drawn()) return;
+        if ((AFTERIMAGES.isEmpty() && RINGS.isEmpty() && COUNTDOWNS.isEmpty() && FLIPS.isEmpty() && LINKS.isEmpty()) || !drawn()) return;
         MultiBufferSource.BufferSource buffers = Minecraft.getInstance().renderBuffers().bufferSource();
         if (!COUNTDOWNS.isEmpty()) renderCountdowns(pose, buffers, cam, partial);
         if (!FLIPS.isEmpty()) renderFlips(pose, buffers, cam, partial);
+        if (!LINKS.isEmpty()) renderLinks(pose, buffers, cam, partial);
         Minecraft mc = Minecraft.getInstance();
         boolean firstPerson = mc.options.getCameraType().isFirstPerson();
         for (Afterimage a : AFTERIMAGES) {

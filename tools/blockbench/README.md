@@ -1,4 +1,4 @@
-# Blockbench tooling (player animations, Strings, Glacial Lance, Glacial Spire, Frost Shard, block marks)
+# Blockbench tooling (player animations, Strings, Glacial Lance, Glacial Spire, Frost Shard, block marks, Anchor's token)
 
 Animations are written pose-to-pose in `tools/anims/<technique>.py` and exported to
 `src/main/resources/assets/kegare/player_animations/<technique>.json` in Blockbench's own Bedrock format, which Player
@@ -97,3 +97,13 @@ mesh: `build_block_marks.py` draws each pattern with PIL, from a few palette col
 
 Trust the game. What was checked in game with PAL 1.1.6 is written at the top of `tools/anims/kit.py`: which channels
 replace the vanilla pose, and why there's a baked `hip` instead of a custom bone and no `bend` channel.
+
+## Anchor's token (Swap): the Python is the source
+
+A small solid teal coin (DESIGN.md §3.19). `build_swap_anchor.py` makes the faces itself (a 16-sided coin with bevelled
+rims), lays them out and exports them with the lance's islands, atlas and Blockbench export, and paints them in Swap's teal
+(`art/blockbench/swap_anchor.bbmodel`, `models/fx/swap_anchor.obj`, `textures/entity/swap_anchor*.png`). Its throw and recall
+are `tools/anims/swap.py`. Blockbench caches a texture it has loaded, so after a repaint its preview can show the old one:
+check the colours in game.
+
+    python3 -I tools/blockbench/build_swap_anchor.py --preview  # also run/anchor_preview/*.png
