@@ -232,6 +232,15 @@ public final class FistTell {
         shown.staleTicks = 0;
     }
 
+    /**
+     * Where a point in vanilla's first-person hand pass is, from the camera along the world's axes, which is what {@link #reportFist} wants.
+     * The hand pass starts its pose with the camera's own rotation, so what comes out is already turned the world's way. Turning it again
+     * put a Severed player's own steam off to one side or behind them whenever they weren't facing north.
+     */
+    static Vector3f handPassPoint(PoseStack.Pose pose, float x, float y, float z) {
+        return pose.pose().transformPosition(x, y, z, new Vector3f());
+    }
+
     /** Is this fist being drawn in the world? A screen's preview of a player goes through the same layer, in its own space. */
     static boolean inWorld(Player player, Vector3f relative, float partialTick) {
         Vec3 at = Minecraft.getInstance().gameRenderer.getMainCamera().getPosition().add(relative.x, relative.y, relative.z);
@@ -296,13 +305,12 @@ public final class FistTell {
             arm.translateAndRotate(pose);
             boolean slim = player.getSkin().model() == PlayerSkin.Model.SLIM;
             float time = player.tickCount + event.getPartialTick();
-            Vector3f fist = pose.last().pose().transformPosition(FistShellMesh.armCentre(slim, left), FistShellMesh.fistY(), 0f, new Vector3f());
+            Vector3f fist = handPassPoint(pose.last(), FistShellMesh.armCentre(slim, left), FistShellMesh.fistY(), 0f);
             drawArm(pose, event.getMultiBufferSource(), look, time, slim, left, event.getPackedLight(), fist.negate(new Vector3f()).normalize(),
                     new Vector3f(0f, 1f, 0f), true);
             Shown shown = SHOWN.get(player.getId());
             if (shown != null && look.kind() == MeleeTell.Kind.GLOW) drawWispsSelf(shown, event.getMultiBufferSource(), fist, time, WISP_SIZE_SELF);
-            Camera camera = mc.gameRenderer.getMainCamera();
-            reportFist(player, fist.rotate(camera.rotation(), new Vector3f()));
+            reportFist(player, fist);
         }
         pose.popPose();
     }
@@ -317,7 +325,7 @@ public final class FistTell {
         pose.mulPose(Axis.XP.rotationDegrees(lift * -80f));
         pose.mulPose(Axis.YP.rotationDegrees(side * -45f));
         // The hand pass's pose comes out relative to the camera along the world's axes, so the camera's own axes are what face it.
-        Vector3f base = pose.last().pose().transformPosition(side * CLUMP_ACROSS, CLUMP_UP, CLUMP_NEARER, new Vector3f());
+        Vector3f base = handPassPoint(pose.last(), side * CLUMP_ACROSS, CLUMP_UP, CLUMP_NEARER);
         Camera camera = Minecraft.getInstance().gameRenderer.getMainCamera();
         Vector3f right = new Vector3f(camera.getLeftVector()).negate();
         Vector3f up = new Vector3f(camera.getUpVector());
