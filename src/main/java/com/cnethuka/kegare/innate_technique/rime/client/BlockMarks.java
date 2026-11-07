@@ -15,6 +15,7 @@ import java.util.Optional;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.client.renderer.LevelRenderer;
+import net.minecraft.client.renderer.LightTexture;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.renderer.texture.OverlayTexture;
@@ -35,7 +36,8 @@ import org.jetbrains.annotations.Nullable;
  * on the faces of the blocks round a point, its centre snapped to their texel grid, and gives every texel the tick it forms and the
  * tick it melts: the inner ones form first and melt last. Each marked face keeps its own 16 x 16 texels, so marks that overlap
  * share texels (the stronger colour, the longer life) instead of flickering through each other. Drawn as one quad per run of like
- * texels in a row, in the world's light.
+ * texels in a row, in the world's light, except that a texel can glow: drawn at least as bright as its glow (0 to 15, a minimum
+ * block light) so it reads in the dark, though it lights nothing round it.
  */
 public final class BlockMarks {
     static final int TEXELS = 16;
@@ -51,8 +53,20 @@ public final class BlockMarks {
     /** Past this, marks aren't drawn: a texel is far below a pixel by then. */
     private static final double DRAW_DISTANCE = 80;
 
-    /** The art ({@code argb}, row by row) and when each texel comes and goes ({@code order}, 0 first in and last out, to 255). */
-    public record Pattern(int width, int height, int[] argb, int[] order) {}
+    /**
+     * The art ({@code argb}, row by row), when each texel comes and goes ({@code order}, 0 first in and last out, to 255), and how
+     * much each glows ({@code glow}, 0 to 15, or null for none: {@code _glow.png}).
+     */
+    public record Pattern(int width, int height, int[] argb, int[] order, byte @Nullable [] glow) {
+        public Pattern(int width, int height, int[] argb, int[] order) {
+            this(width, height, argb, order, null);
+        }
+
+        /** A texel's glow, 0 to 15. */
+        int glowAt(int i) {
+            return glow == null ? 0 : glow[i];
+        }
+    }
 
     /**
      * When a stamp's texels come and go, in ticks from now. {@code reach} (0 to 1) is how much of the pattern's order is shown: less
@@ -91,6 +105,7 @@ public final class BlockMarks {
         final int[] argb = new int[TEXELS * TEXELS];
         final int[] appear = new int[TEXELS * TEXELS];
         final int[] vanish = new int[TEXELS * TEXELS];
+        final byte[] glow = new byte[TEXELS * TEXELS];
         int until;
 
         Face(BlockPos solid, Direction face) {
@@ -98,16 +113,25 @@ public final class BlockMarks {
             this.face = face;
         }
 
-        /** Puts a texel: where one is already there and alive, the two merge (sooner in, later out, the stronger colour). */
         void put(int i, int colour, int appearAt, int vanishAt, int now) {
+            put(i, colour, 0, appearAt, vanishAt, now);
+        }
+
+        /**
+         * Puts a texel: where one is already there and alive, the two merge (sooner in, later out, the stronger colour, the brighter
+         * glow).
+         */
+        void put(int i, int colour, int glowLevel, int appearAt, int vanishAt, int now) {
             if (argb[i] == 0 || vanish[i] <= now) {
                 argb[i] = colour;
+                glow[i] = (byte) glowLevel;
                 appear[i] = appearAt;
                 vanish[i] = vanishAt;
             } else {
                 appear[i] = Math.min(appear[i], appearAt);
                 vanish[i] = Math.max(vanish[i], vanishAt);
                 if ((colour >>> 24) > (argb[i] >>> 24)) argb[i] = colour;
+                glow[i] = (byte) Math.max(glow[i], glowLevel);
             }
             until = Math.max(until, vanish[i]);
         }
@@ -151,6 +175,7 @@ public final class BlockMarks {
         var manager = Minecraft.getInstance().getResourceManager();
         ResourceLocation art = name.withPath(p -> "textures/marks/" + p + ".png");
         ResourceLocation order = name.withPath(p -> "textures/marks/" + p + "_order.png");
+        ResourceLocation glow = name.withPath(p -> "textures/marks/" + p + "_glow.png");
         try (InputStream a = manager.getResourceOrThrow(art).open(); InputStream o = manager.getResourceOrThrow(order).open();
                 NativeImage ai = NativeImage.read(a); NativeImage oi = NativeImage.read(o)) {
             int w = ai.getWidth(), h = ai.getHeight();
@@ -164,7 +189,18 @@ public final class BlockMarks {
                     when[y * w + x] = oi.getPixelRGBA(x, y) & 0xFF;
                 }
             }
-            return Optional.of(new Pattern(w, h, argb, when));
+            byte[] glows = null;
+            var glowFile = manager.getResource(glow);
+            if (glowFile.isPresent()) {
+                try (InputStream g = glowFile.get().open(); NativeImage gi = NativeImage.read(g)) {
+                    if (gi.getWidth() != w || gi.getHeight() != h) throw new IOException("the glow isn't the art's size");
+                    glows = new byte[w * h];
+                    for (int y = 0; y < h; y++) {
+                        for (int x = 0; x < w; x++) glows[y * w + x] = (byte) Math.min(15, Math.round((gi.getPixelRGBA(x, y) & 0xFF) / 17f));
+                    }
+                }
+            }
+            return Optional.of(new Pattern(w, h, argb, when, glows));
         } catch (IOException | RuntimeException e) {
             Kegare.LOGGER.warn("Couldn't read the block mark {}: {}", name, e.toString());
             return Optional.empty();
@@ -225,7 +261,7 @@ public final class BlockMarks {
                 Face f = cells.computeIfAbsent(cellKey, k -> faceAt(level, cell(n, back, a, ca, b, cb), face));
                 if (f == BARE) continue;
                 int local = Math.floorMod(wb, TEXELS) * TEXELS + Math.floorMod(wa, TEXELS);
-                f.put(local, colour, clock + appear, clock + timing.vanish(p.order()[i], jitter(wa, wb)), clock);
+                f.put(local, colour, p.glowAt(i), clock + appear, clock + timing.vanish(p.order()[i], jitter(wa, wb)), clock);
             }
         }
         while (FACES.size() > MAX_FACES) {
@@ -308,6 +344,12 @@ public final class BlockMarks {
         buffers.endBatch(type);
     }
 
+    /** The light a texel is drawn in: the world's, or its glow if that's brighter (as block light; the sky's is kept). */
+    static int lit(int light, int glow) {
+        if (glow <= LightTexture.block(light)) return light;
+        return LightTexture.pack(glow, LightTexture.sky(light));
+    }
+
     /**
      * One face's texels. {@code shade} is how the world shades that face of a block (a wall darker than the top), so the frost on it
      * is shaded just as the block under it is; the normal given is straight up, for which entity lighting adds nothing more.
@@ -326,10 +368,11 @@ public final class BlockMarks {
                     u++;
                     continue;
                 }
+                int g = f.glow[v * TEXELS + u];
                 int end = u + 1;
-                while (end < TEXELS && f.shown(v * TEXELS + end, clock) == c) end++;
+                while (end < TEXELS && f.shown(v * TEXELS + end, clock) == c && f.glow[v * TEXELS + end] == g) end++;
                 quad(out, cam, n, plane, a, ca + u / (double) TEXELS, ca + end / (double) TEXELS, b, cb + v / (double) TEXELS,
-                        cb + (v + 1) / (double) TEXELS, c, light, shade);
+                        cb + (v + 1) / (double) TEXELS, c, lit(light, g), shade);
                 u = end;
             }
         }

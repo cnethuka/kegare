@@ -6,6 +6,8 @@
 Writes, in src/main/resources/assets/kegare/textures/marks/
     <name>.png        the art: every texel is one of the few palette colours below (alpha too), nothing blended or smoothed
     <name>_order.png  when each texel comes and goes: grey 0 forms first and melts last, 255 forms last and melts first
+    <name>_glow.png   (only for a mark with some glow) how much each texel glows, 0 to 15 (stored x17): drawn at least that bright
+                      whatever the world's light, so it reads in the dark, but it lights nothing round it
     white.png         what the game draws them on (each texel's colour goes on its vertices)
 
 The game (BlockMarks.java) lays a pattern on the faces of the blocks with its centre snapped to their texel grid, so one texel of the
@@ -37,10 +39,15 @@ FISSURE = (22, 38, 90, 232)    # a crack in the ground: deep navy, nearly solid
 EDGE = (128, 180, 240, 214)    # the lit lip along a crack
 ICE = (112, 172, 234, 150)     # a glaze of ice: the block's own texture still shows through, gone blue
 DEEP = (64, 122, 204, 164)     # where the glaze is thicker
-PALETTE = (NONE, FILM, FROST, RIME, GLINT, FISSURE, EDGE, ICE, DEEP)
+SHINE = (196, 238, 255, 255)   # light in a crack: the warning's lines, solid
+HALO = (120, 196, 255, 110)    # the faint glow along them, the block showing through
+PALETTE = (NONE, FILM, FROST, RIME, GLINT, FISSURE, EDGE, ICE, DEEP, SHINE, HALO)
+# How much each tone glows (a minimum light, 0 to 15): only the warning's lines and the glow along them; everything else is lit by
+# the world. A mark can also have a faint glow all over (GLOW_FLOOR below).
+GLOW = {9: 15, 10: 11}
 # Strength, for a texel that two strokes cross: a crack cuts through frost, its lip shows over the sheen. In game the more opaque
 # colour wins where two marks meet, so a glaze (less opaque than frost) never covers frost, and the sheen never covers the glaze.
-STRENGTH = {0: 0, 1: 1, 7: 2, 8: 3, 6: 4, 2: 5, 3: 6, 4: 7, 5: 8}
+STRENGTH = {0: 0, 1: 1, 10: 2, 7: 3, 8: 4, 6: 5, 2: 6, 3: 7, 4: 8, 5: 9, 9: 10}
 
 # 16 headings, so every line is one of the clean pixel slopes (flat, 1:2, 1:1, 2:1) instead of a ragged stair.
 HEADINGS = [i * math.pi / 8 for i in range(16)]
@@ -120,16 +127,23 @@ def geodesic_order(canvas, centre, loose=1.15):
     return {k: min(255, round(v / top * 255)) for k, v in dist.items()}
 
 
-def save(name, canvas, order):
+def save(name, canvas, order, floor=0):
     size = canvas.size
     art = Image.new("RGBA", (size, size), NONE)
     when = Image.new("L", (size, size), 0)
+    glow = Image.new("L", (size, size), 0)
     for (x, y), o in order.items():
-        art.putpixel((x, y), PALETTE[canvas.tone[y][x]])
+        tone = canvas.tone[y][x]
+        art.putpixel((x, y), PALETTE[tone])
         when.putpixel((x, y), o)
+        glow.putpixel((x, y), max(floor, GLOW.get(tone, 0)) * 17)
     OUT.mkdir(parents=True, exist_ok=True)
     art.save(OUT / f"{name}.png", optimize=True)
     when.save(OUT / f"{name}_order.png", optimize=True)
+    if glow.getbbox():
+        glow.save(OUT / f"{name}_glow.png", optimize=True)
+    else:
+        (OUT / f"{name}_glow.png").unlink(missing_ok=True)
     print(f"{name}: {size}x{size}, {len(order)} texels")
     return art, when
 
@@ -220,44 +234,73 @@ def crack(c, rng, x0, y0, heading, length, lip=True, wander=0.35, fork=0.0):
     return x, y
 
 
-def spire_crack(seed=23, size=64, radius=23):
-    """Glacial Spire's warning, spreading over the warning time: fissures race out from where it will rise to a broken ring at the
-    reach of the hit (1.5 blocks, 24 texels: `radius` is a texel inside it), then run round the ring; frost creeps along them. The
-    order makes the ring the last thing to form, so it closes just as the spike comes."""
+def spire_crack(seed=23, size=64, radius=24):
+    """Glacial Spire's warning: it has to be seen from 15 blocks, by day and at night, since it's the cue to get out. Light breaks
+    through the ground: a ring of it on the reach of the hit (1.5 blocks, 24 texels), a band all the way round, a bright core three
+    texels wide with dark edges and a glow either side (about eight texels in all, as wide as the old Photon ring looked), and lit fissures racing out to it from where the spike will rise. The bright
+    lines and the glow along them glow (GLOW), so they read at night; the dark edges keep them sharp on pale ground by day. Grows
+    from the middle; SpireClient spreads it in the first part of the warning, so the whole circle is there to dodge."""
     rng = random.Random(seed)
     c = Canvas(size)
     cx = cy = size // 2
-    # Crushed ground in the middle.
+    # Crushed ground in the middle, light coming through it.
     for y in range(size):
         for x in range(size):
             d = math.hypot(x - cx + 0.5, y - cy + 0.5)
-            if d < 2.2:
+            if d < 1.6:
+                c.put(x, y, 9)
+            elif d < 2.6:
                 c.put(x, y, 5)
-            elif d < 3.4 and rng.random() < 0.6:
-                c.put(x, y, 6 if rng.random() < 0.5 else 5)
-    # Fissures out to the ring, evenly round so the circle reads, each its own way.
+            elif d < 3.6 and rng.random() < 0.5:
+                c.put(x, y, 10)
+    # Fissures out to the ring, evenly round so the circle reads, each its own way: a lit core, a dark lip, a glow beside them.
     n = 8
     for k in range(n):
         h = HEADINGS[(2 * k + rng.choice((0, 0, 1))) % 16]
-        crack(c, rng, cx, cy, h, radius + rng.uniform(-1, 1.5), fork=0.22)
-    # The ring: broken, never a clean circle, a texel or so in and out.
-    gaps = sorted(rng.uniform(0, 2 * math.pi) for _ in range(5))
-    for i in range(720):
-        a = 2 * math.pi * i / 720
-        if any(abs((a - g + math.pi) % (2 * math.pi) - math.pi) < 0.14 for g in gaps):
-            continue
-        r = radius + 0.9 * math.sin(a * 5 + 1.3) + 0.6 * math.sin(a * 11)
-        x, y = round(cx - 0.5 + math.cos(a) * r), round(cy - 0.5 + math.sin(a) * r)
-        c.put(x, y, 5)
-        inner = (round(cx - 0.5 + math.cos(a) * (r - 1)), round(cy - 0.5 + math.sin(a) * (r - 1)))
-        c.put(*inner, 6)
-    # Frost creeping along the cracks: sheen and specks beside them.
-    cracks = [(x, y) for x, y in c.filled() if c.tone[y][x] == 5]
-    for x, y in cracks:
-        for ox, oy in ((1, 1), (-1, 1), (1, -1), (-1, -1), (2, 0), (0, 2), (-2, 0), (0, -2)):
-            if rng.random() < 0.16:
-                c.put(x + ox, y + oy, 1 if rng.random() < 0.75 else 2)
+        lit_crack(c, rng, cx, cy, h, radius + 2, fork=0.22, within=radius - 2.1)
+    # The ring, all the way round, never a ruled circle: a texel or so in and out.
+    for y in range(size):
+        for x in range(size):
+            dx, dy = x - cx + 0.5, y - cy + 0.5
+            d, a = math.hypot(dx, dy), math.atan2(dy, dx)
+            r = radius + 0.6 * math.sin(a * 5 + 1.3) + 0.4 * math.sin(a * 11)
+            off = d - r
+            if -1.5 <= off < 1.5:
+                c.put(x, y, 9)
+            elif -2.5 <= off < -1.5 or 1.5 <= off < 2.5:
+                c.put(x, y, 5)
+            elif 2.5 <= off < 4.0 or (-3.5 <= off < -2.5 and rng.random() < 0.85):
+                c.put(x, y, 10)
     return c, geodesic_order(c, (cx, cy))
+
+
+def lit_crack(c, rng, x0, y0, heading, length, wander=0.35, fork=0.0, within=None):
+    """A crack with light coming up through it: a lit core, a dark lip on the side away from the light, and a faint glow beside
+    it, on the clean slopes like `crack`. With `within`, it stops that far from where it started (where it meets the ring)."""
+    x, y = x0, y0
+    ox, oy = x0, y0
+    gone = 0.0
+    lipside = side_of(math.pi * 0.25 + math.pi)
+    while gone < length:
+        step = rng.randint(2, 5)
+        h = heading + rng.choice((0, 0, 1, -1)) * math.pi / 8 * (1 if rng.random() < wander * 2 else 0)
+        seg = ray(x, y, h, step)
+        across = side_of(h)
+        for px, py in seg[1:]:
+            if within is not None and math.hypot(px - ox, py - oy) > within:
+                return x, y
+            c.put(px, py, 9)
+            c.put(px - lipside[0], py - lipside[1], 5)
+            for s in (1, -1):
+                if rng.random() < 0.6:
+                    c.put(px + across[0] * s * 2, py + across[1] * s * 2, 10)
+            c.put(px + across[0], py + across[1], 10)
+        x, y = seg[-1]
+        gone += step
+        if fork and rng.random() < fork and gone < length * 0.8:
+            lit_crack(c, rng, x, y, heading + rng.choice((-1, 1)) * math.pi / 4, (length - gone) * rng.uniform(0.3, 0.6), wander, 0.0,
+                      None if within is None else within - math.hypot(x - ox, y - oy))
+    return x, y
 
 
 def spire_burst(seed=31, size=80):
@@ -493,11 +536,15 @@ PATTERNS = {"lance_frost": lance_frost, "spire_crack": spire_crack, "spire_burst
             "shatter_ring": shatter_ring}
 
 
+# A faint glow all over a mark (a minimum light), by name.
+GLOW_FLOOR = {}
+
+
 def main(args):
     white()
     for name, make in PATTERNS.items():
         canvas, order = make()
-        art, when = save(name, canvas, order)
+        art, when = save(name, canvas, order, GLOW_FLOOR.get(name, 0))
         if "--preview" in args:
             preview(name, art, when)
 

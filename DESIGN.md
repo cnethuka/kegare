@@ -810,7 +810,9 @@ Package `com.cnethuka.kegare.innate_technique.rime`. **Rarity: RARE.** All numbe
     (a sturdy face with nothing sturdy against it), on walls as well as floors; every marked face keeps its own 16 x 16
     texels, so overlapping marks share texels (stronger colour, longer life) instead of flickering. Drawn translucent in the
     world's light and shaded like the block face under it; a texel just formed is brighter (the spreading edge) and thins in
-    its last ticks. Client only: no block changes, nothing is sent, all of it melts on its own. Off with **Vanilla**.
+    its last ticks. A mark can glow (`<name>_glow.png`, 0 to 15 a texel): that texel is drawn at least that bright, as a
+    minimum block light, so it reads in the dark; it lights nothing round it. Client only: no block changes, nothing is
+    sent, all of it melts on its own. Off with **Vanilla**.
   - Specials: animations `ice_path_slide` (loop, a surfing stance) and `shatter_shell_cast` (Splinter's below). Effects
     `splinter_cast`, `splinter_trail`, `ice_path_trail` and `shatter_shell_burst`.
   - `ice_path_trail` is a **lingering** loop (`Visual.lingering`): what it throws up stays in the world and fades on
@@ -829,9 +831,12 @@ Package `com.cnethuka.kegare.innate_technique.rime`. **Rarity: RARE.** All numbe
     not a Kegare packet): the spike stands 0.62 to 1 times as tall and 0.8 to 1 times as wide
     by charge, matching the launch, and the heavy group shows from half a charge. Culled back faces: a player launched off its
     point, seen from inside, doesn't have it in their view.
-  - **The warning** is a block mark (`marks/spire_crack`): fissures race out from the middle to a broken ring at the hit's
-    1.5 blocks, spread over exactly what's left of the warning (so the ring closes just as the spike comes), then run round
-    the ring with frost creeping along them; chips of the ground's own block jump out of it. `glacial_spire_warning` adds
+  - **The warning** is a block mark (`marks/spire_crack`), the cue to dodge, so it reads from 15 blocks by day and at
+    night: light breaking through the ground, a ring of it on the hit's 1.5 blocks all the way round (a bright core three
+    texels wide, dark edges, a faint glow either side) and lit fissures racing out to it from the middle. The bright lines
+    glow fully and the glow beside them faintly (still pixel art on the block); the dark edges keep it sharp on pale ground
+    by day. It races out in the first 5 ticks of the warning, so the whole circle is there to get out of, and holds while
+    the spike stands; chips of the ground's own block jump out of it. `glacial_spire_warning` adds
     only what's soft: cold mist low over the circle, rising specks and the curtain of glints from its edge.
   - **The eruption** (`glacial_spire_erupt`: a flash at the foot, glints up the spike, a ring of mist punched out along the
     ground, a mist column) shatters the ground round its foot (`marks/spire_burst`, further with more charge) and throws up

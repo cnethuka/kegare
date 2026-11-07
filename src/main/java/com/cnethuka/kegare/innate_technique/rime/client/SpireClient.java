@@ -102,9 +102,15 @@ public final class SpireClient {
         return KegareClientConfig.VFX_QUALITY.get();
     }
 
-    /** The crack's time: it spreads over what's left of the warning, holds while the spike stands, then melts. */
+    /** How fast the warning crack races out to its ring: the whole circle is there early in the warning, to dodge. */
+    static final int CRACK_SPREAD = 5;
+
+    /**
+     * The crack's time: it races out to the ring in the first part of the warning ({@link #CRACK_SPREAD}), holds through the rest
+     * and while the spike stands, then melts.
+     */
     static BlockMarks.Timing crackTiming(int warningLeft, int stand) {
-        int spread = Math.max(3, warningLeft);
+        int spread = Math.max(3, Math.min(CRACK_SPREAD, warningLeft));
         return new BlockMarks.Timing(1f, 0, spread, Math.max(0, warningLeft - spread) + stand + 6, MELT_TICKS);
     }
 

@@ -15,6 +15,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.stream.Stream;
 import javax.imageio.ImageIO;
+import net.minecraft.client.renderer.LightTexture;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.world.phys.Vec3;
@@ -63,6 +64,37 @@ class BlockMarksTest {
             assertFalse(Files.exists(marks().resolve(name + ".png.mcmeta")), name + " must stay nearest-filtered");
         }
         assertTrue(palette.size() <= 10, "a small palette across all the marks, not blended shades: " + palette.size());
+    }
+
+    /**
+     * Glow is a minimum light for a texel, so a mark reads in the dark: only where something's drawn, in whole levels. Ice Path's ice
+     * glows faintly all over (it slows whoever steps on it, so it must be seen at night) but never like a light source; the frost
+     * and ice of the rest are lit by the world alone.
+     */
+    @Test
+    void glowIsFaintAndOnlyWhereItShouldBe() throws IOException {
+        for (String name : patterns()) {
+            Path file = marks().resolve(name + "_glow.png");
+            boolean expected = name.equals("spire_crack");
+            assertEquals(expected, Files.exists(file), name + (expected ? " has no glow" : " should be lit by the world alone"));
+            if (!expected) continue;
+            BufferedImage art = ImageIO.read(marks().resolve(name + ".png").toFile());
+            BufferedImage glow = ImageIO.read(file.toFile());
+            for (int y = 0; y < art.getHeight(); y++) {
+                for (int x = 0; x < art.getWidth(); x++) {
+                    int g = glow.getRaster().getSample(x, y, 0);
+                    assertEquals(0, g % 17, name + ": glow in whole levels");
+                    boolean drawn = art.getRGB(x, y) >>> 24 > 0;
+                    if (!drawn) assertEquals(0, g, name + ": glow where nothing's drawn");
+                    if (name.startsWith("path_ice") && drawn) {
+                        assertTrue(g / 17 >= 4 && g / 17 <= 7, name + ": a faint glow all over, not a light: " + g / 17);
+                    }
+                }
+            }
+        }
+        assertEquals(0x00F000F0, BlockMarks.lit(0x00F000F0, 9), "brighter than the glow already: as it is");
+        assertEquals(LightTexture.pack(9, 2), BlockMarks.lit(LightTexture.pack(3, 2), 9), "dark: up to the glow, the sky's kept");
+        assertEquals(LightTexture.pack(3, 2), BlockMarks.lit(LightTexture.pack(3, 2), 0), "no glow: the world's light");
     }
 
     /** The inner part forms first: the middle of a pattern is early in its order, its far edge late. */

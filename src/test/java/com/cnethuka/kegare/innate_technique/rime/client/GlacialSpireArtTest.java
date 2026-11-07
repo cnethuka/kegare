@@ -161,7 +161,9 @@ class GlacialSpireArtTest {
     void theCrackSpreadsOverTheWarningAndMeltsAfter() {
         int warning = 15, stand = 25;
         BlockMarks.Timing t = SpireClient.crackTiming(warning, stand);
-        assertEquals(warning, t.spread(), "fully grown just as the spike comes");
+        assertTrue(t.spread() <= warning / 2, "the whole circle is there in the first half of the warning, to dodge: " + t.spread());
+        assertTrue(t.spread() >= 4, "it still races out, not pops in");
+        assertEquals(warning + stand + 6, t.spread() + t.hold(), "held through the warning and while the spike stands");
         assertEquals(1f, t.reach(), 1e-6f, "out to the ring");
         assertTrue(t.end() > warning + stand, "still there while the spike stands");
         assertEquals(SpireClient.MELT_TICKS, t.melt());
@@ -200,6 +202,52 @@ class GlacialSpireArtTest {
         }
         assertTrue(crossed >= 22, "the ring at the hit's reach is too broken: " + crossed + "/32");
         assertEquals(0, crack.getRGB(1, 1) >>> 24, "nothing outside it");
+    }
+
+    /**
+     * It's the cue to dodge, so it has to read from 15 blocks by day and at night: a solid, glowing ring all the way round at the
+     * hit's reach, at least a few texels wide, with dark edges against pale ground, and a faint glow beside it; still pixel art.
+     */
+    @Test
+    void theWarningReadsFromAfar() throws IOException {
+        BufferedImage crack = image("marks/spire_crack.png");
+        BufferedImage glow = image("marks/spire_crack_glow.png");
+        assertEquals(crack.getWidth(), glow.getWidth());
+        double c = crack.getWidth() / 2.0;
+        // Every texel 19-28 out, by which of 64 wedges round the circle it's in.
+        int[] bright = new int[64], dark = new int[64], lit = new int[64], faint = new int[64], drawn = new int[64];
+        for (int y = 0; y < crack.getHeight(); y++) {
+            for (int x = 0; x < crack.getWidth(); x++) {
+                double dx = x + 0.5 - c, dy = y + 0.5 - c, r = Math.hypot(dx, dy);
+                int argb = crack.getRGB(x, y);
+                if (r < 19 || r > 28 || argb >>> 24 == 0) continue;
+                int k = (int) Math.floor((Math.atan2(dy, dx) + Math.PI) / (2 * Math.PI) * 64) % 64;
+                int g = glow.getRaster().getSample(x, y, 0) / 17;
+                int luma = ((argb >> 16) & 255) + ((argb >> 8) & 255) + (argb & 255);
+                drawn[k]++;
+                if (argb >>> 24 == 255 && luma > 600) {
+                    bright[k]++;
+                    if (g == 15) lit[k]++;
+                }
+                if (luma < 200 && argb >>> 24 > 200) dark[k]++;
+                if (g > 0 && g < 15) faint[k]++;
+            }
+        }
+        for (int k = 0; k < 64; k++) {
+            String at = (k * 360 / 64 - 180) + " degrees";
+            assertTrue(bright[k] >= 2, "the ring is broken at " + at);
+            assertEquals(bright[k], lit[k], "the ring's bright core glows fully at " + at);
+            assertTrue(dark[k] >= 2, "a dark edge to it at " + at);
+            assertTrue(faint[k] >= 1, "a faint glow beside it at " + at);
+            assertTrue(drawn[k] >= 8, "a band, not a hairline, at " + at);
+        }
+        for (int y = 0; y < glow.getHeight(); y++) {
+            for (int x = 0; x < glow.getWidth(); x++) {
+                int g = glow.getRaster().getSample(x, y, 0);
+                assertEquals(0, g % 17, "glow levels are whole: " + g);
+                if (g > 0) assertTrue(crack.getRGB(x, y) >>> 24 > 0, "glow only where something's drawn");
+            }
+        }
     }
 
     // ------------------------------------------------------------------------------------------ the body
