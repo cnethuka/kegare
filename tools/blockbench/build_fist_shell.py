@@ -1,7 +1,7 @@
 """Makes art/blockbench/fist_shell.bbmodel and its OBJ exports (models/fx/fist_shell_regular.obj, fist_shell_slim.obj), by driving a
 running Blockbench (cdp.py).
 
-The thin shell over a player's hand and forearm while a Reinforced Strike is ready, modeled on the right arm hanging straight down:
+The thin shell over a Severed player's hand and forearm while a Reinforced Strike is ready (it carries the strain), modeled on the right arm hanging straight down:
 the hand ends at y=0, the elbow is at y=6, as in a player model where the arm is 12 tall. Flares out over the fist, thins out toward
 the elbow, with chamfered edges so it reads as something wrapped round the arm and not a bigger arm. The game mirrors it for a left
 main hand and fades it toward the elbow by height. Only made it the first time, like the Strings art: from here on the .bbmodel is

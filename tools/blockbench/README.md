@@ -19,7 +19,8 @@ Emotecraft template is in the repo.
 
 ## The fist shell
 
-`art/blockbench/fist_shell.bbmodel` is the ready fist's shell (DESIGN.md §3.22). `build_fist_shell.py` writes the project and both
+`art/blockbench/fist_shell.bbmodel` carries a Severed player's strained forearm (DESIGN.md §3.22); a ready fist's Malice is sprites now, not
+this shell. `build_fist_shell.py` writes the project and both
 OBJs (`models/fx/fist_shell_regular.obj`, `fist_shell_slim.obj`): regular and slim differ only in width. Hand at y=0, faded out by y=6.6 px.
 
 ## Files
