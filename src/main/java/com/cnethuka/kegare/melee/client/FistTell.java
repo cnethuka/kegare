@@ -45,8 +45,8 @@ import org.joml.Vector3f;
 
 /**
  * A ready Reinforced Strike on a player's attacking hand. The server says what each client should see ({@link MeleeTell}), and this
- * draws it, in the arm's own space so it follows every animation: Malice burning round the hand and forearm ({@link FistFlames}), or for
- * the physical tell a strained forearm with steam coming off it.
+ * draws it, in the arm's own space so it follows every animation: Malice burning round the hand and forearm ({@link FistFire}, and
+ * {@link FistFlames} on your own hand), or for the physical tell a strained forearm with steam coming off it.
  * <p>
  * Whatever comes off the fist goes where the hand really is, reported each frame from where it was drawn. In first person there are two
  * ways that happens: while an animation shows your own body the layer draws as usual, and otherwise the hand pass does ({@link #onRenderHand}).
@@ -61,10 +61,12 @@ public final class FistTell {
     private static final int WISP_EVERY_TICKS = 3;
     private static final int WISP_EVERY_TICKS_REDUCED = 6;
     private static final int WISP_EVERY_TICKS_SELF = 5;
-    private static final float WISP_SIZE = 0.36f;
+    private static final float WISP_SIZE = 0.3f;
     /** Your own, right by the camera, in view space. */
     private static final float WISP_SIZE_SELF = 0.11f;
     private static final float WISP_SCALE_SELF = 0.42f;
+    /** And in close: there's no arm in the way of them here, and they'd look like separate fires out to the side. */
+    private static final float WISP_IN_SELF = 0.25f;
     /** In first person with something in hand: from where a bare fist would be to where vanilla puts the grip, in view space. */
     private static final float GRIP_ACROSS = 0.12f;
     private static final float GRIP_UP = 0.04f;
@@ -156,8 +158,13 @@ public final class FistTell {
                         Vector3f toCamera, Vector3f up, FistFlames.Fit fit) {
         float centre = FistShellMesh.armCentre(slim, leftArm);
         if (look.kind() == MeleeTell.Kind.GLOW) {
-            FistFlames.drawArm(pose.last(), buffers.getBuffer(FistFlames.renderType()), MeleeTell.bright(look.color()) & 0xFFFFFF, time, FistShellMesh.handEnd(), centre,
-                    slim ? RADIUS_SLIM : RADIUS, toCamera, up, leftArm, fit);
+            int rgb = MeleeTell.bright(look.color()) & 0xFFFFFF;
+            if (fit == FistFlames.Fit.BODY) {
+                FistFire.drawArm(pose.last(), buffers.getBuffer(FistFire.renderType()), rgb, time, FistShellMesh.handEnd(), centre, slim, toCamera, up);
+            } else {
+                FistFlames.drawArm(pose.last(), buffers.getBuffer(FistFlames.renderType()), rgb, time, FistShellMesh.handEnd(), centre,
+                        slim ? RADIUS_SLIM : RADIUS, toCamera, up, leftArm, fit);
+            }
         } else {
             FistShellMesh.of(slim).draw(pose.last(), buffers.getBuffer(RenderType.entityTranslucent(STRAIN)), leftArm, centre, 1.08f, light);
         }
@@ -201,6 +208,8 @@ public final class FistTell {
             if (age < 0f || age >= 1f) continue;
             float seed = seed(shown.wispBorn[i]);
             FistFlames.wispPath(age, seed, at).mul(WISP_SCALE_SELF);
+            at.x *= WISP_IN_SELF;
+            at.z *= WISP_IN_SELF;
             FistFlames.drawWisp(out, fist.x + at.x, fist.y + at.y, fist.z + at.z, right, up, WISP_SIZE_SELF, age, seed < 0.5f, rgb);
         }
     }

@@ -91,13 +91,14 @@ class FistFlamesTest {
     @Test
     void aCurlComesOffTheFireAndStaysCloseToIt() {
         for (float seed : new float[] {0f, 0.3f, 0.7f, 0.99f}) {
-            assertTrue(FistFlames.wispPath(0f, seed, new Vector3f()).y > 0.1f, "it starts partway up the fire, not at the knuckles");
+            assertTrue(FistFlames.wispPath(0f, seed, new Vector3f()).y >= 0.1f, "it starts partway up the fire, not at the knuckles");
             float last = -1f;
             for (float age = 0f; age < 1f; age += 0.1f) {
                 Vector3f at = FistFlames.wispPath(age, seed, new Vector3f());
                 assertTrue(at.y > last, "always rising");
                 last = at.y;
-                assertTrue(Math.hypot(at.x, at.z) <= 0.13, "it curls, it doesn't fly off");
+                assertTrue(Math.hypot(at.x, at.z) <= 0.26, "it curls round the fire, it doesn't fly off");
+                assertTrue(Math.hypot(at.x, at.z) >= 0.19, "out on the surface of the fire: any closer in and the arm hides it");
             }
             assertTrue(last < 0.6f, "it ends about where the tongues do, well short of the shoulder: " + last);
         }

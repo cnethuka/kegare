@@ -51,6 +51,8 @@ final class FistFlames {
     private static final float MOST_LEAN = 0.7f;
 
     static final int WISP_LIFE_TICKS = 10;
+    /** Curls start on the surface of the fire, which stands a little way off the arm. Any closer in and the arm hides them. */
+    private static final float WISP_RADIUS = 0.2f;
 
     /**
      * How the fire sits on an arm, as fractions of its full size. On a body it's shorter than the arm, so it stays on the fist and lower
@@ -194,14 +196,14 @@ final class FistFlames {
     }
 
     /**
-     * Where a curl has got to, from the fist: it comes off the fire partway up it and goes a little higher, round in a small spiral, slowing as it goes.
+     * Where a curl has got to, from the fist: it comes off the surface of the fire partway up it and goes a little higher, round in a small spiral, slowing as it goes.
      *
      * @param age  from 0 to 1 over its life
      * @param seed from 0 to 1, a different one for each
      */
     static Vector3f wispPath(float age, float seed, Vector3f dest) {
-        float rise = 0.16f + 0.12f * seed + 0.26f * Mth.sqrt(age);
-        float radius = 0.04f + 0.08f * age;
+        float rise = 0.1f + 0.1f * seed + 0.22f * Mth.sqrt(age);
+        float radius = WISP_RADIUS + 0.05f * age;
         float angle = Mth.TWO_PI * (seed + age * (seed < 0.5f ? 1.1f : -1.1f));
         return dest.set(radius * Mth.cos(angle), rise, radius * Mth.sin(angle));
     }
