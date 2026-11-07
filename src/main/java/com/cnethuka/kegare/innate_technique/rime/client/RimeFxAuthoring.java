@@ -688,8 +688,9 @@ public final class RimeFxAuthoring {
 
     /**
      * Glacial Spire's warning (the crack on the ground is pixel art, SpireClient): cold mist creeping low over the circle (authored
-     * for the default 1.5 radius), frost specks lifting out of it, and a curtain of glints rising from its edge past head height, so
-     * someone standing in it sees the warning at the edge of their view even while looking straight ahead.
+     * for the default 1.5 radius), frost specks lifting out of it, and a curtain of bright glints streaking up from its edge to
+     * about four blocks, so it reads from 15 blocks by day, and someone standing in it sees the warning at the edge of their view
+     * even while looking straight ahead.
      */
     private static FX glacialSpireWarning() {
         ParticleEmitter mist = emitter("mist", true, 20);
@@ -723,19 +724,22 @@ public final class RimeFxAuthoring {
 
         ParticleEmitter curtain = emitter("curtain", true, 20);
         ParticleConfig k = curtain.config;
-        k.setMaxParticles(200);
+        k.setMaxParticles(320);
         k.setStartLifetime(range(14, 20));
         k.setStartSpeed(NumberFunction.constant(0));
-        k.setStartSize(uniform(range(0.03f, 0.055f)));
+        k.setStartSize(uniform(range(0.07f, 0.11f)));
         Sphere edge = sphere(1.5f);
         edge.setRadiusThickness(0f);
         k.shape.setShape(edge);
         k.shape.setScale(new NumberFunction3(1f, 0f, 1f));
-        k.emission.setEmissionRate(NumberFunction.constant(6f));
+        k.emission.setEmissionRate(NumberFunction.constant(12f));
         k.velocityOverLifetime.setEnable(true);
-        k.velocityOverLifetime.setLinear(new NumberFunction3(0, 3.4f, 0));
+        k.velocityOverLifetime.setLinear(new NumberFunction3(0, 5.6f, 0));
+        k.renderer.setRenderMode(ParticleRendererSetting.Mode.StretchedBillboard);
+        k.renderer.setLengthScale(4f);
+        k.renderer.setVelocityScale(0f);
         fadeInOut(k, WHITE, CYAN);
-        material(curtain, glow(0.5f, 0.86f, 1f, 1.1f));
+        material(curtain, glow(0.6f, 0.9f, 1f, 1.8f));
         return fx(mist, frost, curtain);
     }
 

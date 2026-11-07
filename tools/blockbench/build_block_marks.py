@@ -236,8 +236,9 @@ def crack(c, rng, x0, y0, heading, length, lip=True, wander=0.35, fork=0.0):
 
 def spire_crack(seed=23, size=64, radius=24):
     """Glacial Spire's warning: it has to be seen from 15 blocks, by day and at night, since it's the cue to get out. Light breaks
-    through the ground: a ring of it on the reach of the hit (1.5 blocks, 24 texels), a band all the way round, a bright core three
-    texels wide with dark edges and a glow either side (about eight texels in all, as wide as the old Photon ring looked), and lit fissures racing out to it from where the spike will rise. The bright
+    through the ground: a ring of it on the reach of the hit, its outer edge at 1.5 blocks (24 texels) all the way round, a bright
+    band six texels wide reaching in from there (wide enough to read at 1x from 15 blocks by day), dark lips either side and a
+    faint glow beyond them, and lit fissures racing out to it from where the spike will rise. The bright
     lines and the glow along them glow (GLOW), so they read at night; the dark edges keep them sharp on pale ground by day. Grows
     from the middle; SpireClient spreads it in the first part of the warning, so the whole circle is there to dodge."""
     rng = random.Random(seed)
@@ -257,19 +258,20 @@ def spire_crack(seed=23, size=64, radius=24):
     n = 8
     for k in range(n):
         h = HEADINGS[(2 * k + rng.choice((0, 0, 1))) % 16]
-        lit_crack(c, rng, cx, cy, h, radius + 2, fork=0.22, within=radius - 2.1)
-    # The ring, all the way round, never a ruled circle: a texel or so in and out.
+        lit_crack(c, rng, cx, cy, h, radius + 2, fork=0.22, within=radius - 7.5)
+    # The ring, all the way round, never a ruled circle: its edge a texel or so in and out, never past the hit's reach.
     for y in range(size):
         for x in range(size):
             dx, dy = x - cx + 0.5, y - cy + 0.5
             d, a = math.hypot(dx, dy), math.atan2(dy, dx)
-            r = radius + 0.6 * math.sin(a * 5 + 1.3) + 0.4 * math.sin(a * 11)
+            r = radius - 0.5 + 0.35 * math.sin(a * 5 + 1.3) + 0.15 * math.sin(a * 11)
             off = d - r
-            if -1.5 <= off < 1.5:
+            inner = -6.0 + 0.6 * math.sin(a * 7 + 0.4) + (0.6 if rng.random() < 0.12 else 0.0)
+            if inner <= off < 0.0:
                 c.put(x, y, 9)
-            elif -2.5 <= off < -1.5 or 1.5 <= off < 2.5:
+            elif 0.0 <= off < 1.0 or inner - 1.0 <= off < inner:
                 c.put(x, y, 5)
-            elif 2.5 <= off < 4.0 or (-3.5 <= off < -2.5 and rng.random() < 0.85):
+            elif 1.0 <= off < 2.0 or (inner - 2.5 <= off < inner - 1.0 and rng.random() < 0.85):
                 c.put(x, y, 10)
     return c, geodesic_order(c, (cx, cy))
 

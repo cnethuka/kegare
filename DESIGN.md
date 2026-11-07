@@ -832,12 +832,14 @@ Package `com.cnethuka.kegare.innate_technique.rime`. **Rarity: RARE.** All numbe
     by charge, matching the launch, and the heavy group shows from half a charge. Culled back faces: a player launched off its
     point, seen from inside, doesn't have it in their view.
   - **The warning** is a block mark (`marks/spire_crack`), the cue to dodge, so it reads from 15 blocks by day and at
-    night: light breaking through the ground, a ring of it on the hit's 1.5 blocks all the way round (a bright core three
-    texels wide, dark edges, a faint glow either side) and lit fissures racing out to it from the middle. The bright lines
+    night: light breaking through the ground, a band of it all the way round whose outer edge is the hit's 1.5 blocks
+    and never past it (six texels wide reaching in from there, dark lips either side, a faint glow beyond them), and lit
+    fissures racing out to it from the middle. The bright lines
     glow fully and the glow beside them faintly (still pixel art on the block); the dark edges keep it sharp on pale ground
     by day. It races out in the first 5 ticks of the warning, so the whole circle is there to get out of, and holds while
     the spike stands; chips of the ground's own block jump out of it. `glacial_spire_warning` adds
-    only what's soft: cold mist low over the circle, rising specks and the curtain of glints from its edge.
+    only what's soft: cold mist low over the circle, rising specks and a curtain of bright glints streaking up from its edge
+    to about four blocks (stretched billboards), which is what catches the eye from 15 blocks.
   - **The eruption** (`glacial_spire_erupt`: a flash at the foot, glints up the spike, a ring of mist punched out along the
     ground, a mist column) shatters the ground round its foot (`marks/spire_burst`, further with more charge) and throws up
     the ground's own block particles. `glacial_spire_spike` is only a faint glow, frost glinting off it and mist at its foot.
@@ -1041,7 +1043,7 @@ Package `com.cnethuka.kegare.innate_technique.rime`. **Rarity: RARE.** All numbe
   | Special (base) | Tell |
   |---|---|
   | Splinter (Frost Shard) | own cast animation (a flat backhand sweep, not Frost Shard's overhand flick) and a fan of glints, three shards in a fan, a brighter crack (amethyst break) |
-  | Glacial Spire (Glacial Lance) | the fist raised, gathering cold; a pixel crack spreading on the ground with rising glints for 0.75 s before the spike |
+  | Glacial Spire (Glacial Lance) | the fist raised, gathering cold; a glowing pixel crack ringing the spot with bright glints streaking up from its edge for 0.75 s before the spike |
   | Ice Path (Frost Field) | own sliding pose, an ice trail left behind, glass sounds |
   | Shatter Shell (Rime Shell) | own cast animation, an icy burst, glass and amethyst shattering |
   | Switchback (Positions) | own wrist flick back toward the caster (`switchback_cast`, not Positions' snap), a respawn-anchor charge sound on both, and the countdown rings go up on both as it's cast |

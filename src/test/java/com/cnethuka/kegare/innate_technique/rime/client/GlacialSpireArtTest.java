@@ -205,8 +205,9 @@ class GlacialSpireArtTest {
     }
 
     /**
-     * It's the cue to dodge, so it has to read from 15 blocks by day and at night: a solid, glowing ring all the way round at the
-     * hit's reach, at least a few texels wide, with dark edges against pale ground, and a faint glow beside it; still pixel art.
+     * It's the cue to dodge, so it has to read from 15 blocks by day at 1x and at night: a solid, glowing band all the way round,
+     * reaching in from the hit's reach and never past it, wide enough to see, with dark edges against pale ground and a faint
+     * glow beside it; still pixel art.
      */
     @Test
     void theWarningReadsFromAfar() throws IOException {
@@ -214,19 +215,20 @@ class GlacialSpireArtTest {
         BufferedImage glow = image("marks/spire_crack_glow.png");
         assertEquals(crack.getWidth(), glow.getWidth());
         double c = crack.getWidth() / 2.0;
-        // Every texel 19-28 out, by which of 64 wedges round the circle it's in.
+        // Every texel 14-28 out, by which of 64 wedges round the circle it's in.
         int[] bright = new int[64], dark = new int[64], lit = new int[64], faint = new int[64], drawn = new int[64];
         for (int y = 0; y < crack.getHeight(); y++) {
             for (int x = 0; x < crack.getWidth(); x++) {
                 double dx = x + 0.5 - c, dy = y + 0.5 - c, r = Math.hypot(dx, dy);
                 int argb = crack.getRGB(x, y);
-                if (r < 19 || r > 28 || argb >>> 24 == 0) continue;
+                if (r < 14 || r > 28 || argb >>> 24 == 0) continue;
                 int k = (int) Math.floor((Math.atan2(dy, dx) + Math.PI) / (2 * Math.PI) * 64) % 64;
                 int g = glow.getRaster().getSample(x, y, 0) / 17;
                 int luma = ((argb >> 16) & 255) + ((argb >> 8) & 255) + (argb & 255);
                 drawn[k]++;
                 if (argb >>> 24 == 255 && luma > 600) {
                     bright[k]++;
+                    assertTrue(r <= SpireClient.CRACK_REACH_TEXELS, "bright past the hit's reach, " + r + " texels out");
                     if (g == 15) lit[k]++;
                 }
                 if (luma < 200 && argb >>> 24 > 200) dark[k]++;
@@ -235,7 +237,7 @@ class GlacialSpireArtTest {
         }
         for (int k = 0; k < 64; k++) {
             String at = (k * 360 / 64 - 180) + " degrees";
-            assertTrue(bright[k] >= 2, "the ring is broken at " + at);
+            assertTrue(bright[k] >= 10, "the band is broken or thin at " + at + ": " + bright[k]);
             assertEquals(bright[k], lit[k], "the ring's bright core glows fully at " + at);
             assertTrue(dark[k] >= 2, "a dark edge to it at " + at);
             assertTrue(faint[k] >= 1, "a faint glow beside it at " + at);
