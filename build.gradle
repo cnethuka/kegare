@@ -243,4 +243,6 @@ tasks.named('test', Test).configure {
     useJUnitPlatform()
     // In-game tests run from their own game directory; tests that read project files resolve them from here.
     systemProperty 'kegare.projectDir', project.projectDir.absolutePath
+    // AgentFilesTest reads these; without them as inputs, a change to only them would leave the tests "up to date".
+    inputs.files('CLAUDE.md', 'AGENTS.md', 'AGENT.md').withPropertyName('agentFiles').withPathSensitivity(PathSensitivity.RELATIVE)
 }
