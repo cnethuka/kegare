@@ -526,6 +526,7 @@
   "kegare.configuration.animationFades": "Animation Fades",
   "kegare.configuration.arriveDistance": "Arrive Distance",
   "kegare.configuration.assessment": "Assessment",
+  "kegare.configuration.assessmentCharge": "Assessment Charge",
   "kegare.configuration.attackerSlownessAmplifier": "Attacker Slowness Amplifier",
   "kegare.configuration.attackerSlownessSeconds": "Attacker Slowness Seconds",
   "kegare.configuration.aura": "Aura",

@@ -75,7 +75,9 @@ public final class MeleeEvents {
     /** Attacking drops the guard. The hit still goes through: that's how a parry turns into a Strike. */
     @SubscribeEvent
     static void onAttack(AttackEntityEvent event) {
-        if (event.getEntity() instanceof ServerPlayer player && player.hasData(MeleeLayer.ATTACHMENT)) Parry.release(player);
+        if (!(event.getEntity() instanceof ServerPlayer player)) return;
+        Parry.noteSwing(player);
+        Parry.release(player);
     }
 
     /** The body that died took its timers with it: nothing on the new one's HUD, and no dash still driving. */

@@ -1375,8 +1375,8 @@ reach Special Grade. Assessment is private and never lowers Grade.
   deal almost none), plus upkeep as spend and casts in the `openingCastSeconds` (5 s) before a fight. Nothing cast scores 0. Shared
   abilities (RMT) are left out.
 - **Severed players** have no technique or Malice: melee variety takes Technique use's weight (distinct moves, by weapon and by crit,
-  sprint or ranged, `severedFullMoves` 4 for full marks, plus combining), Efficiency drops out and the rest is rescaled to 100. They can
-  reach Special Grade.
+  sprint or ranged, plus the melee layer's three against real players: `perfect_parry`, only off a swing with a full attack bar (`melee.parry.assessmentCharge`), `clean_dodge` and `reinforced_strike`; `severedFullMoves` 4 for full marks, plus combining, all with the same repeat decay), Efficiency drops out and the rest is rescaled to 100. They can
+  reach Special Grade. A parry or dodge often comes before any damage: like opening Malice it waits `openingCastSeconds` for the fight, and never opens one, so what a fight is and which ones qualify don't change. A Strike is recorded as itself and not also as the weapon's hit: one hit, one move.
 
 **Your Assessment is the average of your recent qualifying fights,** which needs a minimum number of different opponents so one friend
 can't carry it:

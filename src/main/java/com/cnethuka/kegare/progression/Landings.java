@@ -37,6 +37,8 @@ public final class Landings {
         private LivingEntity engaged;
         private long engagedTick;
         private long criticalTick = -1;
+        private long strikeTick = -1;
+        private int strikeTarget = -1;
         private long ownLandingTick = -1;
     }
 
@@ -141,6 +143,18 @@ public final class Landings {
 
     static void markCritical(ServerPlayer player) {
         state(player).criticalTick = now(player);
+    }
+
+    /** A Reinforced Strike went off on this hit, so it's that move and not the weapon's. Not the rest of the swing's sweep. */
+    public static void markStrike(ServerPlayer player, LivingEntity target) {
+        State state = state(player);
+        state.strikeTick = now(player);
+        state.strikeTarget = target.getId();
+    }
+
+    static boolean wasStrike(ServerPlayer player, LivingEntity target) {
+        State state = state(player);
+        return state.strikeTick == now(player) && state.strikeTarget == target.getId();
     }
 
     static boolean wasCritical(ServerPlayer player) {

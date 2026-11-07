@@ -6,6 +6,9 @@ import com.cnethuka.kegare.innatetechnique.CastManager;
 import com.cnethuka.kegare.innatetechnique.visual.Visual;
 import com.cnethuka.kegare.innatetechnique.visual.VisualService;
 import com.cnethuka.kegare.malice.MaliceService;
+import com.cnethuka.kegare.progression.Attribution;
+import com.cnethuka.kegare.progression.FightTracker;
+import com.cnethuka.kegare.progression.MeleeMoves;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.effect.MobEffectInstance;
@@ -93,6 +96,22 @@ public final class Parry {
         MeleeImpact.PARRY_PERFECT.fire(player.serverLevel(), contact(player, attacker), player);
         stagger(attacker);
         ReinforcedStrike.earn(player, state);
+        if (attacker instanceof ServerPlayer opponent && Attribution.isRealTarget(player, opponent) && swungFullyCharged(opponent)) {
+            FightTracker.meleeMove(player, opponent, MeleeMoves.PERFECT_PARRY);
+        }
+    }
+
+    /** A swing has started, and this is how charged it was. */
+    static void noteSwing(ServerPlayer player) {
+        MeleeState state = MeleeLayer.state(player);
+        state.swingCharge = player.getAttackStrengthScale(0.5f);
+        state.swingTick = player.level().getGameTime();
+    }
+
+    /** Did the hit being handled come from a real, fully charged swing? A tapped one is too easy to feed someone. */
+    static boolean swungFullyCharged(ServerPlayer player) {
+        MeleeState state = MeleeLayer.state(player);
+        return state.swingTick == player.level().getGameTime() && state.swingCharge >= MeleeConfig.PARRY_ASSESSMENT_CHARGE.get();
     }
 
     /** Slowed, with their attack cooldown started over. Their abilities aren't touched, and bosses can't be staggered (DESIGN §4). */

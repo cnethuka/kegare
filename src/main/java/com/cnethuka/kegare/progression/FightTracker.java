@@ -34,6 +34,10 @@ public final class FightTracker {
         static Pair of(UUID a, UUID b) {
             return a.compareTo(b) < 0 ? new Pair(a, b) : new Pair(b, a);
         }
+
+        boolean involves(UUID player) {
+            return low.equals(player) || high.equals(player);
+        }
     }
 
     private record Live(Fight fight, ServerPlayer a, ServerPlayer b) {
@@ -44,11 +48,15 @@ public final class FightTracker {
 
     private record Spend(long tick, double baseMalice) {}
 
+    private record OpeningMove(UUID player, String move, long tick) {}
+
     private static final Map<Pair, Live> FIGHTS = new HashMap<>();
     /** Malice spent while not in a fight, which the fight it opens picks up. */
     private static final Map<UUID, List<Spend>> OPENING = new HashMap<>();
     /** Which fight a cast with no target of its own goes to: the one last active. */
     private static final Map<UUID, Pair> LAST_ACTIVE = new HashMap<>();
+    /** Melee moves against someone before a fight with them is on, which the fight picks up. */
+    private static final Map<Pair, List<OpeningMove>> OPENING_MOVES = new HashMap<>();
     private static final List<Listener> LISTENERS = new CopyOnWriteArrayList<>();
     private static final List<StartListener> START_LISTENERS = new CopyOnWriteArrayList<>();
 
@@ -94,6 +102,26 @@ public final class FightTracker {
         if (live != null) live.fight.melee(attacker.getUUID(), move, now(attacker.server));
     }
 
+    /**
+     * A melee move that isn't a hit, made against {@code opponent}: a perfect parry or a clean dodge. It can come first, with no fight on
+     * yet, so like opening Malice it waits for the fight. It never opens one: only damage and landings do, so it changes nothing about
+     * what a fight is or which ones qualify. Only a Severed player's Assessment reads these.
+     */
+    public static void meleeMove(ServerPlayer player, ServerPlayer opponent, String move) {
+        if (player == opponent) return;
+        Pair key = Pair.of(player.getUUID(), opponent.getUUID());
+        long now = now(player.server);
+        Live live = FIGHTS.get(key);
+        if (live != null) {
+            live.fight.melee(player.getUUID(), move, now);
+            return;
+        }
+        List<OpeningMove> pending = OPENING_MOVES.computeIfAbsent(key, k -> new ArrayList<>());
+        long grace = ProgressionConfig.ticks(ProgressionConfig.OPENING_CAST_SECONDS);
+        pending.removeIf(m -> now - m.tick > grace);
+        pending.add(new OpeningMove(player.getUUID(), move, now));
+    }
+
     /** Malice spent on a technique cast, at base cost. Goes to the fight last active, or waits for the next one. */
     public static void spend(ServerPlayer player, double baseMalice) {
         if (baseMalice <= 0) return;
@@ -120,6 +148,7 @@ public final class FightTracker {
         FIGHTS.put(key, live);
         pickUpOpeningSpend(fight, a, now);
         pickUpOpeningSpend(fight, b, now);
+        pickUpOpeningMoves(fight, key, now);
         LAST_ACTIVE.putIfAbsent(a.getUUID(), key);
         LAST_ACTIVE.putIfAbsent(b.getUUID(), key);
         for (StartListener listener : START_LISTENERS) {
@@ -135,6 +164,15 @@ public final class FightTracker {
         long grace = ProgressionConfig.ticks(ProgressionConfig.OPENING_CAST_SECONDS);
         for (Spend spend : pending) {
             if (now - spend.tick <= grace) fight.spend(player.getUUID(), spend.baseMalice);
+        }
+    }
+
+    private static void pickUpOpeningMoves(Fight fight, Pair key, long now) {
+        List<OpeningMove> pending = OPENING_MOVES.remove(key);
+        if (pending == null) return;
+        long grace = ProgressionConfig.ticks(ProgressionConfig.OPENING_CAST_SECONDS);
+        for (OpeningMove move : pending) {
+            if (now - move.tick <= grace) fight.melee(move.player, move.move, move.tick);
         }
     }
 
@@ -196,6 +234,7 @@ public final class FightTracker {
             report(live, id, FightOutcome.LEFT, FightOutcome.SURVIVED);
         }
         OPENING.remove(id);
+        OPENING_MOVES.keySet().removeIf(pair -> pair.involves(id));
         LAST_ACTIVE.remove(id);
     }
 
@@ -217,6 +256,7 @@ public final class FightTracker {
     public static void clear() {
         FIGHTS.clear();
         OPENING.clear();
+        OPENING_MOVES.clear();
         LAST_ACTIVE.clear();
     }
 }

@@ -56,7 +56,8 @@ public final class ProgressionEvents {
             if (onItsOwn) Landings.landOnItsOwn(attacker, victim, hit.ability());
             else Landings.land(attacker, victim, hit.ability());
         } else if (victim instanceof ServerPlayer target) {
-            FightTracker.melee(attacker, target, MeleeMoves.of(attacker, event.getSource(), Landings.wasCritical(attacker)));
+            FightTracker.melee(attacker, target, Landings.wasStrike(attacker, target) ? MeleeMoves.REINFORCED_STRIKE
+                    : MeleeMoves.of(attacker, event.getSource(), Landings.wasCritical(attacker)));
         }
     }
 

@@ -254,4 +254,23 @@ class AssessmentScoringTest {
         assertTrue(AssessmentRules.evaluate(history, GRADE_2, 2, false).met());
         assertTrue(AssessmentRules.evaluate(history, GRADE_2, 0, true).met(), "Severed players have no Refinement and skip it");
     }
+
+    @Test
+    void theMeleeLayersMovesAreDistinctMovesInMeleeVariety() {
+        double oneWeapon = AssessmentScoring.meleeVariety(landings("sword", "sword", "sword", "sword"), S);
+        double withMoves = AssessmentScoring.meleeVariety(landings(MeleeMoves.PERFECT_PARRY, "sword", MeleeMoves.CLEAN_DODGE, MeleeMoves.REINFORCED_STRIKE), S);
+        assertTrue(withMoves > oneWeapon, withMoves + " against " + oneWeapon);
+        assertEquals(1.0, AssessmentScoring.meleeVariety(landings(MeleeMoves.PERFECT_PARRY, "sword", MeleeMoves.CLEAN_DODGE, MeleeMoves.REINFORCED_STRIKE, "sword_critical"), S), EPS,
+                "a weapon and the three moves, combined: full marks");
+    }
+
+    @Test
+    void repeatingOneOfThemDecaysExactlyLikeRepeatingAWeapon() {
+        for (String move : new String[] {MeleeMoves.PERFECT_PARRY, MeleeMoves.CLEAN_DODGE, MeleeMoves.REINFORCED_STRIKE}) {
+            assertEquals(AssessmentScoring.meleeVariety(landings("fist", "fist", "fist", "fist", "fist", "fist"), S),
+                    AssessmentScoring.meleeVariety(landings(move, move, move, move, move, move), S), EPS, move);
+            assertEquals(AssessmentScoring.spamMultiplier(landings("fist", "fist", "fist", "sword"), S),
+                    AssessmentScoring.spamMultiplier(landings(move, move, move, "sword"), S), EPS, move);
+        }
+    }
 }

@@ -9,8 +9,15 @@ import net.minecraft.world.item.MaceItem;
 import net.minecraft.world.item.SwordItem;
 import net.minecraft.world.item.TridentItem;
 
-/** What kind of hit a plain hit was: its weapon, and how it was thrown. Only a Severed player's Assessment reads this. */
-final class MeleeMoves {
+/**
+ * The moves in melee variety: what kind of hit a plain hit was (its weapon, and how it was thrown), and the melee layer's own three
+ * moves, each its own move for variety and repeats alike. Only a Severed player's Assessment reads these.
+ */
+public final class MeleeMoves {
+    public static final String PERFECT_PARRY = "perfect_parry";
+    public static final String CLEAN_DODGE = "clean_dodge";
+    public static final String REINFORCED_STRIKE = "reinforced_strike";
+
     private MeleeMoves() {}
 
     static String of(ServerPlayer attacker, DamageSource source, boolean critical) {

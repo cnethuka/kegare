@@ -1,6 +1,8 @@
 package com.cnethuka.kegare.melee;
 
 import com.cnethuka.kegare.progression.Attribution;
+import com.cnethuka.kegare.progression.FightTracker;
+import com.cnethuka.kegare.progression.MeleeMoves;
 import java.util.function.Predicate;
 import javax.annotation.Nullable;
 import net.minecraft.server.level.ServerLevel;
@@ -93,6 +95,8 @@ public final class CleanDodge {
         state.ghost = null;
         MeleeImpact.CLEAN_DODGE.fire(player.serverLevel(), at, player);
         ReinforcedStrike.earn(player, state);
+        Entity thrower = from instanceof Projectile shot ? shot.getOwner() : from;
+        if (thrower instanceof ServerPlayer opponent && Attribution.isRealTarget(player, opponent)) FightTracker.meleeMove(player, opponent, MeleeMoves.CLEAN_DODGE);
     }
 
     private static boolean swingReaches(LivingEntity attacker, AABB box) {

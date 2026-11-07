@@ -17,6 +17,9 @@ public final class MeleeState {
     // Parry
     boolean guarding;
     long guardStart;
+    /** How charged their last swing was, and when: the attack has reset the charge by the time its hit is handled. */
+    float swingCharge;
+    long swingTick = -1;
     long recoveryUntil;
     boolean parriedThisGuard;
     long guardLoopAt;

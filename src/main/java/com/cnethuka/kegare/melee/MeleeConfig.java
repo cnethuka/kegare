@@ -14,6 +14,7 @@ public final class MeleeConfig {
     public static ModConfigSpec.DoubleValue DODGE_WINDOW;
 
     public static ModConfigSpec.DoubleValue PARRY_PERFECT_WINDOW;
+    public static ModConfigSpec.DoubleValue PARRY_ASSESSMENT_CHARGE;
     public static ModConfigSpec.DoubleValue PARRY_STAGGER_SECONDS;
     public static ModConfigSpec.IntValue PARRY_STAGGER_SLOWNESS;
     public static ModConfigSpec.DoubleValue GUARD_MELEE_REDUCTION;
@@ -55,6 +56,8 @@ public final class MeleeConfig {
         b.push("parry");
         PARRY_PERFECT_WINDOW = b.comment("The first seconds of holding: a melee hit is cancelled and its attacker staggered.")
                 .defineInRange("perfectWindow", 0.3, 0.0, 10.0);
+        PARRY_ASSESSMENT_CHARGE = b.comment("How charged a player's swing has to be for a perfect parry of it to count as a move in Assessment. 1.0 is a full attack bar. The game itself calls anything past 0.9 full strength, if that's preferred.")
+                .defineInRange("assessmentCharge", 1.0, 0.0, 1.0);
         PARRY_STAGGER_SECONDS = b.comment("How long a perfect parry slows the attacker. Their abilities aren't stopped.")
                 .defineInRange("staggerSeconds", 0.5, 0.0, 10.0);
         PARRY_STAGGER_SLOWNESS = b.comment("Slowness amplifier of the stagger (2 = Slowness III).").defineInRange("staggerSlowness", 2, 0, 9);

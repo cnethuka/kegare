@@ -4,6 +4,7 @@ import com.cnethuka.kegare.combat.CombatHelper;
 import com.cnethuka.kegare.innatetechnique.visual.Visual;
 import com.cnethuka.kegare.innatetechnique.visual.VisualService;
 import com.cnethuka.kegare.malice.MaliceService;
+import com.cnethuka.kegare.progression.Landings;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.phys.Vec3;
@@ -54,6 +55,7 @@ public final class ReinforcedStrike {
         MeleeNumbers numbers = MeleeNumbers.of(attacker);
         if (!MaliceService.trySpend(attacker, numbers.strikeCost())) return damage;
         clear(attacker, state);
+        Landings.markStrike(attacker, target);
         if (!CombatHelper.isBoss(target) && numbers.strikeKnockback() > 0) { // bosses: damaged, never moved
             target.knockback(numbers.strikeKnockback(), attacker.getX() - target.getX(), attacker.getZ() - target.getZ());
             target.hurtMarked = true;
