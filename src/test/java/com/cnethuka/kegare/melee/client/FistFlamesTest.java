@@ -19,6 +19,7 @@ import org.junit.jupiter.api.Test;
 class FistFlamesTest {
     private static final int FRAME = 14;
     private static final int WISP = 7;
+    private static final int NEAR_BLACK = 40;
     private static final Path TEXTURES = Path.of(System.getProperty("kegare.projectDir", "."), "src/main/resources/assets/kegare/textures/entity");
 
     private static BufferedImage sheet() throws IOException {
@@ -98,6 +99,77 @@ class FistFlamesTest {
                 assertTrue(Math.hypot(at.x, at.z) <= 0.21, "it curls, it doesn't fly off");
             }
             assertTrue(last > 0.4f && last < 0.8f, "it ends a little above the fist: " + last);
+        }
+    }
+
+    private static int fireWidth(BufferedImage sheet, int frame, int row, int y) {
+        int width = 0;
+        for (int x = 0; x < FRAME; x++) if (sheet.getRGB(frame * FRAME + x, row * FRAME + y) >>> 24 != 0) width++;
+        return width;
+    }
+
+    @Test
+    void nothingHangsBelowTheHand() throws IOException {
+        BufferedImage sheet = sheet();
+        for (int f = 0; f < FistFlames.FLAME_FRAMES; f++) {
+            int widest = 0;
+            for (int y = 0; y < FRAME; y++) widest = Math.max(widest, fireWidth(sheet, f, 0, y));
+            assertTrue(fireWidth(sheet, f, 0, FRAME - 1) <= 6, "the base is a narrow cup, frame " + f);
+            assertTrue(fireWidth(sheet, f, 0, FRAME - 1) < widest, "and the fire's wider further up, frame " + f);
+            int sum = 0, count = 0;
+            for (int y = 0; y < FRAME; y++) {
+                for (int x = 0; x < FRAME; x++) {
+                    if (sheet.getRGB(f * FRAME + x, y) >>> 24 != 0) {
+                        sum += FRAME - 1 - y;
+                        count++;
+                    }
+                }
+            }
+            assertTrue(sum / (float) count >= 2.5f, "most of it is up round the fist and forearm, frame " + f);
+        }
+    }
+
+    private static boolean nearBlack(BufferedImage sheet, int x, int y) {
+        int argb = sheet.getRGB(x, y);
+        return argb >>> 24 != 0 && (argb & 0xFF) < NEAR_BLACK;
+    }
+
+    @Test
+    void nearBlackMixesIntoTheOuterEdgeOfTheMassOnly() throws IOException {
+        BufferedImage sheet = sheet();
+        for (int f = 0; f < FistFlames.FLAME_FRAMES; f++) {
+            int dark = 0;
+            for (int y = 0; y < FRAME; y++) {
+                int first = -1, last = -1;
+                for (int x = 0; x < FRAME; x++) {
+                    if (sheet.getRGB(f * FRAME + x, y) >>> 24 != 0) {
+                        if (first < 0) first = x;
+                        last = x;
+                    }
+                }
+                for (int x = 0; x < FRAME; x++) {
+                    if (!nearBlack(sheet, f * FRAME + x, y)) continue;
+                    dark++;
+                    boolean outer = x == first || x == last || y == FRAME - 1 || sheet.getRGB(f * FRAME + x, y + 1) >>> 24 == 0;
+                    assertTrue(outer, "only on the outer edge: frame " + f + " at " + x + "," + y);
+                }
+            }
+            assertTrue(dark >= 4, "enough to hold the shape against a bright sky, frame " + f + ": " + dark);
+            for (int y = FRAME; y < 3 * FRAME; y++) {
+                for (int x = f * FRAME; x < (f + 1) * FRAME; x++) assertFalse(nearBlack(sheet, x, y), "the fire in front stays clean: " + x + "," + y);
+            }
+        }
+    }
+
+    @Test
+    void theTipsOfTheFireStayInColor() throws IOException {
+        BufferedImage sheet = sheet();
+        for (int f = 0; f < FistFlames.FLAME_FRAMES; f++) {
+            int top = 0;
+            while (fireWidth(sheet, f, 0, top) == 0) top++;
+            for (int x = 0; x < FRAME; x++) {
+                assertFalse(nearBlack(sheet, f * FRAME + x, top), "a lit tip, not an outlined one, frame " + f);
+            }
         }
     }
 

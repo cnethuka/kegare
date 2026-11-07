@@ -2133,63 +2133,94 @@ def puppet_glow() -> "Image.Image":
 FLAME_FRAMES = 8
 FLAME_SIZE = 14  # one texel is one pixel of a player's skin: as chunky as the arm it burns on
 WISP_SIZE = 7
+FLAME_BLACK = 24  # tinted, this is near-black: it's what holds the shape against a bright sky of nearly the same color
 
 
-def flame_frame(t: int, tongues, values, *, sway: float, phase: float, hot: float, white: float) -> "Image.Image":
-    """One frame of fire, base at the bottom. Each tongue is a column of flame that climbs, leans and trades height with the others
-    over the loop, in whole cycles so the last frame runs into the first. Hard edges and a few flat shades: no soft alpha anywhere."""
+def flame_inside(t: int, tongues, *, snake: float) -> "list[list[bool]]":
+    """Which texels are fire, for one frame. The tongues make a skyline over a base that's rounded like a cup, with nothing hanging below the
+    hand. Then each row slides sideways by a wave running up, in whole cycles so the last frame runs into the first. Sliding by rows keeps
+    everything joined, and tips swing more than roots, so a tongue snakes and licks where a straight one would end in a hard point."""
     size = FLAME_SIZE
     tau = 2 * math.pi
-    rim, body, heat, core = values
-    img = Image.new("RGBA", (size, size), (255, 255, 255, 0))
-    cycle = lambda k, p: math.sin(tau * (k * t / FLAME_FRAMES + p))
+    tops = [0.0] * size
+    for x in range(size):
+        for centre, width, height, k, p in tongues:
+            top = height * (0.82 + 0.18 * math.sin(tau * (k * t / FLAME_FRAMES + p)))
+            across = abs(x - centre + 0.6 * math.sin(tau * (t / FLAME_FRAMES + p + 0.3))) / width
+            if across < 1:
+                tops[x] = max(tops[x], top * (1 - across * across) ** 0.55)  # blunt: a dome, not a spike
+    inside = [[False] * size for _ in range(size)]
     for y in range(size):
+        ny = (size - 1 - y) / (size - 1)
+        slide = round(snake * (0.25 + ny) ** 1.4 * math.sin(tau * (1.15 * ny - t / FLAME_FRAMES + tongues[0][4])))
+        cup = 2.6 + 16 * ny if ny < 0.3 else 7.0  # how far from the middle the base reaches, round underneath
         for x in range(size):
-            nx = (x - (size - 1) / 2) / (size / 2)
+            if tops[x] > ny and abs(x - (size - 1) / 2) <= cup:
+                if 0 <= x + slide < size:
+                    inside[y][x + slide] = True
+    return inside
+
+
+def flame_frame(t: int, inside, *, values, hot_rows: float, black: float) -> "Image.Image":
+    """Flat shades, hard edges and no soft alpha, hottest low down. Along the outer edge and underneath, near-black texels mix in: only there,
+    so the shape holds and the inside stays clean. Tops of tongues stay in color, so tips look lit and not outlined."""
+    size = FLAME_SIZE
+    shade, body, hot = values
+    img = Image.new("RGBA", (size, size), (255, 255, 255, 0))
+    fire = lambda x, y: 0 <= x < size and 0 <= y < size and inside[y][x]
+    for y in range(size):
+        row = [x for x in range(size) if fire(x, y)]
+        for x in row:
+            left, right = not fire(x - 1, y), not fire(x + 1, y)
+            above, below = not fire(x, y - 1), not fire(x, y + 1)
             ny = (size - 1 - y) / (size - 1)
-            leaned = nx + sway * ny * cycle(1, phase + ny * 0.9)
-            depth = -9.0
-            for centre, width, height, k, p in tongues:
-                top = height * (0.72 + 0.28 * cycle(k, p))
-                if ny > top:
-                    continue
-                half = width * (1 - (ny / max(top, 0.01)) ** 1.6)
-                depth = max(depth, (half - abs(leaned - centre - 0.05 * cycle(1, p + 0.3))) * size / 2)
-            depth = min(depth, (0.42 + 1.9 * ny - abs(nx)) * size / 2)  # rounded off past the knuckles
-            if depth <= 0:
-                continue
-            v = rim if depth < 0.75 else body if depth < hot else heat if depth < white else core
+            v = hot if ny < hot_rows else body
+            if left and right:
+                v = body  # a thin lick: all of it in color
+            elif (x == row[0] or x == row[-1] or below) and not above and ny < 0.8:
+                # A broken line, not an outline. Which texels go dark drifts with the frame, so it seethes a little.
+                v = FLAME_BLACK if ((x * 5 + y * 3 + (t // 2) * 7) % 10) / 10 < black else shade
+            elif left or right:
+                v = shade
+            elif above:
+                v = body
             img.putpixel((x, y), (v, v, v, 255))
     return img
 
 
 WISP_FRAMES = (
-    ("...##..", "..#..#.", "..#....", "...#...", "...##..", "..###..", "...#..."),  # fresh off the fist, thick at the root
-    ("....##.", "...#...", "...#...", "....#..", "....#..", "...#...", "..#...."),  # stretching out
-    (".......", "...##..", "..#..#.", "..#....", "...#...", ".......", "......."),  # a small hook
-    (".......", ".......", "...#...", "..##...", ".......", "...#...", "......."),  # breaking up
+    ("...#...", "..##...", "..#+...", "..+#...", "...##..", "...##..", "...#..."),  # a tip that's just come off the fire
+    (".......", "...##..", "..#....", "..#+...", "...#+..", "...#...", "......."),  # thinning into a curl
+    (".......", ".......", "...##..", "..#....", "..+#...", ".......", "......."),  # a small hook
+    (".......", ".......", ".......", "...#...", "...+...", ".......", "......."),  # going out
 )
+
+
+# Tongues: centre (in texels), half width, height, cycles a loop, phase. The arm covers texels 5 to 8, and the tall ones flank it.
+FLAME_MASS = ((3.4, 2.7, 0.84, 2, 0.40), (9.8, 2.7, 0.96, 1, 0.15), (6.5, 3.2, 0.60, 1, 0.70), (1.7, 1.4, 0.40, 1, 0.05), (11.6, 1.4, 0.50, 2, 0.55))
+FLAME_LICKS = ((3.6, 1.5, 0.62, 2, 0.25), (9.6, 1.4, 0.74, 1, 0.80))
+FLAME_HEART = ((3.5, 0.8, 0.34, 2, 0.60), (9.7, 0.8, 0.42, 1, 0.10))
 
 
 def fist_flame() -> "Image.Image":
     """A ready fist's Malice fire, greyscale for the Malice color at runtime, sharp so it stays chunky and reads against a bright sky.
-    Rows of frames: the mass behind the arm with a dark rim for contrast, the licks that cross in front (open in the middle so the fist
-    shows through), the hot heart (drawn paler), and the little curls that come off it."""
+    Rows of frames: the mass behind the arm with near-black mixed into its edge, the licks that cross in front (open in the middle so the
+    fist shows through), the hot heart (drawn paler), and the little curls that come off it."""
     size = FLAME_SIZE
-    back = ((-0.72, 0.36, 0.84, 1, 0.05), (-0.42, 0.42, 1.10, 2, 0.40), (0.02, 0.46, 0.96, 1, 0.70),
-            (0.44, 0.40, 1.16, 2, 0.15), (0.76, 0.34, 0.76, 1, 0.55))
-    front = ((-0.50, 0.20, 0.98, 2, 0.25), (0.52, 0.19, 1.12, 1, 0.80), (0.0, 0.27, 0.40, 3, 0.50))  # the middle one only as far as the wrist
-    heart = ((-0.52, 0.13, 0.56, 2, 0.60), (0.54, 0.12, 0.66, 1, 0.10), (0.05, 0.16, 0.26, 2, 0.85))
     img = Image.new("RGBA", (FLAME_FRAMES * size, 3 * size + WISP_SIZE), (255, 255, 255, 0))
     for t in range(FLAME_FRAMES):
-        img.paste(flame_frame(t, back, (104, 214, 240, 255), sway=0.28, phase=0.1, hot=2.1, white=3.3), (t * size, 0))
-        img.paste(flame_frame(t, front, (205, 240, 255, 255), sway=0.34, phase=0.45, hot=1.6, white=9), (t * size, size))
-        img.paste(flame_frame(t, heart, (225, 255, 255, 255), sway=0.2, phase=0.7, hot=9, white=9), (t * size, 2 * size))
+        img.paste(flame_frame(t, flame_inside(t, FLAME_MASS, snake=1.5), values=(148, 215, 250), hot_rows=0.25, black=0.68), (t * size, 0))
+        img.paste(flame_frame(t, flame_inside(t, FLAME_LICKS, snake=1.8), values=(170, 232, 255), hot_rows=0.2, black=0.0), (t * size, size))
+        heart = flame_inside(t, FLAME_HEART, snake=1.2)
+        heart[size - 1] = heart[size - 2] = [False] * size  # it sits by the knuckles, not under them
+        img.paste(flame_frame(t, heart, values=(235, 250, 255), hot_rows=0.2, black=0.0), (t * size, 2 * size))
+    shades = {"#": 255, "+": 170}
     for f, rows in enumerate(WISP_FRAMES):
         for y, row in enumerate(rows):
             for x, c in enumerate(row):
-                if c == "#":
-                    img.putpixel((f * WISP_SIZE + x, 3 * size + y), (255, 255, 255, 255))
+                if c in shades:
+                    v = shades[c]
+                    img.putpixel((f * WISP_SIZE + x, 3 * size + y), (v, v, v, 255))
     return img
 
 
