@@ -83,6 +83,7 @@ public final class RimeFxAuthoring {
         out.put(RimeIds.FX_FROST_FIELD_CONE_SELF, RimeFxAuthoring::frostFieldConeSelf);
         out.put(RimeIds.FX_FROST_FIELD_MIST, RimeFxAuthoring::frostFieldMist);
         out.put(RimeIds.FX_RIME_SHELL_AURA, RimeFxAuthoring::rimeShellAura);
+        out.put(RimeIds.FX_RIME_SHELL_AURA_SELF, RimeFxAuthoring::rimeShellAuraSelf);
         out.put(RimeIds.FX_FREEZE_SHATTER, RimeFxAuthoring::freezeShatter);
         // Specials
         out.put(RimeIds.FX_SPLINTER_CAST, RimeFxAuthoring::splinterCast);
@@ -444,40 +445,53 @@ public final class RimeFxAuthoring {
         return fx(mist, glints);
     }
 
-    /** Rime Shell: a faint, glassy ice bubble (invisible from the inside) with flakes circling it. */
+    /**
+     * Rime Shell: the plates themselves are solid meshes on the body (ShellClient); round them only a few flakes circling close and
+     * the odd glint rising off the ice. No bubble: the old glassy sphere read as a forcefield, not ice.
+     */
     private static FX rimeShellAura() {
-        ParticleEmitter shell = emitter("shell", true, 40);
-        ParticleConfig c = shell.config;
-        c.setMaxParticles(2);
-        c.setStartLifetime(NumberFunction.constant(40));
-        c.setStartSpeed(NumberFunction.constant(0));
-        c.setStartSize(uniform(NumberFunction.constant(2.3f)));
-        c.shape.setScale(new NumberFunction3(0, 0, 0));
-        c.emission.setEmissionRate(NumberFunction.constant(0));
-        c.emission.getBursts().add(burst(0, 1));
-        c.renderer.setRenderMode(ParticleRendererSetting.Mode.Model);
-        c.renderer.setModel(new MeshData(new ObjModelSource(Photon.id("models/sphere.obj"))));
-        KilaMaterial shield = KilaPresets.ENERGY_SHIELD.create();
-        shield.color = new HDRColor(0.45f, 0.82f, 1f, 0.18f, 1f);
-        shield.fresnel.color = new HDRColor(0.5f, 0.88f, 1f, 1f, 1.6f);
-        shield.doubleSided = false; // seen from inside (first person): nothing in the way
-        material(shell, shield);
+        return rimeShellAura(false);
+    }
 
+    /** Your own: the flakes kept low round the legs, below anything you'd see looking ahead. */
+    private static FX rimeShellAuraSelf() {
+        return rimeShellAura(true);
+    }
+
+    private static FX rimeShellAura(boolean self) {
         ParticleEmitter flakes = emitter("flakes", true, 20);
         ParticleConfig f = flakes.config;
-        f.setMaxParticles(50);
+        f.setMaxParticles(40);
         f.setStartLifetime(range(24, 34));
         f.setStartSpeed(NumberFunction.constant(0));
-        f.setStartSize(uniform(range(0.03f, 0.06f)));
-        Sphere around = sphere(1.2f);
+        f.setStartSize(uniform(range(0.03f, 0.055f)));
+        Sphere around = sphere(self ? 0.55f : 0.75f);
         around.setRadiusThickness(0f);
         f.shape.setShape(around);
-        f.emission.setEmissionRate(NumberFunction.constant(1.2f));
+        f.shape.setScale(new NumberFunction3(1f, self ? 0.5f : 1.1f, 1f));
+        f.emission.setEmissionRate(NumberFunction.constant(self ? 0.5f : 1.1f));
         f.velocityOverLifetime.setEnable(true);
-        f.velocityOverLifetime.setOrbital(new NumberFunction3(0, 1.6f, 0)); // circle the body
+        f.velocityOverLifetime.setOrbital(new NumberFunction3(0, 1.4f, 0)); // circle the body
         fadeInOut(f, WHITE, CYAN);
         material(flakes, glow(0.5f, 0.85f, 1f, 1.3f));
-        return fx(shell, flakes);
+        if (self) flakes.transform().localPosition(new Vector3f(0, -0.55f, 0));
+        if (self) return fx(flakes);
+
+        ParticleEmitter glints = emitter("glints", true, 20);
+        ParticleConfig g = glints.config;
+        g.setMaxParticles(20);
+        g.setStartLifetime(range(10, 16));
+        g.setStartSpeed(range(0.02f, 0.08f));
+        g.setStartSize(uniform(range(0.04f, 0.07f)));
+        Sphere skin = sphere(0.45f);
+        skin.setRadiusThickness(0f);
+        g.shape.setShape(skin);
+        g.shape.setScale(new NumberFunction3(0.8f, 1.6f, 0.8f));
+        g.emission.setEmissionRate(NumberFunction.constant(0.5f));
+        gravity(g, -0.03f);
+        fadeInOut(g, WHITE, CYAN);
+        material(glints, glow(0.55f, 0.88f, 1f, 1.4f));
+        return fx(flakes, glints);
     }
 
     /** Breaking free of a freeze: ice chunks burst outward and fall, with a flash and a ring. */

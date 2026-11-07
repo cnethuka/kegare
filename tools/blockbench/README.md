@@ -59,6 +59,12 @@ Frost Field's crystals: `field_shapes.py` (four small clusters) and `build_frost
 
 Ice Path has no mesh: its ice is pixel art on the blocks (`path_ice`, below). Its slide pose is `tools/anims/ice_path.py`.
 
+Rime Shell's plates: `shell_shapes.py` (23 crested slabs, each in its body part's space about the part's pivot) and
+`build_rime_shell.py`, the lance's painter (`art/blockbench/rime_shell.bbmodel`, `models/fx/rime_shell.obj`,
+`textures/entity/rime_shell*.png`). The preview sets them on a stand-in body. The toggle's pose is `tools/anims/rime_shell.py`.
+
+    python3 -I tools/blockbench/build_rime_shell.py --preview  # also run/shell_preview/*.png
+
 ## Marks on blocks: pixel art, no Blockbench
 
 Rime's frost, cracks and ice on the world's blocks are pixel art at the blocks' own 16 texels a block, so they need no

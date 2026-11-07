@@ -755,12 +755,13 @@ Package `com.cnethuka.kegare.innate_technique.rime`. **Rarity: RARE.** All numbe
   The total is clamped to [0.5, 2]. The innate technique reports it through `InnateTechnique.environment(player)`;
   it is synced (re-checked every 10 ticks) for the HUD's snowflake or flame icon next to the Malice bar, with the
   multiplier. Hovering an ability on the Sorcerer screen shows its current cost, upkeep and every active factor.
-- **Visuals:** PAL animations `rime_shell_toggle` and `frozen` (loop), in
-  `assets/kegare/player_animations/rime.json`; Frost Field's `frost_field_channel` (loop) in `frost_field.json`
+- **Visuals:** PAL animation `frozen` (loop), in
+  `assets/kegare/player_animations/rime.json`; Rime Shell's `rime_shell_toggle` in `rime_shell.json` (`tools/anims/rime_shell.py`);
+  Frost Field's `frost_field_channel` (loop) in `frost_field.json`
   (`tools/anims/frost_field.py`); Ice Path's `ice_path_slide` (loop) in `ice_path.json` (`tools/anims/ice_path.py`); Frost Shard's `frost_shard_cast` in `frost_shard.json` (from
   `tools/anims/frost_shard.py`) and Splinter's `splinter_cast` in `splinter.json` (`tools/anims/splinter.py`); Glacial Lance's `glacial_lance_charge` (loop) and `glacial_lance_release` in
   `glacial_lance.json` (from `tools/anims/glacial_lance.py`). Photon effects in `assets/kegare/fx/rime/`: `frost_shard_trail`,
-  `frost_shard_impact`, `frost_field_cone`, `rime_shell_aura` (an ice bubble, invisible from the inside), `freeze_shatter`,
+  `frost_shard_impact`, `frost_field_cone`, `rime_shell_aura` (flakes and glints round the plates; your own `rime_shell_aura_self`), `freeze_shatter`,
   and Glacial Lance's below. Each has a vanilla-particle lookalike for the fallback.
   - **Glacial Lance** (the style every Rime move's look follows): a solid mesh of cursed ice, not
     an item sprite. `tools/blockbench/build_glacial_lance.py` makes it (`lance_shapes.py`: every chunk a cluster of convex
@@ -911,6 +912,27 @@ Package `com.cnethuka.kegare.innate_technique.rime`. **Rarity: RARE.** All numbe
     first-person hands stay vanilla.
   - **Reduced** plays the spray reduced and lays the same ice; **Vanilla** lays no ice (no marks on blocks), snowflakes
     behind the feet.
+- **Rime Shell's look** (in the Lance's style):
+  - **The plates** are solid slabs of the Lance's ice hugging the body, not a bubble: 23 of them
+    (`models/fx/rime_shell.obj`, one object a plate: `torso_0..8` over the chest, back, belly, collar and sides,
+    `right_arm_0..3` / `left_arm_0..3` on the shoulders and forearms, `right_leg_0..2` / `left_leg_0..2` on the thighs and
+    shins; `textures/entity/rime_shell*.png`, the Lance's navy-to-frost faces, bright ridges and faint glowing cracks;
+    `tools/blockbench/build_rime_shell.py` and `shell_shapes.py`, source `art/blockbench/rime_shell.bbmodel`). Each is a
+    flat-faced slab with a crest down its middle, sunk a fraction into the skin and standing at most about 2 pixels off
+    it. `ShellClient`, a layer on both player skins, draws each in its body part's own space, so the plates follow every
+    pose and animation (a slim arm's are moved in a pixel). It reads the server's toggle loop on the player, so every
+    client shows them exactly while the shell is up. Your own first person draws no body, so nothing of it is in view.
+  - **Forming:** nothing for 4 ticks while the arms cross; then the plates form one after another, chest first, each
+    popping a little past its size and settling, all set within about 0.7 s.
+  - **Coming down:** the plates break off where they were last drawn and fall away from the body, tumbling, shrinking
+    away on the ground within under a second (`ShellClient.breakOff`; drawn on the clients only).
+  - **The effect:** `rime_shell_aura` is only a few flakes circling close and the odd glint rising off the ice.
+    Your own is `rime_shell_aura_self`, a few flakes low round the legs.
+  - **The body:** `rime_shell_toggle` (`tools/anims/rime_shell.py`) crosses the arms over the chest, hunched, then flings
+    them down and out, chest up, fists clenched, as the plates form. The same plays as the shell comes down. Your own
+    first-person hands stay vanilla.
+  - **Reduced** and **Vanilla** draw the same plates (meshes stay, as the Lance's do); Vanilla swaps the flakes for
+    snowflakes.
 - **Effect authoring:** the effects are built from Photon's own objects in `RimeFxAuthoring` (building blocks in the
   shared `client.visual.FxKit`) and written with Photon's serializer, the same `.fx` format the editor exports. In a
   dev client, `/kegare debug fx export` rewrites every effect in `FxCatalog` (Rime's and RMT's, and the running game's

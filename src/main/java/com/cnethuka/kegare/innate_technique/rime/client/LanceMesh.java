@@ -69,6 +69,22 @@ public final class LanceMesh {
         /** Resources reloaded: read the mesh again when it's next drawn. */
         public void forget() {
             pieces = null;
+            centres.clear();
+        }
+
+        private final Map<String, Vector3f> centres = new HashMap<>();
+
+        /** The middle of a piece (the mean of its corners), in its own space; the origin if it isn't there. */
+        public Vector3f centre(String name) {
+            return new Vector3f(centres.computeIfAbsent(name, n -> {
+                Piece p = piece(n);
+                Vector3f sum = new Vector3f();
+                if (p == null) return sum;
+                float[] c = p.corners();
+                int count = c.length / 9;
+                for (int i = 0; i < count; i++) sum.add(c[i * 9], c[i * 9 + 1], c[i * 9 + 2]);
+                return count == 0 ? sum : sum.div(count);
+            }));
         }
 
         private Map<String, Piece> load() {
@@ -140,12 +156,17 @@ public final class LanceMesh {
     public static final Model FIELD = new Model(Kegare.id("models/fx/frost_field.obj"), Kegare.id("textures/entity/frost_field.png"),
             Kegare.id("textures/entity/frost_field_glow.png"));
 
+    /** Rime Shell's plates, one object a plate, each in its body part's space (tools/blockbench/build_rime_shell.py). */
+    public static final Model SHELL = new Model(Kegare.id("models/fx/rime_shell.obj"), Kegare.id("textures/entity/rime_shell.png"),
+            Kegare.id("textures/entity/rime_shell_glow.png"));
+
     /** Resources reloaded: read the meshes again when they're next drawn. */
     public static void forget() {
         LANCE.forget();
         SPIRE.forget();
         SHARD.forget();
         FIELD.forget();
+        SHELL.forget();
     }
 
     /** Reads Blockbench's OBJ: one object per piece, triangles, texture coordinates with v counted from the bottom. */
