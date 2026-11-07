@@ -58,16 +58,18 @@ public final class FistTell {
     /** How far off where the player is a fist can be and still be in the world. Further than that, this is a screen drawing them. */
     private static final double FARTHEST_FIST = 4.0;
     /** How often a curl comes off the fist: at full effects, at Reduced, and your own in first person. */
-    private static final int WISP_EVERY_TICKS = 4;
-    private static final int WISP_EVERY_TICKS_REDUCED = 8;
-    private static final int WISP_EVERY_TICKS_SELF = 6;
-    private static final float WISP_SIZE = 0.31f;
+    private static final int WISP_EVERY_TICKS = 3;
+    private static final int WISP_EVERY_TICKS_REDUCED = 6;
+    private static final int WISP_EVERY_TICKS_SELF = 5;
+    private static final float WISP_SIZE = 0.36f;
     /** Your own, right by the camera, in view space. */
     private static final float WISP_SIZE_SELF = 0.11f;
     private static final float WISP_SCALE_SELF = 0.42f;
     /** In first person with something in hand: from where a bare fist would be to where vanilla puts the grip, in view space. */
     private static final float GRIP_ACROSS = 0.12f;
     private static final float GRIP_UP = 0.04f;
+    /** And nearer the camera, so the fire shows in front of the grip and not behind what's held. */
+    private static final float GRIP_NEARER = 0.14f;
     /** The quads have to clear the corners of the arm's cube, wherever the camera is. */
     private static final float RADIUS = 3f / 16f;
     private static final float RADIUS_SLIM = 2.7f / 16f;
@@ -252,7 +254,8 @@ public final class FistTell {
         PoseStack pose = event.getPoseStack();
         pose.pushPose();
         GuardHand.apply(pose, side, event.getPartialTick());
-        if (!player.getMainHandItem().isEmpty()) pose.translate(side * GRIP_ACROSS, GRIP_UP, 0f); // no arm drawn: round what's held
+        boolean holding = !player.getMainHandItem().isEmpty();
+        if (holding) pose.translate(side * GRIP_ACROSS, GRIP_UP, GRIP_NEARER); // no arm drawn: round what's held
         pose.translate(side * (-0.3f * Mth.sin(root * Mth.PI) + 0.64000005f), 0.4f * Mth.sin(root * Mth.TWO_PI) - 0.6f - mainHandEquip * 0.6f,
                 -0.4f * Mth.sin(swing * Mth.PI) - 0.71999997f);
         pose.mulPose(Axis.YP.rotationDegrees(side * 45f));
@@ -276,7 +279,7 @@ public final class FistTell {
             float time = player.tickCount + event.getPartialTick();
             Vector3f fist = pose.last().pose().transformPosition(FistShellMesh.armCentre(slim, left), FistShellMesh.fistY(), 0f, new Vector3f());
             drawArm(pose, event.getMultiBufferSource(), look, time, slim, left, event.getPackedLight(), fist.negate(new Vector3f()).normalize(),
-                    new Vector3f(0f, 1f, 0f), FistFlames.Fit.FIRST_PERSON);
+                    new Vector3f(0f, 1f, 0f), holding ? FistFlames.Fit.GRIP : FistFlames.Fit.FIRST_PERSON);
             Shown shown = SHOWN.get(player.getId());
             if (shown != null && look.kind() == MeleeTell.Kind.GLOW) drawWispsSelf(shown, event.getMultiBufferSource(), fist, time);
             Camera camera = mc.gameRenderer.getMainCamera();

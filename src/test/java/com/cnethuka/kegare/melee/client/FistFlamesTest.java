@@ -89,16 +89,17 @@ class FistFlamesTest {
     }
 
     @Test
-    void aCurlGoesUpAndStaysCloseToTheFist() {
+    void aCurlComesOffTheFireAndStaysCloseToIt() {
         for (float seed : new float[] {0f, 0.3f, 0.7f, 0.99f}) {
+            assertTrue(FistFlames.wispPath(0f, seed, new Vector3f()).y > 0.1f, "it starts partway up the fire, not at the knuckles");
             float last = -1f;
             for (float age = 0f; age < 1f; age += 0.1f) {
                 Vector3f at = FistFlames.wispPath(age, seed, new Vector3f());
                 assertTrue(at.y > last, "always rising");
                 last = at.y;
-                assertTrue(Math.hypot(at.x, at.z) <= 0.21, "it curls, it doesn't fly off");
+                assertTrue(Math.hypot(at.x, at.z) <= 0.13, "it curls, it doesn't fly off");
             }
-            assertTrue(last > 0.4f && last < 0.8f, "it ends a little above the fist: " + last);
+            assertTrue(last < 0.6f, "it ends about where the tongues do, well short of the shoulder: " + last);
         }
     }
 
@@ -174,6 +175,38 @@ class FistFlamesTest {
     }
 
     @Test
+    void tipsLeanOverToStandUprightOnATiltedArmWithinReason() {
+        assertEquals(0f, FistFlames.lean(0f, -1f, 1f), 1.0e-5f, "an arm straight down needs no lean");
+        assertTrue(FistFlames.lean(0.3f, -0.95f, 1f) > 0f, "toward up");
+        assertTrue(FistFlames.lean(-0.3f, -0.95f, 1f) < 0f, "whichever side that is");
+        assertEquals(FistFlames.lean(1f, 0f, 1f), FistFlames.lean(1f, 0.01f, 1f), 1.0e-5f, "a level arm doesn't flip it about");
+        assertTrue(FistFlames.lean(1f, 0f, 1f) <= 0.7f, "and it never lays the fire flat");
+    }
+
+    @Test
+    void onABodyTheFireStopsPartwayUpTheArm() {
+        float arm = 12f / 16f;
+        assertTrue(FistFlames.Fit.BODY.height() * FRAME / 16f < arm, "shorter than the arm it's on, or it's up by the shoulder");
+        assertTrue(FistFlames.Fit.BODY.leans(), "and on a tilted arm it still goes up");
+    }
+
+    @Test
+    void inFirstPersonAHeldItemGetsMoreFireThanAnEmptyHandAndNeitherLeans() {
+        assertTrue(FistFlames.Fit.GRIP.width() > FistFlames.Fit.FIRST_PERSON.width(), "the item hides part of it");
+        assertTrue(FistFlames.Fit.GRIP.height() > FistFlames.Fit.FIRST_PERSON.height());
+        assertTrue(FistFlames.Fit.GRIP.width() < 1f && FistFlames.Fit.GRIP.height() < 1f, "still no big blob by the camera");
+        assertEquals(0f, FistFlames.Fit.GRIP.flare(), 0f);
+        assertEquals(0f, FistFlames.Fit.FIRST_PERSON.flare(), 0f);
+        assertFalse(FistFlames.Fit.GRIP.leans());
+        assertFalse(FistFlames.Fit.FIRST_PERSON.leans());
+    }
+
+    @Test
+    void aCurlIsShortLived() {
+        assertTrue(FistFlames.WISP_LIFE_TICKS <= 10, "half a second, then it's gone: " + FistFlames.WISP_LIFE_TICKS);
+    }
+
+    @Test
     void fireGoesUpTheScreenWhicheverWayTheArmPoints() {
         Vector3f side = new Vector3f(0f, 0f, 1f);
         // Arm-space: the arm runs down y, toward the hand. Seen from the side, with world up against it, it hangs; with world up along it, it's raised.
@@ -187,7 +220,7 @@ class FistFlamesTest {
     @Test
     void theHeartIsPalerThanTheFireButTheSameHue() {
         int rime = 0x376BFF;
-        int pale = FistFlames.mix(rime, 0xFFFFFF, 0.55f);
+        int pale = FistFlames.mix(rime, 0xFFFFFF, 0.38f);
         assertTrue((pale >> 16 & 0xFF) > (rime >> 16 & 0xFF));
         assertTrue((pale & 0xFF) >= (pale >> 16 & 0xFF), "still blue");
     }
