@@ -755,12 +755,44 @@ Package `com.cnethuka.kegare.innate_technique.rime`. **Rarity: RARE.** All numbe
   The total is clamped to [0.5, 2]. The innate technique reports it through `InnateTechnique.environment(player)`;
   it is synced (re-checked every 10 ticks) for the HUD's snowflake or flame icon next to the Malice bar, with the
   multiplier. Hovering an ability on the Sorcerer screen shows its current cost, upkeep and every active factor.
-- **Visuals:** PAL animations `frost_shard_cast`, `glacial_lance_charge` (loop), `glacial_lance_release`,
-  `frost_field_channel` (loop), `rime_shell_toggle` and `frozen` (loop), in
-  `assets/kegare/player_animations/rime.json`. Photon effects in `assets/kegare/fx/rime/`: `frost_shard_trail`,
-  `frost_shard_impact`, `glacial_lance_charge` (grows with charge), `glacial_lance_trail`, `glacial_lance_impact`,
-  `frost_field_cone`, `rime_shell_aura` (an ice bubble, invisible from the inside) and `freeze_shatter`. Each has a
-  vanilla-particle lookalike for the fallback.
+- **Visuals:** PAL animations `frost_shard_cast`, `frost_field_channel` (loop), `rime_shell_toggle` and `frozen` (loop), in
+  `assets/kegare/player_animations/rime.json`; Glacial Lance's `glacial_lance_charge` (loop) and `glacial_lance_release` in
+  `glacial_lance.json` (from `tools/anims/glacial_lance.py`). Photon effects in `assets/kegare/fx/rime/`: `frost_shard_trail`,
+  `frost_shard_impact`, `frost_field_cone`, `rime_shell_aura` (an ice bubble, invisible from the inside), `freeze_shatter`,
+  and Glacial Lance's below. Each has a vanilla-particle lookalike for the fallback.
+  - **Glacial Lance** (the style every Rime move's look follows): a solid mesh of cursed ice, not
+    an item sprite. `tools/blockbench/build_glacial_lance.py` makes it (`lance_shapes.py`: every chunk a cluster of convex
+    crystals, so every face is a flat plane and every edge a ridge) and writes `art/blockbench/glacial_lance.bbmodel`,
+    `models/fx/glacial_lance.obj` (one object per chunk: `grip`, `fore`, `aft`, `head`, `tail`, `spurs`, and four
+    `shard_*`) and its textures in `textures/entity/`: `glacial_lance.png` (1024², every texel opaque: navy in the middle
+    of each face to pale frost at its ridges, faint cracks running on across faces), `glacial_lance_glow.png` (cut out,
+    drawn full-bright: the ridges and cracks, so it reads at night) and `glacial_lance_frost.png` (the frost mark, 8
+    frames, cut out). All three are filtered smooth (`.mcmeta` blur); nothing of them is half see-through. `LanceMesh`
+    draws it: a solid pass lit by the world (never below light 5) and the glow pass on top.
+  - **Charging** (`LanceHold`, a layer on both player skins): the lance grows out of the right fist in chunks that snap
+    into place (out past their size and back over 3 ticks, with `glacial_lance_snap`), so its size reads the charge: a stub
+    from the start, `fore` at the minimum charge (a javelin), `aft`, `head` and `tail` on the way, `spurs` at full
+    (`LanceShape`: 0, 19, 44, 69 and 100% of the way from the minimum to full). `glacial_lance_charge` (frost falling, cold vapour, a faint
+    glow) follows it, scaled by its length. Remote players square their body up to their aim while charging, so the lance
+    points where they look. Your own first person shows a small copy low on the right behind your hand (whatever you
+    hold) with `glacial_lance_charge_self` (a few specks), and nothing in the middle of the screen. A charge that ends
+    without a throw (a tap, or interrupted) crumbles where it was held: its chunks fall as solid shards.
+  - **Throw:** the release animation is the whole body: hips, chest, then the arm over the top and down across.
+  - **Flight** (`GlacialLanceRenderer`): the lance as thrown (only the chunks it had), spinning slowly about its own axis;
+    `glacial_lance_trail` is a thin pale line that tapers off behind it (a Photon `TrailEmitter` on the glow material with
+    `textures/fx/glacial_lance_trail.png`) and frost
+    falling off it; both scale with charge. Your own lance and trail stay hidden until 3.5 blocks from your camera.
+  - **Miss** (`LanceAftermath`): it stays stuck in the block for a second, blade buried, quivering, then shatters into
+    solid shards (`glacial_lance_stick`, `glacial_lance_shatter`). Drawn on the clients only: no entity, no hitbox.
+  - **Hit:** it bursts into solid shards on the target, where its path met the target's box
+    (`glacial_lance_impact`: a flash, a ring, glints, mist).
+  - **Frost marks:** both leave a frost mark (on the wall it stuck in, and on the ground below) that spreads, holds and
+    melts over 3 to 5 s. Decals only, never a block change. A full charge makes the burst, shards, marks and trail bigger.
+  - The server picks the effect (`GlacialLanceEntity.impactVisual`: a block gets `glacial_lance_stick`, anything else
+    `glacial_lance_impact`) and sends it with `VisualService.playAt(..., entityId)`, so every client reads the lance's
+    charge, heading and spin from it.
+  - **Reduced** plays the effects reduced and draws half the shards; **Vanilla** keeps the lance mesh but swaps every effect for vanilla snowflakes and
+    the shards for packed-ice fragments, with no frost marks.
   - Specials: animations `splinter_cast`, `glacial_spire_charge` (loop), `glacial_spire_release`, `ice_path_slide`
     (loop, a surfing stance) and `shatter_shell_cast`. Effects `splinter_cast`, `splinter_trail`,
     `glacial_spire_charge` (frost round the lowered hand), `glacial_spire_warning` (the frost circle plus a curtain of rising glints, a loop on the
