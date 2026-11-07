@@ -55,7 +55,7 @@ public final class ClientVisuals {
     }
 
     private static final Map<Integer, Map<String, Loop>> LOOPS = new HashMap<>();
-    /** Loops their move draws itself: neither Photon nor vanilla particles, see {@link #drawnByMove}. */
+    /** Effects their move draws itself: neither Photon nor vanilla particles, see {@link #drawnByMove}. */
     private static final Set<ResourceLocation> DRAWN_BY_MOVE = new HashSet<>();
     private static final String TRAIL_KEY = "trail";
 
@@ -91,7 +91,7 @@ public final class ClientVisuals {
         visual.animation().ifPresent(animation -> {
             if (entity instanceof AbstractClientPlayer player) PlayerAnimations.play(player, animation, false);
         });
-        visual.effect().map(effect -> firstPersonVariant(entity, effect)).ifPresent(effect -> {
+        visual.effect().filter(effect -> !DRAWN_BY_MOVE.contains(effect)).map(effect -> firstPersonVariant(entity, effect)).ifPresent(effect -> {
             VfxQuality quality = KegareClientConfig.VFX_QUALITY.get();
             FXEffectExecutor executor = quality == VfxQuality.VANILLA ? null
                     : PhotonEffects.onEntity(effect, entity, visual.anchor(), quality == VfxQuality.REDUCED, false);
@@ -295,11 +295,15 @@ public final class ClientVisuals {
     }
 
     /**
-     * Loops of {@code effect} are drawn by their move (found through a {@link Listener}): the loop is kept and timed as usual, but
-     * plays neither a Photon effect nor vanilla particles.
+     * {@code effect} is drawn by its move (found through a {@link Listener}): a loop of it is kept and timed as usual, and a
+     * one-shot still reaches the listeners, but neither plays a Photon effect or vanilla particles.
      */
     public static void drawnByMove(ResourceLocation effect) {
         DRAWN_BY_MOVE.add(effect);
+    }
+
+    public static boolean isDrawnByMove(ResourceLocation effect) {
+        return DRAWN_BY_MOVE.contains(effect);
     }
 
     /** How long a loop has run, in ticks (partial tick included), and how long it grows for. */

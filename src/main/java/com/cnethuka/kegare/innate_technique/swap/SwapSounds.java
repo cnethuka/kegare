@@ -30,6 +30,8 @@ public final class SwapSounds {
     public static final Clap SWITCHBACK = new Clap(KegareSounds.SWAP_DOUBLE_CLAP, 1f, 1f);
     /** Awareness's cast: the clap, a little higher. */
     public static final Clap AWARENESS = new Clap(KegareSounds.SWAP_CLAP, 0.9f, 1.12f);
+    /** Mimic's cast: a hollow clap of cupped hands, at the caster only (the target stays as themselves). */
+    public static final Clap MIMIC = new Clap(KegareSounds.SWAP_CUPPED_CLAP, 1f, 1f);
     /** A disguise landing (Awareness, Total Swap): a card riffled over. */
     public static final Clap CARD_FLIP = new Clap(KegareSounds.SWAP_FLIP, 0.9f, 1f);
     /** Switchback's swap back: a finger snap. */

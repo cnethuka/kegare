@@ -140,7 +140,7 @@ ALL = [positions_clap, switchback_cast, switchback_snap, awareness_cast, mimic_c
        exchange_cast, momentum_cast, total_swap_clap]
 # The rework lands one move at a time: the moves done so far are built from here, the rest still play their old hand-keyed
 # animation from swap_legacy.json (the swap.json before the rework), which goes once every move is done.
-DONE = {"positions_clap", "switchback_cast", "switchback_snap", "awareness_cast"}
+DONE = {"positions_clap", "switchback_cast", "switchback_snap", "awareness_cast", "mimic_cast"}
 ANIMS = [a for a in ALL if a.name in DONE]
 _LEGACY = json.loads((Path(__file__).parent / "swap_legacy.json").read_text())["animations"]
 LEGACY = {name: anim for name, anim in _LEGACY.items() if name not in DONE}

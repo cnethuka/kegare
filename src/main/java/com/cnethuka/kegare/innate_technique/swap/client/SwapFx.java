@@ -51,7 +51,7 @@ public final class SwapFx {
     static final int GLOW = 0x2EF2DA;
     static final int PALE = 0xCCFBF1;
     /** The afterimage's colour. */
-    private static final int GHOST_RGB = 0x3FF0DA;
+    static final int GHOST_RGB = 0x3FF0DA;
     /** The afterimage's opacity tick by tick: on, nearly off, on, then fading. */
     private static final float[] GHOST_ALPHA = {0.85f, 0.18f, 0.75f, 0.5f, 0.3f, 0.14f, 0.05f};
     /** An afterimage this close to your first-person camera isn't drawn (you've just landed in it). */
@@ -76,6 +76,9 @@ public final class SwapFx {
     /** Switchback's countdown on an entity: the loop's key (its time comes from {@link ClientVisuals#loopTime}). */
     private record Countdown(int entityId, String key) {}
 
+    /** Mimic cast by a player: their body flashing teal. */
+    private record Flicker(int entityId, long born) {}
+
     /** A disguise landing on an entity: the card-flip ripple down its body. */
     private record Flip(int entityId, long born) {}
 
@@ -89,6 +92,9 @@ public final class SwapFx {
     private static final List<Later> LATER = new ArrayList<>();
     private static final List<Countdown> COUNTDOWNS = new ArrayList<>();
     private static final List<Flip> FLIPS = new ArrayList<>();
+    private static final List<Flicker> FLICKERS = new ArrayList<>();
+    /** Mimic's flicker, a tick at a time: the body flashes teal twice, then a faint third (each flash long enough to be seen). */
+    private static final float[] FLICKER_ALPHA = {0.85f, 0.85f, 0f, 0f, 0.75f, 0.75f, 0f, 0.35f, 0.2f};
     /** The card-flip ripple: slats down the body, each this many ticks after the one above, each turning over in FLIP_TICKS. */
     private static final int FLIP_SLATS = 9;
     private static final float FLIP_STAGGER = 0.7f;
@@ -193,6 +199,7 @@ public final class SwapFx {
         clock++;
         tickCountdowns(level);
         FLIPS.removeIf(f -> clock - f.born() > FLIP_SLATS * FLIP_STAGGER + FLIP_TICKS + 1);
+        FLICKERS.removeIf(f -> clock - f.born() >= FLICKER_ALPHA.length);
         if (!LATER.isEmpty()) {
             List<Later> due = LATER.stream().filter(l -> l.due() <= clock).toList();
             LATER.removeAll(due);
@@ -240,6 +247,37 @@ public final class SwapFx {
         LATER.clear();
         COUNTDOWNS.clear();
         FLIPS.clear();
+        FLICKERS.clear();
+    }
+
+    // ---------------------------------------------------------------- Mimic's flicker
+
+    /**
+     * Mimic's tell, seen by everyone nearby: the caster's whole body flashes as a flat teal figure a little bigger than them, in
+     * the pose it's in ({@link MimicFlickerLayer}), on and off twice and a faint third time, under half a second as the face is
+     * redrawn. Never round your own first-person camera.
+     * Vanilla: a ring of teal specks round the head.
+     */
+    static void mimicFlicker(Entity entity) {
+        if (drawn()) {
+            FLICKERS.add(new Flicker(entity.getId(), clock));
+            return;
+        }
+        Minecraft mc = Minecraft.getInstance();
+        if (entity == mc.player && mc.options.getCameraType().isFirstPerson()) return;
+        for (int i = 0; i < 10; i++) {
+            double a = Mth.TWO_PI * i / 10.0;
+            entity.level().addParticle(SPECK, entity.getX() + Math.cos(a) * 0.45, entity.getEyeY(), entity.getZ() + Math.sin(a) * 0.45, 0, 0, 0);
+        }
+    }
+
+    /** How strongly {@code entityId}'s Mimic flicker shows this tick: 0 for none (MimicFlickerLayer draws it). */
+    static float flickerAlpha(int entityId) {
+        for (Flicker f : FLICKERS) {
+            int age = (int) (clock - f.born());
+            if (f.entityId() == entityId && age >= 0 && age < FLICKER_ALPHA.length) return FLICKER_ALPHA[age];
+        }
+        return 0f;
     }
 
     // ---------------------------------------------------------------- Awareness's card flip

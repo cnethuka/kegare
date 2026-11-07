@@ -695,9 +695,10 @@ closing it or disconnecting at any point changes nothing.
 - **What ends, vanishes:** when a loop stops, or its entity is gone, its effect is removed at once. A shell, cone or
   charge must never linger after it ends (a lingering shell would mislead opponents). Only projectile trails fade
   out behind their projectile.
-- **Loops a move draws itself:** `ClientVisuals.drawnByMove(effect)` keeps such a loop keyed and timed as usual but plays
-  neither Photon nor vanilla particles for it; the move finds it through a `ClientVisuals.Listener` (`loopStarted`,
-  `loopStopped`) and `loopTime`. Switchback's countdown ring is one (§3.19).
+- **Effects a move draws itself:** `ClientVisuals.drawnByMove(effect)` keeps a loop of it keyed and timed as usual, and
+  still tells the listeners of a one-shot, but plays neither Photon nor vanilla particles for it (nor preloads it); the
+  move finds it through a `ClientVisuals.Listener` (`loopStarted`, `loopStopped`, `playedOnce`) and `loopTime`.
+  Switchback's countdown ring and Mimic's flicker are such effects (§3.19).
 - **Nothing in front of your own eyes:** an effect at a position closer than 2 blocks to a first-person camera
   (you got hit, you broke free) is skipped. Even small particles there would cover the screen; you still get the
   hurt flash, overlays, HUD and sound. Your own entity-attached loops are authored away from the camera: Rime's
@@ -1058,7 +1059,7 @@ Package `com.cnethuka.kegare.innate_technique.rime`. **Rarity: RARE.** All numbe
   | Ice Path (Frost Field) | own sliding pose, an ice trail left behind, glass sounds |
   | Shatter Shell (Rime Shell) | own cast animation, an icy burst, glass and amethyst shattering |
   | Switchback (Positions) | a double clap, seen and heard: its own animation (`switchback_cast`: two claps, then the right hand turned back to the chest) and sound (`swap.double_clap`, at both ends), and the countdown rings go up on both as it's cast |
-  | Mimic (Awareness) | own hand-across-the-face animation, its own evoker-spell sound, and a teal flicker on the caster (`mimic_flicker`) that everyone nearby sees; the trick is the disguise afterwards, not a hidden cast |
+  | Mimic (Awareness) | its own cupped clap up by the face (animation and `swap.cupped_clap`), and the caster's whole body flashing teal twice (`mimic_flicker`), which everyone nearby sees; the trick is the disguise afterwards, not a hidden cast |
   | Send Off (Anchor) | own two-handed shove; the target vanishes onto the glowing anchor |
   | Momentum Exchange (Exchange) | own arms-up sweep, a burst on both players, a lower teleport sound |
   | Possess (Puppet Creation) | the puppet jolts awake, arms flung wide (`possess_cast`), a soul-escape sound at the body and a lavender thread shooting to the puppet; afterwards the empty body stands slack, a thread running from it to the puppet |
@@ -1306,9 +1307,12 @@ smooth and modern in Swap's teal, nothing heavy, blurry or lingering, never the 
     side at chest height and snapped down and in.
   - `awareness_cast` (Awareness): a clap, then the hands turn over and fan open, low and wide, a card shown front and
     back; held a moment, then dropped.
+  - `mimic_cast` (Mimic): a cupped clap up by the right side of the face, the head tipped toward it; then the right
+    hand drawn down past the cheek, the face taken. In your own first person the hands are always vanilla's: up by
+    the face they'd only sweep across the view.
   - The moves not reworked yet still play their hand-keyed animations, carried as they are from
-    `tools/anims/swap_legacy.json`: `swap_snap` (Total Swap), `mimic_cast`, `anchor_throw`, `anchor_recall`,
-    `send_off_cast`, `exchange_cast`, `momentum_cast`.
+    `tools/anims/swap_legacy.json`: `swap_snap` (Total Swap), `anchor_throw`, `anchor_recall`, `send_off_cast`,
+    `exchange_cast`, `momentum_cast`.
   - In your own first person, a Swap animation shows its hands only while you look about level (no more than 25° down,
     `PlayerAnimations.handsWhileLevel`). They hang from the body, which doesn't tip with the view, so at chest height
     they sit at the bottom corners of a level view; looking further down they'd come up into its middle, so the hands
@@ -1335,6 +1339,10 @@ smooth and modern in Swap's teal, nothing heavy, blurry or lingering, never the 
   its pale back as it turns, like a card turned over; a third of a second, then gone. Everyone sees it on both;
   never round your own first-person camera. Reduced: the same. Vanilla: a short run of teal specks down either side
   of the body.
+- Mimic's **flicker** (`mimic_flicker`, the cast's effect, drawn by `MimicFlickerLayer` on the caster): their whole
+  body, posed as it's drawn, flashes as a flat teal figure a pixel bigger than the skin's outer layer, on for 2 ticks,
+  off for 2, on again, then a faint third; under half a second. Everyone sees it; never round your own first-person
+  camera. Reduced: the same. Vanilla: a ring of teal specks round the head.
 - The disguised player's **brackets** (`SwapHud`, the `awareness_shimmer` loop: Awareness, Mimic and Total Swap):
   thin teal L-brackets one GUI pixel thick in the four corners of their own screen, coming in from the corners as
   the disguise lands, then breathing slowly; gone the moment it ends. Nothing near the middle of the view, nothing
@@ -1342,7 +1350,6 @@ smooth and modern in Swap's teal, nothing heavy, blurry or lingering, never the 
 - Photon effects (`SwapFxAuthoring` → `fx/swap/`), teal with Malice violet, with vanilla particle fallbacks:
   - `swap_link`: beads along the line between the two players (`SwapLink` payload; the client places them): Anchor's
     recall and Send Off.
-  - `mimic_flicker`: Mimic's cast, a teal glow flickering twice over the caster with glitch motes, seen by everyone.
   - `anchor_marker` (loops while the anchor waits) and `anchor_trail` (in flight).
   - `exchange_transfer`: orbs travelling each way along the line, one per exchanged effect.
   - `momentum_burst` (both players) and `total_swap_burst` (both players).
@@ -1352,8 +1359,9 @@ smooth and modern in Swap's teal, nothing heavy, blurry or lingering, never the 
   - `swap.double_clap` ("Hands clap twice"): Switchback's cast. `swap.snap` ("Fingers snap"): its swap back.
   - Awareness: `swap.clap` a little higher (pitch 1.12) on both, and `swap.flip` ("Card flips") on both as the
     disguise lands (Total Swap's disguise too).
-  - `swap.cupped_clap` and `swap.big_clap` are registered for the moves still to come. Exchange and Momentum Exchange
-    still use the enderman teleport, Mimic an evoker spell.
+  - `swap.cupped_clap` ("Cupped hands clap", hollow): Mimic's cast, at the caster only.
+  - `swap.big_clap` is registered for the moves still to come. Exchange and Momentum Exchange still use the enderman
+    teleport.
 
 **Art:** emblem `gui/emblem/swap.png`, icons for all nine abilities (`gui/ability/`), the anchor's item sprite
 (`item/swap_anchor.png`). The Sorcerer screen shows a special's icon in its details when it has one.

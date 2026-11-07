@@ -26,7 +26,7 @@ public final class VisualClientEvents {
     private static void clientSetup(FMLClientSetupEvent event) {
         event.enqueueWork(() -> {
             PlayerAnimations.registerLayer(); // PAL: must be enqueued work on NeoForge
-            PhotonEffects.preload(VisualHooks.allEffects());
+            PhotonEffects.preload(VisualHooks.allEffects().stream().filter(e -> !ClientVisuals.isDrawnByMove(e)).toList());
         });
     }
 
