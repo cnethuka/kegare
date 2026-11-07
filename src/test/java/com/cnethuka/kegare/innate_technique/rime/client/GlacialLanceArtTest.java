@@ -251,9 +251,8 @@ class GlacialLanceArtTest {
     /** They moved out of rime.json: one source for each, or which one plays depends on load order. */
     @Test
     void rimeJsonNoLongerCarriesThem() throws IOException {
-        JsonObject animations = json("src/main/resources/assets/kegare/player_animations/rime.json").getAsJsonObject("animations");
-        assertFalse(animations.has(RimeIds.ANIM_GLACIAL_LANCE_CHARGE.getPath()));
-        assertFalse(animations.has(RimeIds.ANIM_GLACIAL_LANCE_RELEASE.getPath()));
+        assertFalse(RimeJson.has(RimeIds.ANIM_GLACIAL_LANCE_CHARGE.getPath()));
+        assertFalse(RimeJson.has(RimeIds.ANIM_GLACIAL_LANCE_RELEASE.getPath()));
     }
 
     @Test

@@ -218,9 +218,8 @@ class GlacialSpireArtTest {
 
     @Test
     void rimeJsonNoLongerCarriesThem() throws IOException {
-        JsonObject animations = json("src/main/resources/assets/kegare/player_animations/rime.json").getAsJsonObject("animations");
-        assertFalse(animations.has(RimeIds.ANIM_GLACIAL_SPIRE_CHARGE.getPath()));
-        assertFalse(animations.has(RimeIds.ANIM_GLACIAL_SPIRE_RELEASE.getPath()));
+        assertFalse(RimeJson.has(RimeIds.ANIM_GLACIAL_SPIRE_CHARGE.getPath()));
+        assertFalse(RimeJson.has(RimeIds.ANIM_GLACIAL_SPIRE_RELEASE.getPath()));
     }
 
     @Test

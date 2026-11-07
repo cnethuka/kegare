@@ -85,6 +85,8 @@ public final class RimeFxAuthoring {
         out.put(RimeIds.FX_RIME_SHELL_AURA, RimeFxAuthoring::rimeShellAura);
         out.put(RimeIds.FX_RIME_SHELL_AURA_SELF, RimeFxAuthoring::rimeShellAuraSelf);
         out.put(RimeIds.FX_FREEZE_SHATTER, RimeFxAuthoring::freezeShatter);
+        out.put(RimeIds.FX_FREEZE_FROST, RimeFxAuthoring::freezeFrost);
+        out.put(RimeIds.FX_FREEZE_FROST_SELF, RimeFxAuthoring::freezeFrostSelf);
         // Specials
         out.put(RimeIds.FX_SPLINTER_CAST, RimeFxAuthoring::splinterCast);
         out.put(RimeIds.FX_SPLINTER_TRAIL, RimeFxAuthoring::splinterTrail);
@@ -495,7 +497,63 @@ public final class RimeFxAuthoring {
         return fx(flakes, glints);
     }
 
-    /** Breaking free of a freeze: ice chunks burst outward and fall, with a flash and a ring. */
+    /**
+     * Freeze stacks on a body: the frost on it is pixel art on the body's own texels (FreezeClient); round it only a few specks of
+     * frost falling off it and a faint cold breath at the feet.
+     */
+    private static FX freezeFrost() {
+        return freezeFrost(false);
+    }
+
+    /** Your own: a few specks low round the feet, below anything you'd see looking ahead. */
+    private static FX freezeFrostSelf() {
+        return freezeFrost(true);
+    }
+
+    private static FX freezeFrost(boolean self) {
+        ParticleEmitter specks = emitter("specks", true, 20);
+        ParticleConfig c = specks.config;
+        c.setSimulationSpace(ParticleConfig.Space.World);
+        c.setMaxParticles(30);
+        c.setStartLifetime(range(14, 22));
+        c.setStartSpeed(NumberFunction.constant(0));
+        c.setStartSize(uniform(range(0.025f, 0.045f)));
+        Sphere body = sphere(0.35f);
+        body.setRadiusThickness(0f);
+        c.shape.setShape(body);
+        c.shape.setScale(new NumberFunction3(1f, self ? 0.4f : 2.2f, 1f));
+        c.emission.setEmissionRate(NumberFunction.constant(self ? 0.3f : 0.8f));
+        gravity(c, 0.06f);
+        fadeInOut(c, WHITE, CYAN);
+        material(specks, glow(0.62f, 0.88f, 1f, 1.3f));
+        if (self) {
+            specks.transform().localPosition(new Vector3f(0, -0.7f, 0));
+            return fx(specks);
+        }
+
+        ParticleEmitter breath = emitter("breath", true, 20);
+        ParticleConfig b = breath.config;
+        b.setMaxParticles(8);
+        b.setStartLifetime(range(20, 30));
+        b.setStartSpeed(range(0.02f, 0.06f));
+        b.setStartSize(uniform(range(0.25f, 0.4f)));
+        Sphere feet = sphere(0.3f);
+        feet.setRadiusThickness(0f);
+        b.shape.setShape(feet);
+        b.shape.setScale(new NumberFunction3(1f, 0.2f, 1f));
+        b.emission.setEmissionRate(NumberFunction.constant(0.15f));
+        b.colorOverLifetime.setEnable(true);
+        b.colorOverLifetime.setColor(gradient(0x00C2EEFA, 0x30C2EEFA, 0x0079C8EC));
+        grow(b, 0.6f);
+        material(breath, mist());
+        breath.transform().localPosition(new Vector3f(0, -0.85f, 0));
+        return fx(specks, breath);
+    }
+
+    /**
+     * Breaking free of a freeze: a flash and a small ring; the frost that bursts off is solid chips of ice (FreezeClient), not the
+     * glassy cubes this had.
+     */
     private static FX freezeShatter() {
         ParticleEmitter flash = single("flash", 6, 0.9f);
         fadeOut(flash.config, PALE, CYAN);
@@ -507,22 +565,6 @@ public final class RimeFxAuthoring {
         fadeOut(ring.config, PALE, BLUE);
         material(ring, recolor(KilaPresets.SHOCKWAVE.create(), 0.45f, 0.82f, 1f, 1.2f));
 
-        ParticleEmitter chunks = burstEmitter("chunks", 14, 16);
-        ParticleConfig c = chunks.config;
-        c.setStartLifetime(range(16, 26));
-        c.setStartSpeed(range(2.5f, 5f));
-        c.setStartSize(uniform(range(0.12f, 0.24f)));
-        c.setStartRotation(new NumberFunction3(range(0, 360), range(0, 360), range(0, 360)));
-        c.shape.setShape(sphere(0.45f));
-        gravity(c, 1.6f);
-        c.rotationOverLifetime.setEnable(true);
-        c.rotationOverLifetime.setRoll(range(-360, 360));
-        c.colorOverLifetime.setEnable(true);
-        c.colorOverLifetime.setColor(gradient(WHITE, PALE, 0x0079C8EC));
-        c.renderer.setRenderMode(ParticleRendererSetting.Mode.Model);
-        c.renderer.setModel(new MeshData(new ObjModelSource(Photon.id("models/cube.obj"))));
-        material(chunks, KilaPresets.CRYSTAL.create());
-
         ParticleEmitter glints = burstEmitter("glints", 20, 24);
         ParticleConfig g = glints.config;
         g.setStartLifetime(range(8, 14));
@@ -532,7 +574,7 @@ public final class RimeFxAuthoring {
         gravity(g, 0.5f);
         fadeOut(g, WHITE, CYAN);
         material(glints, recolor(KilaPresets.SPARKS.create(), 0.55f, 0.88f, 1f, 1.5f));
-        return fx(flash, ring, chunks, glints);
+        return fx(flash, ring, glints);
     }
 
     // ================================================================ specials

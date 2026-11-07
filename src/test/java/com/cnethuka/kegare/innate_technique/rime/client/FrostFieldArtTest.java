@@ -168,8 +168,7 @@ class FrostFieldArtTest {
         assertNotNull(channel);
         assertNotEquals(Animation.LoopType.PLAY_ONCE, channel.loopType(), "held for as long as the channel");
         assertTrue(channel.boneAnimations().size() >= 3, "the whole upper body");
-        assertFalse(json("src/main/resources/assets/kegare/player_animations/rime.json").getAsJsonObject("animations")
-                .has(RimeIds.ANIM_FROST_FIELD_CHANNEL.getPath()), "one source for it");
+        assertFalse(RimeJson.has(RimeIds.ANIM_FROST_FIELD_CHANNEL.getPath()), "one source for it");
     }
 
     @Test

@@ -42,6 +42,7 @@ public final class RimeClient {
         modBus.addListener(LanceHold::addLayers);
         modBus.addListener(SpireClient::addLayers);
         modBus.addListener(ShellClient::addLayers);
+        modBus.addListener(FreezeClient::addLayers);
         NeoForge.EVENT_BUS.addListener(RimeClient::onClientTick);
         // Glacial Lance draws its own lance: in the hand, in flight, stuck where it lands, in pieces.
         LanceHold.init();
@@ -62,10 +63,14 @@ public final class RimeClient {
         ShatterClient.init();
         NeoForge.EVENT_BUS.addListener(ShatterClient::render);
         ClientVisuals.setFirstPersonVariant(RimeIds.FX_SHATTER_SHELL_BURST, RimeIds.FX_SHATTER_SHELL_BURST_SELF);
+        // Freeze: frost creeping over a body as its stacks build (FreezeClient), bursting off it as chips when it breaks free.
+        FreezeClient.init();
+        ClientVisuals.setFirstPersonVariant(RimeIds.FX_FREEZE_FROST, RimeIds.FX_FREEZE_FROST_SELF);
         for (var effect : List.of(RimeIds.FX_GLACIAL_LANCE_CHARGE, RimeIds.FX_GLACIAL_LANCE_CHARGE_SELF, RimeIds.FX_GLACIAL_LANCE_SNAP,
                 RimeIds.FX_GLACIAL_LANCE_STICK, RimeIds.FX_GLACIAL_LANCE_SHATTER, RimeIds.FX_GLACIAL_SPIRE_CHARGE,
                 RimeIds.FX_GLACIAL_SPIRE_SHATTER, RimeIds.FX_FROST_FIELD_CONE_SELF, RimeIds.FX_FROST_FIELD_MIST,
-                RimeIds.FX_RIME_SHELL_AURA_SELF, RimeIds.FX_SHATTER_SHELL_BURST_SELF)) {
+                RimeIds.FX_RIME_SHELL_AURA_SELF, RimeIds.FX_SHATTER_SHELL_BURST_SELF, RimeIds.FX_FREEZE_FROST,
+                RimeIds.FX_FREEZE_FROST_SELF)) {
             VisualHooks.registerEffect(effect);
         }
         NeoForge.EVENT_BUS.addListener(LanceHold::onRenderHand);
@@ -82,6 +87,7 @@ public final class RimeClient {
             PathClient.clear();
             ShellClient.clear();
             ShatterClient.clear();
+            FreezeClient.clear();
         });
         // The throw is the whole body: in your own first person, that would swing your own arm and whatever it holds across the view.
         PlayerAnimations.keepVanillaHands(List.of(RimeIds.ANIM_GLACIAL_LANCE_CHARGE, RimeIds.ANIM_GLACIAL_LANCE_RELEASE,
@@ -104,6 +110,9 @@ public final class RimeClient {
         VanillaFallback.register(RimeIds.FX_RIME_SHELL_AURA_SELF, new VanillaFallback.Spec(ParticleTypes.SNOWFLAKE, 1, 3, 0.4, 0.0));
         // Small flakes, not ice-block item particles: those look huge and blocky right next to your own camera.
         VanillaFallback.register(RimeIds.FX_FREEZE_SHATTER, new VanillaFallback.Spec(ParticleTypes.SNOWFLAKE, 1, 24, 0.45, 0.18));
+        // The frost on the body (FreezeClient) is drawn in every setting; vanilla snowflakes round it would swarm the body.
+        VanillaFallback.register(RimeIds.FX_FREEZE_FROST, new VanillaFallback.Spec(ParticleTypes.SNOWFLAKE, 0, 0, 0.35, 0.0));
+        VanillaFallback.register(RimeIds.FX_FREEZE_FROST_SELF, new VanillaFallback.Spec(ParticleTypes.SNOWFLAKE, 0, 0, 0.3, 0.0));
         // Specials
         VanillaFallback.register(RimeIds.FX_SPLINTER_CAST, new VanillaFallback.Spec(ParticleTypes.SNOWFLAKE, 1, 10, 0.2, 0.3, true));
         VanillaFallback.register(RimeIds.FX_SPLINTER_TRAIL, new VanillaFallback.Spec(ParticleTypes.SNOWFLAKE, 1, 4, 0.04, 0.01));
@@ -129,6 +138,7 @@ public final class RimeClient {
         event.registerReloadListener((ResourceManagerReloadListener) manager -> {
             LanceMesh.forget();
             BlockMarks.forget();
+            FreezeClient.forget();
         });
     }
 
@@ -142,6 +152,7 @@ public final class RimeClient {
         PathClient.tick(mc.level);
         ShellClient.tick(mc.level);
         ShatterClient.tick();
+        FreezeClient.tick(mc.level);
         BlockMarks.tick(mc.level);
     }
 

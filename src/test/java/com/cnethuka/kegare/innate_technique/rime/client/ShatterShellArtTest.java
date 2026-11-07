@@ -171,7 +171,6 @@ class ShatterShellArtTest {
         JsonObject bones = json(path).getAsJsonObject("animations").getAsJsonObject(RimeIds.ANIM_SHATTER_SHELL_CAST.getPath())
                 .getAsJsonObject("bones");
         for (String bone : new String[] {"right_arm", "left_arm", "torso"}) assertTrue(bones.has(bone), "the cast keys the " + bone);
-        assertFalse(json("src/main/resources/assets/kegare/player_animations/rime.json").getAsJsonObject("animations")
-                .has(RimeIds.ANIM_SHATTER_SHELL_CAST.getPath()), "one source for it");
+        assertFalse(RimeJson.has(RimeIds.ANIM_SHATTER_SHELL_CAST.getPath()), "one source for it");
     }
 }

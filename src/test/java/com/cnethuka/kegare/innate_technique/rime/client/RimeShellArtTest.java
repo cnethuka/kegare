@@ -192,8 +192,7 @@ class RimeShellArtTest {
         JsonObject bones = json(path).getAsJsonObject("animations").getAsJsonObject(RimeIds.ANIM_RIME_SHELL_TOGGLE.getPath())
                 .getAsJsonObject("bones");
         for (String bone : new String[] {"right_arm", "left_arm", "torso"}) assertTrue(bones.has(bone), "the toggle keys the " + bone);
-        assertFalse(json("src/main/resources/assets/kegare/player_animations/rime.json").getAsJsonObject("animations")
-                .has(RimeIds.ANIM_RIME_SHELL_TOGGLE.getPath()), "one source for it");
+        assertFalse(RimeJson.has(RimeIds.ANIM_RIME_SHELL_TOGGLE.getPath()), "one source for it");
     }
 
     @Test

@@ -138,8 +138,7 @@ class FrostShardArtTest {
         assertNotNull(cast);
         assertEquals(Animation.LoopType.PLAY_ONCE, cast.loopType());
         assertTrue(cast.boneAnimations().size() >= 3, "the whole upper body");
-        assertFalse(json("src/main/resources/assets/kegare/player_animations/rime.json").getAsJsonObject("animations")
-                .has(RimeIds.ANIM_FROST_SHARD_CAST.getPath()), "one source for it");
+        assertFalse(RimeJson.has(RimeIds.ANIM_FROST_SHARD_CAST.getPath()), "one source for it");
     }
 
     /** Splinter's own throw, a backhand fan: a different shape from the flick, and quicker. */
@@ -153,8 +152,7 @@ class FrostShardArtTest {
         assertEquals(Animation.LoopType.PLAY_ONCE, fan.loopType());
         assertTrue(fan.boneAnimations().size() >= 3, "the whole upper body");
         assertTrue(fan.length() < flick.length(), "the lighter, quicker throw");
-        assertFalse(json("src/main/resources/assets/kegare/player_animations/rime.json").getAsJsonObject("animations")
-                .has(RimeIds.ANIM_SPLINTER_CAST.getPath()), "one source for it");
+        assertFalse(RimeJson.has(RimeIds.ANIM_SPLINTER_CAST.getPath()), "one source for it");
     }
 
     @Test

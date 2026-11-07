@@ -71,6 +71,13 @@ Shatter Shell has no mesh of its own: the plates that fly off are Rime Shell's, 
 
     python3 -I tools/blockbench/build_shatter_ring.py
 
+Freeze has no mesh either: its frost on a body is pixel art in the player skin's own 64x64 layout, so it lies on the body's
+texels the way the marks lie on a block's (`build_freeze_frost.py`, PIL, the marks' palette, writing
+`textures/entity/freeze_frost*.png` and their order maps; wide and slim arms). The frozen pose is `tools/anims/freeze.py`.
+
+    python3 -I tools/blockbench/build_freeze_frost.py            # write them
+    python3 -I tools/blockbench/build_freeze_frost.py --preview  # also run/freeze_preview/*.png: the unwrapped art, 8x, by coverage
+
 ## Marks on blocks: pixel art, no Blockbench
 
 Rime's frost, cracks and ice on the world's blocks are pixel art at the blocks' own 16 texels a block, so they need no

@@ -1,5 +1,5 @@
-"""Glacial Lance's player animations -> player_animations/glacial_lance.json (the first of Rime's moves to be reworked; the rest
-are still hand-keyed in rime.json).
+"""Glacial Lance's player animations -> player_animations/glacial_lance.json (the first of Rime's moves to be reworked, and the
+style the rest followed).
 
 A javelin thrower's body: the charge winds the whole upper body back, the throwing arm stretched out behind with the lance lying
 along it, tip forward past the head, the other arm out in front on the target. The release is the whole body whipping through:

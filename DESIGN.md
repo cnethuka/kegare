@@ -739,7 +739,7 @@ Package `com.cnethuka.kegare.innate_technique.rime`. **Rarity: RARE.** All numbe
   - One stack melts 3 s after the last change, then every 3 s.
   - At **5 stacks** the target is **frozen solid for 1 s** through the **existing stun system**, so it interrupts
     charges and channels and blocks casting. Walking and jumping are locked with transient attribute modifiers, the
-    vanilla frost overlay shows, and the `frozen` animation plays. Then the stacks reset.
+    vanilla frost overlay shows, and the `frozen` animation plays. Then the stacks reset. (The look: "Freeze's look", below.)
   - Breaking free plays `freeze_shatter` and a glass sound, and gives **2 s of immunity** to new stacks, so nobody
     can be freeze-locked.
   - The HUD shows **your** stacks as pips (also for Severed players), and "Frozen!" while frozen.
@@ -755,14 +755,16 @@ Package `com.cnethuka.kegare.innate_technique.rime`. **Rarity: RARE.** All numbe
   The total is clamped to [0.5, 2]. The innate technique reports it through `InnateTechnique.environment(player)`;
   it is synced (re-checked every 10 ticks) for the HUD's snowflake or flame icon next to the Malice bar, with the
   multiplier. Hovering an ability on the Sorcerer screen shows its current cost, upkeep and every active factor.
-- **Visuals:** PAL animation `frozen` (loop), in
-  `assets/kegare/player_animations/rime.json`; Rime Shell's `rime_shell_toggle` in `rime_shell.json` (`tools/anims/rime_shell.py`);
+- **Visuals:** PAL animation `frozen` (loop) in
+  `freeze.json` (`tools/anims/freeze.py`); every Rime animation now has its own file from `tools/anims`, and the hand-keyed
+  `rime.json` is gone. Rime Shell's `rime_shell_toggle` in `rime_shell.json` (`tools/anims/rime_shell.py`);
   Shatter Shell's `shatter_shell_cast` in `shatter_shell.json` (`tools/anims/shatter_shell.py`);
   Frost Field's `frost_field_channel` (loop) in `frost_field.json`
   (`tools/anims/frost_field.py`); Ice Path's `ice_path_slide` (loop) in `ice_path.json` (`tools/anims/ice_path.py`); Frost Shard's `frost_shard_cast` in `frost_shard.json` (from
   `tools/anims/frost_shard.py`) and Splinter's `splinter_cast` in `splinter.json` (`tools/anims/splinter.py`); Glacial Lance's `glacial_lance_charge` (loop) and `glacial_lance_release` in
   `glacial_lance.json` (from `tools/anims/glacial_lance.py`). Photon effects in `assets/kegare/fx/rime/`: `frost_shard_trail`,
-  `frost_shard_impact`, `frost_field_cone`, `rime_shell_aura` (flakes and glints round the plates; your own `rime_shell_aura_self`), `freeze_shatter`,
+  `frost_shard_impact`, `frost_field_cone`, `rime_shell_aura` (flakes and glints round the plates; your own `rime_shell_aura_self`), `freeze_frost` (your own
+  `freeze_frost_self`), `freeze_shatter`,
   and Glacial Lance's below. Each has a vanilla-particle lookalike for the fallback.
   - **Glacial Lance** (the style every Rime move's look follows): a solid mesh of cursed ice, not
     an item sprite. `tools/blockbench/build_glacial_lance.py` makes it (`lance_shapes.py`: every chunk a cluster of convex
@@ -956,6 +958,28 @@ Package `com.cnethuka.kegare.innate_technique.rime`. **Rarity: RARE.** All numbe
     Your own first-person hands stay vanilla.
   - **Reduced** plays the effect reduced, the rest the same; **Vanilla** keeps the plates and the shock ring, lays no frost
     (no marks on blocks), and swaps the effect for snowflakes.
+- **Freeze's look** (in the Lance's style). Everyone who can see the body sees it:
+  - **Stacks, for everyone:** `FreezeService` shows a body's stacks as a visual
+    loop keyed by how many (`kegare:freeze_<n>`, `RimeIds.freezeStackKey`), swapped as a stack lands or melts and stopped at
+    the freeze and on death; loops are resent to anyone who starts seeing the body later.
+  - **The frost on the body** (`FreezeClient`, a player render layer): pixel art in the skin's own 64x64 layout
+    (`textures/entity/freeze_frost*.png`, `tools/blockbench/build_freeze_frost.py`; slim arms have their own), so it lies on
+    the body's own texels with hard pixels, like the marks on blocks: a glaze of blue ice, thicker in patches, frost in
+    clumps through it, rime feathering up each face from below and gathering on the edges. It covers the stacks out of the
+    most (`freeze.maxStacks`, synced): up from the soles and the hands, the legs and forearms, the hips, then the chest, the
+    head last; ragged, by an order map. It creeps to a new stack over about half a second with a rim of rime on its edge,
+    and melts back slower as stacks melt. Drawn on the skin's outer layer, over a jacket or sleeves, lit by the world; not on
+    an invisible player. Armour covers it.
+  - **Frozen solid:** the glaze thickens to solid pale ice over the whole body, head too, in the `frozen` pose
+    (`tools/anims/freeze.py`): seized flinching from the cold, hunched, arms drawn in across the chest, then held with only a
+    faint tremble.
+  - **Breaking free:** the frost is gone at once, burst off the body as small solid chips of the lance's ice
+    (`LanceAftermath`'s), with the flash and small ring of `freeze_shatter`.
+  - **The effect:** `freeze_frost` is only a few specks of frost falling off the body and a faint breath at the feet; your
+    own `freeze_frost_self`, a few specks low round the feet. Your own first person draws no body, so nothing is in your
+    view; you have the HUD's pips and vanilla's own frost overlay while frozen.
+  - **Reduced** plays the effect reduced, the rest the same; **Vanilla** keeps the frost on the body and the chips, with no
+    particles for the loop (snowflakes would swarm the body).
 - **Effect authoring:** the effects are built from Photon's own objects in `RimeFxAuthoring` (building blocks in the
   shared `client.visual.FxKit`) and written with Photon's serializer, the same `.fx` format the editor exports. In a
   dev client, `/kegare debug fx export` rewrites every effect in `FxCatalog` (Rime's and RMT's, and the running game's

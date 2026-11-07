@@ -114,7 +114,6 @@ class IcePathArtTest {
         for (String bone : new String[] {"right_leg", "left_leg", "right_arm", "left_arm", "torso"}) {
             assertTrue(bones.has(bone), "the slide keys the " + bone + " (a slide isn't walking)");
         }
-        assertFalse(json("src/main/resources/assets/kegare/player_animations/rime.json").getAsJsonObject("animations")
-                .has(RimeIds.ANIM_ICE_PATH_SLIDE.getPath()), "one source for it");
+        assertFalse(RimeJson.has(RimeIds.ANIM_ICE_PATH_SLIDE.getPath()), "one source for it");
     }
 }

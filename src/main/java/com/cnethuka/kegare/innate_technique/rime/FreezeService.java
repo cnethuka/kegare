@@ -53,10 +53,22 @@ public final class FreezeService {
         long now = target.level().getGameTime();
         if (data.frozen || data.immuneUntil > now) return;
         int max = RimeConfig.FREEZE_MAX_STACKS.get();
+        int before = data.stacks;
         data.stacks = Math.min(max, data.stacks + count);
         data.lastChange = now;
         if (target instanceof ServerPlayer player) PlayerSync.markDirty(player);
+        showStacks(target, before, data.stacks >= max ? 0 : data.stacks);
         if (data.stacks >= max) freeze(target, attacker);
+    }
+
+    /**
+     * Visual only: the stacks shown to everyone who can see the body (FreezeClient's frost), as a loop keyed by how many. The
+     * frozen loop takes over at the max.
+     */
+    private static void showStacks(LivingEntity entity, int before, int after) {
+        if (before == after) return;
+        if (before > 0) VisualService.stopLoop(entity, RimeIds.freezeStackKey(before));
+        if (after > 0) VisualService.startLoop(entity, RimeIds.freezeStackKey(after), RimeIds.FROST, 0);
     }
 
     private static void freeze(LivingEntity target, @Nullable ServerPlayer attacker) {
@@ -99,6 +111,7 @@ public final class FreezeService {
         if (data.stacks > 0 && now - data.lastChange >= Math.max(1, RimeConfig.ticks(RimeConfig.FREEZE_DECAY_SECONDS))) {
             data.stacks--;
             data.lastChange = now;
+            showStacks(entity, data.stacks + 1, data.stacks);
             if (entity instanceof ServerPlayer player) PlayerSync.markDirty(player);
         }
     }
@@ -121,6 +134,7 @@ public final class FreezeService {
     public static void clear(LivingEntity entity) {
         if (!entity.hasData(RimeRegistry.FREEZE)) return;
         FreezeData data = get(entity);
+        showStacks(entity, data.stacks, 0);
         data.stacks = 0;
         data.frozen = false;
         data.frozenUntil = 0;

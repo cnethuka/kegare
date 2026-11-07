@@ -4,7 +4,10 @@ import com.cnethuka.kegare.Kegare;
 import com.cnethuka.kegare.innatetechnique.visual.Visual;
 import net.minecraft.resources.ResourceLocation;
 
-/** Rime's IDs: player animations (assets/kegare/player_animations/rime.json) and Photon effects (assets/kegare/fx/rime/). */
+/**
+ * Rime's IDs: player animations (assets/kegare/player_animations/, a file a move, from tools/anims) and Photon effects
+ * (assets/kegare/fx/rime/).
+ */
 public final class RimeIds {
     // Player Animation Library animations
     public static final ResourceLocation ANIM_FROST_SHARD_CAST = Kegare.id("frost_shard_cast");
@@ -39,6 +42,9 @@ public final class RimeIds {
     public static final ResourceLocation FX_RIME_SHELL_AURA_SELF = fx("rime_shell_aura_self");
     public static final ResourceLocation FX_SHATTER_SHELL_BURST_SELF = fx("shatter_shell_burst_self");
     public static final ResourceLocation FX_FREEZE_SHATTER = fx("freeze_shatter");
+    /** Frost falling off a body with Freeze stacks (one loop a stack count, {@link #freezeStackKey}); your own, low round the feet. */
+    public static final ResourceLocation FX_FREEZE_FROST = fx("freeze_frost");
+    public static final ResourceLocation FX_FREEZE_FROST_SELF = fx("freeze_frost_self");
     // Specials
     public static final ResourceLocation FX_SPLINTER_CAST = fx("splinter_cast");
     public static final ResourceLocation FX_SPLINTER_TRAIL = fx("splinter_trail");
@@ -54,6 +60,12 @@ public final class RimeIds {
     public static final Visual FROZEN = Visual.of(ANIM_FROZEN, null, Visual.Anchor.BODY);
     public static final Visual SHATTER = Visual.effect(FX_FREEZE_SHATTER, Visual.Anchor.BODY);
     public static final String FROZEN_LOOP_KEY = "kegare:frozen";
+    /** On a body with Freeze stacks: a loop keyed by how many, so every client sees the frost grow with them (FreezeClient). */
+    public static final Visual FROST = Visual.effect(FX_FREEZE_FROST, Visual.Anchor.BODY);
+
+    public static String freezeStackKey(int stacks) {
+        return "kegare:freeze_" + stacks;
+    }
 
     /** Glacial Spire's entity: the frost circle (warning), then the standing spike. */
     public static final Visual SPIRE_WARNING = Visual.effect(FX_GLACIAL_SPIRE_WARNING, Visual.Anchor.FEET);
