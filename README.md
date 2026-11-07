@@ -53,9 +53,10 @@ file of each one. Minecraft refuses to start and names the missing mod if one is
 
 Requires JDK 21 (e.g. Temurin). Point `JAVA_HOME` at it if it isn't your default Java.
 
-Keys: **C** cast, **R** special, **V** ultimate, **G** Technique Mode (shows the combat panel; then number keys 1–N
-pick abilities while the scroll wheel stays on the hotbar, or the other way round via Sorcerer screen → Settings),
-**K** Sorcerer screen. Right-click is always vanilla. See DESIGN.md §3.5.
+Keys: **G** Technique Mode (shows the combat panel). In it, a number key casts that slot (hold to charge or channel), **R** +
+number key casts its special, **R** alone casts the selected ability's special, and **V** is the ultimate. The scroll wheel stays on
+the hotbar. Out of the mode, number keys are the hotbar and nothing casts. **K** Sorcerer screen. Right-click is always vanilla.
+See DESIGN.md §3.5.
 
 Commands read `/kegare <system> <action> [player] [value]` and take short names (`/kegare innate set Steve rime`).
 `/kegare help` lists what you can run: `info`, `innate`, `trait`, `malice`, `rebirth`, `loadout`, `grade`, `assessment`,

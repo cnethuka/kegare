@@ -175,8 +175,8 @@ All timestamps use **level game time**. They persist across restarts and are ide
 - Registry `kegare:innate_technique`, synced to clients so the HUD can resolve names and ability lists by ID.
 - `InnateTechnique` is made of:
   - a rarity (COMMON / RARE / EPIC / LEGENDARY)
-  - an ordered **ability list**, picked with the number keys or scroll wheel in Technique Mode (§3.5); each ability may
-    have a **special** on R (§3.15)
+  - an ordered **ability list**, cast with the number keys in Technique Mode (§3.5); each ability may
+    have a **special**, with R (§3.15)
   - an optional **ultimate** (the ultimate key, where dominions will plug in)
   - a **Malice color** (`Builder.maliceColor(0xRRGGBB)`, read with `maliceColor()`; default Malice purple
     `#9D4EDD`, `InnateTechnique.DEFAULT_MALICE_COLOR`). It colors the Malice bar's fill, glow and ghost fill on the
@@ -266,33 +266,47 @@ All timestamps use **level game time**. They persist across restarts and are ide
 - The pity math is plain Java (`PityRoller`, `MaliceRoller`) and unit-tested (`./gradlew test`).
 
 ### 3.5 Input and networking
-- **Keys** (all rebindable): **R** special of the selected ability, in Technique Mode only (hold for CHARGED/CHANNELED
-  specials, §3.15), **G** Technique Mode, **C** cast (the selected ability's base cast, in or out of Technique Mode; hold
-  it for CHARGED/CHANNELED), **V** ultimate, in Technique Mode only, **K** Sorcerer screen. There is no next/previous-ability key and no ability
-  menu (the hold-Z radial was removed: Technique Mode does that job).
-- **Right-click is always vanilla**, in and out of Technique Mode: it uses the held item (shield, bow, food) and never
-  casts. **C** is the cast key.
-- **Technique Mode** (**G** toggles it). Out of it, number keys and scroll are vanilla. While it is on:
-  - **one control picks abilities and the other stays on the hotbar** (client config `input.techniqueSelect`, also
-    on the Sorcerer screen's Settings page):
-    - `NUMBER_KEYS` (default): number keys **1–9** pick the loadout's nine slots (an empty one too) and the scroll
-      wheel moves through the hotbar;
-    - `SCROLL_WHEEL`: the scroll wheel picks abilities (skipping empty slots) and number keys pick hotbar slots;
-  - the combat panel takes the hotbar's place and the hotbar becomes a column on the left (§3.6).
+- **Instant Cast is the only control scheme.** There is no cast key and no select-then-cast. In Technique Mode (**G**):
+  - **Number key** (1-9, vanilla's hotbar keys, however they're bound): selects that slot and casts its base ability at once.
+  - **Hold R + number key**: selects that slot and casts its special. R can stay held to chain specials.
+  - **Charged moves**: hold the number key to charge, let go to fire. A charged special: hold R and the number key, let go of the
+    number key to fire. Letting go of R first changes nothing.
+  - **R alone**: acts when it comes up, on the selected ability's special, only if no number key went down while it was held. Since
+    it can't hold anything, on a charged or channeled special that would start, it starts nothing and says "Hold R and 2 to use
+    Glacial Spire." A locked one or one on cooldown still goes to the server, which says why. R's non-cast uses work on the press,
+    in and out of the mode, because something R has to end doesn't wait for a number key: `ClientInput.addSpecialKeyNeeded`
+    (returning from a possession, §3.20).
+  - **V**: the ultimate, on its own key.
+  - **What each type does**, base or special: INSTANT fires on the press. CHARGED charges while held and fires on release.
+    CHANNELED runs while held and stops on release. TOGGLE switches on the press, on then off, and the release does nothing.
+  - **Holding a key never repeats a cast**, and it needs a real press to start anything: auto-repeat doesn't count, nor does a key
+    still down as a screen closes.
+  - **One hold at a time.** Only the key that started a cast sends its release. While it's really holding a charge or channel, other
+    number keys say "Already casting." and do nothing, without moving the selection. Once a cast isn't being held (it was instant,
+    the server refused it, it was interrupted, it ran out), the next key casts straight away.
+  - An empty slot, a locked ability, a cooldown and the like get the server's usual message.
+  - **Nothing gets stuck.** A stun or interruption ends the cast on the server, and the release that follows does nothing. A held key
+    outlasts G: the charge carries on and fires when the key comes up. A screen opening lets go of every key, so a charge fires
+    with what it has (or fizzles under its minimum), a channel stops, and R alone is cancelled.
+- **Right-click is always vanilla**, in and out of Technique Mode: it uses the held item (shield, bow, food) and never casts.
+- **Technique Mode** (**G** toggles it). Out of it, number keys and scroll are vanilla, and nothing casts. While it is on, the scroll
+  wheel stays on the hotbar, the combat panel takes the hotbar's place and the hotbar becomes a column on the left (§3.6).
 
   It ends when you press G again, die, or become Severed (or lose your innate technique), and on logout. G does
   nothing for Severed players. Nothing else ends it: chat, any other screen, a command and a dimension change leave the
   mode and the panel as they were. Input and the HUD read one state (`TechniqueMode.isActive`), and it lives on the
   client only: the server has no copy to fall out of step, and turning it on is free, so nothing rides on enforcing it.
 
-  With it off, R and V do nothing. Two things aren't casts and keep working: letting go of R or V after the mode ended
-  under a held key (the cast that began gets its usual release), and R to return from a possession (§3.20).
-- The Cast key always exists (it was R before R became the special key).
-- Selecting an ability is a `SelectAbilityPayload` request the server validates; a key tap shorter than a tick still
-  counts as a press.
+  With it off, R and V do nothing. Two things aren't casts and keep working: letting go of a key held since before the mode ended
+  (the cast that began gets its usual release), and R to return from a possession (§3.20).
+- **Dash and Parry are separate keys** and work while number keys or R are held. Parry's own rule still applies: it's refused during
+  a real charge or channel (§3.22), and a cast press drops a guard.
+- `client/InstantCastKeys` holds all of these rules as plain logic with its own tests. A number key sends
+  `SelectAbilityPayload` then `IntentPayload`, which arrive in that order.
+- A key tap shorter than a tick still counts as a press.
 - C→S payloads are **requests only**, and the server validates each one:
   - `IntentPayload`: which key went down or up (`CastIntent`)
-  - `SelectAbilityPayload`: pick a loadout slot (Technique Mode's number keys or scroll)
+  - `SelectAbilityPayload`: pick a loadout slot (Technique Mode's number keys, just before they cast)
   - `SorcererRequestPayload`: open the Sorcerer screen
   - `TalismanConfirmPayload`: confirm a reroll
 - S→C GUI payloads carry results that are already decided and saved: `RevealPayload`, `SorcererInfoPayload`,
@@ -313,7 +327,7 @@ All timestamps use **level game time**. They persist across restarts and are ide
 **Rule: the combat HUD does not exist until the player asks for it** (art in `gen_art.py` → `textures/gui/combat/`).
 - **Without Technique Mode** the screen is vanilla. Only what can't wait shows, small and under the crosshair
   (`kegare:status`): freeze pips while there are stacks ("Frozen!" while frozen; Severed players too), and a thin
-  charge/channel line while casting with the Cast key.
+  charge/channel line for a cast still held after the mode ended.
 - **G brings up the combat panel** (`kegare:combat_panel`, 250×50, slides up in 0.18 s), drawn at the GUI's own
   scale: ability icons are 16 px, the size of the hotbar's items.
   It **takes the hotbar's place**: the vanilla hotbar, XP bar, level and jump meter are hidden (`HudClearance`).
@@ -334,12 +348,12 @@ All timestamps use **level game time**. They persist across restarts and are ide
     The number on the centre plate stays full size up to five digits (Vast reaches 11000); only a custom config goes wider, and
     that shrinks to 75%.
   - **tray**: the nine loadout slots (§3.16; 20 px, a 1 px rim round the icon, 2 px apart), then the 24 px ultimate
-    in its iron-and-gold frame (a padlock while locked: no Dominion yet, or Refinement hasn't reached it, §3.21). Each slot: icon, number key (big, bottom-right), cooldown sweep with seconds left, a white flash
+    in its iron-and-gold frame (a padlock while locked: no Dominion yet, or Refinement hasn't reached it, §3.21). Each slot: icon, its number key as bound (big, bottom-right), cooldown sweep with seconds left, a white flash
     when it comes off cooldown, and a small **R** plate (gold letter if the ability has a special and it's unlocked, dull if not). The
     selected slot is lit gold; active toggles get a green outline, the casting ability a gold one. Empty loadout
     slots show only their number. Grade and XP are never on the combat HUD;
   - accents along the tray and crest in the technique's Malice color.
-- The selected ability's name shows above hearts/food for 2 s after picking it (`kegare:combat_name`).
+- The selected ability's name shows above hearts/food for 2 s after a number key selects it (`kegare:combat_name`).
 - The melee layer's cues sit under the crosshair, in and out of Technique Mode and for Severed players too, only while there's something to show: **Reinforced** (gold, a Strike is ready), **Dash** and **Recovering** with thin countdown bars (§3.22).
 - Severed players never get the panel (G does nothing). Everything is hidden when F1 hides the GUI and in spectator
   mode. Client config `hud.enabled` turns all of it off.
@@ -424,7 +438,7 @@ Malice is always shown as whole numbers (floored, like the HUD); the stored valu
     - `sixEyesTransferMode` (RANDOM | KILLER)
     - `sixEyesTransferDelaySeconds` (30)
     - `uniqueTraitInactiveDays` (0 = off; fractions allowed)
-- **Client TOML:** `hud.enabled`, `input.techniqueSelect` (NUMBER_KEYS | SCROLL_WHEEL, §3.5), `input.dashDoubleTapMillis` (§3.22),
+- **Client TOML:** `hud.enabled`, `input.dashDoubleTapMillis` (§3.22),
   `visuals.firstPersonAnimations`, `visuals.animationFades`, `visuals.vfxQuality`, and for the roll reveal (§3.12)
   `reveal.animation` (scenes on/off), `reveal.alwaysFull`, `reveal.reducedMotion`, `reveal.fakeOutChance` (0.2),
   `reveal.debugForceFakeOut` and `reveal.seenTechniques`. All but `hud.enabled`, `reveal.fakeOutChance`,
@@ -610,7 +624,7 @@ closing it or disconnecting at any point changes nothing.
   - "Legendary guaranteed in N rolls" (`PityRoller.rollsUntilSoftPity` / `rollsUntilHardPity`, unit-tested)
   - total rolls
   - **Settings** (a gear): client options as button rows, the current value lit gold, saved to the client config
-    at once: which control picks abilities in Technique Mode (number keys or scroll wheel, §3.5), ability effects
+    at once: ability effects
     (Full / Reduced / Vanilla), your own animations in first person, the roll reveal animation, always playing the full
     reveal, and reduced motion in the reveal.
 - **Right column:** the player model (follows the mouse), Malice current / capacity with the bar in the technique's
@@ -831,11 +845,11 @@ Package `com.cnethuka.kegare.innate_technique.rime`. **Rarity: RARE.** All numbe
 - **Shared cooldown:** `cooldownKey()` is the base ability's ID, so casting either the base or the special starts the
   one cooldown and both show it on the base slot. The length defaults to the base's `cooldownTicks` (a special may
   override it).
-- **Server pipeline** (`CastManager`): R sends `SPECIAL_PRESS`/`SPECIAL_RELEASE`. The server resolves the selected
+- **Server pipeline** (`CastManager`): R with a number key, or R alone, sends `SPECIAL_PRESS`/`SPECIAL_RELEASE` (§3.5). The server resolves the selected
   ability, then its special:
   - no special → `"<ability> has no special."`, nothing paid;
   - otherwise the same shared checks as a base cast (busy, stun, cooldown, requirements, cost, `canCast`), and the
-    same lifecycle. Only R's release ends an R charge/channel (C's release doesn't).
+    same lifecycle. Only `SPECIAL_RELEASE` ends a special's charge/channel, and the client sends it when the number key comes up.
 - **Hooks specials use:** `Ability.canRelease(ctx)` (CHARGED: checked at release before paying; false fizzles
   for free with `blockedMessage`), `CastManager.switchOff(player, toggle, reason)` (end a toggle from code, e.g.
   `EndReason.CONSUMED`), and lingering visual loops (§3.14, Ice Path).
@@ -878,8 +892,8 @@ separate bar is filled from any of them.
     unlocks stay, unlocked but off the bar, and Refinement doesn't gate them;
   - on login a layout built for another technique (or the wrong size) is rebuilt, and entries that no longer
     resolve (locked again, removed by an update) or repeat are emptied.
-- **Everything reads the loadout**, never the technique's fixed list: the cast key and R (`CastManager` resolves the
-  selected loadout slot; specials come from whatever is slotted), number keys, scroll and Technique Mode, the HUD
+- **Everything reads the loadout**, never the technique's fixed list: number keys and R (`CastManager` resolves the
+  selected loadout slot; specials come from whatever is slotted), Technique Mode, the HUD
   combat panel, the Sorcerer screen and `/kegare info`.
 - **Editing** (Sorcerer screen, §3.12):
   - category tabs on the left edge (the innate technique's emblem; a silver ring for Shared). Locked shared
@@ -918,7 +932,7 @@ negative is positive energy, which is why it heals, and why its colors are white
 - **Locked by default.** Found through the green orb (§3.18); `/kegare debug shared unlock|lock` for admins. Severed
   players can never unlock it (`SharedAbilityService.unlock` refuses) or cast it (the cast pipeline refuses Severed
   players for everything).
-- **CHANNELED:** hold the cast key (C) to heal **2 HP** at the end of every
+- **CHANNELED:** hold its number key to heal **2 HP** at the end of every
   full second held (`healPerSecond`); release to stop. Never above max health; once there is nothing left to heal
   the channel ends by itself ("Fully healed."). At full health it is refused before anything is paid ("You aren't
   hurt.").
@@ -1162,7 +1176,7 @@ icon armor stand; ultimate locked (its Dominion comes later). All numbers in `[p
   and out of Technique Mode (`StatusLayer.addExtra`).
 
 **Strings** (`Strings`, runtime only: nothing is saved; `[puppet_manipulation.strings]`):
-- **Stage 1 (cast key):** fire a string at the player, mob or puppet you're looking at, within `range` (24), line of sight
+- **Stage 1 (its number key):** fire a string at the player, mob or puppet you're looking at, within `range` (24), line of sight
   required (`PuppetTargeting.lookedAtStringTarget`: not armor stands, empty bodies or possessed puppets). Another player's
   puppet counts as a mob. Nothing in sight: free. One string at a time. It waits up to `life` (8 s), and snaps if stretched
   beyond `snapRange` (32). Firing has only a `fireCooldown` (0.25 s) lockout, so a double press can't fire and pull at once.
@@ -1201,9 +1215,9 @@ Order glyphs `gui/puppet_order/{follow,stay,guard,go}.png`.
 **Strings' stage on the HUD** (`PuppetHud.StringsHud`, checked every tick while a string waits, since its next stage
 depends on what you look at):
 - Strings selected, no string out: "Fire: 20" above the meter's right end (on the HUD only: the Sorcerer screen lists it).
-- A string waiting: the slot shows what the cast key would do now (`gui/ability/strings_reel`, `strings_tie`), with R's
-  (`strings_zip`, `strings_leash`) small in its corner and a lavender outline. Under the crosshair, in and out of Technique
-  Mode: "[C] Reel In 48 · [R] Zip 40 · 6s".
+- A string waiting: the slot shows what its number key would do now (`gui/ability/strings_reel`, `strings_tie`), with R's
+  (`strings_zip`, `strings_leash`) small in its corner and a lavender outline. Under the crosshair, in Technique Mode, with the keys as they are right now:
+  "[3] Reel In 48 · [R] Zip 40 · 6s" with Strings selected, "[3] Reel In 48 · [R+3] Zip 40 · 6s" without.
 - Sorcerer screen (`SorcererScreen.addDetailLines`): the stage now, then both stage-2 costs on each key. It quotes the
   full cooldown and Zip's cost whatever the stage (`Ability#shownCooldownTicks` and `#shownCost`): R with no string is
   free, and firing only has a moment's lockout.
