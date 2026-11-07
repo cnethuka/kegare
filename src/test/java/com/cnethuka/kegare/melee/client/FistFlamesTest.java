@@ -151,13 +151,23 @@ class FistFlamesTest {
                 for (int x = 0; x < FRAME; x++) {
                     if (!nearBlack(sheet, f * FRAME + x, y)) continue;
                     dark++;
-                    boolean outer = x == first || x == last || y == FRAME - 1 || sheet.getRGB(f * FRAME + x, y + 1) >>> 24 == 0;
+                    boolean outer = x == first || x == last || sheet.getRGB(f * FRAME + x, y + 1) >>> 24 == 0;
                     assertTrue(outer, "only on the outer edge: frame " + f + " at " + x + "," + y);
                 }
             }
             assertTrue(dark >= 4, "enough to hold the shape against a bright sky, frame " + f + ": " + dark);
             for (int y = FRAME; y < 3 * FRAME; y++) {
                 for (int x = f * FRAME; x < (f + 1) * FRAME; x++) assertFalse(nearBlack(sheet, x, y), "the fire in front stays clean: " + x + "," + y);
+            }
+        }
+    }
+
+    @Test
+    void noNearBlackAlongTheBottomOfTheMass() throws IOException {
+        BufferedImage sheet = sheet();
+        for (int f = 0; f < FistFlames.FLAME_FRAMES; f++) {
+            for (int x = 0; x < FRAME; x++) {
+                assertFalse(nearBlack(sheet, f * FRAME + x, FRAME - 1), "that's what showed as a dark bar under the fist: frame " + f);
             }
         }
     }

@@ -2162,8 +2162,8 @@ def flame_inside(t: int, tongues, *, snake: float) -> "list[list[bool]]":
 
 
 def flame_frame(t: int, inside, *, values, hot_rows: float, black: float) -> "Image.Image":
-    """Flat shades, hard edges and no soft alpha, hottest low down. Along the outer edge and underneath, near-black texels mix in: only there,
-    so the shape holds and the inside stays clean. Tops of tongues stay in color, so tips look lit and not outlined."""
+    """Flat shades, hard edges and no soft alpha, hottest low down. Along the outer edge near-black texels mix in: only there, and not along the
+    bottom row, where a run of them reads as a dark bar. So the shape holds and the inside stays clean. Tops of tongues stay in color, so tips look lit and not outlined."""
     size = FLAME_SIZE
     shade, body, hot = values
     img = Image.new("RGBA", (size, size), (255, 255, 255, 0))
@@ -2177,7 +2177,7 @@ def flame_frame(t: int, inside, *, values, hot_rows: float, black: float) -> "Im
             v = hot if ny < hot_rows else body
             if left and right:
                 v = body  # a thin lick: all of it in color
-            elif (x == row[0] or x == row[-1] or below) and not above and ny < 0.8:
+            elif (x == row[0] or x == row[-1] or below) and not above and y < size - 1 and ny < 0.8:
                 # A broken line, not an outline. Which texels go dark drifts with the frame, so it seethes a little.
                 v = FLAME_BLACK if ((x * 5 + y * 3 + (t // 2) * 7) % 10) / 10 < black else shade
             elif left or right:
@@ -2221,6 +2221,191 @@ def fist_flame() -> "Image.Image":
                 if c in shades:
                     v = shades[c]
                     img.putpixel((f * WISP_SIZE + x, 3 * size + y), (v, v, v, 255))
+    return img
+
+
+# --- A ready fist's fire on a body: two layers round the arm, each a greyscale unwrap with real holes in it. ---
+FIRE_FRAMES = 8
+# Texels across one face of the arm, and rows from the fist up. One texel is about one pixel of skin, on either layer.
+FIRE_OUTER = (7, 10)
+FIRE_INNER = (5, 8)
+FIRE_GRIP = (14, 16)
+FIRE_HOT, FIRE_BODY, FIRE_SHADE = 255, 218, 160
+FIRE_SHEET_ROWS = {"outer": 0, "inner": 10, "heart": 18, "outer_up": 26, "inner_up": 36, "heart_up": 44, "grip_back": 52, "grip_front": 68}
+FIRE_SHEET_SIZE = (FIRE_FRAMES * (4 * FIRE_OUTER[0] + FIRE_OUTER[0]), 84)
+# Tongues: column, half width, height in rows, beats a loop, phase. On the outer layer the tall ones stand on the arm's corners, so that from any
+# side they're the ones past its outline, and short ones leave the middle of each face open. The inner layer is the other way about, between them.
+FIRE_OUTER_TONGUES = ((0.3, 1.9, 7.2, 2, 0.10), (3.5, 1.2, 3.2, 1, 0.65), (7.2, 1.8, 5.8, 1, 0.55), (10.6, 1.2, 3.8, 2, 0.05),
+                      (13.8, 2.0, 7.6, 1, 0.30), (17.4, 1.2, 3.0, 2, 0.45), (21.2, 1.8, 6.4, 2, 0.80), (24.6, 1.2, 3.6, 1, 0.25))
+FIRE_INNER_TONGUES = ((1.6, 0.83, 5.4, 1, 0.7),
+                      (4.8, 0.72, 3.2, 2, 0.35),
+                      (7.6, 0.86, 4.6, 2, 0.2),
+                      (11.4, 0.83, 6.2, 1, 0.05),
+                      (14.6, 0.72, 3.4, 2, 0.85),
+                      (17.6, 0.86, 4.8, 2, 0.6))
+FIRE_GRIP_BACK = ((4.6, 1.6, 12.5, 1, 0.15), (8.6, 1.6, 14.0, 2, 0.45))
+FIRE_GRIP_FRONT = ((2.4, 1.5, 8.5, 2, 0.60), (6.4, 1.8, 15.0, 1, 0.20), (10.2, 1.6, 11.5, 2, 0.90), (12.6, 0.9, 5.0, 1, 0.35))
+
+
+def fire_hash(*key: int) -> float:
+    h = 2166136261
+    for k in key:
+        h = ((h ^ (k & 0xFFFF)) * 16777619) & 0xFFFFFFFF
+    h ^= h >> 13
+    h = (h * 1274126177) & 0xFFFFFFFF
+    h ^= h >> 16
+    return h / 2 ** 32
+
+
+def fire_tongues(t: int, around: int, rows: int, tongues, *, snake: float, wraps: bool = True):
+    """Which tongue each texel belongs to and how far across it, row 0 at the bottom: narrow where it starts, widest low down, coming to a
+    point, swelling and swaying, with a bend that runs up it. None is a hole."""
+    tau = 2 * math.pi
+    cells = [[None] * around for _ in range(rows)]
+    for index, (centre, half, height, beats, phase) in enumerate(tongues):
+        top = height * (0.8 + 0.2 * math.sin(tau * (beats * t / FIRE_FRAMES + phase)))
+        sway = 0.6 * math.sin(tau * (t / FIRE_FRAMES + phase + 0.3))
+        for y in range(rows):
+            if y >= top:
+                continue
+            along = y / top
+            bend = snake * along * math.sin(tau * (1.1 * along - t / FIRE_FRAMES + phase))
+            width = max(0.55, half * (0.6 + 0.4 * min(1.0, y / 1.5)) * (1 - along * along) ** 0.6)
+            for c in range(around):
+                d = c - centre - sway - bend
+                if wraps:
+                    d = (d + around / 2) % around - around / 2
+                if abs(d) < width:
+                    s = d / width
+                    if cells[y][c] is None or abs(s) < abs(cells[y][c][1]):
+                        cells[y][c] = (index, s, along)
+    return cells
+
+
+def fire_values(t: int, cells, *, seed: int, dark: float, fleck: float, hot_rows: int, gap: float = 0.0):
+    """Flat shades. Near-black runs up one side of each tongue, and flecks it here and there: that's what keeps the shape on any background, and
+    it stays near-black after tinting. The tips stay in color, so they look lit and not outlined. Now and then a texel on the dark side is a hole."""
+    rows, around = len(cells), len(cells[0])
+    values = [[None] * around for _ in range(rows)]
+    for y in range(rows):
+        for c in range(around):
+            cell = cells[y][c]
+            if cell is None:
+                continue
+            index, s, along = cell
+            dark_side = -1 if index % 2 else 1
+            roll = fire_hash(seed, c, y, 1000 + t // 2)
+            if along > 0.72 or (y + 1 < rows and cells[y + 1][c] is None):
+                v = FIRE_BODY
+            elif s * dark_side > 0.1:
+                if fire_hash(seed, c, y, 3000 + t // 2) < gap:
+                    continue
+                v = FLAME_BLACK if roll < dark else FIRE_SHADE
+            elif roll < fleck:
+                v = FLAME_BLACK
+            elif s * dark_side < -0.55:
+                v = FIRE_SHADE
+            else:
+                v = FIRE_HOT if y < hot_rows else FIRE_BODY
+            values[y][c] = v
+    return values
+
+
+def fire_scraps(t: int, values, *, seed: int, start: int, count: int) -> None:
+    """Near the elbow the fire has broken up into small dark scraps, drifting up the arm."""
+    rows, around = len(values), len(values[0])
+    for i in range(count):
+        c = int(fire_hash(seed, i, 7) * around)
+        span = rows - start
+        y = start + (int(fire_hash(seed, i, 8) * span) + (t + i) // 2) % span
+        if values[y][c] is None:
+            values[y][c] = FLAME_BLACK
+
+
+def fire_cap(t: int, size: int, *, seed: int, cover: float):
+    """The end of the fist, seen when the arm points at you: tongues going out from a broken middle."""
+    tau = 2 * math.pi
+    middle = (size - 1) / 2
+    values = [[None] * size for _ in range(size)]
+    for y in range(size):
+        for x in range(size):
+            dx, dy = x - middle, y - middle
+            r = math.hypot(dx, dy) / max(0.5, middle)
+            a = math.atan2(dy, dx)
+            reach = 0.78 + 0.34 * math.sin(3 * a + tau * (t / FIRE_FRAMES + seed * 0.1)) + 0.1 * math.sin(5 * a - tau * t / FIRE_FRAMES)
+            if r > reach or fire_hash(seed, x, y, t // 2) > cover:
+                continue
+            speck = fire_hash(seed, x, y, 2000 + t // 2)
+            values[y][x] = FLAME_BLACK if speck < 0.32 else FIRE_HOT if r < 0.45 else FIRE_BODY
+    return values
+
+
+def fire_round_base(cells):
+    """A clump that isn't on an arm has to come to a round bottom of its own, or it sits on a straight line."""
+    rows, width = len(cells), len(cells[0])
+    middle = (width - 1) / 2
+    for c in range(width):
+        off = abs(c - middle) / middle
+        for y in range(rows):
+            if y < round(3.2 * off * off):
+                cells[y][c] = None
+    return cells
+
+
+def fire_rising(values, base: int):
+    """The same fire on an arm held up, where fire goes the other way: from the wrist, past the knuckles. Row 0 is still the end nearest the hand."""
+    rows, around = len(values), len(values[0])
+    rising = [[None] * around for _ in range(rows)]
+    for y in range(rows):
+        if 0 <= base - y < rows:
+            rising[base - y] = list(values[y])
+    return rising
+
+
+def fire_put(img, x0: int, y0: int, values, *, flip: bool = True) -> None:
+    rows = len(values)
+    for y, row in enumerate(values):
+        for x, v in enumerate(row):
+            if v is not None:
+                img.putpixel((x0 + x, y0 + (rows - 1 - y if flip else y)), (v, v, v, 255))
+
+
+def fist_fire() -> "Image.Image":
+    """A ready fist's Malice fire on a player's arm, greyscale for the Malice color at runtime, hard-edged with real holes in it.
+    Rows of frames: the outer layer, whose tips break past the arm's outline; the inner layer, tight on the arm; the hot heart of it (drawn
+    paler); and the first-person clump round a held item, behind it and in front. Each arm layer is an unwrap with the fist along the bottom
+    and the elbow along the top, with the end of the fist beside it."""
+    img = Image.new("RGBA", FIRE_SHEET_SIZE, (255, 255, 255, 0))
+    ow, or_ = FIRE_OUTER
+    iw, ir = FIRE_INNER
+    gw, gr = FIRE_GRIP
+    for t in range(FIRE_FRAMES):
+        outer = fire_values(t, fire_tongues(t, 4 * ow, or_, FIRE_OUTER_TONGUES, snake=1.3), seed=11, dark=0.8, fleck=0.14, hot_rows=0)
+        outer_up = fire_rising(outer, 7)
+        fire_scraps(t, outer, seed=12, start=7, count=3)
+        fire_scraps(t, outer_up, seed=12, start=8, count=3)
+        fire_put(img, t * 5 * ow, FIRE_SHEET_ROWS["outer"], outer)
+        fire_put(img, t * 5 * ow, FIRE_SHEET_ROWS["outer_up"], outer_up)
+        fire_put(img, t * 5 * ow + 4 * ow, FIRE_SHEET_ROWS["outer"], fire_cap(t, ow, seed=13, cover=0.8), flip=False)
+
+        inner = fire_values(t, fire_tongues(t, 4 * iw, ir, FIRE_INNER_TONGUES, snake=0.9), seed=21, dark=0.8, fleck=0.14, hot_rows=3)
+        inner_up = fire_rising(inner, 5)
+        fire_scraps(t, inner, seed=22, start=5, count=7)
+        fire_scraps(t, inner_up, seed=22, start=6, count=5)
+        fire_put(img, t * 5 * iw, FIRE_SHEET_ROWS["inner"], inner)
+        fire_put(img, t * 5 * iw, FIRE_SHEET_ROWS["inner_up"], inner_up)
+        inner_cap = fire_cap(t, iw, seed=23, cover=0.85)
+        fire_put(img, t * 5 * iw + 4 * iw, FIRE_SHEET_ROWS["inner"], inner_cap, flip=False)
+
+        heart = [[FIRE_HOT if v == FIRE_HOT and y >= 1 else None for v in row] for y, row in enumerate(inner)]
+        fire_put(img, t * 5 * iw, FIRE_SHEET_ROWS["heart"], heart)
+        fire_put(img, t * 5 * iw, FIRE_SHEET_ROWS["heart_up"], [[FIRE_HOT if v == FIRE_HOT else None for v in row] for row in inner_up])
+        fire_put(img, t * 5 * iw + 4 * iw, FIRE_SHEET_ROWS["heart"], [[FIRE_HOT if v == FIRE_HOT else None for v in row] for row in inner_cap], flip=False)
+
+        back = fire_values(t, fire_round_base(fire_tongues(t, gw, gr, FIRE_GRIP_BACK, snake=1.3, wraps=False)), seed=41, dark=0.88, fleck=0.14, hot_rows=4, gap=0.2)
+        fire_put(img, t * gw, FIRE_SHEET_ROWS["grip_back"], back)
+        front = fire_values(t, fire_round_base(fire_tongues(t, gw, gr, FIRE_GRIP_FRONT, snake=1.2, wraps=False)), seed=42, dark=0.92, fleck=0.18, hot_rows=3, gap=0.22)
+        fire_put(img, t * gw, FIRE_SHEET_ROWS["grip_front"], front)
     return img
 
 
@@ -2274,6 +2459,7 @@ def main() -> None:
     save(swap_anchor_item(), "item/swap_anchor.png")
     save(puppet_glow(), "entity/puppet_glow.png")
     save(fist_flame(), "entity/fist_flame.png")
+    save(fist_fire(), "entity/fist_fire.png")
     save(fist_strain(), "entity/fist_strain.png")
     save(string_braid(), "item/string_braid.png")
     for kind in ("follow", "stay", "guard", "go"):
