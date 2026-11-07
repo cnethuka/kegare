@@ -1,23 +1,29 @@
 package com.cnethuka.kegare.innate_technique.rime.client;
 
 import com.cnethuka.kegare.client.ClientData;
+import com.cnethuka.kegare.client.visual.PlayerAnimations;
 import com.cnethuka.kegare.client.visual.VanillaFallback;
 import com.cnethuka.kegare.innate_technique.rime.GlacialSpireAbility;
 import com.cnethuka.kegare.innate_technique.rime.Rime;
 import com.cnethuka.kegare.innate_technique.rime.RimeConfig;
 import com.cnethuka.kegare.innate_technique.rime.RimeIds;
 import com.cnethuka.kegare.innate_technique.rime.RimeRegistry;
+import com.cnethuka.kegare.innatetechnique.visual.VisualHooks;
 import com.cnethuka.kegare.network.SyncPayload;
+import java.util.List;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.client.renderer.entity.NoopRenderer;
 import net.minecraft.client.renderer.entity.ThrownItemRenderer;
 import net.minecraft.core.particles.DustParticleOptions;
 import net.minecraft.core.particles.ParticleTypes;
+import net.minecraft.server.packs.resources.ResourceManagerReloadListener;
 import net.minecraft.world.phys.Vec3;
 import net.neoforged.bus.api.IEventBus;
+import net.neoforged.neoforge.client.event.ClientPlayerNetworkEvent;
 import net.neoforged.neoforge.client.event.ClientTickEvent;
 import net.neoforged.neoforge.client.event.EntityRenderersEvent;
+import net.neoforged.neoforge.client.event.RegisterClientReloadListenersEvent;
 import net.neoforged.neoforge.common.NeoForge;
 import org.joml.Vector3f;
 
@@ -33,13 +39,34 @@ public final class RimeClient {
 
     public static void init(IEventBus modBus) {
         modBus.addListener(RimeClient::registerRenderers);
+        modBus.addListener(RimeClient::registerReloadListeners);
+        modBus.addListener(LanceHold::addLayers);
         NeoForge.EVENT_BUS.addListener(RimeClient::onClientTick);
+        // Glacial Lance draws its own lance: in the hand, in flight, stuck where it lands, in pieces.
+        LanceHold.init();
+        LanceAftermath.init();
+        for (var effect : List.of(RimeIds.FX_GLACIAL_LANCE_CHARGE, RimeIds.FX_GLACIAL_LANCE_CHARGE_SELF, RimeIds.FX_GLACIAL_LANCE_SNAP,
+                RimeIds.FX_GLACIAL_LANCE_STICK, RimeIds.FX_GLACIAL_LANCE_SHATTER)) {
+            VisualHooks.registerEffect(effect);
+        }
+        NeoForge.EVENT_BUS.addListener(LanceHold::onRenderHand);
+        NeoForge.EVENT_BUS.addListener(LanceAftermath::render);
+        NeoForge.EVENT_BUS.addListener(RimeClient::onLanceTick);
+        NeoForge.EVENT_BUS.addListener((ClientPlayerNetworkEvent.LoggingOut event) -> {
+            LanceHold.clear();
+            LanceAftermath.clear();
+        });
+        // The throw is the whole body: in your own first person, that would swing your own arm and whatever it holds across the view.
+        PlayerAnimations.keepVanillaHands(List.of(RimeIds.ANIM_GLACIAL_LANCE_CHARGE, RimeIds.ANIM_GLACIAL_LANCE_RELEASE));
         // Lookalikes used when an effect can't load, or with vfxQuality = VANILLA.
         VanillaFallback.register(RimeIds.FX_FROST_SHARD_TRAIL, new VanillaFallback.Spec(ParticleTypes.SNOWFLAKE, 2, 6, 0.06, 0.01));
         VanillaFallback.register(RimeIds.FX_FROST_SHARD_IMPACT, new VanillaFallback.Spec(ParticleTypes.SNOWFLAKE, 1, 14, 0.25, 0.12));
         VanillaFallback.register(RimeIds.FX_GLACIAL_LANCE_CHARGE, new VanillaFallback.Spec(ParticleTypes.SNOWFLAKE, 2, 6, 0.25, 0.02));
         VanillaFallback.register(RimeIds.FX_GLACIAL_LANCE_TRAIL, new VanillaFallback.Spec(ParticleTypes.SNOWFLAKE, 4, 8, 0.15, 0.02));
         VanillaFallback.register(RimeIds.FX_GLACIAL_LANCE_IMPACT, new VanillaFallback.Spec(ParticleTypes.SNOWFLAKE, 1, 28, 0.45, 0.2));
+        VanillaFallback.register(RimeIds.FX_GLACIAL_LANCE_STICK, new VanillaFallback.Spec(ParticleTypes.SNOWFLAKE, 1, 12, 0.2, 0.08));
+        VanillaFallback.register(RimeIds.FX_GLACIAL_LANCE_SHATTER, new VanillaFallback.Spec(ParticleTypes.SNOWFLAKE, 1, 16, 0.4, 0.1));
+        VanillaFallback.register(RimeIds.FX_GLACIAL_LANCE_SNAP, new VanillaFallback.Spec(ParticleTypes.SNOWFLAKE, 1, 3, 0.08, 0.02));
         VanillaFallback.register(RimeIds.FX_FROST_FIELD_CONE, new VanillaFallback.Spec(ParticleTypes.SNOWFLAKE, 6, 10, 0.2, 0.45, true));
         VanillaFallback.register(RimeIds.FX_RIME_SHELL_AURA, new VanillaFallback.Spec(ParticleTypes.SNOWFLAKE, 1, 6, 0.55, 0.0));
         // Small flakes, not ice-block item particles: those look huge and blocky right next to your own camera.
@@ -58,10 +85,21 @@ public final class RimeClient {
     private static void registerRenderers(EntityRenderersEvent.RegisterRenderers event) {
         // The item sprite, full-bright so the ice reads at night.
         event.registerEntityRenderer(RimeRegistry.FROST_SHARD.get(), ctx -> new ThrownItemRenderer<>(ctx, 1.0f, true));
-        event.registerEntityRenderer(RimeRegistry.GLACIAL_LANCE.get(), ctx -> new ThrownItemRenderer<>(ctx, 1.8f, true));
+        event.registerEntityRenderer(RimeRegistry.GLACIAL_LANCE.get(), GlacialLanceRenderer::new);
         event.registerEntityRenderer(RimeRegistry.SPLINTER_SHARD.get(), ctx -> new ThrownItemRenderer<>(ctx, 0.7f, true));
         // Glacial Spire is drawn entirely by its Photon loops.
         event.registerEntityRenderer(RimeRegistry.GLACIAL_SPIRE.get(), NoopRenderer::new);
+    }
+
+    private static void registerReloadListeners(RegisterClientReloadListenersEvent event) {
+        event.registerReloadListener((ResourceManagerReloadListener) manager -> LanceMesh.forget());
+    }
+
+    private static void onLanceTick(ClientTickEvent.Post event) {
+        Minecraft mc = Minecraft.getInstance();
+        if (mc.level == null || mc.isPaused()) return;
+        LanceHold.tick(mc.level);
+        LanceAftermath.tick(mc.level);
     }
 
     /** While you charge Glacial Spire, a ring of frost dust shows where it will rise (nobody else sees this). */

@@ -15,7 +15,7 @@ import net.neoforged.neoforge.network.handling.IPayloadContext;
  * Server to clients (the caster and everyone tracking them): play or stop a cosmetic. VISUAL ONLY: sent after the
  * server already acted; nothing ever waits for it, and a client that can't show it just skips it.
  *
- * @param entityId  the entity the visual is attached to (ignored for {@link Action#PLAY_AT})
+ * @param entityId  the entity the visual is attached to; for {@link Action#PLAY_AT}, the entity it came from or -1
  * @param key       identifies a loop so it can be stopped (e.g. {@code kegare:glacial_lance/charge_loop})
  * @param pos       {@link Action#PLAY_AT} only: where the effect plays
  * @param growTicks loops only: the effect grows from small to full size over this many ticks (0 = full size)

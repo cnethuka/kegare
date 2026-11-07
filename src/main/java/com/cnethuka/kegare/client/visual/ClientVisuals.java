@@ -7,13 +7,16 @@ import com.cnethuka.kegare.network.VisualPayload;
 import com.lowdragmc.photon.client.fx.FXEffectExecutor;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
+import java.util.concurrent.CopyOnWriteArrayList;
 import javax.annotation.Nullable;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.client.player.AbstractClientPlayer;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.projectile.Projectile;
 import net.minecraft.world.phys.Vec3;
 
 /**
@@ -58,7 +61,12 @@ public final class ClientVisuals {
         ClientLevel level = Minecraft.getInstance().level;
         if (level == null) return;
         switch (payload.action()) {
-            case PLAY_AT -> playAt(level, payload.pos(), payload.visual());
+            case PLAY_AT -> {
+                PlayAtHandler handler = payload.visual().effect().map(PLAY_AT_HANDLERS::get).orElse(null);
+                if (handler == null || !handler.handle(level, payload.pos(), payload.entityId(), payload.visual())) {
+                    playAt(level, payload.pos(), payload.visual());
+                }
+            }
             case PLAY_ONCE -> {
                 Entity entity = level.getEntity(payload.entityId());
                 if (entity != null) playOnce(entity, payload.visual());
@@ -75,6 +83,7 @@ public final class ClientVisuals {
     // ---------------------------------------------------------------- playback
 
     public static void playOnce(Entity entity, Visual visual) {
+        LISTENERS.forEach(l -> l.playedOnce(entity, visual));
         visual.animation().ifPresent(animation -> {
             if (entity instanceof AbstractClientPlayer player) PlayerAnimations.play(player, animation, false);
         });
@@ -121,13 +130,24 @@ public final class ClientVisuals {
         if (loops == null) return;
         Loop loop = loops.remove(key);
         if (loops.isEmpty()) LOOPS.remove(entityId);
-        if (loop != null) end(level.getEntity(entityId), loop);
+        if (loop == null) return;
+        Entity entity = level.getEntity(entityId);
+        end(entity, loop);
+        if (entity != null) stopped(entity, key, loop);
+    }
+
+    private static void stopped(Entity entity, String key, Loop loop) {
+        float ticks = entity.level().getGameTime() - loop.startTick;
+        LISTENERS.forEach(l -> l.loopStopped(entity, key, ticks, loop.growTicks));
     }
 
     public static void stopAll(net.minecraft.world.level.Level level, int entityId) {
         Map<String, Loop> loops = LOOPS.remove(entityId);
         Entity entity = level.getEntity(entityId);
-        if (loops != null) loops.values().forEach(loop -> end(entity, loop));
+        if (loops != null) {
+            loops.values().forEach(loop -> end(entity, loop));
+            if (entity != null) loops.forEach((key, loop) -> stopped(entity, key, loop));
+        }
         if (entity instanceof AbstractClientPlayer player) PlayerAnimations.stopAll(player);
     }
 
@@ -216,12 +236,93 @@ public final class ClientVisuals {
         startLoop(projectile, TRAIL_KEY, Visual.effect(effect, Visual.Anchor.MOTION), 0);
     }
 
+    /** Projectiles older than this start their trail wherever they are. */
+    private static final int TRAIL_WAIT_TICKS = 10;
+
+    /**
+     * A trail drawn at a size (a projectile that comes in sizes). With {@code clearOfOwnEyes} above 0, your own projectile in first
+     * person doesn't start it until it's that far from your camera: it's thrown from between your eyes.
+     *
+     * @return false if it's waiting for that
+     */
+    public static boolean startTrail(Entity projectile, ResourceLocation effect, float scale, double clearOfOwnEyes) {
+        if (clearOfOwnEyes > 0 && projectile.tickCount < TRAIL_WAIT_TICKS && projectile instanceof Projectile p) {
+            Minecraft mc = Minecraft.getInstance();
+            if (p.getOwner() == mc.player && mc.options.getCameraType().isFirstPerson()
+                    && mc.gameRenderer.getMainCamera().getPosition().distanceToSqr(p.position()) < clearOfOwnEyes * clearOfOwnEyes) {
+                return false;
+            }
+        }
+        startTrail(projectile, effect);
+        Map<String, Loop> loops = LOOPS.get(projectile.getId());
+        Loop loop = loops == null ? null : loops.get(TRAIL_KEY);
+        if (loop != null && loop.executor != null && scale != 1f) PhotonEffects.scale(loop.executor, scale);
+        return true;
+    }
+
     private static void end(@Nullable Entity entity, Loop loop) {
         // A state loop (shell, cone, charge, frozen) vanishes at once: a lingering shell would lie to opponents.
         // Only trails (behind a projectile, or a lingering ground trail) fade out.
         PhotonEffects.stop(loop.executor, !loop.trail);
         if (loop.animation && entity instanceof AbstractClientPlayer player) {
             loop.visual.animation().ifPresent(animation -> PlayerAnimations.stop(player, animation));
+        }
+    }
+
+    // ---------------------------------------------------------------- for moves that draw their own
+
+    /** Told when loops stop and one-shots play, for a move that draws part of itself (Glacial Lance's lance in the hand). */
+    public interface Listener {
+        /** Loop {@code key} on {@code entity} stopped after {@code ticks}; it was growing over {@code growTicks}. */
+        default void loopStopped(Entity entity, String key, float ticks, int growTicks) {}
+
+        default void playedOnce(Entity entity, Visual visual) {}
+    }
+
+    private static final List<Listener> LISTENERS = new CopyOnWriteArrayList<>();
+
+    public static void listen(Listener listener) {
+        LISTENERS.add(listener);
+    }
+
+    /** How long a loop has run, in ticks (partial tick included), and how long it grows for. */
+    public record LoopTime(float ticks, int growTicks) {}
+
+    /** How long loop {@code key} has run on {@code entity}; null if it isn't running there. */
+    @Nullable
+    public static LoopTime loopTime(Entity entity, String key, float partialTick) {
+        Map<String, Loop> loops = LOOPS.get(entity.getId());
+        Loop loop = loops == null ? null : loops.get(key);
+        if (loop == null) return null;
+        return new LoopTime(Math.max(0f, entity.level().getGameTime() - loop.startTick + partialTick), loop.growTicks);
+    }
+
+    /** Plays a positional effect itself: return false to let it play as usual. */
+    @FunctionalInterface
+    public interface PlayAtHandler {
+        /** @param entityId the entity the server named with it, or -1 */
+        boolean handle(ClientLevel level, Vec3 pos, int entityId, Visual visual);
+    }
+
+    private static final Map<ResourceLocation, PlayAtHandler> PLAY_AT_HANDLERS = new HashMap<>();
+
+    public static void onPlayAt(ResourceLocation effect, PlayAtHandler handler) {
+        PLAY_AT_HANDLERS.put(effect, handler);
+    }
+
+    /**
+     * An effect at a position at a size: Photon, or vanilla particles for {@code vfxQuality = VANILLA}, and nothing at all if it's
+     * right by your own first-person camera.
+     */
+    public static void playAt(ClientLevel level, Vec3 pos, ResourceLocation effect, int tint, float scale) {
+        if (nearFirstPersonCamera(pos, NEAR_CAMERA_OVERRIDES.getOrDefault(effect, NEAR_CAMERA))) return;
+        VfxQuality quality = KegareClientConfig.VFX_QUALITY.get();
+        FXEffectExecutor executor = quality == VfxQuality.VANILLA ? null : PhotonEffects.at(effect, level, pos, quality == VfxQuality.REDUCED);
+        PhotonEffects.tint(executor, tint);
+        if (executor != null && scale != 1f) PhotonEffects.scale(executor, scale);
+        if (executor == null) {
+            VanillaFallback.Spec spec = VanillaFallback.spec(effect).tinted(tint);
+            VanillaFallback.spawn(level, pos, new Vec3(0, 1, 0), spec, Math.max(1, Math.round(spec.burst() * scale)));
         }
     }
 

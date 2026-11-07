@@ -16,6 +16,7 @@ import net.minecraft.world.entity.projectile.ThrowableItemProjectile;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.EntityHitResult;
 import net.minecraft.world.phys.HitResult;
+import net.minecraft.world.phys.Vec3;
 
 /**
  * A real ice projectile: a vanilla throwable entity with velocity. Damage type {@code kegare:rime}: the caster is the
@@ -39,6 +40,16 @@ public abstract class RimeProjectile extends ThrowableItemProjectile {
 
     protected abstract ResourceLocation trailEffect();
 
+    /** How big its trail is drawn. */
+    protected float trailScale() {
+        return 1f;
+    }
+
+    /** How far from its thrower's own first-person camera its trail starts (0: at once). */
+    protected double trailClearOfOwnEyes() {
+        return 0;
+    }
+
     /** The projectile damaged a living target. */
     protected abstract void onLivingHit(LivingEntity target, @Nullable ServerPlayer caster);
 
@@ -46,12 +57,9 @@ public abstract class RimeProjectile extends ThrowableItemProjectile {
     public void tick() {
         super.tick();
         if (level().isClientSide) {
-            if (!trailStarted) {
-                trailStarted = true;
-                VisualHooks.startTrail(this, trailEffect());
-            }
+            if (!trailStarted) trailStarted = VisualHooks.startTrail(this, trailEffect(), trailScale(), trailClearOfOwnEyes());
         } else if (isAlive() && tickCount >= lifetime) {
-            VisualService.impact((ServerLevel) level(), ability(), position());
+            impactVisual(position(), null);
             discard();
         }
     }
@@ -72,9 +80,14 @@ public abstract class RimeProjectile extends ThrowableItemProjectile {
     protected void onHit(HitResult result) {
         super.onHit(result);
         if (level().isClientSide) return;
-        VisualService.impact((ServerLevel) level(), ability(), result.getLocation());
+        impactVisual(result.getLocation(), result);
         level().playSound(null, getX(), getY(), getZ(), SoundEvents.GLASS_BREAK, SoundSource.PLAYERS, 0.6f, 1.6f);
         discard();
+    }
+
+    /** What clients see where it ends: on whatever it hit, or ({@code hit} null) where it melted away. */
+    protected void impactVisual(Vec3 at, @Nullable HitResult hit) {
+        VisualService.impact((ServerLevel) level(), ability(), at);
     }
 
     @Override

@@ -14,8 +14,9 @@ import net.minecraft.sounds.SoundSource;
  * stacks). Releasing before the minimum charge fizzles: no cost, no cooldown (CastManager).
  */
 public final class GlacialLanceAbility extends RimeAbility {
+    // The charge has no effect of its own on the caster's eyes: the client draws the lance growing in the hand, with its frost round it.
     private static final AbilityVisuals VISUALS = AbilityVisuals.builder()
-            .chargeLoop(RimeIds.ANIM_GLACIAL_LANCE_CHARGE, RimeIds.FX_GLACIAL_LANCE_CHARGE)
+            .chargeLoop(RimeIds.ANIM_GLACIAL_LANCE_CHARGE, null)
             .release(RimeIds.ANIM_GLACIAL_LANCE_RELEASE, null)
             .projectileTrail(RimeIds.FX_GLACIAL_LANCE_TRAIL)
             .impact(RimeIds.FX_GLACIAL_LANCE_IMPACT)

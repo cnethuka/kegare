@@ -26,6 +26,11 @@ public final class RimeIds {
     public static final ResourceLocation FX_GLACIAL_LANCE_CHARGE = fx("glacial_lance_charge");
     public static final ResourceLocation FX_GLACIAL_LANCE_TRAIL = fx("glacial_lance_trail");
     public static final ResourceLocation FX_GLACIAL_LANCE_IMPACT = fx("glacial_lance_impact");
+    /** Client-side pieces of Glacial Lance's look (see the client's LanceHold and LanceAftermath). */
+    public static final ResourceLocation FX_GLACIAL_LANCE_STICK = fx("glacial_lance_stick");
+    public static final ResourceLocation FX_GLACIAL_LANCE_SHATTER = fx("glacial_lance_shatter");
+    public static final ResourceLocation FX_GLACIAL_LANCE_SNAP = fx("glacial_lance_snap");
+    public static final ResourceLocation FX_GLACIAL_LANCE_CHARGE_SELF = fx("glacial_lance_charge_self");
     public static final ResourceLocation FX_FROST_FIELD_CONE = fx("frost_field_cone");
     public static final ResourceLocation FX_RIME_SHELL_AURA = fx("rime_shell_aura");
     public static final ResourceLocation FX_FREEZE_SHATTER = fx("freeze_shatter");

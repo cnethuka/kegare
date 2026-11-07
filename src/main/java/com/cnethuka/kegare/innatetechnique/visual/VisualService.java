@@ -93,9 +93,17 @@ public final class VisualService {
     }
 
     public static void playAt(ServerLevel level, Vec3 pos, Visual visual) {
+        playAt(level, pos, visual, -1);
+    }
+
+    /**
+     * An effect at a position that names the entity it came from ({@code entityId}), for a client that draws part of it itself from
+     * that entity (Glacial Lance stuck where it landed). Sent before the entity is removed, so it's still there to read.
+     */
+    public static void playAt(ServerLevel level, Vec3 pos, Visual visual, int entityId) {
         if (visual.isEmpty()) return;
         PacketDistributor.sendToPlayersNear(level, null, pos.x, pos.y, pos.z, POSITION_RANGE,
-                new VisualPayload(VisualPayload.Action.PLAY_AT, -1, "", visual, pos, 0));
+                new VisualPayload(VisualPayload.Action.PLAY_AT, entityId, "", visual, pos, 0));
     }
 
     /** An effect at a position that looks different to {@code owner} than to everyone else in range. */

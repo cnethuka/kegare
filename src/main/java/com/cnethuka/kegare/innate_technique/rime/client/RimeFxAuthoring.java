@@ -2,6 +2,7 @@ package com.cnethuka.kegare.innate_technique.rime.client;
 
 import static com.cnethuka.kegare.client.visual.FxKit.*;
 
+import com.cnethuka.kegare.Kegare;
 import com.cnethuka.kegare.client.visual.FxKit;
 
 import com.cnethuka.kegare.innate_technique.rime.RimeIds;
@@ -31,6 +32,8 @@ import com.lowdragmc.photon.client.gameobject.emitter.data.shape.Sphere;
 import com.lowdragmc.photon.client.gameobject.emitter.particle.ParticleConfig;
 import com.lowdragmc.photon.client.gameobject.emitter.particle.ParticleEmitter;
 import com.lowdragmc.photon.client.gameobject.emitter.particle.ParticleRendererSetting;
+import com.lowdragmc.photon.client.gameobject.emitter.trail.TrailConfig;
+import com.lowdragmc.photon.client.gameobject.emitter.trail.TrailEmitter;
 import com.lowdragmc.photon.gui.editor.FXProject;
 import java.io.IOException;
 import java.nio.file.Files;
@@ -74,6 +77,10 @@ public final class RimeFxAuthoring {
         out.put(RimeIds.FX_GLACIAL_LANCE_CHARGE, RimeFxAuthoring::glacialLanceCharge);
         out.put(RimeIds.FX_GLACIAL_LANCE_TRAIL, RimeFxAuthoring::glacialLanceTrail);
         out.put(RimeIds.FX_GLACIAL_LANCE_IMPACT, RimeFxAuthoring::glacialLanceImpact);
+        out.put(RimeIds.FX_GLACIAL_LANCE_CHARGE_SELF, RimeFxAuthoring::glacialLanceChargeSelf);
+        out.put(RimeIds.FX_GLACIAL_LANCE_SNAP, RimeFxAuthoring::glacialLanceSnap);
+        out.put(RimeIds.FX_GLACIAL_LANCE_STICK, RimeFxAuthoring::glacialLanceStick);
+        out.put(RimeIds.FX_GLACIAL_LANCE_SHATTER, RimeFxAuthoring::glacialLanceShatter);
         out.put(RimeIds.FX_FROST_FIELD_CONE, RimeFxAuthoring::frostFieldCone);
         out.put(RimeIds.FX_RIME_SHELL_AURA, RimeFxAuthoring::rimeShellAura);
         out.put(RimeIds.FX_FREEZE_SHATTER, RimeFxAuthoring::freezeShatter);
@@ -134,136 +141,196 @@ public final class RimeFxAuthoring {
         return fx(flash, ring, spray);
     }
 
-    /**
-     * Glacial Lance charging: a glowing core by the raised hand with motes drawn into it. Kegare scales the whole
-     * effect from 30% to 100% over the charge, so it grows with the charge.
-     */
+    // ---------------------------------------------------------------- Glacial Lance
+    // The lance itself is a solid mesh (LanceMesh); these are only what's soft round it: glow, mist, frost, glints. Each is short,
+    // and none of them is drawn as the lance's shape. Played where the client puts them (LanceHold, LanceAftermath), scaled by charge.
+
+    /** Round the lance in the hand while it charges (moved along with it): frost falling off it, cold vapour sinking, a faint glow. */
     private static FX glacialLanceCharge() {
-        // Ahead, up and to the right of the eyes (+X forward, +Z right): far enough from the camera that in first
-        // person it is a small orb in the upper right, not a screen-filling glow.
-        Vector3f hand = new Vector3f(1.0f, 0.25f, 0.4f);
-
-        ParticleEmitter core = emitter("core", true, 20);
-        ParticleConfig c = core.config;
-        c.setMaxParticles(2);
-        c.setStartLifetime(NumberFunction.constant(20));
-        c.setStartSpeed(NumberFunction.constant(0));
-        c.setStartSize(uniform(NumberFunction.constant(0.24f)));
-        c.shape.setScale(new NumberFunction3(0, 0, 0));
-        c.emission.setEmissionRate(NumberFunction.constant(0));
-        c.emission.getBursts().add(burst(0, 1));
-        c.colorOverLifetime.setEnable(true);
-        c.colorOverLifetime.setColor(gradient(0x00FFFFFF, WHITE, PALE, 0x00FFFFFF));
-        material(core, glow(0.5f, 0.85f, 1f, 1.6f));
-        core.transform().localPosition(new Vector3f(hand));
-
-        ParticleEmitter motes = emitter("motes", true, 20);
-        ParticleConfig m = motes.config;
-        m.setMaxParticles(40);
-        m.setStartLifetime(NumberFunction.constant(10));
-        m.setStartSpeed(NumberFunction.constant(0));
-        m.setStartSize(uniform(range(0.025f, 0.05f)));
-        Sphere shell = sphere(0.38f);
-        shell.setRadiusThickness(0f);
-        m.shape.setShape(shell);
-        m.emission.setEmissionRate(NumberFunction.constant(1.5f));
-        m.velocityOverLifetime.setEnable(true);
-        m.velocityOverLifetime.setRadial(NumberFunction.constant(-0.8f)); // drawn inward
-        fadeIn(m, PALE, WHITE);
-        material(motes, glow(0.55f, 0.88f, 1f, 1.4f));
-        motes.transform().localPosition(new Vector3f(hand));
-
-        // A spinning ice crystal in the glow: a glow alone washes out against a bright sky, so opponents could miss it.
-        ParticleEmitter crystal = emitter("crystal", true, 40);
-        ParticleConfig k = crystal.config;
-        k.setMaxParticles(2);
-        k.setStartLifetime(NumberFunction.constant(40));
-        k.setStartSpeed(NumberFunction.constant(0));
-        k.setStartSize(new NumberFunction3(0.16f, 0.34f, 0.16f));
-        k.shape.setScale(new NumberFunction3(0, 0, 0));
-        k.emission.setEmissionRate(NumberFunction.constant(0));
-        k.emission.getBursts().add(burst(0, 1));
-        k.rotationOverLifetime.setEnable(true);
-        k.rotationOverLifetime.setYaw(NumberFunction.constant(270));
-        k.renderer.setRenderMode(ParticleRendererSetting.Mode.Model);
-        k.renderer.setModel(new MeshData(new ObjModelSource(Photon.id("models/cube.obj"))));
-        material(crystal, KilaPresets.CRYSTAL.create());
-        crystal.transform().localPosition(new Vector3f(hand));
-        return fx(core, motes, crystal);
-    }
-
-    /** Glacial Lance in flight: a wide ribbon, glints and a little frost mist. */
-    private static FX glacialLanceTrail() {
-        ParticleEmitter ribbon = ribbon("ribbon", 0.36f, 11, PALE);
-
-        ParticleEmitter glints = emitter("glints", true, 20);
-        ParticleConfig c = glints.config;
+        ParticleEmitter frost = emitter("frost", true, 20);
+        ParticleConfig c = frost.config;
         c.setSimulationSpace(ParticleConfig.Space.World);
-        c.setMaxParticles(120);
-        c.setStartLifetime(range(10, 18));
-        c.setStartSpeed(range(0.1f, 0.6f));
-        c.setStartSize(uniform(range(0.07f, 0.17f)));
-        c.emission.setEmissionRate(NumberFunction.constant(4f));
-        c.shape.setShape(sphere(0.18f));
+        c.setMaxParticles(60);
+        c.setStartLifetime(range(14, 24));
+        c.setStartSpeed(range(0.02f, 0.15f));
+        c.setStartSize(uniform(range(0.025f, 0.05f)));
+        c.emission.setEmissionRate(NumberFunction.constant(1.6f));
+        c.shape.setShape(sphere(0.45f));
+        gravity(c, 0.22f);
         fadeOut(c, WHITE, CYAN);
         shrink(c);
-        material(glints, glow(0.5f, 0.85f, 1f, 1.5f));
+        material(frost, glow(0.62f, 0.86f, 1f, 1.4f));
+
+        ParticleEmitter vapour = emitter("vapour", true, 20);
+        ParticleConfig v = vapour.config;
+        v.setSimulationSpace(ParticleConfig.Space.World);
+        v.setMaxParticles(14);
+        v.setStartLifetime(range(18, 28));
+        v.setStartSpeed(range(0f, 0.08f));
+        v.setStartSize(uniform(range(0.22f, 0.4f)));
+        v.emission.setEmissionRate(NumberFunction.constant(0.4f));
+        v.shape.setShape(sphere(0.4f));
+        gravity(v, 0.04f);
+        v.colorOverLifetime.setEnable(true);
+        v.colorOverLifetime.setColor(gradient(0x00C2EEFA, 0x38C2EEFA, 0x0079C8EC));
+        grow(v, 0.5f);
+        material(vapour, mist());
+
+        ParticleEmitter aura = emitter("aura", true, 20);
+        ParticleConfig a = aura.config;
+        a.setMaxParticles(4);
+        a.setStartLifetime(range(6, 8)); // short, so the glow goes with the lance when it's thrown
+        a.setStartSpeed(NumberFunction.constant(0f));
+        a.setStartSize(uniform(range(0.55f, 0.8f)));
+        a.emission.setEmissionRate(NumberFunction.constant(0.45f));
+        a.shape.setShape(sphere(0.3f));
+        a.colorOverLifetime.setEnable(true);
+        a.colorOverLifetime.setColor(gradient(0x003A8FCC, 0x403A8FCC, 0x003A8FCC));
+        material(aura, glow(0.35f, 0.62f, 1f, 1.1f));
+        return fx(frost, vapour, aura);
+    }
+
+    /** The same in your own first person, round the small lance at the bottom right: a few specks of frost and nothing that clouds the view. */
+    private static FX glacialLanceChargeSelf() {
+        ParticleEmitter frost = emitter("frost", true, 20);
+        ParticleConfig c = frost.config;
+        c.setSimulationSpace(ParticleConfig.Space.World);
+        c.setMaxParticles(16);
+        c.setStartLifetime(range(10, 16));
+        c.setStartSpeed(range(0.01f, 0.05f));
+        c.setStartSize(uniform(range(0.008f, 0.014f)));
+        c.emission.setEmissionRate(NumberFunction.constant(0.7f));
+        c.shape.setShape(sphere(0.14f));
+        gravity(c, 0.1f);
+        fadeOut(c, WHITE, CYAN);
+        shrink(c);
+        material(frost, glow(0.62f, 0.86f, 1f, 1.3f));
+        return fx(frost);
+    }
+
+    /** A chunk snapping onto the lance: a crack of light and a puff of ice dust where it lands. */
+    private static FX glacialLanceSnap() {
+        ParticleEmitter flash = single("flash", 3, 0.42f);
+        fadeOut(flash.config, WHITE, CYAN);
+        material(flash, glow(0.6f, 0.86f, 1f, 1.6f));
+        ParticleEmitter chips = glints("chips", 7, 1.2f, 2.6f, 4, 7, 0.035f, 2.5f);
+        ParticleEmitter dust = burstEmitter("dust", 2, 2);
+        ParticleConfig d = dust.config;
+        d.setStartLifetime(range(8, 12));
+        d.setStartSpeed(range(0.1f, 0.3f));
+        d.setStartSize(uniform(range(0.16f, 0.24f)));
+        d.shape.setShape(sphere(0.08f));
+        d.colorOverLifetime.setEnable(true);
+        d.colorOverLifetime.setColor(gradient(0x60E6F4FF, 0x00C2EEFA));
+        grow(d, 0.6f);
+        material(dust, mist());
+        return fx(flash, chips, dust);
+    }
+
+    /** Glacial Lance in flight: a thin pale line behind it and frost falling off it as it goes. */
+    private static FX glacialLanceTrail() {
+        TrailEmitter ribbon = thinTrail("ribbon", 0.06f, 8, 0.98f);
+
+        ParticleEmitter frost = emitter("frost", true, 20);
+        ParticleConfig c = frost.config;
+        c.setSimulationSpace(ParticleConfig.Space.World);
+        c.setMaxParticles(120);
+        c.setStartLifetime(range(16, 26));
+        c.setStartSpeed(range(0f, 0.12f));
+        c.setStartSize(uniform(range(0.03f, 0.065f)));
+        c.emission.setEmissionRate(NumberFunction.constant(3f));
+        c.shape.setShape(sphere(0.16f));
+        gravity(c, 0.35f);
+        fadeOut(c, WHITE, CYAN);
+        shrink(c);
+        material(frost, glow(0.62f, 0.86f, 1f, 1.4f));
 
         ParticleEmitter mist = emitter("mist", true, 20);
         ParticleConfig mc = mist.config;
         mc.setSimulationSpace(ParticleConfig.Space.World);
-        mc.setMaxParticles(40);
-        mc.setStartLifetime(range(14, 22));
-        mc.setStartSpeed(range(0.0f, 0.2f));
-        mc.setStartSize(uniform(range(0.18f, 0.3f)));
-        mc.emission.setEmissionRate(NumberFunction.constant(0.6f));
-        mc.shape.setShape(sphere(0.1f));
+        mc.setMaxParticles(24);
+        mc.setStartLifetime(range(12, 20));
+        mc.setStartSpeed(range(0.0f, 0.1f));
+        mc.setStartSize(uniform(range(0.14f, 0.24f)));
+        mc.emission.setEmissionRate(NumberFunction.constant(0.4f));
+        mc.shape.setShape(sphere(0.08f));
         mc.colorOverLifetime.setEnable(true);
-        mc.colorOverLifetime.setColor(gradient(0x00C2EEFA, 0x55C2EEFA, 0x0079C8EC));
+        mc.colorOverLifetime.setColor(gradient(0x00C2EEFA, 0x3AC2EEFA, 0x0079C8EC));
         grow(mc, 0.6f);
         material(mist, mist());
-        return fx(ribbon, glints, mist);
+        return fx(ribbon, frost, mist);
     }
 
-    /** Glacial Lance hits: a bigger burst. Flash, double ring, a spray of shards and frost mist. */
+    /** Glacial Lance bursts on whatever it hit (the solid shards are LanceAftermath's): a hard white flash, glints and a cloud of frost. */
     private static FX glacialLanceImpact() {
-        ParticleEmitter flash = single("flash", 7, 1.1f);
-        fadeOut(flash.config, PALE, CYAN);
+        ParticleEmitter flash = single("flash", 5, 1.15f);
+        fadeOut(flash.config, WHITE, CYAN);
         shrink(flash.config);
-        material(flash, glow(0.5f, 0.85f, 1f, 1.5f));
+        material(flash, glow(0.6f, 0.86f, 1f, 1.7f));
 
-        ParticleEmitter ring = single("ring", 12, 2.4f);
-        grow(ring.config, 0.15f);
-        fadeOut(ring.config, PALE, BLUE);
-        material(ring, recolor(KilaPresets.SHOCKWAVE.create(), 0.4f, 0.78f, 1f, 1.3f));
+        ParticleEmitter ring = single("ring", 9, 2.2f);
+        grow(ring.config, 0.2f);
+        fadeOut(ring.config, 0xB0C2EEFA, 0x003A8FCC);
+        material(ring, recolor(KilaPresets.SHOCKWAVE.create(), 0.5f, 0.8f, 1f, 1.2f));
 
-        ParticleEmitter innerRing = single("inner_ring", 9, 1.2f);
-        grow(innerRing.config, 0.1f);
-        fadeOut(innerRing.config, PALE, CYAN);
-        material(innerRing, recolor(KilaPresets.SHOCKWAVE.create(), 0.55f, 0.88f, 1f, 1.4f));
+        ParticleEmitter glints = glints("glints", 26, 4f, 9f, 5, 10, 0.055f, 3f);
+        gravity(glints.config, 0.6f);
 
-        ParticleEmitter shards = burstEmitter("shards", 36, 40);
-        ParticleConfig c = shards.config;
-        c.setStartLifetime(range(10, 20));
-        c.setStartSpeed(range(3.5f, 8f));
-        c.setStartSize(uniform(range(0.07f, 0.18f)));
-        c.shape.setShape(sphere(0.2f));
-        gravity(c, 0.9f);
-        fadeOut(c, WHITE, CYAN);
-        shrink(c);
-        material(shards, recolor(KilaPresets.SPARKS.create(), 0.55f, 0.88f, 1f, 1.6f));
-
-        ParticleEmitter mist = burstEmitter("mist", 5, 6);
+        ParticleEmitter mist = burstEmitter("mist", 7, 7);
         ParticleConfig mc = mist.config;
-        mc.setStartLifetime(range(12, 20));
-        mc.setStartSpeed(range(0.4f, 1.0f));
-        mc.setStartSize(uniform(range(0.35f, 0.6f)));
-        mc.shape.setShape(sphere(0.25f));
+        mc.setStartLifetime(range(16, 26));
+        mc.setStartSpeed(range(0.5f, 1.2f));
+        mc.setStartSize(uniform(range(0.45f, 0.8f)));
+        mc.shape.setShape(sphere(0.3f));
         mc.colorOverLifetime.setEnable(true);
-        mc.colorOverLifetime.setColor(gradient(0x00C2EEFA, 0x55C2EEFA, 0x0079C8EC));
+        mc.colorOverLifetime.setColor(gradient(0x70E6F4FF, 0x40C2EEFA, 0x0079C8EC));
         grow(mc, 0.5f);
+        gravity(mc, 0.03f);
         material(mist, mist());
-        return fx(flash, ring, innerRing, shards, mist);
+        return fx(flash, ring, glints, mist);
+    }
+
+    /** It drove into a block: a flash at the point, ice dust kicked back off the surface. */
+    private static FX glacialLanceStick() {
+        ParticleEmitter flash = single("flash", 4, 0.9f);
+        fadeOut(flash.config, WHITE, CYAN);
+        material(flash, glow(0.6f, 0.86f, 1f, 1.6f));
+        ParticleEmitter glints = glints("glints", 12, 2f, 5f, 4, 8, 0.045f, 2.5f);
+        gravity(glints.config, 0.6f);
+        ParticleEmitter dust = burstEmitter("dust", 5, 5);
+        ParticleConfig d = dust.config;
+        d.setStartLifetime(range(14, 22));
+        d.setStartSpeed(range(0.3f, 0.8f));
+        d.setStartSize(uniform(range(0.3f, 0.5f)));
+        d.shape.setShape(sphere(0.15f));
+        d.colorOverLifetime.setEnable(true);
+        d.colorOverLifetime.setColor(gradient(0x70E6F4FF, 0x30C2EEFA, 0x0079C8EC));
+        grow(d, 0.5f);
+        gravity(d, 0.04f);
+        material(dust, mist());
+        return fx(flash, glints, dust);
+    }
+
+    /** The stuck lance gives way: a flash down the middle of its length, glints and frost. */
+    private static FX glacialLanceShatter() {
+        ParticleEmitter flash = single("flash", 4, 1.1f);
+        fadeOut(flash.config, WHITE, CYAN);
+        shrink(flash.config);
+        material(flash, glow(0.6f, 0.86f, 1f, 1.6f));
+        ParticleEmitter glints = glints("glints", 18, 2.5f, 6f, 5, 9, 0.05f, 2.5f);
+        gravity(glints.config, 0.6f);
+        ParticleEmitter mist = burstEmitter("mist", 5, 5);
+        ParticleConfig mc = mist.config;
+        mc.setStartLifetime(range(14, 22));
+        mc.setStartSpeed(range(0.3f, 0.9f));
+        mc.setStartSize(uniform(range(0.35f, 0.6f)));
+        mc.shape.setShape(sphere(0.4f));
+        mc.colorOverLifetime.setEnable(true);
+        mc.colorOverLifetime.setColor(gradient(0x60E6F4FF, 0x30C2EEFA, 0x0079C8EC));
+        grow(mc, 0.5f);
+        gravity(mc, 0.03f);
+        material(mist, mist());
+        return fx(flash, glints, mist);
     }
 
     /**
@@ -784,6 +851,55 @@ public final class RimeFxAuthoring {
 
 
     // ================================================================ Rime-only building blocks
+
+    /**
+     * A thin pale line drawn along the path its emitter has taken over the last {@code lengthTicks} (Photon's own trail emitter, which
+     * follows where it's carried in the world), tapering to nothing at its far end and hidden from {@code hiddenFrom} (0 to 1 along it)
+     * to where it's being drawn from. Drawn with the glow material: Kila's energy-trail material, which the older ribbons use, drew
+     * nothing at all on the test machine.
+     */
+    private static TrailEmitter thinTrail(String name, float width, int lengthTicks, float hiddenFrom) {
+        TrailEmitter e = new TrailEmitter();
+        e.setName(name);
+        TrailConfig t = e.config;
+        t.setLooping(true);
+        t.setDuration(40);
+        t.setTime(lengthTicks);
+        t.setMinVertexDistance(0.08f);
+        // Along the trail from its far, oldest end (0) to where the emitter is now (1). It fades in from the far end, and is gone again
+        // from hiddenFrom on: that last stretch is still inside the lance it comes from.
+        t.setWidthOverTrail(curve(0f, width));
+        int[] stops = new int[21];
+        for (int i = 0; i < stops.length; i++) {
+            float at = i / 20f;
+            float alpha = at >= hiddenFrom + 0.04f ? 0f : at >= hiddenFrom ? 0.5f : Math.min(1f, at / 0.5f);
+            stops[i] = (Math.round(alpha * 0xC8) << 24) | (PALE & 0xFFFFFF);
+        }
+        t.setColorOverTrail(gradient(stops));
+        t.renderer.getMaterials().clear();
+        // The glow material with a line in place of its round spot: the same all along, so only the curves above shape it.
+        KilaMaterial line = glow(0.78f, 0.93f, 1f, 1.3f);
+        line.main.texture.texture = Kegare.id("textures/fx/glacial_lance_trail.png");
+        t.renderer.getMaterials().add(new MaterialSetting(line));
+        MaterialRequirements.fix(t.renderer.getMaterials(), t.additionalGPUDataSetting, false, t.renderer::isUseGPUInstance, t.renderer::setUseGPUInstance);
+        return e;
+    }
+
+    /** Hard little glints of ice thrown out from a point in every direction, stretched along their flight. */
+    private static ParticleEmitter glints(String name, int count, float speedMin, float speedMax, int lifeMin, int lifeMax, float size, float stretch) {
+        ParticleEmitter e = burstEmitter(name, count, count);
+        ParticleConfig c = e.config;
+        c.setSimulationSpace(ParticleConfig.Space.World);
+        c.setStartLifetime(range(lifeMin, lifeMax));
+        c.setStartSpeed(range(speedMin, speedMax));
+        c.setStartSize(uniform(range(size * 0.7f, size)));
+        c.shape.setShape(sphere(0.08f));
+        c.renderer.setRenderMode(ParticleRendererSetting.Mode.StretchedBillboard);
+        c.renderer.setLengthScale(stretch);
+        fadeOut(c, WHITE, CYAN);
+        material(e, glow(0.62f, 0.88f, 1f, 1.6f));
+        return e;
+    }
 
     /** An ice ribbon (pale to cyan to clear blue) with Rime's energy-trail material. */
     private static ParticleEmitter ribbon(String name, float width, int lengthTicks, int color) {
