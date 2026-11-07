@@ -47,7 +47,7 @@ Before an animation preview after building a mesh, load the rig again (Setting u
 
 Frost Shard's and Splinter's thrown crystals, and the chips they break into, too: `shard_shapes.py` and
 `build_frost_shard.py`, at a finer density (`art/blockbench/frost_shard.bbmodel`, `models/fx/frost_shard.obj`,
-`textures/entity/frost_shard*.png`). The cast is `tools/anims/frost_shard.py`.
+`textures/entity/frost_shard*.png`). The casts are `tools/anims/frost_shard.py` and `tools/anims/splinter.py`.
 
     python3 -I tools/blockbench/build_frost_shard.py --preview  # also run/shard_preview/*.png
 

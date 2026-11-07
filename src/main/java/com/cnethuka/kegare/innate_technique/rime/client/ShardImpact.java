@@ -29,9 +29,9 @@ final class ShardImpact {
         return shard instanceof SplinterShardEntity ? 0.6f : 1f;
     }
 
-    /** How many chips it breaks into. */
+    /** How many chips it breaks into: five for a Frost Shard, three for a Splinter's. */
     static int chips(float size) {
-        return Math.round(2 + 3 * size);
+        return Math.round(5 * size);
     }
 
     static boolean onImpact(ClientLevel level, Vec3 pos, int entityId, Visual visual) {

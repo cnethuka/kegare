@@ -17,6 +17,7 @@ import net.minecraft.client.renderer.entity.EntityRendererProvider;
 import net.minecraft.client.renderer.texture.OverlayTexture;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.Mth;
+import net.minecraft.world.entity.Entity;
 import net.minecraft.world.phys.Vec3;
 import org.joml.Matrix4f;
 import org.joml.Vector3f;
@@ -38,6 +39,8 @@ public class ShardRenderer<T extends RimeProjectile> extends EntityRenderer<T> {
     /** The line's own colour, pale frost; it fades out toward its far end. */
     private static final int LINE_RGB = 0xD6EEFF;
     private static final int SEGMENTS = 6;
+    /** How far short of the thrower's eyes the line stops: clear of their head. */
+    private static final float CLEAR_OF_THROWER = 0.45f;
     private final String piece;
     private final float spin;
     /** How far behind its back the line reaches, and how wide it is at the shard. */
@@ -87,6 +90,14 @@ public class ShardRenderer<T extends RimeProjectile> extends EntityRenderer<T> {
         return Mth.clamp(travelled - 0.3f, 0f, full);
     }
 
+    /**
+     * The same, also stopping short of the thrower's head ({@code fromThrower} blocks from the shard's middle to their eyes): the
+     * tick count alone let it reach back through the head of whoever threw it.
+     */
+    static float lineLength(float full, float travelled, double fromThrower, float back) {
+        return Mth.clamp(Math.min(travelled - 0.3f, (float) fromThrower - back - CLEAR_OF_THROWER), 0f, full);
+    }
+
     /** How wide the line is drawn, seen at {@code sin} of the angle between it and the way you look along: nothing end-on. */
     static float seenWidth(float width, float sin) {
         return width * Mth.clamp(sin / 0.35f, 0f, 1f);
@@ -96,9 +107,12 @@ public class ShardRenderer<T extends RimeProjectile> extends EntityRenderer<T> {
         Vec3 v = shard.getDeltaMovement();
         if (v.lengthSqr() < 1.0e-4) return;
         Vec3 dir = v.normalize();
-        float length = lineLength(lineLength, (float) ((shard.tickCount + partialTick) * v.length()));
-        if (length <= 0.05f) return;
         Vec3 at = shard.getPosition(partialTick).add(0, shard.getBbHeight() * 0.5, 0);
+        float travelled = (float) ((shard.tickCount + partialTick) * v.length());
+        Entity owner = shard.getOwner();
+        float length = owner == null ? lineLength(lineLength, travelled)
+                : lineLength(lineLength, travelled, at.distanceTo(owner.getEyePosition(partialTick)), back);
+        if (length <= 0.05f) return;
         Vec3 cam = Minecraft.getInstance().gameRenderer.getMainCamera().getPosition();
         if (shard.getOwner() == Minecraft.getInstance().player && Minecraft.getInstance().options.getCameraType().isFirstPerson()) {
             // Your own: never in your face, it stops short of your camera.

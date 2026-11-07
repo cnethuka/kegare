@@ -123,6 +123,9 @@ class FrostShardArtTest {
         assertEquals(0f, ShardRenderer.lineLength(1.7f, 0.2f), 1e-6f, "nothing at the hand");
         assertEquals(1.7f, ShardRenderer.lineLength(1.7f, 20f), 1e-6f, "never longer than its full length");
         assertTrue(ShardRenderer.lineLength(1.7f, 1f) < 1.7f, "grows out behind it as it leaves");
+        assertEquals(0f, ShardRenderer.lineLength(1.7f, 5f, 0.5, 0.24f), 1e-6f, "nothing through the thrower's head");
+        assertEquals(1.7f, ShardRenderer.lineLength(1.7f, 20f, 20, 0.24f), 1e-6f, "far out: its full length");
+        assertTrue(0.24f + ShardRenderer.lineLength(1.7f, 5f, 1.5, 0.24f) <= 1.5f - 0.4f, "stops short of their eyes");
         assertEquals(0f, ShardRenderer.seenWidth(0.05f, 0f), 1e-6f, "seen straight down its length: nothing");
         assertEquals(0.05f, ShardRenderer.seenWidth(0.05f, 1f), 1e-6f, "side on: its full width");
         assertTrue(ShardRenderer.seenWidth(0.05f, 0.1f) <= 0.05f * 0.3f);
@@ -137,6 +140,21 @@ class FrostShardArtTest {
         assertTrue(cast.boneAnimations().size() >= 3, "the whole upper body");
         assertFalse(json("src/main/resources/assets/kegare/player_animations/rime.json").getAsJsonObject("animations")
                 .has(RimeIds.ANIM_FROST_SHARD_CAST.getPath()), "one source for it");
+    }
+
+    /** Splinter's own throw, a backhand fan: a different shape from the flick, and quicker. */
+    @Test
+    void palLoadsSplintersFan() throws IOException {
+        Map<String, Animation> loaded = UniversalAnimLoader.loadAnimations(json("src/main/resources/assets/kegare/player_animations/splinter.json"));
+        Animation fan = loaded.get(RimeIds.ANIM_SPLINTER_CAST.getPath());
+        Animation flick = UniversalAnimLoader.loadAnimations(json("src/main/resources/assets/kegare/player_animations/frost_shard.json"))
+                .get(RimeIds.ANIM_FROST_SHARD_CAST.getPath());
+        assertNotNull(fan);
+        assertEquals(Animation.LoopType.PLAY_ONCE, fan.loopType());
+        assertTrue(fan.boneAnimations().size() >= 3, "the whole upper body");
+        assertTrue(fan.length() < flick.length(), "the lighter, quicker throw");
+        assertFalse(json("src/main/resources/assets/kegare/player_animations/rime.json").getAsJsonObject("animations")
+                .has(RimeIds.ANIM_SPLINTER_CAST.getPath()), "one source for it");
     }
 
     @Test

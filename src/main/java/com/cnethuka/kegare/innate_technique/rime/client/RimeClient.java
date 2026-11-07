@@ -13,7 +13,6 @@ import com.cnethuka.kegare.network.SyncPayload;
 import java.util.List;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.player.LocalPlayer;
-import net.minecraft.client.renderer.entity.ThrownItemRenderer;
 import net.minecraft.core.particles.DustParticleOptions;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.server.packs.resources.ResourceManagerReloadListener;
@@ -65,7 +64,8 @@ public final class RimeClient {
         });
         // The throw is the whole body: in your own first person, that would swing your own arm and whatever it holds across the view.
         PlayerAnimations.keepVanillaHands(List.of(RimeIds.ANIM_GLACIAL_LANCE_CHARGE, RimeIds.ANIM_GLACIAL_LANCE_RELEASE,
-                RimeIds.ANIM_GLACIAL_SPIRE_CHARGE, RimeIds.ANIM_GLACIAL_SPIRE_RELEASE, RimeIds.ANIM_FROST_SHARD_CAST));
+                RimeIds.ANIM_GLACIAL_SPIRE_CHARGE, RimeIds.ANIM_GLACIAL_SPIRE_RELEASE, RimeIds.ANIM_FROST_SHARD_CAST,
+                RimeIds.ANIM_SPLINTER_CAST));
         // Lookalikes used when an effect can't load, or with vfxQuality = VANILLA.
         VanillaFallback.register(RimeIds.FX_FROST_SHARD_TRAIL, new VanillaFallback.Spec(ParticleTypes.SNOWFLAKE, 2, 6, 0.06, 0.01));
         VanillaFallback.register(RimeIds.FX_FROST_SHARD_IMPACT, new VanillaFallback.Spec(ParticleTypes.SNOWFLAKE, 1, 14, 0.25, 0.12));
@@ -92,11 +92,10 @@ public final class RimeClient {
     }
 
     private static void registerRenderers(EntityRenderersEvent.RegisterRenderers event) {
-        // The item sprite, full-bright so the ice reads at night.
+        // Solid crystals of the lance's ice (LanceMesh).
         event.registerEntityRenderer(RimeRegistry.FROST_SHARD.get(), ShardRenderer::frostShard);
         event.registerEntityRenderer(RimeRegistry.GLACIAL_LANCE.get(), GlacialLanceRenderer::new);
-        event.registerEntityRenderer(RimeRegistry.SPLINTER_SHARD.get(), ctx -> new ThrownItemRenderer<>(ctx, 0.7f, true));
-        // Glacial Spire is drawn entirely by its Photon loops.
+        event.registerEntityRenderer(RimeRegistry.SPLINTER_SHARD.get(), ShardRenderer::splinter);
         event.registerEntityRenderer(RimeRegistry.GLACIAL_SPIRE.get(), GlacialSpireRenderer::new);
     }
 

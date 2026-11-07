@@ -478,20 +478,17 @@ public final class RimeFxAuthoring {
 
     // ================================================================ specials
 
-    /** Splinter thrown: a small flash at the hand and a flat fan of glints flying forward. */
+    /**
+     * Splinter thrown: a flat fan of fine glints whipped forward off the hand as it sweeps through the aim. No flash and no mist:
+     * it's the lighter throw, and either would swell low in your own first-person view.
+     */
     private static FX splinterCast() {
         Vector3f hand = new Vector3f(1.0f, -0.3f, 0.35f);
-        ParticleEmitter flash = single("flash", 4, 0.3f);
-        fadeOut(flash.config, WHITE, CYAN);
-        shrink(flash.config);
-        material(flash, glow(0.5f, 0.85f, 1f, 1.3f));
-        flash.transform().localPosition(new Vector3f(hand));
-
-        ParticleEmitter fan = burstEmitter("fan", 16, 20);
+        ParticleEmitter fan = burstEmitter("fan", 12, 14);
         ParticleConfig c = fan.config;
-        c.setStartLifetime(range(4, 8));
-        c.setStartSpeed(range(5f, 9f));
-        c.setStartSize(uniform(range(0.03f, 0.07f)));
+        c.setStartLifetime(range(4, 7));
+        c.setStartSpeed(range(6f, 10f));
+        c.setStartSize(uniform(range(0.025f, 0.05f)));
         c.shape.setShape(cone(14f, 0.05f));
         c.shape.setScale(new NumberFunction3(1f, 1f, 0.25f)); // flattened: a fan, not a cone
         fadeOut(c, WHITE, CYAN);
@@ -499,25 +496,27 @@ public final class RimeFxAuthoring {
         material(fan, recolor(KilaPresets.SPARKS.create(), 0.55f, 0.88f, 1f, 1.4f));
         fan.transform().localPosition(new Vector3f(hand));
         fan.transform().localRotation(new Quaternionf().rotateZ((float) (-Math.PI / 2)));
-        return fx(flash, fan);
+        return fx(fan);
     }
 
-    /** A Splinter shard in flight: a thinner, shorter ribbon than Frost Shard's, and a few glints. */
+    /**
+     * A Splinter shard in flight: fewer, finer specks than Frost Shard's. Its line (thinner and shorter than Frost Shard's) is drawn
+     * with the shard (ShardRenderer).
+     */
     private static FX splinterTrail() {
-        ParticleEmitter ribbon = ribbon("ribbon", 0.14f, 6, PALE);
         ParticleEmitter glints = emitter("glints", true, 20);
         ParticleConfig c = glints.config;
         c.setSimulationSpace(ParticleConfig.Space.World);
-        c.setMaxParticles(30);
-        c.setStartLifetime(range(6, 10));
-        c.setStartSpeed(range(0.0f, 0.3f));
-        c.setStartSize(uniform(range(0.03f, 0.07f)));
-        c.emission.setEmissionRate(NumberFunction.constant(2f));
+        c.setMaxParticles(20);
+        c.setStartLifetime(range(5, 8));
+        c.setStartSpeed(range(0.0f, 0.2f));
+        c.setStartSize(uniform(range(0.02f, 0.045f)));
+        c.emission.setEmissionRate(NumberFunction.constant(1.2f));
         c.shape.setShape(sphere(0.04f));
         fadeOut(c, WHITE, CYAN);
         shrink(c);
         material(glints, glow(0.5f, 0.85f, 1f, 1.3f));
-        return fx(ribbon, glints);
+        return fx(glints);
     }
 
     // Glacial Spire's spike is a solid mesh (GlacialSpireRenderer) and what it does to the ground is pixel art on the blocks (SpireClient,
@@ -923,11 +922,5 @@ public final class RimeFxAuthoring {
         fadeOut(c, WHITE, CYAN);
         material(e, glow(0.62f, 0.88f, 1f, 1.6f));
         return e;
-    }
-
-    /** An ice ribbon (pale to cyan to clear blue) with Rime's energy-trail material. */
-    private static ParticleEmitter ribbon(String name, float width, int lengthTicks, int color) {
-        return FxKit.ribbon(name, width, lengthTicks, gradient(color, CYAN, 0x003A8FCC),
-                recolor(KilaPresets.ENERGY_TRAIL.create(), 0.45f, 0.82f, 1f, 1.5f));
     }
 }

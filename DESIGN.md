@@ -757,7 +757,7 @@ Package `com.cnethuka.kegare.innate_technique.rime`. **Rarity: RARE.** All numbe
   multiplier. Hovering an ability on the Sorcerer screen shows its current cost, upkeep and every active factor.
 - **Visuals:** PAL animations `frost_field_channel` (loop), `rime_shell_toggle` and `frozen` (loop), in
   `assets/kegare/player_animations/rime.json`; Frost Shard's `frost_shard_cast` in `frost_shard.json` (from
-  `tools/anims/frost_shard.py`); Glacial Lance's `glacial_lance_charge` (loop) and `glacial_lance_release` in
+  `tools/anims/frost_shard.py`) and Splinter's `splinter_cast` in `splinter.json` (`tools/anims/splinter.py`); Glacial Lance's `glacial_lance_charge` (loop) and `glacial_lance_release` in
   `glacial_lance.json` (from `tools/anims/glacial_lance.py`). Photon effects in `assets/kegare/fx/rime/`: `frost_shard_trail`,
   `frost_shard_impact`, `frost_field_cone`, `rime_shell_aura` (an ice bubble, invisible from the inside), `freeze_shatter`,
   and Glacial Lance's below. Each has a vanilla-particle lookalike for the fallback.
@@ -806,7 +806,7 @@ Package `com.cnethuka.kegare.innate_technique.rime`. **Rarity: RARE.** All numbe
     texels, so overlapping marks share texels (stronger colour, longer life) instead of flickering. Drawn translucent in the
     world's light and shaded like the block face under it; a texel just formed is brighter (the spreading edge) and thins in
     its last ticks. Client only: no block changes, nothing is sent, all of it melts on its own. Off with **Vanilla**.
-  - Specials: animations `splinter_cast`, `ice_path_slide` (loop, a surfing stance) and `shatter_shell_cast`. Effects
+  - Specials: animations `ice_path_slide` (loop, a surfing stance) and `shatter_shell_cast` (Splinter's below). Effects
     `splinter_cast`, `splinter_trail`, `ice_path_trail` and `shatter_shell_burst`.
   - `ice_path_trail` is a **lingering** loop (`Visual.lingering`): what it throws up stays in the world and fades on
     its own; the ice itself is block marks ("Ice Path's look", below). The loop sends `trailSeconds` as
@@ -860,6 +860,17 @@ Package `com.cnethuka.kegare.innate_technique.rime`. **Rarity: RARE.** All numbe
     the aim with the chest behind it (`tools/anims/frost_shard.py`); your own first-person hands stay vanilla.
   - **Reduced** plays the effects reduced and drops half the chips; **Vanilla** keeps the solid shard, snowflakes for the
     rest and packed-ice chips.
+- **Splinter's look** (Frost Shard's, lighter):
+  - **The shards** are the same model's `splinter`: a slimmer, shorter four-sided sliver (about 0.38 blocks to Frost Shard's
+    0.58), drawn by `ShardRenderer` like Frost Shard's, three in a fan. Each line is thinner (0.032 to 0.05) and shorter (up
+    to 1 block to 1.7). `splinter_trail` is fewer, finer specks.
+  - **The hit:** the same `frost_shard_impact` as Frost Shard, played at 0.6 of its size, with three chips to Frost Shard's five.
+  - **The body:** `splinter_cast` (`tools/anims/splinter.py`) is a backhand fan, not the overhand flick: the hand drawn across
+    the chest to the left shoulder as the chest turns away, then whipped out flat to the right through the aim. The code
+    blends every animation in over 3 ticks, so the draw is keyed at 2 ticks, where most of it shows. `splinter_cast` (the
+    effect) is only a flat fan of fine glints off the hand: no flash and no mist, which would swell low in your own first-person
+    view. Your own first-person hands stay vanilla.
+  - **Reduced** and **Vanilla** as Frost Shard's.
 - **Effect authoring:** the effects are built from Photon's own objects in `RimeFxAuthoring` (building blocks in the
   shared `client.visual.FxKit`) and written with Photon's serializer, the same `.fx` format the editor exports. In a
   dev client, `/kegare debug fx export` rewrites every effect in `FxCatalog` (Rime's and RMT's, and the running game's
@@ -907,7 +918,7 @@ Package `com.cnethuka.kegare.innate_technique.rime`. **Rarity: RARE.** All numbe
 
   | Special (base) | Tell |
   |---|---|
-  | Splinter (Frost Shard) | own cast animation and burst, three shards in a fan, a brighter crack (amethyst break) |
+  | Splinter (Frost Shard) | own cast animation (a flat backhand sweep, not Frost Shard's overhand flick) and a fan of glints, three shards in a fan, a brighter crack (amethyst break) |
   | Glacial Spire (Glacial Lance) | the fist raised, gathering cold; a pixel crack spreading on the ground with rising glints for 0.75 s before the spike |
   | Ice Path (Frost Field) | own sliding pose, an ice trail left behind, glass sounds |
   | Shatter Shell (Rime Shell) | own cast animation, an icy burst, glass and amethyst shattering |
