@@ -62,16 +62,19 @@ public final class FistTell {
     private static final int WISP_EVERY_TICKS_REDUCED = 6;
     private static final int WISP_EVERY_TICKS_SELF = 5;
     private static final float WISP_SIZE = 0.3f;
-    /** Your own, right by the camera, in view space. */
+    /** Your own, right by the camera. */
     private static final float WISP_SIZE_SELF = 0.11f;
+    private static final float WISP_SIZE_GRIP = 0.09f;
     private static final float WISP_SCALE_SELF = 0.42f;
     /** And in close: there's no arm in the way of them here, and they'd look like separate fires out to the side. */
     private static final float WISP_IN_SELF = 0.25f;
     /** In first person with something in hand: from where a bare fist would be to where vanilla puts the grip, in view space. */
     private static final float GRIP_ACROSS = 0.12f;
     private static final float GRIP_UP = 0.04f;
-    /** And nearer the camera, so the fire shows in front of the grip and not behind what's held. */
-    private static final float GRIP_NEARER = 0.14f;
+    /** The bottom middle of the fire's clump round the grip, from where vanilla's item transforms start. */
+    private static final float CLUMP_ACROSS = -0.03f;
+    private static final float CLUMP_UP = 0.083f;
+    private static final float CLUMP_NEARER = 0.04f;
     /** The quads have to clear the corners of the arm's cube, wherever the camera is. */
     private static final float RADIUS = 3f / 16f;
     private static final float RADIUS_SLIM = 2.7f / 16f;
@@ -153,17 +156,18 @@ public final class FistTell {
      *
      * @param toCamera toward the camera, in the axes the pose comes out in
      * @param up       which way is up, in those axes
+     * @param ownHand  your own hand in first person, right by the camera: a layer round it would fill the corner of the screen
      */
     static void drawArm(PoseStack pose, MultiBufferSource buffers, MeleeTell.Look look, float time, boolean slim, boolean leftArm, int light,
-                        Vector3f toCamera, Vector3f up, FistFlames.Fit fit) {
+                        Vector3f toCamera, Vector3f up, boolean ownHand) {
         float centre = FistShellMesh.armCentre(slim, leftArm);
         if (look.kind() == MeleeTell.Kind.GLOW) {
             int rgb = MeleeTell.bright(look.color()) & 0xFFFFFF;
-            if (fit == FistFlames.Fit.BODY) {
+            if (!ownHand) {
                 FistFire.drawArm(pose.last(), buffers.getBuffer(FistFire.renderType()), rgb, time, FistShellMesh.handEnd(), centre, slim, toCamera, up);
             } else {
-                FistFlames.drawArm(pose.last(), buffers.getBuffer(FistFlames.renderType()), rgb, time, FistShellMesh.handEnd(), centre,
-                        slim ? RADIUS_SLIM : RADIUS, toCamera, up, leftArm, fit);
+                FistFlames.drawOwnHand(pose.last(), buffers.getBuffer(FistFlames.renderType()), rgb, time, FistShellMesh.handEnd(), centre,
+                        slim ? RADIUS_SLIM : RADIUS, toCamera, up, leftArm);
             }
         } else {
             FistShellMesh.of(slim).draw(pose.last(), buffers.getBuffer(RenderType.entityTranslucent(STRAIN)), leftArm, centre, 1.08f, light);
@@ -194,11 +198,12 @@ public final class FistTell {
         }
     }
 
-    /** Your own curls in first person: they rise off the hand on the screen and stay near it, in view space. */
-    private static void drawWispsSelf(Shown shown, MultiBufferSource buffers, Vector3f fist, float time) {
+    /** Your own curls in first person: they rise off the hand on the screen and stay near it. */
+    private static void drawWispsSelf(Shown shown, MultiBufferSource buffers, Vector3f fist, float time, float size) {
         if (KegareClientConfig.VFX_QUALITY.get() == VfxQuality.VANILLA) return;
-        Vector3f right = new Vector3f(1f, 0f, 0f);
-        Vector3f up = new Vector3f(0f, 1f, 0f);
+        Camera camera = Minecraft.getInstance().gameRenderer.getMainCamera();
+        Vector3f right = new Vector3f(camera.getLeftVector()).negate();
+        Vector3f up = new Vector3f(camera.getUpVector());
         Vector3f at = new Vector3f();
         int rgb = MeleeTell.bright(shown.look.color()) & 0xFFFFFF;
         VertexConsumer out = buffers.getBuffer(FistFlames.renderType());
@@ -210,7 +215,7 @@ public final class FistTell {
             FistFlames.wispPath(age, seed, at).mul(WISP_SCALE_SELF);
             at.x *= WISP_IN_SELF;
             at.z *= WISP_IN_SELF;
-            FistFlames.drawWisp(out, fist.x + at.x, fist.y + at.y, fist.z + at.z, right, up, WISP_SIZE_SELF, age, seed < 0.5f, rgb);
+            FistFlames.drawWisp(out, fist.x + at.x, fist.y + at.y, fist.z + at.z, right, up, size, age, seed < 0.5f, rgb);
         }
     }
 
@@ -241,7 +246,7 @@ public final class FistTell {
 
     /**
      * Vanilla first person: there's no body to draw on, and with something in hand no arm either, so the tell is drawn where vanilla
-     * puts a bare arm (the same moves as {@code ItemInHandRenderer.renderPlayerArm}, swing and all), round the empty hand or the grip of
+     * puts a bare arm (the same moves as {@code ItemInHandRenderer.renderPlayerArm}, swing and all), or the fire goes round the grip of
      * what's held. It waits for the off hand's turn, which comes after the main arm is down. Only the main hand's swing and equip numbers
      * are any use, so they're kept from its turn.
      */
@@ -264,7 +269,12 @@ public final class FistTell {
         pose.pushPose();
         GuardHand.apply(pose, side, event.getPartialTick());
         boolean holding = !player.getMainHandItem().isEmpty();
-        if (holding) pose.translate(side * GRIP_ACROSS, GRIP_UP, GRIP_NEARER); // no arm drawn: round what's held
+        if (holding && look.kind() == MeleeTell.Kind.GLOW) {
+            drawGripFire(pose, event, player, look, side, swing, root);
+            pose.popPose();
+            return;
+        }
+        if (holding) pose.translate(side * GRIP_ACROSS, GRIP_UP, 0f); // no arm drawn: round what's held
         pose.translate(side * (-0.3f * Mth.sin(root * Mth.PI) + 0.64000005f), 0.4f * Mth.sin(root * Mth.TWO_PI) - 0.6f - mainHandEquip * 0.6f,
                 -0.4f * Mth.sin(swing * Mth.PI) - 0.71999997f);
         pose.mulPose(Axis.YP.rotationDegrees(side * 45f));
@@ -288,13 +298,35 @@ public final class FistTell {
             float time = player.tickCount + event.getPartialTick();
             Vector3f fist = pose.last().pose().transformPosition(FistShellMesh.armCentre(slim, left), FistShellMesh.fistY(), 0f, new Vector3f());
             drawArm(pose, event.getMultiBufferSource(), look, time, slim, left, event.getPackedLight(), fist.negate(new Vector3f()).normalize(),
-                    new Vector3f(0f, 1f, 0f), holding ? FistFlames.Fit.GRIP : FistFlames.Fit.FIRST_PERSON);
+                    new Vector3f(0f, 1f, 0f), true);
             Shown shown = SHOWN.get(player.getId());
-            if (shown != null && look.kind() == MeleeTell.Kind.GLOW) drawWispsSelf(shown, event.getMultiBufferSource(), fist, time);
+            if (shown != null && look.kind() == MeleeTell.Kind.GLOW) drawWispsSelf(shown, event.getMultiBufferSource(), fist, time, WISP_SIZE_SELF);
             Camera camera = mc.gameRenderer.getMainCamera();
             reportFist(player, fist.rotate(camera.rotation(), new Vector3f()));
         }
         pose.popPose();
+    }
+
+    /** With something in hand there's no arm to wrap: one clump round the grip, going wherever vanilla's item moves take it (renderArmWithItem's default case). */
+    private static void drawGripFire(PoseStack pose, RenderHandEvent event, AbstractClientPlayer player, MeleeTell.Look look, float side, float swing, float root) {
+        float lift = Mth.sin(root * Mth.PI);
+        pose.translate(side * -0.4f * lift, 0.2f * Mth.sin(root * Mth.TWO_PI), -0.2f * Mth.sin(swing * Mth.PI));
+        pose.translate(side * 0.56f, -0.52f - mainHandEquip * 0.6f, -0.72f);
+        pose.mulPose(Axis.YP.rotationDegrees(side * (45f + Mth.sin(swing * swing * Mth.PI) * -20f)));
+        pose.mulPose(Axis.ZP.rotationDegrees(side * lift * -20f));
+        pose.mulPose(Axis.XP.rotationDegrees(lift * -80f));
+        pose.mulPose(Axis.YP.rotationDegrees(side * -45f));
+        // The hand pass's pose comes out relative to the camera along the world's axes, so the camera's own axes are what face it.
+        Vector3f base = pose.last().pose().transformPosition(side * CLUMP_ACROSS, CLUMP_UP, CLUMP_NEARER, new Vector3f());
+        Camera camera = Minecraft.getInstance().gameRenderer.getMainCamera();
+        Vector3f right = new Vector3f(camera.getLeftVector()).negate();
+        Vector3f up = new Vector3f(camera.getUpVector());
+        float time = player.tickCount + event.getPartialTick();
+        FistFire.drawGrip(event.getMultiBufferSource().getBuffer(FistFire.renderType()), MeleeTell.bright(look.color()) & 0xFFFFFF, time, base, right, up);
+        Vector3f middle = FistFire.gripMiddle(base, up);
+        Shown shown = SHOWN.get(player.getId());
+        if (shown != null) drawWispsSelf(shown, event.getMultiBufferSource(), middle, time, WISP_SIZE_GRIP);
+        reportFist(player, middle);
     }
 
     private static void onClientTick(ClientTickEvent.Post event) {

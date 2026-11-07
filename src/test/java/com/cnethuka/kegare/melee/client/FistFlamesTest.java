@@ -15,7 +15,7 @@ import javax.imageio.ImageIO;
 import org.joml.Vector3f;
 import org.junit.jupiter.api.Test;
 
-/** The ready fist's fire: the sheet it's drawn from, and the arithmetic of its frames and curls. */
+/** The fire on your own hand in first person: the sheet it's drawn from, and the arithmetic of its frames and of the curls off a ready fist. */
 class FistFlamesTest {
     private static final int FRAME = 14;
     private static final int WISP = 7;
@@ -183,33 +183,6 @@ class FistFlamesTest {
                 assertFalse(nearBlack(sheet, f * FRAME + x, top), "a lit tip, not an outlined one, frame " + f);
             }
         }
-    }
-
-    @Test
-    void tipsLeanOverToStandUprightOnATiltedArmWithinReason() {
-        assertEquals(0f, FistFlames.lean(0f, -1f, 1f), 1.0e-5f, "an arm straight down needs no lean");
-        assertTrue(FistFlames.lean(0.3f, -0.95f, 1f) > 0f, "toward up");
-        assertTrue(FistFlames.lean(-0.3f, -0.95f, 1f) < 0f, "whichever side that is");
-        assertEquals(FistFlames.lean(1f, 0f, 1f), FistFlames.lean(1f, 0.01f, 1f), 1.0e-5f, "a level arm doesn't flip it about");
-        assertTrue(FistFlames.lean(1f, 0f, 1f) <= 0.7f, "and it never lays the fire flat");
-    }
-
-    @Test
-    void onABodyTheFireStopsPartwayUpTheArm() {
-        float arm = 12f / 16f;
-        assertTrue(FistFlames.Fit.BODY.height() * FRAME / 16f < arm, "shorter than the arm it's on, or it's up by the shoulder");
-        assertTrue(FistFlames.Fit.BODY.leans(), "and on a tilted arm it still goes up");
-    }
-
-    @Test
-    void inFirstPersonAHeldItemGetsMoreFireThanAnEmptyHandAndNeitherLeans() {
-        assertTrue(FistFlames.Fit.GRIP.width() > FistFlames.Fit.FIRST_PERSON.width(), "the item hides part of it");
-        assertTrue(FistFlames.Fit.GRIP.height() > FistFlames.Fit.FIRST_PERSON.height());
-        assertTrue(FistFlames.Fit.GRIP.width() < 1f && FistFlames.Fit.GRIP.height() < 1f, "still no big blob by the camera");
-        assertEquals(0f, FistFlames.Fit.GRIP.flare(), 0f);
-        assertEquals(0f, FistFlames.Fit.FIRST_PERSON.flare(), 0f);
-        assertFalse(FistFlames.Fit.GRIP.leans());
-        assertFalse(FistFlames.Fit.FIRST_PERSON.leans());
     }
 
     @Test

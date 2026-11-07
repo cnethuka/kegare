@@ -38,12 +38,11 @@ final class FistTellLayer extends PlayerItemInHandLayer<AbstractClientPlayer, Pl
         float time = player.tickCount + partialTick;
         if (FistTell.inWorld(player, fist, partialTick)) {
             boolean self = FistTell.firstPersonSelf(player);
-            FistTell.drawArm(pose, buffers, look, time, slim, left, light, fist.negate(new Vector3f()).normalize(), new Vector3f(0f, 1f, 0f),
-                    self ? FistFlames.Fit.FIRST_PERSON : FistFlames.Fit.BODY);
+            FistTell.drawArm(pose, buffers, look, time, slim, left, light, fist.negate(new Vector3f()).normalize(), new Vector3f(0f, 1f, 0f), self);
             FistTell.reportFist(player, fist);
             if (!self) FistTell.drawWisps(player, buffers, partialTick);
         } else {
-            FistTell.drawArm(pose, buffers, look, time, slim, left, light, new Vector3f(0f, 0f, 1f), new Vector3f(0f, -1f, 0f), FistFlames.Fit.BODY);
+            FistTell.drawArm(pose, buffers, look, time, slim, left, light, new Vector3f(0f, 0f, 1f), new Vector3f(0f, -1f, 0f), false);
         }
         pose.popPose();
     }
