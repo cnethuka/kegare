@@ -24,12 +24,14 @@ import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.renderer.texture.OverlayTexture;
 import net.minecraft.client.resources.PlayerSkin;
+import net.minecraft.core.particles.DustParticleOptions;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.Mth;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.phys.Vec3;
 import org.joml.Matrix4f;
+import org.joml.Vector3f;
 
 /**
  * What Swap draws itself, rather than with Photon (DESIGN §3.19): smooth, flat teal shapes with hard edges, quick and gone, so a
@@ -71,6 +73,9 @@ public final class SwapFx {
     /** An entity about to be moved by a swap: from where, and until when to watch for the move. */
     private record Snap(Vec3 from, long until) {}
 
+    /** Switchback's countdown on an entity: the loop's key (its time comes from {@link ClientVisuals#loopTime}). */
+    private record Countdown(int entityId, String key) {}
+
     /** Photon's part of an effect, played a tick late. */
     private record Later(Vec3 pos, Visual visual, long due) {}
 
@@ -79,6 +84,9 @@ public final class SwapFx {
     private static final List<Ring> RINGS = new ArrayList<>();
     private static final Map<Integer, Snap> SNAP = new HashMap<>();
     private static final List<Later> LATER = new ArrayList<>();
+    private static final List<Countdown> COUNTDOWNS = new ArrayList<>();
+    /** Vanilla's stand-in for a countdown ring: small teal dust, gone almost at once. */
+    private static final DustParticleOptions COUNTDOWN_DUST = new DustParticleOptions(new Vector3f(0.18f, 0.9f, 0.82f), 0.5f);
     private static long clock;
     @Nullable private static PlayerModel<AbstractClientPlayer> wide, slim;
 
@@ -175,6 +183,7 @@ public final class SwapFx {
 
     static void tick(ClientLevel level) {
         clock++;
+        tickCountdowns(level);
         if (!LATER.isEmpty()) {
             List<Later> due = LATER.stream().filter(l -> l.due() <= clock).toList();
             LATER.removeAll(due);
@@ -220,13 +229,88 @@ public final class SwapFx {
         RINGS.clear();
         SNAP.clear();
         LATER.clear();
+        COUNTDOWNS.clear();
+    }
+
+    // ---------------------------------------------------------------- Switchback's countdown
+
+    /**
+     * Switchback's countdown ring went up on an entity (both of them, as it's cast): a thin teal ring at the feet with a bright arc
+     * that drains round it over the delay, a mark for each second still to go and a pulse as each second starts. It's gone the
+     * moment the loop stops (the swap back, or it's called off).
+     */
+    static void countdownStarted(Entity entity, String key) {
+        countdownStopped(entity, key);
+        COUNTDOWNS.add(new Countdown(entity.getId(), key));
+    }
+
+    static void countdownStopped(Entity entity, String key) {
+        COUNTDOWNS.removeIf(c -> c.entityId() == entity.getId() && c.key().equals(key));
+    }
+
+    /** Drops countdowns whose entity is gone; with Vanilla effects, a circle of dust specks as each second starts. */
+    private static void tickCountdowns(ClientLevel level) {
+        if (COUNTDOWNS.isEmpty()) return;
+        boolean vanilla = KegareClientConfig.VFX_QUALITY.get() == KegareClientConfig.VfxQuality.VANILLA;
+        for (Iterator<Countdown> it = COUNTDOWNS.iterator(); it.hasNext(); ) {
+            Countdown c = it.next();
+            Entity entity = level.getEntity(c.entityId());
+            ClientVisuals.LoopTime time = entity == null ? null : ClientVisuals.loopTime(entity, c.key(), 0f);
+            if (time == null) {
+                it.remove();
+                continue;
+            }
+            if (!vanilla || (int) time.ticks() % 20 != 0 || time.ticks() >= time.growTicks()) continue;
+            float radius = countdownRadius(entity);
+            for (int i = 0; i < 12; i++) {
+                double a = Mth.TWO_PI * i / 12.0;
+                level.addParticle(COUNTDOWN_DUST, entity.getX() + Math.cos(a) * radius, entity.getY() + 0.1, entity.getZ() + Math.sin(a) * radius,
+                        0, 0, 0);
+            }
+        }
+    }
+
+    private static float countdownRadius(Entity entity) {
+        return Math.max(0.55f, entity.getBbWidth() * 0.9f);
+    }
+
+    private static void renderCountdowns(PoseStack pose, MultiBufferSource.BufferSource buffers, Vec3 cam, float partial) {
+        ClientLevel level = Minecraft.getInstance().level;
+        if (level == null) return;
+        RenderType type = RenderType.entityTranslucentEmissive(WHITE);
+        VertexConsumer out = buffers.getBuffer(type);
+        for (Countdown c : COUNTDOWNS) {
+            Entity entity = level.getEntity(c.entityId());
+            ClientVisuals.LoopTime time = entity == null ? null : ClientVisuals.loopTime(entity, c.key(), partial);
+            if (time == null) continue;
+            int total = Math.max(1, time.growTicks());
+            float left = 1f - Mth.clamp(time.ticks() / total, 0f, 1f);
+            float radius = countdownRadius(entity);
+            Vec3 feet = entity.getPosition(partial);
+            Matrix4f m = pose.last().pose().translate((float) (feet.x - cam.x), (float) (feet.y - cam.y) + 0.04f,
+                    (float) (feet.z - cam.z), new Matrix4f());
+            ring(out, m, radius, 0.03f, GLOW, 0.25f);                       // the track
+            arc(out, m, radius, 0.065f, 0f, left, GLOW, 0.95f);             // what's left, draining round
+            int seconds = Math.max(1, Math.round(total / 20f));
+            for (int k = 0; k < seconds; k++) {                            // a mark per second still to go
+                float at = (float) k / seconds;
+                if (at < left) mark(out, m, radius, at, 0.16f, 0.035f, PALE, 1f);
+            }
+            float sinceSecond = time.ticks() % 20f;                         // a pulse as each second starts
+            if (sinceSecond < 5f && time.ticks() < total) {
+                float p = sinceSecond / 5f;
+                ring(out, m, radius * (1f + 0.35f * p), 0.05f * (1f - p), PALE, 0.8f * (1f - p));
+            }
+        }
+        buffers.endBatch(type);
     }
 
     // ---------------------------------------------------------------- drawing
 
     static void render(PoseStack pose, Vec3 cam, float partial) {
-        if ((AFTERIMAGES.isEmpty() && RINGS.isEmpty()) || !drawn()) return;
+        if ((AFTERIMAGES.isEmpty() && RINGS.isEmpty() && COUNTDOWNS.isEmpty()) || !drawn()) return;
         MultiBufferSource.BufferSource buffers = Minecraft.getInstance().renderBuffers().bufferSource();
+        if (!COUNTDOWNS.isEmpty()) renderCountdowns(pose, buffers, cam, partial);
         Minecraft mc = Minecraft.getInstance();
         boolean firstPerson = mc.options.getCameraType().isFirstPerson();
         for (Afterimage a : AFTERIMAGES) {
@@ -289,6 +373,35 @@ public final class SwapFx {
             vertex(out, m, c1 * outer, 0f, s1 * outer, rgb, a);
             vertex(out, m, c0 * outer, 0f, s0 * outer, rgb, a);
         }
+    }
+
+    /** Part of a flat ring: from {@code from} to {@code to} of the way round (0 to 1), clockwise seen from above. */
+    static void arc(VertexConsumer out, Matrix4f m, float radius, float width, float from, float to, int rgb, float alpha) {
+        if (to <= from) return;
+        int a = Math.round(Mth.clamp(alpha, 0f, 1f) * 255);
+        float in = Math.max(0f, radius - width / 2), outer = radius + width / 2;
+        int segments = Math.max(1, Math.round(RING_SEGMENTS * (to - from)));
+        for (int i = 0; i < segments; i++) {
+            float a0 = -Mth.HALF_PI + Mth.TWO_PI * (from + (to - from) * i / segments);
+            float a1 = -Mth.HALF_PI + Mth.TWO_PI * (from + (to - from) * (i + 1) / segments);
+            float c0 = Mth.cos(a0), s0 = Mth.sin(a0), c1 = Mth.cos(a1), s1 = Mth.sin(a1);
+            vertex(out, m, c0 * in, 0f, s0 * in, rgb, a);
+            vertex(out, m, c1 * in, 0f, s1 * in, rgb, a);
+            vertex(out, m, c1 * outer, 0f, s1 * outer, rgb, a);
+            vertex(out, m, c0 * outer, 0f, s0 * outer, rgb, a);
+        }
+    }
+
+    /** A short mark across the ring at {@code at} of the way round, {@code length} across and {@code width} wide. */
+    static void mark(VertexConsumer out, Matrix4f m, float radius, float at, float length, float width, int rgb, float alpha) {
+        int a = Math.round(Mth.clamp(alpha, 0f, 1f) * 255);
+        float ang = -Mth.HALF_PI + Mth.TWO_PI * at;
+        float cx = Mth.cos(ang), cz = Mth.sin(ang), tx = -cz * width / 2, tz = cx * width / 2;
+        float r0 = radius - length / 2, r1 = radius + length / 2;
+        vertex(out, m, cx * r0 - tx, 0.002f, cz * r0 - tz, rgb, a);
+        vertex(out, m, cx * r0 + tx, 0.002f, cz * r0 + tz, rgb, a);
+        vertex(out, m, cx * r1 + tx, 0.002f, cz * r1 + tz, rgb, a);
+        vertex(out, m, cx * r1 - tx, 0.002f, cz * r1 - tz, rgb, a);
     }
 
     static void vertex(VertexConsumer out, Matrix4f m, float x, float y, float z, int rgb, int alpha) {

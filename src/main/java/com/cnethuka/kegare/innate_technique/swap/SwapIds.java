@@ -10,6 +10,7 @@ public final class SwapIds {
     public static final ResourceLocation ANIM_POSITIONS_CLAP = Kegare.id("positions_clap");
     public static final ResourceLocation ANIM_SWAP_SNAP = Kegare.id("swap_snap");
     public static final ResourceLocation ANIM_SWITCHBACK_CAST = Kegare.id("switchback_cast");
+    public static final ResourceLocation ANIM_SWITCHBACK_SNAP = Kegare.id("switchback_snap");
     public static final ResourceLocation ANIM_AWARENESS_CAST = Kegare.id("awareness_cast");
     public static final ResourceLocation ANIM_MIMIC_CAST = Kegare.id("mimic_cast");
     public static final ResourceLocation ANIM_ANCHOR_THROW = Kegare.id("anchor_throw");

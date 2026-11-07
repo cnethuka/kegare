@@ -26,6 +26,10 @@ public final class SwapSounds {
 
     /** Positions, and the recall to an anchor. */
     public static final Clap POSITIONS = new Clap(KegareSounds.SWAP_CLAP, 1f, 1f);
+    /** Switchback's cast: two claps, a beat apart. */
+    public static final Clap SWITCHBACK = new Clap(KegareSounds.SWAP_DOUBLE_CLAP, 1f, 1f);
+    /** Switchback's swap back: a finger snap. */
+    public static final Clap SWITCHBACK_BACK = new Clap(KegareSounds.SWAP_SNAP, 1f, 1f);
 
     private SwapSounds() {}
 }

@@ -1,5 +1,6 @@
 package com.cnethuka.kegare.innate_technique.swap;
 
+import com.cnethuka.kegare.innatetechnique.visual.Visual;
 import com.cnethuka.kegare.innatetechnique.visual.VisualService;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -17,11 +18,13 @@ import net.minecraft.world.level.Level;
 /**
  * Switchback's pending swaps back (runtime only). Each one belongs to its caster; the target is a player or a mob.
  * The swap back fires {@link SwapTargetEvent} again. It is called off if either dies, logs out (or the mob is gone) or
- * changes dimension. Both wear the countdown ring until then.
+ * changes dimension. Both wear the countdown ring until then (a loop that runs for the delay: its {@code growTicks}).
  */
 public final class Switchback {
     /** The target is held by reference: a mob can't be looked up by name, and a player who relogs is a new entity. */
     private record Pending(LivingEntity target, long dueTick, ResourceKey<Level> dimension) {}
+
+    private static final Visual SNAP = Visual.animation(SwapIds.ANIM_SWITCHBACK_SNAP);
 
     /** By caster. */
     private static final Map<UUID, Pending> PENDING = new HashMap<>();
@@ -30,11 +33,11 @@ public final class Switchback {
 
     static void schedule(ServerPlayer caster, LivingEntity target) {
         cancel(caster.server, caster.getUUID());
-        long due = caster.serverLevel().getGameTime() + SwapConfig.ticks(SwapConfig.SWITCHBACK_DELAY);
-        PENDING.put(caster.getUUID(), new Pending(target, due, caster.level().dimension()));
+        int delay = SwapConfig.ticks(SwapConfig.SWITCHBACK_DELAY);
+        PENDING.put(caster.getUUID(), new Pending(target, caster.serverLevel().getGameTime() + delay, caster.level().dimension()));
         String key = timerKey(caster.getUUID());
-        VisualService.startLoop(caster, key, SwapIds.SWITCHBACK_TIMER, 0);
-        VisualService.startLoop(target, key, SwapIds.SWITCHBACK_TIMER, 0);
+        VisualService.startLoop(caster, key, SwapIds.SWITCHBACK_TIMER, delay);
+        VisualService.startLoop(target, key, SwapIds.SWITCHBACK_TIMER, delay);
     }
 
     /** The caster is waiting to be swapped back (Round Trip). */
@@ -60,7 +63,8 @@ public final class Switchback {
             stopTimers(casterId, caster, target);
             if (caster == null || !usable(caster, pending) || !usable(target, pending)) return;
             if (!SwapTargeting.allowed(caster, target, Swap.SWITCHBACK, Component.translatable("message.kegare.swap.switchback_refused"))) return;
-            Swapper.swap(caster, target, true, SwapSounds.POSITIONS);
+            Swapper.swap(caster, target, true, SwapSounds.SWITCHBACK_BACK);
+            VisualService.playOnce(caster, SNAP);
             SwapTracker.swapped(caster, target);
         });
     }

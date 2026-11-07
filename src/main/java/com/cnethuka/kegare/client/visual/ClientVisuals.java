@@ -6,9 +6,11 @@ import com.cnethuka.kegare.innatetechnique.visual.Visual;
 import com.cnethuka.kegare.network.VisualPayload;
 import com.lowdragmc.photon.client.fx.FXEffectExecutor;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.CopyOnWriteArrayList;
 import javax.annotation.Nullable;
 import net.minecraft.client.Minecraft;
@@ -46,13 +48,15 @@ public final class ClientVisuals {
             this.trail = trail;
         }
 
-        /** Vanilla particles stand in while there is an effect but no Photon runtime. */
+        /** Vanilla particles stand in while there is an effect but no Photon runtime (not for one its move draws itself). */
         boolean usesFallback() {
-            return visual.effect().isPresent() && executor == null;
+            return visual.effect().isPresent() && executor == null && !DRAWN_BY_MOVE.contains(visual.effect().get());
         }
     }
 
     private static final Map<Integer, Map<String, Loop>> LOOPS = new HashMap<>();
+    /** Loops their move draws itself: neither Photon nor vanilla particles, see {@link #drawnByMove}. */
+    private static final Set<ResourceLocation> DRAWN_BY_MOVE = new HashSet<>();
     private static final String TRAIL_KEY = "trail";
 
     private ClientVisuals() {}
@@ -112,7 +116,7 @@ public final class ClientVisuals {
         }
         boolean trail = TRAIL_KEY.equals(key) || visual.linger();
         FXEffectExecutor executor = null;
-        if (visual.effect().isPresent()) {
+        if (visual.effect().isPresent() && !DRAWN_BY_MOVE.contains(visual.effect().get())) {
             VfxQuality quality = KegareClientConfig.VFX_QUALITY.get();
             if (quality != VfxQuality.VANILLA) {
                 executor = PhotonEffects.onEntity(firstPersonVariant(entity, visual.effect().get()), entity, visual.anchor(),
@@ -124,6 +128,7 @@ public final class ClientVisuals {
         }
         LOOPS.computeIfAbsent(entity.getId(), id -> new HashMap<>())
                 .put(key, new Loop(visual, executor, growTicks, entity.level().getGameTime(), animation, trail));
+        LISTENERS.forEach(l -> l.loopStarted(entity, key, visual));
     }
 
     public static void stopLoop(net.minecraft.world.level.Level level, int entityId, String key) {
@@ -274,6 +279,9 @@ public final class ClientVisuals {
 
     /** Told when loops stop and one-shots play, for a move that draws part of itself (Glacial Lance's lance in the hand). */
     public interface Listener {
+        /** Loop {@code key} started on {@code entity} ({@link #loopTime} says for how long and over how many ticks it grows). */
+        default void loopStarted(Entity entity, String key, Visual visual) {}
+
         /** Loop {@code key} on {@code entity} stopped after {@code ticks}; it was growing over {@code growTicks}. */
         default void loopStopped(Entity entity, String key, float ticks, int growTicks) {}
 
@@ -284,6 +292,14 @@ public final class ClientVisuals {
 
     public static void listen(Listener listener) {
         LISTENERS.add(listener);
+    }
+
+    /**
+     * Loops of {@code effect} are drawn by their move (found through a {@link Listener}): the loop is kept and timed as usual, but
+     * plays neither a Photon effect nor vanilla particles.
+     */
+    public static void drawnByMove(ResourceLocation effect) {
+        DRAWN_BY_MOVE.add(effect);
     }
 
     /** How long a loop has run, in ticks (partial tick included), and how long it grows for. */

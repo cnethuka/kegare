@@ -38,7 +38,6 @@ public final class SwapFxAuthoring {
         out.put(SwapIds.FX_SWAP_DEPART, SwapFxAuthoring::depart);
         out.put(SwapIds.FX_SWAP_ARRIVE, SwapFxAuthoring::arrive);
         out.put(SwapIds.FX_SWAP_LINK, SwapFxAuthoring::link);
-        out.put(SwapIds.FX_SWITCHBACK_TIMER, SwapFxAuthoring::switchbackTimer);
         out.put(SwapIds.FX_AWARENESS_SHIMMER, SwapFxAuthoring::awarenessShimmer);
         out.put(SwapIds.FX_MIMIC_FLICKER, SwapFxAuthoring::mimicFlicker);
         out.put(SwapIds.FX_ANCHOR_MARKER, SwapFxAuthoring::anchorMarker);
@@ -97,42 +96,6 @@ public final class SwapFxAuthoring {
         return fx(bead, sparks);
     }
 
-    /** Switchback's countdown: a faint ring at the feet closing in once a second, with two motes circling. */
-    private static FX switchbackTimer() {
-        ParticleEmitter ring = emitter("ring", true, 20);
-        ParticleConfig c = ring.config;
-        c.setMaxParticles(2);
-        c.setStartLifetime(NumberFunction.constant(20));
-        c.setStartSpeed(NumberFunction.constant(0));
-        c.setStartSize(uniform(NumberFunction.constant(1.6f)));
-        c.shape.setScale(new NumberFunction3(0, 0, 0));
-        c.emission.setEmissionRate(NumberFunction.constant(0));
-        c.emission.getBursts().add(burst(0, 1));
-        c.renderer.setRenderMode(ParticleRendererSetting.Mode.Horizontal);
-        shrink(c);
-        c.colorOverLifetime.setEnable(true);
-        c.colorOverLifetime.setColor(gradient(0x445EEAD4, 0x6614B8A6, 0x22A855F7));
-        material(ring, recolor(KilaPresets.SHOCKWAVE.create(), 0.3f, 0.85f, 0.78f, 0.9f));
-        ring.transform().localPosition(new Vector3f(0, 0.05f, 0));
-
-        ParticleEmitter motes = emitter("motes", true, 20);
-        ParticleConfig m = motes.config;
-        m.setMaxParticles(12);
-        m.setStartLifetime(range(14, 20));
-        m.setStartSpeed(NumberFunction.constant(0));
-        m.setStartSize(uniform(range(0.04f, 0.06f)));
-        Sphere around = sphere(0.6f);
-        around.setRadiusThickness(0f);
-        m.shape.setShape(around);
-        m.shape.setScale(new NumberFunction3(1f, 0f, 1f));
-        m.emission.setEmissionRate(NumberFunction.constant(0.6f));
-        m.velocityOverLifetime.setEnable(true);
-        m.velocityOverLifetime.setOrbital(new NumberFunction3(0, 3f, 0));
-        fadeInOut(m, LIGHT, DEEP);
-        material(motes, glow(0.35f, 0.9f, 0.8f, 1f));
-        motes.transform().localPosition(new Vector3f(0, 0.1f, 0));
-        return fx(ring, motes);
-    }
 
     /** Only the disguised player sees this: a few faint violet-teal motes drifting up close around them. */
     private static FX awarenessShimmer() {

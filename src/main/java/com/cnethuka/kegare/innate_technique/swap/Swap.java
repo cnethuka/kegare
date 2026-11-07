@@ -58,7 +58,6 @@ public final class Swap {
         VisualHooks.registerEffect(SwapIds.FX_SWAP_DEPART);
         VisualHooks.registerEffect(SwapIds.FX_SWAP_ARRIVE);
         VisualHooks.registerEffect(SwapIds.FX_SWAP_LINK);
-        VisualHooks.registerEffect(SwapIds.FX_SWITCHBACK_TIMER);
         VisualHooks.registerEffect(SwapIds.FX_AWARENESS_SHIMMER);
         VisualHooks.registerEffect(SwapIds.FX_MIMIC_FLICKER);
         VisualHooks.registerEffect(SwapIds.FX_ANCHOR_MARKER);

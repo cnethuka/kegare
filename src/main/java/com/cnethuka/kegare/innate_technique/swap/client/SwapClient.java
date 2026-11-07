@@ -5,28 +5,29 @@ import com.cnethuka.kegare.client.visual.PlayerAnimations;
 import com.cnethuka.kegare.client.visual.VanillaFallback;
 import com.cnethuka.kegare.innate_technique.swap.SwapIds;
 import com.cnethuka.kegare.innate_technique.swap.SwapLink;
-import net.minecraft.core.particles.DustParticleOptions;
-import net.minecraft.core.particles.ParticleTypes;
-import org.joml.Vector3f;
 import com.cnethuka.kegare.innate_technique.swap.SwapRegistry;
-import net.minecraft.client.renderer.entity.ThrownItemRenderer;
-import net.neoforged.neoforge.client.event.EntityRenderersEvent;
 import com.cnethuka.kegare.innatetechnique.visual.Visual;
+import com.mojang.blaze3d.vertex.PoseStack;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.multiplayer.ClientLevel;
+import net.minecraft.client.player.AbstractClientPlayer;
+import net.minecraft.client.renderer.entity.ThrownItemRenderer;
+import net.minecraft.core.particles.DustParticleOptions;
+import net.minecraft.core.particles.ParticleTypes;
+import net.minecraft.world.entity.Entity;
 import net.minecraft.world.phys.Vec3;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.neoforge.client.event.ClientPlayerNetworkEvent;
 import net.neoforged.neoforge.client.event.ClientTickEvent;
+import net.neoforged.neoforge.client.event.EntityRenderersEvent;
 import net.neoforged.neoforge.client.event.RenderFrameEvent;
 import net.neoforged.neoforge.client.event.RenderLevelStageEvent;
 import net.neoforged.neoforge.client.event.RenderPlayerEvent;
-import com.mojang.blaze3d.vertex.PoseStack;
-import net.minecraft.client.player.AbstractClientPlayer;
 import net.neoforged.neoforge.common.NeoForge;
+import org.joml.Vector3f;
 
 /**
  * Swap's client side: what it draws itself ({@link SwapFx}), effects drawn along a line (Exchange's travelling orbs) and the
@@ -72,7 +73,6 @@ public final class SwapClient {
         VanillaFallback.register(SwapIds.FX_SWAP_DEPART, new VanillaFallback.Spec(TEAL_FLICK, 1, 12, 0.3, 0.02));
         VanillaFallback.register(SwapIds.FX_SWAP_ARRIVE, new VanillaFallback.Spec(TEAL_FLICK, 1, 8, 0.3, 0.02));
         VanillaFallback.register(SwapIds.FX_SWAP_LINK, new VanillaFallback.Spec(TEAL_DUST, 1, 2, 0.05, 0.0));
-        VanillaFallback.register(SwapIds.FX_SWITCHBACK_TIMER, new VanillaFallback.Spec(TEAL_DUST, 1, 4, 0.6, 0.0));
         VanillaFallback.register(SwapIds.FX_AWARENESS_SHIMMER, new VanillaFallback.Spec(ParticleTypes.WITCH, 1, 4, 0.6, 0.0));
         VanillaFallback.register(SwapIds.FX_MIMIC_FLICKER, new VanillaFallback.Spec(TEAL_DUST, 1, 24, 0.4, 0.0));
         VanillaFallback.register(SwapIds.FX_ANCHOR_MARKER, new VanillaFallback.Spec(TEAL_DUST, 1, 6, 0.2, 0.0));
@@ -86,8 +86,22 @@ public final class SwapClient {
         NeoForge.EVENT_BUS.addListener(SwapClient::onLogout);
         NeoForge.EVENT_BUS.addListener(SwapClient::onRenderPlayer);
         NeoForge.EVENT_BUS.addListener(SwapClient::onRenderLevel);
+        // Switchback's countdown ring is drawn here (SwapFx), not by Photon: it has to drain in step with the swap back.
+        ClientVisuals.drawnByMove(SwapIds.FX_SWITCHBACK_TIMER);
+        ClientVisuals.listen(new ClientVisuals.Listener() {
+            @Override
+            public void loopStarted(Entity entity, String key, Visual visual) {
+                if (key.startsWith(SwapIds.SWITCHBACK_TIMER_KEY)) SwapFx.countdownStarted(entity, key);
+            }
+
+            @Override
+            public void loopStopped(Entity entity, String key, float ticks, int growTicks) {
+                if (key.startsWith(SwapIds.SWITCHBACK_TIMER_KEY)) SwapFx.countdownStopped(entity, key);
+            }
+        });
         // Every Swap animation is a clap in front of the chest: in your own first person, only while you look about level.
         PlayerAnimations.handsWhileLevel(List.of(SwapIds.ANIM_POSITIONS_CLAP, SwapIds.ANIM_SWAP_SNAP, SwapIds.ANIM_SWITCHBACK_CAST,
+                SwapIds.ANIM_SWITCHBACK_SNAP,
                 SwapIds.ANIM_AWARENESS_CAST, SwapIds.ANIM_MIMIC_CAST, SwapIds.ANIM_ANCHOR_THROW, SwapIds.ANIM_ANCHOR_RECALL,
                 SwapIds.ANIM_SEND_OFF_CAST, SwapIds.ANIM_EXCHANGE_CAST, SwapIds.ANIM_MOMENTUM_CAST));
         // Both ends of every swap: drawn here from the entity the server names, and Photon's glints on top (or the dust) a tick late.
