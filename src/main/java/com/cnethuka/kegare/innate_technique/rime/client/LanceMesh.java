@@ -44,28 +44,98 @@ public final class LanceMesh {
         }
     }
 
-    @Nullable private static Map<String, Piece> pieces;
+    /**
+     * One mesh of Rime's ice and its two textures, drawn the same way: the lance, and Glacial Spire's spike
+     * (tools/blockbench/build_glacial_spire.py, the same painter at a coarser density).
+     */
+    public static final class Model {
+        final ResourceLocation obj;
+        final ResourceLocation texture;
+        final ResourceLocation glowTexture;
+        @Nullable private Map<String, Piece> pieces;
+
+        public Model(ResourceLocation obj, ResourceLocation texture, ResourceLocation glowTexture) {
+            this.obj = obj;
+            this.texture = texture;
+            this.glowTexture = glowTexture;
+        }
+
+        @Nullable
+        public Piece piece(String name) {
+            if (pieces == null) pieces = load();
+            return pieces.get(name);
+        }
+
+        /** Resources reloaded: read the mesh again when it's next drawn. */
+        public void forget() {
+            pieces = null;
+        }
+
+        private Map<String, Piece> load() {
+            try (BufferedReader reader = Minecraft.getInstance().getResourceManager().openAsReader(obj)) {
+                return parse(reader);
+            } catch (IOException | RuntimeException e) {
+                Kegare.LOGGER.warn("Couldn't read {}; it won't be drawn", obj, e);
+                return Map.of();
+            }
+        }
+
+        public RenderType body() {
+            return RenderType.entitySolid(texture);
+        }
+
+        public RenderType glow() {
+            return RenderType.entityCutout(glowTexture);
+        }
+
+        /** Draws pieces into both passes, each about the origin by its own {@code scales} entry (0 skips it). */
+        public void draw(PoseStack.Pose pose, MultiBufferSource buffers, List<String> names, float[] scales, int light) {
+            VertexConsumer body = buffers.getBuffer(body());
+            int lit = light(light);
+            for (int i = 0; i < names.size(); i++) {
+                Piece piece = scales[i] > 0f ? piece(names.get(i)) : null;
+                if (piece != null) emit(pose, body, piece, scales[i], lit, false);
+            }
+            VertexConsumer glow = buffers.getBuffer(glow());
+            for (int i = 0; i < names.size(); i++) {
+                Piece piece = scales[i] > 0f ? piece(names.get(i)) : null;
+                if (piece != null) emit(pose, glow, piece, scales[i], LightTexture.FULL_BRIGHT, true);
+            }
+        }
+
+        /** Draws pieces each in its own pose (moved, turned, scaled), both passes, with the same world light. */
+        public void draw(MultiBufferSource buffers, List<PoseStack.Pose> poses, List<String> names, int light) {
+            VertexConsumer body = buffers.getBuffer(body());
+            int lit = light(light);
+            for (int i = 0; i < names.size(); i++) {
+                Piece piece = piece(names.get(i));
+                if (piece != null) emit(poses.get(i), body, piece, 1f, lit, false);
+            }
+            VertexConsumer glow = buffers.getBuffer(glow());
+            for (int i = 0; i < names.size(); i++) {
+                Piece piece = piece(names.get(i));
+                if (piece != null) emit(poses.get(i), glow, piece, 1f, LightTexture.FULL_BRIGHT, true);
+            }
+        }
+    }
+
+    /** The lance. */
+    public static final Model LANCE = new Model(MODEL, TEXTURE, GLOW);
+    /** Glacial Spire's spike: its pieces and the chunks it breaks into (SpireShape). */
+    public static final Model SPIRE = new Model(Kegare.id("models/fx/glacial_spire.obj"), Kegare.id("textures/entity/glacial_spire.png"),
+            Kegare.id("textures/entity/glacial_spire_glow.png"));
 
     private LanceMesh() {}
 
     @Nullable
     public static Piece piece(String name) {
-        if (pieces == null) pieces = load();
-        return pieces.get(name);
+        return LANCE.piece(name);
     }
 
-    /** Resources reloaded: read the mesh again when it's next drawn. */
+    /** Resources reloaded: read the meshes again when they're next drawn. */
     public static void forget() {
-        pieces = null;
-    }
-
-    private static Map<String, Piece> load() {
-        try (BufferedReader reader = Minecraft.getInstance().getResourceManager().openAsReader(MODEL)) {
-            return parse(reader);
-        } catch (IOException | RuntimeException e) {
-            Kegare.LOGGER.warn("Couldn't read {}; Glacial Lance won't be drawn", MODEL, e);
-            return Map.of();
-        }
+        LANCE.forget();
+        SPIRE.forget();
     }
 
     /** Reads Blockbench's OBJ: one object per piece, triangles, texture coordinates with v counted from the bottom. */
@@ -142,11 +212,11 @@ public final class LanceMesh {
     // ---------------------------------------------------------------------------------------------- drawing
 
     public static RenderType body() {
-        return RenderType.entitySolid(TEXTURE);
+        return LANCE.body();
     }
 
     public static RenderType glow() {
-        return RenderType.entityCutout(GLOW);
+        return LANCE.glow();
     }
 
     /** World light with the floor under it. */
@@ -162,17 +232,7 @@ public final class LanceMesh {
      * @param light  packed world light where the lance is
      */
     public static void draw(PoseStack.Pose pose, MultiBufferSource buffers, List<String> names, float[] scales, int light) {
-        VertexConsumer body = buffers.getBuffer(body());
-        int lit = light(light);
-        for (int i = 0; i < names.size(); i++) {
-            Piece piece = scales[i] > 0f ? piece(names.get(i)) : null;
-            if (piece != null) emit(pose, body, piece, scales[i], lit, false);
-        }
-        VertexConsumer glow = buffers.getBuffer(glow());
-        for (int i = 0; i < names.size(); i++) {
-            Piece piece = scales[i] > 0f ? piece(names.get(i)) : null;
-            if (piece != null) emit(pose, glow, piece, scales[i], LightTexture.FULL_BRIGHT, true);
-        }
+        LANCE.draw(pose, buffers, names, scales, light);
     }
 
     /** One piece into one pass. Triangles go out as quads with the last corner twice, which is what an entity render type takes. */

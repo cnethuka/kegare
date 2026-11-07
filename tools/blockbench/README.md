@@ -1,4 +1,4 @@
-# Blockbench tooling (player animations, Strings, Glacial Lance, block marks)
+# Blockbench tooling (player animations, Strings, Glacial Lance, Glacial Spire, block marks)
 
 Animations are written pose-to-pose in `tools/anims/<technique>.py` and exported to
 `src/main/resources/assets/kegare/player_animations/<technique>.json` in Blockbench's own Bedrock format, which Player
@@ -37,6 +37,13 @@ edges, so an edit made in the .bbmodel is lost on the next run.
 Its body animations are in `tools/anims/glacial_lance.py`; `build.py --preview` draws the lance in the hand by
 `LANCE_GRIP`, the numbers `LanceHold` uses in game (`GlacialLanceArtTest` checks they match). Blockbench's preview lights
 faces its own way: check the colours in game.
+
+Glacial Spire's spike is made the same way: `spire_shapes.py` makes its crystal groups and chunks, and
+`build_glacial_spire.py` paints them with the lance's painter at a coarser density (`art/blockbench/glacial_spire.bbmodel`,
+`models/fx/glacial_spire.obj`, `textures/entity/glacial_spire*.png`). Its body animations are in `tools/anims/glacial_spire.py`.
+Before an animation preview after building a mesh, load the rig again (Setting up): the viewer draws whatever project is open.
+
+    python3 -I tools/blockbench/build_glacial_spire.py --preview  # also run/spire_preview/*.png
 
 ## Marks on blocks: pixel art, no Blockbench
 

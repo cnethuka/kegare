@@ -9,10 +9,12 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent))
 import kit  # noqa: E402
 import glacial_lance  # noqa: E402
+import glacial_spire  # noqa: E402
 import melee  # noqa: E402
 import puppet_manipulation  # noqa: E402
 
-SETS = {"puppet_manipulation": puppet_manipulation.ANIMS, "melee": melee.ANIMS, "glacial_lance": glacial_lance.ANIMS}
+SETS = {"puppet_manipulation": puppet_manipulation.ANIMS, "melee": melee.ANIMS, "glacial_lance": glacial_lance.ANIMS,
+        "glacial_spire": glacial_spire.ANIMS}
 # What a set's preview holds: (bone, OBJ, texture, objects, grip). The game draws the same thing from the same numbers.
 HELD = {"glacial_lance": ("right_arm", "src/main/resources/assets/kegare/models/fx/glacial_lance.obj",
                           "src/main/resources/assets/kegare/textures/entity/glacial_lance.png",

@@ -41,6 +41,7 @@ public final class RimeIds {
     public static final ResourceLocation FX_GLACIAL_SPIRE_WARNING = fx("glacial_spire_warning");
     public static final ResourceLocation FX_GLACIAL_SPIRE_SPIKE = fx("glacial_spire_spike");
     public static final ResourceLocation FX_GLACIAL_SPIRE_ERUPT = fx("glacial_spire_erupt");
+    public static final ResourceLocation FX_GLACIAL_SPIRE_SHATTER = fx("glacial_spire_shatter");
     public static final ResourceLocation FX_ICE_PATH_TRAIL = fx("ice_path_trail");
     public static final ResourceLocation FX_SHATTER_SHELL_BURST = fx("shatter_shell_burst");
 

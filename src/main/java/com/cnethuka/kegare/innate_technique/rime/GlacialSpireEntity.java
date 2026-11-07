@@ -1,11 +1,12 @@
 package com.cnethuka.kegare.innate_technique.rime;
 
 import com.cnethuka.kegare.combat.CombatHelper;
-import com.cnethuka.kegare.innatetechnique.visual.Visual;
 import com.cnethuka.kegare.innatetechnique.visual.VisualService;
 import java.util.UUID;
 import javax.annotation.Nullable;
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.network.syncher.EntityDataAccessor;
+import net.minecraft.network.syncher.EntityDataSerializers;
 import net.minecraft.network.syncher.SynchedEntityData;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
@@ -22,9 +23,11 @@ import net.minecraft.world.phys.Vec3;
 /**
  * Glacial Spire on the ground: a marker entity (no blocks, never saved). It shows a frost warning circle, erupts after
  * the warning time (damage, freeze stacks, launch), stands as a spike for a moment, then shatters and is gone.
- * Its visuals are loops on this entity, so players who arrive late still see the right stage.
+ * Its visuals are loops on this entity, so players who arrive late still see the right stage. Its charge rides the entity's own
+ * synced data (vanilla's, not a Kegare packet), so every client draws the spike as tall as the launch it gives.
  */
 public class GlacialSpireEntity extends Entity {
+    private static final EntityDataAccessor<Float> DATA_CHARGE = SynchedEntityData.defineId(GlacialSpireEntity.class, EntityDataSerializers.FLOAT);
     @Nullable
     private UUID caster;
     private float charge;
@@ -42,13 +45,21 @@ public class GlacialSpireEntity extends Entity {
         this(RimeRegistry.GLACIAL_SPIRE.get(), level);
         this.caster = caster.getUUID();
         this.charge = Mth.clamp(charge, 0f, 1f);
+        entityData.set(DATA_CHARGE, this.charge);
         this.warningTicks = RimeConfig.ticks(RimeConfig.SPIRE_DELAY);
         this.standTicks = Math.max(1, RimeConfig.ticks(RimeConfig.SPIRE_STANDS_SECONDS));
         setPos(at.x, at.y, at.z);
     }
 
     @Override
-    protected void defineSynchedData(SynchedEntityData.Builder builder) {}
+    protected void defineSynchedData(SynchedEntityData.Builder builder) {
+        builder.define(DATA_CHARGE, 0.5f);
+    }
+
+    /** How charged it was, 0 to 1 (on the client too). */
+    public float charge() {
+        return entityData.get(DATA_CHARGE);
+    }
 
     @Override
     public void tick() {
@@ -66,7 +77,7 @@ public class GlacialSpireEntity extends Entity {
         if (!erupted && tickCount >= warningTicks) erupt();
         if (erupted && tickCount >= warningTicks + standTicks) {
             VisualService.stopLoop(this, RimeIds.SPIRE_SPIKE_KEY);
-            VisualService.playAt((ServerLevel) level(), position().add(0, 1.0, 0), Visual.effect(RimeIds.FX_FREEZE_SHATTER, Visual.Anchor.BODY));
+            // The spike breaking up is drawn by each client when the marker goes (SpireClient: solid chunks of its own ice).
             level().playSound(null, getX(), getY(), getZ(), SoundEvents.GLASS_BREAK, SoundSource.PLAYERS, 0.8f, 1.2f);
             discard();
         }

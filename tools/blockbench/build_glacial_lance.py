@@ -75,15 +75,22 @@ class Cracks:
     """Borders between regions of a Voronoi field, only where the two nearest seeds belong to different groups: sparse, straight,
     angular lines through the whole volume, so a crack crossing a ridge carries on along the next face."""
 
-    def __init__(self, seed=77):
+    def __init__(self, seed=77, across=(0.32, 0.28), along=(-1.15, 1.95), step=0.13, axis=2, jitter=0.06):
+        """Seeds two to a slice, `step` apart along `axis` from along[0] to along[1], within +-across on the other two axes (the
+        defaults are the lance's: along Z)."""
         import random
         rng = random.Random(seed)
         self.seeds = []
-        z = -1.15
-        while z < 1.95:
+        z = along[0]
+        others = [a for a in range(3) if a != axis]
+        while z < along[1]:
             for _ in range(2):
-                self.seeds.append(((rng.uniform(-0.32, 0.32), rng.uniform(-0.28, 0.28), z + rng.uniform(-0.06, 0.06)), rng.randrange(3)))
-            z += 0.13
+                p = [0.0, 0.0, 0.0]
+                p[others[0]] = rng.uniform(-across[0], across[0])
+                p[others[1]] = rng.uniform(-across[1], across[1])
+                p[axis] = z + rng.uniform(-jitter, jitter)
+                self.seeds.append((tuple(p), rng.randrange(3)))
+            z += step
 
     def distance(self, p):
         """Distance to the nearest crack, and whether there's one near enough to matter."""
@@ -105,8 +112,9 @@ class Cracks:
 # ---------------------------------------------------------------------------------------------- atlas
 
 class Island:
-    def __init__(self, piece, polygon):
+    def __init__(self, piece, polygon, density=DENSITY):
         self.piece = piece
+        self.density = density
         self.polygon = polygon
         self.normal = L.polygon_normal(polygon)
         # Lay the face flat along its longest edge.
@@ -119,20 +127,20 @@ class Island:
         self.min_x = min(x for x, _ in flat)
         self.min_y = min(y for _, y in flat)
         self.flat = [(x - self.min_x, y - self.min_y) for x, y in flat]
-        self.w = math.ceil(max(x for x, _ in self.flat) * DENSITY) + 2 * PAD
-        self.h = math.ceil(max(y for _, y in self.flat) * DENSITY) + 2 * PAD
+        self.w = math.ceil(max(x for x, _ in self.flat) * density) + 2 * PAD
+        self.h = math.ceil(max(y for _, y in self.flat) * density) + 2 * PAD
         self.x0 = self.y0 = 0
 
     def texel(self, flat):
-        return (self.x0 + PAD + flat[0] * DENSITY, self.y0 + PAD + flat[1] * DENSITY)
+        return (self.x0 + PAD + flat[0] * self.density, self.y0 + PAD + flat[1] * self.density)
 
     def uvs(self):
         return [self.texel(f) for f in self.flat]
 
     def point(self, tx, ty):
         """The 3D point under a texel's centre, and where that is on the flat face (blocks)."""
-        fx = (tx + 0.5 - self.x0 - PAD) / DENSITY
-        fy = (ty + 0.5 - self.y0 - PAD) / DENSITY
+        fx = (tx + 0.5 - self.x0 - PAD) / self.density
+        fy = (ty + 0.5 - self.y0 - PAD) / self.density
         lx, ly = fx + self.min_x, fy + self.min_y
         return L.add(self.origin, L.add(L.mul(self.u, lx), L.mul(self.v, ly))), (fx, fy)
 
@@ -157,11 +165,11 @@ class Island:
         return best
 
 
-def pack(islands):
+def pack(islands, width=ATLAS_WIDTH):
     islands = sorted(islands, key=lambda i: -i.h)
     x = y = row = 0
     for isl in islands:
-        if x + isl.w > ATLAS_WIDTH:
+        if x + isl.w > width:
             x, y, row = 0, y + row, 0
         isl.x0, isl.y0 = x, y
         x += isl.w
@@ -175,14 +183,18 @@ def pack(islands):
 
 # ---------------------------------------------------------------------------------------------- paint
 
-def paint(islands, height):
-    colour = Image.new("RGBA", (ATLAS_WIDTH, height), FROST + (255,))
-    glow = Image.new("RGBA", (ATLAS_WIDTH, height), (0, 0, 0, 0))
+def paint(islands, height, width=ATLAS_WIDTH, cracks=None, ridge=RIDGE, band_width=BAND, crack_width=CRACK_WIDTH,
+          crack_glow=CRACK_GLOW):
+    """The colour (opaque) and the glow (cut out) for every face. The defaults are the lance's; a bigger piece of ice wants wider
+    lines (in blocks) so they read at the distance it's seen from."""
+    RIDGE, CRACK_WIDTH, CRACK_GLOW = ridge, crack_width, crack_glow  # noqa: N806 (the lance's names, read below)
+    colour = Image.new("RGBA", (width, height), FROST + (255,))
+    glow = Image.new("RGBA", (width, height), (0, 0, 0, 0))
     cpx, gpx = colour.load(), glow.load()
-    cracks = Cracks()
+    cracks = cracks or Cracks()
     for isl in islands:
         inner = isl.inradius()
-        band = min(BAND, max(0.01, inner * 0.5))
+        band = min(band_width, max(0.01, inner * 0.5))
         shard = isl.piece.startswith("shard")
         for ty in range(isl.y0, isl.y0 + isl.h):
             for tx in range(isl.x0, isl.x0 + isl.w):
@@ -233,9 +245,9 @@ BUILD_JS = """
 (async () => {
   const data = %s;
   newProject(Formats.free);
-  Project.name = 'glacial_lance';
+  Project.name = data.name;
   Project.texture_width = data.width; Project.texture_height = data.height;
-  const tex = new Texture({name: 'glacial_lance.png'}).fromPath(data.texture).add(false);
+  const tex = new Texture({name: data.name + '.png'}).fromPath(data.texture).add(false);
   tex.uv_width = data.width; tex.uv_height = data.height;
   for (const piece of data.pieces) {
     const mesh = new Mesh({name: piece.name, vertices: {}, origin: [0, 0, 0]});
@@ -280,7 +292,6 @@ PREVIEW_JS = """
 
 
 def build(preview=False):
-    from cdp import BB
     shapes = L.pieces()
     islands = [Island(name, poly) for name, polys in shapes.items() for poly in polys]
     height = pack(islands)
@@ -292,35 +303,43 @@ def build(preview=False):
     trail_line().save(TEXTURES.parent / "fx" / "glacial_lance_trail.png", optimize=True)
     print(f"atlas {ATLAS_WIDTH}x{height}, {len(islands)} faces")
 
+    bb = export("glacial_lance", shapes, islands, ATLAS_WIDTH, height, TEXTURES / "glacial_lance.png", OBJ_PATH, BBMODEL)
+    if preview:
+        render_previews(bb)
+
+
+def export(name, shapes, islands, width, height, texture, obj_path, bbmodel_path):
+    """Sends the meshes to the running Blockbench (one mesh per piece, UVs into the atlas) and writes back what it makes of them:
+    the .bbmodel and the OBJ. Returns the Blockbench connection."""
+    from cdp import BB
     pieces = []
-    for name in shapes:
+    for piece in shapes:
         tris = []
-        for isl in (i for i in islands if i.piece == name):
+        for isl in (i for i in islands if i.piece == piece):
             uvs = isl.uvs()
             corners = list(zip(isl.polygon, uvs))
             for i in range(1, len(corners) - 1):
                 tri = (corners[0], corners[i], corners[i + 1])
                 tris.append([{"p": [round(c[0][0] * 16, 5), round(c[0][1] * 16, 5), round(c[0][2] * 16, 5)],
                               "uv": [round(c[1][0], 4), round(c[1][1], 4)]} for c in tri])
-        pieces.append({"name": name, "triangles": tris})
-    data = {"width": ATLAS_WIDTH, "height": height, "texture": str(TEXTURES / "glacial_lance.png"), "pieces": pieces}
+        pieces.append({"name": piece, "triangles": tris})
+    data = {"name": name, "width": width, "height": height, "texture": str(texture), "pieces": pieces}
     bb = BB()
     result = bb.js(BUILD_JS % json.dumps(data))
     bbmodel = result["bbmodel"] if isinstance(result["bbmodel"], str) else json.dumps(result["bbmodel"])
-    BBMODEL.parent.mkdir(parents=True, exist_ok=True)
-    BBMODEL.write_text(bbmodel)
+    bbmodel_path.parent.mkdir(parents=True, exist_ok=True)
+    bbmodel_path.write_text(bbmodel)
     obj = result["obj"] if isinstance(result["obj"], str) else result["obj"]["obj"]
-    OBJ_PATH.write_text(obj)
-    print("wrote", BBMODEL.relative_to(ROOT), "and", OBJ_PATH.relative_to(ROOT), len(obj), "bytes")
-    check_winding(shapes)
-    if preview:
-        render_previews(bb)
+    obj_path.write_text(obj)
+    print("wrote", bbmodel_path.relative_to(ROOT), "and", obj_path.relative_to(ROOT), len(obj), "bytes")
+    check_winding(shapes, obj_path)
+    return bb
 
 
-def check_winding(shapes):
+def check_winding(shapes, obj_path=OBJ_PATH):
     """The OBJ's triangles must face out (the game culls back faces): compare each with the face it came from."""
     verts, faces, current = [], {}, None
-    for line in OBJ_PATH.read_text().splitlines():
+    for line in obj_path.read_text().splitlines():
         parts = line.split()
         if not parts:
             continue

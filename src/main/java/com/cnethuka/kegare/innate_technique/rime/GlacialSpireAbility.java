@@ -25,7 +25,7 @@ import net.minecraft.world.phys.Vec3;
  */
 public final class GlacialSpireAbility extends RimeSpecial {
     private static final AbilityVisuals VISUALS = AbilityVisuals.builder()
-            .chargeLoop(RimeIds.ANIM_GLACIAL_SPIRE_CHARGE, RimeIds.FX_GLACIAL_SPIRE_CHARGE)
+            .chargeLoop(RimeIds.ANIM_GLACIAL_SPIRE_CHARGE, null) // the frost gathers in the raised fist: SpireClient
             .release(RimeIds.ANIM_GLACIAL_SPIRE_RELEASE, null)
             .impact(RimeIds.FX_GLACIAL_SPIRE_ERUPT)
             .build();

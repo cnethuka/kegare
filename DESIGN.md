@@ -726,7 +726,7 @@ Package `com.cnethuka.kegare.innate_technique.rime`. **Rarity: RARE.** All numbe
   | Special (of) | Type | What it does (defaults) |
   |---|---|---|
   | **Splinter** (Frost Shard) | INSTANT | Three smaller shards in a fan, 9° apart (`spreadAngle`), 2 blocks/tick, 1 s flight. 2 damage and +1 Freeze stack each. Shards of one cast skip the hurt cooldown a sibling left, so all three can land on one target (other attacks still respect it). Real projectiles (`SplinterShardEntity`), damage type `kegare:rime`. Cost 56, cooldown 3 s. |
-  | **Glacial Spire** (Glacial Lance) | CHARGED | Hold up to 2 s (a tap under 0.3 s fizzles) while aiming at the ground within 20 blocks. With the crosshair on a living thing it picks the ground under them (`GroundAim`: not an invisible one or one behind a wall, and that ground must be in range too); the spot is fixed at release, so they can still dodge. Aiming at a wall picks the floor in front of it; no ground in range at release fizzles for free ("Glacial Spire needs ground within 20 blocks."). While charging, only the caster sees a ring of frost dust where it will rise. On release a marker entity (`GlacialSpireEntity`, never saved, no blocks) shows a frost warning circle (radius 1.5) for 0.75 s, with a curtain of glints rising from its edge past head height so a player standing in it sees the warning while looking straight ahead, then an ice spike erupts: 6 damage, +2 Freeze stacks, and everyone on it (up to 2.5 blocks above the ground) is launched upward at 0.6 to 1.2 blocks/tick by charge. The spike stands 1.25 s, then shatters. Cost 120, cooldown 8 s. |
+  | **Glacial Spire** (Glacial Lance) | CHARGED | Hold up to 2 s (a tap under 0.3 s fizzles) while aiming at the ground within 20 blocks. With the crosshair on a living thing it picks the ground under them (`GroundAim`: not an invisible one or one behind a wall, and that ground must be in range too); the spot is fixed at release, so they can still dodge. Aiming at a wall picks the floor in front of it; no ground in range at release fizzles for free ("Glacial Spire needs ground within 20 blocks."). While charging, only the caster sees a ring of frost dust where it will rise. On release a marker entity (`GlacialSpireEntity`, never saved, no blocks) cracks the ground in a warning circle (radius 1.5) for 0.75 s, with a curtain of glints rising from its edge past head height so a player standing in it sees the warning while looking straight ahead, then an ice spike erupts: 6 damage, +2 Freeze stacks, and everyone on it (up to 2.5 blocks above the ground) is launched upward at 0.6 to 1.2 blocks/tick by charge. The spike stands 1.25 s, then shatters. Cost 120, cooldown 8 s. |
   | **Ice Path** (Frost Field) | CHANNELED | Hold R: you slide the way you look at 0.65 blocks/tick (step height +0.5 so you ride up blocks; no fall damage while sliding) over an ice trail laid under your feet. Anyone else within 0.9 blocks of the trail gets Slowness II until it melts, 4 s after each bit was laid. The trail is server-side points (`IcePaths`, a level attachment), never blocks. Cost 32, then 40 Malice/s; max 3 s; cooldown 6 s after it ends. |
   | **Shatter Shell** (Rime Shell) | INSTANT | Burst outward: everyone within 4.5 blocks is knocked back (1.4) and gets +2 Freeze stacks. With Rime Shell on, the shell is used up (`EndReason.CONSUMED`) and it costs 32; with no shell up it costs 88. The HUD and Sorcerer screen show whichever applies right now. Cooldown 8 s. |
 
@@ -805,17 +805,40 @@ Package `com.cnethuka.kegare.innate_technique.rime`. **Rarity: RARE.** All numbe
     texels, so overlapping marks share texels (stronger colour, longer life) instead of flickering. Drawn translucent in the
     world's light and shaded like the block face under it; a texel just formed is brighter (the spreading edge) and thins in
     its last ticks. Client only: no block changes, nothing is sent, all of it melts on its own. Off with **Vanilla**.
-  - Specials: animations `splinter_cast`, `glacial_spire_charge` (loop), `glacial_spire_release`, `ice_path_slide`
-    (loop, a surfing stance) and `shatter_shell_cast`. Effects `splinter_cast`, `splinter_trail`,
-    `glacial_spire_charge` (frost round the lowered hand), `glacial_spire_warning` (the frost circle plus a curtain of rising glints, a loop on the
-    marker), `glacial_spire_spike` (a stack of crystal cubes, a loop on the marker), `glacial_spire_erupt`,
-    `ice_path_trail` and `shatter_shell_burst`.
+- **Glacial Spire's look** (in the Lance's style):
+  - **The spike** is a solid mesh of the Lance's ice (`models/fx/glacial_spire.obj`, `textures/entity/glacial_spire*.png`,
+    `tools/blockbench/build_glacial_spire.py` with the Lance's painter at a coarser density; source `art/blockbench/glacial_spire.bbmodel`):
+    a great crystal with two more in its foot (about 3.4 blocks to the point), a crown of three leaning out, a ring of short
+    ones jutting out of the ground to about 1.3 blocks (the hit reaches 1.5), and a heavy group of two more great crystals and
+    four short ones. `GlacialSpireRenderer` draws it from the server's spike loop on the marker: each group shoots up out of the
+    ground in 2.5 ticks (fastest at first), a beat apart (`SpireShape`: foot and spire at once, the crown 1 tick later, the heavy
+    group 1.5), overshoots a little, settles and shudders. The charge rides the marker's own synced entity data (vanilla's,
+    not a Kegare packet): the spike stands 0.62 to 1 times as tall and 0.8 to 1 times as wide
+    by charge, matching the launch, and the heavy group shows from half a charge. Culled back faces: a player launched off its
+    point, seen from inside, doesn't have it in their view.
+  - **The warning** is a block mark (`marks/spire_crack`): fissures race out from the middle to a broken ring at the hit's
+    1.5 blocks, spread over exactly what's left of the warning (so the ring closes just as the spike comes), then run round
+    the ring with frost creeping along them; chips of the ground's own block jump out of it. `glacial_spire_warning` adds
+    only what's soft: cold mist low over the circle, rising specks and the curtain of glints from its edge.
+  - **The eruption** (`glacial_spire_erupt`: a flash at the foot, glints up the spike, a ring of mist punched out along the
+    ground, a mist column) shatters the ground round its foot (`marks/spire_burst`, further with more charge) and throws up
+    the ground's own block particles. `glacial_spire_spike` is only a faint glow, frost glinting off it and mist at its foot.
+  - **It shatters** when the marker goes: every client breaks it into solid chunks of its own ice (`chunk_*`, falling and
+    bouncing like the Lance's shards, never inside your own first-person view) with `glacial_spire_shatter` (glints and mist,
+    only a faint glow, so the chunks stay crisp). The crack and the shattered ground melt from the edge in over 1.5 s after.
+  - **The body:** `glacial_spire_charge` raises the fist high over the head, gathering cold (`glacial_spire_charge` effect, put
+    in the fist by `SpireClient`; never in your own first person), the free hand out at the spot;
+    `glacial_spire_release` brings it down like a hammer, the upper body dropping into the blow. Both in
+    `tools/anims/glacial_spire.py`; your own first-person hands stay vanilla.
+  - **Reduced** halves the debris and chunks; **Vanilla** draws the spike but no marks, snowflakes for the effects and
+    packed-ice chips for the chunks.
+  - Specials: animations `splinter_cast`, `ice_path_slide` (loop, a surfing stance) and `shatter_shell_cast`. Effects
+    `splinter_cast`, `splinter_trail`, `ice_path_trail` and `shatter_shell_burst`.
   - `ice_path_trail` is a **lingering** loop (`Visual.lingering`): what it throws up stays in the world and fades on
     its own; the ice itself is block marks ("Ice Path's look", below). The loop sends `trailSeconds` as
     `VisualPayload.lifetimeTicks`, the particle lifetime of an effect's `persist*` emitters (this one has none). When
     the slide ends, it stops laying ice and what is there melts on its own time. State loops (shell, cone, charge,
     spire circle) still vanish at once.
-  - Photon's model particles scale uniformly, so tall shapes (the spike) are stacks of cubes.
 - **Effect authoring:** the effects are built from Photon's own objects in `RimeFxAuthoring` (building blocks in the
   shared `client.visual.FxKit`) and written with Photon's serializer, the same `.fx` format the editor exports. In a
   dev client, `/kegare debug fx export` rewrites every effect in `FxCatalog` (Rime's and RMT's, and the running game's
@@ -864,7 +887,7 @@ Package `com.cnethuka.kegare.innate_technique.rime`. **Rarity: RARE.** All numbe
   | Special (base) | Tell |
   |---|---|
   | Splinter (Frost Shard) | own cast animation and burst, three shards in a fan, a brighter crack (amethyst break) |
-  | Glacial Spire (Glacial Lance) | own charge animation and aura; a frost warning circle with rising glints on the ground for 0.75 s before the spike |
+  | Glacial Spire (Glacial Lance) | the fist raised, gathering cold; a pixel crack spreading on the ground with rising glints for 0.75 s before the spike |
   | Ice Path (Frost Field) | own sliding pose, an ice trail left behind, glass sounds |
   | Shatter Shell (Rime Shell) | own cast animation, an icy burst, glass and amethyst shattering |
   | Switchback (Positions) | own wrist flick back toward the caster (`switchback_cast`, not Positions' snap), a respawn-anchor charge sound on both, and the countdown rings go up on both as it's cast |

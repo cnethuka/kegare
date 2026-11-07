@@ -13,7 +13,6 @@ import com.cnethuka.kegare.network.SyncPayload;
 import java.util.List;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.player.LocalPlayer;
-import net.minecraft.client.renderer.entity.NoopRenderer;
 import net.minecraft.client.renderer.entity.ThrownItemRenderer;
 import net.minecraft.core.particles.DustParticleOptions;
 import net.minecraft.core.particles.ParticleTypes;
@@ -41,12 +40,14 @@ public final class RimeClient {
         modBus.addListener(RimeClient::registerRenderers);
         modBus.addListener(RimeClient::registerReloadListeners);
         modBus.addListener(LanceHold::addLayers);
+        modBus.addListener(SpireClient::addLayers);
         NeoForge.EVENT_BUS.addListener(RimeClient::onClientTick);
         // Glacial Lance draws its own lance: in the hand, in flight, stuck where it lands, in pieces.
         LanceHold.init();
         LanceAftermath.init();
         for (var effect : List.of(RimeIds.FX_GLACIAL_LANCE_CHARGE, RimeIds.FX_GLACIAL_LANCE_CHARGE_SELF, RimeIds.FX_GLACIAL_LANCE_SNAP,
-                RimeIds.FX_GLACIAL_LANCE_STICK, RimeIds.FX_GLACIAL_LANCE_SHATTER)) {
+                RimeIds.FX_GLACIAL_LANCE_STICK, RimeIds.FX_GLACIAL_LANCE_SHATTER, RimeIds.FX_GLACIAL_SPIRE_CHARGE,
+                RimeIds.FX_GLACIAL_SPIRE_SHATTER)) {
             VisualHooks.registerEffect(effect);
         }
         NeoForge.EVENT_BUS.addListener(LanceHold::onRenderHand);
@@ -58,9 +59,11 @@ public final class RimeClient {
             LanceHold.clear();
             LanceAftermath.clear();
             BlockMarks.clear();
+            SpireClient.clear();
         });
         // The throw is the whole body: in your own first person, that would swing your own arm and whatever it holds across the view.
-        PlayerAnimations.keepVanillaHands(List.of(RimeIds.ANIM_GLACIAL_LANCE_CHARGE, RimeIds.ANIM_GLACIAL_LANCE_RELEASE));
+        PlayerAnimations.keepVanillaHands(List.of(RimeIds.ANIM_GLACIAL_LANCE_CHARGE, RimeIds.ANIM_GLACIAL_LANCE_RELEASE,
+                RimeIds.ANIM_GLACIAL_SPIRE_CHARGE, RimeIds.ANIM_GLACIAL_SPIRE_RELEASE));
         // Lookalikes used when an effect can't load, or with vfxQuality = VANILLA.
         VanillaFallback.register(RimeIds.FX_FROST_SHARD_TRAIL, new VanillaFallback.Spec(ParticleTypes.SNOWFLAKE, 2, 6, 0.06, 0.01));
         VanillaFallback.register(RimeIds.FX_FROST_SHARD_IMPACT, new VanillaFallback.Spec(ParticleTypes.SNOWFLAKE, 1, 14, 0.25, 0.12));
@@ -80,6 +83,7 @@ public final class RimeClient {
         VanillaFallback.register(RimeIds.FX_GLACIAL_SPIRE_CHARGE, new VanillaFallback.Spec(ParticleTypes.SNOWFLAKE, 2, 6, 0.3, 0.02));
         VanillaFallback.register(RimeIds.FX_GLACIAL_SPIRE_WARNING, new VanillaFallback.Spec(ParticleTypes.SNOWFLAKE, 3, 6, 0.9, 0.0));
         VanillaFallback.register(RimeIds.FX_GLACIAL_SPIRE_SPIKE, new VanillaFallback.Spec(ParticleTypes.SNOWFLAKE, 3, 6, 0.4, 0.05));
+        VanillaFallback.register(RimeIds.FX_GLACIAL_SPIRE_SHATTER, new VanillaFallback.Spec(ParticleTypes.SNOWFLAKE, 1, 18, 0.5, 0.15));
         VanillaFallback.register(RimeIds.FX_GLACIAL_SPIRE_ERUPT, new VanillaFallback.Spec(ParticleTypes.SNOWFLAKE, 1, 36, 0.8, 0.35));
         VanillaFallback.register(RimeIds.FX_ICE_PATH_TRAIL, new VanillaFallback.Spec(ParticleTypes.SNOWFLAKE, 3, 6, 0.35, 0.01));
         VanillaFallback.register(RimeIds.FX_SHATTER_SHELL_BURST, new VanillaFallback.Spec(ParticleTypes.SNOWFLAKE, 1, 40, 0.6, 0.5));
@@ -91,7 +95,7 @@ public final class RimeClient {
         event.registerEntityRenderer(RimeRegistry.GLACIAL_LANCE.get(), GlacialLanceRenderer::new);
         event.registerEntityRenderer(RimeRegistry.SPLINTER_SHARD.get(), ctx -> new ThrownItemRenderer<>(ctx, 0.7f, true));
         // Glacial Spire is drawn entirely by its Photon loops.
-        event.registerEntityRenderer(RimeRegistry.GLACIAL_SPIRE.get(), NoopRenderer::new);
+        event.registerEntityRenderer(RimeRegistry.GLACIAL_SPIRE.get(), GlacialSpireRenderer::new);
     }
 
     private static void registerReloadListeners(RegisterClientReloadListenersEvent event) {
@@ -106,6 +110,7 @@ public final class RimeClient {
         if (mc.level == null || mc.isPaused()) return;
         LanceHold.tick(mc.level);
         LanceAftermath.tick(mc.level);
+        SpireClient.tick(mc.level);
         BlockMarks.tick(mc.level);
     }
 

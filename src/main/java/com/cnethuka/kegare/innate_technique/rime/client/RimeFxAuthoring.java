@@ -11,7 +11,6 @@ import com.lowdragmc.lowdraglib2.math.GradientColor;
 import com.lowdragmc.lowdraglib2.math.HDRColor;
 import com.lowdragmc.photon.Photon;
 import com.lowdragmc.photon.client.fx.FX;
-import com.lowdragmc.photon.client.gameobject.IFXObject;
 import com.lowdragmc.photon.client.gameobject.emitter.data.EmissionSetting;
 import com.lowdragmc.photon.client.gameobject.emitter.data.MaterialRequirements;
 import com.lowdragmc.photon.client.gameobject.emitter.data.MaterialSetting;
@@ -39,7 +38,6 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.LinkedHashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.function.Supplier;
 import net.minecraft.nbt.CompoundTag;
@@ -91,6 +89,7 @@ public final class RimeFxAuthoring {
         out.put(RimeIds.FX_GLACIAL_SPIRE_WARNING, RimeFxAuthoring::glacialSpireWarning);
         out.put(RimeIds.FX_GLACIAL_SPIRE_SPIKE, RimeFxAuthoring::glacialSpireSpike);
         out.put(RimeIds.FX_GLACIAL_SPIRE_ERUPT, RimeFxAuthoring::glacialSpireErupt);
+        out.put(RimeIds.FX_GLACIAL_SPIRE_SHATTER, RimeFxAuthoring::glacialSpireShatter);
         out.put(RimeIds.FX_ICE_PATH_TRAIL, RimeFxAuthoring::icePathTrail);
         out.put(RimeIds.FX_SHATTER_SHELL_BURST, RimeFxAuthoring::shatterShellBurst);
         return out;
@@ -518,85 +517,99 @@ public final class RimeFxAuthoring {
         return fx(ribbon, glints);
     }
 
-    /** Glacial Spire charging: frost swirling round the lowered hand (below the view in first person). Grows with charge. */
+    // Glacial Spire's spike is a solid mesh (GlacialSpireRenderer) and what it does to the ground is pixel art on the blocks (SpireClient,
+    // BlockMarks); these are only what's soft round them: glow, mist, glints. No flat shapes on the ground, no cubes.
+
+    /** Glacial Spire charging: cold gathering in the raised fist (moved along with it by SpireClient; never in your own first person). */
     private static FX glacialSpireCharge() {
-        Vector3f hand = new Vector3f(0.7f, -0.95f, 0.35f);
         ParticleEmitter core = emitter("core", true, 20);
         ParticleConfig c = core.config;
-        c.setMaxParticles(2);
-        c.setStartLifetime(NumberFunction.constant(20));
+        c.setMaxParticles(4);
+        c.setStartLifetime(range(6, 8));
         c.setStartSpeed(NumberFunction.constant(0));
-        c.setStartSize(uniform(NumberFunction.constant(0.22f)));
-        c.shape.setScale(new NumberFunction3(0, 0, 0));
-        c.emission.setEmissionRate(NumberFunction.constant(0));
-        c.emission.getBursts().add(burst(0, 1));
+        c.setStartSize(uniform(range(0.3f, 0.42f)));
+        c.shape.setShape(sphere(0.05f));
+        c.emission.setEmissionRate(NumberFunction.constant(0.45f));
         c.colorOverLifetime.setEnable(true);
-        c.colorOverLifetime.setColor(gradient(0x00FFFFFF, PALE, CYAN, 0x00FFFFFF));
-        material(core, glow(0.45f, 0.82f, 1f, 1.4f));
-        core.transform().localPosition(new Vector3f(hand));
+        c.colorOverLifetime.setColor(gradient(0x003A8FCC, 0x553A8FCC, 0x003A8FCC));
+        material(core, glow(0.35f, 0.62f, 1f, 1.2f));
 
+        // Specks drawn in to the fist from round it, on a slow spiral.
         ParticleEmitter swirl = emitter("swirl", true, 20);
         ParticleConfig m = swirl.config;
-        m.setMaxParticles(50);
-        m.setStartLifetime(range(10, 16));
+        m.setMaxParticles(40);
+        m.setStartLifetime(range(8, 12));
         m.setStartSpeed(NumberFunction.constant(0));
-        m.setStartSize(uniform(range(0.025f, 0.05f)));
-        Sphere ring = sphere(0.45f);
+        m.setStartSize(uniform(range(0.025f, 0.045f)));
+        Sphere ring = sphere(0.42f);
         ring.setRadiusThickness(0f);
         m.shape.setShape(ring);
-        m.shape.setScale(new NumberFunction3(1f, 0.25f, 1f));
-        m.emission.setEmissionRate(NumberFunction.constant(2f));
+        m.emission.setEmissionRate(NumberFunction.constant(2.2f));
         m.velocityOverLifetime.setEnable(true);
-        m.velocityOverLifetime.setOrbital(new NumberFunction3(0, 4f, 0));
-        m.velocityOverLifetime.setRadial(NumberFunction.constant(-0.3f));
+        m.velocityOverLifetime.setOrbital(new NumberFunction3(0, 3f, 0));
+        m.velocityOverLifetime.setRadial(NumberFunction.constant(-0.9f));
         fadeInOut(m, WHITE, CYAN);
-        material(swirl, glow(0.5f, 0.85f, 1f, 1.3f));
-        swirl.transform().localPosition(new Vector3f(hand));
-        return fx(core, swirl);
+        material(swirl, glow(0.62f, 0.88f, 1f, 1.5f));
+
+        // Frost falling off it, and cold vapour sinking.
+        ParticleEmitter frost = emitter("frost", true, 20);
+        ParticleConfig f = frost.config;
+        f.setSimulationSpace(ParticleConfig.Space.World);
+        f.setMaxParticles(30);
+        f.setStartLifetime(range(14, 22));
+        f.setStartSpeed(range(0.02f, 0.1f));
+        f.setStartSize(uniform(range(0.02f, 0.04f)));
+        f.shape.setShape(sphere(0.18f));
+        f.emission.setEmissionRate(NumberFunction.constant(1f));
+        gravity(f, 0.22f);
+        fadeOut(f, WHITE, CYAN);
+        shrink(f);
+        material(frost, glow(0.62f, 0.86f, 1f, 1.4f));
+
+        ParticleEmitter vapour = emitter("vapour", true, 20);
+        ParticleConfig v = vapour.config;
+        v.setSimulationSpace(ParticleConfig.Space.World);
+        v.setMaxParticles(10);
+        v.setStartLifetime(range(18, 26));
+        v.setStartSpeed(range(0f, 0.06f));
+        v.setStartSize(uniform(range(0.18f, 0.32f)));
+        v.emission.setEmissionRate(NumberFunction.constant(0.35f));
+        v.shape.setShape(sphere(0.2f));
+        gravity(v, 0.04f);
+        v.colorOverLifetime.setEnable(true);
+        v.colorOverLifetime.setColor(gradient(0x00C2EEFA, 0x34C2EEFA, 0x0079C8EC));
+        grow(v, 0.5f);
+        material(vapour, mist());
+        return fx(core, swirl, frost, vapour);
     }
 
     /**
-     * Glacial Spire's warning: a pulsing frost circle flat on the ground (authored for the default 1.5 radius), frost
-     * rising inside it, and a curtain of glints rising from its edge.
+     * Glacial Spire's warning (the crack on the ground is pixel art, SpireClient): cold mist creeping low over the circle (authored
+     * for the default 1.5 radius), frost specks lifting out of it, and a curtain of glints rising from its edge past head height, so
+     * someone standing in it sees the warning at the edge of their view even while looking straight ahead.
      */
     private static FX glacialSpireWarning() {
-        ParticleEmitter ring = emitter("ring", true, 8);
-        ParticleConfig c = ring.config;
-        c.setMaxParticles(3);
-        c.setStartLifetime(NumberFunction.constant(12));
-        c.setStartSpeed(NumberFunction.constant(0));
-        c.setStartSize(uniform(NumberFunction.constant(3.1f)));
-        c.shape.setScale(new NumberFunction3(0, 0, 0));
-        c.emission.setEmissionRate(NumberFunction.constant(0));
-        c.emission.getBursts().add(burst(0, 1));
-        c.renderer.setRenderMode(ParticleRendererSetting.Mode.Horizontal);
-        grow(c, 0.85f);
-        c.colorOverLifetime.setEnable(true);
-        c.colorOverLifetime.setColor(gradient(0x00C2EEFA, 0xEEF2FDFF, 0xAA79C8EC, 0x003A8FCC));
-        material(ring, recolor(KilaPresets.SHOCKWAVE.create(), 0.5f, 0.86f, 1f, 1.5f));
-        ring.transform().localPosition(new Vector3f(0, 0.06f, 0));
-
-        ParticleEmitter disc = emitter("disc", true, 20);
-        ParticleConfig d = disc.config;
-        d.setMaxParticles(2);
-        d.setStartLifetime(NumberFunction.constant(20));
-        d.setStartSpeed(NumberFunction.constant(0));
-        d.setStartSize(uniform(NumberFunction.constant(2.8f)));
-        d.shape.setScale(new NumberFunction3(0, 0, 0));
-        d.emission.setEmissionRate(NumberFunction.constant(0));
-        d.emission.getBursts().add(burst(0, 1));
-        d.renderer.setRenderMode(ParticleRendererSetting.Mode.Horizontal);
-        d.colorOverLifetime.setEnable(true);
-        d.colorOverLifetime.setColor(gradient(0x4479C8EC, 0x6679C8EC, 0x4479C8EC));
-        material(disc, glow(0.35f, 0.7f, 1f, 0.9f));
-        disc.transform().localPosition(new Vector3f(0, 0.04f, 0));
+        ParticleEmitter mist = emitter("mist", true, 20);
+        ParticleConfig mc = mist.config;
+        mc.setMaxParticles(16);
+        mc.setStartLifetime(range(14, 20));
+        mc.setStartSpeed(range(0.05f, 0.2f));
+        mc.setStartSize(uniform(range(0.45f, 0.7f)));
+        mc.shape.setShape(sphere(1.3f));
+        mc.shape.setScale(new NumberFunction3(1f, 0.04f, 1f));
+        mc.emission.setEmissionRate(NumberFunction.constant(1.2f));
+        mc.colorOverLifetime.setEnable(true);
+        mc.colorOverLifetime.setColor(gradient(0x00C2EEFA, 0x3AC2EEFA, 0x0079C8EC));
+        grow(mc, 0.4f);
+        material(mist, mist());
+        mist.transform().localPosition(new Vector3f(0, 0.2f, 0));
 
         ParticleEmitter frost = emitter("frost", true, 20);
         ParticleConfig f = frost.config;
         f.setMaxParticles(40);
         f.setStartLifetime(range(10, 18));
         f.setStartSpeed(range(0.2f, 0.6f));
-        f.setStartSize(uniform(range(0.04f, 0.08f)));
+        f.setStartSize(uniform(range(0.03f, 0.06f)));
         f.shape.setShape(sphere(1.4f));
         f.shape.setScale(new NumberFunction3(1f, 0.05f, 1f));
         f.emission.setEmissionRate(NumberFunction.constant(2f));
@@ -605,8 +618,6 @@ public final class RimeFxAuthoring {
         fadeInOut(f, WHITE, CYAN);
         material(frost, glow(0.5f, 0.85f, 1f, 1.2f));
 
-        // A curtain of glints rising from the circle's edge past head height: someone standing in it sees the warning
-        // at the edge of their view even while looking straight ahead (the circle itself is below it).
         ParticleEmitter curtain = emitter("curtain", true, 20);
         ParticleConfig k = curtain.config;
         k.setMaxParticles(200);
@@ -622,121 +633,131 @@ public final class RimeFxAuthoring {
         k.velocityOverLifetime.setLinear(new NumberFunction3(0, 3.4f, 0));
         fadeInOut(k, WHITE, CYAN);
         material(curtain, glow(0.5f, 0.86f, 1f, 1.1f));
-        return fx(ring, disc, frost, curtain);
+        return fx(mist, frost, curtain);
     }
 
     /**
-     * Glacial Spire standing: a tapered ice spike (a stack of crystal cubes, wide at the base and narrowing to a tip:
-     * Photon's model particles scale uniformly, so one stretched cube can't make a spike) with a crown of small
-     * crystals round its foot. Everything shoots up in an instant, then holds until the spike shatters.
+     * Glacial Spire standing (the spike itself is the mesh): a faint cold glow round it, frost glinting off its faces and drifting
+     * down, and mist pooling at its foot.
      */
     private static FX glacialSpireSpike() {
-        float[][] stack = { // {centre height, size}
-                {0.35f, 0.72f}, {0.95f, 0.6f}, {1.45f, 0.5f}, {1.86f, 0.4f}, {2.18f, 0.3f}, {2.42f, 0.2f}, {2.6f, 0.12f}};
-        List<IFXObject> parts = new java.util.ArrayList<>();
-        for (int i = 0; i < stack.length; i++) {
-            ParticleEmitter block = emitter("spike_" + i, true, 200);
-            ParticleConfig c = block.config;
-            c.setMaxParticles(1);
-            c.setStartLifetime(NumberFunction.constant(200));
-            c.setStartSpeed(NumberFunction.constant(0));
-            c.setStartSize(uniform(NumberFunction.constant(stack[i][1])));
-            c.setStartRotation(new NumberFunction3(NumberFunction.constant(0), NumberFunction.constant(45 + i * 9), NumberFunction.constant(0)));
-            c.shape.setScale(new NumberFunction3(0, 0, 0));
-            c.emission.setEmissionRate(NumberFunction.constant(0));
-            c.emission.getBursts().add(burst(0, 1));
-            c.renderer.setRenderMode(ParticleRendererSetting.Mode.Model);
-            c.renderer.setModel(new MeshData(new ObjModelSource(Photon.id("models/cube.obj"))));
-            c.sizeOverLifetime.setEnable(true);
-            c.sizeOverLifetime.setSize(uniform(shootUp()));
-            material(block, KilaPresets.CRYSTAL.create());
-            block.transform().localPosition(new Vector3f(0, stack[i][0], 0));
-            parts.add(block);
-        }
+        ParticleEmitter aura = emitter("aura", true, 20);
+        ParticleConfig a = aura.config;
+        a.setMaxParticles(4);
+        a.setStartLifetime(range(10, 14));
+        a.setStartSpeed(NumberFunction.constant(0f));
+        a.setStartSize(uniform(range(1.6f, 2.1f)));
+        a.emission.setEmissionRate(NumberFunction.constant(0.3f));
+        a.shape.setShape(sphere(0.2f));
+        a.colorOverLifetime.setEnable(true);
+        a.colorOverLifetime.setColor(gradient(0x003A8FCC, 0x2C3A8FCC, 0x003A8FCC));
+        material(aura, glow(0.35f, 0.62f, 1f, 1f));
+        aura.transform().localPosition(new Vector3f(0, 1.4f, 0));
 
-        ParticleEmitter crown = emitter("crown", true, 200);
-        ParticleConfig k = crown.config;
-        k.setMaxParticles(7);
-        k.setStartLifetime(NumberFunction.constant(200));
-        k.setStartSpeed(NumberFunction.constant(0));
-        k.setStartSize(uniform(range(0.25f, 0.4f)));
-        k.setStartRotation(new NumberFunction3(range(-30, 30), range(0, 360), range(-30, 30)));
-        Sphere around = sphere(0.75f);
-        around.setRadiusThickness(0f);
-        k.shape.setShape(around);
-        k.shape.setScale(new NumberFunction3(1f, 0f, 1f));
-        k.emission.setEmissionRate(NumberFunction.constant(0));
-        k.emission.getBursts().add(burst(0, 7));
-        k.renderer.setRenderMode(ParticleRendererSetting.Mode.Model);
-        k.renderer.setModel(new MeshData(new ObjModelSource(Photon.id("models/cube.obj"))));
-        k.sizeOverLifetime.setEnable(true);
-        k.sizeOverLifetime.setSize(uniform(shootUp()));
-        material(crown, KilaPresets.CRYSTAL.create());
-        crown.transform().localPosition(new Vector3f(0, 0.15f, 0));
-        parts.add(crown);
+        ParticleEmitter glints = emitter("glints", true, 20);
+        ParticleConfig g = glints.config;
+        g.setSimulationSpace(ParticleConfig.Space.World);
+        g.setMaxParticles(40);
+        g.setStartLifetime(range(10, 18));
+        g.setStartSpeed(range(0.02f, 0.1f));
+        g.setStartSize(uniform(range(0.025f, 0.05f)));
+        g.shape.setShape(sphere(0.55f));
+        g.shape.setScale(new NumberFunction3(1f, 2.4f, 1f));
+        g.emission.setEmissionRate(NumberFunction.constant(1.6f));
+        gravity(g, 0.18f);
+        fadeInOut(g, WHITE, CYAN);
+        material(glints, glow(0.62f, 0.88f, 1f, 1.5f));
+        glints.transform().localPosition(new Vector3f(0, 1.4f, 0));
 
         ParticleEmitter mist = emitter("mist", true, 20);
         ParticleConfig mc = mist.config;
         mc.setMaxParticles(20);
-        mc.setStartLifetime(range(14, 22));
-        mc.setStartSpeed(range(0.1f, 0.3f));
-        mc.setStartSize(uniform(range(0.3f, 0.5f)));
-        mc.shape.setShape(sphere(0.9f));
-        mc.shape.setScale(new NumberFunction3(1f, 0.1f, 1f));
-        mc.emission.setEmissionRate(NumberFunction.constant(0.6f));
+        mc.setStartLifetime(range(16, 24));
+        mc.setStartSpeed(range(0.08f, 0.25f));
+        mc.setStartSize(uniform(range(0.4f, 0.65f)));
+        mc.shape.setShape(sphere(1.0f));
+        mc.shape.setScale(new NumberFunction3(1f, 0.08f, 1f));
+        mc.emission.setEmissionRate(NumberFunction.constant(0.7f));
         mc.colorOverLifetime.setEnable(true);
-        mc.colorOverLifetime.setColor(gradient(0x00C2EEFA, 0x55C2EEFA, 0x0079C8EC));
+        mc.colorOverLifetime.setColor(gradient(0x00C2EEFA, 0x48C2EEFA, 0x0079C8EC));
         grow(mc, 0.5f);
         material(mist, mist());
-        parts.add(mist);
-        return fx(parts.toArray(IFXObject[]::new));
+        mist.transform().localPosition(new Vector3f(0, 0.2f, 0));
+        return fx(aura, glints, mist);
     }
 
-    /** Glacial Spire erupts: shards thrown up out of the ground, a flat shockwave and a puff of frost. */
+    /**
+     * Glacial Spire erupts (the mesh shoots up; the ground's debris is the ground's own block particles): a flash at the foot, hard
+     * glints thrown up the length of the spike, and a ring of mist punched out flat along the ground.
+     */
     private static FX glacialSpireErupt() {
-        ParticleEmitter ring = single("ring", 10, 4.0f);
-        ring.config.renderer.setRenderMode(ParticleRendererSetting.Mode.Horizontal);
-        grow(ring.config, 0.25f);
-        fadeOut(ring.config, PALE, BLUE);
-        material(ring, recolor(KilaPresets.SHOCKWAVE.create(), 0.45f, 0.82f, 1f, 1.4f));
-        ring.transform().localPosition(new Vector3f(0, 0.1f, 0));
+        ParticleEmitter flash = single("flash", 5, 2.4f);
+        fadeOut(flash.config, WHITE, CYAN);
+        shrink(flash.config);
+        material(flash, glow(0.6f, 0.86f, 1f, 1.5f));
+        flash.transform().localPosition(new Vector3f(0, 0.5f, 0));
 
-        ParticleEmitter shards = burstEmitter("shards", 28, 32);
-        ParticleConfig c = shards.config;
-        c.setStartLifetime(range(12, 22));
-        c.setStartSpeed(range(5f, 10f));
-        c.setStartSize(uniform(range(0.08f, 0.18f)));
-        c.setStartRotation(new NumberFunction3(range(0, 360), range(0, 360), range(0, 360)));
-        c.shape.setShape(cone(35f, 0.6f)); // a cone emits up (+Y)
-        gravity(c, 1.4f);
-        c.colorOverLifetime.setEnable(true);
-        c.colorOverLifetime.setColor(gradient(WHITE, PALE, 0x0079C8EC));
-        c.renderer.setRenderMode(ParticleRendererSetting.Mode.Model);
-        c.renderer.setModel(new MeshData(new ObjModelSource(Photon.id("models/cube.obj"))));
-        material(shards, KilaPresets.CRYSTAL.create());
+        ParticleEmitter glints = glints("glints", 30, 4f, 9f, 7, 13, 0.06f, 3f);
+        glints.config.shape.setShape(cone(28f, 0.6f)); // a cone emits up (+Y)
+        gravity(glints.config, 0.9f);
 
-        ParticleEmitter glints = burstEmitter("glints", 24, 28);
-        ParticleConfig g = glints.config;
-        g.setStartLifetime(range(8, 14));
-        g.setStartSpeed(range(4f, 8f));
-        g.setStartSize(uniform(range(0.05f, 0.1f)));
-        g.shape.setShape(cone(45f, 0.8f));
-        gravity(g, 0.6f);
-        fadeOut(g, WHITE, CYAN);
-        material(glints, recolor(KilaPresets.SPARKS.create(), 0.55f, 0.88f, 1f, 1.5f));
+        ParticleEmitter ring = burstEmitter("ring", 14, 14);
+        ParticleConfig r = ring.config;
+        r.setStartLifetime(range(16, 24));
+        r.setStartSpeed(range(1.6f, 2.6f));
+        r.setStartSize(uniform(range(0.45f, 0.75f)));
+        Sphere out = sphere(0.6f);
+        out.setRadiusThickness(0f);
+        r.shape.setShape(out);
+        r.shape.setScale(new NumberFunction3(1f, 0f, 1f));
+        r.colorOverLifetime.setEnable(true);
+        r.colorOverLifetime.setColor(gradient(0x70E6F4FF, 0x40C2EEFA, 0x0079C8EC));
+        grow(r, 0.5f);
+        material(ring, mist());
+        ring.transform().localPosition(new Vector3f(0, 0.25f, 0));
 
-        ParticleEmitter mist = burstEmitter("mist", 6, 6);
-        ParticleConfig mc = mist.config;
+        ParticleEmitter column = burstEmitter("column", 6, 6);
+        ParticleConfig mc = column.config;
         mc.setStartLifetime(range(14, 22));
-        mc.setStartSpeed(range(0.6f, 1.4f));
-        mc.setStartSize(uniform(range(0.4f, 0.7f)));
-        mc.shape.setShape(sphere(0.8f));
-        mc.shape.setScale(new NumberFunction3(1f, 0.2f, 1f));
+        mc.setStartSpeed(range(0.8f, 1.8f));
+        mc.setStartSize(uniform(range(0.4f, 0.65f)));
+        mc.shape.setShape(cone(12f, 0.5f));
         mc.colorOverLifetime.setEnable(true);
-        mc.colorOverLifetime.setColor(gradient(0x00C2EEFA, 0x66C2EEFA, 0x0079C8EC));
+        mc.colorOverLifetime.setColor(gradient(0x60E6F4FF, 0x30C2EEFA, 0x0079C8EC));
         grow(mc, 0.5f);
+        material(column, mist());
+        return fx(flash, glints, ring, column);
+    }
+
+    /**
+     * Glacial Spire breaking up (the chunks are solid, SpireClient): hard glints thrown off it up its whole height and a puff of cold
+     * mist. Only a faint glow at its heart, so the chunks stay crisp.
+     */
+    private static FX glacialSpireShatter() {
+        ParticleEmitter flash = single("flash", 3, 0.7f);
+        flash.config.colorOverLifetime.setEnable(true);
+        flash.config.colorOverLifetime.setColor(gradient(0x80E6F4FF, 0x003A8FCC));
+        material(flash, glow(0.5f, 0.8f, 1f, 1f));
+
+        ParticleEmitter glints = glints("glints", 26, 2f, 5f, 6, 11, 0.05f, 2.5f);
+        Sphere along = sphere(0.4f);
+        glints.config.shape.setShape(along);
+        glints.config.shape.setScale(new NumberFunction3(1f, 3.2f, 1f));
+        gravity(glints.config, 0.7f);
+
+        ParticleEmitter mist = burstEmitter("mist", 8, 8);
+        ParticleConfig mc = mist.config;
+        mc.setStartLifetime(range(16, 24));
+        mc.setStartSpeed(range(0.3f, 0.9f));
+        mc.setStartSize(uniform(range(0.4f, 0.7f)));
+        mc.shape.setShape(sphere(0.5f));
+        mc.shape.setScale(new NumberFunction3(1f, 2.5f, 1f));
+        mc.colorOverLifetime.setEnable(true);
+        mc.colorOverLifetime.setColor(gradient(0x50E6F4FF, 0x28C2EEFA, 0x0079C8EC));
+        grow(mc, 0.5f);
+        gravity(mc, 0.03f);
         material(mist, mist());
-        return fx(ring, shards, glints, mist);
+        return fx(flash, glints, mist);
     }
 
     /**

@@ -71,18 +71,20 @@ public final class LanceAftermath {
         float lastAngle;
         float spin;
         final float size;
-        final int kind;
+        final LanceMesh.Model model;
+        final String piece;
         final int life;
         int age;
         int bounces;
 
-        Shard(Vec3 pos, Vec3 vel, Vector3f axis, float spin, float size, int kind, int life) {
+        Shard(Vec3 pos, Vec3 vel, Vector3f axis, float spin, float size, LanceMesh.Model model, String piece, int life) {
             this.pos = this.last = pos;
             this.vel = vel;
             this.axis = axis;
             this.spin = spin;
             this.size = size;
-            this.kind = kind;
+            this.model = model;
+            this.piece = piece;
             this.life = life;
         }
     }
@@ -233,8 +235,24 @@ public final class LanceAftermath {
         if (quality == VfxQuality.REDUCED && RANDOM.nextBoolean()) return;
         Vector3f axis = new Vector3f((float) RANDOM.nextGaussian(), (float) RANDOM.nextGaussian(), (float) RANDOM.nextGaussian());
         if (axis.lengthSquared() < 1.0e-4f) axis.set(0f, 1f, 0f);
-        SHARDS.add(new Shard(at, vel, axis.normalize(), (RANDOM.nextFloat() - 0.5f) * 0.9f, size, RANDOM.nextInt(LanceShape.SHARDS),
-                24 + RANDOM.nextInt(14)));
+        SHARDS.add(new Shard(at, vel, axis.normalize(), (RANDOM.nextFloat() - 0.5f) * 0.9f, size, LanceMesh.LANCE,
+                "shard_" + RANDOM.nextInt(LanceShape.SHARDS), 24 + RANDOM.nextInt(14)));
+    }
+
+    /**
+     * A solid piece of some other ice (Glacial Spire's chunks) thrown from a point, falling and bouncing like the lance's shards;
+     * packed-ice chips with vanilla particles, half as many with Reduced.
+     */
+    static void chunk(ClientLevel level, Vec3 at, Vec3 vel, float size, LanceMesh.Model model, String piece, int life) {
+        VfxQuality quality = quality();
+        if (quality == VfxQuality.VANILLA) {
+            level.addParticle(new BlockParticleOption(ParticleTypes.BLOCK, Blocks.PACKED_ICE.defaultBlockState()), at.x, at.y, at.z, vel.x, vel.y, vel.z);
+            return;
+        }
+        if (quality == VfxQuality.REDUCED && RANDOM.nextBoolean()) return;
+        Vector3f axis = new Vector3f((float) RANDOM.nextGaussian(), (float) RANDOM.nextGaussian(), (float) RANDOM.nextGaussian());
+        if (axis.lengthSquared() < 1.0e-4f) axis.set(0f, 1f, 0f);
+        SHARDS.add(new Shard(at, vel, axis.normalize(), (RANDOM.nextFloat() - 0.5f) * 0.7f, size, model, piece, life));
     }
 
     // ---------------------------------------------------------------------------------------------- frost marks
@@ -307,9 +325,14 @@ public final class LanceAftermath {
     }
 
     private static boolean nearOwnCamera(Vec3 at) {
+        return nearOwnCamera(at, NEAR_SELF);
+    }
+
+    /** Closer than {@code reach} to your own first-person camera. */
+    static boolean nearOwnCamera(Vec3 at, double reach) {
         Minecraft mc = Minecraft.getInstance();
         if (!mc.options.getCameraType().isFirstPerson()) return false;
-        return mc.gameRenderer.getMainCamera().getPosition().distanceToSqr(at) < NEAR_SELF * NEAR_SELF;
+        return mc.gameRenderer.getMainCamera().getPosition().distanceToSqr(at) < reach * reach;
     }
 
     // ---------------------------------------------------------------------------------------------- drawing
@@ -359,13 +382,14 @@ public final class LanceAftermath {
         float age = s.age + partial;
         float shrink = Mth.clamp((s.life - age) / 6f, 0f, 1f); // the last few ticks it shrinks away, edges still hard
         if (shrink <= 0f) return;
+        // Another ice's chunks (the spire's, thrown from where a player may be standing) never fill your own view.
+        if (s.model != LanceMesh.LANCE && cam.distanceToSqr(at) < 1.0 && Minecraft.getInstance().options.getCameraType().isFirstPerson()) return;
         pose.pushPose();
         pose.translate(at.x - cam.x, at.y - cam.y, at.z - cam.z);
         pose.mulPose(new Quaternionf().rotationAxis(Mth.lerp(partial, s.lastAngle, s.angle), s.axis));
         float size = s.size * shrink;
         pose.scale(size, size, size);
-        String name = "shard_" + s.kind;
-        LanceMesh.draw(pose.last(), buffers, List.of(name), new float[] {1f}, LevelRenderer.getLightColor(level, BlockPos.containing(at)));
+        s.model.draw(pose.last(), buffers, List.of(s.piece), new float[] {1f}, LevelRenderer.getLightColor(level, BlockPos.containing(at)));
         pose.popPose();
     }
 }

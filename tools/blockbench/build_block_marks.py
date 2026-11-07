@@ -33,7 +33,11 @@ FILM = (176, 212, 246, 100)    # a cold sheen over the block
 FROST = (204, 230, 255, 178)   # frost
 RIME = (230, 244, 255, 230)    # thick rime: the spines
 GLINT = (255, 255, 255, 250)   # where it's thickest, and the odd sparkle
-PALETTE = (NONE, FILM, FROST, RIME, GLINT)
+FISSURE = (22, 38, 90, 232)    # a crack in the ground: deep navy, nearly solid
+EDGE = (128, 180, 240, 214)    # the lit lip along a crack
+PALETTE = (NONE, FILM, FROST, RIME, GLINT, FISSURE, EDGE)
+# Strength, for a texel that two strokes cross: a crack cuts through frost, its lip shows over the sheen.
+STRENGTH = {0: 0, 1: 1, 6: 2, 2: 3, 3: 4, 4: 5, 5: 6}
 
 # 16 headings, so every line is one of the clean pixel slopes (flat, 1:2, 1:1, 2:1) instead of a ragged stair.
 HEADINGS = [i * math.pi / 8 for i in range(16)]
@@ -47,7 +51,7 @@ class Canvas:
         self.tone = [[0] * size for _ in range(size)]
 
     def put(self, x, y, t):
-        if 0 <= x < self.size and 0 <= y < self.size and self.tone[y][x] < t:
+        if 0 <= x < self.size and 0 <= y < self.size and STRENGTH[self.tone[y][x]] < STRENGTH[t]:
             self.tone[y][x] = t
 
     def get(self, x, y):
@@ -189,6 +193,101 @@ def lance_frost(seed=11, size=64):
     return c, geodesic_order(c, (cx, cy))
 
 
+def crack(c, rng, x0, y0, heading, length, lip=True, wander=0.35, fork=0.0):
+    """A crack: a one-texel fissure that runs on a heading, kinking to a neighbouring clean slope every few texels, with a lit lip on
+    one side (the light comes from the same side everywhere, so the ground reads as split, not drawn on). Returns where it ends."""
+    x, y = x0, y0
+    run = 0
+    lipside = side_of(math.pi * 0.25 + math.pi)  # light from the upper left
+    gone = 0.0
+    while gone < length:
+        step = rng.randint(2, 5)
+        h = heading + rng.choice((0, 0, 1, -1)) * math.pi / 8 * (1 if rng.random() < wander * 2 else 0)
+        seg = ray(x, y, h, step)
+        for px, py in seg[1:]:
+            c.put(px, py, 5)
+            if lip and rng.random() < 0.8:
+                c.put(px + lipside[0], py + lipside[1], 6)
+            run += 1
+        x, y = seg[-1]
+        gone += step
+        if fork and rng.random() < fork and gone < length * 0.8:
+            crack(c, rng, x, y, heading + rng.choice((-1, 1)) * math.pi / 4, (length - gone) * rng.uniform(0.3, 0.6), lip,
+                  wander, 0.0)
+    return x, y
+
+
+def spire_crack(seed=23, size=64, radius=23):
+    """Glacial Spire's warning, spreading over the warning time: fissures race out from where it will rise to a broken ring at the
+    reach of the hit (1.5 blocks, 24 texels: `radius` is a texel inside it), then run round the ring; frost creeps along them. The
+    order makes the ring the last thing to form, so it closes just as the spike comes."""
+    rng = random.Random(seed)
+    c = Canvas(size)
+    cx = cy = size // 2
+    # Crushed ground in the middle.
+    for y in range(size):
+        for x in range(size):
+            d = math.hypot(x - cx + 0.5, y - cy + 0.5)
+            if d < 2.2:
+                c.put(x, y, 5)
+            elif d < 3.4 and rng.random() < 0.6:
+                c.put(x, y, 6 if rng.random() < 0.5 else 5)
+    # Fissures out to the ring, evenly round so the circle reads, each its own way.
+    n = 8
+    for k in range(n):
+        h = HEADINGS[(2 * k + rng.choice((0, 0, 1))) % 16]
+        crack(c, rng, cx, cy, h, radius + rng.uniform(-1, 1.5), fork=0.22)
+    # The ring: broken, never a clean circle, a texel or so in and out.
+    gaps = sorted(rng.uniform(0, 2 * math.pi) for _ in range(5))
+    for i in range(720):
+        a = 2 * math.pi * i / 720
+        if any(abs((a - g + math.pi) % (2 * math.pi) - math.pi) < 0.14 for g in gaps):
+            continue
+        r = radius + 0.9 * math.sin(a * 5 + 1.3) + 0.6 * math.sin(a * 11)
+        x, y = round(cx - 0.5 + math.cos(a) * r), round(cy - 0.5 + math.sin(a) * r)
+        c.put(x, y, 5)
+        inner = (round(cx - 0.5 + math.cos(a) * (r - 1)), round(cy - 0.5 + math.sin(a) * (r - 1)))
+        c.put(*inner, 6)
+    # Frost creeping along the cracks: sheen and specks beside them.
+    cracks = [(x, y) for x, y in c.filled() if c.tone[y][x] == 5]
+    for x, y in cracks:
+        for ox, oy in ((1, 1), (-1, 1), (1, -1), (-1, -1), (2, 0), (0, 2), (-2, 0), (0, -2)):
+            if rng.random() < 0.16:
+                c.put(x + ox, y + oy, 1 if rng.random() < 0.75 else 2)
+    return c, geodesic_order(c, (cx, cy))
+
+
+def spire_burst(seed=31, size=80):
+    """Where the spike came up: the ground round its foot shattered and frosted. A ragged crust of rime round the foot, short heavy
+    cracks broken out of it in every direction, frost thinning out between them. A full charge shows it out to about two blocks
+    (32 texels); less, only the inner part."""
+    rng = random.Random(seed)
+    c = Canvas(size)
+    cx = cy = size // 2
+    edge = [rng.uniform(7, 11) for _ in range(16)]
+    for y in range(size):
+        for x in range(size):
+            d = math.hypot(x - cx + 0.5, y - cy + 0.5)
+            a = (math.atan2(y - cy, x - cx) / (2 * math.pi)) % 1.0
+            r = edge[int(a * 16) % 16]
+            if d < r:
+                c.put(x, y, 3 if rng.random() < 0.55 else 2)
+            elif d < r + 6 and (x + y) % 2 == 0 and rng.random() < 1.1 - (d - r) / 6:
+                c.put(x, y, 1)
+    for k in range(14):
+        h = 2 * math.pi * (k + rng.uniform(-0.3, 0.3)) / 14
+        h = min(HEADINGS + [2 * math.pi], key=lambda q: abs(q - h)) % (2 * math.pi)
+        start = (round(cx + math.cos(h) * 6), round(cy + math.sin(h) * 6))
+        crack(c, rng, start[0], start[1], h, rng.uniform(10, 26), fork=0.3)
+    for _ in range(40):
+        a, d = rng.uniform(0, 2 * math.pi), rng.uniform(9, 30)
+        c.put(round(cx + math.cos(a) * d), round(cy + math.sin(a) * d), rng.choice((1, 1, 2)))
+    for _ in range(9):
+        a, d = rng.uniform(0, 2 * math.pi), rng.uniform(0, 8)
+        c.put(round(cx + math.cos(a) * d), round(cy + math.sin(a) * d), 4)
+    return c, geodesic_order(c, (cx, cy))
+
+
 def white():
     OUT.mkdir(parents=True, exist_ok=True)
     Image.new("RGBA", (4, 4), (255, 255, 255, 255)).save(OUT / "white.png", optimize=True)
@@ -237,7 +336,7 @@ def preview(name, art, when, reaches=(0.37, 0.65, 1.0), steps=(0.25, 0.5, 1.0)):
     print("preview", (PREVIEW / f"{name}.png").relative_to(ROOT))
 
 
-PATTERNS = {"lance_frost": lance_frost}
+PATTERNS = {"lance_frost": lance_frost, "spire_crack": spire_crack, "spire_burst": spire_burst}
 
 
 def main(args):
