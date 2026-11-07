@@ -807,57 +807,40 @@ public final class RimeFxAuthoring {
     }
 
     /**
-     * Ice Path: flat ice left on the ground behind the slider (world space, so it stays where it was laid) that fades
-     * out over the configured trail time, with a little frost spray at the feet. The two {@code persist} emitters'
-     * lifetimes come from the config at play time.
+     * Ice Path: only what's thrown up at the feet as you slide (world space, so it's left behind): fine ice specks kicked out low and
+     * the odd glint rising. The ice itself is pixel art on the blocks ({@code PathClient}), not sprites lying on them.
      */
     private static FX icePathTrail() {
-        ParticleEmitter ice = emitter("persist_ice", true, 20);
-        ParticleConfig c = ice.config;
-        c.setSimulationSpace(ParticleConfig.Space.World);
-        c.setMaxParticles(1200);
-        c.setStartLifetime(NumberFunction.constant(80));
-        c.setStartSpeed(NumberFunction.constant(0));
-        c.setStartSize(uniform(range(0.9f, 1.3f)));
-        c.setStartRotation(new NumberFunction3(NumberFunction.constant(0), NumberFunction.constant(0), range(0, 360)));
-        c.shape.setShape(sphere(0.2f));
-        c.shape.setScale(new NumberFunction3(1f, 0f, 1f));
-        c.emission.setEmissionRate(NumberFunction.constant(1.5f));
-        c.renderer.setRenderMode(ParticleRendererSetting.Mode.Horizontal);
-        c.colorOverLifetime.setEnable(true);
-        c.colorOverLifetime.setColor(gradient(0x88C2EEFA, 0x7079C8EC, 0x6079C8EC, 0x003A8FCC));
-        material(ice, glow(0.4f, 0.78f, 1f, 0.9f));
-        ice.transform().localPosition(new Vector3f(0, 0.04f, 0));
-
-        ParticleEmitter sparkle = emitter("persist_sparkle", true, 20);
-        ParticleConfig k = sparkle.config;
-        k.setSimulationSpace(ParticleConfig.Space.World);
-        k.setMaxParticles(600);
-        k.setStartLifetime(NumberFunction.constant(80));
-        k.setStartSpeed(NumberFunction.constant(0));
-        k.setStartSize(uniform(range(0.04f, 0.08f)));
-        k.shape.setShape(sphere(0.55f));
-        k.shape.setScale(new NumberFunction3(1f, 0f, 1f));
-        k.emission.setEmissionRate(NumberFunction.constant(0.8f));
-        fadeInOut(k, WHITE, CYAN);
-        material(sparkle, glow(0.55f, 0.88f, 1f, 1.3f));
-        sparkle.transform().localPosition(new Vector3f(0, 0.12f, 0));
-
         ParticleEmitter spray = emitter("spray", true, 20);
         ParticleConfig f = spray.config;
         f.setSimulationSpace(ParticleConfig.Space.World);
-        f.setMaxParticles(60);
+        f.setMaxParticles(80);
         f.setStartLifetime(range(6, 12));
         f.setStartSpeed(range(0.6f, 1.6f));
-        f.setStartSize(uniform(range(0.04f, 0.08f)));
-        f.shape.setShape(sphere(0.3f));
-        f.shape.setScale(new NumberFunction3(1f, 0.2f, 1f));
-        f.emission.setEmissionRate(NumberFunction.constant(2f));
-        gravity(f, 0.4f);
+        f.setStartSize(uniform(range(0.035f, 0.075f)));
+        f.shape.setShape(sphere(0.35f));
+        f.shape.setScale(new NumberFunction3(1f, 0.15f, 1f));
+        f.emission.setEmissionRate(NumberFunction.constant(3f));
+        gravity(f, 0.5f);
         fadeOut(f, WHITE, CYAN);
         material(spray, glow(0.5f, 0.85f, 1f, 1.2f));
-        spray.transform().localPosition(new Vector3f(0, 0.1f, 0));
-        return fx(ice, sparkle, spray);
+        spray.transform().localPosition(new Vector3f(0, 0.08f, 0));
+
+        ParticleEmitter glints = emitter("glints", true, 20);
+        ParticleConfig k = glints.config;
+        k.setSimulationSpace(ParticleConfig.Space.World);
+        k.setMaxParticles(30);
+        k.setStartLifetime(range(10, 18));
+        k.setStartSpeed(range(0.05f, 0.15f));
+        k.setStartSize(uniform(range(0.05f, 0.09f)));
+        k.shape.setShape(sphere(0.5f));
+        k.shape.setScale(new NumberFunction3(1f, 0.1f, 1f));
+        k.emission.setEmissionRate(NumberFunction.constant(0.6f));
+        gravity(k, -0.02f);
+        fadeInOut(k, WHITE, CYAN);
+        material(glints, glow(0.55f, 0.88f, 1f, 1.3f));
+        glints.transform().localPosition(new Vector3f(0, 0.1f, 0));
+        return fx(spray, glints);
     }
 
     /** Shatter Shell: the shell bursts into fragments that fly outward, with a flat shockwave the size of its reach. */

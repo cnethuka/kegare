@@ -35,9 +35,12 @@ RIME = (230, 244, 255, 230)    # thick rime: the spines
 GLINT = (255, 255, 255, 250)   # where it's thickest, and the odd sparkle
 FISSURE = (22, 38, 90, 232)    # a crack in the ground: deep navy, nearly solid
 EDGE = (128, 180, 240, 214)    # the lit lip along a crack
-PALETTE = (NONE, FILM, FROST, RIME, GLINT, FISSURE, EDGE)
-# Strength, for a texel that two strokes cross: a crack cuts through frost, its lip shows over the sheen.
-STRENGTH = {0: 0, 1: 1, 6: 2, 2: 3, 3: 4, 4: 5, 5: 6}
+ICE = (112, 172, 234, 150)     # a glaze of ice: the block's own texture still shows through, gone blue
+DEEP = (64, 122, 204, 164)     # where the glaze is thicker
+PALETTE = (NONE, FILM, FROST, RIME, GLINT, FISSURE, EDGE, ICE, DEEP)
+# Strength, for a texel that two strokes cross: a crack cuts through frost, its lip shows over the sheen. In game the more opaque
+# colour wins where two marks meet, so a glaze (less opaque than frost) never covers frost, and the sheen never covers the glaze.
+STRENGTH = {0: 0, 1: 1, 7: 2, 8: 3, 6: 4, 2: 5, 3: 6, 4: 7, 5: 8}
 
 # 16 headings, so every line is one of the clean pixel slopes (flat, 1:2, 1:1, 2:1) instead of a ragged stair.
 HEADINGS = [i * math.pi / 8 for i in range(16)]
@@ -319,6 +322,64 @@ def field_frost(seed=17, size=52):
     return c, geodesic_order(c, (cx, cy))
 
 
+def value_noise(rng, size, cell):
+    """Smooth blobs: random values on a coarse grid, mixed between (0..1)."""
+    n = size // cell + 2
+    grid = [[rng.random() for _ in range(n)] for _ in range(n)]
+
+    def at(x, y):
+        gx, gy = x / cell, y / cell
+        ix, iy = int(gx), int(gy)
+        fx, fy = gx - ix, gy - iy
+        fx, fy = fx * fx * (3 - 2 * fx), fy * fy * (3 - 2 * fy)
+        top = grid[iy][ix] * (1 - fx) + grid[iy][ix + 1] * fx
+        bottom = grid[iy + 1][ix] * (1 - fx) + grid[iy + 1][ix + 1] * fx
+        return top * (1 - fy) + bottom * fy
+    return at
+
+
+def path_ice(seed=41, size=32):
+    """Ice Path's ice: one patch of the glaze laid under the slider's feet. The game lays one every half a block or so as you slide,
+    so they run together into a band about the trail's width (0.9 blocks either side of the middle): a blue glaze over the block,
+    thicker in places, a frosted ragged rim, and the shine of ice, short streaks all one way on the diagonal (the game only turns it
+    the ways that keep that diagonal), a glint at the top of each, and now and then a hairline crack. Sparse, since the patches
+    overlap two or three deep and the more opaque texels of each all show."""
+    rng = random.Random(seed)
+    c = Canvas(size)
+    cx = cy = size // 2
+    edge = [rng.uniform(12.5, 14.5) for _ in range(12)]
+    deep = value_noise(rng, size, 4)
+
+    def radius(x, y):
+        a = (math.atan2(y - cy, x - cx) / (2 * math.pi)) % 1.0
+        f = a * 12
+        i = int(f) % 12
+        return edge[i] * (1 - (f - int(f))) + edge[(i + 1) % 12] * (f - int(f))
+    for y in range(size):
+        for x in range(size):
+            d = math.hypot(x - cx + 0.5, y - cy + 0.5)
+            r = radius(x, y)
+            if d < r - 0.5:
+                c.put(x, y, 8 if deep(x, y) > 0.74 and d < r - 2.5 else 7)
+            elif d < r + 1.8 and (x + y) % 2 == 0 and rng.random() < 0.75:
+                c.put(x, y, 1)
+    # The shine: short streaks down the diagonal (heading 3/4 pi: up-right to down-left on the canvas), a glint at the top end.
+    for _ in range(2):
+        a, d = rng.uniform(0, 2 * math.pi), rng.uniform(3, 10)
+        x0, y0 = round(cx + math.cos(a) * d), round(cy + math.sin(a) * d)
+        pts = ray(x0, y0, 3 * math.pi / 4, rng.choice((3, 4)))
+        for i, (x, y) in enumerate(pts):
+            c.put(x, y, 3 if i else 4)
+    # Now and then a hairline crack through the glaze, on the clean slopes.
+    for _ in range(rng.choice((0, 1))):
+        a, d = rng.uniform(0, 2 * math.pi), rng.uniform(2, 7)
+        x0, y0 = round(cx + math.cos(a) * d), round(cy + math.sin(a) * d)
+        h = rng.choice([h for h in HEADINGS if abs(math.sin(h - 3 * math.pi / 4)) > 0.5])
+        for x, y in ray(x0, y0, h, rng.uniform(4, 7)):
+            c.put(x, y, 2)
+    return c, geodesic_order(c, (cx, cy))
+
+
 def white():
     OUT.mkdir(parents=True, exist_ok=True)
     Image.new("RGBA", (4, 4), (255, 255, 255, 255)).save(OUT / "white.png", optimize=True)
@@ -368,7 +429,7 @@ def preview(name, art, when, reaches=(0.37, 0.65, 1.0), steps=(0.25, 0.5, 1.0)):
 
 
 PATTERNS = {"lance_frost": lance_frost, "spire_crack": spire_crack, "spire_burst": spire_burst, "field_frost": field_frost,
-            "field_frost_b": lambda: field_frost(seed=29)}
+            "field_frost_b": lambda: field_frost(seed=29), "path_ice": path_ice, "path_ice_b": lambda: path_ice(seed=53)}
 
 
 def main(args):

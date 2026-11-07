@@ -57,6 +57,8 @@ Frost Field's crystals: `field_shapes.py` (four small clusters) and `build_frost
 
     python3 -I tools/blockbench/build_frost_field.py --preview  # also run/field_preview/*.png
 
+Ice Path has no mesh: its ice is pixel art on the blocks (`path_ice`, below). Its slide pose is `tools/anims/ice_path.py`.
+
 ## Marks on blocks: pixel art, no Blockbench
 
 Rime's frost, cracks and ice on the world's blocks are pixel art at the blocks' own 16 texels a block, so they need no

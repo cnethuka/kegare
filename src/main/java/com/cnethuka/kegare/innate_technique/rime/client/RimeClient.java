@@ -67,11 +67,12 @@ public final class RimeClient {
             BlockMarks.clear();
             SpireClient.clear();
             FieldClient.clear();
+            PathClient.clear();
         });
         // The throw is the whole body: in your own first person, that would swing your own arm and whatever it holds across the view.
         PlayerAnimations.keepVanillaHands(List.of(RimeIds.ANIM_GLACIAL_LANCE_CHARGE, RimeIds.ANIM_GLACIAL_LANCE_RELEASE,
                 RimeIds.ANIM_GLACIAL_SPIRE_CHARGE, RimeIds.ANIM_GLACIAL_SPIRE_RELEASE, RimeIds.ANIM_FROST_SHARD_CAST,
-                RimeIds.ANIM_SPLINTER_CAST, RimeIds.ANIM_FROST_FIELD_CHANNEL));
+                RimeIds.ANIM_SPLINTER_CAST, RimeIds.ANIM_FROST_FIELD_CHANNEL, RimeIds.ANIM_ICE_PATH_SLIDE));
         // Lookalikes used when an effect can't load, or with vfxQuality = VANILLA.
         VanillaFallback.register(RimeIds.FX_FROST_SHARD_TRAIL, new VanillaFallback.Spec(ParticleTypes.SNOWFLAKE, 2, 6, 0.06, 0.01));
         VanillaFallback.register(RimeIds.FX_FROST_SHARD_IMPACT, new VanillaFallback.Spec(ParticleTypes.SNOWFLAKE, 1, 14, 0.25, 0.12));
@@ -121,6 +122,7 @@ public final class RimeClient {
         LanceAftermath.tick(mc.level);
         SpireClient.tick(mc.level);
         FieldClient.tick(mc.level);
+        PathClient.tick(mc.level);
         BlockMarks.tick(mc.level);
     }
 

@@ -757,7 +757,7 @@ Package `com.cnethuka.kegare.innate_technique.rime`. **Rarity: RARE.** All numbe
   multiplier. Hovering an ability on the Sorcerer screen shows its current cost, upkeep and every active factor.
 - **Visuals:** PAL animations `rime_shell_toggle` and `frozen` (loop), in
   `assets/kegare/player_animations/rime.json`; Frost Field's `frost_field_channel` (loop) in `frost_field.json`
-  (`tools/anims/frost_field.py`); Frost Shard's `frost_shard_cast` in `frost_shard.json` (from
+  (`tools/anims/frost_field.py`); Ice Path's `ice_path_slide` (loop) in `ice_path.json` (`tools/anims/ice_path.py`); Frost Shard's `frost_shard_cast` in `frost_shard.json` (from
   `tools/anims/frost_shard.py`) and Splinter's `splinter_cast` in `splinter.json` (`tools/anims/splinter.py`); Glacial Lance's `glacial_lance_charge` (loop) and `glacial_lance_release` in
   `glacial_lance.json` (from `tools/anims/glacial_lance.py`). Photon effects in `assets/kegare/fx/rime/`: `frost_shard_trail`,
   `frost_shard_impact`, `frost_field_cone`, `rime_shell_aura` (an ice bubble, invisible from the inside), `freeze_shatter`,
@@ -893,6 +893,24 @@ Package `com.cnethuka.kegare.innate_technique.rime`. **Rarity: RARE.** All numbe
     braced on the right forearm, leaning in, pressing a little harder now and then. Your own first-person hands stay vanilla.
   - **Reduced** lays the same frost with half the crystals and mist; **Vanilla** lays no frost (no marks on blocks) and
     keeps the solid crystals, snowflakes for the rest.
+- **Ice Path's look** (in the Lance's style):
+  - **The ice** is pixel art on the blocks' own texels (`BlockMarks`, patterns `path_ice` and `path_ice_b`): a blue glaze
+    over the block, the block's texture still through it, thicker in places, a frosted ragged rim, short shine streaks all on
+    one diagonal with a glint at the top of each, now and then a hairline crack. `PathClient` lays it under the feet of
+    every player whose trail loop is running (so every client shows it), the way the server lays its trail: on ground within
+    1.5 blocks under the feet, a patch whenever the feet are 0.45 blocks from the last, each about as wide as the trail
+    slows (0.9 blocks either side), so they run together into a band. Each patch's reach and place wander a little, so its
+    edges aren't ruled lines, and it's only ever laid turned the four ways that keep the shine on its diagonal. A patch
+    forms from the middle out in 3 ticks (bright for its first two), holds, and melts from the edge in over 1.2 s, centred
+    on when the server's trail there expires (the trail time from the config). No block changes.
+  - **The effect:** `ice_path_trail` is only what's thrown up at the feet (world space, left behind): fine ice specks
+    kicked out low and the odd glint rising.
+  - **The body:** `ice_path_slide` (`tools/anims/ice_path.py`) pushes off, then glides like a skater: feet split, the left
+    ahead, the body sunk onto them and leant in, the arms out for balance (the left reaching ahead, the right swept back),
+    swaying slowly from side to side. It keys the legs (a slide isn't walking); the head follows the look. Your own
+    first-person hands stay vanilla.
+  - **Reduced** plays the spray reduced and lays the same ice; **Vanilla** lays no ice (no marks on blocks), snowflakes
+    behind the feet.
 - **Effect authoring:** the effects are built from Photon's own objects in `RimeFxAuthoring` (building blocks in the
   shared `client.visual.FxKit`) and written with Photon's serializer, the same `.fx` format the editor exports. In a
   dev client, `/kegare debug fx export` rewrites every effect in `FxCatalog` (Rime's and RMT's, and the running game's
