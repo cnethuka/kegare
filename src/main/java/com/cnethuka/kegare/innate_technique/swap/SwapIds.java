@@ -30,6 +30,7 @@ public final class SwapIds {
     public static final ResourceLocation FX_MIMIC_FLICKER = fx("mimic_flicker");
     /** An effect crossing over in an Exchange (SwapLink.travel; drawn by SwapFx: a line and a bead along it). */
     public static final ResourceLocation FX_EXCHANGE_TRANSFER = fx("exchange_transfer");
+    /** Momentum Exchange, on both: the waist ring and the streaks (drawn by SwapFx; no Photon). */
     public static final ResourceLocation FX_MOMENTUM_BURST = fx("momentum_burst");
     public static final ResourceLocation FX_TOTAL_SWAP_BURST = fx("total_swap_burst");
 

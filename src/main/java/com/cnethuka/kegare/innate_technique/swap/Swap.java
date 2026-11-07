@@ -57,7 +57,6 @@ public final class Swap {
         SwapRegistry.register(modBus);
         VisualHooks.registerEffect(SwapIds.FX_SWAP_DEPART);
         VisualHooks.registerEffect(SwapIds.FX_SWAP_ARRIVE);
-        VisualHooks.registerEffect(SwapIds.FX_MOMENTUM_BURST);
         VisualHooks.registerEffect(SwapIds.FX_TOTAL_SWAP_BURST);
     }
 

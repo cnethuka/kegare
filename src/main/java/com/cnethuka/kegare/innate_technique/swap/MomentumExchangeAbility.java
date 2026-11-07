@@ -7,8 +7,6 @@ import com.cnethuka.kegare.innatetechnique.visual.AbilityVisuals;
 import com.cnethuka.kegare.innatetechnique.visual.VisualService;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.LivingEntity;
-import net.minecraft.sounds.SoundEvents;
-import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.phys.Vec3;
 
 /**
@@ -46,8 +44,8 @@ public final class MomentumExchangeAbility extends SwapAbility.Special {
         target.fallDistance = casterFall;
         VisualService.playOnce(caster, SwapIds.MOMENTUM_BURST);
         VisualService.playOnce(target, SwapIds.MOMENTUM_BURST);
-        caster.level().playSound(null, caster.getX(), caster.getY(), caster.getZ(), SoundEvents.ENDERMAN_TELEPORT, SoundSource.PLAYERS, 0.6f, 0.7f);
-        target.level().playSound(null, target.getX(), target.getY(), target.getZ(), SoundEvents.ENDERMAN_TELEPORT, SoundSource.PLAYERS, 0.6f, 0.7f);
+        SwapSounds.MOMENTUM.at(caster);
+        SwapSounds.MOMENTUM.at(target);
     }
 
     /** Sets a player's or mob's velocity and sends it out (to the player's own client, and everyone tracking it). */

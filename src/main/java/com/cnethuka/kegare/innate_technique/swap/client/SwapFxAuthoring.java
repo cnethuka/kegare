@@ -37,7 +37,6 @@ public final class SwapFxAuthoring {
         Map<ResourceLocation, Supplier<FX>> out = new LinkedHashMap<>();
         out.put(SwapIds.FX_SWAP_DEPART, SwapFxAuthoring::depart);
         out.put(SwapIds.FX_SWAP_ARRIVE, SwapFxAuthoring::arrive);
-        out.put(SwapIds.FX_MOMENTUM_BURST, SwapFxAuthoring::momentumBurst);
         out.put(SwapIds.FX_TOTAL_SWAP_BURST, SwapFxAuthoring::totalSwapBurst);
         return out;
     }
@@ -70,31 +69,6 @@ public final class SwapFxAuthoring {
         shrink(c);
         material(glints, glow(0.35f, 0.95f, 0.86f, 1.6f));
         return glints;
-    }
-
-    /** Momentum traded: streaks thrown out sideways, a ring at the waist, a hard flash. */
-    private static FX momentumBurst() {
-        ParticleEmitter streaks = burstEmitter("streaks", 26, 30);
-        ParticleConfig c = streaks.config;
-        c.setStartLifetime(range(6, 11));
-        c.setStartSpeed(range(4f, 7f));
-        c.setStartSize(uniform(range(0.05f, 0.1f)));
-        c.shape.setShape(sphere(0.3f));
-        c.shape.setScale(new NumberFunction3(1f, 0.25f, 1f));
-        fadeOut(c, PALE, VIOLET);
-        material(streaks, recolor(KilaPresets.SPARKS.create(), 0.5f, 0.75f, 0.95f, 1.6f));
-
-        ParticleEmitter ring = single("ring", 10, 2.0f);
-        ring.config.renderer.setRenderMode(ParticleRendererSetting.Mode.Horizontal);
-        grow(ring.config, 0.15f);
-        fadeOut(ring.config, VIOLET_PALE, VIOLET);
-        material(ring, recolor(KilaPresets.SHOCKWAVE.create(), 0.66f, 0.42f, 0.97f, 1.3f));
-
-        ParticleEmitter flash = single("flash", 6, 1.0f);
-        fadeOut(flash.config, PALE, TEAL);
-        shrink(flash.config);
-        material(flash, glow(0.35f, 0.92f, 0.85f, 1.4f));
-        return fx(streaks, ring, flash);
     }
 
     /** Total Swap: rings on the ground and around the body, a burst of teal and violet sparks, motes rising after. */

@@ -699,7 +699,7 @@ closing it or disconnecting at any point changes nothing.
 - **Effects a move draws itself:** `ClientVisuals.drawnByMove(effect)` keeps a loop of it keyed and timed as usual, and
   still tells the listeners of a one-shot, but plays neither Photon nor vanilla particles for it (nor preloads it); the
   move finds it through a `ClientVisuals.Listener` (`loopStarted`, `loopStopped`, `playedOnce`) and `loopTime`.
-  Switchback's countdown ring and Mimic's flicker are such effects (§3.19).
+  Switchback's countdown ring, Mimic's flicker and Momentum Exchange's streaks are such effects (§3.19).
 - **Nothing in front of your own eyes:** an effect at a position closer than 2 blocks to a first-person camera
   (you got hit, you broke free) is skipped. Even small particles there would cover the screen; you still get the
   hurt flash, overlays, HUD and sound. Your own entity-attached loops are authored away from the camera: Rime's
@@ -1062,7 +1062,7 @@ Package `com.cnethuka.kegare.innate_technique.rime`. **Rarity: RARE.** All numbe
   | Switchback (Positions) | a double clap, seen and heard: its own animation (`switchback_cast`: two claps, then the right hand turned back to the chest) and sound (`swap.double_clap`, at both ends), and the countdown rings go up on both as it's cast |
   | Mimic (Awareness) | its own cupped clap up by the face (animation and `swap.cupped_clap`), and the caster's whole body flashing teal twice (`mimic_flicker`), which everyone nearby sees; the trick is the disguise afterwards, not a hidden cast |
   | Send Off (Anchor) | a clap and its own two-handed shove (`send_off_cast`, both palms pushed out at the target), with a rush of air heard at the caster (`swap.shove`); the target is gone along a teal line onto the token, a lower clap at both ends |
-  | Momentum Exchange (Exchange) | own arms-up sweep, a burst on both players, a lower teleport sound |
+  | Momentum Exchange (Exchange) | its own hard clap thrown forward, then the arms flung back behind (`momentum_cast`), heard low (the clap at pitch 0.8, at both); a teal ring snaps round both waists and speed lines trail each along the way they're sent |
   | Possess (Puppet Creation) | the puppet jolts awake, arms flung wide (`possess_cast`), a soul-escape sound at the body and a lavender thread shooting to the puppet; afterwards the empty body stands slack, a thread running from it to the puppet |
   | Focus (Directive) | own wind-up and a hard point at the target, held, the other hand yanked back (`focus_point`); a bell at the target and a lavender mark on it for 2 s (a ring tightening round it, a bead over its head) |
   | Chain Burst (Curio Burst) | own cast: hands gathered, flung up into a wide Y, then slammed down and out (`chain_burst_cast`); a rising whistle at the target, then the blasts going off one after another |
@@ -1319,8 +1319,10 @@ smooth and modern in Swap's teal, nothing heavy, blurry or lingering, never the 
     the face they'd only sweep across the view.
   - `exchange_cast` (Exchange): a clap, then the hands slide past each other low in front of the waist, each to the
     other's side, the trade; then they part. In your own first person they stay below the view.
+  - `momentum_cast` (Momentum Exchange): a hard clap with the body thrown forward into it, then both arms flung back
+    behind and the chest up, the push given away.
   - The moves not reworked yet still play their hand-keyed animations, carried as they are from
-    `tools/anims/swap_legacy.json`: `swap_snap` (Total Swap), `momentum_cast`.
+    `tools/anims/swap_legacy.json`: `swap_snap` (Total Swap).
   - In your own first person, a Swap animation shows its hands only while you look about level (no more than 15° down,
     `PlayerAnimations.handsWhileLevel`). They hang from the body, which doesn't tip with the view, so at chest height
     they sit at the bottom corners of a level view; looking further down they'd come up into its middle, so the hands
@@ -1376,8 +1378,13 @@ smooth and modern in Swap's teal, nothing heavy, blurry or lingering, never the 
   0.4 s, eased in and out; then the line fades in 3 ticks. When an effect goes each way the two beads cross in the
   middle. Never within 1.5 blocks of your own first-person camera. Reduced: the same. Vanilla: teal specks along the
   bead's path.
+- Momentum Exchange's **streaks** (`momentum_burst` on both, drawn by `SwapFx`, no Photon): a thin teal ring snaps out
+  round the waist in 4 ticks, and for 8 ticks four thin teal speed lines with pale cores trail behind the body along the
+  way it actually goes (the last 3 ticks of its path, read by the client, so they show the momentum it was given,
+  whichever way; one stopped dead gets only the ring). Not round your own first-person camera. Reduced: the same.
+  Vanilla: a ring of specks at the waist and specks left behind as it goes.
 - Photon effects (`SwapFxAuthoring` → `fx/swap/`), teal with Malice violet, with vanilla particle fallbacks:
-  - `momentum_burst` (both players) and `total_swap_burst` (both players).
+  - `total_swap_burst` (both players).
 - Sounds: Kegare's own (§3.10, `tools/sounds/swap.py`), each with a subtitle, at both ends of the swap:
   - `swap.clap` ("Hands clap", a crisp clap): Positions, and for now Total Swap until it gets its own. Anchor's
     recall claps a shade lower (pitch 0.94), at the caster and the token; Send Off the same at the target and the token.
@@ -1390,7 +1397,8 @@ smooth and modern in Swap's teal, nothing heavy, blurry or lingering, never the 
     `swap.token_land` ("Token lands", a small tick and a short low chime): where the token sticks.
   - `swap.trade` ("Hands clap, chimes cross", the clap and two soft glassy chimes sliding past each other, one up and
     one down): Exchange, at both.
-  - `swap.big_clap` is registered for the moves still to come. Momentum Exchange still uses the enderman teleport.
+  - Momentum Exchange: `swap.clap` hard and low (pitch 0.8) at both.
+  - `swap.big_clap` is registered for the moves still to come.
 
 **Art:** emblem `gui/emblem/swap.png`, icons for all nine abilities (`gui/ability/`), Anchor's token
 (`models/fx/swap_anchor.obj`, `textures/entity/swap_anchor*.png`, `art/blockbench/swap_anchor.bbmodel`; above). The

@@ -76,6 +76,9 @@ public final class SwapFx {
     /** Exchange: one effect crossing from {@code from} to {@code to} (middles) over {@code ticks}. */
     private record Transfer(Vec3 from, Vec3 to, long born, int ticks) {}
 
+    /** Momentum Exchange on an entity: where it's been each tick since (its streak trails along that path). */
+    private record Streak(int entityId, long born, List<Vec3> path) {}
+
     /** An entity about to be moved by a swap: from where, and until when to watch for the move. */
     private record Snap(Vec3 from, long until) {}
 
@@ -101,6 +104,11 @@ public final class SwapFx {
     private static final List<Flicker> FLICKERS = new ArrayList<>();
     private static final List<Link> LINKS = new ArrayList<>();
     private static final List<Transfer> TRANSFERS = new ArrayList<>();
+    private static final List<Streak> STREAKS = new ArrayList<>();
+    /** Momentum Exchange: the streak lasts this long, trailing back over the last STREAK_TRAIL ticks of the way it went. */
+    private static final int STREAK_TICKS = 8, STREAK_TRAIL = 3, STREAK_FADE = 3, SNAP_RING_TICKS = 4;
+    /** The speed lines: (height up the body, out to the side), as fractions of its height and in blocks. */
+    private static final float[][] STREAK_LINES = {{0.3f, -0.24f}, {0.52f, 0.28f}, {0.72f, -0.16f}, {0.9f, 0.2f}};
     /** Ticks Exchange's line takes to fade once its bead has arrived. */
     private static final int TRANSFER_FADE = 3;
     /** A link is drawn whole and then drawn in toward its far end over this many ticks. */
@@ -223,6 +231,7 @@ public final class SwapFx {
         RINGS.removeIf(r -> clock - r.born() > RING_TICKS);
         LINKS.removeIf(l -> clock - l.born() > LINK_TICKS);
         if (!drawn()) tickTransfers(level);
+        tickStreaks(level);
         TRANSFERS.removeIf(x -> clock - x.born() > x.ticks() + TRANSFER_FADE);
         POSES.values().removeIf(p -> clock - p.tick() > POSE_KEPT);
         SNAP.values().removeIf(s -> s.until() < clock);
@@ -267,6 +276,7 @@ public final class SwapFx {
         FLICKERS.clear();
         LINKS.clear();
         TRANSFERS.clear();
+        STREAKS.clear();
     }
 
     // ---------------------------------------------------------------- the link
@@ -375,6 +385,96 @@ public final class SwapFx {
             Vec3 tail = p.subtract(dir.scale(0.32)), head = p.add(dir.scale(0.12));
             strip(out, m, tail.subtract(cam), head.subtract(cam), Vec3.ZERO, 0.09f, GLOW, 0.9f);
             strip(out, m, tail.subtract(cam), head.subtract(cam), Vec3.ZERO, 0.04f, PALE, 1f);
+        }
+        buffers.endBatch(type);
+    }
+
+    // ---------------------------------------------------------------- Momentum Exchange's streaks
+
+    /**
+     * Momentum Exchange on an entity (both of them): a thin teal ring snaps round its waist, and for 8 ticks thin teal speed lines
+     * trail behind it along the way it's actually going (the last 3 ticks of its path, so they show the momentum it was given,
+     * whichever way that is; one stopped dead gets only the ring). Not round your own first-person camera. Vanilla: a ring of
+     * specks at the waist and specks left behind it as it goes.
+     */
+    static void momentum(Entity entity) {
+        Minecraft mc = Minecraft.getInstance();
+        if (!drawn()) {
+            if (entity == mc.player && mc.options.getCameraType().isFirstPerson()) return;
+            double y = entity.getY() + entity.getBbHeight() * 0.5;
+            for (int i = 0; i < 10; i++) {
+                double a = Mth.TWO_PI * i / 10.0;
+                entity.level().addParticle(SPECK, entity.getX() + Math.cos(a) * 0.55, y, entity.getZ() + Math.sin(a) * 0.55, 0, 0, 0);
+            }
+        }
+        STREAKS.removeIf(s -> s.entityId() == entity.getId());
+        List<Vec3> path = new ArrayList<>();
+        path.add(entity.position());
+        STREAKS.add(new Streak(entity.getId(), clock, path));
+    }
+
+    private static void tickStreaks(ClientLevel level) {
+        Minecraft mc = Minecraft.getInstance();
+        for (Iterator<Streak> it = STREAKS.iterator(); it.hasNext(); ) {
+            Streak s = it.next();
+            Entity entity = level.getEntity(s.entityId());
+            if (entity == null || clock - s.born() > STREAK_TICKS) {
+                it.remove();
+                continue;
+            }
+            Vec3 last = s.path().get(s.path().size() - 1);
+            s.path().add(entity.position());
+            if (drawn() || (entity == mc.player && mc.options.getCameraType().isFirstPerson())) continue;
+            Vec3 step = entity.position().subtract(last);
+            if (step.horizontalDistanceSqr() + step.y * step.y < 0.01) continue;
+            for (float[] line : new float[][] {STREAK_LINES[0], STREAK_LINES[2]}) {
+                Vec3 p = last.add(0, entity.getBbHeight() * line[0], 0);
+                level.addParticle(SPECK, p.x, p.y, p.z, 0, 0, 0);
+            }
+        }
+    }
+
+    private static void renderStreaks(PoseStack pose, MultiBufferSource.BufferSource buffers, Vec3 cam, float partial) {
+        Minecraft mc = Minecraft.getInstance();
+        if (mc.level == null) return;
+        boolean firstPerson = mc.options.getCameraType().isFirstPerson();
+        RenderType type = RenderType.entityTranslucentEmissive(WHITE);
+        VertexConsumer out = buffers.getBuffer(type);
+        Matrix4f m = pose.last().pose();
+        for (Streak s : STREAKS) {
+            Entity entity = mc.level.getEntity(s.entityId());
+            if (entity == null || (entity == mc.player && firstPerson)) continue;
+            float age = clock - s.born() + partial;
+            Vec3 head = entity.getPosition(partial);
+            float h = entity.getBbHeight();
+            // The ring: snapped out round the waist in a few ticks, thin, gone.
+            float r = age / SNAP_RING_TICKS;
+            if (r <= 1f) {
+                float ease = 1f - (1f - r) * (1f - r);
+                Matrix4f at = new Matrix4f(m).translate((float) (head.x - cam.x), (float) (head.y + h * 0.5 - cam.y), (float) (head.z - cam.z));
+                ring(out, at, entity.getBbWidth() * 0.8f + 0.45f * ease, 0.05f * (1f - 0.5f * r), GLOW, 1f - r);
+            }
+            // The speed lines: from where it was STREAK_TRAIL ticks ago up to just behind it, at a few heights round the body.
+            List<Vec3> path = s.path();
+            Vec3 tail = path.get(Math.max(0, path.size() - 1 - STREAK_TRAIL));
+            Vec3 way = head.subtract(tail);
+            double len = way.length();
+            if (len < 0.25) continue;
+            Vec3 dir = way.scale(1.0 / len);
+            Vec3 side = dir.cross(new Vec3(0, 1, 0));
+            side = side.lengthSqr() < 1.0e-4 ? new Vec3(1, 0, 0) : side.normalize();
+            float fade = age <= STREAK_TICKS - STREAK_FADE ? 1f : Mth.clamp((STREAK_TICKS - age) / STREAK_FADE, 0f, 1f);
+            for (float[] line : STREAK_LINES) {
+                Vec3 off = side.scale(line[1]).add(0, h * line[0], 0);
+                Vec3 b = head.add(off).subtract(dir.scale(entity.getBbWidth() * 0.6));
+                Vec3 a = b.subtract(dir.scale(Math.min(len, 2.2)));
+                if (b.subtract(a).dot(dir) <= 0) continue;
+                // Brightest by the body, fading back along the way it came.
+                Vec3 mid = a.lerp(b, 0.5);
+                strip(out, m, a.subtract(cam), mid.subtract(cam), Vec3.ZERO, 0.03f, GLOW, 0.35f * fade);
+                strip(out, m, mid.subtract(cam), b.subtract(cam), Vec3.ZERO, 0.035f, GLOW, 0.85f * fade);
+                strip(out, m, mid.subtract(cam), b.subtract(cam), Vec3.ZERO, 0.014f, PALE, 0.9f * fade);
+            }
         }
         buffers.endBatch(type);
     }
@@ -564,13 +664,14 @@ public final class SwapFx {
     // ---------------------------------------------------------------- drawing
 
     static void render(PoseStack pose, Vec3 cam, float partial) {
-        if ((AFTERIMAGES.isEmpty() && RINGS.isEmpty() && COUNTDOWNS.isEmpty() && FLIPS.isEmpty() && LINKS.isEmpty() && TRANSFERS.isEmpty())
-                || !drawn()) return;
+        if ((AFTERIMAGES.isEmpty() && RINGS.isEmpty() && COUNTDOWNS.isEmpty() && FLIPS.isEmpty() && LINKS.isEmpty() && TRANSFERS.isEmpty()
+                && STREAKS.isEmpty()) || !drawn()) return;
         MultiBufferSource.BufferSource buffers = Minecraft.getInstance().renderBuffers().bufferSource();
         if (!COUNTDOWNS.isEmpty()) renderCountdowns(pose, buffers, cam, partial);
         if (!FLIPS.isEmpty()) renderFlips(pose, buffers, cam, partial);
         if (!LINKS.isEmpty()) renderLinks(pose, buffers, cam, partial);
         if (!TRANSFERS.isEmpty()) renderTransfers(pose, buffers, cam, partial);
+        if (!STREAKS.isEmpty()) renderStreaks(pose, buffers, cam, partial);
         Minecraft mc = Minecraft.getInstance();
         boolean firstPerson = mc.options.getCameraType().isFirstPerson();
         for (Afterimage a : AFTERIMAGES) {

@@ -78,7 +78,6 @@ public final class SwapClient {
         // Lookalikes used when an effect can't load, or with vfxQuality = VANILLA (teal dust; never the enderman's purple).
         VanillaFallback.register(SwapIds.FX_SWAP_DEPART, new VanillaFallback.Spec(TEAL_FLICK, 1, 12, 0.3, 0.02));
         VanillaFallback.register(SwapIds.FX_SWAP_ARRIVE, new VanillaFallback.Spec(TEAL_FLICK, 1, 8, 0.3, 0.02));
-        VanillaFallback.register(SwapIds.FX_MOMENTUM_BURST, new VanillaFallback.Spec(TEAL_DUST, 1, 24, 0.4, 0.3));
         VanillaFallback.register(SwapIds.FX_TOTAL_SWAP_BURST, new VanillaFallback.Spec(ParticleTypes.REVERSE_PORTAL, 1, 40, 0.6, 0.3));
         NeoForge.EVENT_BUS.addListener(SwapClient::onClientTick);
         NeoForge.EVENT_BUS.addListener(SwapClient::onFrame);
@@ -91,6 +90,8 @@ public final class SwapClient {
         // So is the disguised player's own reminder (SwapHud's brackets), and the card flip as a disguise lands (SwapFx).
         ClientVisuals.drawnByMove(SwapIds.FX_AWARENESS_SHIMMER);
         ClientVisuals.drawnByMove(SwapIds.FX_MIMIC_FLICKER);
+        // Momentum Exchange's streaks follow each player along the way they're sent (SwapFx).
+        ClientVisuals.drawnByMove(SwapIds.FX_MOMENTUM_BURST);
         SwapHud.init(modBus);
         ClientVisuals.onPlayAt(SwapIds.FX_AWARENESS_FLIP, (level, pos, entityId, visual) -> {
             SwapFx.flip(level, pos, entityId);
@@ -110,6 +111,7 @@ public final class SwapClient {
             @Override
             public void playedOnce(Entity entity, Visual visual) {
                 if (visual.effect().filter(SwapIds.FX_MIMIC_FLICKER::equals).isPresent()) SwapFx.mimicFlicker(entity);
+                if (visual.effect().filter(SwapIds.FX_MOMENTUM_BURST::equals).isPresent()) SwapFx.momentum(entity);
             }
         });
         // Mimic claps by your own face: in your own first person that would only sweep your arms across the view, so it's vanilla's.
