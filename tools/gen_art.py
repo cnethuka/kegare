@@ -2130,23 +2130,66 @@ def puppet_glow() -> "Image.Image":
     return img
 
 
-def fist_shell() -> "Image.Image":
-    """A ready fist's Malice shell (entity texture, tinted with the Malice color, scrolling along the arm): streaks running up the
-    arm over a faint constant body, white with the strength in alpha, wrapping seamlessly both ways."""
-    size = 64
-    img = Image.new("RGBA", (size, size), (255, 255, 255, 0))
+FLAME_FRAMES = 8
+FLAME_SIZE = 14  # one texel is one pixel of a player's skin: as chunky as the arm it burns on
+WISP_SIZE = 7
+
+
+def flame_frame(t: int, tongues, values, *, sway: float, phase: float, hot: float, white: float) -> "Image.Image":
+    """One frame of fire, base at the bottom. Each tongue is a column of flame that climbs, leans and trades height with the others
+    over the loop, in whole cycles so the last frame runs into the first. Hard edges and a few flat shades: no soft alpha anywhere."""
+    size = FLAME_SIZE
     tau = 2 * math.pi
+    rim, body, heat, core = values
+    img = Image.new("RGBA", (size, size), (255, 255, 255, 0))
+    cycle = lambda k, p: math.sin(tau * (k * t / FLAME_FRAMES + p))
     for y in range(size):
         for x in range(size):
-            v = 0.0
-            # whole periods across the tile, so it wraps round the arm and along it
-            for fx, wobble, phase, power, strength in ((3, 0.9, 0.0, 7, 1.0), (5, 0.6, 1.9, 9, 0.85), (8, 0.4, 4.1, 12, 0.6)):
-                wob = wobble * math.sin(tau * y / size + phase) + 0.35 * wobble * math.sin(2 * tau * y / size + phase * 2)
-                s = 0.5 + 0.5 * math.sin(tau * fx * x / size + wob)
-                gap = 0.55 + 0.45 * math.sin(tau * (y / size * 2 + phase) + 1.3 * math.sin(tau * x / size * fx))
-                v = max(v, strength * s ** power * gap)
-            a = 0.3 + 0.7 * min(1.0, v * 1.4)
-            img.putpixel((x, y), (255, 255, 255, int(255 * a)))
+            nx = (x - (size - 1) / 2) / (size / 2)
+            ny = (size - 1 - y) / (size - 1)
+            leaned = nx + sway * ny * cycle(1, phase + ny * 0.9)
+            depth = -9.0
+            for centre, width, height, k, p in tongues:
+                top = height * (0.72 + 0.28 * cycle(k, p))
+                if ny > top:
+                    continue
+                half = width * (1 - (ny / max(top, 0.01)) ** 1.6)
+                depth = max(depth, (half - abs(leaned - centre - 0.05 * cycle(1, p + 0.3))) * size / 2)
+            depth = min(depth, (0.42 + 1.9 * ny - abs(nx)) * size / 2)  # rounded off past the knuckles
+            if depth <= 0:
+                continue
+            v = rim if depth < 0.75 else body if depth < hot else heat if depth < white else core
+            img.putpixel((x, y), (v, v, v, 255))
+    return img
+
+
+WISP_FRAMES = (
+    ("...##..", "..#..#.", "..#....", "...#...", "...##..", "..###..", "...#..."),  # fresh off the fist, thick at the root
+    ("....##.", "...#...", "...#...", "....#..", "....#..", "...#...", "..#...."),  # stretching out
+    (".......", "...##..", "..#..#.", "..#....", "...#...", ".......", "......."),  # a small hook
+    (".......", ".......", "...#...", "..##...", ".......", "...#...", "......."),  # breaking up
+)
+
+
+def fist_flame() -> "Image.Image":
+    """A ready fist's Malice fire, greyscale for the Malice color at runtime, sharp so it stays chunky and reads against a bright sky.
+    Rows of frames: the mass behind the arm with a dark rim for contrast, the licks that cross in front (open in the middle so the fist
+    shows through), the hot heart (drawn paler), and the little curls that come off it."""
+    size = FLAME_SIZE
+    back = ((-0.72, 0.36, 0.84, 1, 0.05), (-0.42, 0.42, 1.10, 2, 0.40), (0.02, 0.46, 0.96, 1, 0.70),
+            (0.44, 0.40, 1.16, 2, 0.15), (0.76, 0.34, 0.76, 1, 0.55))
+    front = ((-0.50, 0.20, 0.98, 2, 0.25), (0.52, 0.19, 1.12, 1, 0.80), (0.0, 0.27, 0.40, 3, 0.50))  # the middle one only as far as the wrist
+    heart = ((-0.52, 0.13, 0.56, 2, 0.60), (0.54, 0.12, 0.66, 1, 0.10), (0.05, 0.16, 0.26, 2, 0.85))
+    img = Image.new("RGBA", (FLAME_FRAMES * size, 3 * size + WISP_SIZE), (255, 255, 255, 0))
+    for t in range(FLAME_FRAMES):
+        img.paste(flame_frame(t, back, (104, 214, 240, 255), sway=0.28, phase=0.1, hot=2.1, white=3.3), (t * size, 0))
+        img.paste(flame_frame(t, front, (205, 240, 255, 255), sway=0.34, phase=0.45, hot=1.6, white=9), (t * size, size))
+        img.paste(flame_frame(t, heart, (225, 255, 255, 255), sway=0.2, phase=0.7, hot=9, white=9), (t * size, 2 * size))
+    for f, rows in enumerate(WISP_FRAMES):
+        for y, row in enumerate(rows):
+            for x, c in enumerate(row):
+                if c == "#":
+                    img.putpixel((f * WISP_SIZE + x, 3 * size + y), (255, 255, 255, 255))
     return img
 
 
@@ -2199,7 +2242,7 @@ def main() -> None:
     save(icon(ICON_GLACIAL_LANCE, ICE), "item/glacial_lance.png")
     save(swap_anchor_item(), "item/swap_anchor.png")
     save(puppet_glow(), "entity/puppet_glow.png")
-    save(fist_shell(), "entity/fist_shell.png")
+    save(fist_flame(), "entity/fist_flame.png")
     save(fist_strain(), "entity/fist_strain.png")
     save(string_braid(), "item/string_braid.png")
     for kind in ("follow", "stay", "guard", "go"):
