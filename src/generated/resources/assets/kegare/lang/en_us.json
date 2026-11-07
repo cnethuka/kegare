@@ -24,7 +24,7 @@
   "ability.kegare.glacial_lance": "Glacial Lance",
   "ability.kegare.glacial_lance.desc": "Hold to charge (up to 2s), release to hurl a heavy lance. More charge, more damage; 2 Freeze stacks. A quick tap fizzles.",
   "ability.kegare.glacial_spire": "Glacial Spire",
-  "ability.kegare.glacial_spire.desc": "Hold to charge (up to 2s) while aiming at the ground in range. A frost circle marks the spot, then an ice spike erupts: damage, 2 Freeze stacks, and anyone on it is launched (higher with more charge).",
+  "ability.kegare.glacial_spire.desc": "Hold to charge (up to 2s) while aiming at the ground in range. A glowing crack rings the spot, then an ice spike erupts: damage, 2 Freeze stacks, and anyone on it is launched (higher with more charge).",
   "ability.kegare.ice_path": "Ice Path",
   "ability.kegare.ice_path.desc": "While held, slide fast the way you look over a trail of ice. Anyone else on the trail is slowed until it melts. Drains Malice while held.",
   "ability.kegare.mimic": "Mimic",

@@ -19,7 +19,7 @@ import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
 
 /**
- * Special of Glacial Lance (CHARGED): aim at the ground in range and release. A frost circle marks the spot, then an
+ * Special of Glacial Lance (CHARGED): aim at the ground in range and release. A glowing crack rings the spot, then an
  * ice spike erupts there ({@link GlacialSpireEntity}): damage, freeze stacks, and anyone on it is launched upward
  * (higher with more charge). No ground where you aim at release: fizzles for free.
  */

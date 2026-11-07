@@ -67,7 +67,7 @@ public final class RimeIds {
         return "kegare:freeze_" + stacks;
     }
 
-    /** Glacial Spire's entity: the frost circle (warning), then the standing spike. */
+    /** Glacial Spire's entity: the crack in the ground (warning), then the standing spike. */
     public static final Visual SPIRE_WARNING = Visual.effect(FX_GLACIAL_SPIRE_WARNING, Visual.Anchor.FEET);
     public static final Visual SPIRE_SPIKE = Visual.effect(FX_GLACIAL_SPIRE_SPIKE, Visual.Anchor.FEET);
     public static final String SPIRE_WARNING_KEY = "kegare:glacial_spire/warning";

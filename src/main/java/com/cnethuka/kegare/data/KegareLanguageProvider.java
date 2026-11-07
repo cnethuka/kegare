@@ -111,7 +111,7 @@ public final class KegareLanguageProvider extends LanguageProvider {
         add("ability.kegare.splinter", "Splinter");
         add("ability.kegare.splinter.desc", "Three smaller shards in a fan. Each deals less damage and adds 1 Freeze stack; all three can hit one target.");
         add("ability.kegare.glacial_spire", "Glacial Spire");
-        add("ability.kegare.glacial_spire.desc", "Hold to charge (up to 2s) while aiming at the ground in range. A frost circle marks the spot, "
+        add("ability.kegare.glacial_spire.desc", "Hold to charge (up to 2s) while aiming at the ground in range. A glowing crack rings the spot, "
                 + "then an ice spike erupts: damage, 2 Freeze stacks, and anyone on it is launched (higher with more charge).");
         add("ability.kegare.ice_path", "Ice Path");
         add("ability.kegare.ice_path.desc", "While held, slide fast the way you look over a trail of ice. Anyone else on the trail is "
