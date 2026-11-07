@@ -6,7 +6,8 @@
   "mixins": [],
   "client": [
     "client.PlayerInfoMixin",
-    "client.PlayerTabOverlayMixin"
+    "client.PlayerTabOverlayMixin",
+    "client.ItemInHandRendererInvoker"
   ],
   "injectors": {
     "defaultRequire": 1

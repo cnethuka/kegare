@@ -1,6 +1,7 @@
 package com.cnethuka.kegare.melee;
 
 import com.cnethuka.kegare.Kegare;
+import java.util.List;
 import net.minecraft.resources.ResourceLocation;
 
 /** Animations ({@code player_animations/melee.json}, written by {@code tools/anims/melee.py}), effects and loop keys. */
@@ -14,6 +15,9 @@ public final class MeleeIds {
     public static final ResourceLocation ANIM_PARRY_RECOVERY = Kegare.id("parry_recovery");
     public static final ResourceLocation ANIM_STAGGER = Kegare.id("stagger");
     public static final ResourceLocation ANIM_REINFORCED_STRIKE = Kegare.id("reinforced_strike");
+    /** Every animation of the layer. */
+    public static final List<ResourceLocation> ANIMATIONS = List.of(ANIM_DASH_FORWARD, ANIM_DASH_BACK, ANIM_DASH_LEFT, ANIM_DASH_RIGHT,
+            ANIM_PARRY_GUARD, ANIM_PARRY_PERFECT, ANIM_PARRY_RECOVERY, ANIM_STAGGER, ANIM_REINFORCED_STRIKE);
 
     public static final ResourceLocation FX_DASH_BURST = Kegare.id("melee/dash_burst");
     public static final ResourceLocation FX_DASH_TRAIL = Kegare.id("melee/dash_trail");

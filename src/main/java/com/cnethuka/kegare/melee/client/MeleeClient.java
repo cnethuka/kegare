@@ -5,6 +5,7 @@ import com.cnethuka.kegare.client.StatusLayer;
 import com.cnethuka.kegare.client.gui.GuiDraw;
 import com.cnethuka.kegare.config.KegareClientConfig;
 import com.cnethuka.kegare.client.visual.ClientVisuals;
+import com.cnethuka.kegare.client.visual.PlayerAnimations;
 import com.cnethuka.kegare.melee.MeleeDashPayload;
 import com.cnethuka.kegare.melee.MeleeHudPayload;
 import com.cnethuka.kegare.melee.MeleeIds;
@@ -51,6 +52,8 @@ public final class MeleeClient {
         ClientVisuals.setFirstPersonVariant(MeleeIds.FX_DASH_TRAIL, MeleeIds.FX_DASH_TRAIL_SELF);
         ClientVisuals.setFirstPersonVariant(MeleeIds.FX_PARRY_SPARK, MeleeIds.FX_PARRY_SPARK_SELF);
         ClientVisuals.setFirstPersonVariant(MeleeIds.FX_GUARD_HIT, MeleeIds.FX_GUARD_HIT_SELF);
+        PlayerAnimations.keepVanillaHands(MeleeIds.ANIMATIONS);
+        NeoForge.EVENT_BUS.addListener(GuardHand::onRenderHand);
         StatusLayer.addExtra(MeleeClient::render);
         NeoForge.EVENT_BUS.addListener(MeleeClient::onClientTick);
         NeoForge.EVENT_BUS.addListener(MeleeClient::onClientTickPre);
@@ -62,6 +65,7 @@ public final class MeleeClient {
             SPRINT_TAPS.reset();
             DRIVE.stop();
             DashFeel.reset();
+            GuardHand.reset();
         });
         VanillaFallback.register(MeleeIds.FX_DASH_BURST, new VanillaFallback.Spec(ParticleTypes.CLOUD, 1, 22, 0.4, 0.12));
         VanillaFallback.register(MeleeIds.FX_DASH_TRAIL, new VanillaFallback.Spec(ParticleTypes.CLOUD, 1, 10, 0.3, 0.04));
@@ -83,7 +87,9 @@ public final class MeleeClient {
     /** Before the player moves this tick. */
     private static void onClientTickPre(ClientTickEvent.Pre event) {
         LocalPlayer player = Minecraft.getInstance().player;
-        if (player != null) DRIVE.tick(player);
+        if (player == null) return;
+        DRIVE.tick(player);
+        GuardHand.tick(player);
     }
 
     private static void onClientTick(ClientTickEvent.Post event) {

@@ -181,6 +181,7 @@ public final class FistTell {
         float root = Mth.sqrt(swing);
         PoseStack pose = event.getPoseStack();
         pose.pushPose();
+        GuardHand.apply(pose, side, event.getPartialTick());
         pose.translate(side * (-0.3f * Mth.sin(root * Mth.PI) + 0.64000005f), 0.4f * Mth.sin(root * Mth.TWO_PI) - 0.6f - mainHandEquip * 0.6f,
                 -0.4f * Mth.sin(swing * Mth.PI) - 0.71999997f);
         pose.mulPose(Axis.YP.rotationDegrees(side * 45f));

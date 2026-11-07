@@ -57,4 +57,13 @@ class MeleeAnimationsTest {
             assertFalse(animations.getAsJsonObject(name).has("endTick"), name + ": PlayerAnimations does the fades");
         }
     }
+
+    /** They're what keeps vanilla's hands in first person: one left off this list would put a held sword back in the camera. */
+    @Test
+    void theListOfAnimationsHasThemAll() throws IllegalAccessException {
+        for (java.lang.reflect.Field field : com.cnethuka.kegare.melee.MeleeIds.class.getFields()) {
+            if (!field.getName().startsWith("ANIM_")) continue;
+            assertTrue(com.cnethuka.kegare.melee.MeleeIds.ANIMATIONS.contains(field.get(null)), field.getName());
+        }
+    }
 }

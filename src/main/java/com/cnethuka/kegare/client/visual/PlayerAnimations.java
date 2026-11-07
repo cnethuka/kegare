@@ -42,6 +42,9 @@ public final class PlayerAnimations {
     private static final Set<ResourceLocation> WARNED = ConcurrentHashMap.newKeySet();
     /** What this layer last started per player, so stopping one loop never cuts a newer animation. */
     private static final Map<UUID, ResourceLocation> CURRENT = new ConcurrentHashMap<>();
+    /** What this layer last started per player, staying after it's stopped: a stopped animation still has its fade out to play. */
+    private static final Map<UUID, ResourceLocation> LATEST = new ConcurrentHashMap<>();
+    private static final Set<ResourceLocation> VANILLA_HANDS = ConcurrentHashMap.newKeySet();
 
     private PlayerAnimations() {}
 
@@ -50,11 +53,30 @@ public final class PlayerAnimations {
         PlayerAnimationFactory.ANIMATION_DATA_FACTORY.registerFactory(LAYER, PRIORITY, player -> {
             // Only triggered animations play on this layer; the state handler never starts anything itself.
             PlayerAnimationController controller = new PlayerAnimationController(player, (c, state, setter) -> PlayState.STOP);
-            controller.setFirstPersonModeHandler(c -> KegareClientConfig.FIRST_PERSON_ANIMATIONS.get()
+            controller.setFirstPersonModeHandler(c -> KegareClientConfig.FIRST_PERSON_ANIMATIONS.get() && !keepsVanillaHands(player)
                     ? FirstPersonMode.THIRD_PERSON_MODEL : FirstPersonMode.NONE);
             controller.setFirstPersonConfiguration(new FirstPersonConfiguration().setShowRightArm(true).setShowLeftArm(true));
             return controller;
         });
+    }
+
+    /**
+     * These animations play for everyone else but leave the player's own first-person hands to vanilla. The first-person model draws
+     * whatever's held at its real size right by the camera, usually edge on: fine for an empty hand, but a sword or an axe swung into
+     * a guard fills the view with its dark outline and hides the opponent.
+     */
+    public static void keepVanillaHands(Iterable<ResourceLocation> animations) {
+        animations.forEach(VANILLA_HANDS::add);
+    }
+
+    private static boolean keepsVanillaHands(AbstractClientPlayer player) {
+        ResourceLocation latest = LATEST.get(player.getUUID());
+        return latest != null && VANILLA_HANDS.contains(latest);
+    }
+
+    /** Whether this layer last started {@code animation} on the player, and it hasn't been stopped. A play-once counts until something replaces it. */
+    public static boolean isCurrent(AbstractClientPlayer player, ResourceLocation animation) {
+        return animation.equals(CURRENT.get(player.getUUID()));
     }
 
     public static void play(AbstractClientPlayer player, ResourceLocation animation, boolean loop) {
@@ -78,6 +100,7 @@ public final class PlayerAnimations {
                 controller.triggerAnimation(raw);
             }
             CURRENT.put(player.getUUID(), animation);
+            LATEST.put(player.getUUID(), animation);
         } catch (Throwable t) {
             warnOnce(animation, t.toString());
         }
@@ -119,6 +142,7 @@ public final class PlayerAnimations {
 
     public static void clear() {
         CURRENT.clear();
+        LATEST.clear();
     }
 
     @Nullable
