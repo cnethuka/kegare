@@ -930,8 +930,11 @@ Package `com.cnethuka.kegare.innate_technique.rime`. **Rarity: RARE.** All numbe
     `tools/blockbench/build_rime_shell.py` and `shell_shapes.py`, source `art/blockbench/rime_shell.bbmodel`). Each is a
     flat-faced slab with a crest down its middle, sunk a fraction into the skin and standing at most about 2 pixels off
     it. `ShellClient`, a layer on both player skins, draws each in its body part's own space, so the plates follow every
-    pose and animation (a slim arm's are moved in a pixel). It reads the server's toggle loop on the player, so every
-    client shows them exactly while the shell is up. Your own first person draws no body, so nothing of it is in view.
+    pose and animation (a slim arm's are moved in a pixel). Over armour they stand on it, not sunk in it (`ArmourReach`:
+    how far vanilla's armour model stands off each part, leggings half a pixel, a chestplate or boots one): each plate
+    slides out past it on the axes it lies off its part and stretches to the armour's edges on the ones it spans, its
+    thickness kept, and a slim arm's follow the chestplate's wide arm. It reads the server's toggle loop on the player,
+    so every client shows them exactly while the shell is up. Your own first person draws no body, so nothing of it is in view.
   - **Forming:** nothing for 4 ticks while the arms cross; then the plates form one after another, chest first, each
     popping a little past its size and settling, all set within about 0.7 s.
   - **Coming down:** the plates break off where they were last drawn and fall away from the body, tumbling, shrinking
@@ -977,7 +980,9 @@ Package `com.cnethuka.kegare.innate_technique.rime`. **Rarity: RARE.** All numbe
     head last; ragged, by an order map. It creeps to a new stack over about half a second with a rim of rime on its edge,
     and melts back slower as stacks melt. Drawn on the skin's outer layer, over a jacket or sleeves, lit by the world with a
     faint glow of its own (`FreezeClient.GLOW`, level 6 of 15, as Ice Path's ice) so the stacks can be counted at night
-    without the body looking lit; not on an invisible player. Armour covers it.
+    without the body looking lit; not on an invisible player. Over armour (`ArmourReach`) the same frost is drawn on the
+    outer layer's boxes a quarter pixel past it, posed by the same parts (a slim arm's stretched across a chestplate's
+    wide arm), so the stacks can still be counted on someone in full armour.
   - **Frozen solid:** the glaze thickens to solid pale ice over the whole body, head too, in the `frozen` pose
     (`tools/anims/freeze.py`): seized flinching from the cold, hunched, arms drawn in across the chest, then held with only a
     faint tremble.

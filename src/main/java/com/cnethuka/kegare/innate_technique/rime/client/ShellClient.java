@@ -45,13 +45,25 @@ import org.joml.Vector3f;
  * flying out to the ring instead: Shatter Shell, ShatterClient; with no shell up, a Shatter Shell bursts a whole set off the body
  * all the same).</li>
  * </ul>
- * Read off the server's own toggle loop on the player, so it shows exactly while the shell is up.
+ * Over armour the plates stand out on it, not sunk in it ({@link #overArmour}). Read off the server's own toggle loop on the player,
+ * so it shows exactly while the shell is up.
  */
 public final class ShellClient {
     static final String LOOP = VisualService.key(Rime.RIME_SHELL, VisualPhase.TOGGLE_LOOP);
     /** The parts the plates sit on, and how many each has (shell_shapes.py). */
     static final String[] PARTS = {"torso", "right_arm", "left_arm", "right_leg", "left_leg"};
     static final int[] COUNTS = {9, 4, 4, 3, 3};
+    /**
+     * Each part's box about its pivot, in pixels, in the plates' space (Blockbench's axes: up +Y, the player's right +X, front -Z):
+     * x, y, z, each from and to. Wide arms: a chestplate's are always wide.
+     */
+    static final float[][] BOXES = {{-4, 4, -12, 0, -2, 2}, {-1, 3, -10, 2, -2, 2}, {-3, 1, -10, 2, -2, 2}, {-2, 2, -12, 0, -2, 2},
+            {-2, 2, -12, 0, -2, 2}};
+    /** Which of ArmourReach's parts each of {@link #PARTS} is. */
+    private static final int[] REACH = {ArmourReach.BODY, ArmourReach.RIGHT_ARM, ArmourReach.LEFT_ARM, ArmourReach.RIGHT_LEG,
+            ArmourReach.LEFT_LEG};
+    /** Over armour, plates stand this far (pixels) out past it. */
+    static final float OVER_ARMOUR = 0.15f;
     /** Every plate, in the order they form. */
     static final List<String> PLATES = plates();
     /**
@@ -156,6 +168,35 @@ public final class ShellClient {
         return DELAY + (PLATES.size() - 1) * STAGGER + FORM;
     }
 
+    /**
+     * Where a plate goes over armour standing {@code out} pixels off its part ({@code corners} in blocks, in its own space): on each
+     * axis it lies off a face of the part, it slides out that far; on each it spans, it stretches from the part's middle so its edges
+     * reach the armour's. Its thickness is kept. As a translation (blocks) then a scale: x, y, z, then sx, sy, sz.
+     */
+    static float[] overArmour(float[] corners, float[] box, float out) {
+        float[] lo = {Float.MAX_VALUE, Float.MAX_VALUE, Float.MAX_VALUE}, hi = {-Float.MAX_VALUE, -Float.MAX_VALUE, -Float.MAX_VALUE};
+        for (int i = 0; i < corners.length; i += 9) {
+            for (int k = 0; k < 3; k++) {
+                lo[k] = Math.min(lo[k], corners[i + k] * 16f);
+                hi[k] = Math.max(hi[k], corners[i + k] * 16f);
+            }
+        }
+        float[] move = new float[6];
+        for (int k = 0; k < 3; k++) {
+            float from = box[2 * k], to = box[2 * k + 1], mid = (from + to) / 2f, half = (to - from) / 2f, at = (lo[k] + hi[k]) / 2f;
+            float scale = 1f, shift = 0f;
+            if (at >= to - 0.5f) shift = out;
+            else if (at <= from + 0.5f) shift = -out;
+            else {
+                scale = (half + out) / half;
+                shift = mid - mid * scale;
+            }
+            move[k] = shift / 16f;
+            move[k + 3] = scale;
+        }
+        return move;
+    }
+
     // ---------------------------------------------------------------------------------------------- on a body
 
     static final class Layer extends RenderLayer<AbstractClientPlayer, PlayerModel<AbstractClientPlayer>> {
@@ -194,6 +235,7 @@ public final class ShellClient {
             PlayerModel<AbstractClientPlayer> model = getParentModel();
             ModelPart[] parts = {model.body, model.rightArm, model.leftArm, model.rightLeg, model.leftLeg};
             boolean slim = player.getSkin().model() == PlayerSkin.Model.SLIM;
+            float[] armour = ArmourReach.of(player);
             Camera camera = Minecraft.getInstance().gameRenderer.getMainCamera();
             Vec3 cam = camera.getPosition();
             Map<String, Drawn> drawn = new HashMap<>();
@@ -202,15 +244,22 @@ public final class ShellClient {
                 pose.pushPose();
                 parts[p].translateAndRotate(pose);
                 pose.mulPose(Axis.ZP.rotationDegrees(180f)); // into Blockbench's axes: up is up, the player's right +X
-                // A slim arm is a pixel narrower on its outside.
-                if (slim && p == 1) pose.translate(-1f / 16f, 0f, 0f);
-                if (slim && p == 2) pose.translate(1f / 16f, 0f, 0f);
+                float reach = armour[REACH[p]];
+                // A slim arm is a pixel narrower on its outside; a chestplate's arms are wide ones whatever the skin.
+                if (slim && reach == 0f && p == 1) pose.translate(-1f / 16f, 0f, 0f);
+                if (slim && reach == 0f && p == 2) pose.translate(1f / 16f, 0f, 0f);
                 for (int i = 0; i < COUNTS[p]; i++, order++) {
                     String name = PARTS[p] + "_" + i;
                     float s = ticks < 0f ? 1f : formed(order, ticks);
                     if (s <= 0f) continue;
                     Vector3f c = LanceMesh.SHELL.centre(name);
                     pose.pushPose();
+                    LanceMesh.Piece piece = reach > 0f ? LanceMesh.SHELL.piece(name) : null;
+                    if (piece != null) {
+                        float[] m = overArmour(piece.corners(), BOXES[p], reach + OVER_ARMOUR);
+                        pose.translate(m[0], m[1], m[2]);
+                        pose.scale(m[3], m[4], m[5]);
+                    }
                     pose.translate(c.x, c.y, c.z);
                     pose.scale(s, s, s);
                     pose.translate(-c.x, -c.y, -c.z);

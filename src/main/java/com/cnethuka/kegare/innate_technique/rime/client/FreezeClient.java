@@ -7,6 +7,7 @@ import com.cnethuka.kegare.innate_technique.rime.RimeIds;
 import com.cnethuka.kegare.innatetechnique.visual.Visual;
 import com.mojang.blaze3d.platform.NativeImage;
 import com.mojang.blaze3d.vertex.PoseStack;
+import com.mojang.blaze3d.vertex.VertexConsumer;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.HashMap;
@@ -17,6 +18,9 @@ import javax.annotation.Nullable;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.model.PlayerModel;
 import net.minecraft.client.model.geom.ModelPart;
+import net.minecraft.client.model.geom.PartPose;
+import net.minecraft.client.model.geom.builders.CubeDeformation;
+import net.minecraft.client.model.geom.builders.LayerDefinition;
 import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.client.player.AbstractClientPlayer;
 import net.minecraft.client.renderer.MultiBufferSource;
@@ -46,7 +50,8 @@ import net.neoforged.neoforge.client.event.EntityRenderersEvent;
  * <li>Breaking free ({@code freeze_shatter}): it's gone at once, burst off the body as solid chips of ice.</li>
  * </ul>
  * Drawn on the skin's outer layer (over a jacket or sleeves), lit by the world with a faint glow of its own ({@link #GLOW}) so it
- * reads at night. Not on an invisible player. Your own first person
+ * reads at night; where armour is worn, on the same layer's boxes out past the armour ({@link #OVER_ARMOUR}), so the stacks can still
+ * be counted on someone in full armour. Not on an invisible player. Your own first person
  * draws no body; you have the stacks on the HUD.
  */
 public final class FreezeClient {
@@ -69,6 +74,10 @@ public final class FreezeClient {
      * stacks in the dark, without the body looking lit.
      */
     static final int GLOW = 6;
+    /** Over armour, the frost stands this far (pixels) out past it. */
+    static final float OVER_ARMOUR = 0.25f;
+    /** The outer layer's parts, in ArmourReach's order. */
+    private static final String[] OUTER = {"hat", "jacket", "right_sleeve", "left_sleeve", "right_pants", "left_pants"};
     /** Stacks counted up to at most this many, whatever the most is set to. */
     private static final int MOST = 32;
 
@@ -78,6 +87,8 @@ public final class FreezeClient {
     private static final Map<Integer, Float> COVER = new HashMap<>();
     private static final Map<String, ResourceLocation> TEXTURES = new HashMap<>();
     private static final Art[] LOADED = new Art[2];
+    /** The outer layer's boxes out past armour, by layout, inflation and part: at rest, posed by the body's own parts. */
+    private static final Map<String, ModelPart> OVER = new HashMap<>();
     private static final RandomSource RANDOM = RandomSource.create();
 
     private FreezeClient() {}
@@ -228,6 +239,35 @@ public final class FreezeClient {
 
     // ---------------------------------------------------------------------------------------------- on the body
 
+    /** How far (pixels) out from a part its frost is drawn over armour standing {@code armour} out: just past it. */
+    static float overArmour(float armour) {
+        return armour + OVER_ARMOUR;
+    }
+
+    /** The player mesh's inflation that puts a part's outer layer there (the hat is half a pixel out from it, the rest a quarter). */
+    static float meshInflation(int part, float armour) {
+        return overArmour(armour) - (part == ArmourReach.HEAD ? 0.5f : 0.25f);
+    }
+
+    /** A part's outer-layer box out past armour, at rest. */
+    private static ModelPart overArmourPart(boolean slim, int part, float armour) {
+        float inflation = meshInflation(part, armour);
+        return OVER.computeIfAbsent(slim + "/" + inflation + "/" + part, k -> {
+            ModelPart p = LayerDefinition.create(PlayerModel.createMesh(new CubeDeformation(inflation), slim), 64, 64).bakeRoot()
+                    .getChild(OUTER[part]);
+            p.loadPose(PartPose.ZERO);
+            return p;
+        });
+    }
+
+    /**
+     * How a slim arm's frost (3 pixels wide, inflated by {@code out}) is stretched across, from its inner side, to cover a
+     * chestplate's arm, which is a wide one (4): where the inner side is (pixels, the arm's own x) and by how much.
+     */
+    static float[] widen(boolean right, float out) {
+        return new float[] {right ? 1f + out : -1f - out, (4f + 2f * out) / (3f + 2f * out)};
+    }
+
     static final class Layer extends RenderLayer<AbstractClientPlayer, PlayerModel<AbstractClientPlayer>> {
         Layer(RenderLayerParent<AbstractClientPlayer, PlayerModel<AbstractClientPlayer>> parent) {
             super(parent);
@@ -238,10 +278,14 @@ public final class FreezeClient {
                            float limbSwingAmount, float partialTick, float ageInTicks, float netHeadYaw, float headPitch) {
             Float cover = COVER.get(player.getId());
             if (cover == null || cover <= 0f || player.isInvisible()) return;
-            ResourceLocation texture = texture(player.getSkin().model() == PlayerSkin.Model.SLIM, quantize(cover), frozen(player));
+            boolean slim = player.getSkin().model() == PlayerSkin.Model.SLIM;
+            ResourceLocation texture = texture(slim, quantize(cover), frozen(player));
             if (texture == null) return;
             PlayerModel<AbstractClientPlayer> model = getParentModel();
-            // Only the outer layer, shown whatever the skin's settings: the frost lies over everything.
+            VertexConsumer out = buffers.getBuffer(RenderType.entityTranslucent(texture));
+            int lit = BlockMarks.lit(light, GLOW);
+            float[] armour = ArmourReach.of(player);
+            // Where there's no armour, the skin's own outer layer, shown whatever the skin's settings: the frost lies over everything.
             ModelPart[] inner = {model.head, model.body, model.rightArm, model.leftArm, model.rightLeg, model.leftLeg};
             ModelPart[] outer = {model.hat, model.jacket, model.rightSleeve, model.leftSleeve, model.rightPants, model.leftPants};
             boolean[] was = new boolean[12];
@@ -249,16 +293,29 @@ public final class FreezeClient {
                 was[i] = inner[i].visible;
                 was[i + 6] = outer[i].visible;
                 inner[i].visible = false;
-                outer[i].visible = true;
+                outer[i].visible = armour[i] == 0f;
             }
             try {
-                model.renderToBuffer(pose, buffers.getBuffer(RenderType.entityTranslucent(texture)), BlockMarks.lit(light, GLOW),
-                        OverlayTexture.NO_OVERLAY, -1);
+                model.renderToBuffer(pose, out, lit, OverlayTexture.NO_OVERLAY, -1);
             } finally {
                 for (int i = 0; i < 6; i++) {
                     inner[i].visible = was[i];
                     outer[i].visible = was[i + 6];
                 }
+            }
+            // Over armour, the same frost on the outer layer's boxes out past it, posed by the same parts as the armour.
+            for (int i = 0; i < 6; i++) {
+                if (armour[i] == 0f) continue;
+                pose.pushPose();
+                outer[i].translateAndRotate(pose);
+                if (slim && (i == ArmourReach.RIGHT_ARM || i == ArmourReach.LEFT_ARM)) {
+                    float[] w = widen(i == ArmourReach.RIGHT_ARM, overArmour(armour[i]));
+                    pose.translate(w[0] / 16f, 0f, 0f);
+                    pose.scale(w[1], 1f, 1f);
+                    pose.translate(-w[0] / 16f, 0f, 0f);
+                }
+                overArmourPart(slim, i, armour[i]).render(pose, out, lit, OverlayTexture.NO_OVERLAY);
+                pose.popPose();
             }
         }
     }

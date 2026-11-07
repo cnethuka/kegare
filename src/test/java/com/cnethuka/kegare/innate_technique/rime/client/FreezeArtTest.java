@@ -203,6 +203,31 @@ class FreezeArtTest {
         assertTrue(FreezeClient.GLOW >= 4 && FreezeClient.GLOW <= 7, "faint: " + FreezeClient.GLOW);
     }
 
+    /**
+     * Over armour the frost lies just past it on every part, so the stacks can still be counted in full armour; and a slim arm's frost
+     * is stretched across to a chestplate's arm, which is a wide one, from its inner side.
+     */
+    @Test
+    void overArmourTheFrostLiesJustPastIt() {
+        float[] full = ArmourReach.of(true, true, true, true);
+        for (int part = 0; part < 6; part++) {
+            float armour = full[part], out = FreezeClient.overArmour(armour);
+            assertTrue(out > armour && out <= armour + 0.5f, "just past the armour on part " + part + ": " + out);
+            float layer = FreezeClient.meshInflation(part, armour) + (part == ArmourReach.HEAD ? 0.5f : 0.25f);
+            assertEquals(out, layer, 1e-6f, "the player mesh's outer layer lands there on part " + part);
+        }
+        float out = FreezeClient.overArmour(1f);
+        for (boolean right : new boolean[] {true, false}) {
+            float[] w = FreezeClient.widen(right, out);
+            // The slim arm at that inflation, from its own x; the wide one it has to cover.
+            float slimFrom = right ? -2f - out : -1f - out, slimTo = right ? 1f + out : 2f + out;
+            float wideFrom = right ? -3f - out : -1f - out, wideTo = right ? 1f + out : 3f + out;
+            float from = w[0] + (slimFrom - w[0]) * w[1], to = w[0] + (slimTo - w[0]) * w[1];
+            assertEquals(wideFrom, from, 1e-4f, (right ? "right" : "left") + " arm's outside");
+            assertEquals(wideTo, to, 1e-4f, (right ? "right" : "left") + " arm's inside");
+        }
+    }
+
     @Test
     void everyStackCountHasItsOwnLoop() {
         Set<String> keys = new HashSet<>();

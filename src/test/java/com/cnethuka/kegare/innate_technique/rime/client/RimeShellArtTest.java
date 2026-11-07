@@ -113,6 +113,64 @@ class RimeShellArtTest {
         }
     }
 
+    /** How far a point (pixels) is inside a part's box; 0 on or outside it. */
+    private static float inside(Vector3f p, float[] box) {
+        float d = Math.min(Math.min(p.x - box[0], box[1] - p.x), Math.min(Math.min(p.y - box[2], box[3] - p.y), Math.min(p.z - box[4],
+                box[5] - p.z)));
+        return Math.max(d, 0f);
+    }
+
+    private static float[] inflate(float[] box, float by) {
+        return new float[] {box[0] - by, box[1] + by, box[2] - by, box[3] + by, box[4] - by, box[5] + by};
+    }
+
+    /**
+     * Over armour (leggings stand half a pixel off the body, a chestplate or boots one) each plate stands on it, not sunk in it, sunk
+     * no deeper in it than it is in the bare body, and still touching it, not floating; and it keeps its thickness.
+     */
+    @Test
+    void overArmourThePlatesStandOnIt() throws IOException {
+        Map<String, LanceMesh.Piece> pieces = mesh();
+        for (int p = 0; p < ShellClient.PARTS.length; p++) {
+            assertEquals(BOXES.get(ShellClient.PARTS[p])[0], ShellClient.BOXES[p][0], "the part boxes agree");
+            for (float armour : new float[] {0.5f, 1f}) {
+                float[] box = ShellClient.BOXES[p], over = inflate(box, armour);
+                for (int i = 0; i < ShellClient.COUNTS[p]; i++) {
+                    String name = ShellClient.PARTS[p] + "_" + i;
+                    float[] c = pieces.get(name).corners();
+                    float[] m = ShellClient.overArmour(c, box, armour + ShellClient.OVER_ARMOUR);
+                    float near = Float.MAX_VALUE, sunkBare = 0f, sunk = 0f;
+                    for (int t = 0; t < c.length / 27; t++) {
+                        Vector3f a = corner(c, t * 3).mul(16f), b = corner(c, t * 3 + 1).mul(16f), d = corner(c, t * 3 + 2).mul(16f);
+                        for (int u8 = 0; u8 <= 8; u8++) {
+                            for (int v8 = 0; u8 + v8 <= 8; v8++) {
+                                float u = u8 / 8f, v = v8 / 8f;
+                                Vector3f q = new Vector3f(a).mul(1 - u - v).add(new Vector3f(b).mul(u)).add(new Vector3f(d).mul(v));
+                                Vector3f moved = new Vector3f(q.x * m[3] + m[0] * 16f, q.y * m[4] + m[1] * 16f, q.z * m[5] + m[2] * 16f);
+                                sunkBare = Math.max(sunkBare, inside(q, box));
+                                sunk = Math.max(sunk, inside(moved, over));
+                                near = Math.min(near, outside(moved, over));
+                            }
+                        }
+                    }
+                    String at = name + " over " + armour + " px of armour";
+                    assertTrue(sunk <= sunkBare + 0.01f, at + " sinks " + sunk + " px into it (" + sunkBare + " into the body)");
+                    assertTrue(near <= ShellClient.OVER_ARMOUR + 0.05f, at + " floats " + near + " px off it");
+                    int spans = 0;
+                    for (int k = 0; k < 3; k++) spans += m[k + 3] != 1f ? 1 : 0;
+                    assertTrue(spans <= 2, at + ": it keeps its thickness");
+                }
+            }
+        }
+        float[] none = ArmourReach.of(false, false, false, false);
+        for (float r : none) assertEquals(0f, r, "no armour, nothing moves");
+        float[] full = ArmourReach.of(true, true, true, true);
+        assertEquals(1f, full[ArmourReach.BODY], "a chestplate over leggings");
+        assertEquals(1f, full[ArmourReach.LEFT_LEG], "boots over leggings");
+        assertEquals(0.5f, ArmourReach.of(false, false, true, false)[ArmourReach.BODY], "leggings alone");
+        assertEquals(0f, ArmourReach.of(false, false, true, false)[ArmourReach.RIGHT_ARM], "leggings leave the arms bare");
+    }
+
     @Test
     void everyPlateIsWoundOutward() throws IOException {
         for (Map.Entry<String, LanceMesh.Piece> e : mesh().entrySet()) {
