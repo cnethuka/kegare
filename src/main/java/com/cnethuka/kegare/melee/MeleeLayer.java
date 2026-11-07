@@ -22,7 +22,7 @@ public final class MeleeLayer {
 
     public static void init(IEventBus modBus) {
         ATTACHMENTS.register(modBus);
-        CastManager.addInterceptor(Parry::onCastIntent);
+        CastManager.addStartListener(Parry::onCastStarted);
         MeleeRules.addBlocker(Possession::isPossessing);
         VisualHooks.registerEffect(MeleeIds.FX_DASH_BURST);
         VisualHooks.registerEffect(MeleeIds.FX_DASH_TRAIL);

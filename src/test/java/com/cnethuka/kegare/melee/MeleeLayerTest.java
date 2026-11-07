@@ -10,12 +10,17 @@ import com.cnethuka.kegare.TestServer;
 import com.cnethuka.kegare.combat.CombatHelper;
 import com.cnethuka.kegare.innate_technique.rime.Rime;
 import com.cnethuka.kegare.innate_technique.rime.RimeDamage;
+import com.cnethuka.kegare.innate_technique.swap.Swap;
 import com.cnethuka.kegare.innatetechnique.CastIntent;
 import com.cnethuka.kegare.innatetechnique.CastManager;
 import com.cnethuka.kegare.innatetechnique.InnateTechniqueService;
+import com.cnethuka.kegare.innatetechnique.test.TestAbilities;
+import com.cnethuka.kegare.innatetechnique.test.TestInnateTechniques;
 import com.cnethuka.kegare.malice.MaliceService;
 import com.cnethuka.kegare.melee.MeleeIntentPayload.Action;
 import com.cnethuka.kegare.player.BirthService;
+import com.cnethuka.kegare.progression.ProgressionConfig;
+import com.cnethuka.kegare.progression.TechniqueUnlocks;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.OptionalInt;
@@ -409,6 +414,91 @@ class MeleeLayerTest {
                 assertFalse(ReinforcedStrike.isReady(p), "so nothing was parried");
             } finally {
                 boss.discard();
+            }
+        });
+    }
+
+    @Test
+    void aPressThatCastsNothingLeavesTheGuardUp(MinecraftServer server) throws Exception {
+        TestServer.onServerThread(server, () -> {
+            ServerPlayer p = player(server, "parry_no_cast", 1000);
+            send(p, Action.PARRY_PRESS);
+
+            InnateTechniqueService.select(p, 8);
+            CastManager.handleIntent(p, CastIntent.CAST_PRESS);
+            CastManager.handleIntent(p, CastIntent.SPECIAL_PRESS);
+            assertTrue(MeleeLayer.state(p).isGuarding(), "an empty slot");
+
+            InnateTechniqueService.select(p, 0);
+            ProgressionConfig.REQUIRE_REFINEMENT.set(true);
+            try {
+                assertFalse(TechniqueUnlocks.isUnlocked(p, Rime.SPLINTER), "setup: Splinter is locked at Refinement 0");
+                CastManager.handleIntent(p, CastIntent.SPECIAL_PRESS);
+                assertTrue(MeleeLayer.state(p).isGuarding(), "a locked ability");
+            } finally {
+                ProgressionConfig.REQUIRE_REFINEMENT.set(false);
+            }
+
+            CastManager.handleIntent(p, CastIntent.ULTIMATE_PRESS);
+            assertTrue(MeleeLayer.state(p).isGuarding(), "a locked ultimate");
+
+            CastManager.handleIntent(p, CastIntent.CAST_PRESS);
+            assertFalse(MeleeLayer.state(p).isGuarding(), "a real cast does drop it");
+            assertTrue(InnateTechniqueService.cooldownRemaining(p, Rime.FROST_SHARD) > 0, "setup: Frost Shard is on cooldown");
+
+            send(p, Action.PARRY_RELEASE);
+            MeleeState state = MeleeLayer.state(p);
+            state.recoveryUntil = 0;
+            send(p, Action.PARRY_PRESS);
+            CastManager.handleIntent(p, CastIntent.CAST_PRESS);
+            assertTrue(state.isGuarding(), "a cooldown");
+
+            MaliceService.trySpend(p, MaliceService.get(p).current() - 1);
+            InnateTechniqueService.clearCooldowns(p);
+            CastManager.handleIntent(p, CastIntent.CAST_PRESS);
+            assertTrue(state.isGuarding(), "not enough Malice");
+        });
+    }
+
+    @Test
+    void noTargetAndSwitchingAToggleOffLeaveTheGuardUpToo(MinecraftServer server) throws Exception {
+        TestServer.onServerThread(server, () -> {
+            ServerPlayer swap = player(server, "parry_no_target", 1000);
+            InnateTechniqueService.setInnateTechnique(swap, Swap.SWAP.get());
+            MaliceService.refill(swap);
+            swap.moveTo(swap.getX(), swap.getY(), swap.getZ(), 0f, -90f); // straight up: nobody to swap with
+            send(swap, Action.PARRY_PRESS);
+            InnateTechniqueService.select(swap, 0); // Positions
+            CastManager.handleIntent(swap, CastIntent.CAST_PRESS);
+            assertTrue(MeleeLayer.state(swap).isGuarding(), "no target");
+
+            ServerPlayer p = player(server, "parry_toggle", 1000);
+            InnateTechniqueService.setInnateTechnique(p, TestInnateTechniques.APEX.get());
+            MaliceService.refill(p);
+            InnateTechniqueService.select(p, 3); // Aura
+            CastManager.handleIntent(p, CastIntent.CAST_PRESS);
+            assertTrue(CastManager.isToggleActive(p, TestAbilities.AURA), "setup: on");
+            send(p, Action.PARRY_PRESS);
+            CastManager.handleIntent(p, CastIntent.CAST_PRESS);
+            assertFalse(CastManager.isToggleActive(p, TestAbilities.AURA), "setup: off");
+            assertTrue(MeleeLayer.state(p).isGuarding(), "switching a toggle off isn't a cast starting");
+        });
+    }
+
+    @Test
+    void everyTypeOfCastThatStartsDropsTheGuard(MinecraftServer server) throws Exception {
+        TestServer.onServerThread(server, () -> {
+            ServerPlayer p = player(server, "parry_each_type", 1000);
+            InnateTechniqueService.setInnateTechnique(p, TestInnateTechniques.APEX.get()); // Dash, Burst, Hover, Aura
+            MaliceService.refill(p);
+            for (int slot = 0; slot < 4; slot++) {
+                MeleeLayer.state(p).recoveryUntil = 0;
+                send(p, Action.PARRY_PRESS);
+                assertTrue(MeleeLayer.state(p).isGuarding(), "setup: guarding, slot " + slot);
+                InnateTechniqueService.select(p, slot);
+                CastManager.handleIntent(p, CastIntent.CAST_PRESS);
+                assertFalse(MeleeLayer.state(p).isGuarding(), "slot " + slot);
+                CastManager.handleIntent(p, CastIntent.CAST_RELEASE);
             }
         });
     }

@@ -11,6 +11,8 @@ import com.cnethuka.kegare.registry.KegareAttachments;
 import java.util.List;
 import java.util.Locale;
 import java.util.Optional;
+import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.function.Consumer;
 import javax.annotation.Nullable;
 import com.cnethuka.kegare.innatetechnique.visual.VisualPhase;
 import com.cnethuka.kegare.innatetechnique.visual.VisualService;
@@ -39,10 +41,21 @@ public final class CastManager {
         boolean intercept(ServerPlayer player, CastIntent intent);
     }
 
-    private static final List<Interceptor> INTERCEPTORS = new java.util.concurrent.CopyOnWriteArrayList<>();
+    private static final List<Interceptor> INTERCEPTORS = new CopyOnWriteArrayList<>();
 
     public static void addInterceptor(Interceptor interceptor) {
         INTERCEPTORS.add(interceptor);
+    }
+
+    private static final List<Consumer<ServerPlayer>> START_LISTENERS = new CopyOnWriteArrayList<>();
+
+    /** Told when a cast really starts: past every check and, unless it's a charge (which pays on release), paid for. */
+    public static void addStartListener(Consumer<ServerPlayer> listener) {
+        START_LISTENERS.add(listener);
+    }
+
+    private static void started(ServerPlayer player) {
+        START_LISTENERS.forEach(listener -> listener.accept(player));
     }
 
     public static void handleIntent(ServerPlayer player, CastIntent intent) {
@@ -142,6 +155,7 @@ public final class CastManager {
         switch (ability.castType()) {
             case INSTANT -> {
                 if (!pay(player, ability, ability.cost(player))) return;
+                started(player);
                 state.noCooldown = false;
                 CastScope.run(player, ability, () -> ability.execute(ctx));
                 if (state.noCooldown) { // fizzled after paying (see fizzleKeepingCost): no cooldown, no cast visuals
@@ -154,11 +168,13 @@ public final class CastManager {
             }
             // Cost is checked now but paid on release.
             case CHARGED -> {
+                started(player);
                 state.casting = new CastState.Active(ability, slot, now);
                 VisualService.ability(player, ability, VisualPhase.CHARGE_LOOP, ability.maxChargeTicks(player));
             }
             case CHANNELED -> {
                 if (!pay(player, ability, ability.cost(player))) return;
+                started(player);
                 state.casting = new CastState.Active(ability, slot, now);
                 CastScope.run(player, ability, () -> ability.execute(ctx));
                 wentOff(player, ability);
@@ -167,6 +183,7 @@ public final class CastManager {
             }
             case TOGGLE -> {
                 if (!pay(player, ability, ability.cost(player))) return;
+                started(player);
                 state.toggles.put(ability.id(), new CastState.Active(ability, slot, now));
                 CastScope.run(player, ability, () -> ability.execute(ctx));
                 wentOff(player, ability);

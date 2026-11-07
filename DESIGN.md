@@ -300,7 +300,7 @@ All timestamps use **level game time**. They persist across restarts and are ide
   With it off, R and V do nothing. Two things aren't casts and keep working: letting go of a key held since before the mode ended
   (the cast that began gets its usual release), and R to return from a possession (§3.20).
 - **Dash and Parry are separate keys** and work while number keys or R are held. Parry's own rule still applies: it's refused during
-  a real charge or channel (§3.22), and a cast press drops a guard.
+  a real charge or channel (§3.22). A cast that really starts drops a guard; a press that casts nothing (an empty slot, a locked ability, a cooldown, no target, or switching a toggle off) leaves it up.
 - `client/InstantCastKeys` holds all of these rules as plain logic with its own tests. A number key sends
   `SelectAbilityPayload` then `IntentPayload`, which arrive in that order.
 - A key tap shorter than a tick still counts as a press.

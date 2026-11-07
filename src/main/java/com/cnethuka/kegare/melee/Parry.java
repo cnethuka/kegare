@@ -1,7 +1,6 @@
 package com.cnethuka.kegare.melee;
 
 import com.cnethuka.kegare.combat.CombatHelper;
-import com.cnethuka.kegare.innatetechnique.CastIntent;
 import com.cnethuka.kegare.innatetechnique.CastManager;
 import com.cnethuka.kegare.innatetechnique.visual.Visual;
 import com.cnethuka.kegare.innatetechnique.visual.VisualService;
@@ -134,10 +133,8 @@ public final class Parry {
         return chest.add(to.lengthSqr() < 1.0e-4 ? defender.getLookAngle() : to.normalize().scale(Math.min(0.8, to.length() / 2)));
     }
 
-    /** Casting or attacking drops the guard: you can't hold it and fight at once. */
-    static boolean onCastIntent(ServerPlayer player, CastIntent intent) {
-        boolean press = intent == CastIntent.CAST_PRESS || intent == CastIntent.SPECIAL_PRESS || intent == CastIntent.ULTIMATE_PRESS;
-        if (press && player.hasData(MeleeLayer.ATTACHMENT)) release(player);
-        return false; // it never swallows the cast
+    /** A cast starting drops the guard: you can't hold it and cast at once. A press that casts nothing leaves it up. Attacking drops it too. */
+    static void onCastStarted(ServerPlayer player) {
+        if (player.hasData(MeleeLayer.ATTACHMENT)) release(player);
     }
 }
