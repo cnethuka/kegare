@@ -717,7 +717,7 @@ Package `com.cnethuka.kegare.innate_technique.rime`. **Rarity: RARE.** All numbe
 |---|---|---|
 | **Frost Shard** | INSTANT | A fast ice projectile (2.2 blocks/tick, 1.5 s flight). 3 damage, Slowness I for 1.5 s, 1 Freeze stack. Cost 40, cooldown 1 s. |
 | **Glacial Lance** | CHARGED | Hold up to 2 s; a tap shorter than 0.4 s fizzles (no cost, no cooldown). A bigger, slower lance (1.4 blocks/tick) for 4 to 12 damage by charge, Slowness II for 3 s, 2 Freeze stacks. Cost 100, cooldown 6 s. |
-| **Frost Field** | CHANNELED | A cone in front of you while held (6 blocks, 35° half-angle, line of sight). Slowness II on everyone in it, +1 Freeze stack per second. Cost 32, then 48 Malice/s; max 5 s; cooldown 5 s after it ends. Its effect (`frost_field_cone`) is as wide as that cone: fog that thickens with distance, so it stays clear at the caster's end, plus streaks and flakes. Nobody is blinded, since seeing through it is part of the fight. |
+| **Frost Field** | CHANNELED | A cone in front of you while held (6 blocks, 35° half-angle, line of sight). Slowness II on everyone in it, +1 Freeze stack per second. Cost 32, then 48 Malice/s; max 5 s; cooldown 5 s after it ends. Its look (below, "Frost Field's look") is pixel frost over the ground the cone covers, small solid crystals jutting out of it, streaks, flakes and a little cold mist. Nobody is blinded, since seeing through it is part of the fight. |
 | **Rime Shell** | TOGGLE | 30% damage reduction; anyone who hits you in melee gets Slowness II for 2 s. Cost 40, then 16 Malice/s; cooldown 8 s after switching off. Like every toggle it keeps running while you are stunned or frozen. |
 
 - **Specials (R)**, one per ability (framework §3.15). Each shares its base ability's cooldown; the "cooldown" below
@@ -755,8 +755,9 @@ Package `com.cnethuka.kegare.innate_technique.rime`. **Rarity: RARE.** All numbe
   The total is clamped to [0.5, 2]. The innate technique reports it through `InnateTechnique.environment(player)`;
   it is synced (re-checked every 10 ticks) for the HUD's snowflake or flame icon next to the Malice bar, with the
   multiplier. Hovering an ability on the Sorcerer screen shows its current cost, upkeep and every active factor.
-- **Visuals:** PAL animations `frost_field_channel` (loop), `rime_shell_toggle` and `frozen` (loop), in
-  `assets/kegare/player_animations/rime.json`; Frost Shard's `frost_shard_cast` in `frost_shard.json` (from
+- **Visuals:** PAL animations `rime_shell_toggle` and `frozen` (loop), in
+  `assets/kegare/player_animations/rime.json`; Frost Field's `frost_field_channel` (loop) in `frost_field.json`
+  (`tools/anims/frost_field.py`); Frost Shard's `frost_shard_cast` in `frost_shard.json` (from
   `tools/anims/frost_shard.py`) and Splinter's `splinter_cast` in `splinter.json` (`tools/anims/splinter.py`); Glacial Lance's `glacial_lance_charge` (loop) and `glacial_lance_release` in
   `glacial_lance.json` (from `tools/anims/glacial_lance.py`). Photon effects in `assets/kegare/fx/rime/`: `frost_shard_trail`,
   `frost_shard_impact`, `frost_field_cone`, `rime_shell_aura` (an ice bubble, invisible from the inside), `freeze_shatter`,
@@ -871,6 +872,27 @@ Package `com.cnethuka.kegare.innate_technique.rime`. **Rarity: RARE.** All numbe
     effect) is only a flat fan of fine glints off the hand: no flash and no mist, which would swell low in your own first-person
     view. Your own first-person hands stay vanilla.
   - **Reduced** and **Vanilla** as Frost Shard's.
+- **Frost Field's look** (in the Lance's style):
+  - **The frost** is pixel art on the blocks' own texels (`BlockMarks`, patterns `field_frost` and `field_frost_b`): a mat
+    of hoarfrost, crossing feathered spines over a thin dither, with the block showing through. `FieldClient` lays it, while
+    the channel is held, over the ground the cone really covers (block tops within its range and half-angle with a clear
+    line from the eyes, the same test as the hit), from every other block like a chessboard's, each block's patch always in
+    the same place and the same way round, so laying it again every 3 ticks only keeps it alive. Walls in the cone get one
+    patch a block face. When the channel starts it races out from the caster's feet over a few ticks; when it ends it
+    melts from each patch's edge in over 1.5 s. No block changes.
+  - **The crystals** are small solid clusters of the Lance's ice (`models/fx/frost_field.obj`, four `cluster_*`,
+    `textures/entity/frost_field*.png`; `tools/blockbench/build_frost_field.py` and `field_shapes.py`, the Lance's painter;
+    source `art/blockbench/frost_field.bbmodel`). They jut out of the frost at random in the cone, leaning away from the
+    caster, up in two ticks with a small overshoot, standing a quarter to half a second, then sinking back. None within
+    2.2 blocks of your own camera.
+  - **The effect:** `frost_field_cone` is only streaks, flakes and a faint breath at the hands, as wide as the cone,
+    with no fog, which would fill the middle of the caster's view and hide whoever stands in it. Your own is `frost_field_cone_self`,
+    started lower and narrower so nothing crosses the middle of your view (loops honour first-person variants). A
+    little `frost_field_mist` rises off the frost now and then.
+  - **The body:** `frost_field_channel` (`tools/anims/frost_field.py`) thrusts both hands out low at the aim, the left
+    braced on the right forearm, leaning in, pressing a little harder now and then. Your own first-person hands stay vanilla.
+  - **Reduced** lays the same frost with half the crystals and mist; **Vanilla** lays no frost (no marks on blocks) and
+    keeps the solid crystals, snowflakes for the rest.
 - **Effect authoring:** the effects are built from Photon's own objects in `RimeFxAuthoring` (building blocks in the
   shared `client.visual.FxKit`) and written with Photon's serializer, the same `.fx` format the editor exports. In a
   dev client, `/kegare debug fx export` rewrites every effect in `FxCatalog` (Rime's and RMT's, and the running game's

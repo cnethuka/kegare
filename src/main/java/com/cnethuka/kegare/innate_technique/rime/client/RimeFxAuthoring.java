@@ -80,6 +80,8 @@ public final class RimeFxAuthoring {
         out.put(RimeIds.FX_GLACIAL_LANCE_STICK, RimeFxAuthoring::glacialLanceStick);
         out.put(RimeIds.FX_GLACIAL_LANCE_SHATTER, RimeFxAuthoring::glacialLanceShatter);
         out.put(RimeIds.FX_FROST_FIELD_CONE, RimeFxAuthoring::frostFieldCone);
+        out.put(RimeIds.FX_FROST_FIELD_CONE_SELF, RimeFxAuthoring::frostFieldConeSelf);
+        out.put(RimeIds.FX_FROST_FIELD_MIST, RimeFxAuthoring::frostFieldMist);
         out.put(RimeIds.FX_RIME_SHELL_AURA, RimeFxAuthoring::rimeShellAura);
         out.put(RimeIds.FX_FREEZE_SHATTER, RimeFxAuthoring::freezeShatter);
         // Specials
@@ -336,68 +338,110 @@ public final class RimeFxAuthoring {
     }
 
     /**
-     * Frost Field: a cone of frost gusting forward from in front of the caster (+X), as wide as the area it really covers.
-     * Three layers so it reads at any distance: bright fog gives the cone its shape from far off (and doesn't turn grey
-     * against the sky), fast streaks give it its direction, and flakes give it a texture up close. Each starts small and
-     * clear at the caster, so from first person it opens out without hiding what you're aiming at.
+     * Frost Field's cone, riding the caster: only what's soft. The frost on the ground, the crystals and the mist lying on it are
+     * FieldClient's (block marks, solid meshes, {@link #frostFieldMist}). A breath of cold pouring from the hands and sinking as it
+     * goes, fine streaks giving it its direction, flakes for texture. No big bright fog: it hid the ground the frost runs over.
      */
     private static FX frostFieldCone() {
-        Vector3f origin = new Vector3f(0.55f, -0.25f, 0f);
-        // Photon's cone emits along local +Y; turn it to +X (forward).
-        Quaternionf forward = new Quaternionf().rotateZ((float) (-Math.PI / 2));
-        float halfAngle = 35f; // RimeConfig.FIELD_HALF_ANGLE's default
+        return frostFieldCone(false);
+    }
 
-        ParticleEmitter gust = emitter("gust", true, 20);
-        ParticleConfig c = gust.config;
-        c.setSimulationSpace(ParticleConfig.Space.World);
-        c.setMaxParticles(110);
-        c.setStartLifetime(range(14, 20));
-        c.setStartSpeed(range(5f, 7f));
-        c.setStartSize(uniform(range(0.55f, 0.9f)));
-        c.emission.setEmissionRate(NumberFunction.constant(5f));
-        c.shape.setShape(cone(halfAngle, 0.15f));
-        c.colorOverLifetime.setEnable(true);
-        c.colorOverLifetime.setColor(gradient(0x00FFFFFF, 0x14F2FDFF, 0x60D8F4FF, 0x0079C8EC));
-        grow(c, 0.25f);
-        KilaMaterial fog = mist();
-        fog.color = new HDRColor(0.9f, 0.97f, 1f, 0.85f, 1.4f);
-        material(gust, fog);
-        gust.transform().localPosition(new Vector3f(origin));
-        gust.transform().localRotation(new Quaternionf(forward));
+    /**
+     * The same in your own first person: no breath, and the streaks and flakes start a block and a half out, low, and run down
+     * toward the ground, so nothing crosses the middle of your view.
+     */
+    private static FX frostFieldConeSelf() {
+        return frostFieldCone(true);
+    }
+
+    private static FX frostFieldCone(boolean self) {
+        Vector3f origin = self ? new Vector3f(1.6f, -0.8f, 0f) : new Vector3f(0.6f, -0.35f, 0f);
+        // Photon's cone emits along local +Y; turn it to +X (forward), and in first person a little down, toward the ground.
+        Quaternionf forward = new Quaternionf().rotateZ((float) (-Math.PI / 2) - (self ? (float) Math.toRadians(18) : 0f));
+        float halfAngle = self ? 22f : 35f; // RimeConfig.FIELD_HALF_ANGLE's default
 
         ParticleEmitter streaks = emitter("streaks", true, 20);
         ParticleConfig t = streaks.config;
         t.setSimulationSpace(ParticleConfig.Space.World);
-        t.setMaxParticles(70);
-        t.setStartLifetime(range(8, 13));
+        t.setMaxParticles(50);
+        t.setStartLifetime(range(6, 10));
         t.setStartSpeed(range(8f, 11f));
-        t.setStartSize(uniform(range(0.05f, 0.08f)));
-        t.emission.setEmissionRate(NumberFunction.constant(5f));
+        t.setStartSize(uniform(range(0.04f, 0.065f)));
+        t.emission.setEmissionRate(NumberFunction.constant(self ? 1.5f : 3f));
         t.shape.setShape(cone(halfAngle, 0.12f));
         t.renderer.setRenderMode(ParticleRendererSetting.Mode.StretchedBillboard);
-        t.renderer.setLengthScale(5f);
+        t.renderer.setLengthScale(4f);
         fadeOut(t, WHITE, CYAN);
-        material(streaks, glow(0.6f, 0.9f, 1f, 1.6f));
+        material(streaks, glow(0.6f, 0.9f, 1f, 1.5f));
         streaks.transform().localPosition(new Vector3f(origin));
         streaks.transform().localRotation(new Quaternionf(forward));
 
         ParticleEmitter flakes = emitter("flakes", true, 20);
         ParticleConfig f = flakes.config;
         f.setSimulationSpace(ParticleConfig.Space.World);
-        f.setMaxParticles(120);
+        f.setMaxParticles(90);
         f.setStartLifetime(range(10, 16));
-        f.setStartSpeed(range(5f, 8f));
-        f.setStartSize(uniform(range(0.05f, 0.1f)));
-        f.emission.setEmissionRate(NumberFunction.constant(5f));
+        f.setStartSpeed(range(4f, 7f));
+        f.setStartSize(uniform(range(0.04f, 0.08f)));
+        f.emission.setEmissionRate(NumberFunction.constant(self ? 2f : 4f));
         f.shape.setShape(cone(halfAngle, 0.1f));
         f.noise.setEnable(true);
         f.noise.setFrequency(1.5f);
         f.noise.setPosition(uniform(NumberFunction.constant(0.08f)));
+        gravity(f, 0.3f);
         fadeOut(f, WHITE, CYAN);
         material(flakes, glow(0.5f, 0.85f, 1f, 1.1f));
         flakes.transform().localPosition(new Vector3f(origin));
         flakes.transform().localRotation(new Quaternionf(forward));
-        return fx(gust, streaks, flakes);
+        if (self) return fx(streaks, flakes);
+
+        ParticleEmitter breath = emitter("breath", true, 20);
+        ParticleConfig b = breath.config;
+        b.setSimulationSpace(ParticleConfig.Space.World);
+        b.setMaxParticles(30);
+        b.setStartLifetime(range(12, 16));
+        b.setStartSpeed(range(3f, 4.5f));
+        b.setStartSize(uniform(range(0.22f, 0.34f)));
+        b.emission.setEmissionRate(NumberFunction.constant(2f));
+        b.shape.setShape(cone(halfAngle * 0.6f, 0.1f));
+        gravity(b, 0.5f); // it's heavy, cold air: it sinks toward the ground it's freezing
+        b.colorOverLifetime.setEnable(true);
+        b.colorOverLifetime.setColor(gradient(0x00E6F4FF, 0x34D8F0FF, 0x0079C8EC));
+        grow(b, 0.45f);
+        material(breath, mist());
+        breath.transform().localPosition(new Vector3f(origin));
+        breath.transform().localRotation(new Quaternionf(forward));
+        return fx(breath, streaks, flakes);
+    }
+
+    /** Cold mist lying on Frost Field's frosted ground, put down by FieldClient where the frost is: low, slow, soft, and a few glints rising off it. */
+    private static FX frostFieldMist() {
+        ParticleEmitter mist = burstEmitter("mist", 2, 3);
+        ParticleConfig mc = mist.config;
+        mc.setStartLifetime(range(22, 32));
+        mc.setStartSpeed(range(0.05f, 0.15f));
+        mc.setStartSize(uniform(range(0.6f, 0.9f)));
+        mc.shape.setShape(sphere(0.5f));
+        mc.shape.setScale(new NumberFunction3(1f, 0.08f, 1f));
+        mc.velocityOverLifetime.setEnable(true);
+        mc.velocityOverLifetime.setLinear(new NumberFunction3(0, 0.15f, 0));
+        mc.colorOverLifetime.setEnable(true);
+        mc.colorOverLifetime.setColor(gradient(0x00C2EEFA, 0x30D2F2FC, 0x0079C8EC));
+        grow(mc, 0.5f);
+        material(mist, mist());
+
+        ParticleEmitter glints = burstEmitter("glints", 1, 3);
+        ParticleConfig g = glints.config;
+        g.setStartLifetime(range(10, 16));
+        g.setStartSpeed(range(0.05f, 0.2f));
+        g.setStartSize(uniform(range(0.03f, 0.05f)));
+        g.shape.setShape(sphere(0.5f));
+        g.shape.setScale(new NumberFunction3(1f, 0.05f, 1f));
+        g.velocityOverLifetime.setEnable(true);
+        g.velocityOverLifetime.setLinear(new NumberFunction3(0, 0.7f, 0));
+        fadeInOut(g, WHITE, CYAN);
+        material(glints, glow(0.5f, 0.86f, 1f, 1.2f));
+        return fx(mist, glints);
     }
 
     /** Rime Shell: a faint, glassy ice bubble (invisible from the inside) with flakes circling it. */

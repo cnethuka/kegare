@@ -288,6 +288,37 @@ def spire_burst(seed=31, size=80):
     return c, geodesic_order(c, (cx, cy))
 
 
+def field_frost(seed=17, size=52):
+    """Frost Field's frost: one patch of the frost that races over the ground in the cone. The game lays many of them, overlapping,
+    turned every way, so it is a mat, not a burst: a dithered cold sheen with ragged edges, feathered spines grown from several
+    points (not all from the middle) on the clean slopes, rime only at a few roots, a glint or two and loose specks. About a block
+    and a half across at its fullest."""
+    rng = random.Random(seed)
+    c = Canvas(size)
+    cx = cy = size // 2
+    edge = [rng.uniform(14, 20) for _ in range(16)]
+    for y in range(size):
+        for x in range(size):
+            d = math.hypot(x - cx + 0.5, y - cy + 0.5)
+            a = (math.atan2(y - cy, x - cx) / (2 * math.pi)) % 1.0
+            r = edge[int(a * 16) % 16]
+            if (x + y) % 2 == 0 and d < r and rng.random() < 0.7 - 0.55 * d / r:
+                c.put(x, y, 1)
+    # Spines from all over the patch, each its own way (not out from the middle: that's a burst, a star), crossing each other.
+    for k in range(10):
+        a, d = rng.uniform(0, 2 * math.pi), rng.uniform(2, 13)
+        x0, y0 = round(cx + math.cos(a) * d), round(cy + math.sin(a) * d)
+        fern(c, rng, x0, y0, rng.choice(HEADINGS), rng.uniform(7, 15), start=rng.choice((2, 3)), every=rng.choice((2, 3)),
+             reach=rng.uniform(2.2, 3.4), spine=3 if k < 2 else 2)
+    for _ in range(4):
+        a, d = rng.uniform(0, 2 * math.pi), rng.uniform(0, 12)
+        c.put(round(cx + math.cos(a) * d), round(cy + math.sin(a) * d), 4)
+    for _ in range(28):
+        a, d = rng.uniform(0, 2 * math.pi), rng.uniform(5, 22)
+        c.put(round(cx + math.cos(a) * d), round(cy + math.sin(a) * d), rng.choice((1, 1, 2)))
+    return c, geodesic_order(c, (cx, cy))
+
+
 def white():
     OUT.mkdir(parents=True, exist_ok=True)
     Image.new("RGBA", (4, 4), (255, 255, 255, 255)).save(OUT / "white.png", optimize=True)
@@ -336,7 +367,8 @@ def preview(name, art, when, reaches=(0.37, 0.65, 1.0), steps=(0.25, 0.5, 1.0)):
     print("preview", (PREVIEW / f"{name}.png").relative_to(ROOT))
 
 
-PATTERNS = {"lance_frost": lance_frost, "spire_crack": spire_crack, "spire_burst": spire_burst}
+PATTERNS = {"lance_frost": lance_frost, "spire_crack": spire_crack, "spire_burst": spire_burst, "field_frost": field_frost,
+            "field_frost_b": lambda: field_frost(seed=29)}
 
 
 def main(args):

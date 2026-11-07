@@ -115,7 +115,8 @@ public final class ClientVisuals {
         if (visual.effect().isPresent()) {
             VfxQuality quality = KegareClientConfig.VFX_QUALITY.get();
             if (quality != VfxQuality.VANILLA) {
-                executor = PhotonEffects.onEntity(visual.effect().get(), entity, visual.anchor(), quality == VfxQuality.REDUCED, !trail);
+                executor = PhotonEffects.onEntity(firstPersonVariant(entity, visual.effect().get()), entity, visual.anchor(),
+                        quality == VfxQuality.REDUCED, !trail);
                 PhotonEffects.tint(executor, visual.tint());
                 if (growTicks > 0) PhotonEffects.scale(executor, GROW_FROM);
                 if (lifetimeTicks > 0) PhotonEffects.persistLifetime(executor, lifetimeTicks);

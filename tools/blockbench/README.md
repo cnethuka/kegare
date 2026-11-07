@@ -51,6 +51,12 @@ Frost Shard's and Splinter's thrown crystals, and the chips they break into, too
 
     python3 -I tools/blockbench/build_frost_shard.py --preview  # also run/shard_preview/*.png
 
+Frost Field's crystals: `field_shapes.py` (four small clusters) and `build_frost_field.py`, the lance's painter
+(`art/blockbench/frost_field.bbmodel`, `models/fx/frost_field.obj`, `textures/entity/frost_field*.png`). The channel's pose is
+`tools/anims/frost_field.py`; the frost on the ground is pixel art (`field_frost`, below).
+
+    python3 -I tools/blockbench/build_frost_field.py --preview  # also run/field_preview/*.png
+
 ## Marks on blocks: pixel art, no Blockbench
 
 Rime's frost, cracks and ice on the world's blocks are pixel art at the blocks' own 16 texels a block, so they need no

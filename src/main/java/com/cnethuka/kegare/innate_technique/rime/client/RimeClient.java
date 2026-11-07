@@ -1,6 +1,7 @@
 package com.cnethuka.kegare.innate_technique.rime.client;
 
 import com.cnethuka.kegare.client.ClientData;
+import com.cnethuka.kegare.client.visual.ClientVisuals;
 import com.cnethuka.kegare.client.visual.PlayerAnimations;
 import com.cnethuka.kegare.client.visual.VanillaFallback;
 import com.cnethuka.kegare.innate_technique.rime.GlacialSpireAbility;
@@ -46,9 +47,13 @@ public final class RimeClient {
         LanceAftermath.init();
         // Frost Shard and Splinter: solid crystals in flight, solid chips where they hit.
         ShardImpact.init();
+        // Frost Field: frost on the ground it covers, crystals jutting out of it and mist lying on it (FieldClient); in your own first
+        // person the cone itself starts further out and runs low.
+        ClientVisuals.setFirstPersonVariant(RimeIds.FX_FROST_FIELD_CONE, RimeIds.FX_FROST_FIELD_CONE_SELF);
+        NeoForge.EVENT_BUS.addListener(FieldClient::render);
         for (var effect : List.of(RimeIds.FX_GLACIAL_LANCE_CHARGE, RimeIds.FX_GLACIAL_LANCE_CHARGE_SELF, RimeIds.FX_GLACIAL_LANCE_SNAP,
                 RimeIds.FX_GLACIAL_LANCE_STICK, RimeIds.FX_GLACIAL_LANCE_SHATTER, RimeIds.FX_GLACIAL_SPIRE_CHARGE,
-                RimeIds.FX_GLACIAL_SPIRE_SHATTER)) {
+                RimeIds.FX_GLACIAL_SPIRE_SHATTER, RimeIds.FX_FROST_FIELD_CONE_SELF, RimeIds.FX_FROST_FIELD_MIST)) {
             VisualHooks.registerEffect(effect);
         }
         NeoForge.EVENT_BUS.addListener(LanceHold::onRenderHand);
@@ -61,11 +66,12 @@ public final class RimeClient {
             LanceAftermath.clear();
             BlockMarks.clear();
             SpireClient.clear();
+            FieldClient.clear();
         });
         // The throw is the whole body: in your own first person, that would swing your own arm and whatever it holds across the view.
         PlayerAnimations.keepVanillaHands(List.of(RimeIds.ANIM_GLACIAL_LANCE_CHARGE, RimeIds.ANIM_GLACIAL_LANCE_RELEASE,
                 RimeIds.ANIM_GLACIAL_SPIRE_CHARGE, RimeIds.ANIM_GLACIAL_SPIRE_RELEASE, RimeIds.ANIM_FROST_SHARD_CAST,
-                RimeIds.ANIM_SPLINTER_CAST));
+                RimeIds.ANIM_SPLINTER_CAST, RimeIds.ANIM_FROST_FIELD_CHANNEL));
         // Lookalikes used when an effect can't load, or with vfxQuality = VANILLA.
         VanillaFallback.register(RimeIds.FX_FROST_SHARD_TRAIL, new VanillaFallback.Spec(ParticleTypes.SNOWFLAKE, 2, 6, 0.06, 0.01));
         VanillaFallback.register(RimeIds.FX_FROST_SHARD_IMPACT, new VanillaFallback.Spec(ParticleTypes.SNOWFLAKE, 1, 14, 0.25, 0.12));
@@ -76,6 +82,8 @@ public final class RimeClient {
         VanillaFallback.register(RimeIds.FX_GLACIAL_LANCE_SHATTER, new VanillaFallback.Spec(ParticleTypes.SNOWFLAKE, 1, 16, 0.4, 0.1));
         VanillaFallback.register(RimeIds.FX_GLACIAL_LANCE_SNAP, new VanillaFallback.Spec(ParticleTypes.SNOWFLAKE, 1, 3, 0.08, 0.02));
         VanillaFallback.register(RimeIds.FX_FROST_FIELD_CONE, new VanillaFallback.Spec(ParticleTypes.SNOWFLAKE, 6, 10, 0.2, 0.45, true));
+        VanillaFallback.register(RimeIds.FX_FROST_FIELD_CONE_SELF, new VanillaFallback.Spec(ParticleTypes.SNOWFLAKE, 4, 10, 0.2, 0.45, true));
+        VanillaFallback.register(RimeIds.FX_FROST_FIELD_MIST, new VanillaFallback.Spec(ParticleTypes.SNOWFLAKE, 1, 3, 0.4, 0.02));
         VanillaFallback.register(RimeIds.FX_RIME_SHELL_AURA, new VanillaFallback.Spec(ParticleTypes.SNOWFLAKE, 1, 6, 0.55, 0.0));
         // Small flakes, not ice-block item particles: those look huge and blocky right next to your own camera.
         VanillaFallback.register(RimeIds.FX_FREEZE_SHATTER, new VanillaFallback.Spec(ParticleTypes.SNOWFLAKE, 1, 24, 0.45, 0.18));
@@ -112,6 +120,7 @@ public final class RimeClient {
         LanceHold.tick(mc.level);
         LanceAftermath.tick(mc.level);
         SpireClient.tick(mc.level);
+        FieldClient.tick(mc.level);
         BlockMarks.tick(mc.level);
     }
 

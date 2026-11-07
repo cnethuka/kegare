@@ -136,11 +136,16 @@ public final class LanceMesh {
     public static final Model SHARD = new Model(Kegare.id("models/fx/frost_shard.obj"), Kegare.id("textures/entity/frost_shard.png"),
             Kegare.id("textures/entity/frost_shard_glow.png"));
 
+    /** Frost Field's crystals jutting out of the frosted ground (tools/blockbench/build_frost_field.py). */
+    public static final Model FIELD = new Model(Kegare.id("models/fx/frost_field.obj"), Kegare.id("textures/entity/frost_field.png"),
+            Kegare.id("textures/entity/frost_field_glow.png"));
+
     /** Resources reloaded: read the meshes again when they're next drawn. */
     public static void forget() {
         LANCE.forget();
         SPIRE.forget();
         SHARD.forget();
+        FIELD.forget();
     }
 
     /** Reads Blockbench's OBJ: one object per piece, triangles, texture coordinates with v counted from the bottom. */

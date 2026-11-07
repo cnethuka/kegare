@@ -32,6 +32,9 @@ public final class RimeIds {
     public static final ResourceLocation FX_GLACIAL_LANCE_SNAP = fx("glacial_lance_snap");
     public static final ResourceLocation FX_GLACIAL_LANCE_CHARGE_SELF = fx("glacial_lance_charge_self");
     public static final ResourceLocation FX_FROST_FIELD_CONE = fx("frost_field_cone");
+    /** Client-side pieces of Frost Field's look (see the client's FieldClient). */
+    public static final ResourceLocation FX_FROST_FIELD_CONE_SELF = fx("frost_field_cone_self");
+    public static final ResourceLocation FX_FROST_FIELD_MIST = fx("frost_field_mist");
     public static final ResourceLocation FX_RIME_SHELL_AURA = fx("rime_shell_aura");
     public static final ResourceLocation FX_FREEZE_SHATTER = fx("freeze_shatter");
     // Specials
