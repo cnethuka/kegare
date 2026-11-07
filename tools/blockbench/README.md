@@ -1,4 +1,4 @@
-# Blockbench tooling (player animations, Strings, Glacial Lance, Glacial Spire, block marks)
+# Blockbench tooling (player animations, Strings, Glacial Lance, Glacial Spire, Frost Shard, block marks)
 
 Animations are written pose-to-pose in `tools/anims/<technique>.py` and exported to
 `src/main/resources/assets/kegare/player_animations/<technique>.json` in Blockbench's own Bedrock format, which Player
@@ -44,6 +44,12 @@ Glacial Spire's spike is made the same way: `spire_shapes.py` makes its crystal 
 Before an animation preview after building a mesh, load the rig again (Setting up): the viewer draws whatever project is open.
 
     python3 -I tools/blockbench/build_glacial_spire.py --preview  # also run/spire_preview/*.png
+
+Frost Shard's and Splinter's thrown crystals, and the chips they break into, too: `shard_shapes.py` and
+`build_frost_shard.py`, at a finer density (`art/blockbench/frost_shard.bbmodel`, `models/fx/frost_shard.obj`,
+`textures/entity/frost_shard*.png`). The cast is `tools/anims/frost_shard.py`.
+
+    python3 -I tools/blockbench/build_frost_shard.py --preview  # also run/shard_preview/*.png
 
 ## Marks on blocks: pixel art, no Blockbench
 

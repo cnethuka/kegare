@@ -132,10 +132,15 @@ public final class LanceMesh {
         return LANCE.piece(name);
     }
 
+    /** Frost Shard's and Splinter's thrown crystals and the chips they break into (tools/blockbench/build_frost_shard.py). */
+    public static final Model SHARD = new Model(Kegare.id("models/fx/frost_shard.obj"), Kegare.id("textures/entity/frost_shard.png"),
+            Kegare.id("textures/entity/frost_shard_glow.png"));
+
     /** Resources reloaded: read the meshes again when they're next drawn. */
     public static void forget() {
         LANCE.forget();
         SPIRE.forget();
+        SHARD.forget();
     }
 
     /** Reads Blockbench's OBJ: one object per piece, triangles, texture coordinates with v counted from the bottom. */

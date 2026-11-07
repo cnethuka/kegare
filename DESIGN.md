@@ -755,8 +755,9 @@ Package `com.cnethuka.kegare.innate_technique.rime`. **Rarity: RARE.** All numbe
   The total is clamped to [0.5, 2]. The innate technique reports it through `InnateTechnique.environment(player)`;
   it is synced (re-checked every 10 ticks) for the HUD's snowflake or flame icon next to the Malice bar, with the
   multiplier. Hovering an ability on the Sorcerer screen shows its current cost, upkeep and every active factor.
-- **Visuals:** PAL animations `frost_shard_cast`, `frost_field_channel` (loop), `rime_shell_toggle` and `frozen` (loop), in
-  `assets/kegare/player_animations/rime.json`; Glacial Lance's `glacial_lance_charge` (loop) and `glacial_lance_release` in
+- **Visuals:** PAL animations `frost_field_channel` (loop), `rime_shell_toggle` and `frozen` (loop), in
+  `assets/kegare/player_animations/rime.json`; Frost Shard's `frost_shard_cast` in `frost_shard.json` (from
+  `tools/anims/frost_shard.py`); Glacial Lance's `glacial_lance_charge` (loop) and `glacial_lance_release` in
   `glacial_lance.json` (from `tools/anims/glacial_lance.py`). Photon effects in `assets/kegare/fx/rime/`: `frost_shard_trail`,
   `frost_shard_impact`, `frost_field_cone`, `rime_shell_aura` (an ice bubble, invisible from the inside), `freeze_shatter`,
   and Glacial Lance's below. Each has a vanilla-particle lookalike for the fallback.
@@ -805,6 +806,13 @@ Package `com.cnethuka.kegare.innate_technique.rime`. **Rarity: RARE.** All numbe
     texels, so overlapping marks share texels (stronger colour, longer life) instead of flickering. Drawn translucent in the
     world's light and shaded like the block face under it; a texel just formed is brighter (the spreading edge) and thins in
     its last ticks. Client only: no block changes, nothing is sent, all of it melts on its own. Off with **Vanilla**.
+  - Specials: animations `splinter_cast`, `ice_path_slide` (loop, a surfing stance) and `shatter_shell_cast`. Effects
+    `splinter_cast`, `splinter_trail`, `ice_path_trail` and `shatter_shell_burst`.
+  - `ice_path_trail` is a **lingering** loop (`Visual.lingering`): what it throws up stays in the world and fades on
+    its own; the ice itself is block marks ("Ice Path's look", below). The loop sends `trailSeconds` as
+    `VisualPayload.lifetimeTicks`, the particle lifetime of an effect's `persist*` emitters (this one has none). When
+    the slide ends, it stops laying ice and what is there melts on its own time. State loops (shell, cone, charge,
+    spire circle) still vanish at once.
 - **Glacial Spire's look** (in the Lance's style):
   - **The spike** is a solid mesh of the Lance's ice (`models/fx/glacial_spire.obj`, `textures/entity/glacial_spire*.png`,
     `tools/blockbench/build_glacial_spire.py` with the Lance's painter at a coarser density; source `art/blockbench/glacial_spire.bbmodel`):
@@ -832,13 +840,26 @@ Package `com.cnethuka.kegare.innate_technique.rime`. **Rarity: RARE.** All numbe
     `tools/anims/glacial_spire.py`; your own first-person hands stay vanilla.
   - **Reduced** halves the debris and chunks; **Vanilla** draws the spike but no marks, snowflakes for the effects and
     packed-ice chips for the chunks.
-  - Specials: animations `splinter_cast`, `ice_path_slide` (loop, a surfing stance) and `shatter_shell_cast`. Effects
-    `splinter_cast`, `splinter_trail`, `ice_path_trail` and `shatter_shell_burst`.
-  - `ice_path_trail` is a **lingering** loop (`Visual.lingering`): what it throws up stays in the world and fades on
-    its own; the ice itself is block marks ("Ice Path's look", below). The loop sends `trailSeconds` as
-    `VisualPayload.lifetimeTicks`, the particle lifetime of an effect's `persist*` emitters (this one has none). When
-    the slide ends, it stops laying ice and what is there melts on its own time. State loops (shell, cone, charge,
-    spire circle) still vanish at once.
+- **Frost Shard's look** (in the Lance's style):
+  - **The shard** is a small solid crystal of the Lance's ice, not an item sprite: one sharp six-sided crystal about 0.58
+    blocks long with a little one grown into its back (`models/fx/frost_shard.obj`, `textures/entity/frost_shard*.png`,
+    `tools/blockbench/build_frost_shard.py` and `shard_shapes.py`, the Lance's painter at a finer density; source
+    `art/blockbench/frost_shard.bbmodel`). The same model holds Splinter's slimmer `splinter` and the `chip_*` either breaks
+    into. `ShardRenderer` points it the way it flies and turns it about its length; your own stays hidden until 3 blocks
+    from your first-person camera.
+  - **Its line** is drawn by `ShardRenderer` too: a thin pale strip, up to 1.7 blocks behind its back, fading and narrowing
+    to its end, turned to the camera and narrowing to nothing when seen straight down its length. A Photon ribbon trail
+    turns into a sheet across the view of whoever it is coming at, so `frost_shard_trail` is only the frost specks
+    shed as it goes. It never reaches back past the hand, and your own stops 3 blocks short of your camera. Off with
+    **Vanilla** (snowflakes instead).
+  - **The hit:** the server sends `frost_shard_impact` where its path met the target's box (`RimeProjectile.impactVisual`,
+    with the shard's id), so on a player it bursts on them, not at their feet. Every client then throws a few solid chips of
+    its ice back off whatever it hit (`ShardImpact`, falling and bouncing like the Lance's shards; a Splinter's are fewer
+    and smaller) with a small flash, glints and a breath of mist. Nothing in the eyes of the player it hit.
+  - **The body:** `frost_shard_cast` flicks the hand up by the ear as the chest turns away, then snaps it straight out at
+    the aim with the chest behind it (`tools/anims/frost_shard.py`); your own first-person hands stay vanilla.
+  - **Reduced** plays the effects reduced and drops half the chips; **Vanilla** keeps the solid shard, snowflakes for the
+    rest and packed-ice chips.
 - **Effect authoring:** the effects are built from Photon's own objects in `RimeFxAuthoring` (building blocks in the
   shared `client.visual.FxKit`) and written with Photon's serializer, the same `.fx` format the editor exports. In a
   dev client, `/kegare debug fx export` rewrites every effect in `FxCatalog` (Rime's and RMT's, and the running game's

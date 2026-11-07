@@ -97,47 +97,50 @@ public final class RimeFxAuthoring {
 
     // ================================================================ effects
 
-    /** Frost Shard in flight: a thin icy ribbon plus a few glinting flakes left behind. */
+    // Frost Shard's crystal is a solid mesh (ShardRenderer) and its chips are solid (ShardImpact); these are only what's soft round them.
+
+    /**
+     * Frost Shard in flight: a few specks of frost shed as it goes. Its short line is drawn with the shard (ShardRenderer): a Photon
+     * trail seen straight down its length turned into a sheet across the view.
+     */
     private static FX frostShardTrail() {
-        ParticleEmitter ribbon = ribbon("ribbon", 0.22f, 8, PALE);
-        ParticleEmitter glints = emitter("glints", true, 20);
-        ParticleConfig c = glints.config;
+        ParticleEmitter specks = emitter("specks", true, 20);
+        ParticleConfig c = specks.config;
         c.setSimulationSpace(ParticleConfig.Space.World);
-        c.setMaxParticles(60);
-        c.setStartLifetime(range(8, 14));
-        c.setStartSpeed(range(0.0f, 0.4f));
-        c.setStartSize(uniform(range(0.05f, 0.11f)));
-        c.emission.setEmissionRate(NumberFunction.constant(4f));
-        c.shape.setShape(sphere(0.06f));
+        c.setMaxParticles(30);
+        c.setStartLifetime(range(6, 10));
+        c.setStartSpeed(range(0.0f, 0.08f));
+        c.setStartSize(uniform(range(0.02f, 0.04f)));
+        c.emission.setEmissionRate(NumberFunction.constant(2f));
+        c.shape.setShape(sphere(0.05f));
+        gravity(c, 0.25f);
         fadeOut(c, WHITE, CYAN);
         shrink(c);
-        material(glints, glow(0.5f, 0.85f, 1f, 1.4f));
-        return fx(ribbon, glints);
+        material(specks, glow(0.62f, 0.88f, 1f, 1.4f));
+        return fx(specks);
     }
 
-    /** Frost Shard hits: a small flash, a ring and a spray of ice glints. */
+    /** Frost Shard breaks (its chips are solid, ShardImpact): a small flash, hard glints flung out and a breath of mist. */
     private static FX frostShardImpact() {
-        ParticleEmitter flash = single("flash", 5, 0.5f);
-        fadeOut(flash.config, PALE, CYAN);
+        ParticleEmitter flash = single("flash", 3, 0.42f);
+        fadeOut(flash.config, WHITE, CYAN);
         shrink(flash.config);
-        material(flash, glow(0.5f, 0.85f, 1f, 1.4f));
+        material(flash, glow(0.6f, 0.86f, 1f, 1.4f));
 
-        ParticleEmitter ring = single("ring", 8, 0.9f);
-        grow(ring.config, 0.2f);
-        fadeOut(ring.config, PALE, BLUE);
-        material(ring, recolor(KilaPresets.SHOCKWAVE.create(), 0.45f, 0.82f, 1f, 1.2f));
+        ParticleEmitter glints = glints("glints", 12, 2f, 4.5f, 4, 8, 0.04f, 2.2f);
+        gravity(glints.config, 0.6f);
 
-        ParticleEmitter spray = burstEmitter("spray", 18, 24);
-        ParticleConfig c = spray.config;
-        c.setStartLifetime(range(8, 15));
-        c.setStartSpeed(range(2.5f, 5.5f));
-        c.setStartSize(uniform(range(0.05f, 0.12f)));
-        c.shape.setShape(sphere(0.1f));
-        gravity(c, 0.6f);
-        fadeOut(c, WHITE, CYAN);
-        shrink(c);
-        material(spray, recolor(KilaPresets.SPARKS.create(), 0.55f, 0.88f, 1f, 1.5f));
-        return fx(flash, ring, spray);
+        ParticleEmitter mist = burstEmitter("mist", 3, 3);
+        ParticleConfig mc = mist.config;
+        mc.setStartLifetime(range(10, 16));
+        mc.setStartSpeed(range(0.2f, 0.5f));
+        mc.setStartSize(uniform(range(0.22f, 0.36f)));
+        mc.shape.setShape(sphere(0.15f));
+        mc.colorOverLifetime.setEnable(true);
+        mc.colorOverLifetime.setColor(gradient(0x50E6F4FF, 0x28C2EEFA, 0x0079C8EC));
+        grow(mc, 0.5f);
+        material(mist, mist());
+        return fx(flash, glints, mist);
     }
 
     // ---------------------------------------------------------------- Glacial Lance

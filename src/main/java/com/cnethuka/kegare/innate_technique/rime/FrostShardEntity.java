@@ -43,6 +43,12 @@ public class FrostShardEntity extends RimeProjectile {
         return RimeIds.FX_FROST_SHARD_TRAIL;
     }
 
+    /** Visual only: your own shard's trail starts a little way out, not between your eyes. */
+    @Override
+    protected double trailClearOfOwnEyes() {
+        return 1.2;
+    }
+
     @Override
     protected void onLivingHit(LivingEntity target, @Nullable ServerPlayer caster) {
         int slow = RimeConfig.ticks(RimeConfig.SHARD_SLOWNESS_SECONDS);

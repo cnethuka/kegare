@@ -45,6 +45,8 @@ public final class RimeClient {
         // Glacial Lance draws its own lance: in the hand, in flight, stuck where it lands, in pieces.
         LanceHold.init();
         LanceAftermath.init();
+        // Frost Shard and Splinter: solid crystals in flight, solid chips where they hit.
+        ShardImpact.init();
         for (var effect : List.of(RimeIds.FX_GLACIAL_LANCE_CHARGE, RimeIds.FX_GLACIAL_LANCE_CHARGE_SELF, RimeIds.FX_GLACIAL_LANCE_SNAP,
                 RimeIds.FX_GLACIAL_LANCE_STICK, RimeIds.FX_GLACIAL_LANCE_SHATTER, RimeIds.FX_GLACIAL_SPIRE_CHARGE,
                 RimeIds.FX_GLACIAL_SPIRE_SHATTER)) {
@@ -63,7 +65,7 @@ public final class RimeClient {
         });
         // The throw is the whole body: in your own first person, that would swing your own arm and whatever it holds across the view.
         PlayerAnimations.keepVanillaHands(List.of(RimeIds.ANIM_GLACIAL_LANCE_CHARGE, RimeIds.ANIM_GLACIAL_LANCE_RELEASE,
-                RimeIds.ANIM_GLACIAL_SPIRE_CHARGE, RimeIds.ANIM_GLACIAL_SPIRE_RELEASE));
+                RimeIds.ANIM_GLACIAL_SPIRE_CHARGE, RimeIds.ANIM_GLACIAL_SPIRE_RELEASE, RimeIds.ANIM_FROST_SHARD_CAST));
         // Lookalikes used when an effect can't load, or with vfxQuality = VANILLA.
         VanillaFallback.register(RimeIds.FX_FROST_SHARD_TRAIL, new VanillaFallback.Spec(ParticleTypes.SNOWFLAKE, 2, 6, 0.06, 0.01));
         VanillaFallback.register(RimeIds.FX_FROST_SHARD_IMPACT, new VanillaFallback.Spec(ParticleTypes.SNOWFLAKE, 1, 14, 0.25, 0.12));
@@ -91,7 +93,7 @@ public final class RimeClient {
 
     private static void registerRenderers(EntityRenderersEvent.RegisterRenderers event) {
         // The item sprite, full-bright so the ice reads at night.
-        event.registerEntityRenderer(RimeRegistry.FROST_SHARD.get(), ctx -> new ThrownItemRenderer<>(ctx, 1.0f, true));
+        event.registerEntityRenderer(RimeRegistry.FROST_SHARD.get(), ShardRenderer::frostShard);
         event.registerEntityRenderer(RimeRegistry.GLACIAL_LANCE.get(), GlacialLanceRenderer::new);
         event.registerEntityRenderer(RimeRegistry.SPLINTER_SHARD.get(), ctx -> new ThrownItemRenderer<>(ctx, 0.7f, true));
         // Glacial Spire is drawn entirely by its Photon loops.

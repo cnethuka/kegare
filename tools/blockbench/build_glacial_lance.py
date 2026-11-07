@@ -353,14 +353,23 @@ def check_winding(shapes, obj_path=OBJ_PATH):
         return tuple(sorted(tuple(round(c, 3) for c in p) for p in tri))
 
     outward = {}
+    polygons = []
     for polys in shapes.values():
         for poly in polys:
+            polygons.append((poly, L.polygon_normal(list(poly))))
             for tri in L.triangles(poly):
                 outward[key(tri)] = L.polygon_normal(list(tri))
+
+    def on(p, poly):
+        return any(max(abs(p[i] - q[i]) for i in range(3)) < 2e-3 for q in poly)
+
     flipped = unmatched = 0
     for tris in faces.values():
         for t in tris:
             want = outward.get(key(t))
+            if want is None:
+                # Blockbench may cut a flat many-sided face along other diagonals: find the face all three corners are on.
+                want = next((n for poly, n in polygons if all(on(p, poly) for p in t)), None)
             if want is None:
                 unmatched += 1
             elif L.dot(L.cross(L.sub(t[1], t[0]), L.sub(t[2], t[0])), want) < 0:

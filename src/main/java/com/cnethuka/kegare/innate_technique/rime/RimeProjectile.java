@@ -1,7 +1,9 @@
 package com.cnethuka.kegare.innate_technique.rime;
 
 import com.cnethuka.kegare.innatetechnique.Ability;
+import com.cnethuka.kegare.innatetechnique.visual.Visual;
 import com.cnethuka.kegare.innatetechnique.visual.VisualHooks;
+import com.cnethuka.kegare.innatetechnique.visual.VisualPhase;
 import com.cnethuka.kegare.innatetechnique.visual.VisualService;
 import javax.annotation.Nullable;
 import net.minecraft.nbt.CompoundTag;
@@ -10,10 +12,12 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
+import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.projectile.ThrowableItemProjectile;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.EntityHitResult;
 import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
@@ -85,9 +89,22 @@ public abstract class RimeProjectile extends ThrowableItemProjectile {
         discard();
     }
 
-    /** What clients see where it ends: on whatever it hit, or ({@code hit} null) where it melted away. */
+    /**
+     * What clients see where it ends: on whatever it hit, or ({@code hit} null) where it melted away. Names this projectile, so a client
+     * can read its heading and kind (Frost Shard's and Splinter's solid chips), and sits where its path met a living target, not at the
+     * target's feet (where the hit reports it).
+     */
     protected void impactVisual(Vec3 at, @Nullable HitResult hit) {
-        VisualService.impact((ServerLevel) level(), ability(), at);
+        Vec3 where = hit instanceof EntityHitResult e ? struck(e.getEntity()) : at;
+        ability().visuals().get(VisualPhase.IMPACT).effect().ifPresent(effect ->
+                VisualService.playAt((ServerLevel) level(), where, Visual.effect(effect, Visual.Anchor.BODY), getId()));
+    }
+
+    /** Where this tick's move takes it into {@code target}'s box, or the box's middle when it was already inside. */
+    private Vec3 struck(Entity target) {
+        Vec3 from = getBoundingBox().getCenter();
+        AABB box = target.getBoundingBox();
+        return box.contains(from) ? box.getCenter() : box.clip(from, from.add(getDeltaMovement())).orElse(box.getCenter());
     }
 
     @Override
