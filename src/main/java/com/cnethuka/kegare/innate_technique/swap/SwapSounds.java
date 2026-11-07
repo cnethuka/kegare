@@ -46,6 +46,8 @@ public final class SwapSounds {
     public static final Clap EXCHANGE = new Clap(KegareSounds.SWAP_TRADE, 0.9f, 1f);
     /** Momentum Exchange, at both (its tell): the clap, hard and low. */
     public static final Clap MOMENTUM = new Clap(KegareSounds.SWAP_CLAP, 1f, 0.8f);
+    /** Total Swap, at both ends: the biggest clap. */
+    public static final Clap TOTAL_SWAP = new Clap(KegareSounds.SWAP_BIG_CLAP, 1f, 1f);
     /** A disguise landing (Awareness, Total Swap): a card riffled over. */
     public static final Clap CARD_FLIP = new Clap(KegareSounds.SWAP_FLIP, 0.9f, 1f);
     /** Switchback's swap back: a finger snap. */

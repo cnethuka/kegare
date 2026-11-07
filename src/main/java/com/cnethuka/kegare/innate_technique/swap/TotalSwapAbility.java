@@ -14,7 +14,7 @@ import net.minecraft.server.level.ServerPlayer;
  * percentage of their own max). The target must be at least {@code minDistance} away.
  */
 public final class TotalSwapAbility extends SwapAbility {
-    private static final AbilityVisuals VISUALS = AbilityVisuals.builder().cast(SwapIds.ANIM_SWAP_SNAP, null).build();
+    private static final AbilityVisuals VISUALS = AbilityVisuals.builder().cast(SwapIds.ANIM_TOTAL_SWAP_CLAP, null).build();
 
     TotalSwapAbility() {
         super("total_swap", CastType.INSTANT);
@@ -48,7 +48,7 @@ public final class TotalSwapAbility extends SwapAbility {
         float casterShare = caster.getHealth() / caster.getMaxHealth();
         float targetShare = target.getHealth() / target.getMaxHealth();
         if (casterShare < SwapAdvancements.IDENTITY_CRISIS_HEALTH) SwapTracker.identityCrisisStarted(caster);
-        PositionsAbility.swap(caster, target, SwapSounds.POSITIONS);
+        PositionsAbility.swap(caster, target, SwapSounds.TOTAL_SWAP);
         AwarenessAbility.disguisePair(caster, target, SwapConfig.ticks(SwapConfig.AWARENESS_DURATION), Disguises.Kind.TOTAL_SWAP);
         swapHealth(caster, target, casterShare, targetShare);
         VisualService.playOnce(caster, SwapIds.TOTAL_SWAP_BURST);

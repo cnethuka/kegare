@@ -26,8 +26,6 @@ SETS = {"puppet_manipulation": puppet_manipulation.ANIMS, "melee": melee.ANIMS, 
         "frost_field": frost_field.ANIMS, "ice_path": ice_path.ANIMS,
         "rime_shell": rime_shell.ANIMS,
         "shatter_shell": shatter_shell.ANIMS, "freeze": freeze.ANIMS, "swap": swap.ANIMS}
-# Hand-keyed PAL animations a set still carries as they are.
-EXTRA = {"swap": swap.LEGACY}
 # What a set's preview holds: (bone, OBJ, texture, objects, grip). The game draws the same thing from the same numbers.
 HELD = {"glacial_lance": ("right_arm", "src/main/resources/assets/kegare/models/fx/glacial_lance.obj",
                           "src/main/resources/assets/kegare/textures/entity/glacial_lance.png",
@@ -40,8 +38,8 @@ def main(argv):
     if tuple(glacial_lance.LANCE_GRIP["rotation"]) != stale:
         raise SystemExit(f"glacial_lance.LANCE_GRIP's rotation is stale for the wound pose: make it {stale} (and LanceHold.java)")
     for stem, anims in SETS.items():
-        path = kit.write(stem, anims, EXTRA.get(stem))
-        print(f"wrote {path.relative_to(kit.ROOT)} ({len(anims) + len(EXTRA.get(stem, {}))} animations)")
+        path = kit.write(stem, anims)
+        print(f"wrote {path.relative_to(kit.ROOT)} ({len(anims)} animations)")
     if "--preview" in argv:
         from view import Viewer
         only = [a for a in argv if not a.startswith("--")]

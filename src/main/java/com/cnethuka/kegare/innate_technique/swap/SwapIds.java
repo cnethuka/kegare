@@ -8,7 +8,7 @@ import net.minecraft.resources.ResourceLocation;
 public final class SwapIds {
     // Player Animation Library animations (tools/anims/swap.py)
     public static final ResourceLocation ANIM_POSITIONS_CLAP = Kegare.id("positions_clap");
-    public static final ResourceLocation ANIM_SWAP_SNAP = Kegare.id("swap_snap");
+    public static final ResourceLocation ANIM_TOTAL_SWAP_CLAP = Kegare.id("total_swap_clap");
     public static final ResourceLocation ANIM_SWITCHBACK_CAST = Kegare.id("switchback_cast");
     public static final ResourceLocation ANIM_SWITCHBACK_SNAP = Kegare.id("switchback_snap");
     public static final ResourceLocation ANIM_AWARENESS_CAST = Kegare.id("awareness_cast");
@@ -32,6 +32,7 @@ public final class SwapIds {
     public static final ResourceLocation FX_EXCHANGE_TRANSFER = fx("exchange_transfer");
     /** Momentum Exchange, on both: the waist ring and the streaks (drawn by SwapFx; no Photon). */
     public static final ResourceLocation FX_MOMENTUM_BURST = fx("momentum_burst");
+    /** Total Swap, on both: the wide rings (drawn by SwapFx; no Photon). */
     public static final ResourceLocation FX_TOTAL_SWAP_BURST = fx("total_swap_burst");
 
     /** Both ends of every swap, played at a position and naming who moved (the afterimage and the flicker are drawn from them). */

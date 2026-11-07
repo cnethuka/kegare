@@ -1321,8 +1321,8 @@ smooth and modern in Swap's teal, nothing heavy, blurry or lingering, never the 
     other's side, the trade; then they part. In your own first person they stay below the view.
   - `momentum_cast` (Momentum Exchange): a hard clap with the body thrown forward into it, then both arms flung back
     behind and the chest up, the push given away.
-  - The moves not reworked yet still play their hand-keyed animations, carried as they are from
-    `tools/anims/swap_legacy.json`: `swap_snap` (Total Swap).
+  - `total_swap_clap` (Total Swap): the biggest clap: the arms flung wide (out, never up) and slammed together low with
+    the knees giving under it, meeting as the swap lands like every other clap; then thrown wide open, held, dropped.
   - In your own first person, a Swap animation shows its hands only while you look about level (no more than 15° down,
     `PlayerAnimations.handsWhileLevel`). They hang from the body, which doesn't tip with the view, so at chest height
     they sit at the bottom corners of a level view; looking further down they'd come up into its middle, so the hands
@@ -1383,10 +1383,14 @@ smooth and modern in Swap's teal, nothing heavy, blurry or lingering, never the 
   way it actually goes (the last 3 ticks of its path, read by the client, so they show the momentum it was given,
   whichever way; one stopped dead gets only the ring). Not round your own first-person camera. Reduced: the same.
   Vanilla: a ring of specks at the waist and specks left behind as it goes.
-- Photon effects (`SwapFxAuthoring` → `fx/swap/`), teal with Malice violet, with vanilla particle fallbacks:
-  - `total_swap_burst` (both players).
+- Total Swap's **rings** (`total_swap_burst` on both, drawn by `SwapFx`, no Photon), on top of everything the swap
+  and the disguise already show at once (the clap, both afterimages and rings, the card flip on both): two wide thin
+  teal rings sweep out across the ground from the feet, the second 2 ticks after the first. Reduced: the same.
+  Vanilla: a wide ring of teal specks.
+- Photon draws only `swap_depart`/`swap_arrive`'s glints (`SwapFxAuthoring` → `fx/swap/`); everything else above
+  is drawn by `SwapFx`, `AnchorRenderer`, `MimicFlickerLayer` and `SwapHud`.
 - Sounds: Kegare's own (§3.10, `tools/sounds/swap.py`), each with a subtitle, at both ends of the swap:
-  - `swap.clap` ("Hands clap", a crisp clap): Positions, and for now Total Swap until it gets its own. Anchor's
+  - `swap.clap` ("Hands clap", a crisp clap): Positions. Anchor's
     recall claps a shade lower (pitch 0.94), at the caster and the token; Send Off the same at the target and the token.
   - `swap.shove` ("Hands shove", the clap and a short low rush of air, cut off): Send Off's cast, at the caster.
   - `swap.double_clap` ("Hands clap twice"): Switchback's cast. `swap.snap` ("Fingers snap"): its swap back.
@@ -1398,7 +1402,8 @@ smooth and modern in Swap's teal, nothing heavy, blurry or lingering, never the 
   - `swap.trade` ("Hands clap, chimes cross", the clap and two soft glassy chimes sliding past each other, one up and
     one down): Exchange, at both.
   - Momentum Exchange: `swap.clap` hard and low (pitch 0.8) at both.
-  - `swap.big_clap` is registered for the moves still to come.
+  - `swap.big_clap` ("Thunderous clap": three claps landing together, a deep knock, a long room): Total Swap, at both
+    ends.
 
 **Art:** emblem `gui/emblem/swap.png`, icons for all nine abilities (`gui/ability/`), Anchor's token
 (`models/fx/swap_anchor.obj`, `textures/entity/swap_anchor*.png`, `art/blockbench/swap_anchor.bbmodel`; above). The

@@ -10,9 +10,6 @@ Directions as in melee.py: hip +X leans forward, +Y twists right, +Z tilts left.
 arm's +Z swings it out to its side (the left arm's -Z); raised forward, the right arm's -Y draws it in across the chest (the left's
 +Y). Legs are left to walking.
 """
-import json
-from pathlib import Path
-
 from kit import Anim, pose
 
 REST = pose()
@@ -127,25 +124,18 @@ momentum_cast = (Anim("momentum_cast", 0.7, fade_in=1, fade_out=4,
                  .key(0.28, pose(hip=(-8, 0, 0), hip_pos=(0, 0, 0.5), right_arm=(42, 0, 16), left_arm=(42, 0, -16)), "linear")
                  .key(0.5, pose(hip=(-3, 0, 0), right_arm=(14, 0, 10), left_arm=(14, 0, -10))))
 
-# Total Swap: the biggest clap. Arms flung wide (out, never up: a raised arm fills the first-person view), slammed together low with
-# the knees giving under it, then thrown wide open: everything has changed hands.
-total_swap_clap = (Anim("total_swap_clap", 1.0, fade_in=1, fade_out=5,
-                        note="The biggest clap: arms flung wide, slammed together low with the knees giving under it, then thrown "
+# Total Swap: the biggest clap. Arms flung wide (out, never up: a raised arm fills the first-person view) and slammed together low
+# with the knees giving under it, meeting as the swap lands like every other clap; then thrown wide open: everything has changed hands.
+total_swap_clap = (Anim("total_swap_clap", 0.93, fade_in=1, fade_out=5,
+                        note="The biggest clap: arms flung wide and slammed together low, the knees giving under it, then thrown "
                              "wide open; held, then dropped.")
-                   .key(0.05, pose(hip=(-8, 0, 0), right_arm=(-24, 0, 76), left_arm=(-24, 0, -76)))
-                   .key(0.16, pose(hip=(-10, 0, 0), hip_pos=(0, 0.3, 0), right_arm=(-28, 0, 82), left_arm=(-28, 0, -82)))
-                   .key(0.24, clap(12, -78, 29, -1.2), "linear")
-                   .key(0.3, clap(13, -76, 29, -1.3))
-                   .key(0.46, pose(hip=(-9, 0, 0), right_arm=(-50, 18, 74), left_arm=(-50, -18, -74)))
-                   .key(0.65, pose(hip=(-6, 0, 0), right_arm=(-44, 14, 66), left_arm=(-44, -14, -66)))
-                   .key(0.75, DROP))
+                   .key(0.05, pose(hip=(-8, 0, 0), right_arm=(-26, 0, 78), left_arm=(-26, 0, -78)))
+                   .key(0.13, clap(12, -78, 29, -1.2), "linear")
+                   .key(0.19, clap(13, -76, 29, -1.3))
+                   .key(0.34, pose(hip=(-9, 0, 0), right_arm=(-50, 18, 74), left_arm=(-50, -18, -74)))
+                   .key(0.55, pose(hip=(-6, 0, 0), right_arm=(-44, 14, 66), left_arm=(-44, -14, -66)))
+                   .key(0.68, DROP))
 
 ALL = [positions_clap, switchback_cast, switchback_snap, awareness_cast, mimic_cast, anchor_throw, anchor_recall, send_off_cast,
        exchange_cast, momentum_cast, total_swap_clap]
-# The rework lands one move at a time: the moves done so far are built from here, the rest still play their old hand-keyed
-# animation from swap_legacy.json (the swap.json before the rework), which goes once every move is done.
-DONE = {"positions_clap", "switchback_cast", "switchback_snap", "awareness_cast", "mimic_cast", "anchor_throw", "anchor_recall",
-        "send_off_cast", "exchange_cast", "momentum_cast"}
-ANIMS = [a for a in ALL if a.name in DONE]
-_LEGACY = json.loads((Path(__file__).parent / "swap_legacy.json").read_text())["animations"]
-LEGACY = {name: anim for name, anim in _LEGACY.items() if name not in DONE}
+ANIMS = ALL

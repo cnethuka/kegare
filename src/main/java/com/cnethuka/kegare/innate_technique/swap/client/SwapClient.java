@@ -17,7 +17,6 @@ import net.minecraft.client.player.AbstractClientPlayer;
 import net.minecraft.server.packs.resources.ResourceManagerReloadListener;
 import net.minecraft.client.renderer.entity.ThrownItemRenderer;
 import net.minecraft.core.particles.DustParticleOptions;
-import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.phys.Vec3;
 import net.neoforged.bus.api.IEventBus;
@@ -61,7 +60,6 @@ public final class SwapClient {
     }
 
     private static final List<Travel> TRAVELLING = new ArrayList<>();
-    private static final DustParticleOptions TEAL_DUST = new DustParticleOptions(new Vector3f(0.08f, 0.72f, 0.65f), 1.0f);
     /** Small teal dust for a swap's two ends: vanilla dust lives longer the bigger it is, and these should be gone at once. */
     private static final DustParticleOptions TEAL_FLICK = new DustParticleOptions(new Vector3f(0.18f, 0.9f, 0.82f), 0.5f);
 
@@ -78,7 +76,6 @@ public final class SwapClient {
         // Lookalikes used when an effect can't load, or with vfxQuality = VANILLA (teal dust; never the enderman's purple).
         VanillaFallback.register(SwapIds.FX_SWAP_DEPART, new VanillaFallback.Spec(TEAL_FLICK, 1, 12, 0.3, 0.02));
         VanillaFallback.register(SwapIds.FX_SWAP_ARRIVE, new VanillaFallback.Spec(TEAL_FLICK, 1, 8, 0.3, 0.02));
-        VanillaFallback.register(SwapIds.FX_TOTAL_SWAP_BURST, new VanillaFallback.Spec(ParticleTypes.REVERSE_PORTAL, 1, 40, 0.6, 0.3));
         NeoForge.EVENT_BUS.addListener(SwapClient::onClientTick);
         NeoForge.EVENT_BUS.addListener(SwapClient::onFrame);
         NeoForge.EVENT_BUS.addListener(SwapClient::onTickPre);
@@ -92,6 +89,8 @@ public final class SwapClient {
         ClientVisuals.drawnByMove(SwapIds.FX_MIMIC_FLICKER);
         // Momentum Exchange's streaks follow each player along the way they're sent (SwapFx).
         ClientVisuals.drawnByMove(SwapIds.FX_MOMENTUM_BURST);
+        // And Total Swap's wide rings.
+        ClientVisuals.drawnByMove(SwapIds.FX_TOTAL_SWAP_BURST);
         SwapHud.init(modBus);
         ClientVisuals.onPlayAt(SwapIds.FX_AWARENESS_FLIP, (level, pos, entityId, visual) -> {
             SwapFx.flip(level, pos, entityId);
@@ -112,12 +111,13 @@ public final class SwapClient {
             public void playedOnce(Entity entity, Visual visual) {
                 if (visual.effect().filter(SwapIds.FX_MIMIC_FLICKER::equals).isPresent()) SwapFx.mimicFlicker(entity);
                 if (visual.effect().filter(SwapIds.FX_MOMENTUM_BURST::equals).isPresent()) SwapFx.momentum(entity);
+                if (visual.effect().filter(SwapIds.FX_TOTAL_SWAP_BURST::equals).isPresent()) SwapFx.totalSwap(entity);
             }
         });
         // Mimic claps by your own face: in your own first person that would only sweep your arms across the view, so it's vanilla's.
         PlayerAnimations.keepVanillaHands(List.of(SwapIds.ANIM_MIMIC_CAST));
         // Every other Swap animation is a clap in front of the chest: in your own first person, only while you look about level.
-        PlayerAnimations.handsWhileLevel(List.of(SwapIds.ANIM_POSITIONS_CLAP, SwapIds.ANIM_SWAP_SNAP, SwapIds.ANIM_SWITCHBACK_CAST,
+        PlayerAnimations.handsWhileLevel(List.of(SwapIds.ANIM_POSITIONS_CLAP, SwapIds.ANIM_TOTAL_SWAP_CLAP, SwapIds.ANIM_SWITCHBACK_CAST,
                 SwapIds.ANIM_SWITCHBACK_SNAP,
                 SwapIds.ANIM_AWARENESS_CAST, SwapIds.ANIM_ANCHOR_THROW, SwapIds.ANIM_ANCHOR_RECALL,
                 SwapIds.ANIM_SEND_OFF_CAST, SwapIds.ANIM_EXCHANGE_CAST, SwapIds.ANIM_MOMENTUM_CAST));

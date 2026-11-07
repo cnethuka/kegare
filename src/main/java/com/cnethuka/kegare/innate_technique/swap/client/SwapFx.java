@@ -389,6 +389,27 @@ public final class SwapFx {
         buffers.endBatch(type);
     }
 
+    // ---------------------------------------------------------------- Total Swap's rings
+
+    /**
+     * Total Swap on an entity (both of them), on top of the swap's own ends and the card flip: two wide thin teal rings sweep out
+     * across the ground from its feet, the second 2 ticks after the first. Vanilla: a wide ring of teal specks.
+     */
+    static void totalSwap(Entity entity) {
+        // Where it was sent (a moved entity may still be on its way there on this client).
+        Vec3 feet = entity instanceof LivingEntity living && !living.isControlledByLocalInstance()
+                ? new Vec3(living.lerpTargetX(), living.lerpTargetY(), living.lerpTargetZ()) : entity.position();
+        if (!drawn()) {
+            for (int i = 0; i < 18; i++) {
+                double a = Mth.TWO_PI * i / 18.0;
+                entity.level().addParticle(SPECK, feet.x + Math.cos(a) * 1.3, feet.y + 0.1, feet.z + Math.sin(a) * 1.3, 0, 0, 0);
+            }
+            return;
+        }
+        RINGS.add(new Ring(feet, 1.6f, clock));
+        RINGS.add(new Ring(feet, 2.4f, clock + 2));
+    }
+
     // ---------------------------------------------------------------- Momentum Exchange's streaks
 
     /**

@@ -5,31 +5,23 @@ import static com.cnethuka.kegare.client.visual.FxKit.*;
 import com.cnethuka.kegare.client.visual.FxKit;
 import com.cnethuka.kegare.innate_technique.swap.SwapIds;
 import com.lowdragmc.photon.client.fx.FX;
-import com.lowdragmc.photon.client.gameobject.emitter.data.material.kila.KilaPresets;
-import com.lowdragmc.photon.client.gameobject.emitter.data.number.NumberFunction;
 import com.lowdragmc.photon.client.gameobject.emitter.data.number.NumberFunction3;
 import com.lowdragmc.photon.client.gameobject.emitter.data.shape.Sphere;
 import com.lowdragmc.photon.client.gameobject.emitter.particle.ParticleConfig;
 import com.lowdragmc.photon.client.gameobject.emitter.particle.ParticleEmitter;
-import com.lowdragmc.photon.client.gameobject.emitter.particle.ParticleRendererSetting;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.function.Supplier;
 import net.minecraft.resources.ResourceLocation;
-import org.joml.Vector3f;
 
 /**
  * DEV TOOL (exported with {@code /kegare debug fx export}): Swap's Photon effects, built from Photon's own objects (see
- * {@link FxKit}). Palette: teal with Malice violet, never Rime's ice blue. Body-anchored effects sit at mid-body, so
- * the feet are local y -0.9.
+ * {@link FxKit}). All that's left in Photon is the glints on a swap's two ends; everything else Swap shows is drawn by
+ * {@link SwapFx} (and Anchor's token by {@link AnchorRenderer}). Teal, never Rime's ice blue.
  */
 public final class SwapFxAuthoring {
     private static final int PALE = 0xFFCCFBF1;
-    private static final int LIGHT = 0xFF5EEAD4;
     private static final int TEAL = 0xFF14B8A6;
-    private static final int DEEP = 0xFF0F766E;
-    private static final int VIOLET_PALE = 0xFFE9D5FF;
-    private static final int VIOLET = 0xFFA855F7;
 
     private SwapFxAuthoring() {}
 
@@ -37,7 +29,6 @@ public final class SwapFxAuthoring {
         Map<ResourceLocation, Supplier<FX>> out = new LinkedHashMap<>();
         out.put(SwapIds.FX_SWAP_DEPART, SwapFxAuthoring::depart);
         out.put(SwapIds.FX_SWAP_ARRIVE, SwapFxAuthoring::arrive);
-        out.put(SwapIds.FX_TOTAL_SWAP_BURST, SwapFxAuthoring::totalSwapBurst);
         return out;
     }
 
@@ -69,49 +60,5 @@ public final class SwapFxAuthoring {
         shrink(c);
         material(glints, glow(0.35f, 0.95f, 0.86f, 1.6f));
         return glints;
-    }
-
-    /** Total Swap: rings on the ground and around the body, a burst of teal and violet sparks, motes rising after. */
-    private static FX totalSwapBurst() {
-        ParticleEmitter ground = single("ground", 16, 3.6f);
-        ground.config.renderer.setRenderMode(ParticleRendererSetting.Mode.Horizontal);
-        grow(ground.config, 0.1f);
-        fadeOut(ground.config, LIGHT, DEEP);
-        material(ground, recolor(KilaPresets.SHOCKWAVE.create(), 0.3f, 0.9f, 0.8f, 1.5f));
-        ground.transform().localPosition(new Vector3f(0, -0.85f, 0));
-
-        ParticleEmitter halo = single("halo", 12, 2.6f);
-        grow(halo.config, 0.2f);
-        fadeOut(halo.config, VIOLET_PALE, VIOLET);
-        material(halo, recolor(KilaPresets.SHOCKWAVE.create(), 0.66f, 0.42f, 0.97f, 1.4f));
-
-        ParticleEmitter sparks = burstEmitter("sparks", 44, 50);
-        ParticleConfig c = sparks.config;
-        c.setStartLifetime(range(10, 18));
-        c.setStartSpeed(range(3.5f, 7f));
-        c.setStartSize(uniform(range(0.05f, 0.11f)));
-        c.shape.setShape(sphere(0.3f));
-        gravity(c, 0.2f);
-        fadeOut(c, PALE, VIOLET);
-        material(sparks, recolor(KilaPresets.SPARKS.create(), 0.45f, 0.85f, 0.9f, 1.6f));
-
-        ParticleEmitter flash = single("flash", 9, 1.8f);
-        fadeOut(flash.config, PALE, TEAL);
-        shrink(flash.config);
-        material(flash, glow(0.35f, 0.92f, 0.85f, 1.6f));
-
-        ParticleEmitter rise = burstEmitter("rise", 20, 24);
-        ParticleConfig r = rise.config;
-        r.setStartLifetime(range(18, 28));
-        r.setStartSpeed(NumberFunction.constant(0));
-        r.setStartSize(uniform(range(0.04f, 0.07f)));
-        Sphere around = sphere(0.6f);
-        around.setRadiusThickness(0f);
-        r.shape.setShape(around);
-        r.velocityOverLifetime.setEnable(true);
-        r.velocityOverLifetime.setLinear(new NumberFunction3(0, 1.4f, 0));
-        fadeInOut(r, LIGHT, VIOLET);
-        material(rise, glow(0.45f, 0.8f, 0.92f, 1.2f));
-        return fx(ground, halo, sparks, flash, rise);
     }
 }
