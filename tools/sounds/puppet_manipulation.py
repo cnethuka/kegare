@@ -1,10 +1,10 @@
 """Puppet Manipulation's sounds (DESIGN §3.20). Only Curio Burst's is made here: the rest are vanilla's (wool, soul escape,
 chime, bell, mirror, bobber, leash), which already fit thread.
 
-Curio Burst is a puppet bursting like an overwound toy: a dry pop with a short low knock under it, a spring letting go, and
-the bits of it scattering. SOUNDS maps the file each one ships as (assets/kegare/sounds/puppet_manipulation/<name>.ogg) to how
+Curio Burst is a puppet bursting like an overwound toy: a dry pop, then its music box's comb struck all at once, a bright
+detuned jangle dying fast. SOUNDS maps the file each one ships as (assets/kegare/sounds/puppet_manipulation/<name>.ogg) to how
 it's made. BURST_CANDIDATES are the versions made for choosing (run/sounds_preview/puppet_manipulation/, with --preview); the
-first is the one that ships as curio_burst.
+owner picked 3_music_box, which ships as curio_burst.
 """
 from __future__ import annotations
 
@@ -88,7 +88,7 @@ BURST_CANDIDATES = {"1_spring_pop": spring_pop, "2_ratchet_pop": ratchet_pop, "3
 
 
 def curio_burst() -> list[float]:
-    return spring_pop()
+    return music_box()
 
 
 SOUNDS = {"curio_burst": curio_burst}

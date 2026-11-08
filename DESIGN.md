@@ -1652,8 +1652,8 @@ first-person camera.
   flung from both ends and the middle, curling down as they fall), `strings_tension` (glints of light running along a
   tight string toward the hand, a hair wider than the cord). The string itself is the model above.
 - Sounds: wool (form, dissolve), soul escape (possess, return), note-block chime by order (Directive), bell (Focus),
-  Curio Burst's own burst (`puppet_manipulation.curio_burst`, §3.10: a dry pop over a short knock, a spring twanging
-  loose and bits scattering, an overwound toy, not a bomb; deeper by tier) with a wool tear, a firework launch then the
+  Curio Burst's own burst (`puppet_manipulation.curio_burst`, §3.10: a dry pop, then a music box's comb struck all at
+  once, a bright detuned jangle dying fast; an overwound toy, not a bomb; deeper by tier) with a wool tear, a firework launch then the
   bursts (Chain Burst), illusioner mirror (Stand-In, Understudy), bobber throw and reel, leash knot and a knockback thud
   (Strings).
 
