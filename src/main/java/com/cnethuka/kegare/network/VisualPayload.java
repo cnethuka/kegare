@@ -22,16 +22,20 @@ import net.neoforged.neoforge.network.handling.IPayloadContext;
  * @param lifetimeTicks loops only: lifetime of the effect's {@code persist*} emitters' particles (0 = as authored), so
  *                      a lingering trail lasts exactly as long as the server's config says
  */
-public record VisualPayload(Action action, int entityId, String key, Visual visual, Vec3 pos, int growTicks, int lifetimeTicks)
-        implements CustomPacketPayload {
+public record VisualPayload(Action action, int entityId, String key, Visual visual, Vec3 pos, int growTicks, int lifetimeTicks,
+                            int elapsedTicks) implements CustomPacketPayload {
     public VisualPayload(Action action, int entityId, String key, Visual visual, Vec3 pos, int growTicks) {
-        this(action, entityId, key, visual, pos, growTicks, 0);
+        this(action, entityId, key, visual, pos, growTicks, 0, 0);
+    }
+
+    public VisualPayload(Action action, int entityId, String key, Visual visual, Vec3 pos, int growTicks, int lifetimeTicks) {
+        this(action, entityId, key, visual, pos, growTicks, lifetimeTicks, 0);
     }
 
     public enum Action {
         /** Play once on the entity. */
         PLAY_ONCE,
-        /** Start (or restart) the loop {@code key} on the entity. */
+        /** Start (or restart) the loop {@code key} on the entity, {@code elapsedTicks} into it (a viewer who missed its start). */
         START_LOOP,
         /** Stop the loop {@code key} on the entity. */
         STOP,
@@ -65,6 +69,7 @@ public record VisualPayload(Action action, int entityId, String key, Visual visu
         buf.writeDouble(pos.z);
         buf.writeVarInt(growTicks);
         buf.writeVarInt(lifetimeTicks);
+        buf.writeVarInt(elapsedTicks);
     }
 
     private static VisualPayload read(FriendlyByteBuf buf) {
@@ -77,7 +82,8 @@ public record VisualPayload(Action action, int entityId, String key, Visual visu
         boolean linger = buf.readBoolean();
         int tint = buf.readInt();
         Vec3 pos = new Vec3(buf.readDouble(), buf.readDouble(), buf.readDouble());
-        return new VisualPayload(action, entityId, key, new Visual(animation, effect, anchor, linger, tint), pos, buf.readVarInt(), buf.readVarInt());
+        return new VisualPayload(action, entityId, key, new Visual(animation, effect, anchor, linger, tint), pos, buf.readVarInt(), buf.readVarInt(),
+                buf.readVarInt());
     }
 
     @Override

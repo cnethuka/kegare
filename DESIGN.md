@@ -321,7 +321,11 @@ All timestamps use **level game time**. They persist across restarts and are ide
 - Swap (§3.19) adds two cosmetic S→C payloads: `Disguises.StatePayload` (the disguise map, to everyone) and
   `SwapLink.Payload` (effects drawn along a line).
 - The melee layer (§3.22) has its own payloads: `MeleeIntentPayload` (C→S, requests only), `MeleeDashPayload` and `MeleeHudPayload` (S→C, to their owner), `MeleeTellPayload` (S→C, per viewer: what a ready fist looks like to them). `VisualPayload` carries an optional tint.
-- Network version `15` (since the ready fist). Bump it when payload formats change; mismatched clients are refused.
+- `VisualPayload`'s `START_LOOP` carries how long the loop has been running (`elapsedTicks`, 0 for a fresh start). A
+  player who starts tracking an entity gets its running loops with their full `growTicks` and the time already gone, so
+  they see each one where everyone else does: a growing loop part-grown, Switchback's countdown at the real time left.
+- Network version `16` (since a loop's elapsed time; `15` was the ready fist). Bump it when payload formats change;
+  mismatched clients are refused.
 
 ### 3.6 HUD
 **Rule: the combat HUD does not exist until the player asks for it** (art in `gen_art.py` → `textures/gui/combat/`).
@@ -688,7 +692,8 @@ closing it or disconnecting at any point changes nothing.
   `VisualPayload` (play once, start or stop a keyed loop, stop all, play at a position) to the caster and everyone
   tracking them. Impacts go to players within 64 blocks.
 - **Late viewers:** loops are remembered per entity (runtime attachment `kegare:visual_state`) and sent to players who
-  start tracking it later. So a visible loop always means the thing it shows is active.
+  start tracking it later, with how long each has been running, so they see it where everyone else does (§3.5). So a
+  visible loop always means the thing it shows is active.
 - **Stopping:** a charge or channel ending for any reason (release, out of Malice, max duration, stun or freeze,
   death, logout) stops its loop. Toggles keep running while stunned, so their loop stays too. A toggle switched off
   stops its loop and plays `TOGGLE_OFF`. Death, logout and a dimension change stop everything on the entity. **A
@@ -1342,7 +1347,7 @@ smooth and modern in Swap's teal, nothing heavy, blurry or lingering, never the 
 - Switchback's **countdown ring** (`SwapFx`, on both from the cast to the swap back): a thin teal track at the feet with a
   bright arc that drains round it over the delay, a white mark for each second still to go and a pulse as each second
   starts; gone the moment the swap back comes or it's called off. It's the `switchback_timer` loop, which runs for the
-  delay (its `growTicks`; a late viewer gets the time left) and is drawn by the move, not Photon. Reduced: the same.
+  delay (its `growTicks`; a player who comes into view later sees it at the real time left, §3.5) and is drawn by the move, not Photon. Reduced: the same.
   Vanilla: a ring of small teal dust specks as each second starts.
 - The **card flip** as a disguise lands (Awareness, Total Swap; `awareness_flip`, played at both and naming them,
   drawn by `SwapFx`): thin teal slats round the body flip over one after another from the head down, each showing

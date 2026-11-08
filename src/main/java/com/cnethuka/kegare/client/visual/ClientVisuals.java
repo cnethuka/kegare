@@ -77,7 +77,8 @@ public final class ClientVisuals {
             }
             case START_LOOP -> {
                 Entity entity = level.getEntity(payload.entityId());
-                if (entity != null) startLoop(entity, payload.key(), payload.visual(), payload.growTicks(), payload.lifetimeTicks());
+                if (entity != null) startLoop(entity, payload.key(), payload.visual(), payload.growTicks(), payload.lifetimeTicks(),
+                        payload.elapsedTicks());
             }
             case STOP -> stopLoop(level, payload.entityId(), payload.key());
             case STOP_ALL -> stopAll(level, payload.entityId());
@@ -108,6 +109,11 @@ public final class ClientVisuals {
     }
 
     public static void startLoop(Entity entity, String key, Visual visual, int growTicks, int lifetimeTicks) {
+        startLoop(entity, key, visual, growTicks, lifetimeTicks, 0);
+    }
+
+    /** @param elapsedTicks how long it has already been running (a loop sent to a viewer who missed its start) */
+    public static void startLoop(Entity entity, String key, Visual visual, int growTicks, int lifetimeTicks, int elapsedTicks) {
         stopLoop(entity.level(), entity.getId(), key);
         boolean animation = false;
         if (visual.animation().isPresent() && entity instanceof AbstractClientPlayer player) {
@@ -122,12 +128,12 @@ public final class ClientVisuals {
                 executor = PhotonEffects.onEntity(firstPersonVariant(entity, visual.effect().get()), entity, visual.anchor(),
                         quality == VfxQuality.REDUCED, !trail);
                 PhotonEffects.tint(executor, visual.tint());
-                if (growTicks > 0) PhotonEffects.scale(executor, GROW_FROM);
+                if (growTicks > 0) PhotonEffects.scale(executor, GROW_FROM + (1f - GROW_FROM) * Math.min(1f, elapsedTicks / (float) growTicks));
                 if (lifetimeTicks > 0) PhotonEffects.persistLifetime(executor, lifetimeTicks);
             }
         }
         LOOPS.computeIfAbsent(entity.getId(), id -> new HashMap<>())
-                .put(key, new Loop(visual, executor, growTicks, entity.level().getGameTime(), animation, trail));
+                .put(key, new Loop(visual, executor, growTicks, entity.level().getGameTime() - Math.max(0, elapsedTicks), animation, trail));
         LISTENERS.forEach(l -> l.loopStarted(entity, key, visual));
     }
 

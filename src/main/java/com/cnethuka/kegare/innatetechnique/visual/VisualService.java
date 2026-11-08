@@ -6,6 +6,7 @@ import com.cnethuka.kegare.registry.KegareAttachments;
 import java.util.Map;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.util.Mth;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.phys.Vec3;
 import net.neoforged.neoforge.network.PacketDistributor;
@@ -114,18 +115,20 @@ public final class VisualService {
         }
     }
 
-    /** A player started tracking {@code target}: send them its running loops (they missed the starts). */
+    /**
+     * A player started tracking {@code target}: send them its running loops (they missed the starts), each with how long it has
+     * been running, so a late viewer is at the same point as everyone else (a growing loop part-grown, Switchback's countdown at
+     * the real time left).
+     */
     public static void onStartTracking(ServerPlayer tracker, Entity target) {
         if (!target.hasData(KegareAttachments.VISUAL_STATE)) return;
         long now = target.level().getGameTime();
         for (Map.Entry<String, VisualState.Loop> e : target.getData(KegareAttachments.VISUAL_STATE).loops.entrySet()) {
             VisualState.Loop loop = e.getValue();
-            // A growing loop resumes part-way: grow over what's left of its time.
-            int grow = loop.growTicks() <= 0 ? 0 : (int) Math.max(1, loop.growTicks() - (now - loop.startTick()));
-            Visual visual = loop.visual();
+            int elapsed = (int) Mth.clamp(now - loop.startTick(), 0, Integer.MAX_VALUE);
             // A late viewer's looping animation simply starts from its first frame.
             PacketDistributor.sendToPlayer(tracker, new VisualPayload(VisualPayload.Action.START_LOOP, target.getId(),
-                    e.getKey(), visual, Vec3.ZERO, grow, loop.lifetimeTicks()));
+                    e.getKey(), loop.visual(), Vec3.ZERO, loop.growTicks(), loop.lifetimeTicks(), elapsed));
         }
     }
 
