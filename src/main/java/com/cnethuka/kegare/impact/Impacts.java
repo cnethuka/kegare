@@ -42,6 +42,13 @@ public final class Impacts {
     /** Knockback this tick per entity: it can come before the damage it belongs to (a Strike pushes, then hurts). */
     private static final Map<LivingEntity, Double> KNOCKS = new LinkedHashMap<>();
     private static final List<Consumer<Impact>> LISTENERS = new CopyOnWriteArrayList<>();
+    private static final List<Consumer<Blast>> BLAST_LISTENERS = new CopyOnWriteArrayList<>();
+
+    /**
+     * An area blast going off, as strong as it would be on a body at its centre ({@link #blast}): what battle damage breaks there,
+     * hit or miss.
+     */
+    public record Blast(ServerLevel level, Vec3 centre, double strength, ImpactTier tier, @Nullable Entity attacker, boolean breaksBlocks) {}
 
     private Impacts() {}
 
@@ -66,6 +73,36 @@ public final class Impacts {
 
     public static void remove(Consumer<Impact> listener) {
         LISTENERS.remove(listener);
+    }
+
+    public static void listenBlasts(Consumer<Blast> listener) {
+        BLAST_LISTENERS.add(listener);
+    }
+
+    /**
+     * An area blast went off at {@code centre} (Curio Burst and Chain Burst, Glacial Spire, Shatter Shell, and any to come), whether
+     * or not it hit anyone. Its strength is what it would land on a 20-health body at its centre, by the same rule as a hit: its full
+     * damage, its push there, its launch and charge, and the Malice behind it (its cast's base cost, from {@code cast} or else the
+     * cast running now, plus {@code carried}). It goes to the blast listeners at once (battle damage, DESIGN §3.24); the clients get
+     * nothing from it themselves.
+     *
+     * @param knockback its push at the centre, as vanilla knockback strength (a push and vanilla's own 0.4, stacked, if it hurts too)
+     */
+    public static void blast(ServerLevel level, Vec3 centre, @Nullable Entity attacker, @Nullable Ability cast, double damage, double knockback,
+                             double launch, double charge, double carried, boolean breaksBlocks) {
+        double malice = Math.max(0, carried);
+        if (attacker instanceof ServerPlayer player) {
+            Ability behind = cast != null ? cast : CastScope.current(player);
+            if (behind != null) malice += CastMalice.behind(player, behind);
+        }
+        double strength = ImpactStrength.of(damage / 20.0, knockback, launch, charge, malice);
+        Blast blast = new Blast(level, centre, strength, ImpactStrength.tier(strength), attacker, breaksBlocks);
+        if (log && attacker instanceof ServerPlayer player) {
+            player.sendSystemMessage(net.minecraft.network.chat.Component.translatable("commands.kegare.debug.impact.blast",
+                    net.minecraft.network.chat.Component.translatable("impact.kegare.tier." + blast.tier().serializedName()),
+                    String.format(java.util.Locale.ROOT, "%.2f", strength), String.format(java.util.Locale.ROOT, "%.0f", malice)));
+        }
+        BLAST_LISTENERS.forEach(l -> l.accept(blast));
     }
 
     /** A hit that throws rather than pushes (it sets the victim's speed itself): how fast it threw them up, in blocks/tick. */

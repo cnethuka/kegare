@@ -110,6 +110,9 @@ public class GlacialSpireEntity extends Entity implements com.cnethuka.kegare.im
             com.cnethuka.kegare.impact.Impacts.launch(target, launch); // a throw, not a push: the Impact System reads it from here
             if (owner != null && target instanceof ServerPlayer victim) RimeLaunch.mark(victim, owner);
         }
+        // The ground it erupts from breaks whether or not anyone was standing on it (DESIGN §3.24): its damage (with vanilla's own push),
+        // its launch and charge, and the Malice of the cast behind it.
+        com.cnethuka.kegare.impact.Impacts.blast(level, position(), owner, Rime.GLACIAL_SPIRE, damage, 0.4, launch, charge, 0, true);
     }
 
     /** The charge it was cast at: one of the things the Impact System reads a hit's strength from. */

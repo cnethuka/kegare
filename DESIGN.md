@@ -2127,6 +2127,13 @@ Big hits damage the world. This changes fights on purpose: cover breaks and the 
 **What breaks it.** Only hits strong enough, read from the Impact System's strength (§3.23): a hit at `minimumTier` (Medium) or
 above breaks blocks round where it met the body. Light hits never break anything. Swap never does (a clean magic trick). A hit by a
 player or their technique always may; a mob's only with the `mobGriefing` gamerule on (`mobsNeedGriefing`).
+- **Area blasts** (`Impacts.blast`) also break the blocks at their own centre, whether or not they hit anyone: Curio Burst and Chain
+  Burst (where the puppet was), Glacial Spire (where it erupts) and Shatter Shell (round the caster). Their strength there is what
+  they'd land on a 20-health body at their centre by the same rule as a hit: their full damage and push, their launch and charge,
+  and the Malice behind them (measured: a missed Full Curio Burst 3.87, a missed full Glacial Spire 3.66, a missed Shatter Shell
+  1.86 with no shell up). Same block rule, caps, modes and break events as a hit; a hit that also lands breaks round the body as
+  well. A future area ability calls `Impacts.blast` with its own numbers. Swap has none. `/kegare debug impact log` shows each
+  blast's strength to its caster.
 - **Wall slams** (`WallSlams`): for `windowSeconds` (2.5) after a breaking hit its victim is watched. Knocked into a wall, a floor or
   a ceiling at `minSpeed` (0.9 blocks/tick; a sprinting hit knocks someone about 0.7) or more, stopping dead against blocks that
   way, they leave a crater where they hit: a hit of strength `strengthPerSpeed` (1.45) × speed at their edge. Speed is read from

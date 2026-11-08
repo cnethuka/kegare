@@ -76,6 +76,7 @@ public final class BattleDamage {
     public static void init() {
         NeoForge.EVENT_BUS.addListener(BattleDamage::onEntityJoin);
         Impacts.listen(BattleDamage::onImpact);
+        Impacts.listenBlasts(BattleDamage::onBlast);
         BattleScars.init();
         WallSlams.init();
     }
@@ -85,6 +86,13 @@ public final class BattleDamage {
         WallSlams.watch(impact);
         if (impact.tier().ordinal() < BattleDamageConfig.MIN_TIER.get().ordinal()) return;
         hit(impact.level(), impact.contact(), impact.strength(), impact.tier(), impact.attacker());
+    }
+
+    /** An area blast breaks the blocks round its own centre, hit or miss, as hard as it would hit a body there. */
+    private static void onBlast(Impacts.Blast blast) {
+        if (!blast.breaksBlocks() || !allowed(blast.level(), blast.attacker())) return;
+        if (blast.tier().ordinal() < BattleDamageConfig.MIN_TIER.get().ordinal()) return;
+        hit(blast.level(), blast.centre(), blast.strength(), blast.tier(), blast.attacker());
     }
 
     /** A player's hit (or their technique's) always; a mob's or nobody's only where mobs may grief. */

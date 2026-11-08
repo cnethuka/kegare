@@ -78,6 +78,10 @@ public final class CurioBursts {
                 0.7f + 0.25f * tier.ordinal(), 1.1f - 0.12f * tier.ordinal());
 
         com.cnethuka.kegare.melee.CleanDodge.areaWentOff(level, owner, com.cnethuka.kegare.melee.CleanDodge.sphere(center, radius));
+        // The ground where it went off breaks whether or not it caught anyone (DESIGN §3.24): its full damage and push, the puppet's
+        // charge, and the Malice behind it (the cast running now, Curio Burst or Chain Burst, and what the puppet was made of).
+        com.cnethuka.kegare.impact.Impacts.blast(level, center, owner, null, damage, knockback + 0.1, 0, tier.ordinal() / 2.0,
+                PuppetConfig.TIER_COST[tier.ordinal()].get(), true);
         List<LivingEntity> hurt = new ArrayList<>();
         for (LivingEntity target : level.getEntitiesOfClass(LivingEntity.class, new AABB(center, center).inflate(radius),
                 e -> e.isAlive() && !e.isSpectator() && !spared(e, owner))) {

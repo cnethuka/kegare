@@ -385,6 +385,26 @@ class BattleDamageTest {
     }
 
     @Test
+    void anAreaBlastBreaksTheGroundAtItsCentreEvenWhenItHitsNobody(MinecraftServer server) throws Exception {
+        TestServer.onServerThread(server, () -> {
+            ServerLevel level = world(server);
+            permanent(() -> {
+                clear(level);
+                level.setBlock(AT.below(), Blocks.DIRT.defaultBlockState(), 2);
+                // A Full Curio Burst's worth (12 damage, a 0.7 push, a full charge, a Full puppet's 180 Malice) with nobody near.
+                Impacts.blast(level, Vec3.atCenterOf(AT), null, null, 12, 0.7, 0, 1, 180, true);
+                assertTrue(level.getBlockState(AT.below()).isAir(), "it breaks the ground where it went off");
+
+                level.setBlock(AT.below(), Blocks.DIRT.defaultBlockState(), 2);
+                Impacts.blast(level, Vec3.atCenterOf(AT), null, null, 12, 0.7, 0, 1, 180, false);
+                assertSame(Blocks.DIRT, level.getBlockState(AT.below()).getBlock(), "a blast that never breaks blocks doesn't");
+                Impacts.blast(level, Vec3.atCenterOf(AT), null, null, 1, 0.4, 0, 0, 0, true);
+                assertSame(Blocks.DIRT, level.getBlockState(AT.below()).getBlock(), "nor does a light one");
+            });
+        });
+    }
+
+    @Test
     void aSlamMeetsTheWallAtTheEdgeOfTheBody() {
         AABB box = new AABB(0, 0, 0, 0.6, 1.8, 0.6);
         Vec3 c = WallSlams.contact(box, new Vec3(1, 0, 0));

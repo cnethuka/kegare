@@ -47,6 +47,8 @@ public final class ShatterShellAbility extends RimeSpecial {
         int stacks = RimeConfig.SHATTER_FREEZE_STACKS.get();
         int players = 0;
         com.cnethuka.kegare.melee.CleanDodge.areaWentOff(p.serverLevel(), p, com.cnethuka.kegare.melee.CleanDodge.sphere(p.position(), radius));
+        // The shell bursts from the caster's body, and breaks what's round them whether or not it caught anyone (DESIGN §3.24).
+        com.cnethuka.kegare.impact.Impacts.blast(p.serverLevel(), p.getBoundingBox().getCenter(), p, null, 0, knockback, 0, 0, 0, true);
         for (LivingEntity target : p.level().getEntitiesOfClass(LivingEntity.class, p.getBoundingBox().inflate(radius),
                 e -> e != p && e.isAlive() && !e.isSpectator() && e.distanceToSqr(p) <= radius * radius)) {
             if (CombatHelper.isBoss(target)) continue; // never knocked back, never frozen (DESIGN §4)
