@@ -873,7 +873,9 @@ Package `com.cnethuka.kegare.innate_technique.rime`. **Rarity: RARE.** All numbe
     group 1.5), overshoots a little, settles and shudders. The charge rides the marker's own synced entity data (vanilla's,
     not a Kegare packet): the spike stands 0.62 to 1 times as tall and 0.8 to 1 times as wide
     by charge, matching the launch, and the heavy group shows from half a charge. Culled back faces: a player launched off its
-    point, seen from inside, doesn't have it in their view.
+    point, seen from inside, doesn't have it in their view. Nor is it drawn while your own first-person camera is inside it (the
+    spike erupting under you, before the launch carries you clear): even at Reduced, a frame of it would fill the whole view. You see
+    it below you once you're above it.
   - **The warning** is a block mark (`marks/spire_crack`), the cue to dodge, so it reads from 15 blocks by day and at
     night: light breaking through the ground, a band of it all the way round whose outer edge is the hit's 1.5 blocks
     and never past it (six texels wide reaching in from there, dark lips either side, a faint glow beyond them), and lit
