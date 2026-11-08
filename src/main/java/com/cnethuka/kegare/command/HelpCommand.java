@@ -104,6 +104,7 @@ final class HelpCommand {
             entry("debug orb status [player]", "commands.kegare.help.debug.orb.status"),
             entry("debug swap unswappable <player> <on>", "commands.kegare.help.debug.swap"),
             entry("debug impact <player> <tier> [attacker|victim|witness] [technique]", "commands.kegare.help.debug.impact"),
+            entry("debug impact log <on>", "commands.kegare.help.debug.impact.log"),
             entry("debug screen <player> <effect> <seconds>", "commands.kegare.help.debug.screen"),
             entry("debug strings unmovable <player> <on>", "commands.kegare.help.debug.strings"),
             devClient("debug fx export", "commands.kegare.help.debug.fx.export"),

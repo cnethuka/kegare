@@ -615,6 +615,8 @@ public final class KegareLanguageProvider extends LanguageProvider {
         add("commands.kegare.help.debug.swap", "Stop swaps from reaching a player, or let them again.");
         add("commands.kegare.help.debug.strings", "Stop strings from moving a player, or let them again.");
         add("commands.kegare.help.debug.impact", "Play an impact tier on a player's own screen, to tune how it feels. Nothing lands.");
+        add("commands.kegare.help.debug.battle.restore", "Start rebuilding every block battle damage broke (restoring mode) now.");
+        add("commands.kegare.help.debug.impact.log", "Show every hit's tier and strength to its attacker and victim, for tuning.");
         add("commands.kegare.help.debug.screen", "Play a whole-screen effect (grayscale) on a player's screen for a time. 0 stops it.");
         add("commands.kegare.help.debug.fx.export", "Dev client only: rewrite every Photon effect from its authoring class.");
         add("commands.kegare.help.debug.fx.play", "Dev client only: preview an effect, in front, on yourself or looping.");
@@ -725,6 +727,14 @@ public final class KegareLanguageProvider extends LanguageProvider {
         add("commands.kegare.debug.orb.status.locked", "locked");
         add("commands.kegare.debug.impact", "Played a %s impact on %s's screen, as the %s. Nothing landed.");
         add("commands.kegare.debug.screen", "Playing %s on %s's screen for %s s.");
+        add("commands.kegare.debug.impact.log.on", "Every hit's tier and strength now goes to its attacker and victim.");
+        add("commands.kegare.debug.impact.log.off", "Hits aren't shown any more.");
+        add("commands.kegare.debug.impact.line", "Hit: %s, strength %s (damage %s of %s, knockback %s, launch %s, charge %s)");
+        add("impact.kegare.tier.light", "Light");
+        add("impact.kegare.tier.medium", "Medium");
+        add("impact.kegare.tier.heavy", "Heavy");
+        add("impact.kegare.tier.impact_frame", "Impact frame");
+        add("impact.kegare.tier.top", "Top");
         add("commands.kegare.debug.screen.stopped", "Stopped %s on %s's screen.");
         add("commands.kegare.debug.swap.on", "%s can't be swapped now. This cancels SwapTargetEvent.");
         add("commands.kegare.debug.swap.off", "%s can be swapped again.");

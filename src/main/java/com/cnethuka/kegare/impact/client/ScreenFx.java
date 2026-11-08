@@ -34,6 +34,8 @@ import org.lwjgl.opengl.GL30;
 public final class ScreenFx {
     private static @Nullable TextureTarget held;
     private static boolean capturing, holding;
+    /** The freeze asked for, counted from the frame it's captured on: a slow frame must never eat it. */
+    private static long holdMillis;
     private static long holdUntil;
 
     private static final Map<ResourceLocation, PostChain> CHAINS = new HashMap<>();
@@ -41,7 +43,12 @@ public final class ScreenFx {
     private static final Map<ResourceLocation, Playing> PLAYING = new LinkedHashMap<>();
     private static int chainWidth, chainHeight;
 
-    private record Playing(long start, long end, long fade) {
+    /** {@code start} and {@code end} are -1 until it's first drawn: its time counts from there, so it's always seen at least once. */
+    private record Playing(long millis, long fade, long start, long end) {
+        Playing started(long now) {
+            return start >= 0 ? this : new Playing(millis, fade, now, now + millis * 1_000_000L);
+        }
+
         float amount(long now) {
             if (fade <= 0) return 1f;
             float in = (now - start) / (float) fade, out = (end - now) / (float) fade;
@@ -54,8 +61,12 @@ public final class ScreenFx {
     /** Freezes the picture for {@code millis} from the next frame (a hit landing). Overlapping freezes run to the latest end. */
     public static void hold(long millis) {
         if (millis <= 0) return;
-        if (!holding) capturing = true;
-        holdUntil = Math.max(holdUntil, System.nanoTime() + millis * 1_000_000L);
+        if (holding) {
+            holdUntil = Math.max(holdUntil, System.nanoTime() + millis * 1_000_000L);
+        } else {
+            capturing = true;
+            holdMillis = Math.max(holdMillis, millis);
+        }
     }
 
     public static boolean holding() {
@@ -70,13 +81,17 @@ public final class ScreenFx {
         }
         long now = System.nanoTime();
         Playing was = PLAYING.get(effect);
-        long start = was != null && was.end > now ? was.start : now; // already showing: no fade in again
-        PLAYING.put(effect, new Playing(start, now + millis * 1_000_000L, Math.min(fadeMillis, millis / 2) * 1_000_000L));
+        long fade = Math.min(fadeMillis, millis / 2) * 1_000_000L;
+        if (was != null && was.start >= 0 && was.end > now) { // already showing: no fade in again, it just lasts longer
+            PLAYING.put(effect, new Playing(millis, fade, was.start, Math.max(was.end, now + millis * 1_000_000L)));
+        } else {
+            PLAYING.put(effect, new Playing(millis, fade, -1, -1));
+        }
     }
 
     public static boolean playing(ResourceLocation effect) {
         Playing p = PLAYING.get(effect);
-        return p != null && p.end > System.nanoTime();
+        return p != null && (p.start < 0 || p.end > System.nanoTime());
     }
 
     public static void afterLevel(DeltaTracker deltaTracker) {
@@ -86,6 +101,8 @@ public final class ScreenFx {
         if (capturing) { // this frame is the one the hit landed on: keep it, and show it as it is
             capturing = false;
             holding = true;
+            holdUntil = now + holdMillis * 1_000_000L;
+            holdMillis = 0;
             copy(main, held(main));
         } else if (holding) {
             if (now >= holdUntil) holding = false;
@@ -97,13 +114,15 @@ public final class ScreenFx {
         RenderSystem.resetTextureMatrix();
         for (Iterator<Map.Entry<ResourceLocation, Playing>> it = PLAYING.entrySet().iterator(); it.hasNext(); ) {
             Map.Entry<ResourceLocation, Playing> e = it.next();
-            if (now >= e.getValue().end) {
+            Playing p = e.getValue().started(now);
+            e.setValue(p);
+            if (now > p.end && p.start != now) {
                 it.remove();
                 continue;
             }
             PostChain chain = chain(mc, main, e.getKey());
             if (chain == null) continue;
-            chain.setUniform("Amount", e.getValue().amount(now));
+            chain.setUniform("Amount", p.amount(now));
             chain.process(deltaTracker.getGameTimeDeltaTicks());
         }
         main.bindWrite(false);
@@ -154,6 +173,7 @@ public final class ScreenFx {
 
     public static void clear() {
         capturing = holding = false;
+        holdMillis = 0;
         PLAYING.clear();
     }
 }

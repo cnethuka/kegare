@@ -167,7 +167,7 @@ public final class Impacts {
     }
 
     /** Resolves everything gathered so far (the end of the tick; tests call it directly). */
-    static void flush() {
+    public static void flush() {
         if (PENDING.isEmpty()) {
             KNOCKS.clear();
             return;
@@ -200,7 +200,26 @@ public final class Impacts {
                 p.launch, p.charge, !p.noBreak, p.technique ? ItemStack.EMPTY : p.weapon, p.source);
     }
 
+    /** {@code /kegare debug impact log}: every hit's tier and the numbers behind it, to its attacker and victim, for tuning. */
+    private static boolean log;
+
+    public static void setLog(boolean on) {
+        log = on;
+    }
+
+    private static void logged(Impact i) {
+        net.minecraft.network.chat.Component line = net.minecraft.network.chat.Component.translatable("commands.kegare.debug.impact.line",
+                net.minecraft.network.chat.Component.translatable("impact.kegare.tier." + i.tier().serializedName()),
+                String.format(java.util.Locale.ROOT, "%.2f", i.strength()),
+                String.format(java.util.Locale.ROOT, "%.1f", i.damage()), String.format(java.util.Locale.ROOT, "%.0f", i.victim().getMaxHealth()),
+                String.format(java.util.Locale.ROOT, "%.2f", i.knockback()), String.format(java.util.Locale.ROOT, "%.2f", i.launch()),
+                String.format(java.util.Locale.ROOT, "%.2f", i.charge()));
+        if (i.attacker() instanceof ServerPlayer p) p.sendSystemMessage(line);
+        if (i.victim() instanceof ServerPlayer p && p != i.attacker()) p.sendSystemMessage(line);
+    }
+
     private static void dispatch(Impact impact) {
+        if (log) logged(impact);
         int parts = ImpactPayload.FLASH | ImpactPayload.HIT_STOP | ImpactPayload.SHAKE
                 | (impact.tier().ordinal() >= ImpactTier.IMPACT_FRAME.ordinal() ? ImpactPayload.FRAME : 0);
         send(impact.level(), impact.tier(), impact.kind(), parts, impact.contact(), impact.direction(), impact.attacker(), impact.victim(),
@@ -242,7 +261,8 @@ public final class Impacts {
         return look.kind() == MeleeTell.Kind.GLOW ? look.color() & 0xFFFFFF : 0;
     }
 
-    static void clear() {
+    /** Forgets everything gathered and not yet resolved (tests). */
+    public static void clear() {
         PENDING.clear();
         KNOCKS.clear();
     }

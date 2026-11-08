@@ -2038,7 +2038,8 @@ within `witnessRange` (48) of the hit: tier, where it met the body, which way it
 Each client plays its own part:
 - **Hit-stop** (`ScreenFx`): the frame the hit lands on is kept and shown again for the freeze, for the attacker and the victim only.
   It's the picture only: the game ticks on, the server is never delayed, damage and knockback land as they always did, keys are read
-  as normal and the HUD stays live; when it ends you see where everything really is.
+  as normal and the HUD stays live; when it ends you see where everything really is. The freeze and the impact frame count their
+  time from the first frame they're drawn on, so a slow frame never swallows them.
 - **Screen shake** (`ScreenShake`): the victim's stronger, the attacker's lighter (`attackerShake`, 45%). It starts as the freeze
   ends: a jolt the way the hit went (a recoil for the attacker), then a fast tremble dying away. Camera angles only, never anyone's
   aim or position. Nearby players get none.
@@ -2071,7 +2072,9 @@ charged one, and `GUARD_HIT` makes its hit a tier softer.
   | Top | 220 | 4.5, 650 | 1.1 |
 
 `/kegare debug impact <player> <tier> [attacker|victim|witness] [technique]` plays a tier on that player's own screen and nowhere
-else, with nothing landing, so a tier can be felt and tuned without a fight.
+else, with nothing landing, so a tier can be felt and tuned without a fight. `/kegare debug impact log <on>` shows every hit's tier
+and the numbers behind it (strength, damage of max health, knockback, launch, charge) to its attacker and victim, for tuning the
+server's thresholds against real hits.
 
 **Hit sounds** (`ImpactSounds`, Kegare's own from `tools/sounds/impact.py`, §3.10), at the point of contact and always with
 vanilla's own hurt sound, never instead of it. A melee hit sounds like what it was hit with: `impact.punch` (an empty hand, or

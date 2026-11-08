@@ -91,7 +91,14 @@ final class DebugCommands {
                                                     return forEachPlayer(c, (source, player) -> unswappable(source, player, on));
                                                 })))))
                 // The Impact System (DESIGN §3.23): play a tier on someone's own screen, to tune how it feels without a fight.
-                .then(Commands.literal("impact").then(impactTiers()))
+                .then(Commands.literal("impact")
+                        .then(Commands.literal("log").then(Commands.argument("on", BoolArgumentType.bool()).executes(c -> {
+                            boolean on = BoolArgumentType.getBool(c, "on");
+                            com.cnethuka.kegare.impact.Impacts.setLog(on);
+                            say(c.getSource(), on ? "commands.kegare.debug.impact.log.on" : "commands.kegare.debug.impact.log.off");
+                            return 1;
+                        })))
+                        .then(impactTiers()))
                 // The screen shader hook: a whole-screen effect for a set time (grayscale, for Standstill to come).
                 .then(Commands.literal("screen")
                         .then(player()
