@@ -12,8 +12,8 @@ import net.minecraft.world.phys.Vec3;
  * Drives Blur on its owner's client (DESIGN §3.27), the way a dash is driven: the client owns its player's movement, so the velocity
  * is set here before each tick's move and the game's own collision stops it (no clipping). Momentum: the velocity turns toward where
  * they steer at no more than {@code turnDegrees} a tick, so a sharp turn overshoots, and letting go skids to a stop. Anything that
- * slows movement (Slowness, a Decelerate hit, a Stasis Field) slows it the same share. No Blur speed in water or lava, on a mount,
- * gliding or flying, or while a dash or a Closing Line is driving.
+ * slows movement (Slowness, a Decelerate hit, a Stasis Field) slows it the same share, and a hit's knockback becomes the momentum it
+ * steers on from. No Blur speed in water or lava, on a mount, gliding or flying, or while a dash or a Closing Line is driving.
  */
 public final class BlurDrive {
     static BlurPayload state = BlurPayload.OFF;
@@ -57,6 +57,11 @@ public final class BlurDrive {
         }
         if (moved.lengthSqr() > 16) velocity = Vec3.ZERO; // moved by something else: a teleport, a swap
         else if (player.horizontalCollision && moved.horizontalDistance() < velocity.horizontalDistance()) velocity = moved; // a wall took it
+        // A hit's knockback lands on the momentum instead of being driven over: the push is the new velocity, steered from there.
+        if (player.hurtTime > 0 && player.hurtTime >= player.hurtDuration - 1) {
+            Vec3 pushed = horizontal(player.getDeltaMovement());
+            if (pushed.subtract(velocity).length() > 0.2) velocity = pushed;
+        }
         boolean recovering = player.level().getGameTime() < state.recoveryUntil(); // after a Closing Line: no Blur speed
         if (MeleeClient.dashing() || RushDrive.active() || recovering || player.isInWater() || player.isInLava() || player.isPassenger()
                 || player.isFallFlying() || player.getAbilities().flying) {

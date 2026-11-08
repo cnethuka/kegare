@@ -2388,7 +2388,8 @@ Technique Mode, unchanged (`client/SeveredKeys`).
 - **Movement:** extremely fast (`[blur] speed` 0.56 blocks a tick, about twice a sprint). Momentum: the velocity turns toward where
   you steer at most `turnDegrees` (8) a tick, so a sharp turn overshoots; steering gains `acceleration` (0.07) a tick up to top speed;
   letting go skids to a stop, losing `skid` (0.05) a tick. Anything that slows movement (Slowness, a Decelerate hit, a Stasis Field)
-  slows it by the same share.
+  slows it by the same share (a Stasis Field takes it to about a quarter, a Decelerate hit to about two thirds). A hit's
+  knockback lands on the momentum: the push becomes the velocity it steers on from (a Closing Line's rush isn't knocked off course).
 - **Who moves you:** the server allows it and tells the owner (`BlurPayload`); `client/BlurDrive` sets the velocity before each
   tick's move, as a dash is driven, and the game's own collision stops it, so it can't clip. The server checks every tick how far
   they really went, summed over five ticks (a late packet bunches two ticks into one, so ping can't trip it), and puts them back if
