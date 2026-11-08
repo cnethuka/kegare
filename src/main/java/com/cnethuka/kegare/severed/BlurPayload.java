@@ -9,11 +9,12 @@ import net.neoforged.neoforge.network.handling.IPayloadContext;
 
 /**
  * Server to client, only to its owner (DESIGN §3.27): whether Blur is on, and how it moves (the client drives it); until when they're
- * winded and how long that is (for the HUD). Sent whenever any of it changes.
+ * winded and how long that is (for the HUD); until when a Closing Line's recovery holds Blur's speed back. Sent whenever any of it
+ * changes.
  */
-public record BlurPayload(boolean on, float speed, float turnDegrees, float acceleration, float skid, long windedUntil, int windedTicks)
+public record BlurPayload(boolean on, float speed, float turnDegrees, float acceleration, float skid, long windedUntil, int windedTicks, long recoveryUntil)
         implements CustomPacketPayload {
-    public static final BlurPayload OFF = new BlurPayload(false, 0, 0, 0, 0, 0, 0);
+    public static final BlurPayload OFF = new BlurPayload(false, 0, 0, 0, 0, 0, 0, 0);
     public static final Type<BlurPayload> TYPE = new Type<>(Kegare.id("blur"));
     public static final StreamCodec<FriendlyByteBuf, BlurPayload> STREAM_CODEC = StreamCodec.of(
             (buf, p) -> {
@@ -24,8 +25,10 @@ public record BlurPayload(boolean on, float speed, float turnDegrees, float acce
                 buf.writeFloat(p.skid());
                 buf.writeVarLong(p.windedUntil());
                 buf.writeVarInt(p.windedTicks());
+                buf.writeVarLong(p.recoveryUntil());
             },
-            buf -> new BlurPayload(buf.readBoolean(), buf.readFloat(), buf.readFloat(), buf.readFloat(), buf.readFloat(), buf.readVarLong(), buf.readVarInt()));
+            buf -> new BlurPayload(buf.readBoolean(), buf.readFloat(), buf.readFloat(), buf.readFloat(), buf.readFloat(), buf.readVarLong(), buf.readVarInt(),
+                    buf.readVarLong()));
 
     /** Set by the client entry point; null on a dedicated server. */
     private static Consumer<BlurPayload> clientHandler;

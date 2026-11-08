@@ -33,6 +33,9 @@ public final class SeveredClient {
         SensesClient.init();
         modBus.addListener((RegisterClientReloadListenersEvent e) -> e.registerReloadListener((ResourceManagerReloadListener) m -> SensesClient.reload()));
         BlurPayload.setClientHandler(BlurDrive::set);
+        com.cnethuka.kegare.severed.RushPayload.setClientHandler(RushDrive::start);
+        // R while Blurring is Closing Line: it goes to the server on the press, in or out of Technique Mode (which they never have).
+        com.cnethuka.kegare.client.ClientInput.addSpecialKeyNeeded(BlurDrive::on);
         BlurFeel.init(modBus);
         // Blur's smear and dust are drawn here (BlurFx), not by Photon, from its loop on the one blurring.
         ClientVisuals.drawnByMove(SeveredIds.FX_BLUR);
@@ -49,7 +52,10 @@ public final class SeveredClient {
         });
         NeoForge.EVENT_BUS.addListener((ClientTickEvent.Pre e) -> {
             Minecraft mc = Minecraft.getInstance();
-            if (mc.player != null) BlurDrive.tick(mc.player);
+            if (mc.player != null) {
+                RushDrive.tick(mc.player);
+                BlurDrive.tick(mc.player);
+            }
         });
         NeoForge.EVENT_BUS.addListener((ClientTickEvent.Post e) -> {
             ClientLevel level = Minecraft.getInstance().level;
@@ -64,6 +70,7 @@ public final class SeveredClient {
         });
         NeoForge.EVENT_BUS.addListener((ClientPlayerNetworkEvent.LoggingOut e) -> {
             BlurDrive.reset();
+            RushDrive.reset();
             BlurFeel.reset();
             BlurFx.clear();
         });

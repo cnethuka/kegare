@@ -35,6 +35,19 @@ final class SeveredFx {
 
     static void winded(ServerPlayer player) {}
 
+    /** Closing Line's launch: a crack and a burst of dust and grit off the ground where they left. */
+    static void launch(ServerPlayer player, Vec3 direction) {
+        Vec3 at = player.position();
+        dust(player, at, 28, 0.45, 0.22);
+        player.serverLevel().sendParticles(ParticleTypes.POOF, at.x - direction.x * 0.4, at.y + 0.15, at.z - direction.z * 0.4, 6, 0.25, 0.05, 0.25, 0.04);
+    }
+
+    /** Its arrival: a skid and dust where they stop. */
+    static void arrive(ServerPlayer player, Vec3 direction) {
+        Vec3 at = player.position();
+        dust(player, at.add(direction.x * 0.3, 0, direction.z * 0.3), 16, 0.35, 0.12);
+    }
+
     static void wallCrash(ServerPlayer player, double lost) {
         Vec3 ahead = player.position().add(player.getLookAngle().multiply(1, 0, 1).normalize().scale(0.5)).add(0, 1.0, 0);
         player.serverLevel().sendParticles(ParticleTypes.POOF, ahead.x, ahead.y, ahead.z, (int) Math.min(12, 3 + lost * 6), 0.2, 0.4, 0.2, 0.02);

@@ -93,7 +93,14 @@ public final class Parry {
         state.guardLoopAt = player.level().getGameTime() + MeleeIds.PARRY_PERFECT_TICKS;
         VisualService.playOnce(player, Visual.animation(MeleeIds.ANIM_PARRY_PERFECT));
         MeleeImpact.PARRY_PERFECT.fire(player.serverLevel(), contact(player, attacker), player, attacker);
-        stagger(attacker);
+        if (attacker instanceof ServerPlayer rusher && ReinforcedStrike.fromRush(rusher)) {
+            // A Closing Line's Strike caught (DESIGN §3.27): it's spent, and they're staggered harder for having committed to it.
+            ReinforcedStrike.clear(rusher, MeleeLayer.state(rusher));
+            stagger(attacker, com.cnethuka.kegare.severed.SeveredConfig.ticks(com.cnethuka.kegare.severed.SeveredConfig.PARRY_STAGGER_SECONDS.get()),
+                    com.cnethuka.kegare.severed.SeveredConfig.PARRY_STAGGER_SLOWNESS.get());
+        } else {
+            stagger(attacker);
+        }
         ReinforcedStrike.earn(player, state);
         if (attacker instanceof ServerPlayer opponent && Attribution.isRealTarget(player, opponent) && swungFullyCharged(opponent)) {
             FightTracker.meleeMove(player, opponent, MeleeMoves.PERFECT_PARRY);
@@ -115,9 +122,12 @@ public final class Parry {
 
     /** Slowed, with their attack cooldown started over. Their abilities aren't touched, and bosses can't be staggered (DESIGN §4). */
     static void stagger(LivingEntity attacker) {
+        stagger(attacker, MeleeConfig.ticks(MeleeConfig.PARRY_STAGGER_SECONDS.get()), MeleeConfig.PARRY_STAGGER_SLOWNESS.get());
+    }
+
+    static void stagger(LivingEntity attacker, int ticks, int slowness) {
         if (CombatHelper.isBoss(attacker)) return;
-        int ticks = MeleeConfig.ticks(MeleeConfig.PARRY_STAGGER_SECONDS.get());
-        if (ticks > 0) attacker.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SLOWDOWN, ticks, MeleeConfig.PARRY_STAGGER_SLOWNESS.get(), false, false));
+        if (ticks > 0) attacker.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SLOWDOWN, ticks, slowness, false, false));
         if (attacker instanceof ServerPlayer player) {
             player.resetAttackStrengthTicker();
             MeleeLayer.sendAttackReset(player); // the client keeps its own copy, for the swing and the indicator

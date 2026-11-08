@@ -14,6 +14,16 @@ public final class SeveredState {
     int samples;
     long crashedAt = -100;
     long windTick;
+    // Closing Line
+    long closingReadyAt;
+    long recoveryUntil;
+    @Nullable Vec3 rushFrom;
+    @Nullable Vec3 rushDirection;
+    double rushDistance;
+    double rushSpeed;
+    int rushTicksLeft;
+    int rushTarget = -1;
+    long rushAllowedUntil;
     // What the owner's client was last told
     @Nullable BlurPayload sent;
 

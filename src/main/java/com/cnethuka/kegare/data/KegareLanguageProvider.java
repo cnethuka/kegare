@@ -401,6 +401,9 @@ public final class KegareLanguageProvider extends LanguageProvider {
         add("hud.kegare.severed.blur", "Blur");
         add("hud.kegare.severed.winded", "Winded");
         add("message.kegare.severed.winded", "Too winded to Blur.");
+        add("message.kegare.severed.no_target", "No one in sight.");
+        add("message.kegare.severed.in_reach", "Already within reach.");
+        add("message.kegare.severed.closing_line_cooldown", "Closing Line isn't ready (%ss).");
         // Time Manipulation
         add("innate_technique.kegare.time_manipulation", "Time Manipulation");
         add("innate_technique.kegare.time_manipulation.epithet", "The Clock Forgets to Tick");

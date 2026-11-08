@@ -26,6 +26,9 @@ public final class MeleeState {
     // Reinforced Strike
     long strikeUntil;
     int strikeTicks;
+    /** A Severed Closing Line's Strike (DESIGN §3.27): the knockback its rush carries, and that it was one (a parry staggers harder). */
+    double strikeExtraKnockback;
+    boolean strikeFromRush;
     // What the tell last looked like, to the player themself and to everyone else
     MeleeTell.Look tellOwn = MeleeTell.Look.NONE;
     MeleeTell.Look tellOthers = MeleeTell.Look.NONE;

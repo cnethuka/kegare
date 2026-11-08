@@ -329,7 +329,9 @@ All timestamps use **level game time**. They persist across restarts and are ide
   player who starts tracking an entity gets its running loops with their full `growTicks` and the time already gone, so
   they see each one where everyone else does: a growing loop part-grown, Switchback's countdown at the real time left.
 - Severed players (§3.27) get `SensesPayload` (S→C, to that player only: who they sense) and `BlurPayload` (S→C, to its owner:
-  Blur on or off, how it moves, until when they're winded); G sends `MeleeIntentPayload.Action.BLUR`.
+  Blur on or off, how it moves, until when they're winded, until when a Closing Line's recovery lasts) and `RushPayload` (S→C, to
+  its owner: a Closing Line to drive, or stop); G sends `MeleeIntentPayload.Action.BLUR`, and R while Blurring is the usual
+  `SPECIAL_PRESS`, taken by Closing Line's cast interceptor.
 - Network version `19` (since Severed's payloads, §3.27; `18` was Burnout's end time in the sync, §3.25, and Time Manipulation's
   payloads, §3.26). Bump it when payload formats change; mismatched clients are refused.
 
@@ -2407,7 +2409,29 @@ Technique Mode, unchanged (`client/SeveredKeys`).
   at Vanilla, and vanilla's FOV Effects slider scales the widening.
 - **HUD:** "Blur" under the crosshair with the melee cues while it's on, and "Winded" with a countdown bar while it can't come back.
 
-**Tests:** `BlurTest` (G is Blur only for the Severed; the drain by distance at Blur speed, none for a walk; crashing off at
+**Closing Line** (R while Blurring; `ClosingLine`, `client/RushDrive`, `[closing_line]`, `[targeting]`).
+- R while Blur is on, looking at a player or mob (`[targeting] range` 24, `aimTolerance` 0.3, in line of sight, the nearest under
+  the crosshair), rushes you in a straight line toward where it stood when you cast it, at `speed` (4 blocks a tick: a 20-block gap
+  in five ticks). It looks like a teleport but it's real travel, driven on the owner's client like a dash (`RushPayload`), checked
+  by the server like Blur. It doesn't home: a target that dashes away makes you miss. R reaches the server as the usual
+  `SPECIAL_PRESS` (`ClientInput.addSpecialKeyNeeded` while Blurring) and Closing Line's cast interceptor takes it.
+- You stop `stopGap` (0.8) blocks short of the target's edge: melee reach, in front of it. **Walls** stop it: the game's own
+  collision holds you at the wall, and a wall stopping you at that speed is a wall crash (no Strike). **Anything living in the
+  path** stops you in reach of it (worked out at the cast, and checked every tick for anything that steps in). Projectiles and
+  techniques hit you normally on the way, with no invulnerability. Moved off the line by something else (a swap) or stopped by a
+  stun or a freeze (Rime's, a Standstill's), it's over with no Strike; a Decelerate hit or a Stasis Field slow it like any movement.
+- **Arriving** (in reach of the target or of whatever stopped you) earns a Reinforced Strike (Severed numbers) for `strikeWindow`
+  (0.5 s) that carries the rush's speed as extra knockback (`carriedKnockback` 0.1 per block a tick: 0.4 on top of a Severed
+  Strike's 0.9). The ready fist shows as usual. `ReinforcedStrike.earnFromRush`.
+- **Counter:** a perfect parry that catches that Strike spends it and staggers the Severed harder than a normal stagger
+  (`parryStaggerSeconds` 1.5 at Slowness `parryStaggerSlowness` 3, against 0.5 s at 2).
+- **After every Closing Line** (arrived or not): `recoverySeconds` (0.6) with no Blur speed, and a `cooldown` of 6 s ("Closing Line
+  isn't ready (Xs).").
+- **Bosses (§4):** it rushes at them and the Strike damages them; they're never moved (the Strike never pushes a boss).
+
+**Tests:** `ClosingLineTest` (the rush to melee reach of where the target stood, arriving, the Strike from the rush with
+its window and harder knockback, the recovery and cooldown; a wall mid-rush crashes it; something living in the path stops it short;
+a swap ends it; a perfect parry spends the Strike and staggers harder; a boss is struck and never moved), `BlurTest` (G is Blur only for the Severed; the drain by distance at Blur speed, none for a walk; crashing off at
 the floor, winded, refused until food is above it; the wall crash scaling with the speed lost, a scrape doing nothing; a stun or no
 longer being Severed ending it), `SeveredBodyTest` (Strength only on a Severed hand; the Toughness split, falls least, the void, /kill and starving
 untouched; Stamina on normal drain and on healing; Senses: a player standing still, a mob, an invisible one, moving, out of range,

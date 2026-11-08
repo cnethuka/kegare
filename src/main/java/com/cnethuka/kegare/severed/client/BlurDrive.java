@@ -57,8 +57,9 @@ public final class BlurDrive {
         }
         if (moved.lengthSqr() > 16) velocity = Vec3.ZERO; // moved by something else: a teleport, a swap
         else if (player.horizontalCollision && moved.horizontalDistance() < velocity.horizontalDistance()) velocity = moved; // a wall took it
-        if (MeleeClient.dashing() || RushDrive.active() || player.isInWater() || player.isInLava() || player.isPassenger() || player.isFallFlying()
-                || player.getAbilities().flying) {
+        boolean recovering = player.level().getGameTime() < state.recoveryUntil(); // after a Closing Line: no Blur speed
+        if (MeleeClient.dashing() || RushDrive.active() || recovering || player.isInWater() || player.isInLava() || player.isPassenger()
+                || player.isFallFlying() || player.getAbilities().flying) {
             velocity = horizontal(player.getDeltaMovement());
             return;
         }

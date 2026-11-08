@@ -24,6 +24,17 @@ public final class SeveredConfig {
     public static ModConfigSpec.IntValue BLUR_FOOD_FLOOR;
     public static ModConfigSpec.DoubleValue WINDED_SECONDS;
     public static ModConfigSpec.IntValue WINDED_SLOWNESS;
+    // closing line
+    public static ModConfigSpec.DoubleValue RANGE;
+    public static ModConfigSpec.DoubleValue AIM_TOLERANCE;
+    public static ModConfigSpec.DoubleValue CLOSING_COOLDOWN;
+    public static ModConfigSpec.DoubleValue CLOSING_SPEED;
+    public static ModConfigSpec.DoubleValue CLOSING_GAP;
+    public static ModConfigSpec.DoubleValue CLOSING_RECOVERY;
+    public static ModConfigSpec.DoubleValue CLOSING_STRIKE_WINDOW;
+    public static ModConfigSpec.DoubleValue CLOSING_CARRY;
+    public static ModConfigSpec.DoubleValue PARRY_STAGGER_SECONDS;
+    public static ModConfigSpec.IntValue PARRY_STAGGER_SLOWNESS;
     // wall crash
     public static ModConfigSpec.DoubleValue CRASH_MIN_LOSS;
     public static ModConfigSpec.DoubleValue CRASH_DAMAGE;
@@ -66,6 +77,24 @@ public final class SeveredConfig {
                 "on until food is above it.").defineInRange("foodFloor", 6, 0, 20);
         WINDED_SECONDS = b.comment("Winded: the slowdown when it crashes off.").defineInRange("windedSeconds", 4.0, 0.0, 60.0);
         WINDED_SLOWNESS = b.comment("Slowness amplifier while winded (0 = Slowness I).").defineInRange("windedSlowness", 0, 0, 9);
+        b.pop();
+
+        b.comment("Closing Line's target: the player or mob under the crosshair, in line of sight.").push("targeting");
+        RANGE = b.defineInRange("range", 24.0, 1.0, 128.0);
+        AIM_TOLERANCE = b.comment("How far off the crosshair (blocks) still counts as looking at someone.").defineInRange("aimTolerance", 0.3, 0.0, 2.0);
+        b.pop();
+
+        b.comment("Closing Line (R during Blur): a straight rush at where the target stood, a Reinforced Strike on arrival.").push("closing_line");
+        CLOSING_COOLDOWN = b.defineInRange("cooldown", 6.0, 0.0, 600.0);
+        CLOSING_SPEED = b.comment("Rush speed, blocks a tick: a 20-block gap in five ticks.").defineInRange("speed", 4.0, 0.5, 9.0);
+        CLOSING_GAP = b.comment("Blocks left between you and the target when you stop: melee reach, in front of them.").defineInRange("stopGap", 0.8, 0.0, 3.0);
+        CLOSING_RECOVERY = b.comment("After every Closing Line: this long with no Blur speed.").defineInRange("recoverySeconds", 0.6, 0.0, 10.0);
+        CLOSING_STRIKE_WINDOW = b.comment("How long the Strike it earns waits.").defineInRange("strikeWindow", 0.5, 0.05, 10.0);
+        CLOSING_CARRY = b.comment("Knockback the Strike carries per block/tick of the rush's speed, on top of a Severed Strike's own.")
+                .defineInRange("carriedKnockback", 0.1, 0.0, 5.0);
+        PARRY_STAGGER_SECONDS = b.comment("A perfect parry that catches the Strike staggers them this long (a normal stagger is 0.5 s)...")
+                .defineInRange("parryStaggerSeconds", 1.5, 0.0, 30.0);
+        PARRY_STAGGER_SLOWNESS = b.comment("...at this Slowness amplifier (a normal stagger is 2).").defineInRange("parryStaggerSlowness", 3, 0, 9);
         b.pop();
 
         b.comment("A wall hit at speed (in Blur or a Closing Line): damage and a stun from the speed lost, like flying into a wall.",

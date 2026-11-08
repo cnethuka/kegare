@@ -29,6 +29,7 @@ public final class Severed {
     public static void init(IEventBus modBus) {
         ATTACHMENTS.register(modBus);
         NeoForge.EVENT_BUS.addListener(SeveredBody::onIncoming);
+        com.cnethuka.kegare.innatetechnique.CastManager.addInterceptor(ClosingLine::intercept); // R while Blurring
         NeoForge.EVENT_BUS.addListener(SeveredBody::onDamage);
         NeoForge.EVENT_BUS.addListener((PlayerTickEvent.Post e) -> {
             if (e.getEntity() instanceof ServerPlayer p && !(p instanceof FakePlayer)) {

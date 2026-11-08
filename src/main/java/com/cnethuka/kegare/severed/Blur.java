@@ -96,18 +96,17 @@ public final class Blur {
         double before = Math.max(state.speed(0), Math.max(state.speed(1), state.speed(2)));
         if (now - state.crashedAt > CRASH_COOLDOWN && before - speed >= SeveredConfig.CRASH_MIN_LOSS.get() && wallAhead(player, state)) {
             state.crashedAt = now;
-            boolean rushing = ClosingLine.rushing(state);
             if (WallCrash.crash(player, before - speed)) {
                 ClosingLine.cancel(player, state);
                 stop(player, state);
                 state.record(at, speed);
                 return;
             }
-            if (rushing) ClosingLine.stoppedByWall(player, state);
         }
+        ClosingLine.tick(player, state);
         // Never further than Blur (or the rush) allows, summed over a few ticks so a late packet can't trip it.
         Vec3 back = state.position(CHECK_TICKS - 1);
-        double allowed = CHECK_TICKS * (Math.max(SeveredConfig.BLUR_SPEED.get(), ClosingLine.allowedSpeed(state)) * SLACK + SLACK_FLAT);
+        double allowed = CHECK_TICKS * (Math.max(SeveredConfig.BLUR_SPEED.get(), ClosingLine.allowedSpeed(state, now)) * SLACK + SLACK_FLAT);
         if (back != null && was != null && Math.sqrt(sq(at.x - back.x) + sq(at.z - back.z)) > allowed && at.distanceToSqr(was) <= 64) {
             Vec3 to = state.position(0);
             player.connection.teleport(to.x, to.y, to.z, player.getYRot(), player.getXRot());
@@ -144,7 +143,7 @@ public final class Blur {
     static void sync(ServerPlayer player, SeveredState state) {
         BlurPayload payload = new BlurPayload(state.blur, SeveredConfig.BLUR_SPEED.get().floatValue(), SeveredConfig.BLUR_TURN.get().floatValue(),
                 SeveredConfig.BLUR_ACCEL.get().floatValue(), SeveredConfig.BLUR_SKID.get().floatValue(), state.windedUntil,
-                SeveredConfig.ticks(SeveredConfig.WINDED_SECONDS.get()));
+                SeveredConfig.ticks(SeveredConfig.WINDED_SECONDS.get()), state.recoveryUntil);
         if (payload.equals(state.sent)) return;
         state.sent = payload;
         if (player.connection != null) PacketDistributor.sendToPlayer(player, payload);
