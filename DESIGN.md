@@ -324,8 +324,8 @@ All timestamps use **level game time**. They persist across restarts and are ide
 - `VisualPayload`'s `START_LOOP` carries how long the loop has been running (`elapsedTicks`, 0 for a fresh start). A
   player who starts tracking an entity gets its running loops with their full `growTicks` and the time already gone, so
   they see each one where everyone else does: a growing loop part-grown, Switchback's countdown at the real time left.
-- Network version `17` (since the Impact System's and battle damage's payloads, §3.23 and §3.24; `16` was a loop's elapsed
-  time). Bump it when payload formats change; mismatched clients are refused.
+- Network version `18` (since Burnout's end time in the sync, §3.25, and Time Manipulation's payloads, §3.26; `17` was the Impact
+  System's and battle damage's). Bump it when payload formats change; mismatched clients are refused.
 
 ### 3.6 HUD
 **Rule: the combat HUD does not exist until the player asks for it** (art in `gen_art.py` → `textures/gui/combat/`).
@@ -2180,6 +2180,25 @@ within 96 blocks; the blocks change through the game's own updates):
 **Tests:** `BattleDamageTest` (the rule, what never breaks, the protected list, no drops, spilling, both caps, a cancelled break
 event, COSMETIC, RESTORING with contents and a restart, never over a block placed since, Swap and light hits, where a slam meets
 the wall).
+
+
+### 3.25 Burnout (`innatetechnique.Burnout`)
+
+A shared state that locks a player's innate technique for a while after something big: Time Manipulation's Standstill now (§3.26),
+Dominions later.
+- **While it lasts**, every ability, special and the ultimate of their innate technique fizzles with "Burnt out (Xs).", nothing paid
+  and no cooldown (`CastResult.BURNT_OUT`, checked right after the Refinement lock). Shared abilities (Reverse Malice Technique)
+  still cast, and a running toggle can still be switched off.
+- **API:** `Burnout.apply(player, ticks)` (never shortens one already running: the longer stands), `isBurntOut`, `remaining`,
+  `shorten(player, ticks)` and `clear`. A `Burnout.Modifier` (`addModifier`) changes every Burnout's length as it's applied: the
+  hook Background RMT uses to shorten it (§3.31).
+- **Saved** (attachment `kegare:burnout`, ticks left), so it survives logging out; it only counts down while they're online, so
+  logging out never waits it out. **Cleared on death** (it isn't copied to the respawned player).
+- **HUD:** "Burnt out 12.3s" under the crosshair, in and out of Technique Mode (`BurnoutHud`), and the combat panel greys over its
+  innate technique slots and the ultimate (shared abilities stay lit). The end time travels in the sync (`SyncPayload.burntOutUntil`).
+
+**Tests:** `BurnoutTest` (blocks the technique and its special, nothing paid; RMT still casts; counts down; the longer stands; saved;
+not copied on death; the duration hook).
 
 ---
 

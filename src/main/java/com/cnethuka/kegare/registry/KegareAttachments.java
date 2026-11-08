@@ -48,6 +48,11 @@ public final class KegareAttachments {
     public static final Supplier<AttachmentType<CombatData>> COMBAT = ATTACHMENT_TYPES.register("combat",
             () -> AttachmentType.builder(() -> new CombatData()).serialize(CombatData.CODEC).build());
 
+    /** Burnout's ticks left (DESIGN §3.25): saved, but not copied on death, so dying clears it. */
+    public static final Supplier<AttachmentType<com.cnethuka.kegare.innatetechnique.Burnout.Data>> BURNOUT = ATTACHMENT_TYPES.register("burnout",
+            () -> AttachmentType.builder(() -> new com.cnethuka.kegare.innatetechnique.Burnout.Data())
+                    .serialize(com.cnethuka.kegare.innatetechnique.Burnout.Data.CODEC).build());
+
     public static final Supplier<AttachmentType<com.cnethuka.kegare.loadout.LoadoutData>> LOADOUT = ATTACHMENT_TYPES.register("loadout",
             () -> AttachmentType.builder(() -> new com.cnethuka.kegare.loadout.LoadoutData())
                     .serialize(com.cnethuka.kegare.loadout.LoadoutData.CODEC).copyOnDeath().build());

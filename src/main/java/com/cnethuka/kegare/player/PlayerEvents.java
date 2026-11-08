@@ -123,6 +123,7 @@ public final class PlayerEvents {
     static void onPlayerTick(PlayerTickEvent.Post event) {
         if (!(event.getEntity() instanceof ServerPlayer player) || player instanceof FakePlayer) return;
         if (player.isAlive()) {
+            com.cnethuka.kegare.innatetechnique.Burnout.tick(player);
             CastManager.tick(player);
             MaliceService.tickRegen(player);
         }

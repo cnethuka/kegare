@@ -116,6 +116,7 @@ public final class CastManager {
     public static CastResult validate(ServerPlayer player, AbilityContext ctx) {
         Ability ability = ctx.ability();
         if (!com.cnethuka.kegare.progression.TechniqueUnlocks.isUnlocked(player, ability)) return CastResult.REFINEMENT_LOCKED;
+        if (Burnout.blocks(player, ability)) return CastResult.BURNT_OUT;
         if (state(player).casting != null) return CastResult.BUSY;
         if (CombatHelper.isStunned(player)) return CastResult.STUNNED;
         if (InnateTechniqueService.cooldownRemaining(player, ability) > 0) return CastResult.ON_COOLDOWN;
@@ -473,6 +474,7 @@ public final class CastManager {
                     Integer.toString((int) Math.ceil((ability == null ? 0 : ability.cost(player)) - 1.0e-6)),
                     Integer.toString((int) Math.floor(MaliceService.get(player).current())));
             case STUNNED -> Component.translatable(result.translationKey(), seconds(CombatHelper.stunTicksRemaining(player)));
+            case BURNT_OUT -> Component.translatable(result.translationKey(), seconds(Burnout.remaining(player)));
             case BLOCKED -> ability != null ? ability.blockedMessage(player) : Component.translatable(result.translationKey(), name);
             case REQUIREMENT_UNMET -> Component.translatable(result.translationKey(), name,
                     ability == null ? Component.empty() : unmetRequirement(player, ability).map(Requirement::description).orElse(Component.empty()));

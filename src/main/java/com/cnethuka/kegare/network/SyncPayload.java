@@ -50,6 +50,7 @@ public record SyncPayload(
         int freezeStacks,
         int maxFreezeStacks,
         long frozenUntil,
+        long burntOutUntil,
         List<Optional<ResourceLocation>> loadout,
         List<ResourceLocation> sharedUnlocked,
         boolean inCombat,
@@ -102,6 +103,7 @@ public record SyncPayload(
                 new ArrayList<>(TraitService.get(player).view()),
                 environment, costs,
                 FreezeService.stacks(player), RimeConfig.FREEZE_MAX_STACKS.get(), FreezeService.frozenUntil(player),
+                com.cnethuka.kegare.innatetechnique.Burnout.isBurntOut(player) ? now + com.cnethuka.kegare.innatetechnique.Burnout.remaining(player) : 0L,
                 LoadoutService.slots(player), new ArrayList<>(SharedAbilityService.get(player).unlocked()),
                 CombatHelper.isInCombat(player),
                 ProgressionSnapshot.of(player));
@@ -141,6 +143,7 @@ public record SyncPayload(
         buf.writeVarInt(freezeStacks);
         buf.writeVarInt(maxFreezeStacks);
         buf.writeVarLong(frozenUntil);
+        buf.writeVarLong(burntOutUntil);
         buf.writeCollection(loadout, (b, slot) -> b.writeOptional(slot, FriendlyByteBuf::writeResourceLocation));
         buf.writeCollection(sharedUnlocked, FriendlyByteBuf::writeResourceLocation);
         buf.writeBoolean(inCombat);
@@ -163,7 +166,7 @@ public record SyncPayload(
                 new CostEnvironment(buf.readFloat(), buf.readEnum(CostEnvironment.Icon.class),
                         buf.readList(b -> new CostEnvironment.Factor(b.readUtf(128), b.readFloat()))),
                 buf.readList(b -> new AbilityCost(b.readResourceLocation(), b.readFloat(), b.readFloat())),
-                buf.readVarInt(), buf.readVarInt(), buf.readVarLong(),
+                buf.readVarInt(), buf.readVarInt(), buf.readVarLong(), buf.readVarLong(),
                 buf.readList(b -> b.readOptional(FriendlyByteBuf::readResourceLocation)),
                 buf.readList(FriendlyByteBuf::readResourceLocation),
                 buf.readBoolean(),

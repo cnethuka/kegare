@@ -288,6 +288,7 @@ public final class CombatPanelLayer implements LayeredDraw.Layer {
             if (ult.isPresent() && !ClientLoadout.isLocked(data, ult.get())) {
                 GuiDraw.abilityIcon(g, ult.get(), ux + ULT_INSET, uy + ULT_INSET);
                 drawCooldown(g, font, data, ult.get(), ux + ULT_INSET, uy + ULT_INSET, 16, now);
+                burntOut(g, ult.get(), ux + ULT_INSET, uy + ULT_INSET, 16);
             } else {
                 GuiDraw.sprite(g, GuiDraw.LOCK, ux + (ULT_SIZE - 11) / 2, uy + (ULT_SIZE - 11) / 2, 11, 11);
             }
@@ -309,6 +310,7 @@ public final class CombatPanelLayer implements LayeredDraw.Layer {
             g.drawCenteredString(font, ability.displayName().getString().substring(0, 1), x + SLOT_SIZE / 2, y + 6, GuiDraw.WHITE);
         }
         boolean cooling = drawCooldown(g, font, data, ability, x + SLOT_INSET, y + SLOT_INSET, 16, now);
+        burntOut(g, ability, x + SLOT_INSET, y + SLOT_INSET, 16);
         if (ClientLoadout.toggledOn(data, ability)) g.renderOutline(x + 1, y + 1, SLOT_SIZE - 2, SLOT_SIZE - 2, 0xFF5CFF7A);
         if (ability.id().equals(castingId) || ability.special().map(s -> s.id().equals(castingId)).orElse(false)) {
             g.renderOutline(x + 1, y + 1, SLOT_SIZE - 2, SLOT_SIZE - 2, 0xFFFFD24A);
@@ -327,6 +329,12 @@ public final class CombatPanelLayer implements LayeredDraw.Layer {
     public static void slotFrame(GuiGraphics g, int x, int y, boolean selected) {
         RenderSystem.enableBlend();
         g.blit(selected ? SLOT_SELECTED : SLOT, x, y, 0f, 0f, SLOT_SIZE, SLOT_SIZE, SLOT_SIZE, SLOT_SIZE);
+    }
+
+    /** Burnout (DESIGN §3.25): an innate technique slot is greyed over while it lasts. Shared abilities stay lit: they still cast. */
+    private static void burntOut(GuiGraphics g, Ability ability, int x, int y, int size) {
+        if (!BurnoutHud.active() || com.cnethuka.kegare.loadout.SharedAbilities.find(ability.id()).isPresent()) return;
+        g.fill(x, y, x + size, y + size, 0x9A3A3430);
     }
 
     /** Cooldown sweep (and seconds) over a 16x16 icon area, plus the ready flash. Returns whether it is cooling. */

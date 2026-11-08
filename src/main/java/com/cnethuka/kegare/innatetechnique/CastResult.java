@@ -16,6 +16,8 @@ public enum CastResult {
     ULTIMATE_LOCKED("message.kegare.cast.ultimate_locked"),
     BUSY("message.kegare.cast.busy"),
     STUNNED("message.kegare.cast.stunned"),
+    /** Burnt out (DESIGN §3.25): their innate technique fizzles, nothing paid; shared abilities still cast. */
+    BURNT_OUT("message.kegare.cast.burnt_out"),
     ON_COOLDOWN("message.kegare.cast.on_cooldown"),
     NOT_ENOUGH_MALICE("message.kegare.cast.not_enough_malice"),
     BLOCKED("message.kegare.cast.blocked"),
