@@ -96,6 +96,16 @@ public final class PlayerAnimations {
         return !player.getMainHandItem().isEmpty() || !player.getOffhandItem().isEmpty();
     }
 
+    /**
+     * Whether PAL is drawing your own body for your own first-person view right now (an animation shown with
+     * {@code THIRD_PERSON_MODEL}). A layer on the player's body skips it: PAL hides the head and body there and shows the arms, but a
+     * layer that draws its own copy of the parts (Freeze's frost, the Rime Shell, a possessor's glow) would put a head round the
+     * camera and fill the view.
+     */
+    public static boolean firstPersonPass() {
+        return FirstPersonMode.isFirstPersonPass();
+    }
+
     /** Whether this layer last started {@code animation} on the player, and it hasn't been stopped. A play-once counts until something replaces it. */
     public static boolean isCurrent(AbstractClientPlayer player, ResourceLocation animation) {
         return animation.equals(CURRENT.get(player.getUUID()));

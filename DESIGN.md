@@ -723,6 +723,9 @@ closing it or disconnecting at any point changes nothing.
     with the view, so hands at chest height sit at the bottom corners of a level view and come up into its middle as you
     look down. Every other Swap and Puppet Manipulation cast. Looking up takes them out of view.
   - Rime's `frozen` is the one on neither list: you can't move, and your arms stay where they are.
+  - While PAL draws your own arms for your first-person view (`PlayerAnimations.firstPersonPass`), the layers drawn on a
+    player's body skip it: Freeze's frost, the Rime Shell's plates and a possessor's glow. PAL hides the head and body
+    there, but a layer draws its own copy of the parts and would put them round the camera.
 - **Failures never crash:** a missing or broken `.fx` falls back to vanilla particles (`VanillaFallback`, per-effect
   lookalikes), and a missing animation is skipped. Each one is logged once. Effects are preloaded at client setup.
 - **Client config (`visuals`):**
@@ -967,7 +970,8 @@ Package `com.cnethuka.kegare.innate_technique.rime`. **Rarity: RARE.** All numbe
     how far vanilla's armour model stands off each part, leggings half a pixel, a chestplate or boots one): each plate
     slides out past it on the axes it lies off its part and stretches to the armour's edges on the ones it spans, its
     thickness kept, and a slim arm's follow the chestplate's wide arm. It reads the server's toggle loop on the player,
-    so every client shows them exactly while the shell is up. Your own first person draws no body, so nothing of it is in view.
+    so every client shows them exactly while the shell is up. Your own first person shows none of it, not even while PAL
+    draws your arms there (`PlayerAnimations.firstPersonPass`, §3.13).
   - **Forming:** nothing for 4 ticks while the arms cross; then the plates form one after another, chest first, each
     popping a little past its size and settling, all set within about 0.7 s.
   - **Coming down:** the plates break off where they were last drawn and fall away from the body, tumbling, shrinking
@@ -1022,8 +1026,10 @@ Package `com.cnethuka.kegare.innate_technique.rime`. **Rarity: RARE.** All numbe
   - **Breaking free:** the frost is gone at once, burst off the body as small solid chips of the lance's ice
     (`LanceAftermath`'s), with the flash and small ring of `freeze_shatter`.
   - **The effect:** `freeze_frost` is only a few specks of frost falling off the body and a faint breath at the feet; your
-    own `freeze_frost_self`, a few specks low round the feet. Your own first person draws no body, so nothing is in your
-    view; you have the HUD's pips and vanilla's own frost overlay while frozen.
+    own `freeze_frost_self`, a few specks low round the feet. Your own first person shows none of the frost, not even
+    while `frozen` plays and PAL draws your arms there (`PlayerAnimations.firstPersonPass`, §3.13: otherwise it would draw the
+    frosted head round the camera as big pale squares over the view); you have the HUD's pips and vanilla's own frost
+    overlay while frozen.
   - **Reduced** plays the effect reduced, the rest the same; **Vanilla** keeps the frost on the body and the chips, with no
     particles for the loop (snowflakes would swarm the body).
 - **Effect authoring:** the effects are built from Photon's own objects in `RimeFxAuthoring` (building blocks in the

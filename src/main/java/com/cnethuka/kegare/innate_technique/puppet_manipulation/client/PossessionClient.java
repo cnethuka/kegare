@@ -3,6 +3,7 @@ package com.cnethuka.kegare.innate_technique.puppet_manipulation.client;
 import com.cnethuka.kegare.client.ClientInput;
 import com.cnethuka.kegare.client.StatusLayer;
 import com.cnethuka.kegare.client.gui.GuiDraw;
+import com.cnethuka.kegare.client.visual.PlayerAnimations;
 import com.cnethuka.kegare.innate_technique.puppet_manipulation.PossessionLinks;
 import com.cnethuka.kegare.innate_technique.puppet_manipulation.PuppetHud;
 import com.cnethuka.kegare.innate_technique.puppet_manipulation.PuppetManipulation;
@@ -156,6 +157,7 @@ public final class PossessionClient {
                            float partialTick, float ageInTicks, float netHeadYaw, float headPitch) {
             PossessionLinks.Entry e = entry(player.getUUID());
             if (e == null || player.isInvisible()) return;
+            if (PlayerAnimations.firstPersonPass()) return; // your own arms in first person: its own head would be round the camera
             float t = player.tickCount + partialTick;
             getParentModel().copyPropertiesTo(model);
             model.prepareMobModel(player, limbSwing, limbSwingAmount, partialTick);

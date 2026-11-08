@@ -2,6 +2,7 @@ package com.cnethuka.kegare.innate_technique.rime.client;
 
 import com.cnethuka.kegare.Kegare;
 import com.cnethuka.kegare.client.visual.ClientVisuals;
+import com.cnethuka.kegare.client.visual.PlayerAnimations;
 import com.cnethuka.kegare.innate_technique.rime.RimeConfig;
 import com.cnethuka.kegare.innate_technique.rime.RimeIds;
 import com.cnethuka.kegare.innatetechnique.visual.Visual;
@@ -51,8 +52,8 @@ import net.neoforged.neoforge.client.event.EntityRenderersEvent;
  * </ul>
  * Drawn on the skin's outer layer (over a jacket or sleeves), lit by the world with a faint glow of its own ({@link #GLOW}) so it
  * reads at night; where armour is worn, on the same layer's boxes out past the armour ({@link #OVER_ARMOUR}), so the stacks can still
- * be counted on someone in full armour. Not on an invisible player. Your own first person
- * draws no body; you have the stacks on the HUD.
+ * be counted on someone in full armour. Not on an invisible player, and not in your own first person, even while PAL draws your
+ * arms there ({@link PlayerAnimations#firstPersonPass}); you have the stacks on the HUD.
  */
 public final class FreezeClient {
     private static final ResourceLocation[] ART = {Kegare.id("textures/entity/freeze_frost.png"),
@@ -278,6 +279,7 @@ public final class FreezeClient {
                            float limbSwingAmount, float partialTick, float ageInTicks, float netHeadYaw, float headPitch) {
             Float cover = COVER.get(player.getId());
             if (cover == null || cover <= 0f || player.isInvisible()) return;
+            if (PlayerAnimations.firstPersonPass()) return; // your own arms in first person: the hat's frost would be round the camera
             boolean slim = player.getSkin().model() == PlayerSkin.Model.SLIM;
             ResourceLocation texture = texture(slim, quantize(cover), frozen(player));
             if (texture == null) return;

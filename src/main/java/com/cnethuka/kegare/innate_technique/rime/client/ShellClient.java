@@ -1,6 +1,7 @@
 package com.cnethuka.kegare.innate_technique.rime.client;
 
 import com.cnethuka.kegare.client.visual.ClientVisuals;
+import com.cnethuka.kegare.client.visual.PlayerAnimations;
 import com.cnethuka.kegare.innate_technique.rime.Rime;
 import com.cnethuka.kegare.innatetechnique.visual.VisualPhase;
 import com.cnethuka.kegare.innatetechnique.visual.VisualService;
@@ -37,7 +38,8 @@ import org.joml.Vector3f;
 /**
  * Rime Shell's plates: solid slabs of the lance's ice on the body ({@code models/fx/rime_shell.obj}, one object a plate, each in its
  * body part's space), drawn with the player model's own parts so they follow every pose, for everyone who can see the body: other
- * players, and you in third person. Your own first person draws no body, so nothing of it is in your view.
+ * players, and you in third person. Your own first person shows none of it, even while PAL draws your arms there
+ * ({@link PlayerAnimations#firstPersonPass}).
  * <ul>
  * <li>When the shell goes up (its toggle loop starts) the plates form one after another, chest first, each popping out a little
  * past its size and settling.</li>
@@ -207,6 +209,7 @@ public final class ShellClient {
         @Override
         public void render(PoseStack pose, MultiBufferSource buffers, int light, AbstractClientPlayer player, float limbSwing,
                            float limbSwingAmount, float partialTick, float ageInTicks, float netHeadYaw, float headPitch) {
+            if (PlayerAnimations.firstPersonPass()) return; // your own arms in first person: the plates would be round the camera
             ClientVisuals.LoopTime time = ClientVisuals.loopTime(player, LOOP, partialTick);
             long now = player.level().getGameTime();
             if (time == null) {
