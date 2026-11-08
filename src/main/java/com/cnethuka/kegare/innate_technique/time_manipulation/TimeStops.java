@@ -328,8 +328,9 @@ public final class TimeStops {
         if (volley == null || !(hit.getEntity() instanceof ServerPlayer victim) || victim.getUUID().equals(volley.owner())) return;
         if (projectile.level().getGameTime() > volley.until()) return;
         int hits = VOLLEY_HITS.merge(volley.owner(), 1, Integer::sum);
-        ServerPlayer owner = victim.server.getPlayerList().getPlayer(volley.owner());
-        if (owner != null && hits >= TimeAdvancements.PRE_PLANNED_HITS) TimeAdvancements.award(owner, TimeAdvancements.PRE_PLANNED);
+        if (projectile instanceof Projectile p && p.getOwner() instanceof ServerPlayer owner && hits >= TimeAdvancements.PRE_PLANNED_HITS) {
+            TimeAdvancements.award(owner, TimeAdvancements.PRE_PLANNED);
+        }
     }
 
     /** The caster died, left or went elsewhere: it ends. A frozen player who left is let go, what they'd have taken dropped. */

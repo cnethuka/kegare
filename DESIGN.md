@@ -2312,6 +2312,21 @@ Standstill's gray stay at every setting: they're what you play by).
   person, Standstill's and Stasis Field's leave the hands to vanilla (they'd cross the middle of the view); the rest keep the hands
   low and show only while you look about level (`TimeIds.FIRST_PERSON_*`).
 
+**Advancements** (tab root `kegare:innate_technique/time_manipulation`, unlocked silently on first rolling it; every one hidden,
+silent, `minecraft:impossible` and awarded from code, `TimeAdvancements`, only to a player whose current technique is Time
+Manipulation; the task ones need no target, the goals and the challenge count players only):
+
+| Advancement | Frame | When |
+|---|---|---|
+| *The World Stood Still* | task | cast Standstill |
+| *Overclock* | task | keep Accelerate on for 30 seconds straight |
+| *Second Chance* | goal | return with Point Maker while under 3 hearts, and be alive 10 seconds later |
+| *Slow Motion* | goal | hit a player with Decelerate while one of their abilities is on cooldown |
+| *Not So Fast* | goal | Rewind a player who'd got 8 or more blocks further from you in those 3 seconds |
+| *Frozen in Flight* | goal | catch 5 projectiles of other players in one Stasis Field (your own don't count) |
+| *Same Clock* | goal | be inside another player's Standstill as an immune Time user |
+| *Pre-Planned* | challenge | have 5 or more of your projectiles that hung in a Standstill hit players within 5 s of time resuming |
+
 **Sounds** (`tools/sounds/time_manipulation.py`, a pocket watch made from nothing; three versions each of the click, the tick, the
 stop and the resume in `run/sounds_preview/time_manipulation/`, the first of each ships): `time_manipulation.click` (Point Maker's
 mark and return, Decelerate's strike), `.tick` (Accelerate running, Decelerate's hit, a projectile caught in a Stasis Field),
@@ -2324,7 +2339,8 @@ player and a mob, with no history, refused, and a boss; Accelerate's 1.5x clock 
 Burnout or RMT; Decelerate's hit, the event guarding its cooldown slow, a boss; Stasis Field's slow and its projectiles crawling and
 restored, on leaving and at its end; Standstill freezing players and mobs but not the caster, the immune or a boss, refusing a
 second stop, a thrown projectile's flight then hang, the held damage landing as one hit, its cap, Burnout, the Insight hook, a
-frozen player leaving and the caster dying). `TimeVisualsTest` (PAL loads every animation the code plays, each has one
+frozen player leaving and the caster dying). `TimeAdvancementsTest` (each loads hidden and silent, only a holder earns them, and
+each is earned the way it says, a mob not counting where a player is needed). `TimeVisualsTest` (PAL loads every animation the code plays, each has one
 first-person rule; the mark's hour marks run down and its hands are painted where they stood). `TechniqueUnlocksTest` checks its
 unlock levels.
 

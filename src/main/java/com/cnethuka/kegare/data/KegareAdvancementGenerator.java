@@ -5,6 +5,7 @@ import com.cnethuka.kegare.advancement.KegareAdvancements;
 import com.cnethuka.kegare.innate_technique.rime.RimeAdvancements;
 import com.cnethuka.kegare.innate_technique.swap.SwapAdvancements;
 import com.cnethuka.kegare.innate_technique.puppet_manipulation.PuppetAdvancements;
+import com.cnethuka.kegare.innate_technique.time_manipulation.TimeAdvancements;
 import com.cnethuka.kegare.innatetechnique.InnateTechnique;
 import com.cnethuka.kegare.registry.KegareItems;
 import com.cnethuka.kegare.registry.KegareRegistries;
@@ -137,6 +138,18 @@ public final class KegareAdvancementGenerator implements AdvancementProvider.Adv
         techniqueChild(saver, puppets, PuppetAdvancements.TIED_UP, "puppet_manipulation.tied_up", Items.COBWEB, AdvancementType.GOAL);
         techniqueChild(saver, puppets, PuppetAdvancements.WALKIES, "puppet_manipulation.walkies", Items.LEAD, AdvancementType.GOAL);
         techniqueChild(saver, puppets, PuppetAdvancements.STRINGS_ATTACHED, "puppet_manipulation.strings_attached", Items.TRIPWIRE_HOOK, AdvancementType.CHALLENGE);
+
+        // ---- Time Manipulation tab: all hidden and silent; mastery ones need a player on the other side ----
+        AdvancementHolder time = techniqueRoots.get(Kegare.id("time_manipulation"));
+        if (time == null) throw new IllegalStateException("Time Manipulation's tab root was not generated");
+        techniqueChild(saver, time, TimeAdvancements.THE_WORLD_STOOD_STILL, "time_manipulation.the_world_stood_still", Items.CLOCK, AdvancementType.TASK);
+        techniqueChild(saver, time, TimeAdvancements.OVERCLOCK, "time_manipulation.overclock", Items.SUGAR, AdvancementType.TASK);
+        techniqueChild(saver, time, TimeAdvancements.SECOND_CHANCE, "time_manipulation.second_chance", Items.GOLDEN_APPLE, AdvancementType.GOAL);
+        techniqueChild(saver, time, TimeAdvancements.SLOW_MOTION, "time_manipulation.slow_motion", Items.SOUL_SAND, AdvancementType.GOAL);
+        techniqueChild(saver, time, TimeAdvancements.NOT_SO_FAST, "time_manipulation.not_so_fast", Items.ECHO_SHARD, AdvancementType.GOAL);
+        techniqueChild(saver, time, TimeAdvancements.FROZEN_IN_FLIGHT, "time_manipulation.frozen_in_flight", Items.ARROW, AdvancementType.GOAL);
+        techniqueChild(saver, time, TimeAdvancements.SAME_CLOCK, "time_manipulation.same_clock", Items.RECOVERY_COMPASS, AdvancementType.GOAL);
+        techniqueChild(saver, time, TimeAdvancements.PRE_PLANNED, "time_manipulation.pre_planned", Items.SPECTRAL_ARROW, AdvancementType.CHALLENGE);
     }
 
     /**

@@ -486,6 +486,14 @@ public final class KegareLanguageProvider extends LanguageProvider {
         advancement("puppet_manipulation.tied_up", "Tied Up", "Tie two players together");
         advancement("puppet_manipulation.walkies", "Walkies", "Leash two players at once");
         advancement("puppet_manipulation.strings_attached", "Strings Attached", "Tie a player to your puppet and detonate it with Curio Burst");
+        advancement("time_manipulation.the_world_stood_still", "The World Stood Still", "Cast Standstill");
+        advancement("time_manipulation.overclock", "Overclock", "Keep Accelerate on for 30 seconds straight");
+        advancement("time_manipulation.second_chance", "Second Chance", "Return with Point Maker while under 3 hearts and survive the next 10 seconds");
+        advancement("time_manipulation.slow_motion", "Slow Motion", "Hit a player with Decelerate while their ability is on cooldown");
+        advancement("time_manipulation.not_so_fast", "Not So Fast", "Rewind a player who was running from you");
+        advancement("time_manipulation.frozen_in_flight", "Frozen in Flight", "Catch 5 player projectiles in one Stasis Field");
+        advancement("time_manipulation.same_clock", "Same Clock", "Be inside another player's Standstill as an immune Time user");
+        advancement("time_manipulation.pre_planned", "Pre-Planned", "Have 5 or more of your frozen projectiles hit players when time resumes");
         advancement("swap.newtons_third", "Newton's Third", "A player dies from fall damage after you used Momentum Exchange on them");
         advancement("rime.brain_freeze", "Brain Freeze", "Freeze a player while they're charging or channeling");
         advancement("rime.full_charge", "Full Charge", "Hit a player with a fully charged Glacial Lance");
