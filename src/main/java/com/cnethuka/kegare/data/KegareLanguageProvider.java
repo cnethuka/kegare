@@ -168,6 +168,7 @@ public final class KegareLanguageProvider extends LanguageProvider {
         add("subtitles.kegare.swap.token_land", "Token lands");
         add("subtitles.kegare.swap.shove", "Hands shove");
         add("subtitles.kegare.swap.trade", "Hands clap, chimes cross");
+        add("subtitles.kegare.puppet_manipulation.curio_burst", "Puppet bursts apart");
         add("message.kegare.swap.switchback_refused", "Something stops the swap back.");
         // Puppet Manipulation
         add("innate_technique.kegare.puppet_manipulation", "Puppet Manipulation");

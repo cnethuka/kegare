@@ -1607,7 +1607,10 @@ lavender with threads as the motif, each with a lavender-dust vanilla fallback:
 - `stand_in_grow` (a rising column of motes), `understudy_swap` (motes drawn in, a vertical seam, at both ends);
 - `strings_attach` (a burst of fibers where a knot grips, and a pinch of light), `strings_snap` (frayed fibers flung from both ends and the middle, curling down), `strings_tension` (a faint glint, spawned on each client along a string while it pulls or drags). Particles only: the string itself is the model above.
 - Sounds: wool (form, dissolve), soul escape (possess, return), note-block chime by order (Directive), bell (Focus),
-  firework launch then explosions (Chain Burst), illusioner mirror (Stand-In, Understudy), bobber throw and reel, leash knot and a knockback thud (Strings).
+  Curio Burst's own burst (`puppet_manipulation.curio_burst`, §3.10: a dry pop over a short knock, a spring twanging
+  loose and bits scattering, an overwound toy, not a bomb; deeper by tier) with a wool tear, a firework launch then the
+  bursts (Chain Burst), illusioner mirror (Stand-In, Understudy), bobber throw and reel, leash knot and a knockback thud
+  (Strings).
 
 **Art** (`tools/gen_art.py`, lavender and wood ramps): emblem `gui/emblem/puppet_manipulation.png` (a marionette: the
 wooden control cross, strings, a doll with its arms out), icons for the five abilities and five specials, the four Strings

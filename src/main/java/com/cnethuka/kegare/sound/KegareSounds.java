@@ -37,6 +37,10 @@ public final class KegareSounds {
     public static final DeferredHolder<SoundEvent, SoundEvent> SWAP_SHOVE = register("swap.shove", "swap/shove");
     public static final DeferredHolder<SoundEvent, SoundEvent> SWAP_TRADE = register("swap.trade", "swap/trade");
 
+    // Puppet Manipulation (§3.20): Curio Burst's overwound toy bursting (the rest of its sounds are vanilla's).
+    public static final DeferredHolder<SoundEvent, SoundEvent> PUPPET_CURIO_BURST = register("puppet_manipulation.curio_burst",
+            "puppet_manipulation/curio_burst");
+
     private KegareSounds() {}
 
     private static DeferredHolder<SoundEvent, SoundEvent> register(String name, String file) {

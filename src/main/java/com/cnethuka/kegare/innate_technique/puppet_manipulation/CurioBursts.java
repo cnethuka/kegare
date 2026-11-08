@@ -4,6 +4,7 @@ import com.cnethuka.kegare.Kegare;
 import com.cnethuka.kegare.combat.CombatHelper;
 import com.cnethuka.kegare.innatetechnique.visual.Visual;
 import com.cnethuka.kegare.innatetechnique.visual.VisualService;
+import com.cnethuka.kegare.sound.KegareSounds;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.Iterator;
@@ -68,8 +69,9 @@ public final class CurioBursts {
         puppet.discard(); // it IS the bomb
 
         VisualService.playAt(level, center, Visual.effect(effect(tier), Visual.Anchor.BODY));
-        level.playSound(null, center.x, center.y, center.z, SoundEvents.GENERIC_EXPLODE.value(), SoundSource.PLAYERS,
-                0.6f + 0.25f * tier.ordinal(), 1.5f - 0.2f * tier.ordinal());
+        // An overwound toy bursting (tools/sounds/puppet_manipulation.py), heard as far as the old bang was; bigger is deeper.
+        level.playSound(null, center.x, center.y, center.z, KegareSounds.PUPPET_CURIO_BURST.value(), SoundSource.PLAYERS,
+                0.6f + 0.25f * tier.ordinal(), 1.1f - 0.1f * tier.ordinal());
         level.playSound(null, center.x, center.y, center.z, SoundEvents.WOOL_BREAK, SoundSource.PLAYERS, 1.0f, 0.8f);
 
         com.cnethuka.kegare.melee.CleanDodge.areaWentOff(level, owner, com.cnethuka.kegare.melee.CleanDodge.sphere(center, radius));

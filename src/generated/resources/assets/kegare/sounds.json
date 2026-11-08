@@ -1,4 +1,10 @@
 {
+  "puppet_manipulation.curio_burst": {
+    "sounds": [
+      "kegare:puppet_manipulation/curio_burst"
+    ],
+    "subtitle": "subtitles.kegare.puppet_manipulation.curio_burst"
+  },
   "swap.big_clap": {
     "sounds": [
       "kegare:swap/big_clap"
