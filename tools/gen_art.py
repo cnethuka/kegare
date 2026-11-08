@@ -2108,25 +2108,43 @@ def build() -> dict[str, Image.Image]:
 # ---------------------------------------------------------------------------------------------------- Puppet Manipulation
 
 def puppet_glow() -> "Image.Image":
-    """The puppets' glow shell (entity texture, drawn additively and tinted with the Malice color, scrolling slowly):
-    soft white threads woven across a black tile, wrapping seamlessly both ways."""
+    """The puppets' glow shell (entity texture, drawn additively and tinted with the Malice color, scrolling slowly): hard
+    one-pixel threads woven across a black tile, four each way, gently waving, wrapping seamlessly both ways. Where two cross,
+    one passes over the other in turn, like cloth: the one underneath stops a pixel short on each side. No soft edge, no
+    noise: crisp at any size (the tiers differ by how bright the layer draws it, PuppetGlowLayer)."""
     size = 64
+    weft_level, warp_level = 255, 200
+    weft: dict[tuple[int, int], int] = {}  # pixel -> which thread
+    warp: dict[tuple[int, int], int] = {}
+    for i in range(4):
+        for x in range(size):  # the waves' slopes stay under 1, so a pixel per column is a joined line
+            y = round(8 + 16 * i + 3.0 * math.sin(2 * math.pi * 2 * x / size + 1.3 * i)) % size
+            weft[(x, y)] = i
+        for y in range(size):
+            x = round(8 + 16 * i + 3.0 * math.sin(2 * math.pi * 2 * y / size + 0.9 * i + 0.5)) % size
+            warp[(x, y)] = i
+    level = {p: weft_level for p in weft}
+    for p, j in warp.items():
+        level.setdefault(p, warp_level)
+    for (x, y), j in warp.items():
+        i = weft.get((x, y))
+        if i is None:
+            continue
+        if (i + j) % 2 == 0:  # the weft goes over: the warp stops short above and below
+            level[(x, y)] = weft_level
+            for dy in (-1, 1):
+                q = (x, (y + dy) % size)
+                if q in warp and q not in weft:
+                    level[q] = 0
+        else:  # the warp goes over: the weft stops short left and right
+            level[(x, y)] = warp_level
+            for dx in (-1, 1):
+                q = ((x + dx) % size, y)
+                if q in weft and q not in warp:
+                    level[q] = 0
     img = Image.new("RGBA", (size, size), (0, 0, 0, 255))
-    layers = noise_stack(seed=611, px=size, py=size, cells=(8, 4))
-    for y in range(size):
-        for x in range(size):
-            v = 0.0
-            # three families of threads (sine waves that tile: whole periods across the 64px tile)
-            for k, (fx, fy, amp, phase, width, strength) in enumerate((
-                    (1, 2, 5.0, 0.0, 0.8, 1.0), (2, 1, 4.0, 1.7, 0.7, 0.7))):
-                t = (fx * x + fy * y) / size * 2 * math.pi
-                offset = amp * math.sin(t * 2 + phase)
-                d = ((fy * x - fx * y) / math.hypot(fx, fy) + offset) % (size / 4)
-                d = min(d, size / 4 - d)
-                v = max(v, strength * max(0.0, 1.0 - d / width))
-            v = min(1.0, v * (0.55 + 0.45 * fbm(layers, x, y)))  # threads only, brighter in places; no haze
-            c = int(255 * v)
-            img.putpixel((x, y), (c, c, c, 255))
+    for (x, y), c in level.items():
+        img.putpixel((x, y), (c, c, c, 255))
     return img
 
 

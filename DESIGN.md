@@ -1462,8 +1462,9 @@ icon armor stand; ultimate locked (its Dominion comes later). All numbers in `[p
   | Full | full charge | 180 | 8 | bright, plus an outline in the glow color |
 
   The glow is a shell of drifting threads just outside the body (`PuppetGlowLayer`, additive, texture
-  `entity/puppet_glow.png`) in the owner's Malice color. The Full outline uses vanilla's outline pass, but only while
-  the viewer has line of sight, so it never gives a hidden puppet away through walls.
+  `entity/puppet_glow.png`: hard one-pixel threads woven four each way, no soft edge, tiling seamlessly) in the owner's
+  Malice color. The Full outline uses vanilla's outline pass, but only while the viewer has line of sight, so it never
+  gives a hidden puppet away through walls; a new Full puppet's outline comes as its weave finishes (`puppet_form`).
 - Barely any melee (`meleeDamage` 1, reach 1.4 blocks from its centre so a small body can still land it), and
   `movementSpeed` 0.42: a little faster than a walking player; a following puppet more than 6 blocks behind runs at
   1.35× and keeps pace with a sprint, and one more than `followTeleportDistance` (24) behind appears beside its owner.
