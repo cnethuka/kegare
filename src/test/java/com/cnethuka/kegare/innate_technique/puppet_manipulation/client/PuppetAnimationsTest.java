@@ -113,4 +113,18 @@ class PuppetAnimationsTest {
                     "1": {"vector": [10, 0, 0], "easing": "easeInQuad"}}}}}""").getAsJsonObject();
         assertEquals(2.5f, PuppetPoses.parse(gecko).rotation("a", 0.5f).x, 1e-3f, "GeckoLib easings belong to the key a segment ends on");
     }
+
+    /**
+     * Every animation the caster plays has a first-person rule; one left off both lists would show its hands in your own first
+     * person at any pitch, coming up into the middle of the view when you look down. The spin is on the puppet, not a player.
+     */
+    @Test
+    void everyCastHasAFirstPersonRule() throws IllegalAccessException {
+        for (java.lang.reflect.Field field : PuppetIds.class.getFields()) {
+            if (!field.getName().startsWith("ANIM_") || field.get(null).equals(PuppetIds.ANIM_PUPPET_IDLE_SPIN)) continue;
+            Object id = field.get(null);
+            assertTrue(PuppetIds.FIRST_PERSON_VANILLA.contains(id) ^ PuppetIds.FIRST_PERSON_WHILE_LEVEL.contains(id),
+                    field.getName() + " is on exactly one of the lists");
+        }
+    }
 }

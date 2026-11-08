@@ -1,6 +1,8 @@
 package com.cnethuka.kegare.innate_technique.puppet_manipulation.client;
 
+import com.cnethuka.kegare.client.visual.PlayerAnimations;
 import com.cnethuka.kegare.innate_technique.puppet_manipulation.PuppetEntity;
+import com.cnethuka.kegare.innate_technique.puppet_manipulation.PuppetIds;
 import com.cnethuka.kegare.innate_technique.puppet_manipulation.PuppetRegistry;
 import com.cnethuka.kegare.innate_technique.puppet_manipulation.PuppetTier;
 import java.util.HashMap;
@@ -29,6 +31,9 @@ public final class PuppetClient {
         StringsClient.init(modBus);
         // Every one of its effects is drawn by PuppetFx (thread, and lavender specks at Vanilla), not by Photon.
         PuppetFx.init(modBus);
+        // Your own first-person hands (PuppetIds): the way back and Zip are always vanilla's, the rest only while you look about level.
+        PlayerAnimations.keepVanillaHands(PuppetIds.FIRST_PERSON_VANILLA);
+        PlayerAnimations.handsWhileLevel(PuppetIds.FIRST_PERSON_WHILE_LEVEL);
     }
 
     private static void registerRenderers(EntityRenderersEvent.RegisterRenderers event) {

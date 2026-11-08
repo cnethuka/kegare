@@ -1599,7 +1599,10 @@ puppets; Stand-In copies only the owner's look. Strings is physical, so all of i
 Casts leave the legs to the game, so they work on the move, and (unless the gesture needs the head) leave the head
 looking where the player aims. They blend in from and out to whatever the player was doing (in code, §3.13), and
 looping phases honour a loop point the file declares (`PlayerAnimations`). PAL animates players only, so `PuppetPoses`
-reads the same file and samples the spin's keyframes for the puppet model.
+reads the same file and samples the spin's keyframes for the puppet model. In your own first person (§3.13, "Your own
+hands"; the lists are in `PuppetIds`) the way back and Zip always leave the hands to vanilla: the first flings the arms
+across the view and Zip's string arm reaches into its middle. Every other cast keeps its hands to the bottom corners of a
+level view, so it shows them only while you look about level.
 
 Effects: everything is thread, like a puppeteer's show: fine lavender (#C4B5FD) with white highlights, precise, gone
 fast, never smoke or soft orbs. The client draws them all itself (`PuppetFx`: crisp camera-facing strips, flat rings,

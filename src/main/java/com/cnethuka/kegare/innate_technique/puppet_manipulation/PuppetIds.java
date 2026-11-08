@@ -2,6 +2,7 @@ package com.cnethuka.kegare.innate_technique.puppet_manipulation;
 
 import com.cnethuka.kegare.Kegare;
 import com.cnethuka.kegare.innatetechnique.visual.Visual;
+import java.util.List;
 import net.minecraft.resources.ResourceLocation;
 
 /**
@@ -29,6 +30,18 @@ public final class PuppetIds {
     public static final ResourceLocation ANIM_STRINGS_LEASH = Kegare.id("strings_leash");
     /** On the puppet itself: PAL animates players only, so {@code PuppetPoses} samples this one for the puppet model. */
     public static final ResourceLocation ANIM_PUPPET_IDLE_SPIN = Kegare.id("puppet_idle_spin");
+    /**
+     * In your own first person these leave the hands to vanilla ({@code PlayerAnimations.keepVanillaHands}): the way back flings
+     * the arms across the view, and Zip's string arm reaches into its middle.
+     */
+    public static final List<ResourceLocation> FIRST_PERSON_VANILLA = List.of(ANIM_POSSESS_RETURN, ANIM_STRINGS_ZIP);
+    /**
+     * The rest keep their hands to the bottom corners of a level view, so they show them only while you look about level
+     * ({@code PlayerAnimations.handsWhileLevel}): looking down brings them up into its middle.
+     */
+    public static final List<ResourceLocation> FIRST_PERSON_WHILE_LEVEL = List.of(ANIM_CREATE_CHARGE, ANIM_CREATE_RELEASE,
+            ANIM_POSSESS_CAST, ANIM_DIRECTIVE_CAST, ANIM_FOCUS_POINT, ANIM_CURIO_BURST_CAST, ANIM_CHAIN_BURST_CAST,
+            ANIM_UNDERSTUDY_CAST, ANIM_STAND_IN_CAST, ANIM_STRINGS_FIRE, ANIM_STRINGS_REEL, ANIM_STRINGS_TIE, ANIM_STRINGS_LEASH);
 
     // Effects (drawn by PuppetFx)
     public static final ResourceLocation FX_PUPPET_FORM = fx("puppet_form");
