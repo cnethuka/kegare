@@ -38,6 +38,10 @@ final class DashDrive {
         direction = null;
     }
 
+    boolean active() {
+        return direction != null;
+    }
+
     void tick(LocalPlayer player) {
         if (direction == null) return;
         boolean first = start == null;

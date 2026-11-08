@@ -397,6 +397,10 @@ public final class KegareLanguageProvider extends LanguageProvider {
         add("message.kegare.roll.hard_pity", "Fate relented on roll %s.");
         add("message.kegare.roll.replaced", "Your " + INNATE_TECHNIQUE + " was removed by an update and has been re-rolled.");
 
+        // Severed (DESIGN §3.27)
+        add("hud.kegare.severed.blur", "Blur");
+        add("hud.kegare.severed.winded", "Winded");
+        add("message.kegare.severed.winded", "Too winded to Blur.");
         // Time Manipulation
         add("innate_technique.kegare.time_manipulation", "Time Manipulation");
         add("innate_technique.kegare.time_manipulation.epithet", "The Clock Forgets to Tick");

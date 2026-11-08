@@ -293,8 +293,8 @@ All timestamps use **level game time**. They persist across restarts and are ide
 - **Technique Mode** (**G** toggles it). Out of it, number keys and scroll are vanilla, and nothing casts. While it is on, the scroll
   wheel stays on the hotbar, the combat panel takes the hotbar's place and the hotbar becomes a column on the left (§3.6).
 
-  It ends when you press G again, die, or become Severed (or lose your innate technique), and on logout. G does
-  nothing for Severed players. Nothing else ends it: chat, any other screen, a command and a dimension change leave the
+  It ends when you press G again, die, or become Severed (or lose your innate technique), and on logout. For Severed
+  players G is Blur instead (§3.27), sent as `MeleeIntentPayload.Action.BLUR`; for everyone else it stays Technique Mode. Nothing else ends it: chat, any other screen, a command and a dimension change leave the
   mode and the panel as they were. Input and the HUD read one state (`TechniqueMode.isActive`), and it lives on the
   client only: the server has no copy to fall out of step, and turning it on is free, so nothing rides on enforcing it.
 
@@ -328,7 +328,8 @@ All timestamps use **level game time**. They persist across restarts and are ide
 - `VisualPayload`'s `START_LOOP` carries how long the loop has been running (`elapsedTicks`, 0 for a fresh start). A
   player who starts tracking an entity gets its running loops with their full `growTicks` and the time already gone, so
   they see each one where everyone else does: a growing loop part-grown, Switchback's countdown at the real time left.
-- Severed players (§3.27) get `SensesPayload` (S→C, to that player only: who they sense).
+- Severed players (§3.27) get `SensesPayload` (S→C, to that player only: who they sense) and `BlurPayload` (S→C, to its owner:
+  Blur on or off, how it moves, until when they're winded); G sends `MeleeIntentPayload.Action.BLUR`.
 - Network version `19` (since Severed's payloads, §3.27; `18` was Burnout's end time in the sync, §3.25, and Time Manipulation's
   payloads, §3.26). Bump it when payload formats change; mismatched clients are refused.
 
@@ -2374,7 +2375,38 @@ The client draws each sensed body's silhouette into a mask (invisible ones as if
 or Malice color, no names or labels, nothing that tells a technique or trait (§1). It shows at every effects setting, because it's
 what they play by.
 
-**Tests:** `SeveredBodyTest` (Strength only on a Severed hand; the Toughness split, falls least, the void, /kill and starving
+**Blur** (G for Severed players; `Blur`, `client/BlurDrive`, `client/BlurFeel`, `client/BlurFx`). For everyone else G stays
+Technique Mode, unchanged (`client/SeveredKeys`).
+- **Movement:** extremely fast (`[blur] speed` 0.56 blocks a tick, about twice a sprint). Momentum: the velocity turns toward where
+  you steer at most `turnDegrees` (8) a tick, so a sharp turn overshoots; steering gains `acceleration` (0.07) a tick up to top speed;
+  letting go skids to a stop, losing `skid` (0.05) a tick. Anything that slows movement (Slowness, a Decelerate hit, a Stasis Field)
+  slows it by the same share.
+- **Who moves you:** the server allows it and tells the owner (`BlurPayload`); `client/BlurDrive` sets the velocity before each
+  tick's move, as a dash is driven, and the game's own collision stops it, so it can't clip. The server checks every tick how far
+  they really went, summed over five ticks (a late packet bunches two ticks into one, so ping can't trip it), and puts them back if
+  it's more than Blur allows. At these speeds vanilla's "moved too quickly" (10 blocks in one packet) never comes into it.
+- **Wall crash** (`WallCrash`, `[wall_crash]`): when a move runs into something and most of the speed is gone, the speed lost
+  (blocks a tick) sets the damage (`damagePerSpeed` 10 × lost − `damageGrace` 2, at most `maxDamage` 12, as `flyIntoWall`, so
+  Toughness takes its share) and a stun (`stunPerSpeed` 2 s per block a tick, at most 2 s). A scrape along a wall keeps most of its
+  speed and does nothing below `minSpeedLost` (0.3). Then Blur is off.
+- **Cost:** hunger. It burns `exhaustionPerBlock` (0.2) per block covered faster than a sprint, straight to the food bar (Stamina
+  doesn't cut it). At `foodFloor` (6, three shanks, where vanilla stops sprinting) it crashes off: **winded** (`windedSeconds` 4 of
+  Slowness I) and it can't come back on until the food is above 6 and the winding is over ("Too winded to Blur.").
+- **Ends** on a stun, a freeze (Rime's, or a Standstill's), death, logout, no longer being Severed, a mount or gliding. Swimming,
+  lava and creative flight get no Blur speed; it stays on.
+- **Look:** everyone else sees a smear of delayed afterimages trailing behind them (`BlurFx`: the body drawn again 2 to 9 ticks back,
+  dust-grey, see-through, lit by the world like the body itself, never glowing), and dust and grit kicked off the ground they run on
+  (vanilla block particles of that block). Where they really are reads clearly: the body itself is drawn as always, a sharp, solid
+  silhouette at the front, and no afterimage is drawn within 0.9 blocks of it, so a hit on what you see is a hit on the real box.
+  Reduced draws three afterimages; Vanilla none, only the dust. Your own smear shows in third person, never round your first-person
+  camera. **In first person** (`BlurFeel`): the view opens up to 12% wider the faster you go, and needle streaks run round the
+  screen's edge, flowing from where you're headed; nothing is drawn inside the middle 60% of the screen. Half of it at Reduced, none
+  at Vanilla, and vanilla's FOV Effects slider scales the widening.
+- **HUD:** "Blur" under the crosshair with the melee cues while it's on, and "Winded" with a countdown bar while it can't come back.
+
+**Tests:** `BlurTest` (G is Blur only for the Severed; the drain by distance at Blur speed, none for a walk; crashing off at
+the floor, winded, refused until food is above it; the wall crash scaling with the speed lost, a scrape doing nothing; a stun or no
+longer being Severed ending it), `SeveredBodyTest` (Strength only on a Severed hand; the Toughness split, falls least, the void, /kill and starving
 untouched; Stamina on normal drain and on healing; Senses: a player standing still, a mob, an invisible one, moving, out of range,
 never an armor stand, a spectator or themself, and never for a Malice user).
 

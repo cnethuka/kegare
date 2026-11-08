@@ -12,7 +12,7 @@ import net.neoforged.neoforge.network.handling.IPayloadContext;
  * held, clamped on arrival: which way to dash is the player's choice anyway, and how far and how often aren't in here.
  */
 public record MeleeIntentPayload(Action action, byte forward, byte left) implements CustomPacketPayload {
-    public enum Action { DASH, PARRY_PRESS, PARRY_RELEASE }
+    public enum Action { DASH, PARRY_PRESS, PARRY_RELEASE, /** G from a Severed player (DESIGN §3.27). */ BLUR }
 
     public static final Type<MeleeIntentPayload> TYPE = new Type<>(Kegare.id("melee_intent"));
     public static final StreamCodec<FriendlyByteBuf, MeleeIntentPayload> STREAM_CODEC = StreamCodec.of(
@@ -40,6 +40,7 @@ public record MeleeIntentPayload(Action action, byte forward, byte left) impleme
             case PARRY_RELEASE -> {
                 if (player.hasData(MeleeLayer.ATTACHMENT)) Parry.release(player);
             }
+            case BLUR -> com.cnethuka.kegare.severed.Severed.toggleBlur(player);
         }
     }
 }

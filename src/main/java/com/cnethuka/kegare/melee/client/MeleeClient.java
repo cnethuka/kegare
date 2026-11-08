@@ -79,6 +79,11 @@ public final class MeleeClient {
         VanillaFallback.register(MeleeIds.FX_STRIKE_IMPACT_PHYSICAL, new VanillaFallback.Spec(ParticleTypes.POOF, 1, 14, 0.3, 0.12));
     }
 
+    /** A dash is driving this client's player right now (Blur gives way to it). */
+    public static boolean dashing() {
+        return DRIVE.active();
+    }
+
     private static void onHud(MeleeHudPayload payload) {
         if (payload.resetAttack() && Minecraft.getInstance().player != null) Minecraft.getInstance().player.resetAttackStrengthTicker();
         hud = payload;

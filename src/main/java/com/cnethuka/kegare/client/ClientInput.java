@@ -159,7 +159,7 @@ public final class ClientInput {
             deathBeforeReplaced = null;
         }
         TechniqueMode.tick();
-        while (KegareKeys.TECHNIQUE_MODE.consumeClick()) TechniqueMode.toggle();
+        while (KegareKeys.TECHNIQUE_MODE.consumeClick()) com.cnethuka.kegare.severed.client.SeveredKeys.pressG(); // Blur for Severed (§3.27)
 
         tickNumberKeysAndSpecial(mc);
         ultimateHeld = edge(CastKeys.down(consumeAndCheck(KegareKeys.ULTIMATE), ultimateHeld, TechniqueMode.isActive()),

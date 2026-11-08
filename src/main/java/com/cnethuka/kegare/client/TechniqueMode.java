@@ -41,7 +41,7 @@ public final class TechniqueMode {
     }
 
     /** G: on when allowed, off when on. Does nothing for Severed players or without abilities. */
-    static void toggle() {
+    public static void toggle() {
         if (active) {
             exit();
         } else if (abilitiesAvailable()) {
