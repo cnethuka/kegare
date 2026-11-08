@@ -730,11 +730,11 @@ closing it or disconnecting at any point changes nothing.
   - Holding anything in either hand (a sword, an axe, a shield, a block), every animation leaves the hands to vanilla.
     PAL's model draws what's held at its real size right by the camera, usually edge on, so a cast would swing a dark blade or
     a shield's back through the view. Only an empty-handed cast shows its gesture.
-  - `keepVanillaHands`: never shown. Melee's animations, every Rime cast, Swap's Mimic, and Puppet Manipulation's way back
-    and Zip.
+  - `keepVanillaHands`: never shown. Melee's animations, every Rime cast, Swap's Mimic, Puppet Manipulation's way back
+    and Zip, and Time Manipulation's Standstill and Stasis Field.
   - `handsWhileLevel`: shown only while you look no more than 15° down. The arms hang from the body, which doesn't tip
     with the view, so hands at chest height sit at the bottom corners of a level view and come up into its middle as you
-    look down. Every other Swap and Puppet Manipulation cast. Looking up takes them out of view.
+    look down. Every other Swap, Puppet Manipulation and Time Manipulation cast. Looking up takes them out of view.
   - Rime's `frozen` is the one on neither list: you can't move, and your arms stay where they are.
   - While PAL draws your own arms for your first-person view (`PlayerAnimations.firstPersonPass`), the layers drawn on a
     player's body skip it: Freeze's frost, the Rime Shell's plates and a possessor's glow. PAL hides the head and body
@@ -1108,6 +1108,12 @@ Package `com.cnethuka.kegare.innate_technique.rime`. **Rarity: RARE.** All numbe
   | Stand-In (Understudy) | own stage bow, then a hand presenting the double (`stand_in_cast`); the puppet grows inside a rising column of lavender threads with a mirror sound (and shrinks back the same way) |
   | Zip (Strings, R) | yanked off the ground: the string arm up and ahead, body and legs trailing behind it (`strings_zip`); the string runs taut and shimmers, and YOU are the one moving, with a bobber reel at a higher pitch than Reel In's |
   | Leash (Strings, R) | two leads in two fists: yanked back low and wide, leaning back, held (`strings_leash`); a second string shoots from the caster and a knot grips the second target, and two taut strings run from the slowed caster for 5 s |
+  | Rewind (Point Maker) | its own cast: the arm held out at the target, turned back counter-clockwise and drawn in (`rewind_cast`), where Point Maker only points down or arrives; a backward tick heard at the target (`time_manipulation.reverse_tick`); the target yanked back down its path through bronze afterimages, a clock face snapping up on it with its hands swept round counter-clockwise |
+  | Fast Forward (Accelerate) | its own sweep round the clock (`fast_forward_cast`), where Accelerate winds a crown; ticks running together into a whirr (`time_manipulation.whirl`); a clock face round the caster, three hands whirling forward faster and faster |
+  | Stasis Field (Decelerate) | its own palm pushed at the ground (`stasis_field_cast`), where Decelerate flicks a blade; a slowed, ringing tick (`time_manipulation.stasis`); a glassy bronze dome snapping open over a clock face laid on the ground, and projectiles crawling through it |
+
+  Standstill isn't a special, but it has a tell of its own all the same: the raised watch (`standstill_cast`), the sharp click
+  (`time_manipulation.stop`) and a one-frame inverted flash (at Full) for everyone inside, then the gray.
 
   Strings' base casts have tells of their own too, because the string itself is the tell:
 
@@ -2263,6 +2269,41 @@ breaks the record. Runtime only.
 Decelerate or a Stasis Field, or stopped by Standstill. **`TimeTargetEvent(caster, target, ability)`** (cancellable) fires before
 Rewind moves anyone and before Decelerate's cooldown slow.
 
+**Look and sound** (DESIGN §3.13's rules):
+precise, elegant and cold. A sharp click, the world drained of colour, blades hanging in the air, then everything moving at once.
+Clockwork bronze `#B08D57` and silver-white, pocket watches, clock faces and hands. The technique's own objects are smooth (meshes and
+flat shapes with hard edges, fully lit, so they read by day and by night); the mark painted on a block is pixel art at 16 texels a
+block. No dome of yellow, no purple, no soft glowing orbs, no particle soup, no haze, nothing that lingers. All of it is drawn by
+`TimeFx`, `MarkClient` and `DecelerateRenderer` (no Photon files); with `vfxQuality = REDUCED` there are fewer afterimages and a
+coarser dome, and with `VANILLA` none of it is drawn and small bronze and silver dust stands in (the mark, the clock hand and
+Standstill's gray stay at every setting: they're what you play by).
+- **Point Maker's mark** (`MarkClient`, its caster only): a small clock face stamped on the top of the block, a bronze rim, twelve
+  hour marks that go dark one by one clockwise from twelve as the mark runs out, and the two hands stopped where the world's clock
+  stood when it was marked (twelve to the north). The hands and the marks still to come glow a little. **The return:** the caster
+  snaps to the mark while bronze afterimages run back down the way they came, newest first, fading; a watch click.
+- **Rewind:** the target snaps back (never sliding) while bronze afterimages run back down its path, a clock face snapping up on it
+  with both hands swept round counter-clockwise, a backward tick.
+- **Accelerate:** a winding click as it goes on; while it runs, a quick tick five times a second and a faint silver afterimage left
+  behind every few ticks when the caster moves.
+- **Fast Forward:** a clock face round the caster, turned toward whoever watches (laid flat at the waist in the caster's own first
+  person), three hands whirling forward faster and faster; a whirr of ticks.
+- **Decelerate:** the thrown clock hand (`DecelerateRenderer`): a slim silver-white blade with a spade and a fine point, a bronze
+  pivot ring and counterweight, turning end over end in the plane it flies along, turning with its speed (so it crawls in a field
+  and hangs in a Standstill). On a hit, a small clock face flashes up over the target (above its name) and stays there, dim, its
+  hands dragging round once in the 5 s.
+- **Stasis Field:** a smooth glass dome of bronze, clear where you look straight through it and denser toward its edge, a bright
+  rim where it meets the ground, over a clock face laid on the ground that turns slowly; it snaps open in 4 ticks and folds away in
+  3. Projectiles visibly crawl through it.
+- **Standstill:** the sharp click and one inverted frame (`kegare:invert`, at Full only, under the impact-frame setting) for
+  everyone inside, then the gray for every frozen player and silence but for one slow tick a second; what the caster throws hangs
+  where it stopped. On the resume a loud tick, colour snaps straight back (no fade), and everything lands at once.
+- **Animations** (`tools/anims/time_manipulation.py`, Python-built): `point_maker_mark` (a fingertip set on the spot, one exact
+  tap), `point_maker_return` (arrived, the left hand closing over the chest like a watch lid), `rewind_cast`, `accelerate_toggle`
+  (a crown wound between finger and thumb), `fast_forward_cast`, `decelerate_cast` (a blade flicked off the back of the hand),
+  `stasis_field_cast` and `standstill_cast` (the watch raised before the face, one press of the thumb, held). In your own first
+  person, Standstill's and Stasis Field's leave the hands to vanilla (they'd cross the middle of the view); the rest keep the hands
+  low and show only while you look about level (`TimeIds.FIRST_PERSON_*`).
+
 **Sounds** (`tools/sounds/time_manipulation.py`, a pocket watch made from nothing; three versions each of the click, the tick, the
 stop and the resume in `run/sounds_preview/time_manipulation/`, the first of each ships): `time_manipulation.click` (Point Maker's
 mark and return, Decelerate's strike), `.tick` (Accelerate running, Decelerate's hit, a projectile caught in a Stasis Field),
@@ -2275,7 +2316,9 @@ player and a mob, with no history, refused, and a boss; Accelerate's 1.5x clock 
 Burnout or RMT; Decelerate's hit, the event guarding its cooldown slow, a boss; Stasis Field's slow and its projectiles crawling and
 restored, on leaving and at its end; Standstill freezing players and mobs but not the caster, the immune or a boss, refusing a
 second stop, a thrown projectile's flight then hang, the held damage landing as one hit, its cap, Burnout, the Insight hook, a
-frozen player leaving and the caster dying). `TechniqueUnlocksTest` checks its unlock levels.
+frozen player leaving and the caster dying). `TimeVisualsTest` (PAL loads every animation the code plays, each has one
+first-person rule; the mark's hour marks run down and its hands are painted where they stood). `TechniqueUnlocksTest` checks its
+unlock levels.
 
 ---
 

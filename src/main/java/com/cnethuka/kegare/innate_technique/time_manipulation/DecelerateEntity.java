@@ -29,6 +29,11 @@ import net.neoforged.neoforge.common.NeoForge;
 public class DecelerateEntity extends ThrowableProjectile {
     private int lifetime = 30;
     private float damage;
+    /** Client only: how far it has turned end over end (degrees), now and a tick ago. It turns with its speed, so it slows in a
+     * Stasis Field and hangs in a Standstill. */
+    public float spin, spinO;
+    /** Degrees a tick at its thrown speed. */
+    private static final float SPIN_PER_TICK = 38f;
 
     public DecelerateEntity(EntityType<? extends DecelerateEntity> type, Level level) {
         super(type, level);
@@ -51,7 +56,12 @@ public class DecelerateEntity extends ThrowableProjectile {
     @Override
     public void tick() {
         super.tick();
-        if (!level().isClientSide && isAlive() && tickCount >= lifetime) discard();
+        if (level().isClientSide) {
+            spinO = spin;
+            spin += SPIN_PER_TICK * (float) Math.min(1.5, getDeltaMovement().length() / 2.0);
+        } else if (isAlive() && tickCount >= lifetime) {
+            discard();
+        }
     }
 
     @Override

@@ -506,6 +506,7 @@
   "hud.kegare.melee.dash": "Dash",
   "hud.kegare.melee.recovery": "Recovering",
   "hud.kegare.melee.strike": "Reinforced",
+  "hud.kegare.point_maker.return": "Point Maker: return %ss",
   "hud.kegare.possessing": "Possessing",
   "hud.kegare.puppets": "Puppets: %s/%s",
   "hud.kegare.shell_health": "Body %s",

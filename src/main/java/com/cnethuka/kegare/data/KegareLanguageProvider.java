@@ -433,6 +433,7 @@ public final class KegareLanguageProvider extends LanguageProvider {
         add("message.kegare.time.no_history", "%s has no past here to go back to.");
         add("message.kegare.time.refused", "Something holds it where it is.");
         add("message.kegare.time.already_stopped", "Time already stands still here.");
+        add("hud.kegare.point_maker.return", "Point Maker: return %ss");
         add("entity.kegare.decelerate", "Clock Hand");
         add("death.attack.kegare.time_manipulation", "%1$s was cut down by %2$s's clock hand");
         add("death.attack.kegare.time_manipulation.item", "%1$s was cut down by %2$s's clock hand");

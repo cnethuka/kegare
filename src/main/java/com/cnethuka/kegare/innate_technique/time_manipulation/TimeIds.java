@@ -32,6 +32,8 @@ public final class TimeIds {
 
     /** Accelerate's toggle loop: the client draws its afterimages while it runs. */
     public static final ResourceLocation FX_ACCELERATE = fx("accelerate");
+    /** Its loop's key ({@code VisualService.key(ACCELERATE, TOGGLE_LOOP)}). */
+    public static final String ACCELERATE_LOOP_KEY = Kegare.id("accelerate") + "/toggle_loop";
 
     private TimeIds() {}
 
