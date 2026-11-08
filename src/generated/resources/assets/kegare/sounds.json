@@ -35,6 +35,42 @@
     ],
     "subtitle": "subtitles.kegare.puppet_manipulation.curio_thump"
   },
+  "severed.blur_on": {
+    "sounds": [
+      "kegare:severed/blur_on"
+    ],
+    "subtitle": "subtitles.kegare.severed.blur_on"
+  },
+  "severed.blur_wind": {
+    "sounds": [
+      "kegare:severed/blur_wind"
+    ],
+    "subtitle": "subtitles.kegare.severed.blur_wind"
+  },
+  "severed.closing_line_arrive": {
+    "sounds": [
+      "kegare:severed/closing_line_arrive"
+    ],
+    "subtitle": "subtitles.kegare.severed.closing_line_arrive"
+  },
+  "severed.closing_line_launch": {
+    "sounds": [
+      "kegare:severed/closing_line_launch"
+    ],
+    "subtitle": "subtitles.kegare.severed.closing_line_launch"
+  },
+  "severed.wall_crash": {
+    "sounds": [
+      "kegare:severed/wall_crash"
+    ],
+    "subtitle": "subtitles.kegare.severed.wall_crash"
+  },
+  "severed.winded": {
+    "sounds": [
+      "kegare:severed/winded"
+    ],
+    "subtitle": "subtitles.kegare.severed.winded"
+  },
   "swap.big_clap": {
     "sounds": [
       "kegare:swap/big_clap"

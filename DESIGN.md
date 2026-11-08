@@ -735,10 +735,11 @@ closing it or disconnecting at any point changes nothing.
     PAL's model draws what's held at its real size right by the camera, usually edge on, so a cast would swing a dark blade or
     a shield's back through the view. Only an empty-handed cast shows its gesture.
   - `keepVanillaHands`: never shown. Melee's animations, every Rime cast, Swap's Mimic, Puppet Manipulation's way back
-    and Zip, and Time Manipulation's Standstill and Stasis Field.
+    and Zip, Time Manipulation's Standstill and Stasis Field, and Severed's winded and wall crash.
   - `handsWhileLevel`: shown only while you look no more than 15° down. The arms hang from the body, which doesn't tip
     with the view, so hands at chest height sit at the bottom corners of a level view and come up into its middle as you
-    look down. Every other Swap, Puppet Manipulation and Time Manipulation cast. Looking up takes them out of view.
+    look down. Every other Swap, Puppet Manipulation and Time Manipulation cast, and Severed's Blur start, launch and arrival.
+    Looking up takes them out of view.
   - Rime's `frozen` is the one on neither list: you can't move, and your arms stay where they are.
   - While PAL draws your own arms for your first-person view (`PlayerAnimations.firstPersonPass`), the layers drawn on a
     player's body skip it: Freeze's frost, the Rime Shell's plates and a possessor's glow. PAL hides the head and body
@@ -1115,6 +1116,7 @@ Package `com.cnethuka.kegare.innate_technique.rime`. **Rarity: RARE.** All numbe
   | Rewind (Point Maker) | its own cast: the arm held out at the target, turned back counter-clockwise and drawn in (`rewind_cast`), where Point Maker only points down or arrives; a backward tick heard at the target (`time_manipulation.reverse_tick`); the target yanked back down its path through bronze afterimages, a clock face snapping up on it with its hands swept round counter-clockwise |
   | Fast Forward (Accelerate) | its own sweep round the clock (`fast_forward_cast`), where Accelerate winds a crown; ticks running together into a whirr (`time_manipulation.whirl`); a clock face round the caster, three hands whirling forward faster and faster |
   | Stasis Field (Decelerate) | its own palm pushed at the ground (`stasis_field_cast`), where Decelerate flicks a blade; a slowed, ringing tick (`time_manipulation.stasis`); a glassy bronze dome snapping open over a clock face laid on the ground, and projectiles crawling through it |
+  | Closing Line (Blur, Severed, §3.27) | a planted push-off (`closing_line_launch`), a crack and a burst of dust and grit off the ground where they left, and a heavy launch everyone nearby hears (`severed.closing_line_launch`, loud); on arrival a skid (`closing_line_arrive`, `severed.closing_line_arrive`) and dust where they stop |
 
   Standstill isn't a special, but it has a tell of its own all the same: the raised watch (`standstill_cast`), the sharp click
   (`time_manipulation.stop`) and a one-frame inverted flash (at Full) for everyone inside, then the gray.
@@ -2429,7 +2431,22 @@ Technique Mode, unchanged (`client/SeveredKeys`).
   isn't ready (Xs).").
 - **Bosses (§4):** it rushes at them and the Strike damages them; they're never moved (the Strike never pushes a boss).
 
-**Tests:** `ClosingLineTest` (the rush to melee reach of where the target stood, arriving, the Strike from the rush with
+**Look and sound** (all of it physical: dust, grit, wind streaks, afterimages; no glow, no Innate color, no Photon). The moments
+fire on the server (`SeveredFx`): dust and grit are vanilla block particles of the ground they're on, so they read the same at every
+effects setting, and Blur's smear and first-person feel have their own Reduced and Vanilla forms (above).
+- **Animations** (`tools/anims/severed.py`, Python-built): `blur_on` (a breath out into a low, forward stance), `closing_line_launch`
+  (a planted push-off, body pitched low, arms flung back), `closing_line_arrive` (a skid, leaning back, arms out low for balance),
+  `winded` (bent over, hands on knees, the back heaving) and `wall_crash` (thrown back off the wall, arms flung out wide, never up,
+  then slumping). In your own first person, `winded` and `wall_crash` leave the hands to vanilla; the rest keep them low.
+- **Sounds** (`tools/sounds/severed.py`, made from nothing; three versions each of Blur's start, the launch and the wall crash in
+  `run/sounds_preview/severed/`, the first of each ships): `severed.blur_on` (a hard breath out, the air starting to tear past),
+  `severed.blur_wind` (air tearing past, every half second while they run faster than a sprint), `severed.closing_line_launch` (a heel
+  planted, the ground cracking, gravel sprayed, the air torn open: played loud, heard well off), `severed.closing_line_arrive` (a
+  skid), `severed.wall_crash` (a body slammed into stone, louder the harder the crash) and `severed.winded` (ragged breaths).
+- **Closing Line's tell** (§3.15): at the cast the push-off, the crack and a burst of dust and grit from the ground where they left,
+  and the heavy launch heard by everyone nearby; on arrival the skid and dust where they stop.
+
+**Tests:** `SeveredAnimationsTest` (PAL loads all five, each with one first-person rule), `ClosingLineTest` (the rush to melee reach of where the target stood, arriving, the Strike from the rush with
 its window and harder knockback, the recovery and cooldown; a wall mid-rush crashes it; something living in the path stops it short;
 a swap ends it; a perfect parry spends the Strike and staggers harder; a boss is struck and never moved), `BlurTest` (G is Blur only for the Severed; the drain by distance at Blur speed, none for a walk; crashing off at
 the floor, winded, refused until food is above it; the wall crash scaling with the speed lost, a scrape doing nothing; a stun or no

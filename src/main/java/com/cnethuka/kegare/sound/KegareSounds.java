@@ -72,7 +72,25 @@ public final class KegareSounds {
     /** ...and the loud tick it resumes on. */
     public static final DeferredHolder<SoundEvent, SoundEvent> TIME_RESUME = time("resume");
 
+    // Severed (§3.27): a body, nothing else.
+    /** Blur on: a breath out, the air starting to tear past. */
+    public static final DeferredHolder<SoundEvent, SoundEvent> SEVERED_BLUR_ON = severed("blur_on");
+    /** Blur running: air tearing past, played over itself while they run. */
+    public static final DeferredHolder<SoundEvent, SoundEvent> SEVERED_BLUR_WIND = severed("blur_wind");
+    /** Closing Line's launch: a heel planted, the ground cracking, the air torn open. Heard by everyone nearby. */
+    public static final DeferredHolder<SoundEvent, SoundEvent> SEVERED_CLOSING_LINE_LAUNCH = severed("closing_line_launch");
+    /** Its arrival: a hard skid. */
+    public static final DeferredHolder<SoundEvent, SoundEvent> SEVERED_CLOSING_LINE_ARRIVE = severed("closing_line_arrive");
+    /** A body slammed into a wall. */
+    public static final DeferredHolder<SoundEvent, SoundEvent> SEVERED_WALL_CRASH = severed("wall_crash");
+    /** Winded: ragged breaths. */
+    public static final DeferredHolder<SoundEvent, SoundEvent> SEVERED_WINDED = severed("winded");
+
     private KegareSounds() {}
+
+    private static DeferredHolder<SoundEvent, SoundEvent> severed(String name) {
+        return register("severed." + name, "severed/" + name);
+    }
 
     private static DeferredHolder<SoundEvent, SoundEvent> time(String name) {
         return register("time_manipulation." + name, "time_manipulation/" + name);

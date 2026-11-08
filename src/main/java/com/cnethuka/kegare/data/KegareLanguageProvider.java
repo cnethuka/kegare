@@ -404,6 +404,12 @@ public final class KegareLanguageProvider extends LanguageProvider {
         add("message.kegare.severed.no_target", "No one in sight.");
         add("message.kegare.severed.in_reach", "Already within reach.");
         add("message.kegare.severed.closing_line_cooldown", "Closing Line isn't ready (%ss).");
+        add("subtitles.kegare.severed.blur_on", "Sharp breath out");
+        add("subtitles.kegare.severed.blur_wind", "Air rushes past");
+        add("subtitles.kegare.severed.closing_line_launch", "Ground cracks under a launch");
+        add("subtitles.kegare.severed.closing_line_arrive", "Feet skid");
+        add("subtitles.kegare.severed.wall_crash", "Body slams into a wall");
+        add("subtitles.kegare.severed.winded", "Ragged breathing");
         // Time Manipulation
         add("innate_technique.kegare.time_manipulation", "Time Manipulation");
         add("innate_technique.kegare.time_manipulation.epithet", "The Clock Forgets to Tick");

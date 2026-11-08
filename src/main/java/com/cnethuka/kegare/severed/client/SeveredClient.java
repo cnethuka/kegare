@@ -75,6 +75,8 @@ public final class SeveredClient {
             BlurFx.clear();
         });
         StatusLayer.addExtra(SeveredClient::hud);
+        com.cnethuka.kegare.client.visual.PlayerAnimations.keepVanillaHands(SeveredIds.FIRST_PERSON_VANILLA);
+        com.cnethuka.kegare.client.visual.PlayerAnimations.handsWhileLevel(SeveredIds.FIRST_PERSON_WHILE_LEVEL);
     }
 
     /** Under the crosshair with the melee cues: "Blur" while it's on, "Winded" while it can't come back on. */

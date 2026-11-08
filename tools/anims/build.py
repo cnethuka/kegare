@@ -19,6 +19,7 @@ import shatter_shell  # noqa: E402
 import freeze  # noqa: E402
 import melee  # noqa: E402
 import puppet_manipulation  # noqa: E402
+import severed  # noqa: E402
 import swap  # noqa: E402
 import time_manipulation  # noqa: E402
 
@@ -27,7 +28,7 @@ SETS = {"puppet_manipulation": puppet_manipulation.ANIMS, "melee": melee.ANIMS, 
         "frost_field": frost_field.ANIMS, "ice_path": ice_path.ANIMS,
         "rime_shell": rime_shell.ANIMS,
         "shatter_shell": shatter_shell.ANIMS, "freeze": freeze.ANIMS, "swap": swap.ANIMS,
-        "time_manipulation": time_manipulation.ANIMS}
+        "time_manipulation": time_manipulation.ANIMS, "severed": severed.ANIMS}
 # What a set's preview holds: (bone, OBJ, texture, objects, grip). The game draws the same thing from the same numbers.
 HELD = {"glacial_lance": ("right_arm", "src/main/resources/assets/kegare/models/fx/glacial_lance.obj",
                           "src/main/resources/assets/kegare/textures/entity/glacial_lance.png",
