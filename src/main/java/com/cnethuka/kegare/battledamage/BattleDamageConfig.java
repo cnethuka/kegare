@@ -50,11 +50,11 @@ public final class BattleDamageConfig {
                 "(containers with their contents, never spilled; pending rebuilds survive a restart). COSMETIC: cracks and debris only.")
                 .defineEnum("mode", Mode.PERMANENT);
         MIN_TIER = b.comment("The weakest hit that breaks anything (light hits never do).").defineEnum("minimumTier", ImpactTier.MEDIUM);
-        STRENGTH_SCALE = b.defineInRange("strengthScale", 5.0, 0.0, 10_000.0);
+        STRENGTH_SCALE = b.defineInRange("strengthScale", 3.0, 0.0, 10_000.0);
         TOP_POWER = b.comment("The top tier's power (reserved for Black Spark): ceiling level, the only thing that breaks obsidian.")
                 .defineInRange("topPower", 1500.0, 0.0, 1_000_000.0);
         BASE_RADIUS = b.defineInRange("baseRadius", 0.5, 0.0, 16.0);
-        RADIUS_PER_STRENGTH = b.defineInRange("radiusPerStrength", 1.2, 0.0, 16.0);
+        RADIUS_PER_STRENGTH = b.defineInRange("radiusPerStrength", 0.8, 0.0, 16.0);
         MAX_RADIUS = b.defineInRange("maxRadius", 4.5, 0.0, 16.0);
         SPILL_CONTENTS = b.comment("A broken container spills what was in it on the ground, as TNT does (never in RESTORING: it comes back full).")
                 .define("spillContents", true);
@@ -76,7 +76,7 @@ public final class BattleDamageConfig {
         SLAMS = b.define("enabled", true);
         SLAM_MIN_SPEED = b.comment("The slowest (blocks/tick) that counts as a slam. A sprinting hit knocks someone about 0.7.")
                 .defineInRange("minSpeed", 0.9, 0.0, 10.0);
-        SLAM_STRENGTH_PER_SPEED = b.comment("Strength (as a hit's) per block/tick of speed.").defineInRange("strengthPerSpeed", 1.0, 0.0, 100.0);
+        SLAM_STRENGTH_PER_SPEED = b.comment("Strength (as a hit's) per block/tick of speed.").defineInRange("strengthPerSpeed", 1.45, 0.0, 100.0);
         SLAM_WINDOW = b.comment("Seconds after a breaking hit that its victim is watched for a slam.").defineInRange("windowSeconds", 2.5, 0.0, 60.0);
         b.pop();
         b.pop();

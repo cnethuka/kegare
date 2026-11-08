@@ -87,6 +87,7 @@ public final class CurioBursts {
             if (!target.hurt(source, scaled)) continue;
             hurt.add(target);
             com.cnethuka.kegare.impact.Impacts.charge(target, tier.ordinal() / 2.0); // the puppet's charge: Tap 0, Half 0.5, Full 1
+            com.cnethuka.kegare.impact.Impacts.malice(target, PuppetConfig.TIER_COST[tier.ordinal()].get()); // and the Malice it was made of
             if (!CombatHelper.isBoss(target) && knockback > 0) { // bosses: damaged, never moved
                 target.knockback(knockback * (1.0 - d / radius) + 0.1, center.x - target.getX(), center.z - target.getZ());
                 target.hurtMarked = true;

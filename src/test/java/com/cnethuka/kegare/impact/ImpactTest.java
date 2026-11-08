@@ -22,12 +22,16 @@ import org.junit.jupiter.api.extension.ExtendWith;
 /** The Impact System's strength rule (DESIGN §3.23), and real hits resolving into impacts on a throwaway server. */
 @ExtendWith(EphemeralTestServerProvider.class)
 class ImpactTest {
-    /** The shipped defaults, so these read the rule as it ships whatever a test server's file holds. */
-    private static ImpactTier tier(double damage, double knockback, double launch, double charge) {
-        double strength = ImpactStrength.of(damage / 20.0, knockback, launch, charge, ImpactConfig.DAMAGE_WEIGHT.getDefault(),
+    /** The shipped defaults, so these read the rule as it ships whatever a test server's file holds. On a 20-health player. */
+    private static ImpactTier tier(double damage, double knockback, double launch, double charge, double malice) {
+        return ImpactStrength.tier(strength(damage, knockback, launch, charge, malice), ImpactConfig.MEDIUM.getDefault(),
+                ImpactConfig.HEAVY.getDefault(), ImpactConfig.IMPACT_FRAME.getDefault());
+    }
+
+    private static double strength(double damage, double knockback, double launch, double charge, double malice) {
+        return ImpactStrength.of(damage / 20.0, knockback, launch, charge, malice, ImpactConfig.DAMAGE_WEIGHT.getDefault(),
                 ImpactConfig.KNOCKBACK_WEIGHT.getDefault(), ImpactConfig.BASE_KNOCKBACK.getDefault(), ImpactConfig.LAUNCH_WEIGHT.getDefault(),
-                ImpactConfig.CHARGE_WEIGHT.getDefault());
-        return ImpactStrength.tier(strength, ImpactConfig.MEDIUM.getDefault(), ImpactConfig.HEAVY.getDefault(), ImpactConfig.IMPACT_FRAME.getDefault());
+                ImpactConfig.CHARGE_WEIGHT.getDefault(), ImpactConfig.MALICE_WEIGHT.getDefault());
     }
 
     private static double stack(double... pushes) {
@@ -36,25 +40,38 @@ class ImpactTest {
         return k;
     }
 
+    /** What the rule must produce (DESIGN §3.23): the shipped weights put each of these in its tier from what it did, no minimums. */
     @Test
     void whatHitsDoMapsOntoTheTiers() {
-        // On a 20-health player. Vanilla gives every hit a 0.4 knockback; a sprint adds 0.5; a Strike 0.6 before it.
-        assertEquals(ImpactTier.LIGHT, tier(1, 0.4, 0, 0), "a punch barely registers");
-        assertEquals(ImpactTier.LIGHT, tier(6, 0.4, 0, 0), "an iron sword's normal hit is a normal hit");
-        assertEquals(ImpactTier.LIGHT, tier(3, 0.4, 0, 0), "a Frost Shard");
-        assertEquals(ImpactTier.MEDIUM, tier(6, stack(0.4, 0.5), 0, 0), "a sprinting sword hit is a solid one");
-        assertEquals(ImpactTier.MEDIUM, tier(9, 0.4, 0, 0), "so is a critical one");
-        assertEquals(ImpactTier.HEAVY, tier(1.5, stack(0.6, 0.4), 0, 1), "a Reinforced Strike, even with a fist");
-        assertEquals(ImpactTier.HEAVY, tier(9, stack(0.6, 0.4), 0, 1), "a Reinforced Strike with an iron sword");
-        assertEquals(ImpactTier.HEAVY, tier(12, 0.4, 0, 1), "a full Glacial Lance");
-        assertEquals(ImpactTier.MEDIUM, tier(6, 0.4, 0.6, 0), "a Glacial Spire at its least");
-        assertEquals(ImpactTier.IMPACT_FRAME, tier(6, 0.4, 1.2, 1), "a full Glacial Spire");
-        assertEquals(ImpactTier.IMPACT_FRAME, tier(12, stack(0.4, 0.7), 0, 1), "a Full Curio Burst at its centre");
-        assertEquals(ImpactTier.LIGHT, tier(4, stack(0.4, 0.1), 0, 0), "a Tap Curio Burst at its edge");
-        assertEquals(ImpactTier.MEDIUM, tier(0, 1.4, 0, 0), "Shatter Shell's push");
-        assertEquals(ImpactTier.IMPACT_FRAME, tier(28, 0, 0, 1), "Total Swap trading 4/20 and 18/20 (it moves 14 each way)");
-        assertEquals(ImpactTier.MEDIUM, tier(0, 0, 0, 1), "Total Swap between two at the same health");
-        assertNotEquals(ImpactTier.TOP, tier(1000, 50, 50, 1), "the top tier is never reached by strength: it's Black Spark's to ask for");
+        // Vanilla gives every hit a 0.4 knockback; a sprint adds 0.5; a Strike 0.6 before it (a Severed player's 0.9).
+        assertEquals(ImpactTier.LIGHT, tier(1, 0.4, 0, 0, 0), "a punch stays Light");
+        assertEquals(ImpactTier.MEDIUM, tier(0, 1.4, 0, 0, 88), "Shatter Shell's push with no shell up (88 Malice) is Medium");
+        assertEquals(ImpactTier.MEDIUM, tier(0, 1.4, 0, 0, 32), "and with the shell up (32)");
+        assertEquals(ImpactTier.HEAVY, tier(9, stack(0.6, 0.4), 0, 1, 0), "an iron-sword Reinforced Strike is Heavy (no cast behind it)");
+        assertEquals(ImpactTier.HEAVY, tier(12, 0.4, 0, 1, 100), "a full Glacial Lance is Heavy");
+        assertEquals(ImpactTier.IMPACT_FRAME, tier(6, 0.4, 1.2, 1, 120), "a full Glacial Spire reaches the impact frame");
+        assertEquals(ImpactTier.IMPACT_FRAME, tier(10.4, 0.54, 0, 1, 32 + 180), "so does a Full Curio Burst a block away (its cast and its puppet)");
+        assertEquals(ImpactTier.IMPACT_FRAME, tier(0, 0, 0, 1, 240), "and a Total Swap, even between two at the same health");
+        assertNotEquals(ImpactTier.TOP, tier(1000, 50, 50, 1, 100_000), "the top tier is never reached by strength: it's Black Spark's to ask for");
+        // The earlier examples hold.
+        assertEquals(ImpactTier.LIGHT, tier(6, 0.4, 0, 0, 0), "an iron sword's normal hit");
+        assertEquals(ImpactTier.MEDIUM, tier(6, stack(0.4, 0.5), 0, 0, 0), "a sprinting sword hit");
+        assertEquals(ImpactTier.MEDIUM, tier(9, 0.4, 0, 0, 0), "a critical one");
+        assertEquals(ImpactTier.LIGHT, tier(3, 0.4, 0, 0, 40), "a Frost Shard");
+    }
+
+    /**
+     * A Severed player has no Malice, so that input is always 0 for them; their hits still reach the same tiers through damage, knockback
+     * and the Strike's full charge, and their Strike lands above a standard one.
+     */
+    @Test
+    void severedHitsReachTheSameTiersWithoutMalice() {
+        assertEquals(ImpactTier.LIGHT, tier(1, 0.4, 0, 0, 0), "a punch");
+        assertEquals(ImpactTier.MEDIUM, tier(8, stack(0.4, 0.5), 0, 0, 0), "a sprinting netherite sword hit");
+        assertEquals(ImpactTier.HEAVY, tier(6 * 1.75, stack(0.9, 0.4), 0, 1, 0), "an iron-sword Strike (75% more, 0.9 knockback)");
+        assertEquals(ImpactTier.IMPACT_FRAME, tier(8 * 1.5 * 1.75, stack(0.9, 0.4), 0, 1, 0), "a critical netherite Strike: 21 damage");
+        assertTrue(strength(6 * 1.75, stack(0.9, 0.4), 0, 1, 0) > strength(6 * 1.5, stack(0.6, 0.4), 0, 1, 0),
+                "the same Strike lands harder for a Severed player");
     }
 
     @Test
@@ -119,7 +136,24 @@ class ImpactTest {
             Impacts.flush();
             assertEquals(1, seen.size());
             assertEquals(ImpactKind.TECHNIQUE, seen.get(0).kind(), "a technique's damage flashes in its Malice color");
-            assertEquals(ImpactTier.HEAVY, seen.get(0).tier(), "12 damage at full charge");
+            assertEquals(0, seen.get(0).malice(), 1e-9, "no cast traced: no Malice");
+            assertEquals(ImpactTier.MEDIUM, seen.get(0).tier(), "12 damage at full charge, with no Malice behind it");
+
+            // Inside a paid cast (a Glacial Lance at its base cost of 100): that cast's base cost goes in, whatever the surroundings made
+            // it cost.
+            seen.clear();
+            b.invulnerableTime = 0;
+            com.cnethuka.kegare.innatetechnique.InnateTechniqueService.setInnateTechnique(a, com.cnethuka.kegare.innate_technique.rime.Rime.RIME.get());
+            var lance = com.cnethuka.kegare.innate_technique.rime.Rime.GLACIAL_LANCE;
+            double multiplier = com.cnethuka.kegare.innatetechnique.InnateTechniqueService.current(a).orElseThrow().environment(a).multiplier();
+            CastMalice.paid(a, lance, 100 * multiplier);
+            com.cnethuka.kegare.progression.CastScope.run(a, lance, () -> b.hurt(RimeDamage.source(server.overworld(), null, a), 12f));
+            Impacts.charge(b, 1.0); // a real lance carries its charge on itself
+            Impacts.flush();
+            assertEquals(1, seen.size());
+            assertEquals(100, seen.get(0).malice(), 1e-6, "its base cost");
+            assertEquals(ImpactTier.HEAVY, seen.get(0).tier(), "the same hit as a full Glacial Lance's");
+            CastMalice.clear();
 
             seen.clear();
             Impacts.charge(c, 1.0); // a hint with no hit behind it

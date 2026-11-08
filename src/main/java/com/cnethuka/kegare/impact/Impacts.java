@@ -2,6 +2,8 @@ package com.cnethuka.kegare.impact;
 
 import com.cnethuka.kegare.Kegare;
 import com.cnethuka.kegare.innate_technique.puppet_manipulation.PuppetEntity;
+import com.cnethuka.kegare.innatetechnique.Ability;
+import com.cnethuka.kegare.progression.CastScope;
 import com.cnethuka.kegare.melee.MeleeImpact;
 import com.cnethuka.kegare.melee.MeleeTell;
 import com.cnethuka.kegare.progression.Attribution;
@@ -47,7 +49,12 @@ public final class Impacts {
         NeoForge.EVENT_BUS.addListener(EventPriority.LOWEST, Impacts::onDamage);
         NeoForge.EVENT_BUS.addListener(EventPriority.LOWEST, Impacts::onKnockback);
         NeoForge.EVENT_BUS.addListener(Impacts::onServerTick);
-        NeoForge.EVENT_BUS.addListener((ServerStoppedEvent e) -> clear());
+        NeoForge.EVENT_BUS.addListener((ServerStoppedEvent e) -> {
+            clear();
+            CastMalice.clear();
+        });
+        NeoForge.EVENT_BUS.addListener((net.neoforged.neoforge.event.entity.player.PlayerEvent.PlayerLoggedOutEvent e) ->
+                CastMalice.forget(e.getEntity().getUUID()));
         MeleeImpact.listen(Impacts::onMoment);
         listen(ImpactSounds::play);
     }
@@ -74,6 +81,15 @@ public final class Impacts {
     }
 
     /**
+     * Malice a hit carries besides its cast's (a puppet going off carries what its tier cost to make), added to the cast's own base
+     * cost for the strength's Malice input.
+     */
+    public static void malice(LivingEntity victim, double amount) {
+        Pending p = pending(victim);
+        if (p != null) p.carried += Math.max(0, amount);
+    }
+
+    /**
      * A hit that deals no damage but still lands on a body (Swap's trades, Shatter Shell's push). It counts with anything else that hit
      * the victim this tick.
      *
@@ -94,6 +110,10 @@ public final class Impacts {
         p.knock = ImpactStrength.stack(p.knock, Math.max(0, knockback));
         p.charge = Math.max(p.charge, charge);
         if (!breaksBlocks) p.noBreak = true;
+        if (attacker instanceof ServerPlayer player) { // the cast it's part of
+            Ability cast = CastScope.current(player);
+            if (cast != null) p.castMalice = Math.max(p.castMalice, CastMalice.behind(player, cast));
+        }
     }
 
     // ---------------------------------------------------------------- gathering
@@ -116,6 +136,9 @@ public final class Impacts {
         p.attacker(attacker != null ? attacker : direct, victim);
         if (technique(source)) p.technique = true;
         if (direct instanceof ChargedHit charged) p.charge = Math.max(p.charge, charged.hitCharge());
+        // The Malice behind it: the base cost of the cast it traces back to (a melee hit, with no cast behind it, has none).
+        Attribution.Hit traced = Attribution.of(source, p.level.getServer());
+        if (traced != null && traced.ability() != null) p.castMalice = Math.max(p.castMalice, CastMalice.behind(traced.attacker(), traced.ability()));
         if (direct instanceof LivingEntity body && direct == attacker) {
             p.from = body.getEyePosition();
             if (p.weapon.isEmpty()) p.weapon = body.getMainHandItem().copy();
@@ -186,7 +209,7 @@ public final class Impacts {
     static Impact resolve(Pending p) {
         LivingEntity victim = p.victim;
         double share = p.share + p.damage / Math.max(1f, victim.getMaxHealth());
-        double strength = ImpactStrength.of(share, p.knock, p.launch, p.charge);
+        double strength = ImpactStrength.of(share, p.knock, p.launch, p.charge, p.castMalice + p.carried);
         ImpactTier tier = ImpactStrength.tier(strength);
         if (p.guarded) tier = tier.lower();
         AABB box = victim.getBoundingBox();
@@ -197,7 +220,7 @@ public final class Impacts {
         direction = direction.lengthSqr() < 1.0e-6 ? victim.getLookAngle().scale(-1) : direction.normalize();
         ImpactKind kind = p.technique ? ImpactKind.TECHNIQUE : ImpactKind.MELEE;
         return new Impact(p.level, tier, strength, kind, p.attacker, victim, contact, direction, p.damage + p.share * victim.getMaxHealth(), p.knock,
-                p.launch, p.charge, !p.noBreak, p.technique ? ItemStack.EMPTY : p.weapon, p.source);
+                p.launch, p.charge, p.castMalice + p.carried, !p.noBreak, p.technique ? ItemStack.EMPTY : p.weapon, p.source);
     }
 
     /** {@code /kegare debug impact log}: every hit's tier and the numbers behind it, to its attacker and victim, for tuning. */
@@ -213,7 +236,7 @@ public final class Impacts {
                 String.format(java.util.Locale.ROOT, "%.2f", i.strength()),
                 String.format(java.util.Locale.ROOT, "%.1f", i.damage()), String.format(java.util.Locale.ROOT, "%.0f", i.victim().getMaxHealth()),
                 String.format(java.util.Locale.ROOT, "%.2f", i.knockback()), String.format(java.util.Locale.ROOT, "%.2f", i.launch()),
-                String.format(java.util.Locale.ROOT, "%.2f", i.charge()));
+                String.format(java.util.Locale.ROOT, "%.2f", i.charge()), String.format(java.util.Locale.ROOT, "%.0f", i.malice()));
         if (i.attacker() instanceof ServerPlayer p) p.sendSystemMessage(line);
         if (i.victim() instanceof ServerPlayer p && p != i.attacker()) p.sendSystemMessage(line);
     }
@@ -274,7 +297,7 @@ public final class Impacts {
         @Nullable Entity attacker;
         @Nullable Vec3 from;
         @Nullable DamageSource source;
-        double damage, share, knock, launch, charge;
+        double damage, share, knock, launch, charge, castMalice, carried;
         boolean explicit, technique, guarded, noBreak;
         ItemStack weapon = ItemStack.EMPTY;
 

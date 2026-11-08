@@ -454,7 +454,9 @@ Malice is always shown as whole numbers (floored, like the HUD); the stored valu
   default never reaches a file that already exists. `kegare-server.toml` has a `configVersion` (a file without one reads as 1). On load, a
   file behind `CURRENT_VERSION` is fixed once: a value still at its old default moves to the new one, and a value that's neither was changed
   by hand, so it stays and the server log lists it. **Version 2** is the Malice rescale (the tiers, and every cost and upkeep x4). It doesn't
-  touch players' saved data, so anyone already born keeps the capacity they rolled. A later change to a shipped default that needs the same
+  touch players' saved data, so anyone already born keeps the capacity they rolled. **Version 3** is the stronger Severed melee numbers.
+  **Version 4** is the Impact System's Malice input (§3.23): its re-tuned weights and tiers, and battle damage's `strengthScale`,
+  `radiusPerStrength` and slams' `strengthPerSpeed` with them (§3.24). A later change to a shipped default that needs the same
   treatment adds its own table and bumps `CURRENT_VERSION`.
 
 ### 3.10 Data generation and art
@@ -2005,21 +2007,31 @@ feel only: nothing in it changes what a hit does.
 **Strength comes from what the hit did** (`ImpactStrength`, numbers in `[impact]` of the server toml), never a fixed number per
 move. Everything that landed on one victim in one server tick is added up (`Impacts`), then:
 
-  strength = damageWeight × (damage dealt ÷ the victim's max health)
-           + knockbackWeight × (knockback beyond baseKnockback, the 0.4 every hit gets)
-           + launchWeight × (upward launch speed, blocks/tick) + chargeWeight × (the charge it was cast at, 0 to 1)
+  strength = damageWeight (1.2) × (damage dealt ÷ the victim's max health)
+           + knockbackWeight (1.2) × (knockback beyond baseKnockback, the 0.4 every hit gets)
+           + launchWeight (1.0) × (upward launch speed, blocks/tick) + chargeWeight (1.2) × (the charge it was cast at, 0 to 1)
+           + maliceWeight (0.75) × (the base Malice behind the hit, per 100)
 
 - Damage is what actually came off their health (`LivingDamageEvent.Post`), so armour, a guard and Rime Shell soften a hit's feel too.
 - Knockback is stacked the way vanilla stacks it (each push halves what was there and adds its own): a hit's own 0.4 and a sprint's
   0.5 make 0.7. A throw that sets speed instead of pushing reports it (`Impacts.launch`: Glacial Spire).
 - Charge: a projectile or spike that carries it (`ChargedHit`: Glacial Lance, Glacial Spire); Curio Burst's puppet tier (Tap 0,
   Half 0.5, Full 1); a Reinforced Strike counts as fully charged, and so does an ultimate.
+- **The Malice behind it** (`CastMalice`): the base cost of the cast the hit traces back to (`Landings.baseCost` of what was paid,
+  recorded when it's paid, so the surroundings and any discount never make a hit feel lighter, and Shatter Shell counts the 32 it
+  cost with the shell up even though the shell is gone by the time it lands), plus the Malice a puppet carries when it goes off in
+  a Curio Burst or a Chain Burst (what its tier cost to make: 40, 100 or 180). A melee hit with no cast behind it (a Reinforced
+  Strike too) adds nothing.
 - Hits that deal no damage still land on a body (`Impacts.hit`): Swap's moves (a plain swap, Exchange or Send Off is light; Momentum
   Exchange counts the speed it handed over; Total Swap counts the shares of health it moved, both ways, as its damage, and is an
   ultimate), and Shatter Shell's push. Abilities that never touch a body (Directive, Focus, Possess, Understudy, Stand-In, Strings'
   pulls, Awareness, Mimic, Anchor) make none.
 - A hit the guard took some of (`GUARD_HIT`) lands one tier softer.
-- Severed players' hits go through the same rule; theirs are simply bigger.
+- Severed players' hits go through the same rule. They have no Malice, so that input is always 0 for them (nothing stands in for it).
+  Their hits still reach every tier through damage, knockback and a Strike's full charge, and their Strike always lands harder than
+  the same standard one (their bigger bonus and knockback): a punch is Light, a sprinting netherite hit Medium, an iron-sword Strike
+  Heavy (2.37 against a standard player's 2.10), and a critical netherite Strike (21 damage) reaches the impact frame (3.00). That
+  last is their only way there: a Malice user also reaches it with a full Glacial Spire, a Full Curio Burst or any Total Swap.
 - The animations mark no impact tick of their own: they're timed to the server's moment (a melee reaction's key pose is its first
   frame; a clap meets as the swap lands), so the Impact System fires on those server moments.
 
@@ -2027,11 +2039,16 @@ move. Everything that landed on one victim in one server tick is added up (`Impa
 
   | Tier | From | What lands like it (on a 20-health player) |
   |---|---|---|
-  | Light | below 0.6 | a punch, a sword's normal hit, a Frost Shard, a plain swap: it barely registers |
-  | Medium | 0.6 | a sprinting or critical sword hit, Shatter Shell's push, the least Glacial Spire |
-  | Heavy | 1.1 | Reinforced Strikes (a fist's too), a full Glacial Lance, a Half Curio Burst |
-  | Impact frame | 2.1 | a full Glacial Spire, a Full Curio Burst near its centre, a Total Swap between very different health |
+  | Light | below 0.51 | a punch (0.06), a sword's normal hit, a Frost Shard, a plain swap (Positions, Exchange): it barely registers |
+  | Medium | 0.51 | a sprinting or critical sword hit, a fist's Reinforced Strike, Shatter Shell's push (1.44 with the shell up, 1.86 without), the least Glacial Spire, Send Off, Switchback |
+  | Heavy | 1.98 | an iron-sword Reinforced Strike (2.10), a full Glacial Lance (2.67), a Half Curio Burst |
+  | Impact frame | 2.84 | a full Glacial Spire (3.66), a Full Curio Burst (3.57 a block away), every Total Swap (3.00 at equal health, 4.32 between 9/20 and 20/20) |
   | Top | never reached | reserved for Black Spark (not built): only a hit that asks for it |
+
+  The numbers in brackets come from `/kegare debug impact log`. The weights were chosen so the rule itself puts each
+  of those where it is, with no per-move minimum. The closest calls, about 5% from the line: a full Glacial Lance (2.67) and a Total
+  Swap at equal health (3.00) either side of 2.84, and Shatter Shell's push (1.86) and an iron-sword Strike (2.10) either side of
+  1.98. Configs from before the Malice input are moved to these numbers once (`KegareConfigMigration` version 4), unless edited.
 
 **What each part does** (clients, `impact/client`). The server sends one `ImpactPayload` to the attacker, the victim and everyone
 within `witnessRange` (48) of the hit: tier, where it met the body, which way it went, its color, and who attacked and who was hit.
@@ -2112,15 +2129,15 @@ above breaks blocks round where it met the body. Light hits never break anything
 player or their technique always may; a mob's only with the `mobGriefing` gamerule on (`mobsNeedGriefing`).
 - **Wall slams** (`WallSlams`): for `windowSeconds` (2.5) after a breaking hit its victim is watched. Knocked into a wall, a floor or
   a ceiling at `minSpeed` (0.9 blocks/tick; a sprinting hit knocks someone about 0.7) or more, stopping dead against blocks that
-  way, they leave a crater where they hit: a hit of strength `strengthPerSpeed` (1.0) × speed at their edge. Speed is read from
+  way, they leave a crater where they hit: a hit of strength `strengthPerSpeed` (1.45) × speed at their edge. Speed is read from
   where they are each tick, so players and mobs alike. Landing from a full Glacial Spire's launch is one. Craters only: a slam does
   no damage of its own.
 
-**One rule for what breaks** (`BattleDamage.breaks`): a hit's power is `strengthScale` (5) × its strength at the point of contact
+**One rule for what breaks** (`BattleDamage.breaks`): a hit's power is `strengthScale` (3) × its strength at the point of contact
 (the top tier, reserved for a hit that asks for it: `topPower`, 1500), falling off in a straight line to nothing at its radius,
-`baseRadius` (0.5) + `radiusPerStrength` (1.2) × strength, at most `maxRadius` (4.5). A block breaks where the power reaching it is
+`baseRadius` (0.5) + `radiusPerStrength` (0.8) × strength, at most `maxRadius` (4.5). A block breaks where the power reaching it is
 more than its blast resistance: glass 0.3 and dirt 0.5 go to almost anything that breaks at all, wood (3) to a solid hit, stone (6)
-to a Heavy one at close range (a full Glacial Spire takes stone out to about 1.7 blocks), and obsidian (1200) only to the top tier.
+to a Heavy one at close range (a full Glacial Spire takes stone out to about 1.6 blocks), and obsidian (1200) only to the top tier.
 - Never: blocks vanilla makes unbreakable (negative hardness: bedrock, barriers, End portal frames, command blocks, structure and
   jigsaw blocks, light blocks), fluids, and anything on the `protected` list (block ids and `#tags`; empty by default).
 - Each block fires NeoForge's `BlockEvent.BreakEvent` first (as the attacking player, or a fake player for a mob), so spawn

@@ -19,7 +19,7 @@ import net.neoforged.neoforge.common.ModConfigSpec;
  */
 public final class KegareConfigMigration {
     /** The version these numbers are for. A file with no {@code configVersion} reads as 1, from before there was one. */
-    public static final int CURRENT_VERSION = 3;
+    public static final int CURRENT_VERSION = 4;
 
     /** Version 2, the Malice rescale: every value it changed, and its default before that. The new value is always the spec's default. */
     static final Map<String, Number> RESCALE_OLD_DEFAULTS = Map.ofEntries(
@@ -95,12 +95,29 @@ public final class KegareConfigMigration {
             entry("melee.severed.strikeKnockback", 0.4)
     );
 
+    /**
+     * Version 4, the Impact System's Malice input (DESIGN §3.23): the weights and tiers re-tuned round it, and battle damage's scale and
+     * slams with them (strengths grew), so what breaks stays as it was.
+     */
+    static final Map<String, Number> MALICE_INPUT_OLD_DEFAULTS = Map.ofEntries(
+            entry("impact.strength.damageWeight", 1.5),
+            entry("impact.strength.knockbackWeight", 1.0),
+            entry("impact.strength.chargeWeight", 0.8),
+            entry("impact.tiers.medium", 0.6),
+            entry("impact.tiers.heavy", 1.1),
+            entry("impact.tiers.impactFrame", 2.1),
+            entry("battle_damage.strengthScale", 5.0),
+            entry("battle_damage.radiusPerStrength", 1.2),
+            entry("battle_damage.slams.strengthPerSpeed", 1.0)
+    );
+
     /** One migration: a file below {@code version} goes through it. */
     record Step(int version, Map<String, Number> oldDefaults, String what) {}
 
     static final List<Step> STEPS = List.of(
             new Step(2, RESCALE_OLD_DEFAULTS, "the rescaled Malice numbers (new tiers, costs and regen)"),
-            new Step(3, SEVERED_MELEE_OLD_DEFAULTS, "the stronger Severed melee numbers"));
+            new Step(3, SEVERED_MELEE_OLD_DEFAULTS, "the stronger Severed melee numbers"),
+            new Step(4, MALICE_INPUT_OLD_DEFAULTS, "the Impact System's Malice input (its weights, tiers and battle damage scale)"));
 
     enum Action { NONE, MOVE_TO_NEW_DEFAULT, KEEP_HAND_EDITED }
 

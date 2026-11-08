@@ -20,18 +20,21 @@ public final class ImpactStrength {
      * @param knockback   the knockback it landed with ({@link #stack}ed)
      * @param launch      the upward speed it launched them at (blocks/tick), for hits that throw rather than push
      * @param charge      the charge it was cast at, 0 to 1
+     * @param malice      the base Malice behind it ({@link CastMalice}, and what a puppet carried); a melee hit's is 0
      */
-    public static double of(double damageShare, double knockback, double launch, double charge) {
-        return of(damageShare, knockback, launch, charge, ImpactConfig.DAMAGE_WEIGHT.get(), ImpactConfig.KNOCKBACK_WEIGHT.get(),
-                ImpactConfig.BASE_KNOCKBACK.get(), ImpactConfig.LAUNCH_WEIGHT.get(), ImpactConfig.CHARGE_WEIGHT.get());
+    public static double of(double damageShare, double knockback, double launch, double charge, double malice) {
+        return of(damageShare, knockback, launch, charge, malice, ImpactConfig.DAMAGE_WEIGHT.get(), ImpactConfig.KNOCKBACK_WEIGHT.get(),
+                ImpactConfig.BASE_KNOCKBACK.get(), ImpactConfig.LAUNCH_WEIGHT.get(), ImpactConfig.CHARGE_WEIGHT.get(), ImpactConfig.MALICE_WEIGHT.get());
     }
 
-    public static double of(double damageShare, double knockback, double launch, double charge, double damageWeight,
-                            double knockbackWeight, double baseKnockback, double launchWeight, double chargeWeight) {
+    /** {@code maliceWeight} is per 100 Malice. */
+    public static double of(double damageShare, double knockback, double launch, double charge, double malice, double damageWeight,
+                            double knockbackWeight, double baseKnockback, double launchWeight, double chargeWeight, double maliceWeight) {
         return damageWeight * Math.max(0, damageShare)
                 + knockbackWeight * Math.max(0, knockback - baseKnockback)
                 + launchWeight * Math.max(0, launch)
-                + chargeWeight * Math.max(0, Math.min(1, charge));
+                + chargeWeight * Math.max(0, Math.min(1, charge))
+                + maliceWeight * Math.max(0, malice) / 100.0;
     }
 
     public static ImpactTier tier(double strength) {

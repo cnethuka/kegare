@@ -199,6 +199,7 @@ public final class CastManager {
     private static boolean pay(ServerPlayer player, Ability ability, double amount) {
         if (!MaliceService.trySpend(player, amount)) return false;
         Landings.spent(player, ability, amount);
+        com.cnethuka.kegare.impact.CastMalice.paid(player, ability, amount); // the Impact System's Malice input (DESIGN §3.23)
         return true;
     }
 

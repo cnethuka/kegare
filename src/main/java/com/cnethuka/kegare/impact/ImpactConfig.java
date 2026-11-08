@@ -14,6 +14,7 @@ public final class ImpactConfig {
     public static ModConfigSpec.DoubleValue BASE_KNOCKBACK;
     public static ModConfigSpec.DoubleValue LAUNCH_WEIGHT;
     public static ModConfigSpec.DoubleValue CHARGE_WEIGHT;
+    public static ModConfigSpec.DoubleValue MALICE_WEIGHT;
     public static ModConfigSpec.DoubleValue MEDIUM;
     public static ModConfigSpec.DoubleValue HEAVY;
     public static ModConfigSpec.DoubleValue IMPACT_FRAME;
@@ -50,23 +51,26 @@ public final class ImpactConfig {
         b.comment("The Impact System (hit-stop, screen shake, impact flashes and frames). A hit's strength is",
                         "  damageWeight * (damage dealt / the victim's max health)",
                         "  + knockbackWeight * (knockback beyond baseKnockback, which every hit gets)",
-                        "  + launchWeight * (upward launch speed, blocks/tick) + chargeWeight * (the charge it was cast at, 0 to 1),",
+                        "  + launchWeight * (upward launch speed, blocks/tick) + chargeWeight * (the charge it was cast at, 0 to 1)",
+                        "  + maliceWeight * (the base Malice behind it, per 100: the cast's base cost, plus what a puppet that went off cost to make;",
+                        "    a melee hit's is 0, and so is every hit of a Severed player's),",
                         "and its tier is the highest whose threshold it reaches (below medium: light). The top tier is reserved for",
                         "Black Spark: no strength reaches it. Battle damage reads the same strength.")
                 .push("impact");
         b.push("strength");
-        DAMAGE_WEIGHT = b.defineInRange("damageWeight", 1.5, 0.0, 100.0);
-        KNOCKBACK_WEIGHT = b.defineInRange("knockbackWeight", 1.0, 0.0, 100.0);
+        DAMAGE_WEIGHT = b.defineInRange("damageWeight", 1.2, 0.0, 100.0);
+        KNOCKBACK_WEIGHT = b.defineInRange("knockbackWeight", 1.2, 0.0, 100.0);
         BASE_KNOCKBACK = b.comment("Knockback every hit gets anyway (vanilla's 0.4): only what's beyond it counts.")
                 .defineInRange("baseKnockback", 0.4, 0.0, 10.0);
         LAUNCH_WEIGHT = b.defineInRange("launchWeight", 1.0, 0.0, 100.0);
         CHARGE_WEIGHT = b.comment("A Reinforced Strike counts as fully charged, and so does an ultimate.")
-                .defineInRange("chargeWeight", 0.8, 0.0, 100.0);
+                .defineInRange("chargeWeight", 1.2, 0.0, 100.0);
+        MALICE_WEIGHT = b.comment("Per 100 Malice of base cost behind the hit.").defineInRange("maliceWeight", 0.75, 0.0, 100.0);
         b.pop();
         b.comment("Where each tier starts (strength).").push("tiers");
-        MEDIUM = b.defineInRange("medium", 0.6, 0.0, 1000.0);
-        HEAVY = b.defineInRange("heavy", 1.1, 0.0, 1000.0);
-        IMPACT_FRAME = b.defineInRange("impactFrame", 2.1, 0.0, 1000.0);
+        MEDIUM = b.defineInRange("medium", 0.51, 0.0, 1000.0);
+        HEAVY = b.defineInRange("heavy", 1.98, 0.0, 1000.0);
+        IMPACT_FRAME = b.defineInRange("impactFrame", 2.84, 0.0, 1000.0);
         b.pop();
         WITNESS_RANGE = b.comment("Players this close (blocks) to a hit see its flash.").defineInRange("witnessRange", 48.0, 0.0, 256.0);
         b.comment("The melee moments that aren't damage, and the tier each plays at (light, medium, heavy, impact_frame).").push("moments");

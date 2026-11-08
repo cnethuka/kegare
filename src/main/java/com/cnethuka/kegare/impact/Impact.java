@@ -18,12 +18,13 @@ import net.minecraft.world.phys.Vec3;
  * @param damage       health it took (a Total Swap: health moved), in points
  * @param knockback    knockback it landed with, stacked as vanilla stacks it
  * @param launch       the upward speed it threw them at (blocks/tick)
+ * @param malice       the base Malice behind it: its cast's base cost, plus what a puppet that went off carried
  * @param breaksBlocks false for hits that never break the world (Swap: a clean magic trick)
  * @param weapon       a melee hit's weapon (empty: a fist), else empty
  * @param source       the damage that landed, if any did
  */
 public record Impact(ServerLevel level, ImpactTier tier, double strength, ImpactKind kind, @Nullable Entity attacker, LivingEntity victim,
-                     Vec3 contact, Vec3 direction, double damage, double knockback, double launch, double charge, boolean breaksBlocks,
+                     Vec3 contact, Vec3 direction, double damage, double knockback, double launch, double charge, double malice, boolean breaksBlocks,
                      ItemStack weapon, @Nullable DamageSource source) {
     public boolean melee() {
         return kind == ImpactKind.MELEE && attacker != null && source != null && source.getDirectEntity() == attacker;

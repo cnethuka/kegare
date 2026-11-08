@@ -730,7 +730,7 @@ public final class KegareLanguageProvider extends LanguageProvider {
         add("commands.kegare.debug.impact.unknown", "No such choice: %s. Choose from %s.");
         add("commands.kegare.debug.impact.log.on", "Every hit's tier and strength now goes to its attacker and victim.");
         add("commands.kegare.debug.impact.log.off", "Hits aren't shown any more.");
-        add("commands.kegare.debug.impact.line", "Hit: %s, strength %s (damage %s of %s, knockback %s, launch %s, charge %s)");
+        add("commands.kegare.debug.impact.line", "Hit: %s, strength %s (damage %s of %s, knockback %s, launch %s, charge %s, Malice %s)");
         add("impact.kegare.tier.light", "Light");
         add("impact.kegare.tier.medium", "Medium");
         add("impact.kegare.tier.heavy", "Heavy");
