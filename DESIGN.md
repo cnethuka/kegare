@@ -2471,8 +2471,8 @@ and kills outside the window don't count; brought low by a Malice user then kill
 totem, or the fight ending first don't count; a Malice user never earns either), `SeveredAnimationsTest` (PAL loads all five, each with one first-person rule), `ClosingLineTest` (the rush to melee reach of where the target stood, arriving, the Strike from the rush with
 its window and harder knockback, the recovery and cooldown; a wall mid-rush crashes it; something living in the path stops it short;
 a swap ends it; a perfect parry spends the Strike and staggers harder; a boss is struck and never moved), `BlurTest` (G is Blur only for the Severed; the drain by distance at Blur speed, none for a walk; crashing off at
-the floor, winded, refused until food is above it; the wall crash scaling with the speed lost, a scrape doing nothing; a stun or no
-longer being Severed ending it), `SeveredBodyTest` (Strength only on a Severed hand; the Toughness split, falls least, the void, /kill and starving
+the floor, winded, refused until food is above it; the wall crash scaling with the speed lost, a scrape doing nothing; a stun, a
+Rime freeze or no longer being Severed ending it), `SeveredBodyTest` (Strength only on a Severed hand; the Toughness split, falls least, the void, /kill and starving
 untouched; Stamina on normal drain and on healing; Senses: a player standing still, a mob, an invisible one, moving, out of range,
 never an armor stand, a spectator or themself, and never for a Malice user).
 

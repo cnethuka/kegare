@@ -142,7 +142,7 @@ class BlurTest {
     }
 
     @Test
-    void aStunOrNoLongerBeingSeveredEndsIt(MinecraftServer server) throws Exception {
+    void aStunAFreezeOrNoLongerBeingSeveredEndsIt(MinecraftServer server) throws Exception {
         TestServer.onServerThread(server, () -> {
             TestServer.ensureOverworld(server);
             ServerLevel level = server.overworld();
@@ -153,6 +153,17 @@ class BlurTest {
                 CombatHelper.stun(s, 20);
                 Blur.tick(s, Severed.state(s));
                 assertFalse(Severed.blurring(s), "a stun");
+                CombatHelper.clearStun(s);
+                Severed.toggleBlur(s);
+                assertTrue(Severed.blurring(s));
+                // A Rime freeze ends it too.
+                com.cnethuka.kegare.innate_technique.rime.FreezeService.addStacks(s, 1000, null);
+                assertTrue(com.cnethuka.kegare.innate_technique.rime.FreezeService.isFrozen(s), "setup: frozen solid");
+                Blur.tick(s, Severed.state(s));
+                assertFalse(Severed.blurring(s), "a Rime freeze");
+                Severed.toggleBlur(s);
+                assertFalse(Severed.blurring(s), "and it can't start while frozen");
+                com.cnethuka.kegare.innate_technique.rime.FreezeService.clear(s);
                 CombatHelper.clearStun(s);
                 Severed.toggleBlur(s);
                 assertTrue(Severed.blurring(s));
