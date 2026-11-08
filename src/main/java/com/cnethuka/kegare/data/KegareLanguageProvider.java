@@ -397,6 +397,56 @@ public final class KegareLanguageProvider extends LanguageProvider {
         add("message.kegare.roll.hard_pity", "Fate relented on roll %s.");
         add("message.kegare.roll.replaced", "Your " + INNATE_TECHNIQUE + " was removed by an update and has been re-rolled.");
 
+        // Time Manipulation
+        add("innate_technique.kegare.time_manipulation", "Time Manipulation");
+        add("innate_technique.kegare.time_manipulation.epithet", "The Clock Forgets to Tick");
+        add("innate_technique.kegare.time_manipulation.desc", "Mark a moment to come back to, run your own clock fast and everyone "
+                + "else's slow, and at the last, stop time itself.");
+        add("ability.kegare.point_maker", "Point Maker");
+        add("ability.kegare.point_maker.desc", "First cast: mark the top of the block you're looking at (up to 32 blocks away; only you "
+                + "see it, and it lasts 15 seconds). Second cast: return to it, facing as you did, shedding every effect you've gained since, "
+                + "healed by 30% of your max health but never past the health you had when you marked it.");
+        add("ability.kegare.rewind", "Rewind");
+        add("ability.kegare.rewind.desc", "Snap the player or mob you're looking at (up to 24 blocks) back to where it was 3 seconds ago. "
+                + "Only its place goes back: health, effects and facing stay as they are.");
+        add("ability.kegare.accelerate", "Accelerate");
+        add("ability.kegare.accelerate.desc", "Toggle: Speed II, 30% faster attacks, and your technique's other cooldowns run half again "
+                + "as fast. Costs Malice every second it's on.");
+        add("ability.kegare.fast_forward", "Fast Forward");
+        add("ability.kegare.fast_forward.desc", "Take 6 seconds off every other cooldown of your technique at once, never your ultimate's. "
+                + "Switches Accelerate off and starts their shared cooldown.");
+        add("ability.kegare.decelerate", "Decelerate");
+        add("ability.kegare.decelerate.desc", "Throw a spinning clock hand. A hit deals 3 damage and, for 5 seconds, slows the target, "
+                + "slows their mining and runs their ability cooldowns at half speed.");
+        add("ability.kegare.stasis_field", "Stasis Field");
+        add("ability.kegare.stasis_field.desc", "A field 4 blocks round the block you're looking at, for 5 seconds: everything inside is "
+                + "heavily slowed, and projectiles crawl through it at a twentieth of their speed (yours too) until they're out.");
+        add("ability.kegare.standstill", "Standstill");
+        add("ability.kegare.standstill.desc", "Stop time for 3 seconds within 48 blocks of you. Everything else freezes: anything you "
+                + "throw hangs in the air, and every hit on the frozen lands at once when time resumes, as one blow. Anyone else with "
+                + "Time Manipulation moves too. Afterwards you're burnt out for 20 seconds.");
+        add("message.kegare.time.mark_elsewhere", "Your mark is in another dimension.");
+        add("message.kegare.time.no_block", "No block in sight within %s blocks.");
+        add("message.kegare.time.no_block_field", "No block in sight within %s blocks.");
+        add("message.kegare.time.no_target", "No one in sight.");
+        add("message.kegare.time.immune", "Time won't move %s.");
+        add("message.kegare.time.no_history", "%s has no past here to go back to.");
+        add("message.kegare.time.refused", "Something holds it where it is.");
+        add("message.kegare.time.already_stopped", "Time already stands still here.");
+        add("entity.kegare.decelerate", "Clock Hand");
+        add("death.attack.kegare.time_manipulation", "%1$s was cut down by %2$s's clock hand");
+        add("death.attack.kegare.time_manipulation.item", "%1$s was cut down by %2$s's clock hand");
+        add("death.attack.kegare.time_manipulation.player", "%1$s was cut down by a clock hand while fighting %2$s");
+        add("subtitles.kegare.time_manipulation.click", "Watch clicks");
+        add("subtitles.kegare.time_manipulation.tick", "Clock ticks");
+        add("subtitles.kegare.time_manipulation.wind", "Watch winds");
+        add("subtitles.kegare.time_manipulation.reverse_tick", "Clock ticks backward");
+        add("subtitles.kegare.time_manipulation.whirl", "Clock hands whirl");
+        add("subtitles.kegare.time_manipulation.throw", "Clock hand thrown");
+        add("subtitles.kegare.time_manipulation.stasis", "Time slows");
+        add("subtitles.kegare.time_manipulation.stop", "Time stops");
+        add("subtitles.kegare.time_manipulation.stop_tick", "Slow tick");
+        add("subtitles.kegare.time_manipulation.resume", "Time resumes");
         // Advancements
         advancement("awakening", "Awakening", "Be born into a world of " + MALICE + ".");
         advancement("reawakening", "Reawakening", "Use a " + REROLL_ITEM + " to reroll your " + INNATE_TECHNIQUE + ".");

@@ -27,7 +27,7 @@ import org.lwjgl.opengl.GL30;
  * the game ticks on underneath, keys are read, the HUD stays live, and when it ends you see where everything really is now.</li>
  * <li><b>Screen effects</b>: post-processing chains ({@code assets/<namespace>/shaders/post/<path>.json}, Minecraft's own
  * {@link PostChain}) played over the whole screen for a time, fading in and out by their {@code Amount} uniform. The impact frame is
- * one; the server's screen effect hook plays others (grayscale for Standstill, to come).</li>
+ * one; the server's screen effect hook plays others (grayscale for the players a Standstill freezes; its inverted frame is played by its own client code).</li>
  * </ul>
  * A chain that won't load (a driver that can't run it) is logged once and skipped; the rest still plays.
  */

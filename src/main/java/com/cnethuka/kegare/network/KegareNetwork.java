@@ -61,6 +61,15 @@ public final class KegareNetwork {
                 com.cnethuka.kegare.battledamage.BattleDamagePayload.STREAM_CODEC, com.cnethuka.kegare.battledamage.BattleDamagePayload::handle);
         registrar.playToClient(com.cnethuka.kegare.impact.ScreenEffects.Payload.TYPE, com.cnethuka.kegare.impact.ScreenEffects.Payload.STREAM_CODEC,
                 com.cnethuka.kegare.impact.ScreenEffects.Payload::handle);
+        registrar.playToClient(com.cnethuka.kegare.innate_technique.time_manipulation.TimeNet.Fx.TYPE,
+                com.cnethuka.kegare.innate_technique.time_manipulation.TimeNet.Fx.STREAM_CODEC,
+                com.cnethuka.kegare.innate_technique.time_manipulation.TimeNet.Fx::handle);
+        registrar.playToClient(com.cnethuka.kegare.innate_technique.time_manipulation.TimeNet.Mark.TYPE,
+                com.cnethuka.kegare.innate_technique.time_manipulation.TimeNet.Mark.STREAM_CODEC,
+                com.cnethuka.kegare.innate_technique.time_manipulation.TimeNet.Mark::handle);
+        registrar.playToClient(com.cnethuka.kegare.innate_technique.time_manipulation.TimeNet.Stop.TYPE,
+                com.cnethuka.kegare.innate_technique.time_manipulation.TimeNet.Stop.STREAM_CODEC,
+                com.cnethuka.kegare.innate_technique.time_manipulation.TimeNet.Stop::handle);
         // server -> clients tracking an entity (cosmetic only: animations and VFX)
         registrar.playToClient(VisualPayload.TYPE, VisualPayload.STREAM_CODEC, VisualPayload::handle);
     }

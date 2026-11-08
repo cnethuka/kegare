@@ -145,6 +145,7 @@ public final class KegareServerConfig {
         com.cnethuka.kegare.innate_technique.rime.RimeConfig.define(b);
         com.cnethuka.kegare.innate_technique.swap.SwapConfig.define(b);
         com.cnethuka.kegare.innate_technique.puppet_manipulation.PuppetConfig.define(b);
+        com.cnethuka.kegare.innate_technique.time_manipulation.TimeConfig.define(b);
         com.cnethuka.kegare.melee.MeleeConfig.define(b);
         com.cnethuka.kegare.impact.ImpactConfig.define(b);
         com.cnethuka.kegare.battledamage.BattleDamageConfig.define(b);

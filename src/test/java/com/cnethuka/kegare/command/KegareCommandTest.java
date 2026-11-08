@@ -262,7 +262,8 @@ class KegareCommandTest {
             assertEquals(Optional.of(Rime.RIME.get().rarity().color()), colorOf(hover, "Rime"), "in the rarity's color");
 
             assertEquals(List.of("rime"), names(suggestions(server, OP, "kegare innate set anyone ri")));
-            assertEquals(List.of("puppet_manipulation"), names(suggestions(server, OP, "kegare debug reroll anyone manip")), "it matches after an underscore too");
+            assertEquals(List.of("puppet_manipulation", "time_manipulation"), names(suggestions(server, OP, "kegare debug reroll anyone manip")),
+                    "it matches after an underscore too");
 
             List<Suggestion> traits = suggestions(server, OP, "kegare trait give anyone ");
             assertEquals(List.of("six_eyes"), names(traits));

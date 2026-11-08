@@ -9,6 +9,7 @@ import com.cnethuka.kegare.TestServer;
 import com.cnethuka.kegare.innate_technique.puppet_manipulation.PuppetManipulation;
 import com.cnethuka.kegare.innate_technique.rime.Rime;
 import com.cnethuka.kegare.innate_technique.swap.Swap;
+import com.cnethuka.kegare.innate_technique.time_manipulation.TimeManipulation;
 import com.cnethuka.kegare.innatetechnique.Ability;
 import com.cnethuka.kegare.innatetechnique.AbilityContext;
 import com.cnethuka.kegare.innatetechnique.CastIntent;
@@ -113,6 +114,16 @@ class TechniqueUnlocksTest {
             assertEquals(7, puppets.unlockLevel(PuppetManipulation.STAND_IN));
             assertEquals(9, puppets.unlockLevel(PuppetManipulation.ZIP_LEASH), "Zip and Leash");
             assertTrue(puppets.ultimateLocked());
+
+            InnateTechnique time = TimeManipulation.TIME_MANIPULATION.get();
+            assertEquals(0, time.unlockLevel(TimeManipulation.POINT_MAKER));
+            assertEquals(0, time.unlockLevel(TimeManipulation.ACCELERATE));
+            assertEquals(1, time.unlockLevel(TimeManipulation.REWIND));
+            assertEquals(2, time.unlockLevel(TimeManipulation.DECELERATE));
+            assertEquals(3, time.unlockLevel(TimeManipulation.FAST_FORWARD));
+            assertEquals(5, time.unlockLevel(TimeManipulation.STASIS_FIELD));
+            assertEquals(8, time.unlockLevel(TimeManipulation.STANDSTILL), "Standstill: the ultimate's level, like Total Swap");
+            assertFalse(time.ultimateLocked());
 
             assertEquals(0, TestInnateTechniques.APEX.get().unlockLevel(TestInnateTechniques.APEX.get().abilities().get(3)), "test techniques: everything");
             assertFalse(InnateTechnique.builder(InnateTechniqueRarity.COMMON).ability(Rime.FROST_SHARD).build().hasUnlockLevels(), "what datagen refuses");

@@ -69,6 +69,10 @@ public final class InnateTechniqueData {
         cooldowns.put(ability, cooldown);
     }
 
+    void removeCooldown(ResourceLocation ability) {
+        cooldowns.remove(ability);
+    }
+
     void pruneCooldowns(long now) {
         cooldowns.values().removeIf(c -> c.endTick() <= now);
     }

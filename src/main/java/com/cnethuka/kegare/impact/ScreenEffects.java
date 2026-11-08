@@ -14,13 +14,13 @@ import net.neoforged.neoforge.network.handling.IPayloadContext;
 /**
  * The screen shader hook (DESIGN §3.23): a whole-screen effect on one player's screen for a set time, from the server. The effect is
  * a post-processing chain the client loads from {@code assets/<namespace>/shaders/post/<path>.json}; it fades in and out over a few
- * ticks. Time Manipulation's Standstill will be the first real user ({@link #GRAYSCALE}); for now only {@code /kegare debug screen}
- * plays one.
+ * ticks. Time Manipulation's Standstill grays out the players it freezes with {@link #GRAYSCALE} (§3.26); {@code /kegare debug screen}
+ * plays any of them.
  */
 public final class ScreenEffects {
     public static final ResourceLocation GRAYSCALE = Kegare.id("grayscale");
     /** Every effect that ships, for the debug command's suggestions. */
-    public static final List<ResourceLocation> ALL = List.of(GRAYSCALE, Kegare.id("impact_frame"));
+    public static final List<ResourceLocation> ALL = List.of(GRAYSCALE, Kegare.id("impact_frame"), Kegare.id("invert"));
 
     private ScreenEffects() {}
 

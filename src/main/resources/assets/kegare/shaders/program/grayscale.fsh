@@ -1,6 +1,6 @@
 #version 150
 
-// A whole-screen grayscale (the screen effect hook, DESIGN §3.23): Time Manipulation's Standstill will use it. Amount fades it in
+// A whole-screen grayscale (the screen effect hook, DESIGN §3.23): what a player frozen in Standstill sees (§3.26). Amount fades it in
 // and out.
 
 uniform sampler2D DiffuseSampler;

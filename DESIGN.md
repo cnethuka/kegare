@@ -187,10 +187,11 @@ All timestamps use **level game time**. They persist across restarts and are ide
     says what the technique feels like, shown under its name on the Sorcerer screen and typed out in the Epic and
     Legendary reveals (§3.12). **Every non-test innate technique sets one; datagen fails without it.** Test techniques
     use "[Test]". Rime: "Breath Turned to Glass". Swap: "Nothing Stays Where It Was". Puppet Manipulation: "Strings
-    Without a Stage".
+    Without a Stage". Time Manipulation: "The Clock Forgets to Tick".
   - an optional **signature animation** (`Builder.signatureAnimation(id)`, a PAL animation, read with
     `signatureAnimation()`): what the player model does beside the emblem on the reveal's name card. Without one the model
     just stands there. Rime: `frost_shard_cast`. Swap: `positions_clap`. Puppet Manipulation: `puppet_create_release`.
+    Time Manipulation: `standstill_cast`.
   - the hooks `onAssigned` / `onRemoved`
 - `Ability` interface: `cost`, `cooldownTicks`, `castType`, `upkeepPerSecond`, min/max charge, max channel,
   `canCast`, `execute`, `tick`, `onEnd`, plus `special`, `cooldownKey` and `requirements` (§3.15). Costs take the
@@ -320,6 +321,9 @@ All timestamps use **level game time**. They persist across restarts and are ide
   - The client counts down cooldowns locally from game time.
 - Swap (§3.19) adds two cosmetic S→C payloads: `Disguises.StatePayload` (the disguise map, to everyone) and
   `SwapLink.Payload` (effects drawn along a line).
+- Time Manipulation (§3.26) adds three S→C payloads, all decided already: `TimeNet.Fx` (a moment to draw: a return, a Rewind,
+  Fast Forward, a Decelerate hit, a Stasis Field opening or closing), `TimeNet.Mark` (Point Maker's mark, to its caster only) and
+  `TimeNet.Stop` (Standstill's state, to the whole level: where, until when, who moves in it).
 - The melee layer (§3.22) has its own payloads: `MeleeIntentPayload` (C→S, requests only), `MeleeDashPayload` and `MeleeHudPayload` (S→C, to their owner), `MeleeTellPayload` (S→C, per viewer: what a ready fist looks like to them). `VisualPayload` carries an optional tint.
 - `VisualPayload`'s `START_LOOP` carries how long the loop has been running (`elapsedTicks`, 0 for a fresh start). A
   player who starts tracking an entity gets its running loops with their full `growTicks` and the time already gone, so
@@ -1857,18 +1861,18 @@ Abilities, specials and the ultimate of an innate technique unlock through Refin
 (`UnlockTable`, `Builder.defaultUnlockLevels()`, `Builder.unlockLevel`), and `refinement.unlockLevelOverrides` overrides any of them from the
 config (`["kegare:frost_field=1"]`). **Datagen fails if a non-test technique sets none.**
 
-| Level | Default | Rime | Swap | Puppet Manipulation |
-|---|---|---|---|---|
-| 0 | abilities 1 and 2 | Frost Shard, Glacial Lance | Positions, Awareness | Puppet Creation, Directive |
-| 1 | special of 1 | Splinter | Switchback | Possess |
-| 2 | ability 3 | Frost Field | Anchor | Curio Burst |
-| 3 | special of 2 | Glacial Spire | Mimic | Focus |
-| 4 | ability 4 | Rime Shell | Exchange | Understudy |
-| 5 | special of 3 | Ice Path | Send Off | Chain Burst |
-| 6 | ability 5 | | | Strings (with Reel In and Tie) |
-| 7 | special of 4 | Shatter Shell | Momentum Exchange | Stand-In |
-| 8 | ultimate | locked until Dominions | Total Swap | locked until Dominions |
-| 9 | special of 5 | | | Zip and Leash |
+| Level | Default | Rime | Swap | Puppet Manipulation | Time Manipulation |
+|---|---|---|---|---|---|
+| 0 | abilities 1 and 2 | Frost Shard, Glacial Lance | Positions, Awareness | Puppet Creation, Directive | Point Maker, Accelerate |
+| 1 | special of 1 | Splinter | Switchback | Possess | Rewind |
+| 2 | ability 3 | Frost Field | Anchor | Curio Burst | Decelerate |
+| 3 | special of 2 | Glacial Spire | Mimic | Focus | Fast Forward |
+| 4 | ability 4 | Rime Shell | Exchange | Understudy | |
+| 5 | special of 3 | Ice Path | Send Off | Chain Burst | Stasis Field |
+| 6 | ability 5 | | | Strings (with Reel In and Tie) | |
+| 7 | special of 4 | Shatter Shell | Momentum Exchange | Stand-In | |
+| 8 | ultimate | locked until Dominions | Total Swap | locked until Dominions | Standstill |
+| 9 | special of 5 | | | Zip and Leash | |
 
 Test techniques have everything unlocked. A level past `maxLevel` means `maxLevel`; abilities past the fifth wait for level 10 unless set; an
 ultimate's special comes with the ultimate.
@@ -1925,7 +1929,8 @@ For shared and system unlocks, separate from a technique's own abilities.
   A promotion that earns an advancement also shows that advancement's own toast, to the same player. Levels with nothing to unlock show none.
 - **Saved** with attachments (§2), copied on death. Synced to the owner only, in `SyncPayload`, never with an attachment's own `.sync`.
 - **Advancements** (§3.11): silent and hidden. Every existing technique advancement can still be earned, because each is awarded by using an ability
-  that a level from 0 to 9 unlocks; none needs a Dominion. Swap's Total Swap ones wait for level 8.
+  that a level from 0 to 9 unlocks; none needs a Dominion. Swap's Total Swap ones wait for level 8, and so do Time
+  Manipulation's Standstill ones.
 
 #### Rules for every future technique
 - **It gets Refinement through the shared path.** It writes no Refinement code of its own, unless an ability has no target (`hasNoTarget`) or lands
@@ -2200,6 +2205,78 @@ Dominions later.
 **Tests:** `BurnoutTest` (blocks the technique and its special, nothing paid; RMT still casts; counts down; the longer stands; saved;
 not copied on death; the duration hook).
 
+### 3.26 Time Manipulation (LEGENDARY innate technique)
+Package `innate_technique.time_manipulation`. A mark to come back to, your own clock run fast and everyone else's slow, and at the
+last, time stopped. Malice color clockwork bronze `#B08D57`; tab icon clock; epithet "The Clock Forgets to Tick"; signature
+animation `standstill_cast`. All numbers in `[time_manipulation]` of `kegare-server.toml` (seconds, blocks). Unlock levels are the
+default table (§3.21): Point Maker and Accelerate 0, Rewind 1, Decelerate 2, Fast Forward 3, Stasis Field 5, Standstill 8.
+
+**Abilities** (default loadout order) and their specials (R, sharing the base ability's cooldown):
+
+| Ability | Type | Cost | Cooldown | Effect |
+|---|---|---|---|---|
+| **Point Maker** | INSTANT, two stages | 40 mark / 60 return | 12 s | With no mark out: mark the top of the block you're looking at (`markRange` 32; only you see the mark). It snapshots where you'll stand (the top of that block), your facing, your active effects and your health, and lasts `markSeconds` (15). Second cast: return to it, facing as you faced; every effect you've gained since is removed; heal `healFraction` (30%) of MAX health, but never more than you've lost since marking (so never above the snapshot): 20 → 8 comes back to 14, 20 → 18 to 20. It never touches Malice. The mark starts no cooldown; the return does, or the mark running out. Marked in another dimension: "Your mark is in another dimension.", free. The mark is gone on death, logout and a technique change, with no cooldown. |
+| ↳ **Rewind** (R) | INSTANT | 120 | 12 s, shared | The player or mob you're looking at (`[targeting] range` 24, in line of sight, `aimTolerance` 0.3) is snapped back to where it was `seconds` (3) ago: position only (health, effects and facing stay), nudged out of blocks, its fall reset. Needs an unbroken record of those 3 s in its current level: fizzles for free without one ("X has no past here to go back to."), and on a boss ("Time won't move X."). `TimeTargetEvent` first: cancelled, it fizzles with the Malice spent. |
+| **Accelerate** | TOGGLE | 60, then 40/s | 8 s (from switching off) | Speed II (`speedAmplifier` 1), `attackSpeed` +30% (a multiplied attribute modifier), and every OTHER cooldown of your innate technique runs `cooldownRate` (1.5) times as fast (`CooldownRates`). |
+| ↳ **Fast Forward** (R) | INSTANT | 320 | 20 s, shared | `seconds` (6) off every OTHER cooldown of your technique at once: never Accelerate's own, never the ultimate's, never Burnout (it isn't a cooldown) and never a shared ability's (RMT). Switches Accelerate off if it's on, and puts it on their shared cooldown. |
+| **Decelerate** | INSTANT | 50 | 6 s | Throws a real projectile (`DecelerateEntity`, `speed` 2 blocks a tick, no gravity, gone after `flightSeconds` 1.5; blocks stop it). On a player or mob: `damage` (3, type `kegare:time_manipulation`, the caster credited), then for `seconds` (5) Slowness II and Mining Fatigue II, and (players) their ability cooldowns at `cooldownRate` 0.5. `TimeTargetEvent` comes before the cooldown slow: cancelled, the effects still land and the cooldowns don't slow. A boss takes the damage only. |
+| ↳ **Stasis Field** (R) | INSTANT | 140 | 14 s, shared | A field of `radius` 4 for `seconds` (5) on the block you're looking at (`range` 32; no block, free). Everything living inside gets Slowness V (`slownessAmplifier` 4), a boss excepted. Every projectile inside, yours too, keeps its direction at `projectileSpeed` (5%) of the speed it came in with (gravity can't bend it while it's in), and gets its own speed back the moment it leaves or the field ends (`StasisFields`). |
+| **Standstill** (V, ultimate, no special) | INSTANT | 400 | 180 s | Time stops round you. See below. |
+
+**The cooldown clock** (`innatetechnique.CooldownRates`, shared code): a `Rate(key, multiplier, touches, until)` per player. Every
+server tick each running cooldown it touches ends (product of the rates − 1) ticks sooner, the fractions carried over (1.5 takes
+half a tick off each tick; 0.5 gives half a tick back), synced every 5 ticks while it moves. Accelerate's touches its technique's
+other cooldowns until it's switched off; a Decelerate hit's touches all of them for 5 s; together they multiply. Runtime only.
+`InnateTechniqueService.shiftCooldown` moves one by a set amount (Fast Forward).
+
+**Where things were** (`PositionHistory`): every player's position each tick, and every mob's within `historyMobRange` (32) of
+anyone holding Time Manipulation, for the last `seconds` + 2 ticks. A gap (a mob out of range a moment) or a change of dimension
+breaks the record. Runtime only.
+
+**Standstill** (`TimeStops`, one per level, runtime only, never saved; not vanilla's `/tick freeze`):
+- Centred where you cast it, `radius` 48, for `seconds` (3). One per level: while one stands nobody starts another ("Time already
+  stands still here.", free), an immune Time user included.
+- **Frozen:** every entity inside except the caster, players whose CURRENT technique is Time Manipulation (immune), spectators,
+  bosses (DESIGN §4: they take the damage, time never stops for them) and anything carrying an unfrozen player. The server cancels
+  their `EntityTickEvent.Pre` (and takes back the tick count it adds, so lifetimes counted by it don't run); the clients do the same
+  (`TimeStopClient`), so the old position is the position and nothing drifts between frames, and `LevelRendererMixin` draws them at
+  a fixed partial tick so nothing shivers. Something that walks in during the stop freezes then.
+- **A frozen player** (their physics run from their connection) is also stunned (the shared stun: no casting), their attacks,
+  interactions, item use and block breaking are refused, and they're put back where they stood if they move. Their client blocks
+  movement, attack and use keys, stops every sound at the freeze and plays none but Standstill's own three, and grays the screen
+  (the server's `kegare:grayscale` screen effect, fading in, snapped off at the end). The stun they had before comes back as it was.
+- **Projectiles** the caster or the immune throw during it fly `projectileFlightTicks` (3) and then hang where they are, their speed
+  kept; projectiles already flying freeze at once. All resume together.
+- **Damage to anything frozen is held** (at its full incoming amount, before anything else sees it: `LivingIncomingDamageEvent`,
+  highest priority, cancelled). Hurt with nothing behind it (fire, falling, drowning) doesn't happen in stopped time; the void and
+  /kill still do. When time resumes each victim takes what was held as **ONE hit** through its normal `hurt()` (armour, shields and
+  everything else apply once, to the sum), dealt as the biggest single source of it, at most `damageCap` (40), so the Impact System
+  and battle damage see one blow. The hurt cooldown is cleared before and after it, so the projectiles hanging round them land
+  whole right after.
+- **Immune** players move, attack, cast and see in colour; damage between them and the caster lands at once.
+- **Ends early** if the caster dies, logs out or changes dimension (what was held lands then). A frozen player who logs out (or
+  dies, or leaves the level) is let go and what was held for them is dropped.
+- **Afterwards:** `burnoutSeconds` (20) of Burnout on the caster (§3.25), on top of the 180 s cooldown. Every frozen player still
+  alive after the resume gets the `survived_standstill` Insight hook (§3.21).
+
+**The boundary (§4):** movement, status and freezing work on mobs. Bosses take Decelerate's damage but are never Rewound, slowed by
+Decelerate or a Stasis Field, or stopped by Standstill. **`TimeTargetEvent(caster, target, ability)`** (cancellable) fires before
+Rewind moves anyone and before Decelerate's cooldown slow.
+
+**Sounds** (`tools/sounds/time_manipulation.py`, a pocket watch made from nothing; three versions each of the click, the tick, the
+stop and the resume in `run/sounds_preview/time_manipulation/`, the first of each ships): `time_manipulation.click` (Point Maker's
+mark and return, Decelerate's strike), `.tick` (Accelerate running, Decelerate's hit, a projectile caught in a Stasis Field),
+`.wind` (Accelerate on), `.reverse_tick` (Rewind), `.whirl` (Fast Forward), `.throw` (Decelerate), `.stasis` (a Stasis Field
+opening), `.stop` (Standstill: the sharp click), `.stop_tick` (the one slow tick each second it stands, played by each client
+inside) and `.resume` (the loud tick it ends on).
+
+**Tests:** `TimeManipulationTest` (the return's heal math; Point Maker's mark, return, expiry and its free fizzle; Rewind on a
+player and a mob, with no history, refused, and a boss; Accelerate's 1.5x clock and Fast Forward never touching the ultimate,
+Burnout or RMT; Decelerate's hit, the event guarding its cooldown slow, a boss; Stasis Field's slow and its projectiles crawling and
+restored, on leaving and at its end; Standstill freezing players and mobs but not the caster, the immune or a boss, refusing a
+second stop, a thrown projectile's flight then hang, the held damage landing as one hit, its cap, Burnout, the Insight hook, a
+frozen player leaving and the caster dying). `TechniqueUnlocksTest` checks its unlock levels.
+
 ---
 
 ## 4. Extension points (how later content plugs in)
@@ -2224,7 +2301,12 @@ not copied on death; the duration hook).
     pushed, pulled or disabled; Stand-In copies only its owner. Pulling Strings, Out of Body, Kuru Kuru and Get Over Here count
     anything (not your own puppet, for Get Over Here); Nobody Home, Decoy, Who's Real?, Curiosity Killed, Little Me, Tied Up, Walkies
     and Strings Attached need a player.
-  - The boss check is shared: `CombatHelper.isBoss` (`c:bosses`), used by Rime, `SwapTargeting` and Curio Burst.
+  - Time Manipulation follows it (§3.26): Rewind, Decelerate, Stasis Field and Standstill take mobs; bosses take Decelerate's
+    damage but are never Rewound, slowed or stopped (so nothing is ever held for one). Its two task ones (The World Stood Still,
+    Overclock) need no target; the goals and the challenge (Second Chance, Slow Motion, Not So Fast, Frozen in Flight, Same Clock,
+    Pre-Planned) count players only.
+  - The boss check is shared: `CombatHelper.isBoss` (`c:bosses`), used by Rime, `SwapTargeting`, Curio Burst and Time
+    Manipulation.
 
 - **New innate technique:** create a `DeferredRegister<InnateTechnique>` on
   `KegareRegistries.INNATE_TECHNIQUE_KEY`, build abilities with `BaseAbility`, add the lang names and an **epithet**
@@ -2240,7 +2322,8 @@ not copied on death; the duration hook).
 - **Shared abilities:** build the ability, `SharedAbilities.register` it at mod construction, unlock it with
   `SharedAbilityService.unlock` (§3.16).
 - **Specials:** override `special()` on the base ability and build the special on `SpecialAbility` (§3.15).
-- **Swap immunity:** listen for `SwapTargetEvent` and cancel it (§3.19). **Seeing through disguises:** ask
+- **Swap immunity:** listen for `SwapTargetEvent` and cancel it (§3.19). **Time immunity:** cancel `TimeTargetEvent` (Rewind,
+  Decelerate's cooldown slow, §3.26). **Seeing through disguises:** ask
   `Disguises` (`isDisguised`, `getRealIdentity`, `getDisguisedAs`), never what is drawn.
 - **New trait:** register a `Trait` subclass (unique or not) and override its hooks.
 - **Dominions:** an innate technique's `ultimate` ability. It uses `CombatHelper` (stun, combat) and the shared

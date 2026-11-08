@@ -50,7 +50,33 @@ public final class KegareSounds {
     public static final DeferredHolder<SoundEvent, SoundEvent> IMPACT_HEAVY = register("impact.heavy", "impact/heavy");
     public static final DeferredHolder<SoundEvent, SoundEvent> IMPACT_BOOM = register("impact.boom", "impact/boom");
 
+    // Time Manipulation (§3.26): a pocket watch's clicks and ticks, wound, run backward, whirled, and stopped.
+    /** A watch's sharp click: Point Maker's mark and return, Decelerate's hand striking. */
+    public static final DeferredHolder<SoundEvent, SoundEvent> TIME_CLICK = time("click");
+    /** One clean tick: Accelerate running, Decelerate's hit, a projectile caught in a Stasis Field. */
+    public static final DeferredHolder<SoundEvent, SoundEvent> TIME_TICK = time("tick");
+    /** A crown wound: Accelerate on. */
+    public static final DeferredHolder<SoundEvent, SoundEvent> TIME_WIND = time("wind");
+    /** A tick played backward: Rewind. */
+    public static final DeferredHolder<SoundEvent, SoundEvent> TIME_REVERSE_TICK = time("reverse_tick");
+    /** Ticks run together into a whirr: Fast Forward. */
+    public static final DeferredHolder<SoundEvent, SoundEvent> TIME_WHIRL = time("whirl");
+    /** A thin blade thrown, with a tick in it: Decelerate. */
+    public static final DeferredHolder<SoundEvent, SoundEvent> TIME_THROW = time("throw");
+    /** A slowed, ringing tick: a Stasis Field opening. */
+    public static final DeferredHolder<SoundEvent, SoundEvent> TIME_STASIS = time("stasis");
+    /** Standstill: the sharp click time stops on... */
+    public static final DeferredHolder<SoundEvent, SoundEvent> TIME_STOP = time("stop");
+    /** ...the one slow tick heard while it stands... */
+    public static final DeferredHolder<SoundEvent, SoundEvent> TIME_STOP_TICK = time("stop_tick");
+    /** ...and the loud tick it resumes on. */
+    public static final DeferredHolder<SoundEvent, SoundEvent> TIME_RESUME = time("resume");
+
     private KegareSounds() {}
+
+    private static DeferredHolder<SoundEvent, SoundEvent> time(String name) {
+        return register("time_manipulation." + name, "time_manipulation/" + name);
+    }
 
     private static DeferredHolder<SoundEvent, SoundEvent> register(String name, String file) {
         DeferredHolder<SoundEvent, SoundEvent> event = SOUND_EVENTS.register(name, () -> SoundEvent.createVariableRangeEvent(Kegare.id(name)));

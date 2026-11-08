@@ -94,5 +94,65 @@
       "kegare:swap/trade"
     ],
     "subtitle": "subtitles.kegare.swap.trade"
+  },
+  "time_manipulation.click": {
+    "sounds": [
+      "kegare:time_manipulation/click"
+    ],
+    "subtitle": "subtitles.kegare.time_manipulation.click"
+  },
+  "time_manipulation.resume": {
+    "sounds": [
+      "kegare:time_manipulation/resume"
+    ],
+    "subtitle": "subtitles.kegare.time_manipulation.resume"
+  },
+  "time_manipulation.reverse_tick": {
+    "sounds": [
+      "kegare:time_manipulation/reverse_tick"
+    ],
+    "subtitle": "subtitles.kegare.time_manipulation.reverse_tick"
+  },
+  "time_manipulation.stasis": {
+    "sounds": [
+      "kegare:time_manipulation/stasis"
+    ],
+    "subtitle": "subtitles.kegare.time_manipulation.stasis"
+  },
+  "time_manipulation.stop": {
+    "sounds": [
+      "kegare:time_manipulation/stop"
+    ],
+    "subtitle": "subtitles.kegare.time_manipulation.stop"
+  },
+  "time_manipulation.stop_tick": {
+    "sounds": [
+      "kegare:time_manipulation/stop_tick"
+    ],
+    "subtitle": "subtitles.kegare.time_manipulation.stop_tick"
+  },
+  "time_manipulation.throw": {
+    "sounds": [
+      "kegare:time_manipulation/throw"
+    ],
+    "subtitle": "subtitles.kegare.time_manipulation.throw"
+  },
+  "time_manipulation.tick": {
+    "sounds": [
+      "kegare:time_manipulation/tick"
+    ],
+    "subtitle": "subtitles.kegare.time_manipulation.tick"
+  },
+  "time_manipulation.whirl": {
+    "sounds": [
+      "kegare:time_manipulation/whirl"
+    ],
+    "subtitle": "subtitles.kegare.time_manipulation.whirl"
+  },
+  "time_manipulation.wind": {
+    "sounds": [
+      "kegare:time_manipulation/wind"
+    ],
+    "subtitle": "subtitles.kegare.time_manipulation.wind"
   }
 }

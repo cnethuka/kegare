@@ -66,6 +66,7 @@ public final class PlayerEvents {
         CastManager.stopAll(player, EndReason.LOGOUT);
         VisualService.stopAll(player);
         TraitSuccession.markSeen(player);
+        com.cnethuka.kegare.innatetechnique.CooldownRates.forget(player.getUUID());
     }
 
     /** A charge, channel or toggle never carries through a portal, and neither do its visuals. */
@@ -124,6 +125,7 @@ public final class PlayerEvents {
         if (!(event.getEntity() instanceof ServerPlayer player) || player instanceof FakePlayer) return;
         if (player.isAlive()) {
             com.cnethuka.kegare.innatetechnique.Burnout.tick(player);
+            com.cnethuka.kegare.innatetechnique.CooldownRates.tick(player);
             CastManager.tick(player);
             MaliceService.tickRegen(player);
         }

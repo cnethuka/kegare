@@ -78,6 +78,21 @@ public final class InnateTechniqueService {
         PlayerSync.markDirty(player);
     }
 
+    /**
+     * Moves a running cooldown's end by {@code ticks} (negative: sooner). Nothing if it isn't running; past now, it's over. Used by the
+     * abilities that run the clock (Time Manipulation, DESIGN §3.26).
+     */
+    public static void shiftCooldown(ServerPlayer player, ResourceLocation cooldownKey, long ticks, boolean sync) {
+        InnateTechniqueData data = get(player);
+        InnateTechniqueData.Cooldown cooldown = data.cooldowns().get(cooldownKey);
+        long now = player.level().getGameTime();
+        if (cooldown == null || cooldown.endTick() <= now || ticks == 0) return;
+        long end = cooldown.endTick() + ticks;
+        if (end <= now) data.removeCooldown(cooldownKey);
+        else data.putCooldown(cooldownKey, new InnateTechniqueData.Cooldown(end, cooldown.duration()));
+        if (sync) PlayerSync.markDirty(player);
+    }
+
     /** Admin/debug: wipe cooldowns. */
     public static void clearCooldowns(ServerPlayer player) {
         get(player).pruneCooldowns(Long.MAX_VALUE);
