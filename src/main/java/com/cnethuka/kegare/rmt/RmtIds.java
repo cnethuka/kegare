@@ -9,7 +9,11 @@ public final class RmtIds {
     public static final ResourceLocation ABILITY = Kegare.id("reverse_malice_technique");
 
     public static final ResourceLocation FX_CHANNEL_AURA = fx("rmt_channel_aura");
+    /** The aura in your own first person: only motes low round the feet (RmtClient). */
+    public static final ResourceLocation FX_CHANNEL_AURA_SELF = fx("rmt_channel_aura_self");
     public static final ResourceLocation FX_HEAL_PULSE = fx("rmt_heal_pulse");
+    /** A heal in your own first person: only the rings on the ground (RmtClient). */
+    public static final ResourceLocation FX_HEAL_PULSE_SELF = fx("rmt_heal_pulse_self");
     /** The green orb (client-only, its finder alone sees it), the dots marking its route, and its burst on unlock. */
     public static final ResourceLocation FX_ORB = fx("rmt_orb");
     public static final ResourceLocation FX_TRAIL_DOT = fx("rmt_trail_dot");

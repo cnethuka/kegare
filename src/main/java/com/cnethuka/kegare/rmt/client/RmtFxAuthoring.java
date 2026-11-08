@@ -33,16 +33,22 @@ public final class RmtFxAuthoring {
 
     public static Map<ResourceLocation, Supplier<FX>> effects() {
         Map<ResourceLocation, Supplier<FX>> out = new LinkedHashMap<>();
-        out.put(RmtIds.FX_CHANNEL_AURA, RmtFxAuthoring::channelAura);
-        out.put(RmtIds.FX_HEAL_PULSE, RmtFxAuthoring::healPulse);
+        out.put(RmtIds.FX_CHANNEL_AURA, () -> channelAura(false));
+        out.put(RmtIds.FX_CHANNEL_AURA_SELF, () -> channelAura(true));
+        out.put(RmtIds.FX_HEAL_PULSE, () -> healPulse(false));
+        out.put(RmtIds.FX_HEAL_PULSE_SELF, () -> healPulse(true));
         out.put(RmtIds.FX_ORB, RmtFxAuthoring::orb);
         out.put(RmtIds.FX_TRAIL_DOT, RmtFxAuthoring::trailDot);
         out.put(RmtIds.FX_UNLOCK_BURST, RmtFxAuthoring::unlockBurst);
         return out;
     }
 
-    /** While healing: green and white motes rising round the body, white sparkles circling it, a white-hearted glow at the chest. */
-    private static FX channelAura() {
+    /**
+     * While healing: green and white motes rising round the body, white sparkles circling it, a white-hearted glow at the chest.
+     * {@code self}, for your own first person: only the motes, low round the feet and rising no higher than the knees. Everything
+     * at the chest is just under your own camera, and looking down it would sit bright in the middle of the view.
+     */
+    private static FX channelAura(boolean self) {
         ParticleEmitter motes = emitter("motes", true, 20);
         ParticleConfig c = motes.config;
         c.setSimulationSpace(ParticleConfig.Space.World);
@@ -61,6 +67,12 @@ public final class RmtFxAuthoring {
         shrink(c); // gone by the time they reach eye level: close to a first-person camera they'd be huge
         material(motes, glow(0.45f, 1f, 0.6f, 1.2f));
         motes.transform().localPosition(new Vector3f(0, -0.85f, 0));
+        if (self) {
+            c.setStartLifetime(range(8, 12));
+            c.velocityOverLifetime.setLinear(new NumberFunction3(0, 0.6f, 0));
+            c.emission.setEmissionRate(NumberFunction.constant(1.2f));
+            return fx(motes);
+        }
 
         ParticleEmitter whiteMotes = emitter("white_motes", true, 20);
         ParticleConfig w = whiteMotes.config;
@@ -127,8 +139,11 @@ public final class RmtFxAuthoring {
         return fx(motes, whiteMotes, sparkles, heart, heartCore);
     }
 
-    /** Each heal: a green ring spreading on the ground with a white one inside it, a burst of white glints rising, a soft green flash with a white heart. */
-    private static FX healPulse() {
+    /**
+     * Each heal: a green ring spreading on the ground with a white one inside it, a burst of white glints rising, a soft green flash
+     * with a white heart. {@code self}, for your own first person: only the two rings on the ground (the rest is at the chest).
+     */
+    private static FX healPulse(boolean self) {
         ParticleEmitter ring = single("ring", 12, 2.2f);
         ring.config.renderer.setRenderMode(ParticleRendererSetting.Mode.Horizontal);
         grow(ring.config, 0.25f);
@@ -142,6 +157,7 @@ public final class RmtFxAuthoring {
         fadeOut(whiteRing.config, WHITE, PALE);
         material(whiteRing, recolor(KilaPresets.SHOCKWAVE.create(), 1f, 1f, 1f, 1.5f));
         whiteRing.transform().localPosition(new Vector3f(0, -0.82f, 0));
+        if (self) return fx(ring, whiteRing);
 
         ParticleEmitter glints = burstEmitter("glints", 14, 16);
         ParticleConfig c = glints.config;

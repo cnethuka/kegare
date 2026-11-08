@@ -1206,7 +1206,11 @@ negative is positive energy, which is why it heals, and why its colors are white
   a green ring on the ground with a white one inside it, rising white glints, a soft green flash with a white heart), authored in
   `RmtFxAuthoring` with the shared `FxKit` building blocks. Vanilla fallback: happy-villager sparkles. Palette: white and green,
   never Malice violet. The motes shrink away as they rise, and nothing bright passes eye level: close to a first-person
-  camera it would cover the screen in the middle of a fight.
+  camera it would cover the screen in the middle of a fight. In your own first person you get quieter versions
+  (`ClientVisuals.setFirstPersonVariant`): `rmt_channel_aura_self` is only the green motes, low round the feet and
+  gone by the knees, and `rmt_heal_pulse_self` only the two rings on the ground. The glow, sparkles, glints and flash
+  sit at the chest, just under your camera: looking down they'd be bright orbs in the middle of the view. At Vanilla
+  your own show nothing.
 - **Icon** `textures/gui/ability/reverse_malice_technique.png`: a plus inside a ring that turns back on itself, in its
   own green ramp (`gen_art.py`), independent of any innate technique or Malice color. Own name, description and
   tooltip in the lang file.
