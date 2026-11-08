@@ -83,7 +83,17 @@ public final class PlayerAnimations {
 
     private static boolean keepsVanillaHands(AbstractClientPlayer player) {
         ResourceLocation latest = LATEST.get(player.getUUID());
-        return latest != null && (VANILLA_HANDS.contains(latest) || WHILE_LEVEL.contains(latest) && player.getXRot() > LEVEL_PITCH);
+        return latest != null && (VANILLA_HANDS.contains(latest) || holdsSomething(player)
+                || WHILE_LEVEL.contains(latest) && player.getXRot() > LEVEL_PITCH);
+    }
+
+    /**
+     * Holding anything in either hand, every animation on this layer leaves your own first-person hands to vanilla, for the same
+     * reason as {@link #keepVanillaHands}: the first-person model would draw the sword, axe or shield at its real size right by
+     * the camera, edge on and dark. Only an empty-handed cast shows its gesture in your own first person.
+     */
+    private static boolean holdsSomething(AbstractClientPlayer player) {
+        return !player.getMainHandItem().isEmpty() || !player.getOffhandItem().isEmpty();
     }
 
     /** Whether this layer last started {@code animation} on the player, and it hasn't been stopped. A play-once counts until something replaces it. */

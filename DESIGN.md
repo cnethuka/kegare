@@ -711,10 +711,23 @@ closing it or disconnecting at any point changes nothing.
   charge sits a block ahead, the cone starts in front of you, and the shell is invisible from inside.
 - **Near the camera:** a positional effect closer than 2 blocks to a first-person camera isn't drawn, or it would sit in front of your eyes. `ClientVisuals.setNearCameraDistance` lowers that for one effect (Reinforced Strike's impact, 1 block: only the target is that close).
 - **On your own screen:** `ClientVisuals.setFirstPersonVariant` swaps an effect riding a player for a quieter one, for that player in first person only (the dash's trail, the parry's spark and the guard's hit).
+- **Your own hands** (`PlayerAnimations`). In your own first person an animation can show your arms (PAL's first-person
+  model), or leave the hands to vanilla. Everyone else always sees the whole animation. Nothing may fill the middle of the
+  view, so:
+  - Holding anything in either hand (a sword, an axe, a shield, a block), every animation leaves the hands to vanilla.
+    PAL's model draws what's held at its real size right by the camera, usually edge on, so a cast would swing a dark blade or
+    a shield's back through the view. Only an empty-handed cast shows its gesture.
+  - `keepVanillaHands`: never shown. Melee's animations, every Rime cast, Swap's Mimic, and Puppet Manipulation's way back
+    and Zip.
+  - `handsWhileLevel`: shown only while you look no more than 15° down. The arms hang from the body, which doesn't tip
+    with the view, so hands at chest height sit at the bottom corners of a level view and come up into its middle as you
+    look down. Every other Swap and Puppet Manipulation cast. Looking up takes them out of view.
+  - Rime's `frozen` is the one on neither list: you can't move, and your arms stay where they are.
 - **Failures never crash:** a missing or broken `.fx` falls back to vanilla particles (`VanillaFallback`, per-effect
   lookalikes), and a missing animation is skipped. Each one is logged once. Effects are preloaded at client setup.
 - **Client config (`visuals`):**
-  - `firstPersonAnimations` (default on): your own arms animate in first person (PAL `THIRD_PERSON_MODEL` mode).
+  - `firstPersonAnimations` (default on): your own arms animate in first person (PAL `THIRD_PERSON_MODEL` mode), within
+    the rules under "Your own hands" above.
   - `animationFades` (default on): see below. It's per viewer: it changes how YOU see everyone's animations.
 - **Fades are in code, not in the files** (`PlayerAnimations`), because a Blockbench export can't carry them, and every
   animation gets them: a 3-tick blend through PAL's fade modifiers. It starts from the animation being replaced if there is
