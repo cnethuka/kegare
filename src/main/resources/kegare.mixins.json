@@ -11,7 +11,8 @@
   "client": [
     "client.PlayerInfoMixin",
     "client.PlayerTabOverlayMixin",
-    "client.ItemInHandRendererInvoker"
+    "client.ItemInHandRendererInvoker",
+    "client.OwnEffectParticlesMixin"
   ],
   "injectors": {
     "defaultRequire": 1

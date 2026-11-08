@@ -708,7 +708,11 @@ closing it or disconnecting at any point changes nothing.
 - **Nothing in front of your own eyes:** an effect at a position closer than 2 blocks to a first-person camera
   (you got hit, you broke free) is skipped. Even small particles there would cover the screen; you still get the
   hurt flash, overlays, HUD and sound. Your own entity-attached loops are authored away from the camera: Rime's
-  charge sits a block ahead, the cone starts in front of you, and the shell is invisible from inside.
+  charge sits a block ahead, the cone starts in front of you, and the shell is invisible from inside. Your own effect
+  particles (vanilla's swirls for Slowness, Speed and the rest) aren't spawned while you're in first person
+  (`OwnEffectParticlesMixin`): they rise round your body, so they would drift across your view, and Rime's Slowness would make a cloud
+  of pale blue swirls in the middle of a fight. Everyone else still sees yours, since they show who's slowed, and so do you
+  in third person.
 - **Near the camera:** a positional effect closer than 2 blocks to a first-person camera isn't drawn, or it would sit in front of your eyes. `ClientVisuals.setNearCameraDistance` lowers that for one effect (Reinforced Strike's impact, 1 block: only the target is that close).
 - **On your own screen:** `ClientVisuals.setFirstPersonVariant` swaps an effect riding a player for a quieter one, for that player in first person only (the dash's trail, the parry's spark and the guard's hit).
 - **Your own hands** (`PlayerAnimations`). In your own first person an animation can show your arms (PAL's first-person
