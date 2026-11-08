@@ -2260,8 +2260,11 @@ breaks the record. Runtime only.
   and battle damage see one blow. The hurt cooldown is cleared before and after it, so the projectiles hanging round them land
   whole right after.
 - **Immune** players move, attack, cast and see in colour; damage between them and the caster lands at once.
-- **Ends early** if the caster dies, logs out or changes dimension (what was held lands then). A frozen player who logs out (or
-  dies, or leaves the level) is let go and what was held for them is dropped.
+- **Ends early** if the caster dies, logs out or changes dimension (what was held lands then). A frozen player who logs out or is
+  sent to another level is let go and takes what was held for them right then, before they're gone (on a trip, before it starts),
+  as the same one hit as on the resume: capped, dealt as the biggest single source, through `hurt()` so the Impact System and
+  battle damage see it. If it kills them, they die: leaving is no way out of it. One who dies during the stop has nothing left to
+  land.
 - **Afterwards:** `burnoutSeconds` (20) of Burnout on the caster (§3.25), on top of the 180 s cooldown. Every frozen player still
   alive after the resume gets the `survived_standstill` Insight hook (§3.21).
 
@@ -2339,7 +2342,8 @@ player and a mob, with no history, refused, and a boss; Accelerate's 1.5x clock 
 Burnout or RMT; Decelerate's hit, the event guarding its cooldown slow, a boss; Stasis Field's slow and its projectiles crawling and
 restored, on leaving and at its end; Standstill freezing players and mobs but not the caster, the immune or a boss, refusing a
 second stop, a thrown projectile's flight then hang, the held damage landing as one hit, its cap, Burnout, the Insight hook, a
-frozen player leaving and the caster dying). `TimeAdvancementsTest` (each loads hidden and silent, only a holder earns them, and
+frozen player logging out or sent to another level taking the held hit as they go, even when it kills them, one who dies having
+nothing left to land, and the caster dying). `TimeAdvancementsTest` (each loads hidden and silent, only a holder earns them, and
 each is earned the way it says, a mob not counting where a player is needed). `TimeVisualsTest` (PAL loads every animation the code plays, each has one
 first-person rule; the mark's hour marks run down and its hands are painted where they stood). `TechniqueUnlocksTest` checks its
 unlock levels.

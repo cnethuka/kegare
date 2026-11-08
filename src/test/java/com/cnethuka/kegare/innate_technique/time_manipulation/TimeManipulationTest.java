@@ -34,10 +34,12 @@ import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.animal.Pig;
 import net.minecraft.world.entity.boss.wither.WitherBoss;
 import net.minecraft.world.entity.projectile.Snowball;
+import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.levelgen.Heightmap;
 import net.minecraft.world.phys.Vec3;
 import net.neoforged.neoforge.common.NeoForge;
+import net.neoforged.neoforge.event.entity.EntityTravelToDimensionEvent;
 import net.neoforged.neoforge.event.entity.living.LivingDeathEvent;
 import net.neoforged.neoforge.event.entity.player.AttackEntityEvent;
 import net.neoforged.neoforge.event.tick.EntityTickEvent;
@@ -533,16 +535,42 @@ class TimeManipulationTest {
                 TimeStops.tick(level);
                 assertEquals(100f - TimeConfig.STANDSTILL_DAMAGE_CAP.get().floatValue(), target.getHealth(), EPS, "at most damageCap");
 
-                // A frozen player who leaves is let go, and what was held for them is dropped.
+                // A frozen player who logs out takes what was held for them there and then, as the one hit (capped), and is let go;
+                // the stop goes on without them.
+                float cap = TimeConfig.STANDSTILL_DAMAGE_CAP.get().floatValue();
+                target.setHealth(100f);
+                target.invulnerableTime = 0;
+                TimeStops.start(caster, caster.position(), 48, 60);
+                target.hurt(caster.damageSources().playerAttack(caster), 30f);
+                target.hurt(caster.damageSources().playerAttack(caster), 30f);
+                TimeStops.onLeaving(target);
+                assertEquals(100f - cap, target.getHealth(), EPS, "landed as they left, as one capped hit");
+                assertFalse(com.cnethuka.kegare.combat.CombatHelper.isStunned(target), "let go");
+                assertTrue(TimeStops.active(level), "it stands for the rest");
+                TestServer.advanceGameTime(server, 60);
+                TimeStops.tick(level);
+                assertEquals(100f - cap, target.getHealth(), EPS, "nothing lands twice");
+
+                // Sent to another level: the same, before they go.
                 target.setHealth(100f);
                 target.invulnerableTime = 0;
                 TimeStops.start(caster, caster.position(), 48, 60);
                 target.hurt(caster.damageSources().playerAttack(caster), 10f);
-                TimeStops.onGone(target);
-                assertTrue(TimeStops.active(level), "it stands for the rest");
+                NeoForge.EVENT_BUS.post(new EntityTravelToDimensionEvent(target, Level.NETHER));
+                assertEquals(90f, target.getHealth(), EPS, "landed before the trip");
                 TestServer.advanceGameTime(server, 60);
                 TimeStops.tick(level);
-                assertEquals(100f, target.getHealth(), EPS, "nothing landed on them");
+                assertEquals(90f, target.getHealth(), EPS, "nothing lands twice");
+
+                // A frozen player who dies during it has nothing left to land.
+                target.setHealth(100f);
+                target.invulnerableTime = 0;
+                TimeStops.start(caster, caster.position(), 48, 60);
+                target.hurt(caster.damageSources().playerAttack(caster), 10f);
+                NeoForge.EVENT_BUS.post(new LivingDeathEvent(target, caster.damageSources().generic()));
+                TestServer.advanceGameTime(server, 60);
+                TimeStops.tick(level);
+                assertEquals(100f, target.getHealth(), EPS, "dropped");
 
                 // The caster dies: it ends early, and what was held lands.
                 target.invulnerableTime = 0;
@@ -551,7 +579,17 @@ class TimeManipulationTest {
                 NeoForge.EVENT_BUS.post(new LivingDeathEvent(caster, caster.damageSources().generic()));
                 assertFalse(TimeStops.active(level), "ended early");
                 assertEquals(90f, target.getHealth(), EPS, "landed");
+
+                // Logging out is no way out: if what was held kills them, they die.
                 target.getAttribute(Attributes.MAX_HEALTH).setBaseValue(20.0);
+                target.setHealth(5f);
+                target.invulnerableTime = 0;
+                TimeStops.start(caster, caster.position(), 48, 60);
+                target.hurt(caster.damageSources().playerAttack(caster), 12f);
+                TimeStops.onLeaving(target);
+                assertTrue(target.isDeadOrDying(), "killed by the held hit as they left");
+                TestServer.advanceGameTime(server, 60);
+                TimeStops.tick(level);
             } finally {
                 pig.discard();
                 wither.discard();

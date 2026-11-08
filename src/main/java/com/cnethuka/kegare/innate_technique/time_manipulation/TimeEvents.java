@@ -8,6 +8,7 @@ import net.neoforged.bus.api.EventPriority;
 import net.neoforged.bus.api.ICancellableEvent;
 import net.neoforged.neoforge.common.NeoForge;
 import net.neoforged.neoforge.event.entity.EntityJoinLevelEvent;
+import net.neoforged.neoforge.event.entity.EntityTravelToDimensionEvent;
 import net.neoforged.neoforge.event.entity.ProjectileImpactEvent;
 import net.neoforged.neoforge.event.entity.living.LivingDeathEvent;
 import net.neoforged.neoforge.event.entity.living.LivingEntityUseItemEvent;
@@ -66,7 +67,7 @@ final class TimeEvents {
             if (entity instanceof ServerPlayer p) {
                 PointMarks.clear(p);
                 TimeAdvancements.forget(p.getUUID());
-                TimeStops.onGone(p);
+                TimeStops.onDied(p);
             }
         });
         NeoForge.EVENT_BUS.addListener((PlayerEvent.PlayerLoggedOutEvent e) -> {
@@ -74,7 +75,7 @@ final class TimeEvents {
             PointMarks.forget(p.getUUID());
             PositionHistory.forget(p);
             TimeAdvancements.forget(p.getUUID());
-            TimeStops.onGone(p);
+            TimeStops.onLeaving(p); // before they're removed: a frozen player takes what was held for them
             AccelerateAbility.forget(p.getUUID());
         });
         NeoForge.EVENT_BUS.addListener((PlayerEvent.PlayerLoggedInEvent e) -> {
@@ -82,8 +83,13 @@ final class TimeEvents {
         });
         NeoForge.EVENT_BUS.addListener((PlayerEvent.PlayerChangedDimensionEvent e) -> {
             if (!(e.getEntity() instanceof ServerPlayer p)) return;
-            TimeStops.onGone(p); // a caster who leaves ends it; the held are let go where they are
+            TimeStops.onLeaving(p); // a caster who's gone ends it
             TimeStops.sendTo(p);
+        });
+        // A frozen player sent to another level takes what was held for them first, where they were held (last, and only if the trip
+        // is still on).
+        NeoForge.EVENT_BUS.addListener(EventPriority.LOWEST, (EntityTravelToDimensionEvent e) -> {
+            if (!e.isCanceled() && e.getEntity() instanceof ServerPlayer p) TimeStops.onTravel(p);
         });
         NeoForge.EVENT_BUS.addListener((ServerStoppedEvent e) -> {
             PointMarks.clearAll();

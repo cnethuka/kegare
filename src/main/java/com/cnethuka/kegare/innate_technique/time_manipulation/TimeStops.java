@@ -45,8 +45,9 @@ import net.neoforged.neoforge.network.PacketDistributor;
  * runs from their connection, so they're also stunned, their attacks, interactions, item use and block breaking are refused, and they're
  * put back if they move. Damage to anything frozen is held, and when time resumes each one takes it as ONE hit through its normal
  * {@code hurt} (armour, shields and everything else apply once, to the sum), at most {@code damageCap}, so the Impact System and battle
- * damage see it as one blow. Ends early if the caster dies, logs out or leaves the level; a frozen player who logs out is let go, what
- * was held for them dropped. Afterwards the caster burns out.
+ * damage see it as one blow. Ends early if the caster dies, logs out or leaves the level. A frozen player who logs out or leaves the
+ * level takes what was held for them there and then, as that same one hit (it can kill them); one who dies during it has nothing
+ * left to land. Afterwards the caster burns out.
  */
 public final class TimeStops {
     /** A frozen player: where they're held, and the stun they had before. */
@@ -117,6 +118,8 @@ public final class TimeStops {
     private static final Map<ResourceKey<Level>, Stop> STOPS = new HashMap<>();
     private static final Map<Entity, Volley> VOLLEYS = new WeakHashMap<>();
     private static final Map<UUID, Integer> VOLLEY_HITS = new HashMap<>();
+    /** The one being dealt their held hit right now: that hit is let through, not held again. */
+    @Nullable private static LivingEntity landing;
     /** Grayscale is asked for this much longer than the stop, so it never fades out early: the end snaps it off. */
     private static final int GRAY_SLACK = 40;
 
@@ -161,15 +164,7 @@ public final class TimeStops {
         float volume = (float) Math.max(1.0, stop.radius / 16.0);
         stop.level.playSound(null, stop.centre.x, stop.centre.y, stop.centre.z, KegareSounds.TIME_RESUME.value(), SoundSource.PLAYERS, volume, 1f);
         // Everything lands at once.
-        double cap = TimeConfig.STANDSTILL_DAMAGE_CAP.get();
-        for (Map.Entry<LivingEntity, Queued> e : stop.queued.entrySet()) {
-            LivingEntity victim = e.getKey();
-            Queued q = e.getValue();
-            if (!victim.isAlive() || victim.isRemoved() || q.total <= 0f) continue;
-            victim.invulnerableTime = 0;
-            victim.hurt(q.source, (float) Math.min(q.total, cap));
-            victim.invulnerableTime = 0; // what hung in the air lands right after, whole
-        }
+        for (Map.Entry<LivingEntity, Queued> e : stop.queued.entrySet()) land(e.getKey(), e.getValue());
         for (ServerPlayer p : stop.held.keySet()) if (p.isAlive() && !p.isRemoved()) InsightHooks.survivedStandstill(p);
         for (UUID owner : stop.hung.values()) VOLLEY_HITS.remove(owner); // each stop's volley counts on its own
         for (Map.Entry<Entity, UUID> e : stop.hung.entrySet()) {
@@ -177,6 +172,22 @@ public final class TimeStops {
         }
         ServerPlayer caster = stop.caster;
         if (caster.isAlive()) Burnout.apply(caster, TimeConfig.ticks(TimeConfig.STANDSTILL_BURNOUT));
+    }
+
+    /**
+     * What was held for {@code victim}, dealt as ONE hit through its normal {@code hurt} (armour, shields and the rest apply once, to
+     * the sum; the Impact System and battle damage see one blow), as the biggest single source of it, at most {@code damageCap}.
+     */
+    private static void land(LivingEntity victim, Queued q) {
+        if (!victim.isAlive() || victim.isRemoved() || q.total <= 0f || q.source == null) return;
+        landing = victim;
+        try {
+            victim.invulnerableTime = 0;
+            victim.hurt(q.source, (float) Math.min(q.total, TimeConfig.STANDSTILL_DAMAGE_CAP.get()));
+            victim.invulnerableTime = 0; // what hung in the air lands right after, whole
+        } finally {
+            landing = null;
+        }
     }
 
     private static void release(ServerPlayer p, Held held, Stop stop, long now) {
@@ -304,7 +315,7 @@ public final class TimeStops {
         LivingEntity victim = event.getEntity();
         if (victim.level().isClientSide) return;
         Stop stop = STOPS.get(victim.level().dimension());
-        if (stop == null || !stop.frozen(victim)) return;
+        if (stop == null || victim == landing || !stop.frozen(victim)) return;
         DamageSource source = event.getSource();
         if (source.is(DamageTypeTags.BYPASSES_INVULNERABILITY)) return;
         event.setCanceled(true);
@@ -333,19 +344,44 @@ public final class TimeStops {
         }
     }
 
-    /** The caster died, left or went elsewhere: it ends. A frozen player who left is let go, what they'd have taken dropped. */
-    static void onGone(ServerPlayer player) {
+    /**
+     * Logging out, or gone to another level: a caster's stop ends (what was held lands); a frozen player is let go and takes what was
+     * held for them right now, before they're gone, as the one hit (it can kill them). Never a way out of it.
+     */
+    static void onLeaving(ServerPlayer player) {
         for (Stop stop : List.copyOf(STOPS.values())) {
             if (stop.caster == player) {
                 end(stop, true);
                 continue;
             }
-            Held held = stop.held.remove(player);
-            if (held != null) {
-                stop.queued.remove(player);
-                release(player, held, stop, stop.level.getGameTime());
-            }
+            letGo(player, stop, true);
         }
+    }
+
+    /**
+     * About to travel to another level (before it happens, so the hit lands where they were held). The caster's own stop ends once
+     * they've actually gone ({@link #onLeaving}), in case the trip is called off.
+     */
+    static void onTravel(ServerPlayer player) {
+        for (Stop stop : List.copyOf(STOPS.values())) if (stop.caster != player) letGo(player, stop, true);
+    }
+
+    /** Died: a caster's stop ends (what was held lands on the rest); a frozen player who died has nothing left to land. */
+    static void onDied(ServerPlayer player) {
+        for (Stop stop : List.copyOf(STOPS.values())) {
+            if (stop.caster == player) {
+                end(stop, true);
+                continue;
+            }
+            letGo(player, stop, false);
+        }
+    }
+
+    private static void letGo(ServerPlayer player, Stop stop, boolean landIt) {
+        Held held = stop.held.remove(player);
+        if (held != null) release(player, held, stop, stop.level.getGameTime());
+        Queued q = stop.queued.remove(player);
+        if (landIt && q != null) land(player, q);
     }
 
     /** Moved by the caster's own technique (Rewind) while frozen: held there instead. */

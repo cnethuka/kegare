@@ -177,11 +177,11 @@ class TimeAdvancementsTest {
                 assertTrue(has(server, caster, TimeAdvancements.SECOND_CHANCE), "Second Chance");
 
                 // Frozen in Flight: five projectiles of another player caught in one field (the caster's own don't count).
-                StasisFields.open(caster, new Vec3(3.5, Y, -6.5), 4.0, 100);
+                StasisFields.open(caster, new Vec3(10.5, Y, 10.5), 4.0, 100); // in the loaded chunk, away from everyone
                 Snowball[] caught = new Snowball[6];
                 for (int i = 0; i < 6; i++) {
                     caught[i] = new Snowball(level, i == 0 ? caster : other);
-                    caught[i].setPos(3.5, Y + 0.5, -6.5 + i * 0.3);
+                    caught[i].setPos(10.5, Y + 0.5, 10.5 + i * 0.3);
                     caught[i].setNoGravity(true);
                     caught[i].setDeltaMovement(0.5, 0, 0);
                     level.addFreshEntity(caught[i]);
