@@ -131,7 +131,7 @@ public final class SorcererScreen extends Screen {
     private int px, py, pw, ph;
     private int lx0, lx1, rcx, rcw, wellY0, wellY1, trayX, trayY;
 
-    private enum Kind { CATEGORY, VIEW, TILE, RESET, OPTION }
+    private enum Kind { CATEGORY, VIEW, TILE, RESET, OPTION, SLIDER }
 
     private record Hit(Kind kind, int x, int y, int w, int h, int index, @Nullable ResourceLocation ability, boolean unlocked) {
         boolean contains(double mx, double my) {
@@ -633,9 +633,45 @@ public final class SorcererScreen extends Screen {
         y = optionRow(g, 1, "gui.kegare.settings.vfx", VFX_VALUES, KegareClientConfig.VFX_QUALITY.get().ordinal(), x, y, w, mouseX, mouseY) + 5;
         y = optionRow(g, 2, "gui.kegare.settings.first_person", ON_OFF, KegareClientConfig.FIRST_PERSON_ANIMATIONS.get() ? 0 : 1, x, y, w, mouseX, mouseY) + 5;
         y = optionRow(g, 4, "gui.kegare.settings.animation_fades", ON_OFF, KegareClientConfig.ANIMATION_FADES.get() ? 0 : 1, x, y, w, mouseX, mouseY) + 5;
+        y = sliderRow(g, SHAKE_SLIDER, "gui.kegare.settings.shake", KegareClientConfig.SHAKE_STRENGTH.get(), x, y, w, mouseX, mouseY) + 5;
+        y = optionRow(g, 8, "gui.kegare.settings.impact_frames", ON_OFF, KegareClientConfig.IMPACT_FRAMES.get() ? 0 : 1, x, y, w, mouseX, mouseY) + 5;
         y = optionRow(g, 3, "gui.kegare.settings.reveal", ON_OFF, KegareClientConfig.REVEAL_ANIMATION.get() ? 0 : 1, x, y, w, mouseX, mouseY) + 5;
         y = optionRow(g, 5, "gui.kegare.settings.reveal_always_full", ON_OFF, KegareClientConfig.REVEAL_ALWAYS_FULL.get() ? 0 : 1, x, y, w, mouseX, mouseY) + 5;
         return optionRow(g, 6, "gui.kegare.settings.reveal_reduced_motion", ON_OFF, KegareClientConfig.REVEAL_REDUCED_MOTION.get() ? 0 : 1, x, y, w, mouseX, mouseY);
+    }
+
+    // ---------------------------------------------------------------- the shake slider
+
+    private static final int SHAKE_SLIDER = 1;
+    /** The slider's whole range: 0 (none) to 200%, in steps of 5%. */
+    private static final double SLIDER_MAX = 2.0, SLIDER_STEP = 0.05;
+    private static final int SLIDER_W = 150, SLIDER_KNOB = 6;
+    /** The slider being dragged, or 0; and its track, for reading the mouse against. */
+    private int draggingSlider;
+    private int sliderX, sliderW;
+
+    /** A label with the value, then a track: click or drag along it. Returns the y below the row. */
+    private int sliderRow(GuiGraphics g, int slider, String labelKey, double value, int x, int y, int w, int mouseX, int mouseY) {
+        Component label = Component.translatable(labelKey, Math.round(value * 100) + "%");
+        y += GuiDraw.wrapped(g, font, label, x, y, w, 0xFFD8D2E0) + 2;
+        int tw = Math.min(w, SLIDER_W);
+        int top = Math.max(y, wellY0 + 3), bottom = Math.min(y + BUTTON_H, wellY1 - 3);
+        boolean hover = bottom > top && mouseX >= x && mouseX < x + tw && mouseY >= top && mouseY < bottom;
+        GuiDraw.sprite(g, BUTTON, x, y, tw, BUTTON_H);
+        int inner = tw - 8, fill = (int) Math.round(inner * Math.min(1, value / SLIDER_MAX));
+        g.fill(x + 4, y + BUTTON_H / 2 - 1, x + 4 + inner, y + BUTTON_H / 2 + 1, 0xFF3A3242);
+        g.fill(x + 4, y + BUTTON_H / 2 - 1, x + 4 + fill, y + BUTTON_H / 2 + 1, hover || draggingSlider == slider ? GuiDraw.WHITE : GuiDraw.GOLD);
+        int notch = x + 4 + inner / 2; // 100%: as tuned
+        g.fill(notch, y + 3, notch + 1, y + BUTTON_H - 3, 0xFF6B6276);
+        GuiDraw.sprite(g, BUTTON_LIT, x + 4 + fill - SLIDER_KNOB / 2, y, SLIDER_KNOB, BUTTON_H);
+        if (bottom > top) hits.add(new Hit(Kind.SLIDER, x, top, tw, bottom - top, slider, null, true));
+        return y + BUTTON_H + 3;
+    }
+
+    private void slide(double mouseX) {
+        double f = (mouseX - (sliderX + 4)) / Math.max(1, sliderW - 8);
+        double value = Math.round(Math.max(0, Math.min(1, f)) * SLIDER_MAX / SLIDER_STEP) * SLIDER_STEP;
+        if (draggingSlider == SHAKE_SLIDER) KegareClientConfig.SHAKE_STRENGTH.set(value);
     }
 
     /** The button nearest what's in the file, which can hold any value. */
@@ -679,6 +715,7 @@ public final class SorcererScreen extends Screen {
             case 5 -> KegareClientConfig.REVEAL_ALWAYS_FULL.set(value == 0);
             case 6 -> KegareClientConfig.REVEAL_REDUCED_MOTION.set(value == 0);
             case 7 -> KegareClientConfig.DASH_DOUBLE_TAP_MILLIS.set(DOUBLE_TAP_MILLIS[value]);
+            case 8 -> KegareClientConfig.IMPACT_FRAMES.set(value == 0);
             default -> {
                 return;
             }
@@ -789,6 +826,12 @@ public final class SorcererScreen extends Screen {
                 }
                 case RESET -> send(LoadoutService.Action.RESET, 0, 0, null);
                 case OPTION -> applyOption(hit.index / 10, hit.index % 10);
+                case SLIDER -> {
+                    draggingSlider = hit.index;
+                    sliderX = hit.x;
+                    sliderW = hit.w;
+                    slide(mouseX);
+                }
             }
             return true;
         }
@@ -808,6 +851,10 @@ public final class SorcererScreen extends Screen {
 
     @Override
     public boolean mouseDragged(double mouseX, double mouseY, int button, double dragX, double dragY) {
+        if (button == 0 && draggingSlider != 0) {
+            slide(mouseX);
+            return true;
+        }
         if (button == 0 && pressAbility != null) {
             if (!dragging && Math.hypot(mouseX - pressX, mouseY - pressY) > 3) dragging = true;
             return true;
@@ -817,6 +864,13 @@ public final class SorcererScreen extends Screen {
 
     @Override
     public boolean mouseReleased(double mouseX, double mouseY, int button) {
+        if (button == 0 && draggingSlider != 0) { // saved once, when it's let go
+            slide(mouseX);
+            draggingSlider = 0;
+            KegareClientConfig.SPEC.save();
+            if (minecraft != null) minecraft.getSoundManager().play(SimpleSoundInstance.forUI(SoundEvents.UI_BUTTON_CLICK, 1f));
+            return true;
+        }
         if (button != 0 || (pressAbility == null && pressSlot < 0)) return super.mouseReleased(mouseX, mouseY, button);
         ResourceLocation ability = pressAbility;
         int fromSlot = pressSlot;

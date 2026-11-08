@@ -146,6 +146,7 @@ public final class KegareServerConfig {
         com.cnethuka.kegare.innate_technique.swap.SwapConfig.define(b);
         com.cnethuka.kegare.innate_technique.puppet_manipulation.PuppetConfig.define(b);
         com.cnethuka.kegare.melee.MeleeConfig.define(b);
+        com.cnethuka.kegare.impact.ImpactConfig.define(b);
         com.cnethuka.kegare.rmt.RmtConfig.define(b);
         com.cnethuka.kegare.progression.ProgressionConfig.define(b);
 

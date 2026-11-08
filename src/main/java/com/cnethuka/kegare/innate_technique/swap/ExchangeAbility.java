@@ -69,6 +69,7 @@ public final class ExchangeAbility extends SwapAbility {
         });
         SwapSounds.EXCHANGE.at(caster);
         SwapSounds.EXCHANGE.at(target);
+        Swapper.landed(caster, target, 0, 0, 0);
     }
 
     @Override boolean takesMobs() { return true; }

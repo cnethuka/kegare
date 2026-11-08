@@ -32,6 +32,7 @@ import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import com.mojang.brigadier.context.CommandContext;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import com.mojang.brigadier.exceptions.Dynamic2CommandExceptionType;
+import java.util.List;
 import java.util.Locale;
 import java.util.stream.Collectors;
 import net.minecraft.commands.CommandSourceStack;
@@ -89,6 +90,20 @@ final class DebugCommands {
                                                     boolean on = BoolArgumentType.getBool(c, "on");
                                                     return forEachPlayer(c, (source, player) -> unswappable(source, player, on));
                                                 })))))
+                // The Impact System (DESIGN §3.23): play a tier on someone's own screen, to tune how it feels without a fight.
+                .then(Commands.literal("impact").then(impactTiers()))
+                // The screen shader hook: a whole-screen effect for a set time (grayscale, for Standstill to come).
+                .then(Commands.literal("screen")
+                        .then(player()
+                                .then(Commands.argument("effect", net.minecraft.commands.arguments.ResourceLocationArgument.id())
+                                        .suggests((c, b) -> net.minecraft.commands.SharedSuggestionProvider.suggestResource(
+                                                com.cnethuka.kegare.impact.ScreenEffects.ALL, b))
+                                        .then(Commands.argument("seconds", DoubleArgumentType.doubleArg(0, 600))
+                                                .executes(c -> {
+                                                    var effect = net.minecraft.commands.arguments.ResourceLocationArgument.getId(c, "effect");
+                                                    double seconds = DoubleArgumentType.getDouble(c, "seconds");
+                                                    return forEachPlayer(c, (source, player) -> screen(source, player, effect, seconds));
+                                                })))))
                 .then(Commands.literal("strings")
                         .then(Commands.literal("unmovable")
                                 .then(player()
@@ -97,6 +112,60 @@ final class DebugCommands {
                                                     boolean on = BoolArgumentType.getBool(c, "on");
                                                     return forEachPlayer(c, (source, player) -> unmovable(source, player, on));
                                                 }))))));
+    }
+
+    /** {@code impact <player> <tier> [attacker|victim|witness] [technique]}: as the victim and a plain hit unless it says. */
+    private static com.mojang.brigadier.builder.RequiredArgumentBuilder<CommandSourceStack, ?> impactTiers() {
+        var player = player();
+        for (com.cnethuka.kegare.impact.ImpactTier tier : com.cnethuka.kegare.impact.ImpactTier.values()) {
+            var tierNode = Commands.literal(tier.serializedName())
+                    .executes(c -> forEachPlayer(c, (source, p) -> impact(source, p, tier, "victim", false)));
+            for (String role : List.of("attacker", "victim", "witness")) {
+                tierNode.then(Commands.literal(role)
+                        .executes(c -> forEachPlayer(c, (source, p) -> impact(source, p, tier, role, false)))
+                        .then(Commands.literal("technique")
+                                .executes(c -> forEachPlayer(c, (source, p) -> impact(source, p, tier, role, true)))));
+            }
+            player.then(tierNode);
+        }
+        return player;
+    }
+
+    /** A hit of this tier as only this player sees it: nothing lands, nobody else sees a thing. */
+    private static int impact(CommandSourceStack source, ServerPlayer player, com.cnethuka.kegare.impact.ImpactTier tier, String role, boolean technique) {
+        net.minecraft.world.phys.Vec3 eye = player.getEyePosition(), look = player.getLookAngle();
+        net.minecraft.world.phys.Vec3 contact, direction = look;
+        int attacker = -1, victim = -1;
+        switch (role) {
+            case "attacker" -> {
+                contact = eye.add(look.scale(2.0));
+                attacker = player.getId();
+            }
+            case "victim" -> {
+                contact = eye.add(0, -0.45, 0).add(look.scale(0.3));
+                direction = look.scale(-1);
+                victim = player.getId();
+            }
+            default -> contact = eye.add(look.scale(4.0));
+        }
+        com.cnethuka.kegare.melee.MeleeTell.Look own = com.cnethuka.kegare.melee.MeleeTell.of(player);
+        int color = technique && own.kind() == com.cnethuka.kegare.melee.MeleeTell.Kind.GLOW ? own.color() & 0xFFFFFF : 0;
+        int parts = com.cnethuka.kegare.impact.ImpactPayload.FLASH | com.cnethuka.kegare.impact.ImpactPayload.HIT_STOP
+                | com.cnethuka.kegare.impact.ImpactPayload.SHAKE
+                | (tier.ordinal() >= com.cnethuka.kegare.impact.ImpactTier.IMPACT_FRAME.ordinal() ? com.cnethuka.kegare.impact.ImpactPayload.FRAME : 0);
+        net.neoforged.neoforge.network.PacketDistributor.sendToPlayer(player, new com.cnethuka.kegare.impact.ImpactPayload(tier,
+                technique ? com.cnethuka.kegare.impact.ImpactKind.TECHNIQUE : com.cnethuka.kegare.impact.ImpactKind.MELEE, parts, contact, direction,
+                color, attacker, victim, 0f));
+        say(source, "commands.kegare.debug.impact", tier.serializedName(), player.getDisplayName(), role);
+        return 1;
+    }
+
+    private static int screen(CommandSourceStack source, ServerPlayer player, net.minecraft.resources.ResourceLocation effect, double seconds) {
+        int ticks = (int) Math.round(seconds * 20);
+        com.cnethuka.kegare.impact.ScreenEffects.play(player, effect, ticks);
+        if (ticks <= 0) say(source, "commands.kegare.debug.screen.stopped", effect.toString(), player.getDisplayName());
+        else say(source, "commands.kegare.debug.screen", effect.toString(), player.getDisplayName(), String.format(Locale.ROOT, "%.1f", seconds));
+        return 1;
     }
 
     private static LiteralArgumentBuilder<CommandSourceStack> sharedAction(String action, boolean unlock) {

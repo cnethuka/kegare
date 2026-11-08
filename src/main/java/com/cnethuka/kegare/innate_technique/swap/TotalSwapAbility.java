@@ -51,6 +51,8 @@ public final class TotalSwapAbility extends SwapAbility {
         PositionsAbility.swap(caster, target, SwapSounds.TOTAL_SWAP);
         AwarenessAbility.disguisePair(caster, target, SwapConfig.ticks(SwapConfig.AWARENESS_DURATION), Disguises.Kind.TOTAL_SWAP);
         swapHealth(caster, target, casterShare, targetShare);
+        // What it did: each moved by the difference in their shares; and it's the ultimate (a full charge).
+        Swapper.landed(caster, target, 2 * Math.abs(casterShare - targetShare), 0, 1);
         VisualService.playOnce(caster, SwapIds.TOTAL_SWAP_BURST);
         VisualService.playOnce(target, SwapIds.TOTAL_SWAP_BURST);
     }

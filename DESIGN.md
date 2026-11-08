@@ -324,8 +324,8 @@ All timestamps use **level game time**. They persist across restarts and are ide
 - `VisualPayload`'s `START_LOOP` carries how long the loop has been running (`elapsedTicks`, 0 for a fresh start). A
   player who starts tracking an entity gets its running loops with their full `growTicks` and the time already gone, so
   they see each one where everyone else does: a growing loop part-grown, Switchback's countdown at the real time left.
-- Network version `16` (since a loop's elapsed time; `15` was the ready fist). Bump it when payload formats change;
-  mismatched clients are refused.
+- Network version `17` (since the Impact System's payloads, §3.23; `16` was a loop's elapsed time). Bump it when payload
+  formats change; mismatched clients are refused.
 
 ### 3.6 HUD
 **Rule: the combat HUD does not exist until the player asks for it** (art in `gen_art.py` → `textures/gui/combat/`).
@@ -436,7 +436,7 @@ Malice is always shown as whole numbers (floored, like the HUD); the stored valu
 - **Server TOML** (`config/kegare-server.toml`, where NeoForge 21.1 keeps server configs; synced to clients and
   hot-reloaded when edited) holds **every balance number**.
   - Sections: `malice` (with `tiers`), `traits`, `roll` (with `weights`, and `includeTestInnateTechniques`),
-    `combat`, `rime` (§3.14), `swap` (§3.19), `melee` (§3.22), `reverse_malice_technique` (§3.17), `progression` (§3.21), `test_abilities`.
+    `combat`, `rime` (§3.14), `swap` (§3.19), `melee` (§3.22), `impact` (§3.23), `reverse_malice_technique` (§3.17), `progression` (§3.21), `test_abilities`.
   - The `traits` section includes:
     - `sixEyesBirthChance`
     - `sixEyesTransferMode` (RANDOM | KILLER)
@@ -445,9 +445,10 @@ Malice is always shown as whole numbers (floored, like the HUD); the stored valu
 - **Client TOML:** `hud.enabled`, `input.dashDoubleTapMillis` (§3.22),
   `visuals.firstPersonAnimations`, `visuals.animationFades`, `visuals.vfxQuality`, and for the roll reveal (§3.12)
   `reveal.animation` (scenes on/off), `reveal.alwaysFull`, `reveal.reducedMotion`, `reveal.fakeOutChance` (0.2),
-  `reveal.debugForceFakeOut` and `reveal.seenTechniques`. All but `hud.enabled`, `reveal.fakeOutChance`,
-  `reveal.debugForceFakeOut` and `reveal.seenTechniques` are also on the Sorcerer screen's Settings page (§3.12), which
-  saves them at once.
+  `reveal.debugForceFakeOut` and `reveal.seenTechniques`, and `impact` (§3.23: shake, hit-stop, impact frames and each
+  tier's look). All but `hud.enabled`, `reveal.fakeOutChance`, `reveal.debugForceFakeOut`, `reveal.seenTechniques` and
+  `impact` are also on the Sorcerer screen's Settings page (§3.12), which saves them at once; of `impact`, the shake
+  strength and impact frames are there too.
 - Both are editable in-game via Mods → Kegare → Config. Labels are generated into the lang file.
 - **Migrations (`KegareConfigMigration`).** NeoForge keeps every value in an existing file and only adds missing keys, so a changed
   default never reaches a file that already exists. `kegare-server.toml` has a `configVersion` (a file without one reads as 1). On load, a
@@ -639,7 +640,9 @@ closing it or disconnecting at any point changes nothing.
   - **Settings** (a gear): client options as button rows, the current value lit gold, saved to the client config
     at once: ability effects
     (Full / Reduced / Vanilla), your own animations in first person, the roll reveal animation, always playing the full
-    reveal, and reduced motion in the reveal.
+    reveal, and reduced motion in the reveal. Screen shake (§3.23) is a slider instead: drag or click along its track,
+    0 to 200% in steps of 5% (a notch marks 100%), saved when it's let go. Impact frames (§3.23) are an On / Off row,
+    since a whole-screen flash can bother some people.
 - **Right column:** the player model (follows the mouse), Malice current / capacity with the bar in the technique's
   Malice color, the tier, and regen per second (or "Regen paused"). In a window too narrow for them (640x480), the amount and
   "Regen paused" each take a second line and the model gives up the height; shrinking them would land the font on fractions of a
@@ -1982,14 +1985,98 @@ Without the Malice the hit stays normal and the Strike waits until it expires. E
 
 **Severed** trade all their Malice for superhuman abilities, so their melee is stronger than standard, with no costs. `[melee.severed]` has their own numbers: dash 6 blocks every 2.5 s; perfect window 0.3 s; guard 50% off melee and nothing off techniques, held at most 4 s (no Malice to run out of); recovery 0.75 s; Strike +75% with more knockback than standard (0.9 against 0.6). A config file from before these numbers moves to them unless a value was changed by hand (`KegareConfigMigration`, version 3).
 
-**Impact moments** (`MeleeImpact`): `DASH_BURST`, `CLEAN_DODGE`, `PARRY_PERFECT`, `GUARD_HIT`, `STAGGER`, `STRIKE_HIT`, fired on the server tick the effect is applied. Sounds and effects hang off them, and `MeleeImpact.listen` is where the Impact System hooks in. No screen shake, hit-stop or shaders yet.
+**Impact moments** (`MeleeImpact`): `DASH_BURST`, `CLEAN_DODGE`, `PARRY_PERFECT`, `GUARD_HIT`, `STAGGER`, `STRIKE_HIT`, fired on the server tick the effect is applied. Sounds and effects hang off them, and `MeleeImpact.listen` is where the Impact System (§3.23) hooks in: each moment's listener gets both fighters where it has two (a parry's attacker, a Strike's striker).
 
 **Visuals.** Animations: `tools/anims/melee.py` → `player_animations/melee.json` (four dash directions, `parry_guard`, `parry_perfect`, `parry_recovery`, `stagger`, `reinforced_strike`). A reaction's key pose is on its first frames, because the server has already applied the hit when it starts. Raised arms fill the first-person view, so parry and stagger throw arms out and not up. On the player's own first-person screen every melee animation leaves the hands to vanilla (`PlayerAnimations.keepVanillaHands`): PAL's first-person model draws what's held at its real size right by the camera, usually edge on, so a sword or an axe would fill the view with its dark outline and hide the opponent. `GuardHand` draws the guard instead: vanilla's hand and item brought in and turned across the body, with a short shove on a perfect parry. Everyone else sees the full animations.
 Effects (`MeleeFxAuthoring`, `fx/melee/`): dash burst on the ground left behind, afterimages and a wake along the dash, parry spark and guard hit riding the defender's look (a point at the contact is too near both fighters' cameras to draw), with quieter versions on the player's own first-person screen, and Strike impact on the target (`strike_impact`, `strike_burst`, tinted). The parry's crescent is a Blockbench model, `art/blockbench/parry_arc.bbmodel` (`tools/blockbench/build_parry_arc.py`) exported to `models/fx/parry_arc.obj` and drawn by Photon's Model render mode. The model holds its shape from every side and takes the gold cleanly, where Photon's stock SLASH sprite turns to every camera, keeps a blue edge and whites out the first-person view.
 
-**A dash from inside it** (`client/DashFeel`, its numbers in `DashKick`), where the trail everyone else sees can't be drawn. First person only: a field-of-view kick (16% at its peak two ticks in, gone by eleven; the hand's own view stays put) and needle streaks round the screen's edge, flowing from where you're headed: outward going forward, inward going backward, off to the side going sideways. Nothing is drawn inside the middle 60% of the screen. Reduced is half the kick and fewer, fainter streaks; Vanilla is neither, and vanilla's own FOV Effects slider scales the kick too. No screen shake: that's for the Impact System.
+**A dash from inside it** (`client/DashFeel`, its numbers in `DashKick`), where the trail everyone else sees can't be drawn. First person only: a field-of-view kick (16% at its peak two ticks in, gone by eleven; the hand's own view stays put) and needle streaks round the screen's edge, flowing from where you're headed: outward going forward, inward going backward, off to the side going sideways. Nothing is drawn inside the middle 60% of the screen. Reduced is half the kick and fewer, fainter streaks; Vanilla is neither, and vanilla's own FOV Effects slider scales the kick too. Its light shake is the Impact System's (`DASH_BURST`, §3.23).
 
 **Tests:** `MeleeLayerTest`, `MeleeTellTest` (in-game JUnit), `DoubleTapTest`, `DashMotionTest`, `DashKickTest`, `MeleeAnimationsTest`.
+
+### 3.23 The Impact System (package `impact`)
+
+A shared toolkit that makes hits feel heavy, like an anime fight: a hit lands with a short freeze, the camera shakes, a sharp flash
+goes off where it met the body, and the biggest hits get a single black-and-white impact frame. Every hit goes through it: every
+technique's damage, every melee hit, plain hits with no technique behind them (a sword, an arrow, a mob), and Swap's trades. It's
+feel only: nothing in it changes what a hit does.
+
+**Strength comes from what the hit did** (`ImpactStrength`, numbers in `[impact]` of the server toml), never a fixed number per
+move. Everything that landed on one victim in one server tick is added up (`Impacts`), then:
+
+  strength = damageWeight × (damage dealt ÷ the victim's max health)
+           + knockbackWeight × (knockback beyond baseKnockback, the 0.4 every hit gets)
+           + launchWeight × (upward launch speed, blocks/tick) + chargeWeight × (the charge it was cast at, 0 to 1)
+
+- Damage is what actually came off their health (`LivingDamageEvent.Post`), so armour, a guard and Rime Shell soften a hit's feel too.
+- Knockback is stacked the way vanilla stacks it (each push halves what was there and adds its own): a hit's own 0.4 and a sprint's
+  0.5 make 0.7. A throw that sets speed instead of pushing reports it (`Impacts.launch`: Glacial Spire).
+- Charge: a projectile or spike that carries it (`ChargedHit`: Glacial Lance, Glacial Spire); Curio Burst's puppet tier (Tap 0,
+  Half 0.5, Full 1); a Reinforced Strike counts as fully charged, and so does an ultimate.
+- Hits that deal no damage still land on a body (`Impacts.hit`): Swap's moves (a plain swap, Exchange or Send Off is light; Momentum
+  Exchange counts the speed it handed over; Total Swap counts the shares of health it moved, both ways, as its damage, and is an
+  ultimate), and Shatter Shell's push. Abilities that never touch a body (Directive, Focus, Possess, Understudy, Stand-In, Strings'
+  pulls, Awareness, Mimic, Anchor) make none.
+- A hit the guard took some of (`GUARD_HIT`) lands one tier softer.
+- Severed players' hits go through the same rule; theirs are simply bigger.
+- The animations mark no impact tick of their own: they're timed to the server's moment (a melee reaction's key pose is its first
+  frame; a clap meets as the swap lands), so the Impact System fires on those server moments.
+
+**Tiers** (where each starts, in strength; the server's `[impact.tiers]`):
+
+  | Tier | From | What lands like it (on a 20-health player) |
+  |---|---|---|
+  | Light | below 0.6 | a punch, a sword's normal hit, a Frost Shard, a plain swap: it barely registers |
+  | Medium | 0.6 | a sprinting or critical sword hit, Shatter Shell's push, the least Glacial Spire |
+  | Heavy | 1.1 | Reinforced Strikes (a fist's too), a full Glacial Lance, a Half Curio Burst |
+  | Impact frame | 2.1 | a full Glacial Spire, a Full Curio Burst near its centre, a Total Swap between very different health |
+  | Top | never reached | reserved for Black Spark (not built): only a hit that asks for it |
+
+**What each part does** (clients, `impact/client`). The server sends one `ImpactPayload` to the attacker, the victim and everyone
+within `witnessRange` (48) of the hit: tier, where it met the body, which way it went, its color, and who attacked and who was hit.
+Each client plays its own part:
+- **Hit-stop** (`ScreenFx`): the frame the hit lands on is kept and shown again for the freeze, for the attacker and the victim only.
+  It's the picture only: the game ticks on, the server is never delayed, damage and knockback land as they always did, keys are read
+  as normal and the HUD stays live; when it ends you see where everything really is.
+- **Screen shake** (`ScreenShake`): the victim's stronger, the attacker's lighter (`attackerShake`, 45%). It starts as the freeze
+  ends: a jolt the way the hit went (a recoil for the attacker), then a fast tremble dying away. Camera angles only, never anyone's
+  aim or position. Nearby players get none.
+- **Impact flash** (`ImpactFlash`): sharp and brief where the hit met the body, for everyone near: a hard white glint and spikes
+  that shoot out and break away, solid and full-bright, gone in 3 to 6 ticks. White for a body or a weapon, the attacker's Malice
+  color for a technique (its core stays white): the attacker sees their own color, everyone else the color of the face they wear
+  (§1, §3.19). Never on your own body in your own first person, and smaller the closer it is to your camera.
+- **Impact frame**: on the impact-frame tier and above, the attacker and the victim see one black-and-white high-contrast frame
+  (`shaders/post/impact_frame.json`, Minecraft's own post-processing): brightness cut hard into black and white, read through a
+  slight blur so textures don't turn to grain, with the outlines of shapes inked black. It's the first frame of the freeze.
+  Everyone else sees the flash.
+- **The screen shader hook** (`ScreenEffects`, `ScreenFx`): any post chain over one player's whole screen for a set time, from the
+  server, fading in and out by its `Amount` uniform. Time Manipulation's Standstill uses it for its gray (`kegare:grayscale`, §3.26). `/kegare debug screen <player> <effect> <seconds>` plays one.
+
+**The melee layer's moments** (§3.22) play by themselves at the tier `[impact.moments]` gives them: `DASH_BURST` a light shake for
+the one dashing; `CLEAN_DODGE` a short freeze for the one who dodged; `PARRY_PERFECT` freeze, shake and a white flash for both
+fighters (the parried attacker gets the stronger shake); `STAGGER` a shake for the one staggered. `STRIKE_HIT` makes its hit a fully
+charged one, and `GUARD_HIT` makes its hit a tier softer.
+
+**Each player's own look** (client toml, `[impact]`; all of it read live, so it can be tuned while the game runs):
+`shakeStrength` (0 to 2) and `impactFrames` (on/off) are also on the Sorcerer screen's Settings page (§3.12); `hitStopStrength`,
+`attackerShake`, `impactFrameMillis` (90), and for each tier `hitStopMillis`, `shakeDegrees`, `shakeMillis` and `flashSize`:
+
+  | Tier | Freeze (ms) | Shake (degrees, ms) | Flash (blocks) |
+  |---|---|---|---|
+  | Light | 0 | 0.35, 140 | 0.22 |
+  | Medium | 45 | 0.9, 220 | 0.36 |
+  | Heavy | 90 | 1.8, 320 | 0.55 |
+  | Impact frame | 150 | 3.0, 450 | 0.8 |
+  | Top | 220 | 4.5, 650 | 1.1 |
+
+`/kegare debug impact <player> <tier> [attacker|victim|witness] [technique]` plays a tier on that player's own screen and nowhere
+else, with nothing landing, so a tier can be felt and tuned without a fight.
+
+**Full, Reduced and Vanilla:** Full draws everything. Reduced draws fewer spikes and no impact frame. Vanilla draws vanilla's crit
+sparks for the flash (dust in the Malice color for a technique) and no impact frame. Hit-stop and shake follow their own settings at
+every quality. The impact frame needs the setting on and Full.
+
+**Tests:** `ImpactTest` (the rule and its tiers, real hits resolving).
 
 ---
 

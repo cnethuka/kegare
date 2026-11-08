@@ -13,8 +13,8 @@
   §3 Systems (§3.1 Malice, §3.2 Traits, §3.3 Innate technique framework, §3.4 Rolls, §3.5 Input and networking, §3.6 HUD,
   §3.8 Commands, §3.9 Config, §3.10 Data generation and art, §3.11 Advancements, §3.12 GUIs, §3.13 Animations and VFX,
   §3.14 Rime, §3.15 Specials and the tell rule, §3.16 Loadout, §3.17-3.18 RMT, §3.19 Swap, §3.20 Puppet Manipulation,
-  §3.21 Progression, §3.22 Melee), §4 Extension points, §5 Future. Read the section before touching a system; update it in the
-  same commit when behaviour or visuals change.
+  §3.21 Progression, §3.22 Melee, §3.23 Impact System), §4 Extension points, §5 Future. Read the section before touching a
+  system; update it in the same commit when behaviour or visuals change.
 - `README.md`: required mods, content list, dev commands and keys.
 - `tools/anims/*.py` → `assets/kegare/player_animations/*.json` (`python3 tools/anims/build.py [--preview names]`).
 - `tools/sounds/*.py` → `assets/kegare/sounds/**/*.ogg` (`python3 tools/sounds/build.py [--preview]`), registered in

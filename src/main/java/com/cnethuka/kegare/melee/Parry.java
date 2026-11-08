@@ -92,7 +92,7 @@ public final class Parry {
         state.parriedThisGuard = true;
         state.guardLoopAt = player.level().getGameTime() + MeleeIds.PARRY_PERFECT_TICKS;
         VisualService.playOnce(player, Visual.animation(MeleeIds.ANIM_PARRY_PERFECT));
-        MeleeImpact.PARRY_PERFECT.fire(player.serverLevel(), contact(player, attacker), player);
+        MeleeImpact.PARRY_PERFECT.fire(player.serverLevel(), contact(player, attacker), player, attacker);
         stagger(attacker);
         ReinforcedStrike.earn(player, state);
         if (attacker instanceof ServerPlayer opponent && Attribution.isRealTarget(player, opponent) && swungFullyCharged(opponent)) {

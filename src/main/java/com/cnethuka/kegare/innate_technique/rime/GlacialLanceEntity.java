@@ -29,7 +29,7 @@ import net.minecraft.world.phys.Vec3;
  * Glacial Lance's projectile: bigger and slower; damage scales with charge; two freeze stacks. The charge is synced so every client
  * draws the lance as big as it was charged.
  */
-public class GlacialLanceEntity extends RimeProjectile {
+public class GlacialLanceEntity extends RimeProjectile implements com.cnethuka.kegare.impact.ChargedHit {
     private static final EntityDataAccessor<Float> DATA_CHARGE = SynchedEntityData.defineId(GlacialLanceEntity.class, EntityDataSerializers.FLOAT);
 
     public GlacialLanceEntity(EntityType<? extends GlacialLanceEntity> type, Level level) {
@@ -47,6 +47,11 @@ public class GlacialLanceEntity extends RimeProjectile {
     protected void defineSynchedData(SynchedEntityData.Builder builder) {
         super.defineSynchedData(builder);
         builder.define(DATA_CHARGE, 0f);
+    }
+
+    @Override
+    public float hitCharge() {
+        return charge();
     }
 
     /** How far it was charged, from 0 to 1 (a full charge). */

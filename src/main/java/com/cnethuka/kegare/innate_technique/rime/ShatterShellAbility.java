@@ -59,6 +59,8 @@ public final class ShatterShellAbility extends RimeSpecial {
             target.knockback(knockback, dx, dz);
             target.setDeltaMovement(target.getDeltaMovement().add(0, 0.15, 0));
             target.hurtMarked = true;
+            // No damage, but it lands on them: the Impact System reads its push from the knockback above.
+            com.cnethuka.kegare.impact.Impacts.hit(p, target, com.cnethuka.kegare.impact.ImpactKind.TECHNIQUE, 0, 0, 0, true);
             FreezeService.addStacks(target, stacks, p);
             if (target instanceof ServerPlayer) players++;
         }

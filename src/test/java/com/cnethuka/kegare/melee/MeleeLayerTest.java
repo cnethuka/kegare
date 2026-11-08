@@ -226,7 +226,7 @@ class MeleeLayerTest {
             ServerPlayer p = player(server, "parry_perfect", 1000);
             Zombie attacker = place(level, new Zombie(EntityType.ZOMBIE, level), 4.5, 8.5);
             List<MeleeImpact> impacts = new ArrayList<>();
-            MeleeImpact.Listener listener = (moment, l, at, who) -> impacts.add(moment);
+            MeleeImpact.Listener listener = (moment, l, at, who, other) -> impacts.add(moment);
             MeleeImpact.listen(listener);
             try {
                 send(p, Action.PARRY_PRESS);

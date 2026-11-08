@@ -30,6 +30,7 @@ public final class Swapper {
 
     /** Swaps the caster's position with a player's or a mob's, and their facing too if asked, with a clap at both ends. */
     public static void swap(ServerPlayer caster, LivingEntity target, boolean facing, SwapSounds.Clap clap) {
+        landed(caster, target, 0, 0, 0);
         Vec3 posA = caster.position();
         Vec3 posB = target.position();
         float yawA = caster.getYRot(), pitchA = caster.getXRot();
@@ -42,6 +43,18 @@ public final class Swapper {
         moveTo(target, posA, facing ? yawA : yawB, facing ? pitchA : pitchB);
         arrive(caster);
         arrive(target);
+    }
+
+    /**
+     * A Swap move landed on {@code target} (DESIGN §3.23): it goes through the Impact System like any hit, as a technique, but never
+     * breaks the world (it's a clean magic trick). What it did is all it's worth: a plain swap is a light one.
+     *
+     * @param healthShare the shares of health it moved (Total Swap), else 0
+     * @param motion      the speed it handed the target (Momentum Exchange), else 0
+     * @param charge      1 for the ultimate, else 0
+     */
+    static void landed(ServerPlayer caster, LivingEntity target, double healthShare, double motion, double charge) {
+        com.cnethuka.kegare.impact.Impacts.hit(caster, target, com.cnethuka.kegare.impact.ImpactKind.TECHNIQUE, healthShare, motion, charge, false);
     }
 
     /** Moves one entity (keeping its own facing), resetting its fall distance. */

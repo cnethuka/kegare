@@ -514,6 +514,8 @@ public final class KegareLanguageProvider extends LanguageProvider {
         add("gui.kegare.settings.vfx.vanilla", "Vanilla");
         add("gui.kegare.settings.first_person", "Your own animations in first person");
         add("gui.kegare.settings.animation_fades", "Blend animations in and out");
+        add("gui.kegare.settings.shake", "Screen shake when hits land: %s");
+        add("gui.kegare.settings.impact_frames", "Impact frames (black-and-white flash on the biggest hits, Full only)");
         add("gui.kegare.settings.reveal", "Roll reveal animation");
         add("gui.kegare.settings.reveal_always_full", "Always play a technique's full reveal");
         add("gui.kegare.settings.reveal_reduced_motion", "Reveal: fewer flashes, no shake");
@@ -607,6 +609,8 @@ public final class KegareLanguageProvider extends LanguageProvider {
         add("commands.kegare.help.debug.orb.status", "Show a player's next orb roll and any orb under way.");
         add("commands.kegare.help.debug.swap", "Stop swaps from reaching a player, or let them again.");
         add("commands.kegare.help.debug.strings", "Stop strings from moving a player, or let them again.");
+        add("commands.kegare.help.debug.impact", "Play an impact tier on a player's own screen, to tune how it feels. Nothing lands.");
+        add("commands.kegare.help.debug.screen", "Play a whole-screen effect (grayscale) on a player's screen for a time. 0 stops it.");
         add("commands.kegare.help.debug.fx.export", "Dev client only: rewrite every Photon effect from its authoring class.");
         add("commands.kegare.help.debug.fx.play", "Dev client only: preview an effect, in front, on yourself or looping.");
 
@@ -714,6 +718,9 @@ public final class KegareLanguageProvider extends LanguageProvider {
         add("commands.kegare.debug.orb.status.no", "no");
         add("commands.kegare.debug.orb.status.unlocked", "unlocked");
         add("commands.kegare.debug.orb.status.locked", "locked");
+        add("commands.kegare.debug.impact", "Played a %s impact on %s's screen, as the %s. Nothing landed.");
+        add("commands.kegare.debug.screen", "Playing %s on %s's screen for %s s.");
+        add("commands.kegare.debug.screen.stopped", "Stopped %s on %s's screen.");
         add("commands.kegare.debug.swap.on", "%s can't be swapped now. This cancels SwapTargetEvent.");
         add("commands.kegare.debug.swap.off", "%s can be swapped again.");
         add("commands.kegare.debug.strings.on", "%s can't be moved by strings now. This cancels StringsTargetEvent.");

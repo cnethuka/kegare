@@ -26,7 +26,7 @@ import net.minecraft.world.phys.Vec3;
  * Its visuals are loops on this entity, so players who arrive late still see the right stage. Its charge rides the entity's own
  * synced data (vanilla's, not a Kegare packet), so every client draws the spike as tall as the launch it gives.
  */
-public class GlacialSpireEntity extends Entity {
+public class GlacialSpireEntity extends Entity implements com.cnethuka.kegare.impact.ChargedHit {
     private static final EntityDataAccessor<Float> DATA_CHARGE = SynchedEntityData.defineId(GlacialSpireEntity.class, EntityDataSerializers.FLOAT);
     @Nullable
     private UUID caster;
@@ -107,8 +107,15 @@ public class GlacialSpireEntity extends Entity {
             target.setDeltaMovement(v.x * 0.2, launch, v.z * 0.2);
             target.hurtMarked = true;
             target.hasImpulse = true;
+            com.cnethuka.kegare.impact.Impacts.launch(target, launch); // a throw, not a push: the Impact System reads it from here
             if (owner != null && target instanceof ServerPlayer victim) RimeLaunch.mark(victim, owner);
         }
+    }
+
+    /** The charge it was cast at: one of the things the Impact System reads a hit's strength from. */
+    @Override
+    public float hitCharge() {
+        return charge;
     }
 
     private double horizontalDistance(Entity e) {

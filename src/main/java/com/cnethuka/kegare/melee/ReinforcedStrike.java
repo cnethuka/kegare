@@ -63,7 +63,7 @@ public final class ReinforcedStrike {
         VisualService.playOnce(attacker, Visual.animation(MeleeIds.ANIM_REINFORCED_STRIKE));
         Vec3 at = target.position().add(0, target.getBbHeight() * 0.6, 0);
         MeleeTell.playStrikeImpact(attacker, at);
-        MeleeImpact.STRIKE_HIT.fire(attacker.serverLevel(), at, target);
+        MeleeImpact.STRIKE_HIT.fire(attacker.serverLevel(), at, target, attacker);
         return damage * (float) (1.0 + numbers.strikeBonus());
     }
 }

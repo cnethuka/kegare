@@ -52,7 +52,8 @@ public final class MeleeEvents {
             MeleeNumbers numbers = MeleeNumbers.of(player);
             if (kind == MeleeHits.Kind.MELEE && source.getEntity() != player) {
                 event.setNewDamage(event.getNewDamage() * (float) (1.0 - numbers.guardMeleeReduction()));
-                MeleeImpact.GUARD_HIT.fire(level, source.getEntity() instanceof LivingEntity attacker ? Parry.contact(player, attacker) : player.getEyePosition(), player);
+                MeleeImpact.GUARD_HIT.fire(level, source.getEntity() instanceof LivingEntity attacker ? Parry.contact(player, attacker) : player.getEyePosition(),
+                        player, source.getEntity());
             } else if (kind == MeleeHits.Kind.TECHNIQUE) {
                 event.setNewDamage(event.getNewDamage() * (float) (1.0 - numbers.guardTechniqueReduction()));
             }

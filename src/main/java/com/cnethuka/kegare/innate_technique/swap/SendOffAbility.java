@@ -52,6 +52,7 @@ public final class SendOffAbility extends SwapAbility.Special {
         Swapper.depart(anchor);
         SwapLink.play(caster.serverLevel(), Swapper.bodyPos(target), Swapper.bodyPos(anchor));
         Anchors.consume(caster, anchor);
+        Swapper.landed(caster, target, 0, 0, 0);
         Swapper.moveTo(target, to);
         Swapper.arrive(target);
         SwapTracker.swapped(caster, target);
