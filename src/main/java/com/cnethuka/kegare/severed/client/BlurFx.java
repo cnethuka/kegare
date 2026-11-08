@@ -32,8 +32,8 @@ import net.minecraft.world.phys.Vec3;
  * Blur as everyone else sees it (DESIGN §3.27): a smear of delayed afterimages trailing behind the one blurring, desaturated and
  * physical (lit by the world like the body, never glowing), with dust and grit kicked off the ground. Where they really are reads
  * clearly: the body itself is drawn as always, a sharp, solid silhouette at the front, and no afterimage is drawn within reach of it,
- * so a hit on what you see is a hit on their real box. Reduced draws fewer afterimages; Vanilla none, only the dust. Your own smear
- * shows in third person, never round your first-person camera.
+ * so a hit on what you see is a hit on their real box. Reduced draws fewer afterimages; Vanilla none, only the dust. No afterimage is
+ * drawn round the camera looking at it (yours in first person, or anyone they blur past or through).
  */
 final class BlurFx {
     static final ResourceLocation WHITE = ResourceLocation.withDefaultNamespace("textures/misc/white.png");
@@ -43,6 +43,8 @@ final class BlurFx {
     private static final int[] BACK_FULL = {2, 3, 5, 7, 9}, BACK_REDUCED = {3, 6, 9};
     /** No afterimage closer than this to the real body (the front stays clean), nor this close to another. */
     private static final double CLEAR_OF_BODY = 0.9, APART = 0.5;
+    /** Nor this close to the camera looking at it: someone blurring past (or through) you never fills your view with grey. */
+    private static final double CLEAR_OF_CAMERA = 1.6;
     private static final int KEPT = 12;
     /** Faster than a sprint (blocks a tick): dust flies. */
     private static final double DUSTY = 0.32;
@@ -124,6 +126,7 @@ final class BlurFx {
                 if (index < 0) break;
                 Vec3 at = trail.get(index);
                 if (at.distanceTo(now) < CLEAR_OF_BODY || at.distanceTo(last) < APART) continue;
+                if (at.add(0, entity.getBbHeight() / 2, 0).distanceTo(cam) < CLEAR_OF_CAMERA) continue;
                 last = at;
                 float alpha = 0.42f * (1f - k / (float) back.length);
                 int light = LevelRenderer.getLightColor(level, BlockPos.containing(at.x, at.y + 1.0, at.z));

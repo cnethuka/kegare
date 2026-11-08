@@ -95,7 +95,7 @@ public final class SeveredConfig {
         CLOSING_RECOVERY = b.comment("After every Closing Line: this long with no Blur speed.").defineInRange("recoverySeconds", 0.6, 0.0, 10.0);
         CLOSING_STRIKE_WINDOW = b.comment("How long the Strike it earns waits.").defineInRange("strikeWindow", 0.5, 0.05, 10.0);
         CLOSING_CARRY = b.comment("Knockback the Strike carries per block/tick of the rush's speed, on top of a Severed Strike's own.")
-                .defineInRange("carriedKnockback", 0.1, 0.0, 5.0);
+                .defineInRange("carriedKnockback", 0.2, 0.0, 5.0);
         PARRY_STAGGER_SECONDS = b.comment("A perfect parry that catches the Strike staggers them this long (a normal stagger is 0.5 s)...")
                 .defineInRange("parryStaggerSeconds", 1.5, 0.0, 30.0);
         PARRY_STAGGER_SLOWNESS = b.comment("...at this Slowness amplifier (a normal stagger is 2).").defineInRange("parryStaggerSlowness", 3, 0, 9);

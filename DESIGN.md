@@ -2050,9 +2050,11 @@ move. Everything that landed on one victim in one server tick is added up (`Impa
 - A hit the guard took some of (`GUARD_HIT`) lands one tier softer.
 - Severed players' hits go through the same rule. They have no Malice, so that input is always 0 for them (nothing stands in for it).
   Their hits still reach every tier through damage, knockback and a Strike's full charge, and their Strike always lands harder than
-  the same standard one (their bigger bonus and knockback): a punch is Light, a sprinting netherite hit Medium, an iron-sword Strike
-  Heavy (2.37 against a standard player's 2.10), and a critical netherite Strike (21 damage) reaches the impact frame (3.00). That
-  last is their only way there: a Malice user also reaches it with a full Glacial Spire, a Full Curio Burst or any Total Swap.
+  the same standard one (their bigger bonus and knockback). With their Strength (§3.27), on a 20-health player: a punch
+  0.08 (Light), an iron sword 0.45 (Light), a netherite sword 0.60 (Medium, where it was Light before Strength), a sprinting
+  netherite hit 0.96 (Medium). Before Strength an iron-sword Strike was Heavy (2.37 against a standard player's 2.10) and a critical
+  netherite Strike reached the impact frame (3.00); a Closing Line Strike reaches it with an iron sword and no crit (3.01, §3.27). A
+  Malice user reaches it with a full Glacial Spire, a Full Curio Burst or any Total Swap.
 - The animations mark no impact tick of their own: they're timed to the server's moment (a melee reaction's key pose is its first
   frame; a clap meets as the swap lands), so the Impact System fires on those server moments.
 
@@ -2407,8 +2409,8 @@ Technique Mode, unchanged (`client/SeveredKeys`).
   (vanilla block particles of that block). Where they really are reads clearly: the body itself is drawn as always, a sharp, solid
   silhouette at the front, and no afterimage is drawn within 0.9 blocks of it, so a hit on what you see is a hit on the real box.
   A copy of a body carries no name tag (`client/visual/BodyCopies`, also used by Senses and Time Manipulation's afterimages).
-  Reduced draws three afterimages; Vanilla none, only the dust. Your own smear shows in third person, never round your first-person
-  camera. **In first person** (`BlurFeel`): the view opens up to 12% wider the faster you go, and needle streaks run round the
+  Reduced draws three afterimages; Vanilla none, only the dust. No afterimage is drawn within 1.6 blocks of the camera looking at it,
+  so your own smear shows in third person only, and someone blurring past or through you never fills your view with grey. **In first person** (`BlurFeel`): the view opens up to 12% wider the faster you go, and needle streaks run round the
   screen's edge, flowing from where you're headed; nothing is drawn inside the middle 60% of the screen. Half of it at Reduced, none
   at Vanilla, and vanilla's FOV Effects slider scales the widening.
 - **HUD:** "Blur" under the crosshair with the melee cues while it's on, and "Winded" with a countdown bar while it can't come back.
@@ -2425,8 +2427,13 @@ Technique Mode, unchanged (`client/SeveredKeys`).
   techniques hit you normally on the way, with no invulnerability. Moved off the line by something else (a swap) or stopped by a
   stun or a freeze (Rime's, a Standstill's), it's over with no Strike; a Decelerate hit or a Stasis Field slow it like any movement.
 - **Arriving** (in reach of the target or of whatever stopped you) earns a Reinforced Strike (Severed numbers) for `strikeWindow`
-  (0.5 s) that carries the rush's speed as extra knockback (`carriedKnockback` 0.1 per block a tick: 0.4 on top of a Severed
+  (0.5 s) that carries the rush's speed as extra knockback (`carriedKnockback` 0.2 per block a tick: 0.8 on top of a Severed
   Strike's 0.9). The ready fist shows as usual. `ReinforcedStrike.earnFromRush`.
+- **Impact System (§3.23):** the Strike counts as fully charged and the carried speed adds knockback, so through the rule alone (no
+  per-move tier) a Closing Line Strike lands harder than any other Severed hit. Measured live on a 20-health player with no armour
+  (`/kegare debug impact log`): a fist 2.35 (Heavy), an iron sword 3.01 (the impact frame, with no crit), a netherite sword 3.27. The
+  carried push is halved by the hit's own (vanilla stacking), which is why it's 0.2: at 0.1 the iron sword came to 2.77, short of
+  2.84.
 - **Counter:** a perfect parry that catches that Strike spends it and staggers the Severed harder than a normal stagger
   (`parryStaggerSeconds` 1.5 at Slowness `parryStaggerSlowness` 3, against 0.5 s at 2).
 - **After every Closing Line** (arrived or not): `recoverySeconds` (0.6) with no Blur speed, and a `cooldown` of 6 s ("Closing Line
