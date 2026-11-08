@@ -1660,7 +1660,8 @@ first-person camera.
   tight string toward the hand, a hair wider than the cord). The string itself is the model above.
 - Sounds: wool (form, dissolve), soul escape (possess, return), note-block chime by order (Directive), bell (Focus),
   Curio Burst's own burst (`puppet_manipulation.curio_burst`, §3.10: a dry pop, then a music box's comb struck all at
-  once, a bright detuned jangle dying fast; an overwound toy, not a bomb; deeper by tier) with a wool tear, a firework launch then the
+  once, a bright detuned jangle dying fast; an overwound toy, not a bomb; deeper by tier) with a wool tear and a deep
+  heavy thump under it (`puppet_manipulation.curio_thump`, §3.23: the toy actually hurts), a firework launch then the
   bursts (Chain Burst), illusioner mirror (Stand-In, Understudy), bobber throw and reel, leash knot and a knockback thud
   (Strings).
 
@@ -2071,6 +2072,14 @@ charged one, and `GUARD_HIT` makes its hit a tier softer.
 
 `/kegare debug impact <player> <tier> [attacker|victim|witness] [technique]` plays a tier on that player's own screen and nowhere
 else, with nothing landing, so a tier can be felt and tuned without a fight.
+
+**Hit sounds** (`ImpactSounds`, Kegare's own from `tools/sounds/impact.py`, §3.10), at the point of contact and always with
+vanilla's own hurt sound, never instead of it. A melee hit sounds like what it was hit with: `impact.punch` (an empty hand, or
+anything that isn't a weapon: a heavy thud with a crack on top), `impact.blade` (a sword: a sharp swish with a slice),
+`impact.heavy` (an axe or a mace: a heavier thud with a crunch); louder the harder it lands. Big hits of any kind (Heavy and up)
+get `impact.boom` under them (a deep boom: 0.6 at pitch 1.1 for Heavy, 1.0 at 0.9 for the impact frame, 1.4 at 0.75 for Top).
+Curio Burst adds its own thump (§3.20). Each has three versions to pick from in `run/sounds_preview/impact/` (`--preview`); the
+first of each ships.
 
 **Full, Reduced and Vanilla:** Full draws everything. Reduced draws fewer spikes and no impact frame. Vanilla draws vanilla's crit
 sparks for the flash (dust in the Malice color for a technique) and no impact frame. Hit-stop and shake follow their own settings at

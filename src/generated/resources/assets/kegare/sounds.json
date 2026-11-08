@@ -1,9 +1,39 @@
 {
+  "impact.blade": {
+    "sounds": [
+      "kegare:impact/blade"
+    ],
+    "subtitle": "subtitles.kegare.impact.blade"
+  },
+  "impact.boom": {
+    "sounds": [
+      "kegare:impact/boom"
+    ],
+    "subtitle": "subtitles.kegare.impact.boom"
+  },
+  "impact.heavy": {
+    "sounds": [
+      "kegare:impact/heavy"
+    ],
+    "subtitle": "subtitles.kegare.impact.heavy"
+  },
+  "impact.punch": {
+    "sounds": [
+      "kegare:impact/punch"
+    ],
+    "subtitle": "subtitles.kegare.impact.punch"
+  },
   "puppet_manipulation.curio_burst": {
     "sounds": [
       "kegare:puppet_manipulation/curio_burst"
     ],
     "subtitle": "subtitles.kegare.puppet_manipulation.curio_burst"
+  },
+  "puppet_manipulation.curio_thump": {
+    "sounds": [
+      "kegare:puppet_manipulation/curio_thump"
+    ],
+    "subtitle": "subtitles.kegare.puppet_manipulation.curio_thump"
   },
   "swap.big_clap": {
     "sounds": [

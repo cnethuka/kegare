@@ -73,6 +73,9 @@ public final class CurioBursts {
         level.playSound(null, center.x, center.y, center.z, KegareSounds.PUPPET_CURIO_BURST.value(), SoundSource.PLAYERS,
                 0.6f + 0.25f * tier.ordinal(), 1.1f - 0.1f * tier.ordinal());
         level.playSound(null, center.x, center.y, center.z, SoundEvents.WOOL_BREAK, SoundSource.PLAYERS, 1.0f, 0.8f);
+        // Under the music box, a deep heavy thump: it's a toy, and it hurts (DESIGN §3.23). Bigger is heavier.
+        level.playSound(null, center.x, center.y, center.z, KegareSounds.PUPPET_CURIO_THUMP.value(), SoundSource.PLAYERS,
+                0.7f + 0.25f * tier.ordinal(), 1.1f - 0.12f * tier.ordinal());
 
         com.cnethuka.kegare.melee.CleanDodge.areaWentOff(level, owner, com.cnethuka.kegare.melee.CleanDodge.sphere(center, radius));
         List<LivingEntity> hurt = new ArrayList<>();

@@ -49,6 +49,7 @@ public final class Impacts {
         NeoForge.EVENT_BUS.addListener(Impacts::onServerTick);
         NeoForge.EVENT_BUS.addListener((ServerStoppedEvent e) -> clear());
         MeleeImpact.listen(Impacts::onMoment);
+        listen(ImpactSounds::play);
     }
 
     /** Called with every resolved hit, on the server, at the end of the tick it landed in. */

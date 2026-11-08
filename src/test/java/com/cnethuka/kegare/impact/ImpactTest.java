@@ -58,6 +58,19 @@ class ImpactTest {
     }
 
     @Test
+    void aMeleeHitSoundsLikeWhatItWasHitWith(MinecraftServer server) { // the server binds the item tags
+        assertSame(com.cnethuka.kegare.sound.KegareSounds.IMPACT_PUNCH.value(), ImpactSounds.weaponSound(net.minecraft.world.item.ItemStack.EMPTY), "a fist");
+        assertSame(com.cnethuka.kegare.sound.KegareSounds.IMPACT_BLADE.value(),
+                ImpactSounds.weaponSound(new net.minecraft.world.item.ItemStack(net.minecraft.world.item.Items.IRON_SWORD)), "a sword");
+        assertSame(com.cnethuka.kegare.sound.KegareSounds.IMPACT_HEAVY.value(),
+                ImpactSounds.weaponSound(new net.minecraft.world.item.ItemStack(net.minecraft.world.item.Items.DIAMOND_AXE)), "an axe");
+        assertSame(com.cnethuka.kegare.sound.KegareSounds.IMPACT_HEAVY.value(),
+                ImpactSounds.weaponSound(new net.minecraft.world.item.ItemStack(net.minecraft.world.item.Items.MACE)), "a mace");
+        assertSame(com.cnethuka.kegare.sound.KegareSounds.IMPACT_PUNCH.value(),
+                ImpactSounds.weaponSound(new net.minecraft.world.item.ItemStack(net.minecraft.world.item.Items.STICK)), "anything else lands like a fist");
+    }
+
+    @Test
     void stackingKnockbackIsVanillas() {
         assertEquals(0.4, stack(0.4), 1e-9);
         assertEquals(0.7, stack(0.4, 0.5), 1e-9, "each push halves what was there");
@@ -84,6 +97,7 @@ class ImpactTest {
         Impacts.listen(listener);
         try {
             Impacts.clear();
+            a.setItemInHand(net.minecraft.world.InteractionHand.MAIN_HAND, new net.minecraft.world.item.ItemStack(net.minecraft.world.item.Items.IRON_SWORD));
             b.hurt(a.damageSources().playerAttack(a), 6f);
             Impacts.flush();
             assertEquals(1, seen.size(), "one hit, one impact");
@@ -94,6 +108,9 @@ class ImpactTest {
             assertSame(b, hit.victim());
             assertTrue(b.getBoundingBox().inflate(1.0e-3).contains(hit.contact()), "it meets the victim's body");
             assertTrue(hit.breaksBlocks());
+            assertTrue(hit.melee(), "struck by the attacker's own hand");
+            assertTrue(hit.weapon().is(net.minecraft.world.item.Items.IRON_SWORD), "with what was in it");
+            a.setItemInHand(net.minecraft.world.InteractionHand.MAIN_HAND, net.minecraft.world.item.ItemStack.EMPTY);
 
             seen.clear();
             b.invulnerableTime = 0;

@@ -40,6 +40,15 @@ public final class KegareSounds {
     // Puppet Manipulation (§3.20): Curio Burst's overwound toy bursting (the rest of its sounds are vanilla's).
     public static final DeferredHolder<SoundEvent, SoundEvent> PUPPET_CURIO_BURST = register("puppet_manipulation.curio_burst",
             "puppet_manipulation/curio_burst");
+    /** A deep, heavy thump under the music box: the creepy toy actually hurts (§3.23). */
+    public static final DeferredHolder<SoundEvent, SoundEvent> PUPPET_CURIO_THUMP = register("puppet_manipulation.curio_thump",
+            "puppet_manipulation/curio_thump");
+
+    // The Impact System's hit sounds (§3.23), played with vanilla's hurt sound, never instead of it.
+    public static final DeferredHolder<SoundEvent, SoundEvent> IMPACT_PUNCH = register("impact.punch", "impact/punch");
+    public static final DeferredHolder<SoundEvent, SoundEvent> IMPACT_BLADE = register("impact.blade", "impact/blade");
+    public static final DeferredHolder<SoundEvent, SoundEvent> IMPACT_HEAVY = register("impact.heavy", "impact/heavy");
+    public static final DeferredHolder<SoundEvent, SoundEvent> IMPACT_BOOM = register("impact.boom", "impact/boom");
 
     private KegareSounds() {}
 
