@@ -38,7 +38,13 @@ public class PuppetRenderer extends EntityRenderer<PuppetEntity> {
     @Override
     public void render(PuppetEntity puppet, float yaw, float partialTick, PoseStack pose, MultiBufferSource buffers, int light) {
         if (puppet.isPossessed()) return; // it's inside its possessor, who is drawn as it
+        float hop = PuppetFx.hop(puppet, partialTick); // a Directive's tug lifts it a moment on its strings
+        if (hop != 0f) {
+            pose.pushPose();
+            pose.translate(0f, hop, 0f);
+        }
         body(puppet).render(puppet, yaw, partialTick, pose, buffers, light);
+        if (hop != 0f) pose.popPose();
     }
 
     @Override

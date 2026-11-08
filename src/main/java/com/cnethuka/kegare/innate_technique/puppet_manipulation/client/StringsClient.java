@@ -1,11 +1,8 @@
 package com.cnethuka.kegare.innate_technique.puppet_manipulation.client;
 
 import com.cnethuka.kegare.Kegare;
-import com.cnethuka.kegare.client.visual.ClientVisuals;
-import com.cnethuka.kegare.innate_technique.puppet_manipulation.PuppetIds;
 import com.cnethuka.kegare.innate_technique.puppet_manipulation.Strings;
 import com.cnethuka.kegare.innate_technique.puppet_manipulation.StringsSync;
-import com.cnethuka.kegare.innatetechnique.visual.Visual;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import java.util.ArrayList;
@@ -314,21 +311,33 @@ public final class StringsClient {
 
     // ---------------------------------------------------------------- the tension shimmer
 
-    private static void onClientTick(ClientTickEvent.Post event) {
-        ClientLevel level = Minecraft.getInstance().level;
-        if (level == null || SHOWN.isEmpty() || level.getGameTime() % SHIMMER_EVERY_TICKS != 0) return;
-        Visual shimmer = Visual.effect(PuppetIds.FX_STRINGS_TENSION, Visual.Anchor.BODY);
+    /**
+     * The strings pulled tight right now, as {far end, near end (the hand)}: while pulling, or dragging something back at the
+     * end of a tether or leash; a waiting string is at rest. PuppetFx runs glints of light along them toward the hand.
+     */
+    static List<Vec3[]> tense(ClientLevel level, float partial) {
+        if (SHOWN.isEmpty()) return List.of();
+        List<Vec3[]> out = new ArrayList<>(2);
         for (Shown shown : SHOWN.values()) {
             float limit = shown.entry.limit();
-            for (Span span : spans(level, shown.entry, 1f)) {
+            for (Span span : spans(level, shown.entry, partial)) {
                 double length = span.from().distanceTo(span.to());
-                // While pulling, or dragging something back at the end of a tether or leash; a waiting string is at rest.
                 boolean tense = limit <= 0f || shown.entry.phase() != Strings.Phase.ATTACHED && length >= limit * 0.98;
-                if (!tense) continue;
-                int beads = Math.max(1, Math.min(4, (int) (length / 4.0)));
-                for (int i = 0; i < beads; i++) {
-                    ClientVisuals.playAt(level, along(span.from(), span.to(), 0.0, level.random.nextDouble()), shimmer);
-                }
+                if (tense) out.add(new Vec3[] {span.to(), span.from()});
+            }
+        }
+        return out;
+    }
+
+    /** Vanilla quality: pale specks along the tight strings instead (Full and Reduced draw glints, PuppetFx). */
+    private static void onClientTick(ClientTickEvent.Post event) {
+        ClientLevel level = Minecraft.getInstance().level;
+        if (level == null || SHOWN.isEmpty() || PuppetFx.drawn() || level.getGameTime() % SHIMMER_EVERY_TICKS != 0) return;
+        for (Vec3[] span : tense(level, 1f)) {
+            int specks = Math.max(1, Math.min(4, (int) (span[0].distanceTo(span[1]) / 4.0)));
+            for (int i = 0; i < specks; i++) {
+                Vec3 at = along(span[0], span[1], 0.0, level.random.nextDouble());
+                level.addParticle(PuppetFx.PALE_SPECK, at.x, at.y, at.z, 0, 0, 0);
             }
         }
     }

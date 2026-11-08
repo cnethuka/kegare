@@ -139,7 +139,6 @@ public final class Possession {
         player.refreshDimensions();
 
         REFS.put(player.getUUID(), new Refs(puppet, shell));
-        Vec3 from = Swapper.bodyPos(player);
         Vec3 into = puppet.position();
         float yaw = puppet.getYRot();
         puppet.setPossessed(player);
@@ -147,7 +146,6 @@ public final class Possession {
         player.resetFallDistance();
 
         VisualService.playAt(level, Swapper.bodyPos(player), PuppetIds.body(PuppetIds.FX_PUPPET_FORM));
-        PossessionLinks.travel(level, from, Swapper.bodyPos(player));
         level.playSound(null, shell.getX(), shell.getY(), shell.getZ(), SoundEvents.SOUL_ESCAPE.value(), SoundSource.PLAYERS, 1.2f, 0.9f);
         level.playSound(null, player.getX(), player.getY(), player.getZ(), SoundEvents.WOOL_PLACE, SoundSource.PLAYERS, 0.9f, 0.7f);
         PuppetAdvancements.award(player, PuppetAdvancements.OUT_OF_BODY);

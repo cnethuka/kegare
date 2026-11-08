@@ -1071,7 +1071,7 @@ Package `com.cnethuka.kegare.innate_technique.rime`. **Rarity: RARE.** All numbe
   | Possess (Puppet Creation) | the puppet jolts awake, arms flung wide (`possess_cast`), a soul-escape sound at the body and a lavender thread shooting to the puppet; afterwards the empty body stands slack, a thread running from it to the puppet |
   | Focus (Directive) | own wind-up and a hard point at the target, held, the other hand yanked back (`focus_point`); a bell at the target and a lavender mark on it for 2 s (a ring tightening round it, a bead over its head) |
   | Chain Burst (Curio Burst) | own cast: hands gathered, flung up into a wide Y, then slammed down and out (`chain_burst_cast`); a rising whistle at the target, then the blasts going off one after another |
-  | Stand-In (Understudy) | own stage bow, then a hand presenting the double (`stand_in_cast`); the puppet grows in a rising column of lavender motes with a mirror sound (and shrinks back the same way) |
+  | Stand-In (Understudy) | own stage bow, then a hand presenting the double (`stand_in_cast`); the puppet grows inside a rising column of lavender threads with a mirror sound (and shrinks back the same way) |
   | Zip (Strings, R) | yanked off the ground: the string arm up and ahead, body and legs trailing behind it (`strings_zip`); the string runs taut and shimmers, and YOU are the one moving, with a bobber reel at a higher pitch than Reel In's |
   | Leash (Strings, R) | two leads in two fists: yanked back low and wide, leaning back, held (`strings_leash`); a second string shoots from the caster and a knot grips the second target, and two taut strings run from the slowed caster for 5 s |
 
@@ -1508,7 +1508,8 @@ icon armor stand; ultimate locked (its Dominion comes later). All numbers in `[p
 - The body stays behind as a **shell** (`PuppetShellEntity`, never saved): their skin, armor and name, standing slack
   with its head bowed, motionless (no knockback, not pushable) and defenceless. The puppet waits hidden inside the
   player and can't be hit; others see the player drawn with the puppet's glow and no name tag, and a thin lavender
-  thread from the shell to them (`possess_link` beads, client-drawn with a slight sag).
+  thread from the shell to them (`possess_link`, drawn by each client: a pale core in a lavender strand with a slight
+  sag, shooting out from the shell over 5 ticks as it starts, kept while they possess, never drawn into your own eyes).
 - **Ways back** (each puts back real health, size, inventory, and the position at the shell; items picked up meanwhile
   are kept, never lost; the puppet comes back out where they left it, with what health they left it):
   - R again;
@@ -1598,14 +1599,32 @@ puppets; Stand-In copies only the owner's look. Strings is physical, so all of i
 Casts leave the legs to the game, so they work on the move, and (unless the gesture needs the head) leave the head
 looking where the player aims. They blend in from and out to whatever the player was doing (in code, §3.13), and
 looping phases honour a loop point the file declares (`PlayerAnimations`). PAL animates players only, so `PuppetPoses`
-reads the same file and samples the spin's keyframes for the puppet model. Photon effects (`PuppetFxAuthoring` → `fx/puppet_manipulation/`),
-lavender with threads as the motif, each with a lavender-dust vanilla fallback:
-- `puppet_form` (threads wound in round a new puppet, a seam ring), `puppet_dissolve` (threads drifting away);
-- `possess_link` (one bead of the thread), `directive_pulse` (rings spreading on the ground at each puppet that heard);
-- `focus_mark` (a ring tightening round the target, a bead over its head, 2 s);
-- `curio_burst_explosion_tap` / `_half` / `_full` (flash, ground ring, sparks, torn threads, a puff; scaled per tier);
-- `stand_in_grow` (a rising column of motes), `understudy_swap` (motes drawn in, a vertical seam, at both ends);
-- `strings_attach` (a burst of fibers where a knot grips, and a pinch of light), `strings_snap` (frayed fibers flung from both ends and the middle, curling down), `strings_tension` (a faint glint, spawned on each client along a string while it pulls or drags). Particles only: the string itself is the model above.
+reads the same file and samples the spin's keyframes for the puppet model.
+
+Effects: everything is thread, like a puppeteer's show: fine lavender (#C4B5FD) with white highlights, precise, gone
+fast, never smoke or soft orbs. The client draws them all itself (`PuppetFx`: crisp camera-facing strips, flat rings,
+small diamonds and squares, full-bright; no Photon files). Reduced draws fewer threads; Vanilla puts small lavender
+specks in the same places (dust at 0.5, never explosion puffs). Nothing is drawn right in front of your own
+first-person camera.
+- `puppet_form`: threads stitch the new puppet together from the ground up, each drawn on like a needle running round
+  it: a Tap is 4 quick threads (0.25 s), a Half 8, a Full a dense weave of 16 crossing each other (0.6 s) that ends in
+  its outline. Possess and the way back stitch a few threads round the body that changes hands.
+- `puppet_dissolve`: the puppet unravels: its threads come loose, widen and drift apart, gone in 0.7 s.
+- `possess_link`: the thread from the shell to the possessor (above).
+- `directive_pulse`: each puppet that hears the order jumps on its strings: three threads drop onto its head and hands
+  from a little control bar above it, and it's lifted a moment (a hop of 0.13 blocks, drawn only).
+- `focus_mark`: a crisp ring tightening round the target's waist with four short ticks across it, and a solid diamond
+  bead over its head, 2 s.
+- `curio_burst_explosion_tap` / `_half` / `_full`: an overwound toy bursting: a sharp pale flash for 3 ticks, then
+  torn threads and small solid scraps flung out and a ring running out along the ground, gone in 0.6 s. Its reach is
+  the blast's radius (2.5 / 3 / 4, read from the synced config): nothing is drawn past it.
+- `understudy_swap`: at both places, threads cinch and are yanked toward the other place, and a taut thread twangs
+  between them. No teal and no clap: it isn't Swap.
+- `stand_in_grow`: a column of ten twisting threads rises round the puppet to a player's height as it grows, then
+  falls away; the same as it shrinks back.
+- `strings_attach` (short fibers springing out where a knot grips, and a pinch of light), `strings_snap` (frayed ends
+  flung from both ends and the middle, curling down as they fall), `strings_tension` (glints of light running along a
+  tight string toward the hand, a hair wider than the cord). The string itself is the model above.
 - Sounds: wool (form, dissolve), soul escape (possess, return), note-block chime by order (Directive), bell (Focus),
   Curio Burst's own burst (`puppet_manipulation.curio_burst`, §3.10: a dry pop over a short knock, a spring twanging
   loose and bits scattering, an overwound toy, not a bomb; deeper by tier) with a wool tear, a firework launch then the

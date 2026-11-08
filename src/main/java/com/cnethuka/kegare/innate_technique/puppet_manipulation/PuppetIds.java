@@ -6,7 +6,7 @@ import net.minecraft.resources.ResourceLocation;
 
 /**
  * Puppet Manipulation's IDs: player animations ({@code assets/kegare/player_animations/puppet_manipulation.json}) and
- * Photon effects ({@code assets/kegare/fx/puppet_manipulation/}). Lavender palette.
+ * effects, which the client draws itself as lavender thread ({@code PuppetFx}; no Photon files).
  */
 public final class PuppetIds {
     // Player Animation Library animations (on the caster)
@@ -30,7 +30,7 @@ public final class PuppetIds {
     /** On the puppet itself: PAL animates players only, so {@code PuppetPoses} samples this one for the puppet model. */
     public static final ResourceLocation ANIM_PUPPET_IDLE_SPIN = Kegare.id("puppet_idle_spin");
 
-    // Photon effects
+    // Effects (drawn by PuppetFx)
     public static final ResourceLocation FX_PUPPET_FORM = fx("puppet_form");
     public static final ResourceLocation FX_PUPPET_DISSOLVE = fx("puppet_dissolve");
     public static final ResourceLocation FX_POSSESS_LINK = fx("possess_link");

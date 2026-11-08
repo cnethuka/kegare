@@ -5,7 +5,6 @@ import com.cnethuka.kegare.innatetechnique.CastManager;
 import com.cnethuka.kegare.innatetechnique.InnateTechnique;
 import com.cnethuka.kegare.innatetechnique.InnateTechniqueRarity;
 import com.cnethuka.kegare.innatetechnique.InnateTechniqueService;
-import com.cnethuka.kegare.innatetechnique.visual.VisualHooks;
 import com.cnethuka.kegare.registry.KegareRegistries;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.item.Items;
@@ -67,17 +66,7 @@ public final class PuppetManipulation {
         // A possessed puppet's punch is the player's own melee, so nothing else ties it to Possess.
         com.cnethuka.kegare.progression.Attribution.addAttributor((attacker, source) ->
                 Possession.isPossessing(attacker) && source.getDirectEntity() == attacker ? POSSESS : null);
-        VisualHooks.registerEffect(PuppetIds.FX_PUPPET_FORM);
-        VisualHooks.registerEffect(PuppetIds.FX_PUPPET_DISSOLVE);
-        VisualHooks.registerEffect(PuppetIds.FX_POSSESS_LINK);
-        VisualHooks.registerEffect(PuppetIds.FX_DIRECTIVE_PULSE);
-        VisualHooks.registerEffect(PuppetIds.FX_FOCUS_MARK);
-        VisualHooks.registerEffect(PuppetIds.FX_STAND_IN_GROW);
-        VisualHooks.registerEffect(PuppetIds.FX_UNDERSTUDY_SWAP);
-        VisualHooks.registerEffect(PuppetIds.FX_STRINGS_ATTACH);
-        VisualHooks.registerEffect(PuppetIds.FX_STRINGS_SNAP);
-        VisualHooks.registerEffect(PuppetIds.FX_STRINGS_TENSION);
-        for (PuppetTier tier : PuppetTier.values()) VisualHooks.registerEffect(CurioBursts.effect(tier));
+        // Its effects are drawn by PuppetFx on the client (thread), not Photon: nothing to preload.
     }
 
     public static boolean holds(ServerPlayer player) {

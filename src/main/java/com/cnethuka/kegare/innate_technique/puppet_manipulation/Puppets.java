@@ -81,7 +81,9 @@ public final class Puppets {
 
     static void dissolveEffect(PuppetEntity puppet) {
         if (!(puppet.level() instanceof ServerLevel level)) return;
-        VisualService.playAt(level, puppet.position().add(0, puppet.getBbHeight() / 2, 0), Visual.effect(PuppetIds.FX_PUPPET_DISSOLVE, Visual.Anchor.BODY));
+        // Named, so each client unravels a puppet of its size (it's sent before the puppet goes).
+        VisualService.playAt(level, puppet.position().add(0, puppet.getBbHeight() / 2, 0), Visual.effect(PuppetIds.FX_PUPPET_DISSOLVE, Visual.Anchor.BODY),
+                puppet.getId());
         level.playSound(null, puppet.getX(), puppet.getY(), puppet.getZ(), SoundEvents.WOOL_BREAK, SoundSource.PLAYERS, 0.8f, 1.2f);
     }
 

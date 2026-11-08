@@ -48,7 +48,7 @@ file of each one. Minecraft refuses to start and names the missing mod if one is
 | `./gradlew runClient -PquickPlayWorld=<world>` | Dev client, straight into an existing singleplayer world |
 | `./gradlew runClient -PquickPlay=localhost` | Dev client, straight onto a server |
 | `./gradlew runServer` | Dev dedicated server (`run/eula.txt` must say `eula=true`) |
-| `/kegare debug fx export` (dev client only) | Rebuild every technique's Photon effects into `assets/kegare/fx/` from the authoring classes (`RimeFxAuthoring`, `PuppetFxAuthoring`, …); `/kegare debug fx play <name>` previews one |
+| `/kegare debug fx export` (dev client only) | Rebuild every technique's Photon effects into `assets/kegare/fx/` from the authoring classes (`RimeFxAuthoring`, `MeleeFxAuthoring`, …); `/kegare debug fx play <name>` previews one |
 | `python3 tools/gen_art.py [--preview sheet.png]` | Regenerate all GUI and item art (needs Pillow); see DESIGN.md §3.10 |
 
 Requires JDK 21 (e.g. Temurin). Point `JAVA_HOME` at it if it isn't your default Java.

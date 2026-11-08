@@ -1,26 +1,19 @@
 package com.cnethuka.kegare.innate_technique.puppet_manipulation.client;
 
-import com.cnethuka.kegare.client.visual.VanillaFallback;
 import com.cnethuka.kegare.innate_technique.puppet_manipulation.PuppetEntity;
-import com.cnethuka.kegare.innate_technique.puppet_manipulation.PuppetIds;
 import com.cnethuka.kegare.innate_technique.puppet_manipulation.PuppetRegistry;
 import com.cnethuka.kegare.innate_technique.puppet_manipulation.PuppetTier;
 import java.util.HashMap;
 import java.util.Map;
 import net.minecraft.client.Minecraft;
-import net.minecraft.core.particles.DustParticleOptions;
-import net.minecraft.core.particles.ParticleTypes;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.neoforge.client.event.ClientPlayerNetworkEvent;
 import net.neoforged.neoforge.client.event.EntityRenderersEvent;
 import net.neoforged.neoforge.client.event.RegisterClientReloadListenersEvent;
 import net.neoforged.neoforge.common.NeoForge;
-import org.joml.Vector3f;
 
-/** Puppet Manipulation's client side: the puppet renderer, its spin keyframes, outlines and vanilla stand-ins for its effects. */
+/** Puppet Manipulation's client side: the puppet renderer, its spin keyframes, outlines and its effects (PuppetFx). */
 public final class PuppetClient {
-    public static final DustParticleOptions LAVENDER_DUST = new DustParticleOptions(new Vector3f(0.77f, 0.71f, 0.99f), 1.0f);
-
     /** Line-of-sight answers for full puppets' outlines, refreshed every few ticks: entity ID -> (game tick, visible). */
     private static final Map<Integer, long[]> SIGHT = new HashMap<>();
 
@@ -34,19 +27,8 @@ public final class PuppetClient {
         PuppetEntity.setOutlineHook(PuppetClient::outlined);
         PossessionClient.init(modBus);
         StringsClient.init(modBus);
-        VanillaFallback.register(PuppetIds.FX_PUPPET_FORM, new VanillaFallback.Spec(LAVENDER_DUST, 1, 24, 0.35, 0.05));
-        VanillaFallback.register(PuppetIds.FX_PUPPET_DISSOLVE, new VanillaFallback.Spec(LAVENDER_DUST, 1, 30, 0.35, 0.12));
-        VanillaFallback.register(PuppetIds.FX_POSSESS_LINK, new VanillaFallback.Spec(LAVENDER_DUST, 1, 2, 0.04, 0.0));
-        VanillaFallback.register(PuppetIds.FX_DIRECTIVE_PULSE, new VanillaFallback.Spec(LAVENDER_DUST, 1, 30, 1.2, 0.05));
-        VanillaFallback.register(PuppetIds.FX_FOCUS_MARK, new VanillaFallback.Spec(ParticleTypes.CRIT, 1, 12, 0.4, 0.05));
-        VanillaFallback.register(PuppetIds.FX_CURIO_BURST_EXPLOSION_TAP, new VanillaFallback.Spec(ParticleTypes.EXPLOSION, 1, 2, 0.4, 0.0));
-        VanillaFallback.register(PuppetIds.FX_CURIO_BURST_EXPLOSION_HALF, new VanillaFallback.Spec(ParticleTypes.EXPLOSION, 1, 4, 0.7, 0.0));
-        VanillaFallback.register(PuppetIds.FX_CURIO_BURST_EXPLOSION_FULL, new VanillaFallback.Spec(ParticleTypes.EXPLOSION, 1, 7, 1.1, 0.0));
-        VanillaFallback.register(PuppetIds.FX_STAND_IN_GROW, new VanillaFallback.Spec(LAVENDER_DUST, 1, 30, 0.6, 0.08));
-        VanillaFallback.register(PuppetIds.FX_UNDERSTUDY_SWAP, new VanillaFallback.Spec(ParticleTypes.PORTAL, 1, 24, 0.5, 0.5));
-        VanillaFallback.register(PuppetIds.FX_STRINGS_ATTACH, new VanillaFallback.Spec(LAVENDER_DUST, 1, 8, 0.12, 0.05));
-        VanillaFallback.register(PuppetIds.FX_STRINGS_SNAP, new VanillaFallback.Spec(LAVENDER_DUST, 1, 14, 0.2, 0.12));
-        VanillaFallback.register(PuppetIds.FX_STRINGS_TENSION, new VanillaFallback.Spec(LAVENDER_DUST, 1, 1, 0.02, 0.0));
+        // Every one of its effects is drawn by PuppetFx (thread, and lavender specks at Vanilla), not by Photon.
+        PuppetFx.init(modBus);
     }
 
     private static void registerRenderers(EntityRenderersEvent.RegisterRenderers event) {
@@ -65,10 +47,10 @@ public final class PuppetClient {
 
     /**
      * A full puppet's outline, in its glow color, while this client can see it: unlike vanilla glowing it never shows
-     * through walls, so it gives nobody's hiding puppet away.
+     * through walls, so it gives nobody's hiding puppet away. A new one's outline comes as its weave ends (PuppetFx).
      */
     private static boolean outlined(PuppetEntity puppet) {
-        if (puppet.tier() != PuppetTier.FULL || puppet.isInvisible() || puppet.isStandIn()) return false;
+        if (puppet.tier() != PuppetTier.FULL || puppet.isInvisible() || puppet.isStandIn() || PuppetFx.forming(puppet)) return false;
         Minecraft mc = Minecraft.getInstance();
         if (mc.player == null || mc.level == null) return false;
         long now = mc.level.getGameTime();
