@@ -32,6 +32,7 @@ public final class KegareClient {
         com.cnethuka.kegare.innate_technique.swap.client.SwapClient.init(modBus);
         com.cnethuka.kegare.innate_technique.puppet_manipulation.client.PuppetClient.init(modBus);
         com.cnethuka.kegare.impact.client.ImpactClient.init(modBus);
+        com.cnethuka.kegare.battledamage.client.BattleDamageClient.init();
     }
 
     /** Emblem/icon art is looked up once per texture; forget the answers when resource packs change. */

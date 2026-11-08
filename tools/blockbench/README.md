@@ -80,8 +80,8 @@ texels the way the marks lie on a block's (`build_freeze_frost.py`, PIL, the mar
 
 ## Marks on blocks: pixel art, no Blockbench
 
-Rime's frost, cracks and ice on the world's blocks are pixel art at the blocks' own 16 texels a block, so they need no
-mesh: `build_block_marks.py` draws each pattern with PIL, from a few palette colours, and writes it with its order map to
+Rime's frost, cracks and ice on the world's blocks, and battle damage's cracks (`battle_crack`, DESIGN §3.24: Python, like
+the rest), are pixel art at the blocks' own 16 texels a block, so they need no mesh: `build_block_marks.py` draws each pattern with PIL, from a few palette colours, and writes it with its order map to
 `textures/marks/` (the game's `BlockMarks` lays them on the blocks' texel grid). No `.mcmeta`: they stay nearest-filtered.
 
     python3 -I tools/blockbench/build_block_marks.py            # write them

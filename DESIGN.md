@@ -324,8 +324,8 @@ All timestamps use **level game time**. They persist across restarts and are ide
 - `VisualPayload`'s `START_LOOP` carries how long the loop has been running (`elapsedTicks`, 0 for a fresh start). A
   player who starts tracking an entity gets its running loops with their full `growTicks` and the time already gone, so
   they see each one where everyone else does: a growing loop part-grown, Switchback's countdown at the real time left.
-- Network version `17` (since the Impact System's payloads, §3.23; `16` was a loop's elapsed time). Bump it when payload
-  formats change; mismatched clients are refused.
+- Network version `17` (since the Impact System's and battle damage's payloads, §3.23 and §3.24; `16` was a loop's elapsed
+  time). Bump it when payload formats change; mismatched clients are refused.
 
 ### 3.6 HUD
 **Rule: the combat HUD does not exist until the player asks for it** (art in `gen_art.py` → `textures/gui/combat/`).
@@ -436,7 +436,7 @@ Malice is always shown as whole numbers (floored, like the HUD); the stored valu
 - **Server TOML** (`config/kegare-server.toml`, where NeoForge 21.1 keeps server configs; synced to clients and
   hot-reloaded when edited) holds **every balance number**.
   - Sections: `malice` (with `tiers`), `traits`, `roll` (with `weights`, and `includeTestInnateTechniques`),
-    `combat`, `rime` (§3.14), `swap` (§3.19), `melee` (§3.22), `impact` (§3.23), `reverse_malice_technique` (§3.17), `progression` (§3.21), `test_abilities`.
+    `combat`, `rime` (§3.14), `swap` (§3.19), `melee` (§3.22), `impact` (§3.23), `battle_damage` (§3.24), `reverse_malice_technique` (§3.17), `progression` (§3.21), `test_abilities`.
   - The `traits` section includes:
     - `sixEyesBirthChance`
     - `sixEyesTransferMode` (RANDOM | KILLER)
@@ -2089,6 +2089,63 @@ sparks for the flash (dust in the Malice color for a technique) and no impact fr
 every quality. The impact frame needs the setting on and Full.
 
 **Tests:** `ImpactTest` (the rule and its tiers, real hits resolving).
+
+### 3.24 Battle damage (package `battledamage`)
+
+Big hits damage the world. This changes fights on purpose: cover breaks and the ground changes mid-fight.
+
+**Modes** (`[battle_damage] mode`):
+- `PERMANENT` (default): what breaks stays broken.
+- `RESTORING`: blocks rebuild themselves piece by piece once the fight has moved on (`BattleScars`). Each hit's blocks wait until
+  there's been no battle damage within `quietRadius` (32) of them for `delay` (60 s), then come back one every `interval` (3)
+  ticks: solid blocks first, lowest first, so what hangs on them (a torch, the top of a door) has something to hang on. What came
+  down with a broken block (a torch on it, a door's other half) comes back too. A container comes back with its contents and never
+  spills. A block comes back only where its space is empty again: never over something a player has put there since (a container
+  that can't come back drops what it held there, so nothing is lost), and it waits while someone stands in it. Pending rebuilds are
+  saved with the dimension (`data/kegare_battle_scars.dat`), so a restart loses none, and they finish even if the mode is changed.
+  `/kegare debug battle restore` starts them all now.
+- `COSMETIC`: cracks and debris only; nothing breaks.
+
+**What breaks it.** Only hits strong enough, read from the Impact System's strength (§3.23): a hit at `minimumTier` (Medium) or
+above breaks blocks round where it met the body. Light hits never break anything. Swap never does (a clean magic trick). A hit by a
+player or their technique always may; a mob's only with the `mobGriefing` gamerule on (`mobsNeedGriefing`).
+- **Wall slams** (`WallSlams`): for `windowSeconds` (2.5) after a breaking hit its victim is watched. Knocked into a wall, a floor or
+  a ceiling at `minSpeed` (0.9 blocks/tick; a sprinting hit knocks someone about 0.7) or more, stopping dead against blocks that
+  way, they leave a crater where they hit: a hit of strength `strengthPerSpeed` (1.0) × speed at their edge. Speed is read from
+  where they are each tick, so players and mobs alike. Landing from a full Glacial Spire's launch is one. Craters only: a slam does
+  no damage of its own.
+
+**One rule for what breaks** (`BattleDamage.breaks`): a hit's power is `strengthScale` (5) × its strength at the point of contact
+(the top tier, reserved for a hit that asks for it: `topPower`, 1500), falling off in a straight line to nothing at its radius,
+`baseRadius` (0.5) + `radiusPerStrength` (1.2) × strength, at most `maxRadius` (4.5). A block breaks where the power reaching it is
+more than its blast resistance: glass 0.3 and dirt 0.5 go to almost anything that breaks at all, wood (3) to a solid hit, stone (6)
+to a Heavy one at close range (a full Glacial Spire takes stone out to about 1.7 blocks), and obsidian (1200) only to the top tier.
+- Never: blocks vanilla makes unbreakable (negative hardness: bedrock, barriers, End portal frames, command blocks, structure and
+  jigsaw blocks, light blocks), fluids, and anything on the `protected` list (block ids and `#tags`; empty by default).
+- Each block fires NeoForge's `BlockEvent.BreakEvent` first (as the attacking player, or a fake player for a mob), so spawn
+  protection and claim or protection mods can cancel it; spawn protection, the world border and adventure mode are checked too.
+- Nothing drops itself: broken blocks shatter into rubble, so a technique can't mine. What would have been knocked off them (a torch,
+  a door's other half) doesn't drop either.
+- A container spills its contents on the ground like TNT's (`spillContents`, on), and so does a lectern its book; in RESTORING mode
+  they come back with the block instead.
+- Performance: at most `maxBlocksPerHit` (40, the nearest first) per hit and `maxBlocksPerSecond` (160) per dimension, so a long
+  fight can't lag the server.
+
+**How it looks** (`BattleDamageClient`; the server sends one `BattleDamagePayload` with the blocks and what each was to players
+within 96 blocks; the blocks change through the game's own updates):
+- **Debris**: small solid chunks cut from the broken block's own texture (2 to 4 texels of its particle face, tinted as vanilla
+  tints it), flung out from where the hit landed, tumbling, bouncing once and gone in under a second. Never drawn right in front of
+  your own first-person camera. In COSMETIC mode they fly from the blocks that would have broken.
+- **Cracks** on what survived: the surfaces round the hit (straight down, up and out each way from it) and the rim of the hole,
+  nearest first. Pixel art on the blocks' own grid, 16 texels a block (`textures/marks/battle_crack`, near-black cracks with a pale
+  broken lip and grit where it struck, built by `tools/blockbench/build_block_marks.py`), drawn by the same `BlockMarks` as Rime's
+  frost. They reach further the more power was left at that face against what the block can take, and fade after 30 s.
+- **Full** draws 5 chunks a block and up to 6 cracks round the hit and 5 on the rim; **Reduced** 2 chunks, 3 and 2 cracks;
+  **Vanilla** vanilla's own block particles and no cracks.
+
+**Tests:** `BattleDamageTest` (the rule, what never breaks, the protected list, no drops, spilling, both caps, a cancelled break
+event, COSMETIC, RESTORING with contents and a restart, never over a block placed since, Swap and light hits, where a slam meets
+the wall).
 
 ---
 

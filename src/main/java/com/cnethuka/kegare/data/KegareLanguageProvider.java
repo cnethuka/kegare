@@ -736,6 +736,7 @@ public final class KegareLanguageProvider extends LanguageProvider {
         add("impact.kegare.tier.impact_frame", "Impact frame");
         add("impact.kegare.tier.top", "Top");
         add("commands.kegare.debug.screen.stopped", "Stopped %s on %s's screen.");
+        add("commands.kegare.debug.battle.restore", "%s broken blocks start coming back now.");
         add("commands.kegare.debug.swap.on", "%s can't be swapped now. This cancels SwapTargetEvent.");
         add("commands.kegare.debug.swap.off", "%s can be swapped again.");
         add("commands.kegare.debug.strings.on", "%s can't be moved by strings now. This cancels StringsTargetEvent.");

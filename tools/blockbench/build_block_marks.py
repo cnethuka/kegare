@@ -1,4 +1,5 @@
-"""Rime's marks on blocks: pixel art on the blocks' own grid, 16 texels a block, hard pixels, so the block itself looks frozen.
+"""Marks on blocks: pixel art on the blocks' own grid, 16 texels a block, hard pixels, so the block itself looks frozen (Rime's) or
+cracked by a big hit (battle damage's, DESIGN §3.24).
 
     python3 -I tools/blockbench/build_block_marks.py            write them
     python3 -I tools/blockbench/build_block_marks.py --preview  also run/marks_preview/<name>.png: on stone at 8x, as it spreads
@@ -41,13 +42,17 @@ ICE = (112, 172, 234, 150)     # a glaze of ice: the block's own texture still s
 DEEP = (64, 122, 204, 164)     # where the glaze is thicker
 SHINE = (196, 238, 255, 255)   # light in a crack: the warning's lines, solid
 HALO = (120, 196, 255, 110)    # the faint glow along them, the block showing through
-PALETTE = (NONE, FILM, FROST, RIME, GLINT, FISSURE, EDGE, ICE, DEEP, SHINE, HALO)
+# Battle damage's cracks: neutral, so they sit on any block, its own texture showing through the lip and the grit.
+CHASM = (18, 16, 15, 228)      # the crack itself: near black, nearly solid
+SCUFF = (214, 208, 200, 118)   # the broken lip along it, pale
+GRIT = (64, 60, 56, 138)       # crushed chips round where it hit
+PALETTE = (NONE, FILM, FROST, RIME, GLINT, FISSURE, EDGE, ICE, DEEP, SHINE, HALO, CHASM, SCUFF, GRIT)
 # How much each tone glows (a minimum light, 0 to 15): only the warning's lines and the glow along them; everything else is lit by
 # the world. A mark can also have a faint glow all over (GLOW_FLOOR below).
 GLOW = {9: 15, 10: 11}
 # Strength, for a texel that two strokes cross: a crack cuts through frost, its lip shows over the sheen. In game the more opaque
 # colour wins where two marks meet, so a glaze (less opaque than frost) never covers frost, and the sheen never covers the glaze.
-STRENGTH = {0: 0, 1: 1, 10: 2, 7: 3, 8: 4, 6: 5, 2: 6, 3: 7, 4: 8, 5: 9, 9: 10}
+STRENGTH = {0: 0, 1: 1, 10: 2, 7: 3, 8: 4, 6: 5, 2: 6, 3: 7, 4: 8, 5: 9, 9: 10, 12: 2, 13: 3, 11: 11}
 
 # 16 headings, so every line is one of the clean pixel slopes (flat, 1:2, 1:1, 2:1) instead of a ragged stair.
 HEADINGS = [i * math.pi / 8 for i in range(16)]
@@ -533,9 +538,48 @@ def preview(name, art, when, reaches=(0.37, 0.65, 1.0), steps=(0.25, 0.5, 1.0)):
     print("preview", (PREVIEW / f"{name}.png").relative_to(ROOT))
 
 
+def battle_crack(seed=41, size=48):
+    """A block face cracked by a big hit (battle damage, DESIGN §3.24): crushed grit where it struck, and near-black cracks running
+    out from it on the clean slopes, forking, each with a pale broken lip on the side the light comes from. Neutral greys, so it
+    sits on stone, wood or dirt alike. How far it reaches is the hit's strength (the game shows less of the order for a lighter one)."""
+    rng = random.Random(seed)
+    c = Canvas(size)
+    cx = cy = size // 2
+    lipside = side_of(math.pi * 0.25 + math.pi)
+    for _ in range(22):  # the crushed middle
+        a, d = rng.uniform(0, 2 * math.pi), rng.uniform(0, 3.2)
+        c.put(round(cx + math.cos(a) * d), round(cy + math.sin(a) * d), 13)
+    first = rng.randrange(16)
+    for k in range(7):
+        heading = HEADINGS[(first + k * 16 // 7 + rng.choice((0, 1))) % 16]
+        x, y, gone, length = cx, cy, 0.0, rng.uniform(11, 22)
+        while gone < length:
+            step = rng.randint(2, 4)
+            seg = ray(x, y, heading + rng.choice((0, 0, 0, 1, -1)) * math.pi / 8, step)
+            for px, py in seg[1:]:
+                c.put(px, py, 11)
+                if rng.random() < 0.7:
+                    c.put(px + lipside[0], py + lipside[1], 12)
+            x, y = seg[-1]
+            gone += step
+            if rng.random() < 0.18 and gone < length * 0.7:  # a fork, shorter
+                fx, fy, fgone, flen = x, y, 0.0, (length - gone) * rng.uniform(0.3, 0.6)
+                fh = heading + rng.choice((-1, 1)) * math.pi / 4
+                while fgone < flen:
+                    seg = ray(fx, fy, fh, rng.randint(2, 3))
+                    for px, py in seg[1:]:
+                        c.put(px, py, 11)
+                    fx, fy = seg[-1]
+                    fgone += 3
+    for _ in range(14):  # chips thrown clear
+        a, d = rng.uniform(0, 2 * math.pi), rng.uniform(4, 12)
+        c.put(round(cx + math.cos(a) * d), round(cy + math.sin(a) * d), 13)
+    return c, geodesic_order(c, (cx, cy))
+
+
 PATTERNS = {"lance_frost": lance_frost, "spire_crack": spire_crack, "spire_burst": spire_burst, "field_frost": field_frost,
             "field_frost_b": lambda: field_frost(seed=29), "path_ice": path_ice, "path_ice_b": lambda: path_ice(seed=53),
-            "shatter_ring": shatter_ring}
+            "shatter_ring": shatter_ring, "battle_crack": battle_crack}
 
 
 # A faint glow all over a mark (a minimum light): Ice Path's ice slows whoever steps on it, so it has to be seen on dark ground at

@@ -111,6 +111,8 @@ final class DebugCommands {
                                                     double seconds = DoubleArgumentType.getDouble(c, "seconds");
                                                     return forEachPlayer(c, (source, player) -> screen(source, player, effect, seconds));
                                                 })))))
+                // Battle damage's pending rebuilds (RESTORING mode): start them all now instead of after the fight's delay.
+                .then(Commands.literal("battle").then(Commands.literal("restore").executes(c -> battleRestore(c.getSource()))))
                 .then(Commands.literal("strings")
                         .then(Commands.literal("unmovable")
                                 .then(player()
@@ -165,6 +167,17 @@ final class DebugCommands {
                 color, attacker, victim, 0f));
         say(source, "commands.kegare.debug.impact", tier.serializedName(), player.getDisplayName(), role);
         return 1;
+    }
+
+    private static int battleRestore(CommandSourceStack source) {
+        int blocks = 0;
+        for (net.minecraft.server.level.ServerLevel level : source.getServer().getAllLevels()) {
+            var scars = com.cnethuka.kegare.battledamage.BattleScars.get(level);
+            blocks += scars.pending();
+            scars.restoreNow(level);
+        }
+        say(source, "commands.kegare.debug.battle.restore", Integer.toString(blocks));
+        return blocks;
     }
 
     private static int screen(CommandSourceStack source, ServerPlayer player, net.minecraft.resources.ResourceLocation effect, double seconds) {

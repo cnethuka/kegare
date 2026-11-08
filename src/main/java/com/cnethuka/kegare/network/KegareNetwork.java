@@ -57,6 +57,8 @@ public final class KegareNetwork {
                 com.cnethuka.kegare.innate_technique.puppet_manipulation.PossessionLinks.StatePayload::handle);
         registrar.playToClient(com.cnethuka.kegare.impact.ImpactPayload.TYPE, com.cnethuka.kegare.impact.ImpactPayload.STREAM_CODEC,
                 com.cnethuka.kegare.impact.ImpactPayload::handle);
+        registrar.playToClient(com.cnethuka.kegare.battledamage.BattleDamagePayload.TYPE,
+                com.cnethuka.kegare.battledamage.BattleDamagePayload.STREAM_CODEC, com.cnethuka.kegare.battledamage.BattleDamagePayload::handle);
         registrar.playToClient(com.cnethuka.kegare.impact.ScreenEffects.Payload.TYPE, com.cnethuka.kegare.impact.ScreenEffects.Payload.STREAM_CODEC,
                 com.cnethuka.kegare.impact.ScreenEffects.Payload::handle);
         // server -> clients tracking an entity (cosmetic only: animations and VFX)
