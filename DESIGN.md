@@ -2385,10 +2385,12 @@ Technique Mode, unchanged (`client/SeveredKeys`).
   tick's move, as a dash is driven, and the game's own collision stops it, so it can't clip. The server checks every tick how far
   they really went, summed over five ticks (a late packet bunches two ticks into one, so ping can't trip it), and puts them back if
   it's more than Blur allows. At these speeds vanilla's "moved too quickly" (10 blocks in one packet) never comes into it.
-- **Wall crash** (`WallCrash`, `[wall_crash]`): when a move runs into something and most of the speed is gone, the speed lost
+- **Wall crash** (`WallCrash`, `[wall_crash]`): when most of the speed is gone in a tick and something solid (too high to step onto)
+  is right ahead the way they were going, the speed lost
   (blocks a tick) sets the damage (`damagePerSpeed` 10 × lost − `damageGrace` 2, at most `maxDamage` 12, as `flyIntoWall`, so
   Toughness takes its share) and a stun (`stunPerSpeed` 2 s per block a tick, at most 2 s). A scrape along a wall keeps most of its
-  speed and does nothing below `minSpeedLost` (0.3). Then Blur is off.
+  speed and does nothing below `minSpeedLost` (0.3). Then Blur is off. The server judges it this way because the client stops
+  itself at the wall and only reports the shorter move, so the server never sees a collision of its own.
 - **Cost:** hunger. It burns `exhaustionPerBlock` (0.2) per block covered faster than a sprint, straight to the food bar (Stamina
   doesn't cut it). At `foodFloor` (6, three shanks, where vanilla stops sprinting) it crashes off: **winded** (`windedSeconds` 4 of
   Slowness I) and it can't come back on until the food is above 6 and the winding is over ("Too winded to Blur.").
@@ -2398,6 +2400,7 @@ Technique Mode, unchanged (`client/SeveredKeys`).
   dust-grey, see-through, lit by the world like the body itself, never glowing), and dust and grit kicked off the ground they run on
   (vanilla block particles of that block). Where they really are reads clearly: the body itself is drawn as always, a sharp, solid
   silhouette at the front, and no afterimage is drawn within 0.9 blocks of it, so a hit on what you see is a hit on the real box.
+  A copy of a body carries no name tag (`client/visual/BodyCopies`, also used by Senses and Time Manipulation's afterimages).
   Reduced draws three afterimages; Vanilla none, only the dust. Your own smear shows in third person, never round your first-person
   camera. **In first person** (`BlurFeel`): the view opens up to 12% wider the faster you go, and needle streaks run round the
   screen's edge, flowing from where you're headed; nothing is drawn inside the middle 60% of the screen. Half of it at Reduced, none

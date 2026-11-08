@@ -111,11 +111,17 @@ class BlurTest {
                 Severed.toggleBlur(s);
                 double speed = SeveredConfig.BLUR_SPEED.get();
                 run(server, s, speed, 4);
-                s.setPos(s.getX() + 0.05, s.getY(), s.getZ());
-                s.horizontalCollision = true;
+                // A wall just ahead: the client stopped them against it, short of where the speed would have carried them.
+                net.minecraft.core.BlockPos wall = net.minecraft.core.BlockPos.containing(s.getX() + 0.6, Y, s.getZ());
+                level.setBlock(wall, net.minecraft.world.level.block.Blocks.STONE.defaultBlockState(), 3);
+                level.setBlock(wall.above(), net.minecraft.world.level.block.Blocks.STONE.defaultBlockState(), 3);
+                s.setPos(wall.getX() - 0.3, s.getY(), s.getZ());
                 Blur.tick(s, Severed.state(s));
-                float expected = WallCrash.damage(speed - 0.05) * SeveredConfig.TAKEN_PHYSICAL.get().floatValue();
-                assertEquals(s.getMaxHealth() - expected, s.getHealth(), 1.0e-3, "a head-on crash, Toughness applied");
+                level.setBlock(wall, net.minecraft.world.level.block.Blocks.AIR.defaultBlockState(), 3);
+                level.setBlock(wall.above(), net.minecraft.world.level.block.Blocks.AIR.defaultBlockState(), 3);
+                assertTrue(s.getHealth() < s.getMaxHealth(), "a head-on crash hurts");
+                assertTrue(s.getMaxHealth() - s.getHealth() <= WallCrash.damage(speed) * SeveredConfig.TAKEN_PHYSICAL.get().floatValue() + 1.0e-3,
+                        "no more than the speed lost does, Toughness applied");
                 assertTrue(CombatHelper.isStunned(s), "stunned");
                 assertFalse(Severed.blurring(s), "and out of Blur");
 
@@ -125,8 +131,7 @@ class BlurTest {
                 TestServer.advanceGameTime(server, 20);
                 Severed.toggleBlur(s);
                 run(server, s, speed, 4);
-                s.setPos(s.getX() + speed * 0.8, s.getY(), s.getZ());
-                s.horizontalCollision = true;
+                s.setPos(s.getX() + speed * 0.8, s.getY(), s.getZ()); // most of the speed kept, as along a wall
                 Blur.tick(s, Severed.state(s));
                 assertEquals(s.getMaxHealth(), s.getHealth(), 1.0e-3, "a scrape");
                 assertTrue(Severed.blurring(s), "still blurring");

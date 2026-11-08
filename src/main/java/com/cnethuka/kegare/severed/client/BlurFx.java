@@ -140,7 +140,7 @@ final class BlurFx {
         MultiBufferSource tinted = t -> drawn(t) ? new Tint(buffers.getBuffer(type), a, light) : NOTHING;
         dispatcher.setRenderShadow(false);
         try {
-            dispatcher.render(e, at.x, at.y, at.z, e.getYRot(), partial, pose, tinted, light);
+            com.cnethuka.kegare.client.visual.BodyCopies.draw(() -> dispatcher.render(e, at.x, at.y, at.z, e.getYRot(), partial, pose, tinted, light));
         } catch (RuntimeException ignored) {
             // An odd renderer: no afterimage of it, rather than a crash.
         } finally {

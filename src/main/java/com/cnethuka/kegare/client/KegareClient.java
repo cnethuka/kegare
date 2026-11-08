@@ -24,6 +24,7 @@ public final class KegareClient {
         modBus.addListener(KegareClient::registerGuiLayers);
         modBus.addListener(KegareClient::registerReloadListeners);
         VisualClientEvents.init(modBus);
+        com.cnethuka.kegare.client.visual.BodyCopies.init(); // afterimages and sensed outlines carry no name tag
         com.cnethuka.kegare.innate_technique.rime.client.RimeClient.init(modBus);
         com.cnethuka.kegare.melee.client.MeleeClient.init();
         com.cnethuka.kegare.melee.client.FistTell.init(modBus);

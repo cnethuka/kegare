@@ -270,7 +270,8 @@ public final class TimeFx {
         MultiBufferSource tinted = t -> drawsGhost(t) ? new Tint(buffers.getBuffer(type), rgb, a) : NOTHING;
         dispatcher.setRenderShadow(false);
         try {
-            dispatcher.render(e, at.x, at.y, at.z, e.getYRot(), partial, pose, tinted, LightTexture.FULL_BRIGHT);
+            com.cnethuka.kegare.client.visual.BodyCopies.draw(
+                    () -> dispatcher.render(e, at.x, at.y, at.z, e.getYRot(), partial, pose, tinted, LightTexture.FULL_BRIGHT));
         } catch (RuntimeException ignored) {
             // An odd renderer: no afterimage of it, rather than a crash.
         } finally {

@@ -91,9 +91,10 @@ public final class Blur {
             return;
         }
         long now = player.level().getGameTime();
-        // A wall: they were going fast, the last move ran into something, and most of the speed is gone.
+        // A wall: they were going fast, most of the speed is gone, and there's something solid right ahead the way they were going.
+        // (The client stops itself at the wall and only reports the shorter move, so the server can't wait for a collision of its own.)
         double before = Math.max(state.speed(0), Math.max(state.speed(1), state.speed(2)));
-        if (player.horizontalCollision && now - state.crashedAt > CRASH_COOLDOWN && before - speed >= SeveredConfig.CRASH_MIN_LOSS.get()) {
+        if (now - state.crashedAt > CRASH_COOLDOWN && before - speed >= SeveredConfig.CRASH_MIN_LOSS.get() && wallAhead(player, state)) {
             state.crashedAt = now;
             boolean rushing = ClosingLine.rushing(state);
             if (WallCrash.crash(player, before - speed)) {
@@ -127,6 +128,16 @@ public final class Blur {
             state.windTick = now;
             SeveredFx.wind(player);
         }
+    }
+
+    /** Something solid just ahead of them the way they were last going, too high to step up onto. */
+    static boolean wallAhead(ServerPlayer player, SeveredState state) {
+        Vec3 a = state.position(0), b = state.position(1);
+        if (a == null || b == null) return false;
+        Vec3 step = new Vec3(a.x - b.x, 0, a.z - b.z);
+        if (step.lengthSqr() < 1.0e-6) return false;
+        net.minecraft.world.phys.AABB box = player.getBoundingBox().move(0, 0.05, 0).move(step.normalize().scale(0.25));
+        return !player.level().noCollision(player, box) && !player.level().noCollision(player, box.move(0, 0.55, 0));
     }
 
     /** Tells the owner's client, if anything it shows or drives by changed. */

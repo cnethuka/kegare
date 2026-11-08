@@ -98,7 +98,8 @@ public final class SensesClient {
                 boolean invisible = e.isInvisible();
                 if (invisible) e.setInvisible(false); // sensed, not seen: an invisible body is there all the same
                 try {
-                    dispatcher.render(e, at.x, at.y, at.z, e.getViewYRot(partial), partial, new PoseStack(), silhouette, LightTexture.FULL_BRIGHT);
+                    com.cnethuka.kegare.client.visual.BodyCopies.draw(() -> dispatcher.render(e, at.x, at.y, at.z, e.getViewYRot(partial), partial,
+                            new PoseStack(), silhouette, LightTexture.FULL_BRIGHT));
                 } catch (RuntimeException ignored) {
                     // An odd renderer: no outline for it, rather than a crash.
                 } finally {
