@@ -549,7 +549,7 @@ Each tab has its own root.
 - The root is **silent in chat**. Announcing it would tell every opponent which innate technique a player rolled. The
   same goes for everything in the tab: datagen fails if any advancement under `innate_technique/` announces.
 - Test innate techniques get no tab.
-- Tabs so far: Rime (§3.14), Swap (§3.19).
+- Tabs so far: Rime (§3.14), Swap (§3.19), Puppet Manipulation (§3.20), Time Manipulation (§3.26).
 
 **Who sees which tab:** vanilla only shows a tab once the player has earned something in it.
 - Everyone sees the Base tab (*Awakening* is granted at birth).
@@ -2268,6 +2268,14 @@ breaks the record. Runtime only.
 **The boundary (§4):** movement, status and freezing work on mobs. Bosses take Decelerate's damage but are never Rewound, slowed by
 Decelerate or a Stasis Field, or stopped by Standstill. **`TimeTargetEvent(caster, target, ability)`** (cancellable) fires before
 Rewind moves anyone and before Decelerate's cooldown slow.
+
+**GUI** (`tools/gen_art.py`, hard pixels): the emblem `textures/gui/emblem/time_manipulation.png` (a pocket watch in brush strokes:
+a bronze case with its crown and bow, twelve hour marks, two silver hands stopped, over a bronze vignette) and seven ability icons
+in bronze and silver-white: Point Maker (a hand pointing down into a clock laid flat), Rewind (◀◀), Accelerate (a clock face with
+speed lines), Fast Forward (▶▶), Decelerate (the thrown clock hand), Stasis Field (an hourglass under a dome) and Standstill (a
+pocket watch). The reveal card's description is the technique's (`.desc`), the tooltips the abilities' own; the Legendary reveal's
+signature is `standstill_cast`. **HUD:** "Point Maker: return 12.3s" under the crosshair while a mark is out (`TimeHud`: the next
+cast is the return, and what's left of the mark), and Burnout's own line (§3.25).
 
 **Look and sound** (DESIGN §3.13's rules):
 precise, elegant and cold. A sharp click, the world drained of colour, blades hanging in the air, then everything moving at once.

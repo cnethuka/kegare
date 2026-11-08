@@ -52,6 +52,8 @@ ICE = ramp("#081428", "#0f2d55", "#1a5590", "#3a8fcc", "#79c8ec", "#c2eefa", "#f
 TEAL = ramp("#03201d", "#063b36", "#0b5f57", "#0f8a7e", "#14b8a6", "#5eead4", "#ccfbf1")  # Swap: teal (with Malice violet)
 LAVENDER = ramp("#1a1233", "#2c1f57", "#45338a", "#6450be", "#9886ee", "#c4b5fd", "#f1edff")  # Puppet Manipulation
 WOOD = ramp("#1f1208", "#3a220f", "#5c3818", "#83532a", "#a8723e", "#c99a62", "#ead0a6")  # a marionette's control bar
+BRONZE = ramp("#1c1309", "#362613", "#5a4021", "#836138", "#b08d57", "#d4b783", "#f2e2bf")  # Time Manipulation: clockwork bronze
+PEARL = ramp("#1a1a1c", "#2e2d31", "#4a4850", "#6f6c74", "#a7a49d", "#d9d6cd", "#fbf9f2")  # and its silver-white
 
 
 def pick(r: list, t: float):
@@ -1254,6 +1256,147 @@ def emblem_puppet_manipulation():
     brush(fg, [(24, 35), (28, 43)], 1.3, LAVENDER[3:], seed=643, taper=(0.1, 0.5), wobble=0.2)
     paste(img, rim_light(outline(fg), LAVENDER[-1]))
     for (x, y) in ((6, 30), (39, 35), (37, 19)):
+        paste(img, sparkle().resize((5, 5), Image.NEAREST), x, y)
+    return img
+
+
+# ---- Time Manipulation: ability icons and the emblem (clockwork bronze and silver-white)
+
+def _clock(x, y, cx, cy, r, hands=((0.0, 0.62), (2.1, 0.42)), rim=BRONZE, face=None, hand=PEARL):
+    """A small clock face: its rim, an optional face, and hands (angle from twelve clockwise, length as a share of r)."""
+    d = math.hypot(x - cx, y - cy)
+    if r - 1.3 <= d <= r:
+        return rim
+    for a, length in hands:
+        dx, dy = math.sin(a), -math.cos(a)
+        t = (x - cx) * dx + (y - cy) * dy
+        if -0.3 <= t <= r * length and abs((x - cx) * dy - (y - cy) * dx) <= 0.55:
+            return hand
+    if face is not None and d < r - 1.3:
+        return face
+    return None
+
+
+def icon_point_maker():
+    def f(x, y):
+        # a clock face laid flat on the ground (an ellipse), and a hand pointing straight down into its middle
+        e = ((x - 7.5) / 6.6) ** 2 + ((y - 11.5) / 2.9) ** 2
+        if 0.55 <= e <= 1.0:
+            return BRONZE
+        if abs(x - 7.5) <= 0.6 and 1 <= y <= 9:
+            return PEARL
+        if abs(x - 7.5) <= 1.6 - (y - 7) * 0.8 and 7 <= y <= 9:
+            return PEARL
+        return None
+    return shaped_icon(f)
+
+
+def _triangle(x, y, tip_x, cy, facing, half, length):
+    """Inside a solid triangle pointing {facing} (+1 right, -1 left) with its tip at (tip_x, cy)."""
+    along = (tip_x - x) * facing
+    return 0 <= along <= length and abs(y - cy) <= half * along / length + 0.01
+
+
+def icon_rewind():
+    def f(x, y):
+        if _triangle(x, y, 1, 7.5, -1, 5.0, 6.5):
+            return BRONZE
+        if _triangle(x, y, 8, 7.5, -1, 5.0, 6.5):
+            return BRONZE
+        return None
+    return shaped_icon(f)
+
+
+def icon_accelerate():
+    def f(x, y):
+        c = _clock(x, y, 9.5, 7.5, 5.6, hands=((0.0, 0.7), (1.3, 0.5)))
+        if c is not None:
+            return c
+        # speed lines trailing off to the left
+        for cy, x0 in ((3, 1), (7, 0), (11, 1)):
+            if y == cy and x0 <= x <= 2:
+                return PEARL
+        return None
+    return shaped_icon(f)
+
+
+def icon_fast_forward():
+    def f(x, y):
+        if _triangle(x, y, 7.5, 7.5, 1, 5.0, 6.5):
+            return PEARL
+        if _triangle(x, y, 14, 7.5, 1, 5.0, 6.5):
+            return PEARL
+        return None
+    return shaped_icon(f)
+
+
+def icon_decelerate():
+    def f(x, y):
+        # the thrown clock hand, corner to corner: a slim shaft, a spade near the tip, a bronze pivot ring and counterweight
+        u = ((x - 3.5) + (12.5 - y)) / math.sqrt(2)          # along the hand, from the pivot
+        v = ((x - 3.5) - (12.5 - y)) / math.sqrt(2)          # across it
+        if math.hypot(x - 3.5, y - 12.5) <= 2.1:
+            return BRONZE
+        if 1.5 <= u <= 9.5 and abs(v) <= 0.8:
+            return PEARL
+        if 9.0 <= u <= 13.6 and abs(v) <= 1.9 * (1 - abs(u - 10.6) / 3.0):
+            return PEARL
+        return None
+    return shaped_icon(f)
+
+
+def icon_stasis_field():
+    def f(x, y):
+        # a dome over an hourglass: time held under glass
+        d = math.hypot(x - 7.5, y - 13.0)
+        if y <= 13 and 6.2 <= d <= 7.6:
+            return BRONZE
+        if 13 <= y <= 14 and 0 <= x <= 15:
+            return BRONZE
+        if 8 <= y <= 12:
+            half = 0.5 + 1.7 * abs(y - 10) / 2.0  # the hourglass: wide at both ends, pinched in the middle
+            if abs(x - 7.5) <= half:
+                return PEARL
+        return None
+    return shaped_icon(f)
+
+
+def icon_standstill():
+    def f(x, y):
+        # a pocket watch: the crown and bow on top, a bronze case, a pale face, its hands stopped at twelve
+        if 6.5 <= x <= 8.5 and 0 <= y <= 2:
+            return BRONZE
+        c = _clock(x, y, 7.5, 9.0, 6.4, hands=((0.0, 0.7), (2.3, 0.45)), rim=BRONZE, face=PEARL, hand=BRONZE)
+        if c is PEARL and (x, y) in ((7, 4), (8, 4), (12, 9), (7, 14), (8, 14), (3, 9)):
+            return BRONZE  # the quarter marks
+        return c
+    return shaped_icon(f)
+
+
+def emblem_time_manipulation():
+    """A pocket watch in brush strokes: a bronze case with its crown and bow, twelve hour marks, two silver hands stopped,
+    over a bronze vignette."""
+    img = vignette(48, BRONZE, seed=701)
+    fg = new(48, 48)
+    cx, cy = 23.5, 26.0
+    ring(fg, cx, cy, 15.0, 2.4, BRONZE[3:], seed=703, wobble=0.12)
+    ring(fg, cx, cy, 12.2, 0.9, BRONZE[2:6], seed=705, wobble=0.05)
+    # the crown and its bow
+    brush(fg, [(cx, 9.5), (cx, 5.5)], 1.8, BRONZE[3:], seed=707, taper=(0.1, 0.1), wobble=0.05)
+    ring(fg, cx, 3.6, 2.4, 1.0, BRONZE[3:], seed=709, wobble=0.05)
+    # hour marks
+    for k in range(12):
+        a = math.tau * k / 12
+        r0, r1 = (9.0, 11.6) if k % 3 == 0 else (10.2, 11.6)
+        brush(fg, [(cx + math.sin(a) * r0, cy - math.cos(a) * r0), (cx + math.sin(a) * r1, cy - math.cos(a) * r1)],
+              0.7 if k % 3 else 0.95, PEARL[4:], seed=711 + k, taper=(0.0, 0.0), wobble=0.0)
+    # the hands, stopped
+    for a, length, w, sd in ((math.radians(-58), 7.0, 1.2, 741), (math.radians(12), 10.4, 0.9, 743)):
+        brush(fg, [(cx, cy), (cx + math.sin(a) * length, cy - math.cos(a) * length)], w, PEARL[3:], seed=sd,
+              taper=(0.0, 0.7), wobble=0.03)
+    ring(fg, cx, cy, 1.4, 1.3, BRONZE[4:], seed=747, wobble=0.0)
+    paste(img, rim_light(outline(fg), BRONZE[-1]))
+    for (x, y) in ((5, 34), (40, 38), (39, 12)):
         paste(img, sparkle().resize((5, 5), Image.NEAREST), x, y)
     return img
 
@@ -2496,12 +2639,16 @@ def main() -> None:
              "focus": icon_focus(), "curio_burst": icon_curio_burst(), "chain_burst": icon_chain_burst(),
              "understudy": icon_understudy(), "stand_in": icon_stand_in(),
              "strings": icon_strings(), "zip_leash": icon_zip_leash(), "strings_reel": icon_strings_reel(),
-             "strings_tie": icon_strings_tie(), "strings_zip": icon_strings_zip(), "strings_leash": icon_strings_leash()}
+             "strings_tie": icon_strings_tie(), "strings_zip": icon_strings_zip(), "strings_leash": icon_strings_leash(),
+             "point_maker": icon_point_maker(), "rewind": icon_rewind(), "accelerate": icon_accelerate(),
+             "fast_forward": icon_fast_forward(), "decelerate": icon_decelerate(), "stasis_field": icon_stasis_field(),
+             "standstill": icon_standstill()}
     for name, img in icons.items():
         save(img, f"gui/ability/{name}.png")
     emblems = {"test_kinetic": emblem_kinetic(), "test_flux": emblem_flux(),
                "test_prism": emblem_prism(), "test_apex": emblem_apex(), "rime": emblem_rime(),
-               "swap": emblem_swap(), "puppet_manipulation": emblem_puppet_manipulation()}
+               "swap": emblem_swap(), "puppet_manipulation": emblem_puppet_manipulation(),
+               "time_manipulation": emblem_time_manipulation()}
     for name, img in emblems.items():
         save(img, f"gui/emblem/{name}.png")
 
