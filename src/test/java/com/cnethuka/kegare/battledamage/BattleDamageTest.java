@@ -322,6 +322,42 @@ class BattleDamageTest {
     }
 
     @Test
+    void someoneStandingInTheCraterOnlyHoldsUpTheBlocksRoundThem(MinecraftServer server) throws Exception {
+        TestServer.onServerThread(server, () -> {
+            ServerLevel level = world(server);
+            with(Mode.RESTORING, 4096, 100_000, true, List.of(), () -> {
+                clear(level);
+                BlockPos far = AT.east(4);
+                BattleScars scars = new BattleScars();
+                scars.add(level, Vec3.atCenterOf(AT), List.of(new BattleScars.Piece(AT, Blocks.STONE.defaultBlockState(), null),
+                        new BattleScars.Piece(far, Blocks.STONE.defaultBlockState(), null)));
+                net.minecraft.world.entity.decoration.ArmorStand stand =
+                        new net.minecraft.world.entity.decoration.ArmorStand(level, AT.getX() + 0.5, AT.getY(), AT.getZ() + 0.5);
+                stand.setNoGravity(true);
+                level.addFreshEntity(stand);
+                try {
+                    scars.restoreNow(level);
+                    for (int i = 0; i < 10; i++) {
+                        TestServer.advanceGameTime(server, 1);
+                        scars.tick(level);
+                    }
+                    assertTrue(level.getBlockState(AT).isAir(), "never over someone standing in it");
+                    assertSame(Blocks.STONE, level.getBlockState(far).getBlock(), "but the rest of the scar isn't held up");
+                    assertEquals(1, scars.pending());
+                    stand.discard();
+                    for (int i = 0; i < 30; i++) {
+                        TestServer.advanceGameTime(server, 1);
+                        scars.tick(level);
+                    }
+                    assertSame(Blocks.STONE, level.getBlockState(AT).getBlock(), "once they've moved, it comes back");
+                } finally {
+                    stand.discard();
+                }
+            });
+        });
+    }
+
+    @Test
     void swapNeverBreaksAndLightHitsNeverDo(MinecraftServer server) throws Exception {
         TestServer.onServerThread(server, () -> {
             ServerLevel level = world(server);

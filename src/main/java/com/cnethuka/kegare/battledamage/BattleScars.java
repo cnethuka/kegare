@@ -35,8 +35,9 @@ import net.neoforged.neoforge.event.tick.LevelTickEvent;
  * blocks; it waits until no battle damage has happened within {@code quietRadius} of it for {@code delay}, then rebuilds one block
  * every {@code interval} ticks: solid blocks first, lowest first, so what hangs on them has something to hang on. A block comes back
  * only where its space is empty again (never over something a player put there since: a container that can't come back drops what
- * was in it, so nothing is lost), with its block entity's contents, and waits while something's standing in it. Scars made in
- * RESTORING mode rebuild even if the mode is changed afterwards: they were promised.
+ * was in it, so nothing is lost), with its block entity's contents. A block with someone standing in it or right beside it waits for
+ * them to move, and the rest of the scar comes back round them. Scars made in RESTORING mode rebuild even if the mode is changed
+ * afterwards: they were promised.
  */
 public final class BattleScars extends SavedData {
     private static final String NAME = "kegare_battle_scars";
@@ -123,13 +124,18 @@ public final class BattleScars extends SavedData {
                 setDirty();
                 continue;
             }
-            Piece piece = s.pieces.get(0);
-            if (!level.isLoaded(piece.pos)) continue; // its chunk isn't there: wait for it
-            if (occupied(level, piece)) { // someone is standing in it: try again a little later
+            // The first in order that can come back now: its chunk is there and nobody is standing in it or right beside it. One person
+            // in the crater must not hold the whole scar up, and the blocks round them wait so they're never walled into a pit.
+            int next = -1;
+            for (int k = 0; k < s.pieces.size() && next < 0; k++) {
+                Piece p = s.pieces.get(k);
+                if (level.isLoaded(p.pos) && !occupied(level, p)) next = k;
+            }
+            if (next < 0) { // all waiting: try again a little later
                 s.nextAt = now + 20;
                 continue;
             }
-            s.pieces.remove(0);
+            Piece piece = s.pieces.remove(next);
             restore(level, piece);
             s.nextAt = now + interval;
             setDirty();
@@ -137,9 +143,10 @@ public final class BattleScars extends SavedData {
         }
     }
 
-    private static boolean occupied(ServerLevel level, Piece piece) {
+    /** Something alive stands in its space or right beside it (within a block across): it waits for them to move. */
+    static boolean occupied(ServerLevel level, Piece piece) {
         if (piece.state.getCollisionShape(level, piece.pos).isEmpty()) return false;
-        return !level.getEntitiesOfClass(LivingEntity.class, new AABB(piece.pos), LivingEntity::isAlive).isEmpty();
+        return !level.getEntitiesOfClass(LivingEntity.class, new AABB(piece.pos).inflate(1.0, 0.0, 1.0), LivingEntity::isAlive).isEmpty();
     }
 
     static void restore(ServerLevel level, Piece piece) {

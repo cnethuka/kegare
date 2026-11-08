@@ -2101,7 +2101,8 @@ Big hits damage the world. This changes fights on purpose: cover breaks and the 
   ticks: solid blocks first, lowest first, so what hangs on them (a torch, the top of a door) has something to hang on. What came
   down with a broken block (a torch on it, a door's other half) comes back too. A container comes back with its contents and never
   spills. A block comes back only where its space is empty again: never over something a player has put there since (a container
-  that can't come back drops what it held there, so nothing is lost), and it waits while someone stands in it. Pending rebuilds are
+  that can't come back drops what it held there, so nothing is lost). A block with someone standing in it or right beside it
+  waits for them to move, and the rest comes back round them. Pending rebuilds are
   saved with the dimension (`data/kegare_battle_scars.dat`), so a restart loses none, and they finish even if the mode is changed.
   `/kegare debug battle restore` starts them all now.
 - `COSMETIC`: cracks and debris only; nothing breaks.
