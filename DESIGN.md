@@ -2095,6 +2095,13 @@ else, with nothing landing, so a tier can be felt and tuned without a fight. `/k
 and the numbers behind it (strength, damage of max health, knockback, launch, charge) to its attacker and victim, for tuning the
 server's thresholds against real hits.
 
+**A death after a hit** (`DeathBurst`): a mob a hit killed goes out with solid slivers flung out of its body and a thin ring at
+its feet, in that hit's colour (white for a body or a weapon, the attacker's Malice colour for a technique), full-bright and gone in
+under half a second, instead of vanilla's death smoke: the soft white puff, which isn't anything Kegare's visual rules allow
+(`DeathPoofMixin`). It counts when the mob dies within 3 s of the hit (vanilla's smoke comes a second after death). A death with no
+hit behind it (a fall, fire, `/kill`) keeps vanilla's smoke, and so does every death at Vanilla quality. Reduced draws half the
+slivers. A player has no death smoke, so this is only for mobs.
+
 **Hit sounds** (`ImpactSounds`, Kegare's own from `tools/sounds/impact.py`, §3.10), at the point of contact and always with
 vanilla's own hurt sound, never instead of it. A melee hit sounds like what it was hit with: `impact.punch` (an empty hand, or
 anything that isn't a weapon: a heavy thud with a crack on top), `impact.blade` (a sword: a sharp swish with a slice),

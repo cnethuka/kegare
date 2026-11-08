@@ -35,9 +35,13 @@ public final class ImpactClient {
         ScreenEffects.Payload.setClientHandler(p -> ScreenFx.play(p.effect(), p.ticks() * 50L, Math.min(300L, p.ticks() * 50L / 3)));
         NeoForge.EVENT_BUS.addListener(ScreenShake::onCameraAngles);
         NeoForge.EVENT_BUS.addListener((RenderLevelStageEvent e) -> ImpactFlash.render(e));
+        NeoForge.EVENT_BUS.addListener((RenderLevelStageEvent e) -> DeathBurst.render(e));
         NeoForge.EVENT_BUS.addListener((ClientTickEvent.Post e) -> {
             ClientLevel level = Minecraft.getInstance().level;
-            if (level != null) ImpactFlash.tick(level);
+            if (level != null) {
+                ImpactFlash.tick(level);
+                DeathBurst.tick(level);
+            }
         });
         NeoForge.EVENT_BUS.addListener((ClientPlayerNetworkEvent.LoggingOut e) -> clear());
         modBus.addListener((RegisterClientReloadListenersEvent e) -> e.registerReloadListener((ResourceManagerReloadListener) m -> ScreenFx.reload()));
@@ -49,6 +53,7 @@ public final class ImpactClient {
         int me = mc.player.getId();
         Role role = me == p.attacker() ? Role.ATTACKER : me == p.victim() ? Role.VICTIM : Role.WITNESS;
         int t = p.tier().ordinal();
+        DeathBurst.hit(mc.level, p);
         if (p.has(ImpactPayload.FLASH)) {
             ImpactFlash.spawn(mc.level, p, KegareClientConfig.FLASH_SIZE[t].get().floatValue(), role == Role.VICTIM);
         }
@@ -74,5 +79,6 @@ public final class ImpactClient {
         ScreenFx.clear();
         ScreenShake.clear();
         ImpactFlash.clear();
+        DeathBurst.clear();
     }
 }

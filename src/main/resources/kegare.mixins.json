@@ -13,7 +13,8 @@
     "client.PlayerTabOverlayMixin",
     "client.ItemInHandRendererInvoker",
     "client.OwnEffectParticlesMixin",
-    "client.GameRendererMixin"
+    "client.GameRendererMixin",
+    "client.DeathPoofMixin"
   ],
   "injectors": {
     "defaultRequire": 1
