@@ -44,7 +44,7 @@ public class AnchorRenderer extends EntityRenderer<AnchorEntity> {
     /** Degrees a tick: flipping in flight, turning on its edge while it waits. */
     private static final float FLIP = 42f, TURN = 5f;
     private static final int PING_EVERY = 30, PING_TICKS = 9;
-    /** Your own isn't drawn this close to your first-person camera: it leaves from between your eyes. */
+    /** Your own isn't drawn this close to your first-person camera: it leaves your hand just below and beside it. */
     private static final double OWN_HIDDEN_WITHIN = 1.2;
     private static final float LINE_LENGTH = 1.4f, LINE_WIDTH = 0.035f;
     /** How far short of the thrower's eyes the line stops. */

@@ -1366,6 +1366,11 @@ smooth and modern in Swap's teal, nothing heavy, blurry or lingering, never the 
   the source): a small solid teal coin a quarter of a block across, deep teal faces with a bright inlaid ring and a
   pale diamond, pale rims; the ring, the diamond and the rims stay lit in the dark. Drawn like Rime's ice (smooth mesh,
   filtered texture, a lit glow pass; it reuses `LanceMesh.Model`) but nothing of Rime's look.
+  - It leaves the right hand where `anchor_throw` lets go (0.52 right, 0.4 below the eyes and 0.5 forward, along the
+    body; `AnchorThrow`), at a pearl's speed, and is aimed to land where a throw from the eyes would: its speed,
+    spread and the thrower's own movement are worked out from the eyes, then only its direction is turned so the flight
+    from the hand meets that one where it lands. With the hand in or behind a block, or no such aim landing within 0.3
+    blocks of the same place, it leaves from the eyes.
   - Thrown: it flips end over end the way it's going, with a thin crisp teal line behind it (up to 1.4 blocks, fading
     toward its far end, turned to face each camera and narrowing to nothing end-on, so the thrower sees only the coin).
     The line never reaches back past where it was thrown from or into the thrower's head; your own token isn't drawn

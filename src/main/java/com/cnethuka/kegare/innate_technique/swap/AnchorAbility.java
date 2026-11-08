@@ -50,8 +50,10 @@ public final class AnchorAbility extends SwapAbility {
     }
 
     private void throwAnchor(ServerPlayer caster) {
-        AnchorEntity anchor = new AnchorEntity(caster, caster.level(), SwapConfig.ticks(SwapConfig.ANCHOR_LIFETIME));
+        int lifetime = SwapConfig.ticks(SwapConfig.ANCHOR_LIFETIME);
+        AnchorEntity anchor = new AnchorEntity(caster, caster.level(), lifetime);
         anchor.shootFromRotation(caster, caster.getXRot(), caster.getYRot(), 0f, SwapConfig.ANCHOR_SPEED.get().floatValue(), 0.5f);
+        AnchorThrow.fromHand(caster, anchor, lifetime); // from the throwing hand, landing where it would have
         caster.level().addFreshEntity(anchor);
         Anchors.set(caster, anchor);
         VisualService.playOnce(caster, THROW);
