@@ -91,6 +91,9 @@ public final class TestServer {
         // Tests of an ability's own behaviour start from a fresh player, who has every ability unlocked here. The tests
         // of the unlocks themselves turn this back on (see WithLocks).
         com.cnethuka.kegare.progression.ProgressionConfig.REQUIRE_REFINEMENT.set(false);
+        // Nor does the world break under them: a test's big hits would leave holes where the next test stands. BattleDamageTest sets
+        // each mode itself.
+        com.cnethuka.kegare.battledamage.BattleDamageConfig.MODE.set(com.cnethuka.kegare.battledamage.BattleDamageConfig.Mode.COSMETIC);
         if (server.overworld() != null) return;
         try {
             Method createLevels = MinecraftServer.class.getDeclaredMethod("createLevels", ChunkProgressListener.class);

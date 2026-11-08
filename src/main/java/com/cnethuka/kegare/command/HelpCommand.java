@@ -103,7 +103,7 @@ final class HelpCommand {
             entry("debug orb spawn [player]", "commands.kegare.help.debug.orb.spawn"),
             entry("debug orb status [player]", "commands.kegare.help.debug.orb.status"),
             entry("debug swap unswappable <player> <on>", "commands.kegare.help.debug.swap"),
-            entry("debug impact <player> <tier> [attacker|victim|witness] [technique]", "commands.kegare.help.debug.impact"),
+            entry("debug impact <player> <tier> <role> <kind>", "commands.kegare.help.debug.impact"),
             entry("debug impact log <on>", "commands.kegare.help.debug.impact.log"),
             entry("debug screen <player> <effect> <seconds>", "commands.kegare.help.debug.screen"),
             entry("debug battle restore", "commands.kegare.help.debug.battle.restore"),

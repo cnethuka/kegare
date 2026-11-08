@@ -49,6 +49,10 @@ file of each one. Minecraft refuses to start and names the missing mod if one is
 | `./gradlew runClient -PquickPlay=localhost` | Dev client, straight onto a server |
 | `./gradlew runServer` | Dev dedicated server (`run/eula.txt` must say `eula=true`) |
 | `/kegare debug fx export` (dev client only) | Rebuild every technique's Photon effects into `assets/kegare/fx/` from the authoring classes (`RimeFxAuthoring`, `MeleeFxAuthoring`, …); `/kegare debug fx play <name>` previews one |
+| `/kegare debug impact <player> <tier> <attacker\|victim\|witness> <melee\|technique>` | Play an Impact System tier on that player's own screen only (nothing lands), to tune how it looks in the client config's `[impact]` (DESIGN §3.23) |
+| `/kegare debug impact log <true\|false>` | Every hit's tier and the numbers behind it go to its attacker and victim, to tune the server's `[impact]` thresholds |
+| `/kegare debug screen <player> <effect> <seconds>` | Play a whole-screen effect (`kegare:grayscale`) on a player's screen; 0 stops it |
+| `/kegare debug battle restore` | Start rebuilding everything battle damage broke in RESTORING mode now (DESIGN §3.24) |
 | `python3 tools/gen_art.py [--preview sheet.png]` | Regenerate all GUI and item art (needs Pillow); see DESIGN.md §3.10 |
 
 Requires JDK 21 (e.g. Temurin). Point `JAVA_HOME` at it if it isn't your default Java.

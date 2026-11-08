@@ -71,7 +71,7 @@ public final class KegareClientConfig {
                 .defineEnum("vfxQuality", VfxQuality.FULL);
         b.pop();
         b.comment("How hits look and feel on your screen (the Impact System). Only you see these; the server decides which tier a hit is.",
-                "Edit while the game runs and try a tier with /kegare debug impact @s <tier> [attacker|victim|witness] [technique].").push("impact");
+                "Edit while the game runs and try a tier with /kegare debug impact @s <tier> <attacker|victim|witness> <melee|technique>.").push("impact");
         SHAKE_STRENGTH = b.comment("Screen shake: 0 = none, 1 = as tuned, up to 2. Only the camera moves: never your aim or where you are.")
                 .defineInRange("shakeStrength", 1.0, 0.0, 2.0);
         IMPACT_FRAMES = b.comment("The black-and-white impact frame on the biggest hits. It flashes the whole screen, so it can be switched off.",

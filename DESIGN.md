@@ -2071,7 +2071,7 @@ charged one, and `GUARD_HIT` makes its hit a tier softer.
   | Impact frame | 150 | 3.0, 450 | 0.8 |
   | Top | 220 | 4.5, 650 | 1.1 |
 
-`/kegare debug impact <player> <tier> [attacker|victim|witness] [technique]` plays a tier on that player's own screen and nowhere
+`/kegare debug impact <player> <tier> <attacker|victim|witness> <melee|technique>` plays a tier on that player's own screen and nowhere
 else, with nothing landing, so a tier can be felt and tuned without a fight. `/kegare debug impact log <on>` shows every hit's tier
 and the numbers behind it (strength, damage of max health, knockback, launch, charge) to its attacker and victim, for tuning the
 server's thresholds against real hits.

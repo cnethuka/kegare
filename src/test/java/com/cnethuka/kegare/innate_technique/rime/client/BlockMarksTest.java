@@ -63,7 +63,8 @@ class BlockMarksTest {
             assertTrue(drawn > 50, name + " draws something");
             assertFalse(Files.exists(marks().resolve(name + ".png.mcmeta")), name + " must stay nearest-filtered");
         }
-        assertTrue(palette.size() <= 10, "a small palette across all the marks, not blended shades: " + palette.size());
+        // Rime's ten tones, and battle damage's three neutral ones for its cracks (DESIGN §3.24).
+        assertTrue(palette.size() <= 13, "a small palette across all the marks, not blended shades: " + palette.size());
     }
 
     /**

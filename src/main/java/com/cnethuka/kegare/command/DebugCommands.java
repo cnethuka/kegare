@@ -45,6 +45,8 @@ import net.minecraft.server.level.ServerPlayer;
  * tree ({@code FxDevCommand}).
  */
 final class DebugCommands {
+    private static final Dynamic2CommandExceptionType IMPACT_UNKNOWN = new Dynamic2CommandExceptionType(
+            (typed, choices) -> Component.translatable("commands.kegare.debug.impact.unknown", String.valueOf(typed), String.valueOf(choices)));
     private static final Dynamic2CommandExceptionType UNKNOWN_SHARED = new Dynamic2CommandExceptionType(
             (typed, abilities) -> Component.translatable("commands.kegare.debug.shared.unknown", String.valueOf(typed), String.valueOf(abilities)));
 
@@ -123,21 +125,28 @@ final class DebugCommands {
                                                 }))))));
     }
 
-    /** {@code impact <player> <tier> [attacker|victim|witness] [technique]}: as the victim and a plain hit unless it says. */
+    private static final List<String> ROLES = List.of("attacker", "victim", "witness"), KINDS = List.of("melee", "technique");
+
+    /** {@code impact <player> <tier> <role> <kind>}: a tier as that player sees it in that role, a plain hit's white or a technique's color. */
     private static com.mojang.brigadier.builder.RequiredArgumentBuilder<CommandSourceStack, ?> impactTiers() {
-        var player = player();
-        for (com.cnethuka.kegare.impact.ImpactTier tier : com.cnethuka.kegare.impact.ImpactTier.values()) {
-            var tierNode = Commands.literal(tier.serializedName())
-                    .executes(c -> forEachPlayer(c, (source, p) -> impact(source, p, tier, "victim", false)));
-            for (String role : List.of("attacker", "victim", "witness")) {
-                tierNode.then(Commands.literal(role)
-                        .executes(c -> forEachPlayer(c, (source, p) -> impact(source, p, tier, role, false)))
-                        .then(Commands.literal("technique")
-                                .executes(c -> forEachPlayer(c, (source, p) -> impact(source, p, tier, role, true)))));
-            }
-            player.then(tierNode);
-        }
-        return player;
+        List<String> tiers = java.util.Arrays.stream(com.cnethuka.kegare.impact.ImpactTier.values()).map(com.cnethuka.kegare.impact.ImpactTier::serializedName).toList();
+        return player().then(Commands.argument("tier", com.mojang.brigadier.arguments.StringArgumentType.word())
+                .suggests((c, b) -> net.minecraft.commands.SharedSuggestionProvider.suggest(tiers, b))
+                .then(Commands.argument("role", com.mojang.brigadier.arguments.StringArgumentType.word())
+                        .suggests((c, b) -> net.minecraft.commands.SharedSuggestionProvider.suggest(ROLES, b))
+                        .then(Commands.argument("kind", com.mojang.brigadier.arguments.StringArgumentType.word())
+                                .suggests((c, b) -> net.minecraft.commands.SharedSuggestionProvider.suggest(KINDS, b))
+                                .executes(c -> {
+                                    String tier = com.mojang.brigadier.arguments.StringArgumentType.getString(c, "tier");
+                                    String role = com.mojang.brigadier.arguments.StringArgumentType.getString(c, "role");
+                                    String kind = com.mojang.brigadier.arguments.StringArgumentType.getString(c, "kind");
+                                    var found = java.util.Arrays.stream(com.cnethuka.kegare.impact.ImpactTier.values())
+                                            .filter(t -> t.serializedName().equals(tier)).findFirst();
+                                    if (found.isEmpty()) throw IMPACT_UNKNOWN.create(tier, String.join(", ", tiers));
+                                    if (!ROLES.contains(role)) throw IMPACT_UNKNOWN.create(role, String.join(", ", ROLES));
+                                    if (!KINDS.contains(kind)) throw IMPACT_UNKNOWN.create(kind, String.join(", ", KINDS));
+                                    return forEachPlayer(c, (source, p) -> impact(source, p, found.get(), role, kind.equals("technique")));
+                                }))));
     }
 
     /** A hit of this tier as only this player sees it: nothing lands, nobody else sees a thing. */
