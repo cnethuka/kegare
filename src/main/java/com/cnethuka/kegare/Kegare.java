@@ -43,6 +43,7 @@ public final class Kegare {
         com.cnethuka.kegare.innate_technique.puppet_manipulation.PuppetManipulation.register(modBus);
         com.cnethuka.kegare.innate_technique.time_manipulation.TimeManipulation.register(modBus);
         com.cnethuka.kegare.melee.MeleeLayer.init(modBus);
+        com.cnethuka.kegare.severed.Severed.init(); // a Severed player's body (DESIGN §3.27)
         com.cnethuka.kegare.rmt.Rmt.init(modBus); // registers Reverse Malice Technique as a shared ability
         com.cnethuka.kegare.impact.Impacts.init(); // hit-stop, shake, flashes and impact frames (DESIGN §3.23)
         com.cnethuka.kegare.battledamage.BattleDamage.init(); // big hits break the world (DESIGN §3.24)

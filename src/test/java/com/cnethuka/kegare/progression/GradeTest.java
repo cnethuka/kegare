@@ -67,7 +67,8 @@ class GradeTest {
             ServerPlayer other = born(server, "pay_other");
             hit(severed, other, 5);
             FightTracker.onDeath(other);
-            assertEquals(5 * 2.0 + 40.0, GradeService.get(severed).xp(), EPS);
+            // The same XP for the same damage; their Strength (DESIGN §3.27) makes the same swing deal more of it.
+            assertEquals(5 * com.cnethuka.kegare.severed.SeveredConfig.MELEE_DAMAGE.get() * 2.0 + 40.0, GradeService.get(severed).xp(), EPS);
         });
     }
 

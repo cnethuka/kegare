@@ -6,7 +6,9 @@
   "mixins": [
     "ChunkMapAccessor",
     "ServerEntityAccessor",
-    "TrackedEntityAccessor"
+    "TrackedEntityAccessor",
+    "PlayerExhaustionMixin",
+    "FoodDataMixin"
   ],
   "client": [
     "client.PlayerInfoMixin",

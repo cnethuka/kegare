@@ -328,8 +328,9 @@ All timestamps use **level game time**. They persist across restarts and are ide
 - `VisualPayload`'s `START_LOOP` carries how long the loop has been running (`elapsedTicks`, 0 for a fresh start). A
   player who starts tracking an entity gets its running loops with their full `growTicks` and the time already gone, so
   they see each one where everyone else does: a growing loop part-grown, Switchback's countdown at the real time left.
-- Network version `18` (since Burnout's end time in the sync, §3.25, and Time Manipulation's payloads, §3.26; `17` was the Impact
-  System's and battle damage's). Bump it when payload formats change; mismatched clients are refused.
+- Severed players (§3.27) get `SensesPayload` (S→C, to that player only: who they sense).
+- Network version `19` (since Severed's payloads, §3.27; `18` was Burnout's end time in the sync, §3.25, and Time Manipulation's
+  payloads, §3.26). Bump it when payload formats change; mismatched clients are refused.
 
 ### 3.6 HUD
 **Rule: the combat HUD does not exist until the player asks for it** (art in `gen_art.py` → `textures/gui/combat/`).
@@ -2348,6 +2349,35 @@ each is earned the way it says, a mob not counting where a player is needed). `T
 first-person rule; the mark's hour marks run down and its hands are painted where they stood). `TechniqueUnlocksTest` checks its
 unlock levels.
 
+### 3.27 Severed (package `severed`)
+Severed players (§3.1: born with no Malice) trade all of it for a superhuman body. Everything here comes from the body: no Malice,
+no glow, no Innate color. None of it grows with Grade or Refinement, because their body is complete from birth. Every number is in
+`[severed]` of `kegare-server.toml` (`SeveredConfig`), each a starting point to tune live.
+
+**The body** (`SeveredBody`, always on):
+- **Strength:** their melee hits (`MeleeHits`: fists and weapons, outside a cast) deal `meleeDamage` (1.25) times as much, on the
+  incoming amount (before armour, as a heavier blow would), and a Reinforced Strike's own bonus comes on top.
+- **Toughness:** after armour, what reaches them is cut to `takenPhysical` (0.75) for hits and everything else physical (arrows,
+  fire, explosions), `takenTechnique` (0.9) for techniques (any Kegare damage type, or anything `Attribution` puts on an ability)
+  and `takenFall` (0.4) for falls. The void, /kill and starving are never touched.
+- **Stamina:** the hunger they feel from normal activity (sprinting, jumping, attacking, mining, taking hits, healing) is cut to
+  `exhaustion` (0.5): `PlayerExhaustionMixin` on `Player.causeFoodExhaustion`, and `FoodDataMixin` for healing, which the food bar
+  charges itself. Blur's own drain goes straight to the food bar, outside both.
+- **Healing stays vanilla.** Canon gives them toughness, not regeneration.
+
+**Senses** (`Senses`, `client/SensesClient`): every player and mob within `[senses] range` (16) shows to them as a faint outline
+through walls, still or moving, invisible ones included. They're sensed through hearing, smell and the air, not seen. The server
+works out who that is four times a second (nearest first; not armor stands, spectators or themself) and sends the set to that
+player alone (`SensesPayload`, only when it changes; an empty set once they stop being Severed); a Malice user is never sent one.
+The client draws each sensed body's silhouette into a mask (invisible ones as if they weren't), its brightness how near it is, and
+`shaders/post/senses.json` lays a dim, pale, neutral two-pixel outline just outside each silhouette: never vanilla glowing, no team
+or Malice color, no names or labels, nothing that tells a technique or trait (§1). It shows at every effects setting, because it's
+what they play by.
+
+**Tests:** `SeveredBodyTest` (Strength only on a Severed hand; the Toughness split, falls least, the void, /kill and starving
+untouched; Stamina on normal drain and on healing; Senses: a player standing still, a mob, an invisible one, moving, out of range,
+never an armor stand, a spectator or themself, and never for a Malice user).
+
 ---
 
 ## 4. Extension points (how later content plugs in)
@@ -2421,5 +2451,4 @@ unlock levels.
   gear.
 - **PvE:** the **Kegare** (hostile spirit mobs), spawning, structures, progression.
 - **Open questions:**
-  - Physical buffs for Severed.
   - Talisman recipe cost.

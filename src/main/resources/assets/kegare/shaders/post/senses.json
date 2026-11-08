@@ -1,0 +1,8 @@
+{
+  "targets": ["mask", "swap"],
+  "passes": [
+    { "name": "kegare:senses", "intarget": "minecraft:main", "outtarget": "swap",
+      "auxtargets": [ { "name": "MaskSampler", "id": "mask" } ] },
+    { "name": "blit", "intarget": "swap", "outtarget": "minecraft:main" }
+  ]
+}

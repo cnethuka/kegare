@@ -804,10 +804,12 @@ class MeleeLayerTest {
                 advance(server, p, MeleeConfig.ticks(MeleeConfig.SEVERED_PERFECT_WINDOW.get()) - 1);
                 assertEquals(0f, melee(p, attacker, 6f), EPS, "parries in its own window");
                 assertTrue(ReinforcedStrike.isReady(p), "earns a Strike");
-                assertEquals(4f * (1f + MeleeConfig.SEVERED_STRIKE_BONUS.get().floatValue()), melee(cow, p, 4f), EPS, "its own bonus, for free");
+                assertEquals(4f * com.cnethuka.kegare.severed.SeveredConfig.MELEE_DAMAGE.get().floatValue()
+                        * (1f + MeleeConfig.SEVERED_STRIKE_BONUS.get().floatValue()), melee(cow, p, 4f), EPS, "its own bonus, for free, on their Strength");
 
                 advance(server, p, 1);
-                assertEquals(6f * (1f - MeleeConfig.SEVERED_GUARD_MELEE_REDUCTION.get().floatValue()), melee(p, attacker, 6f), EPS, "its own guard");
+                assertEquals(6f * (1f - MeleeConfig.SEVERED_GUARD_MELEE_REDUCTION.get().floatValue())
+                        * com.cnethuka.kegare.severed.SeveredConfig.TAKEN_PHYSICAL.get().floatValue(), melee(p, attacker, 6f), EPS, "its own guard, on their Toughness");
                 p.setHealth(p.getMaxHealth());
                 advance(server, p, MeleeConfig.ticks(MeleeConfig.SEVERED_GUARD_MAX.get()));
                 assertFalse(state.isGuarding(), "no Malice to run out, so a guard has a limit of its own");
