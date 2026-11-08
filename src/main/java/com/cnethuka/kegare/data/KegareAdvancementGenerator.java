@@ -54,7 +54,11 @@ public final class KegareAdvancementGenerator implements AdvancementProvider.Adv
                 KegareItems.PURIFICATION_TALISMAN.get(), AdvancementType.TASK, false);
         child(saver, awakening, KegareAdvancements.CHOSEN_BY_FATE, "chosen_by_fate", Items.NETHER_STAR, AdvancementType.CHALLENGE, false);
         child(saver, reawakening, KegareAdvancements.BITTER_LUCK, "bitter_luck", Items.POISONOUS_POTATO, AdvancementType.GOAL, true);
-        child(saver, awakening, KegareAdvancements.SEVERED, "severed", Items.SHEARS, AdvancementType.GOAL, true);
+        AdvancementHolder severed = child(saver, awakening, KegareAdvancements.SEVERED, "severed", Items.SHEARS, AdvancementType.GOAL, true);
+        // Severed's body (§3.27): hidden, announced, awarded only while Severed.
+        child(saver, severed, com.cnethuka.kegare.severed.SeveredAdvancements.HOW_CRUEL, "how_cruel", Items.SKELETON_SKULL, AdvancementType.CHALLENGE, true);
+        child(saver, severed, com.cnethuka.kegare.severed.SeveredAdvancements.JUST_GETTING_STARTED, "just_getting_started", Items.IRON_SWORD,
+                AdvancementType.GOAL, true);
         child(saver, awakening, KegareAdvancements.OVERFLOWING, "overflowing", Items.EXPERIENCE_BOTTLE, AdvancementType.GOAL, true);
         child(saver, awakening, KegareAdvancements.RUNNING_ON_EMPTY, "running_on_empty", Items.GLASS_BOTTLE, AdvancementType.TASK, false);
         // Reverse Malice Technique: hidden and silent (they would tell everyone this player can heal).

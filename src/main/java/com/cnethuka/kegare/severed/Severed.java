@@ -30,10 +30,12 @@ public final class Severed {
         ATTACHMENTS.register(modBus);
         NeoForge.EVENT_BUS.addListener(SeveredBody::onIncoming);
         com.cnethuka.kegare.innatetechnique.CastManager.addInterceptor(ClosingLine::intercept); // R while Blurring
+        SeveredAdvancements.init();
         NeoForge.EVENT_BUS.addListener(SeveredBody::onDamage);
         NeoForge.EVENT_BUS.addListener((PlayerTickEvent.Post e) -> {
             if (e.getEntity() instanceof ServerPlayer p && !(p instanceof FakePlayer)) {
                 Senses.tick(p);
+                if (Severed.is(p) && p.tickCount % 5 == 0) SeveredAdvancements.noteIfLow(p); // healed back up since doesn't matter
                 if (p.hasData(STATE)) Blur.tick(p, state(p));
             }
         });

@@ -521,6 +521,8 @@ Each tab has its own root.
 | *Chosen by Fate* | challenge | yes, **silent** (reveals a Legendary roll) | rolled a Legendary |
 | *Bitter Luck* (under Reawakening) | goal | hidden | hit hard pity |
 | *Severed* | goal | hidden | born with 0 Malice |
+| *How cruel, don't you have a human heart?* (under Severed) | challenge | hidden | as Severed, killed 3 different Malice users within 60 s (§3.27) |
+| *Our fight is just getting started!* (under Severed) | goal | hidden | as Severed, down to 3 hearts or less in a fight with a Malice user, then killed that same player before the fight ended, no totem used in it (§3.27) |
 | *Overflowing* | goal | hidden, **silent** (reveals Malice capacity) | born (or reborn) in the Vast tier |
 | *Running on Empty* | task | yes | visible Malice (floored, like the HUD) drops to 0 while in combat |
 | *A Green Light* | goal | hidden, **silent** (reveals a player can heal) | unlocked Reverse Malice Technique (took in the green orb, §3.18) |
@@ -2446,7 +2448,19 @@ effects setting, and Blur's smear and first-person feel have their own Reduced a
 - **Closing Line's tell** (§3.15): at the cast the push-off, the crack and a burst of dust and grit from the ground where they left,
   and the heavy launch heard by everyone nearby; on arrival the skid and dust where they stop.
 
-**Tests:** `SeveredAnimationsTest` (PAL loads all five, each with one first-person rule), `ClosingLineTest` (the rush to melee reach of where the target stood, arriving, the Strike from the rush with
+**Advancements** (`SeveredAdvancements`, under *Severed* in the base tab; hidden, announced in chat, awarded from code and only
+while the player is Severed). A "Malice user" is any player who isn't Severed, and a "fight" is the fight tracker's (§3.21); a mob
+never counts. Numbers in `[advancements]`.
+- *How cruel, don't you have a human heart?* (challenge): kill `cruelKills` (3) different Malice users within `cruelWindowSeconds`
+  (60). The killer is whoever `Attribution` puts the killing hit on (a projectile's shooter), so any way of killing counts.
+- *Our fight is just getting started!* (goal): drop to `startedHearts` (3) hearts or less in a fight with a Malice user (checked as
+  the hit lands and every quarter second), then kill that same player before the fight ends. A Totem of Undying they use in that fight
+  disqualifies it; golden apples and natural healing are fine. The death is seen before the fight tracker ends the fight (it listens
+  last).
+
+**Tests:** `SeveredAdvancementsTest` (three different Malice users in time; mobs, a Severed victim, the same player again
+and kills outside the window don't count; brought low by a Malice user then killing them in the fight; a mob, a different player, a
+totem, or the fight ending first don't count; a Malice user never earns either), `SeveredAnimationsTest` (PAL loads all five, each with one first-person rule), `ClosingLineTest` (the rush to melee reach of where the target stood, arriving, the Strike from the rush with
 its window and harder knockback, the recovery and cooldown; a wall mid-rush crashes it; something living in the path stops it short;
 a swap ends it; a perfect parry spends the Strike and staggers harder; a boss is struck and never moved), `BlurTest` (G is Blur only for the Severed; the drain by distance at Blur speed, none for a walk; crashing off at
 the floor, winded, refused until food is above it; the wall crash scaling with the speed lost, a scrape doing nothing; a stun or no

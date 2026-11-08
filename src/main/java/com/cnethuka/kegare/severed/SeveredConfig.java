@@ -35,6 +35,10 @@ public final class SeveredConfig {
     public static ModConfigSpec.DoubleValue CLOSING_CARRY;
     public static ModConfigSpec.DoubleValue PARRY_STAGGER_SECONDS;
     public static ModConfigSpec.IntValue PARRY_STAGGER_SLOWNESS;
+    // advancements
+    public static ModConfigSpec.IntValue CRUEL_KILLS;
+    public static ModConfigSpec.DoubleValue CRUEL_WINDOW;
+    public static ModConfigSpec.DoubleValue STARTED_HEARTS;
     // wall crash
     public static ModConfigSpec.DoubleValue CRASH_MIN_LOSS;
     public static ModConfigSpec.DoubleValue CRASH_DAMAGE;
@@ -95,6 +99,12 @@ public final class SeveredConfig {
         PARRY_STAGGER_SECONDS = b.comment("A perfect parry that catches the Strike staggers them this long (a normal stagger is 0.5 s)...")
                 .defineInRange("parryStaggerSeconds", 1.5, 0.0, 30.0);
         PARRY_STAGGER_SLOWNESS = b.comment("...at this Slowness amplifier (a normal stagger is 2).").defineInRange("parryStaggerSlowness", 3, 0, 9);
+        b.pop();
+
+        b.comment("Severed advancements.").push("advancements");
+        CRUEL_KILLS = b.comment("How cruel, don't you have a human heart?: this many different Malice users killed...").defineInRange("cruelKills", 3, 1, 50);
+        CRUEL_WINDOW = b.comment("...within this many seconds.").defineInRange("cruelWindowSeconds", 60.0, 1.0, 3600.0);
+        STARTED_HEARTS = b.comment("Our fight is just getting started!: down to this many hearts or fewer in the fight.").defineInRange("startedHearts", 3.0, 0.5, 10.0);
         b.pop();
 
         b.comment("A wall hit at speed (in Blur or a Closing Line): damage and a stun from the speed lost, like flying into a wall.",

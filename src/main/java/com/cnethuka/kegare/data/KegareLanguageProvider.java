@@ -467,6 +467,9 @@ public final class KegareLanguageProvider extends LanguageProvider {
         advancement("chosen_by_fate", "Chosen by Fate", "Roll a Legendary " + INNATE_TECHNIQUE + ".");
         advancement("bitter_luck", "Bitter Luck", "Hit hard pity. That Legendary was guaranteed, not lucky.");
         advancement("severed", SEVERED, "Be born with zero " + MALICE + ".");
+        advancement("how_cruel", "How cruel, don't you have a human heart?", "As " + SEVERED + ", kill 3 different " + MALICE + " users within 60 seconds");
+        advancement("just_getting_started", "Our fight is just getting started!", "As " + SEVERED + ", drop to 3 hearts or less in a fight with a "
+                + MALICE + " user, then kill that same player before the fight ends");
         advancement("overflowing", "Overflowing", "Be born in the Vast " + MALICE + " tier.");
         advancement("running_on_empty", "Running on Empty", "Run out of " + MALICE + " in the middle of a fight.");
         add("advancements.kegare.innate_technique_root.description", "Roll this " + INNATE_TECHNIQUE + " for the first time.");
