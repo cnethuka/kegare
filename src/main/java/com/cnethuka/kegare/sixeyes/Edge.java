@@ -41,6 +41,8 @@ public final class Edge {
 
     private static final Map<UUID, Reader> READERS = new ConcurrentHashMap<>();
     private static final List<BiPredicate<ServerPlayer, ServerPlayer>> TOP_TIER = new CopyOnWriteArrayList<>();
+    /** Told who each spark goes to (tests). */
+    static java.util.function.BiConsumer<ServerPlayer, Spark> sentHook;
 
     private Edge() {}
 
@@ -82,7 +84,10 @@ public final class Edge {
     /** A cast key's stamp just arrived (on the network thread): the cue, there and then. */
     static void spark(net.minecraft.world.entity.player.Player caster) {
         for (Reader reader : READERS.values()) {
-            if (reader.topTier().contains(caster.getUUID())) PacketDistributor.sendToPlayer(reader.bearer(), new Spark(caster.getId()));
+            if (!reader.topTier().contains(caster.getUUID())) continue;
+            Spark spark = new Spark(caster.getId());
+            if (sentHook != null) sentHook.accept(reader.bearer(), spark);
+            PacketDistributor.sendToPlayer(reader.bearer(), spark);
         }
     }
 

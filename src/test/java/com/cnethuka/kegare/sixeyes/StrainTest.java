@@ -197,6 +197,52 @@ class StrainTest {
         });
     }
 
+    /** The real path: the tick's snapshot, then a cast key's stamp arriving. */
+    @Test
+    void theSparkGoesOutOnlyWhenItShould(MinecraftServer server) throws Exception {
+        TestServer.onServerThread(server, () -> {
+            ServerPlayer p = SightTest.player(server, "spark_bearer", 1000, 0.5, 0.5);
+            java.util.List<ServerPlayer> sentTo = new java.util.ArrayList<>();
+            try {
+                ServerPlayer plain = SightTest.player(server, "spark_grade4", 1000, 4.5, 0.5);
+                ServerPlayer special = SightTest.player(server, "spark_special", 1000, -4.5, 0.5);
+                GradeService.set(special, Grade.SPECIAL_GRADE);
+                SightTest.eyes(server, p, true);
+                Edge.sentHook = (to, spark) -> {
+                    assertEquals(special.getId(), spark.entityId(), "the one about to cast");
+                    sentTo.add(to);
+                };
+                Edge.snapshot(server);
+                Edge.spark(plain);
+                assertTrue(sentTo.isEmpty(), "a Grade 4's key press shows nothing");
+                Edge.spark(special);
+                assertEquals(java.util.List.of(p), sentTo, "a Special Grade's goes to the uncovered bearer, and nobody else");
+
+                sentTo.clear();
+                wear(p, new ItemStack(KegareItems.BLINDFOLD.get()));
+                Edge.snapshot(server);
+                Edge.spark(special);
+                assertTrue(sentTo.isEmpty(), "covered: they see the cast when it starts, like everyone");
+                wear(p, ItemStack.EMPTY);
+
+                Strain.set(p, Strain.MAX);
+                Edge.snapshot(server);
+                Edge.spark(special);
+                assertTrue(sentTo.isEmpty(), "at the top: lost");
+                Strain.set(p, 0);
+                special.moveTo(0.5 + SixEyesConfig.EDGE_RANGE.get() + 10, 120, 0.5, 0f, 0f);
+                Edge.snapshot(server);
+                Edge.spark(special);
+                assertTrue(sentTo.isEmpty(), "out of range");
+            } finally {
+                Edge.sentHook = null;
+                Edge.clear();
+                SightTest.eyes(server, p, false);
+                TestServer.removePlayers(server);
+            }
+        });
+    }
+
     @Test
     void uncoveredAtTheTopTheRiskGrowsAndACollapseStunsAndHurts(MinecraftServer server) throws Exception {
         TestServer.onServerThread(server, () -> {

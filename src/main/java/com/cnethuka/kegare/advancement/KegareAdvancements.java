@@ -23,6 +23,10 @@ public final class KegareAdvancements {
     // Reverse Malice Technique (Base tab, hidden and silent: they reveal that a player can heal)
     public static final ResourceLocation A_GREEN_LIGHT = Kegare.id("a_green_light");
     public static final ResourceLocation ITS_BEEN_A_WHILE = Kegare.id("its_been_a_while");
+    /** Stealing another person's kill (progression.BushCamper): hidden, announced. */
+    public static final ResourceLocation BUSH_CAMPER = Kegare.id("bush_camper");
+    /** Reading a void for the first time (sixeyes.SixEyes, Six Eyes tab): hidden and silent like the rest of it. */
+    public static final ResourceLocation SOMETHINGS_MISSING = Kegare.id("somethings_missing");
     /** Explaining RMT to the one you're fighting (rmt.AreTheyHigh): hidden, announced. */
     public static final ResourceLocation ARE_THEY_HIGH = Kegare.id("are_they_high");
     /** Background RMT unlocked (DESIGN §3.31). */
@@ -49,7 +53,7 @@ public final class KegareAdvancements {
      * ID here automatically, and datagen fails if one ever isn't hidden and silent. Add future secret IDs here.
      */
     public static final Set<ResourceLocation> SECRET_IDENTITY = Set.of(
-            CLEAR_SIGHT, THE_CYCLE_CONTINUES, EYES_CLOSED, BLINDED,
+            CLEAR_SIGHT, THE_CYCLE_CONTINUES, EYES_CLOSED, BLINDED, SOMETHINGS_MISSING,
             VESSEL_OF_THE_KING, UNWORTHY_HEIR, UNSEALED);
 
     /**

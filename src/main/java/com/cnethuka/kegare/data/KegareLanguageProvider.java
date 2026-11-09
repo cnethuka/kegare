@@ -636,6 +636,8 @@ public final class KegareLanguageProvider extends LanguageProvider {
         advancement("rime.home_field", "Home Field", "Cast a Rime ability during snowfall in a cold biome");
         advancement("a_green_light", "A Green Light", "Unlock Reverse Malice Technique");
         advancement("its_been_a_while", "It's been a while, huh?", "Use Reverse Malice Technique on the brink of death");
+        advancement("bush_camper", "Bush Camper", "Steal another person's kill");
+        advancement("somethings_missing", "Something's Missing", "Read someone and find nothing there");
         advancement("are_they_high", "Are They High?", "Explain Reverse Malice Technique to the person you're fighting");
         advancement("always_on", "Always On", "Heal enough with Reverse Malice Technique that it keeps going on its own");
         advancement("rime.splinter", "Splinter", "Hit one player with all 3 Splinter shards");

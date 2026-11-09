@@ -71,6 +71,9 @@ public final class KegareAdvancementGenerator implements AdvancementProvider.Adv
         // Background RMT unlocked (§3.31): hidden and silent too.
         child(saver, greenLight, KegareAdvancements.ALWAYS_ON, "always_on", Items.REDSTONE_TORCH, AdvancementType.GOAL, true);
 
+        // Anyone's, Severed included (§3.11): hidden, announced.
+        child(saver, awakening, KegareAdvancements.BUSH_CAMPER, "bush_camper", Items.DEAD_BUSH, AdvancementType.TASK, true);
+
         // Progression: hidden and silent, since Grade is private.
         child(saver, awakening, KegareAdvancements.MOVING_UP, "moving_up", Items.IRON_NUGGET, AdvancementType.TASK, true);
         child(saver, awakening, KegareAdvancements.PROVEN, "proven", Items.IRON_INGOT, AdvancementType.GOAL, true);
@@ -94,6 +97,7 @@ public final class KegareAdvancementGenerator implements AdvancementProvider.Adv
         child(saver, clearSight, KegareAdvancements.THE_CYCLE_CONTINUES, "the_cycle_continues", Items.CLOCK, AdvancementType.CHALLENGE, true);
         child(saver, clearSight, KegareAdvancements.EYES_CLOSED, "eyes_closed", Items.INK_SAC, AdvancementType.TASK, true);
         child(saver, clearSight, KegareAdvancements.BLINDED, "blinded", Items.FERMENTED_SPIDER_EYE, AdvancementType.GOAL, true);
+        child(saver, clearSight, KegareAdvancements.SOMETHINGS_MISSING, "somethings_missing", Items.BLACK_CONCRETE, AdvancementType.GOAL, true);
 
         // Shrine (vessel_of_the_king, unworthy_heir, unsealed): reserved in SECRET_IDENTITY, added with the Shrine.
 

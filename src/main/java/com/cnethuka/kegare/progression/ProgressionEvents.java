@@ -44,6 +44,10 @@ public final class ProgressionEvents {
             Landings.engaged(player, source);
         }
         Attribution.Hit hit = Attribution.of(event.getSource(), level.getServer());
+        // Every hit a player takes, by whom (Bush Camper reads the last stealWindow of it): a hit from themself counts as from nobody.
+        if (victim instanceof ServerPlayer target) {
+            BushCamper.took(target, hit == null || hit.attacker() == target ? null : hit.attacker(), Math.min(amount, victim.getMaxHealth()), level.getGameTime());
+        }
         if (hit == null || !Attribution.isRealTarget(hit.attacker(), victim)) return;
         ServerPlayer attacker = hit.attacker();
         boolean onItsOwn = event.getSource().getEntity() instanceof OwnedEntity owned && owned.actsOnItsOwn();
@@ -88,7 +92,10 @@ public final class ProgressionEvents {
     /** Runs after everything else has had its say: a cancelled death is no death. */
     @SubscribeEvent(priority = EventPriority.LOWEST)
     static void onDeath(LivingDeathEvent event) {
-        if (!event.isCanceled() && event.getEntity() instanceof ServerPlayer dead && !dead.level().isClientSide) FightTracker.onDeath(dead);
+        if (event.isCanceled() || !(event.getEntity() instanceof ServerPlayer dead) || dead.level().isClientSide) return;
+        Attribution.Hit blow = Attribution.of(event.getSource(), dead.server);
+        BushCamper.died(dead, blow == null ? null : blow.attacker(), dead.level().getGameTime());
+        FightTracker.onDeath(dead);
     }
 
     @SubscribeEvent
@@ -100,7 +107,10 @@ public final class ProgressionEvents {
 
     @SubscribeEvent
     static void onLogout(PlayerEvent.PlayerLoggedOutEvent event) {
-        if (event.getEntity() instanceof ServerPlayer player) FightTracker.onLogout(player);
+        if (event.getEntity() instanceof ServerPlayer player) {
+            FightTracker.onLogout(player);
+            BushCamper.forget(player.getUUID());
+        }
     }
 
     @SubscribeEvent
@@ -113,5 +123,6 @@ public final class ProgressionEvents {
     @SubscribeEvent
     static void onServerStopped(ServerStoppedEvent event) {
         FightTracker.clear();
+        BushCamper.clear();
     }
 }

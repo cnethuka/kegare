@@ -43,7 +43,7 @@ game never names a bearer, heir or killer of a secret holder.
 
 - **Enforced in code:** `KegareAdvancements.SECRET_IDENTITY` lists every such ID. The advancement generator forces
   them hidden and silent, and datagen fails if one ever isn't.
-- **Current:** `clear_sight`, `the_cycle_continues`, `eyes_closed`, `blinded`.
+- **Current:** `clear_sight`, `the_cycle_continues`, `eyes_closed`, `blinded`, `somethings_missing`.
 - **Reserved for later content:** a few more IDs are already in the set, so they're covered automatically once they're
   generated.
 - **Adding a new secret advancement:** add its ID to the set first.
@@ -556,6 +556,7 @@ Each tab has its own root.
 | *Running on Empty* | task | yes | visible Malice (floored, like the HUD) drops to 0 while in combat |
 | *A Green Light* | goal | hidden, **silent** (reveals a player can heal) | unlocked Reverse Malice Technique (took in the green orb, §3.18) |
 | *It's been a while, huh?* (under A Green Light) | challenge | hidden, **silent** | started a Reverse Malice Technique cast at 6 HP or less, within 10 s of being hit by a player |
+| *Bush Camper* | task | hidden, announced | landed the killing blow on a player while another player dealt at least `stealShare` (75%) of the damage they took in the last `stealWindow` (30 s) and you dealt the rest or less; anyone's, Severed included; mobs don't count (`BushCamper`, `[progression.bush_camper]`) |
 | *Are They High?* (under It's been a while) | task | hidden, announced | explained Reverse Malice Technique to the person you're fighting, in chat (§3.17); only for those with It's been a while |
 | *Always On* (under A Green Light) | goal | hidden, **silent** | unlocked Background RMT (§3.31) |
 | *Moving Up* | task | hidden, **silent** (Grade is private, §3.21) | reached Grade 3 |
@@ -3093,6 +3094,9 @@ for the eye" (§3.30).
 - Sent every 4 ticks for players within 96 blocks. Mobs' tags come from what the eyes already see.
 - **Tests:** `ReadsTest` (compact Reads with technique and Malice; a void's says nothing; the focus at the crosshair, toggles and cooldowns
   in its detail; none when nobody's there; no field for anything secret, and a Special Grade reading the same as a Grade 4).
+**Something's Missing** (Six Eyes tab, goal, hidden and silent like the rest of it): a full-detail Read of a Severed player for the first time. The
+focus is the Read the server decides for itself, so that's the one it counts.
+
 **Eyewear** (Curios, a required dependency; client `EyewearRenderer`)
 - Two items for Curios' **Eyes** slot (`data/kegare/curios`, the item tag `curios:eyes`, a player's only Curios slot unless another mod adds
   some): a **blindfold** (string, black wool, string) and **tinted glasses** (tinted glass, iron nugget, tinted glass). Our own pixel art

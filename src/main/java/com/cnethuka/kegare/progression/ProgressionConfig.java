@@ -9,6 +9,8 @@ import net.neoforged.neoforge.common.ModConfigSpec;
 
 /** Every progression number: section {@code [progression]} of {@code kegare-server.toml}. Times are in seconds. */
 public final class ProgressionConfig {
+    public static ModConfigSpec.DoubleValue STEAL_SHARE;
+    public static ModConfigSpec.DoubleValue STEAL_WINDOW;
     public static ModConfigSpec.BooleanValue REQUIRE_REFINEMENT;
     public static ModConfigSpec.ConfigValue<List<? extends String>> UNLOCK_OVERRIDES;
     private static List<? extends String> parsedFrom;
@@ -242,6 +244,11 @@ public final class ProgressionConfig {
                 .defineInRange("ownerActiveWindow", 30.0, 0.0, 3600.0);
         b.pop();
 
+        b.comment("Bush Camper (an advancement): steal another person's kill.").push("bush_camper");
+        STEAL_SHARE = b.comment("Another player dealt at least this share of the damage the victim took in the window, and you (who landed the",
+                "killing blow) dealt the rest or less.").defineInRange("stealShare", 0.75, 0.5, 1.0);
+        STEAL_WINDOW = b.comment("The window, in seconds.").defineInRange("stealWindow", 30.0, 1.0, 3600.0);
+        b.pop();
         b.pop();
     }
 

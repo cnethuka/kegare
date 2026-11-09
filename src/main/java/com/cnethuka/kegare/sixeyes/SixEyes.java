@@ -53,5 +53,11 @@ public final class SixEyes {
         Edge.init();
         Efficiency.init();
         Attunement.init();
+        // Something's Missing: a full Read that finds nothing there. (The server decides the focus, so this is the Read it can vouch for.)
+        Reads.addFocusListener((bearer, target) -> {
+            if (com.cnethuka.kegare.malice.MaliceService.isSevered(target)) {
+                com.cnethuka.kegare.advancement.KegareAdvancements.award(bearer, com.cnethuka.kegare.advancement.KegareAdvancements.SOMETHINGS_MISSING);
+            }
+        });
     }
 }
