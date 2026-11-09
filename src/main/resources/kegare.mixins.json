@@ -21,7 +21,9 @@
     "RangedAttackGoalAccessor",
     "ShulkerAttackGoalAccessor",
     "WitherBossAccessor",
-    "MobAttackBoxInvoker"
+    "MobAttackBoxInvoker",
+    "AttachmentTypeAccessor",
+    "PlayerDataStorageMixin"
   ],
   "client": [
     "client.PlayerInfoMixin",

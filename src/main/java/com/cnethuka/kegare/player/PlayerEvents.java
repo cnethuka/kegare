@@ -152,6 +152,16 @@ public final class PlayerEvents {
     }
 
     @SubscribeEvent
+    static void onServerAboutToStart(net.neoforged.neoforge.event.server.ServerAboutToStartEvent event) {
+        com.cnethuka.kegare.database.KegareDatabase.serverStarting();
+    }
+
+    @SubscribeEvent
+    static void onServerStopped(net.neoforged.neoforge.event.server.ServerStoppedEvent event) {
+        com.cnethuka.kegare.database.KegareDatabase.serverStopped();
+    }
+
+    @SubscribeEvent
     static void onServerStarted(ServerStartedEvent event) {
         if (event.getServer().overworld() == null) return;
         TraitSuccession.checkInactive(event.getServer());

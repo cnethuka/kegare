@@ -158,6 +158,15 @@ dependencies {
     // Photon VFX (assets/kegare/fx) and its library LDLib2. The "all" jars are the mods themselves; Photon's metadata
     // lists no dependencies, so LDLib2 is declared here (its own transitive libraries stay enabled, per its docs).
     implementation "top.theillusivec4.curios:curios-neoforge:${curios_version}"
+
+    // PostgreSQL's JDBC driver (DESIGN §3.33), approved by the owner: bundled inside our jar, so players and servers install nothing. Only ever
+    // opened on a dedicated server, with storage switched on.
+    implementation("org.postgresql:postgresql:42.7.4") { exclude group: "org.checkerframework" }
+    jarJar("org.postgresql:postgresql:[42.7.4,43)") {
+        version { prefer "42.7.4" }
+        exclude group: "org.checkerframework"
+    }
+    additionalRuntimeClasspath("org.postgresql:postgresql:42.7.4") { exclude group: "org.checkerframework" }
     implementation "com.lowdragmc.ldlib2:ldlib2-neoforge-${minecraft_version}:${ldlib2_version}:all"
     implementation "com.lowdragmc.photon:photon-neoforge-${minecraft_version}:${photon_version}:all"
 

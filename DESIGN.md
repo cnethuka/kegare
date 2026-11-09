@@ -3190,6 +3190,29 @@ focus is the Read the server decides for itself, so that's the one it counts.
   and the next, the same for a hoglin, a zoglin, a piglin brute and a warden; a breeze before its wind charge, with no lock; a witch, a drowned and a shulker exactly 10 ticks before; the wither before its first skull, and unmoved; the fallback's lock, item, reach and rest, on
   a hostile mob only).
 
+### 3.33 Postgres storage (package `database`)
+
+Optional: a server owner can move all of Kegare's saved data off the server's world files and into Postgres. Postgres only, and Kegare's data only: vanilla's own player files (inventory, ender chest, health, position)
+stay with Minecraft, and so do other mods' attachments, Curios' with the eyewear in it among them.
+
+**Off by default.** With it off, world saving works exactly as it always has and no connection is ever opened. On a client, even a singleplayer one, it's never on: only a dedicated server reads the settings, so a client never opens a connection. The driver
+(`org.postgresql:postgresql`) is bundled through jarJar, so nobody installs anything. There's no pool library: `ConnectionPool` is our own, and uses the driver directly, not through DriverManager, which can't see into a mod's module layer.
+
+**Credentials never reach a client.** `kegare-server.toml` is a SERVER config, which NeoForge sends to every client that joins, so nothing about the database goes in it. `config/kegare-database.toml` (`DatabaseConfig`) is read by our own code on the server
+and never registered as a config. It's generated off with an empty password. The environment variable `KEGARE_DB_PASSWORD` wins over the file. The password never goes in a log, an error, a command or a report: `DatabaseConfig.toString` leaves it out and `DatabaseLog`
+takes it, and anything like it in a url, out of failure text. All SQL uses parameters.
+
+**Schema** (`Schema`): Kegare's tables are in their own schema, `kegare`, built by versioned migrations of our own, applied on startup in one transaction under an advisory lock and recorded in `kegare.schema_version`. A database newer than the mod refuses to start the storage with a clear message rather than guessing.
+- `player_data`: one row per (player, attachment), JSONB, with `updated_at`. Driven from the attachment registry (`PlayerDataCodec`), so a new saved attachment is stored with no new code. A NeoForge attachment keeps its CODEC behind an NBT serializer, so encoding runs that CODEC and turns the
+  result into JSON with JsonOps, and decoding builds the NBT again, keeping whole numbers whole, for the same serializer.
+
+**What stays in the world, on purpose:** `PuppetSavedData`, `BattleScars` and attachments on non-player entities. They belong to that world's blocks and entities.
+
+With it on, Kegare's per-player keys aren't written to the world's playerdata files (`PlayerDataStorageMixin`).
+
+**Tests:** `DatabaseConfigTest` (generated off with an empty password, the environment wins, no password in any text, nothing of it in any registered config, off opens no connection), `PlayerDataCodecTest` (every attachment with a serializer covered, real data through a round trip, big whole
+numbers exact, a row that won't decode changing nothing, only Kegare's keys out of a player file), `SchemaIT` (needs `KEGARE_TEST_DB_URL`: migrating twice, a newer database refused, all or nothing, JSONB keeping what the codec wrote).
+
 ---
 
 ## 4. Extension points (how later content plugs in)
