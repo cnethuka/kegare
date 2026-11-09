@@ -17,7 +17,11 @@
     "PathNavigationSightMixin",
     "LookControlSightMixin",
     "PathNavigationAccessor",
-    "MeleeAttackGoalAccessor"
+    "MeleeAttackGoalAccessor",
+    "RangedAttackGoalAccessor",
+    "ShulkerAttackGoalAccessor",
+    "WitherBossAccessor",
+    "MobAttackBoxInvoker"
   ],
   "client": [
     "client.PlayerInfoMixin",

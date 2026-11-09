@@ -3070,14 +3070,17 @@ for the eye" (§3.30).
   toggle: the server sends it to the bearer from inside the cast's start, before its tell plays (`CastManager.addStartListener`).
   Severed players never pulse (they have no casts).
 - **Hostile mob intent:** the eyes read a hostile mob's flow before it acts, so its outline pulses danger red just before the attack (a hostile outline is near white already), once as each
-  begins (checked every tick within 64 blocks of a bearer): a skeleton of any kind drawing its bow, a pillager or piglin charging a
-  crossbow (LOOSE); a creeper starting to swell (SWELL); any mob attacking with the vanilla melee goal (zombies of every kind, spiders,
-  vindicators, endermen, silverfish, endermites, iron golems, angry wolves...) 4 ticks before its swing with its target in reach (SWING; the
-  first swing as one closes in comes with no warning: the goal swings at once); a ghast or blaze charging a shot (CHARGE); an evoker or
-  illusioner casting (SPELL); a guardian or elder guardian locking its beam (BEAM); a warden starting its sonic boom (SONIC_BOOM); the ender
-  dragon turning to strafe, charge or breathe (DRAGON). Not covered: the wither's skulls (no wind-up), brain-driven melee (hoglins,
-  zoglins, piglin brutes, the warden's melee), witches, shulkers, drowned throwing tridents. Bosses are read like anything else; reading
-  never moves, slows or disables anything.
+  begins (checked every tick within 64 blocks of a bearer). Reading never moves, slows or disables anything, bosses included.
+  - **Melee** (SWING), 4 ticks before the swing with the target in reach or arriving by then (how fast they're closing is measured, whichever of them is moving, so the first swing as a mob closes in is
+    read too): the vanilla melee goal (zombies of every kind, spiders, vindicators, endermen, silverfish, endermites, iron golems, angry wolves...) and brain-driven melee (hoglins, zoglins, piglins,
+    piglin brutes, the warden). A melee goal that gives up when its path is done restarts with its timer at zero and swings at once, so that one comes with a tick or two of warning.
+  - **Ranged, read from the timer** 10 ticks before the shot: a witch's potion and a drowned's trident (THROW; not while the witch drinks), a shulker's bullet (BULLET), the wither's skulls from all three
+    heads (SKULL), anything else on the vanilla ranged goal (LOOSE). Vanilla can pause a timer (a shulker's look goal), and then it pulses again when it resumes.
+  - **Ranged, read from the body:** a hostile mob drawing or charging a weapon (LOOSE: skeletons, pillagers, piglins, illusioners), a creeper swelling (SWELL), a ghast or blaze charging (CHARGE), an
+    evoker or illusioner casting (SPELL), a guardian or elder guardian locking its beam (BEAM), a warden starting its sonic boom (SONIC_BOOM), the ender dragon turning to strafe, charge or breathe (DRAGON).
+  - **Modded mobs:** the reads go by what the AI is made of, not by species, so one built on the vanilla goals or the brain's attack memories reads exactly the same. A hostile mob with AI there's nothing
+    to read in falls back on what any mob shows: a pulse as it locks onto a target (LOCK), while it uses an item (LOOSE), and when its target comes into reach (SWING), again 16 ticks after a hit. That's a
+    guess at when and not a reading: a ranged attack with no item shows only the lock. Vanilla's slimes, phantoms, vexes and breezes are in this group.
 - **Every setting:** the map, outlines, markers, voids and pulses don't change with Reduced or Vanilla: they're what the bearer plays by.
 **Reads** (`Reads`, `ReadsPayload`; client `ReadsClient`)
 - Every player and mob in the bearer's field of view gets a compact tag automatically, with no staring needed:
@@ -3161,7 +3164,9 @@ focus is the Read the server decides for itself, so that's the one it counts.
   nothing; RMT output past 1.6, growing with Attunement, halved by fatigue).
 - **Tests (perception):** `SightTest` (only the bearer is sent anything; a player 25 km off and a void as far, never another dimension, not themself,
   capacity carried; losing the eyes sends one "forget" and then nothing; loaded mobs with their flow; a cast pulsing once for the bearer
-  only, a void never; a creeper, a skeleton and a ghast pulsing once as each begins, and not moved).
+  only, a void never; a creeper, a skeleton and a ghast pulsing once as each begins, and not moved); `MobIntentTest` (on each mob's own AI, ticked by hand, the pulse coming before the attack: a zombie's first swing
+  and the next, the same for a hoglin, a zoglin, a piglin brute and a warden; a witch, a drowned and a shulker exactly 10 ticks before; the wither before its first skull, and unmoved; the fallback's lock, item, reach and rest, on
+  a hostile mob only).
 
 ---
 

@@ -84,7 +84,8 @@ public final class SightPayloads {
 
     /** An outline pulses: a player started a cast ({@link #CAST}), or a hostile mob is about to act (the other kinds). */
     public record Pulse(int entityId, int kind) implements CustomPacketPayload {
-        public static final int CAST = 0, LOOSE = 1, SWELL = 2, SWING = 3, CHARGE = 4, SPELL = 5, BEAM = 6, SONIC_BOOM = 7, DRAGON = 8;
+        public static final int CAST = 0, LOOSE = 1, SWELL = 2, SWING = 3, CHARGE = 4, SPELL = 5, BEAM = 6, SONIC_BOOM = 7, DRAGON = 8,
+                SKULL = 9, THROW = 10, BULLET = 11, LOCK = 12, LAST_KIND = LOCK;
         public static final Type<Pulse> TYPE = new Type<>(Kegare.id("sight_pulse"));
         public static final StreamCodec<FriendlyByteBuf, Pulse> STREAM_CODEC = StreamCodec.composite(
                 ByteBufCodecs.VAR_INT, Pulse::entityId, ByteBufCodecs.VAR_INT, Pulse::kind, Pulse::new);

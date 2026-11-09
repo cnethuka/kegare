@@ -9,4 +9,7 @@ import org.spongepowered.asm.mixin.gen.Accessor;
 public interface MeleeAttackGoalAccessor {
     @Accessor("ticksUntilNextAttack")
     int kegare$ticksUntilNextAttack();
+
+    @Accessor("followingTargetEvenIfNotSeen")
+    boolean kegare$followsUnseen();
 }
