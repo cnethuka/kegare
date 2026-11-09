@@ -1052,11 +1052,6 @@ def six_eyes_sprites():
 # Eyewear (DESIGN §3.32), hard pixels: on the face, a strip of the head's four sides, 8 pixels each and 3 tall: the front, its left, the
 # back, its right.
 EYEWEAR_FACE = {
-    "blindfold": [
-        "DDDDDDDD" "dddddddd" "ddDKKDdd" "dddddddd",
-        "dDDDDDDd" "dddddddd" "dDKNNKDd" "dddddddd",
-        "DDDDDDDD" "dddddddd" "ddDKKDdd" "dddddddd",
-    ],
     "tinted_glasses": [
         "FFFFFFFF" "AAAAAAAA" "........" "AAAAAAAA",
         "LLLFFLLL" "........" "........" "........",
@@ -1089,18 +1084,21 @@ def eyewear_face(name: str) -> "Image.Image":
     return img
 
 
+# The Blindfold's inventory icon (DESIGN §3.32), hard pixels, the same shape as its 3D model: the cloth band with its two lobes, the pinch over the
+# nose and grey along its folds.
+EYEWEAR_ICON_COLORS = {"K": INK, "1": (24, 25, 30, 255), "2": (40, 42, 48, 255), "3": (84, 86, 94, 255), "4": (132, 134, 142, 255)}
 ITEM_BLINDFOLD = [
     "................",
     "................",
     "................",
     "................",
-    "....KKKKKKKK....",
-    "...K33333333K...",
-    ".KKK33333333KKK.",
-    "K22232222223222K",
-    "K11K22222222K11K",
-    ".KK.K111111K.KK.",
-    "....KKKKKKKK....",
+    "..KKKKK..KKKKK..",
+    ".K11134KK43111K.",
+    "K21133422433112K",
+    "K11332111123311K",
+    ".K122111111221K.",
+    "..K111K11K111K..",
+    "...KKK.KK.KKK...",
     "................",
     "................",
     "................",
@@ -3086,9 +3084,8 @@ def main() -> None:
     save(aura_sheet(True), "entity/aura_simple.png")
     save(aura_wisp(), "entity/aura_wisp.png")
     save(aura_shimmer(), "entity/aura_shimmer.png")
-    save(icon(ITEM_BLINDFOLD, SILVER), "item/blindfold.png")
+    save(from_grid(ITEM_BLINDFOLD, EYEWEAR_ICON_COLORS), "item/blindfold.png")
     save(icon(ITEM_TINTED_GLASSES, SILVER), "item/tinted_glasses.png")
-    save(eyewear_face("blindfold"), "entity/blindfold.png")
     save(eyewear_face("tinted_glasses"), "entity/tinted_glasses.png")
     save(eye_slot(), "slot/eyes.png")
     save(sight_marker(), "entity/sight_marker.png")

@@ -4,8 +4,11 @@ import com.cnethuka.kegare.registry.KegareItems;
 import com.mojang.blaze3d.platform.InputConstants;
 import net.minecraft.client.KeyMapping;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.renderer.RenderType;
+import net.minecraft.server.packs.resources.ResourceManagerReloadListener;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.fml.event.lifecycle.FMLClientSetupEvent;
+import net.neoforged.neoforge.client.event.RegisterClientReloadListenersEvent;
 import org.lwjgl.glfw.GLFW;
 import top.theillusivec4.curios.api.client.CuriosRendererRegistry;
 
@@ -14,15 +17,18 @@ import top.theillusivec4.curios.api.client.CuriosRendererRegistry;
  * its screen on G by default, which is Technique Mode, the game's main control; while it sits on G it moves to J.
  */
 public final class EyewearClient {
+    private static final EyewearRenderer BLINDFOLD = new EyewearRenderer("blindfold", RenderType::entityCutoutNoCull);
+
     private EyewearClient() {}
 
     public static void init(IEventBus modBus) {
         modBus.addListener((FMLClientSetupEvent e) -> e.enqueueWork(EyewearClient::setup));
+        modBus.addListener((RegisterClientReloadListenersEvent e) -> e.registerReloadListener((ResourceManagerReloadListener) manager -> BLINDFOLD.forget()));
     }
 
     private static void setup() {
-        CuriosRendererRegistry.register(KegareItems.BLINDFOLD.get(), () -> new EyewearRenderer("blindfold"));
-        CuriosRendererRegistry.register(KegareItems.TINTED_GLASSES.get(), () -> new EyewearRenderer("tinted_glasses"));
+        CuriosRendererRegistry.register(KegareItems.BLINDFOLD.get(), () -> BLINDFOLD);
+        CuriosRendererRegistry.register(KegareItems.TINTED_GLASSES.get(), () -> new TintedGlassesStrip("tinted_glasses"));
         Minecraft mc = Minecraft.getInstance();
         for (KeyMapping key : mc.options.keyMappings) {
             if ("key.curios.open.desc".equals(key.getName()) && key.getKey().getValue() == GLFW.GLFW_KEY_G) {

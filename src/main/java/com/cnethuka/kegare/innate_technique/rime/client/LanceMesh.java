@@ -267,7 +267,7 @@ public final class LanceMesh {
     }
 
     /** One piece into one pass. Triangles go out as quads with the last corner twice, which is what an entity render type takes. */
-    static void emit(PoseStack.Pose pose, VertexConsumer out, Piece piece, float scale, int light, boolean glow) {
+    public static void emit(PoseStack.Pose pose, VertexConsumer out, Piece piece, float scale, int light, boolean glow) {
         float[] c = piece.corners();
         Vector3f n = new Vector3f();
         for (int t = 0; t < piece.triangles(); t++) {
