@@ -47,6 +47,8 @@ import net.minecraft.server.level.ServerPlayer;
 final class DebugCommands {
     private static final Dynamic2CommandExceptionType IMPACT_UNKNOWN = new Dynamic2CommandExceptionType(
             (typed, choices) -> Component.translatable("commands.kegare.debug.impact.unknown", String.valueOf(typed), String.valueOf(choices)));
+    private static final Dynamic2CommandExceptionType UNKNOWN_TASK = new Dynamic2CommandExceptionType(
+            (typed, tasks) -> Component.translatable("commands.kegare.debug.task.unknown", String.valueOf(typed), String.valueOf(tasks)));
     private static final Dynamic2CommandExceptionType UNKNOWN_SHARED = new Dynamic2CommandExceptionType(
             (typed, abilities) -> Component.translatable("commands.kegare.debug.shared.unknown", String.valueOf(typed), String.valueOf(abilities)));
 
@@ -79,6 +81,10 @@ final class DebugCommands {
                 .then(Commands.literal("shared")
                         .then(sharedAction("unlock", true))
                         .then(sharedAction("lock", false)))
+                // Background Tasks' unlocks (DESIGN §3.31), given or taken whatever earns them.
+                .then(Commands.literal("task")
+                        .then(taskAction("unlock", true))
+                        .then(taskAction("lock", false)))
                 // The green orb, which finds Reverse Malice Technique: force one now, or see the roll cooldown.
                 .then(Commands.literal("orb")
                         .then(senderOr(Commands.literal("spawn"), DebugCommands::orbSpawn))
@@ -273,6 +279,34 @@ final class DebugCommands {
                                     Ability ability = sharedAbility(c);
                                     return forEachPlayer(c, (source, player) -> shared(source, player, ability, unlock));
                                 })));
+    }
+
+    private static LiteralArgumentBuilder<CommandSourceStack> taskAction(String action, boolean unlock) {
+        return Commands.literal(action)
+                .then(player()
+                        .then(name("task")
+                                .suggests((c, b) -> suggest(b, com.cnethuka.kegare.backgroundtask.BackgroundTasks.all(), t -> shortName(t.id()),
+                                        com.cnethuka.kegare.backgroundtask.BackgroundTask::name))
+                                .executes(c -> {
+                                    com.cnethuka.kegare.backgroundtask.BackgroundTask task = backgroundTask(c);
+                                    return forEachPlayer(c, (source, player) -> task(source, player, task, unlock));
+                                })));
+    }
+
+    private static com.cnethuka.kegare.backgroundtask.BackgroundTask backgroundTask(CommandContext<CommandSourceStack> c) throws CommandSyntaxException {
+        String typed = typedName(c, "task");
+        String wanted = typed.toLowerCase(Locale.ROOT);
+        var all = com.cnethuka.kegare.backgroundtask.BackgroundTasks.all();
+        return all.stream().filter(t -> shortName(t.id()).equals(wanted)).findFirst()
+                .orElseThrow(() -> UNKNOWN_TASK.create(typed, all.stream().map(t -> shortName(t.id())).collect(Collectors.joining(", "))));
+    }
+
+    private static int task(CommandSourceStack source, ServerPlayer player, com.cnethuka.kegare.backgroundtask.BackgroundTask task, boolean unlock) {
+        if (unlock && MaliceService.isSevered(player)) return fail(source, "commands.kegare.debug.task.severed", player.getDisplayName(), task.name());
+        boolean changed = unlock ? com.cnethuka.kegare.progression.Unlocks.grant(player, task.id()) : com.cnethuka.kegare.progression.Unlocks.revoke(player, task.id());
+        if (!changed) return fail(source, unlock ? "commands.kegare.debug.task.already" : "commands.kegare.debug.task.not_unlocked", player.getDisplayName(), task.name());
+        say(source, unlock ? "commands.kegare.debug.task.unlocked" : "commands.kegare.debug.task.locked", task.name(), player.getDisplayName());
+        return 1;
     }
 
     /** The shared abilities there's anything to unlock or lock: not the ones every Malice user has (Reinforced Fists). */

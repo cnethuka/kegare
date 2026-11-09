@@ -36,7 +36,7 @@ public final class Unlocks {
     }
 
     /** For tests, whose entries mustn't outlive them. */
-    static void unregister(ResourceLocation id) {
+    public static void unregister(ResourceLocation id) {
         ENTRIES.remove(id);
     }
 

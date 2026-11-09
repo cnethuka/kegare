@@ -84,6 +84,7 @@ game never names a bearer, heir or killer of a secret holder.
 | `kegare:refinement` | yes | yes | level and XP (current technique), Peak Refinement, landings per target in the rolling window (§3.21) |
 | `kegare:insight` | yes | yes | Dominion, Ward and Output values, the first-time keys already paid (§3.21) |
 | `kegare:unlocks` | yes | yes | IDs held in the unlock framework (§3.21) |
+| `kegare:background_tasks` | yes | yes | three Background Task slots, each a task ID or nothing, on or off (§3.31) |
 | `kegare:cast_state` | no | no | runtime: active charge/channel, active toggles |
 | `kegare:sync_state` | no | no | runtime: "needs sync" flag |
 | `kegare:landing_state` | no | no | runtime: when each ability last landed on each target, who the player last traded hits with |
@@ -338,7 +339,8 @@ All timestamps use **level game time**. They persist across restarts and are ide
   see behind where it is), and vanilla's own teleport and head packets for the delayed image.
 - **Sub-tick timing** (§3.29): `TimingNet.Stamp` (C→S, an input stamped with the client's clock, sent at the key press), `TimingNet.Ping`
   (S→C) and `TimingNet.Pong` (C→S, the client's clock), all handled on the network thread. Reinforced Fists' look is `FistsPayload` (§3.28).
-- Network version `24` (since Reinforcement and Background Tasks, §3.16 and §3.31: `AuraPayload`; `23` was too fast for the eye, §3.30:
+- Network version `24` (since Reinforcement and Background Tasks, §3.16 and §3.31: `AuraPayload`, `BackgroundSyncPayload`,
+  `BackgroundActionPayload`; `23` was too fast for the eye, §3.30:
   `SensedPositionsPayload`; `22` was Reinforced Fists and Black Spark, §3.28-3.29: `FistsPayload`, the timing stamps; `21` was RMT's rework, §3.17: `RmtOutputPayload`, then heal-others' `RmtLinkPayload` and `RmtMomentPayload`; `20`
   was Closing Line's line in three dimensions in `RushPayload` and its cooldown in `BlurPayload`, §3.27; `19`
   was Severed's payloads, `18` Burnout's end time in the sync, §3.25, and Time Manipulation's payloads, §3.26). Bump it when payload formats change; mismatched clients are refused.
@@ -446,6 +448,8 @@ Everything that exists only for testing is under `/kegare debug`:
 | `/kegare debug reroll <player> <innate>` | Force a roll's result, for testing reveals. It still goes through the roll pipeline: pity, advancements, reveal. A player can't be forced into what they already hold |
 | `/kegare debug shared unlock <player> <ability>` | Unlock a shared ability (§3.16) |
 | `/kegare debug shared lock <player> <ability>` | Lock it again |
+| `/kegare debug task unlock <player> <task>` | Unlock a Background Task, whatever earns it (§3.31) |
+| `/kegare debug task lock <player> <task>` | Lock it again |
 | `/kegare debug orb spawn [player]` | Force a green orb now (§3.18) |
 | `/kegare debug orb status [player]` | Time to the next roll, and any orb under way |
 | `/kegare debug swap unswappable <player> <on>` | For Swap (§3.19): cancels `SwapTargetEvent` for swaps targeting this player (a stand-in for a future immunity) |
@@ -595,7 +599,7 @@ a result back; they only send requests the server re-validates. All text comes f
 | Screen | Opens when | Data | Sends |
 |---|---|---|---|
 | Roll reveal (`RevealScreen`, `RevealScript`, `RevealLayout`) | the server finished a roll: Awakening, Reawakening, admin reroll, replacement | `RevealPayload`, sent only to that player | nothing |
-| Sorcerer (`SorcererScreen`) | key **K** | `SorcererInfoPayload`, computed by the server, plus the live sync (loadout, Malice, cooldowns) | the open request (again whenever the sync shows an unlock, reroll or trait change); loadout edit requests (§3.16) |
+| Sorcerer (`SorcererScreen`) | key **K** | `SorcererInfoPayload`, computed by the server, plus the live sync (loadout, Malice, cooldowns) and your Background Tasks (`BackgroundSyncPayload`) | the open request (again whenever the sync shows an unlock, reroll or trait change); loadout edit requests (§3.16); Background Task requests (§3.31) |
 | Talisman confirm (`TalismanConfirmScreen`) | using a Purification Talisman (nothing consumed yet) | `TalismanPromptPayload` | a confirm request |
 
 **Roll reveal** (`RevealScreen` draws it. `RevealScript` holds the timeline and `RevealLayout` the sizes, both plain Java and
@@ -2880,6 +2884,40 @@ Numbers in `[too_fast_for_the_eye]` of `kegare-server.toml`.
 - **Tests:** `DelayedSightTest` (the image to a normal viewer, 150 ms and 100 ms behind; the real position to the mover, to a Six Eyes
   bearer and in Senses; the spawn packet; the ease back with no snap; nothing delayed with neither state on; a mob turning, pathing and
   swinging at the image and missing; a boss the real one; the hit measurements above).
+
+### 3.31 Background Tasks (package `backgroundtask`)
+
+Background Tasks are things a sorcerer keeps running without thinking, separate from the ability bar. A task is weaker than its
+ability on the bar, but it takes no bar slot and leaves the hands free.
+- **A task** (`BackgroundTask`, registered in `BackgroundTasks`, shown in that order): an ID, a display name and description
+  (`background_task.<namespace>.<path>`, `.desc`), an icon (GUI sprite `<namespace>:background/<path>`, `tools/gen_art.py`, hard
+  pixels), its unlock (an Unlocks framework entry under the same ID, §3.21, registered with it; its requirement as
+  `background_task.<ns>.<path>.unlock`, shown with a padlock while it's locked), its Malice drain a second (`drainPerSecond`) and its
+  effect (`tick`, every tick it runs; `stopped`, when it stops; `paused`, its own pause rule). A later task plugs in by registering
+  one; the system doesn't change.
+- **Slots** (`BackgroundTaskService`): every Malice user has **2**. A Six Eyes bearer (the `SixEyesTrait` holder, §3.2) has **3**,
+  from the start, because of how much processing the eyes can take. Losing the eyes switches off the task in the third slot; it stays
+  in that slot, saved, for if they get the eyes again, and gaining them gives the third slot at once (switch it back on). Severed
+  players have none and no Background view. The slot count is private: it goes only to its owner (`BackgroundSyncPayload`, which
+  carries as many slots as they have), so it never reveals who holds the eyes.
+- **Changing** which task sits in a slot is out of combat only, like the loadout ("You can't change your Background Tasks
+  mid-fight."); placing a task puts it there switched on, and placing one that's in another slot moves it (swapping with what was
+  there). **Switching** a slotted task on or off is allowed any time, mid-fight included. Every request is checked on the server
+  (`BackgroundActionPayload`); a refusal shows on the action bar and the Sorcerer screen's status line.
+- **Running:** a slotted task that's on, unlocked and in a slot they have runs every tick, paying `drainPerSecond`, unless it's
+  paused: by its own rule, or because it can't pay this tick. A paused task pays nothing and does nothing, and resumes on its own.
+- **Saved** per player (attachment `kegare:background_tasks`: three slots, each a task or nothing and on or off), kept through rerolls
+  and death.
+- **GUI** (§3.12): a **Background** view on the Sorcerer screen, its own tab on the right edge (a loop icon), separate from the ability
+  categories: a line on what they are, your slots (each with its task, Running, Paused or Off, and an On/Off switch), then every task
+  as a card (icon, name, drain, description, and a padlock with its requirement while locked). Click a task, then a slot; right-click
+  a slot to empty it. A small status icon per running task sits under the crosshair with the other status lines (lit while it runs,
+  greyed with a pause mark while paused), shown only to its owner (`BackgroundClient`).
+- **Commands:** `/kegare debug task unlock|lock <player> <task>` gives or takes a task's unlock whatever earns it.
+- **Tests:** `BackgroundTasksTest` (with test-only tasks): 2 slots, 3 with the eyes, none Severed; losing the eyes switches off the
+  third and keeps it, gaining them gives it back; slot changes refused in a fight, switching allowed; locked refused; the drain, the
+  effect every tick, pausing by its own rule and when it can't pay, resuming; moving and swapping; kept through a reroll and the save
+  round trip; each player's state sent to them alone, the count with it.
 
 ---
 

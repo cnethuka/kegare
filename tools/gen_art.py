@@ -881,6 +881,25 @@ def _arrow(x, y, x0, x1, cy, right: bool, shaft=1.0, head=3.2, head_len=4):
     return lo <= x <= hi and abs(y - cy) <= shaft
 
 
+def icon_view_background():
+    """The Background view (DESIGN §3.31): a loop, round and round on its own, an arrowhead chasing its tail."""
+    def f(x, y):
+        cx, cy = x + 0.5 - 8.0, y + 0.5 - 8.0
+        r = math.hypot(cx, cy)
+        a = math.degrees(math.atan2(cy, cx)) % 360
+        if 3.6 <= r <= 6.0 and not (300 <= a <= 345):
+            return MALICE
+        # the arrowhead at the gap, pointing round the loop (clockwise on screen)
+        hx, hy = 8.0 + 4.8 * math.cos(math.radians(300)), 8.0 + 4.8 * math.sin(math.radians(300))
+        tx, ty = x + 0.5 - hx, y + 0.5 - hy
+        along = tx * math.cos(math.radians(30)) + ty * math.sin(math.radians(30))  # along the loop's direction at the gap
+        across = -tx * math.sin(math.radians(30)) + ty * math.cos(math.radians(30))
+        if -0.5 <= along <= 3.2 and abs(across) <= 2.8 * (3.2 - along) / 3.7:
+            return MALICE
+        return None
+    return shaped_icon(f)
+
+
 def icon_reinforcement():
     """Reinforcement (DESIGN §3.28 Part 2): a dark figure wrapped in Malice that rises into tongues over the head and shoulders."""
     def body(x, y):
@@ -2442,6 +2461,7 @@ def build() -> dict[str, Image.Image]:
     out["menu_tab"] = menu_tab(False)
     out["menu_tab_selected"] = menu_tab(True)
     out["view_technique"] = icon(ICON_VIEW_TECHNIQUE, MALICE)
+    out["view_background"] = icon_view_background()
     out["view_progress"] = icon(ICON_VIEW_PROGRESS, TEAL)
     out["view_traits"] = icon(ICON_VIEW_TRAITS, ICE)
     out["view_pity"] = icon(ICON_VIEW_PITY, GOLD)

@@ -32,6 +32,8 @@ public final class KegareNetwork {
         registrar.playToServer(SorcererRequestPayload.TYPE, SorcererRequestPayload.STREAM_CODEC, SorcererRequestPayload::handle);
         registrar.playToServer(TalismanConfirmPayload.TYPE, TalismanConfirmPayload.STREAM_CODEC, TalismanConfirmPayload::handle);
         registrar.playToServer(LoadoutEditPayload.TYPE, LoadoutEditPayload.STREAM_CODEC, LoadoutEditPayload::handle);
+        registrar.playToServer(com.cnethuka.kegare.backgroundtask.BackgroundActionPayload.TYPE,
+                com.cnethuka.kegare.backgroundtask.BackgroundActionPayload.STREAM_CODEC, com.cnethuka.kegare.backgroundtask.BackgroundActionPayload::handle);
         registrar.playToServer(com.cnethuka.kegare.melee.MeleeIntentPayload.TYPE, com.cnethuka.kegare.melee.MeleeIntentPayload.STREAM_CODEC,
                 com.cnethuka.kegare.melee.MeleeIntentPayload::handle);
         // server -> client (state and decided results)
@@ -67,6 +69,8 @@ public final class KegareNetwork {
                 com.cnethuka.kegare.fists.ZonePayload::handle);
         registrar.playToClient(com.cnethuka.kegare.fists.FistsPayload.TYPE, com.cnethuka.kegare.fists.FistsPayload.STREAM_CODEC,
                 com.cnethuka.kegare.fists.FistsPayload::handle);
+        registrar.playToClient(com.cnethuka.kegare.backgroundtask.BackgroundSyncPayload.TYPE,
+                com.cnethuka.kegare.backgroundtask.BackgroundSyncPayload.STREAM_CODEC, com.cnethuka.kegare.backgroundtask.BackgroundSyncPayload::handle);
         registrar.playToClient(com.cnethuka.kegare.reinforcement.AuraPayload.TYPE, com.cnethuka.kegare.reinforcement.AuraPayload.STREAM_CODEC,
                 com.cnethuka.kegare.reinforcement.AuraPayload::handle);
         registrar.playToClient(com.cnethuka.kegare.rmt.OrbPayload.TYPE, com.cnethuka.kegare.rmt.OrbPayload.STREAM_CODEC,

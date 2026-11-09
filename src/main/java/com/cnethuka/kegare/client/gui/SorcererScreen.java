@@ -48,14 +48,14 @@ import org.lwjgl.glfw.GLFW;
 /**
  * The Sorcerer screen (key K): one window (our own art).
  * <ul>
- *   <li>Left edge: ability category tabs (Innate Technique, Shared).</li>
+ *   <li>Left edge: ability category tabs (Innate, Malice, Melee).</li>
  *   <li>Header: the innate technique's emblem, name and rarity, and the selected category's abilities (padlocks for
  *       locked ones; a gold number marks the slot each is on), then the technique's ultimate, labelled V.</li>
  *   <li>The large box: whatever ability is hovered (or clicked: a tile or a bar slot, which keeps it there to scroll):
  *       category, cast type, current cost and cooldown,
  *       description, its special and its slot; greyed out with a lock and the level it needs while Refinement hasn't
  *       unlocked it. The right-edge buttons switch the box to Progress (Grade, Assessment, Refinement, Insight, all
- *       private), Traits, Pity or Settings (client options, saved at once: which control picks abilities in Technique
+ *       private), Background (your Background Task slots and every task; not for the Severed), Traits, Pity or Settings (client options, saved at once: which control picks abilities in Technique
  *       Mode, effects, animations).</li>
  *   <li>Right column: your player model, Malice capacity and tier, reserve, regen.</li>
  *   <li>Bottom: the combat panel itself, live, as the loadout bar. Drag an ability onto a slot (or click it, then a
@@ -67,6 +67,7 @@ import org.lwjgl.glfw.GLFW;
 public final class SorcererScreen extends Screen {
     private enum View {
         TECHNIQUE("gui.kegare.sorcerer.view.technique"),
+        BACKGROUND("gui.kegare.sorcerer.view.background"),
         PROGRESS("gui.kegare.sorcerer.view.progress"),
         TRAITS("gui.kegare.sorcerer.tab.traits"),
         PITY("gui.kegare.sorcerer.tab.pity"),
@@ -92,6 +93,7 @@ public final class SorcererScreen extends Screen {
     private static final ResourceLocation BUTTON_LIT = Kegare.id("button_highlighted");
     private static final int BUTTON_H = 16;
     private static final ResourceLocation ICON_TECHNIQUE = Kegare.id("view_technique");
+    private static final ResourceLocation ICON_BACKGROUND = Kegare.id("view_background");
     private static final int TILE = CombatPanelLayer.SLOT_SIZE;
     private static final int TILE_INSET = 2;
     /** The tile and card for an ultimate still locked until its Dominion (Rime, Puppet Manipulation): there's no ability to show. */
@@ -134,7 +136,11 @@ public final class SorcererScreen extends Screen {
     private int px, py, pw, ph;
     private int lx0, lx1, rcx, rcw, wellY0, wellY1, trayX, trayY;
 
-    private enum Kind { CATEGORY, VIEW, TILE, RESET, OPTION, SLIDER }
+    private enum Kind { CATEGORY, VIEW, TILE, RESET, OPTION, SLIDER, BG_SLOT, BG_SWITCH, BG_TASK }
+
+    /** The Background view: the task picked up to place in a slot. */
+    @Nullable
+    private ResourceLocation bgPicked;
 
     private record Hit(Kind kind, int x, int y, int w, int h, int index, @Nullable ResourceLocation ability, boolean unlocked) {
         boolean contains(double mx, double my) {
@@ -217,6 +223,13 @@ public final class SorcererScreen extends Screen {
         }
         InnateTechnique technique = info.severed() ? null : info.innateTechnique().map(KegareRegistries.INNATE_TECHNIQUE::get).orElse(null);
         long now = minecraft != null && minecraft.level != null ? minecraft.level.getGameTime() : 0L;
+        if (!visibleViews().contains(view)) view = View.TECHNIQUE;
+        Component bgRefusal = com.cnethuka.kegare.backgroundtask.client.BackgroundClient.takeRefusal();
+        if (bgRefusal != null) {
+            status = bgRefusal;
+            statusResult = null;
+            statusUntil = Util.getMillis() + STATUS_MS;
+        }
 
         renderEdgeTabs(g, technique, mouseX, mouseY);
         GuiDraw.sprite(g, FRAME, px, py, pw, ph);
@@ -235,6 +248,7 @@ public final class SorcererScreen extends Screen {
         int bx = lx0 + 7, by = wellY0 + 6 - scroll, bw = lx1 - lx0 - 16;
         int end = switch (view) {
             case TECHNIQUE -> renderDetails(g, technique, data, shown, bx, by, bw);
+            case BACKGROUND -> renderTasks(g, bx, by, bw, mouseX, mouseY);
             case PROGRESS -> renderProgress(g, technique, data, bx, by, bw);
             case TRAITS -> renderTraits(g, bx, by, bw);
             case PITY -> renderPity(g, bx, by, bw);
@@ -279,18 +293,19 @@ public final class SorcererScreen extends Screen {
                 hits.add(new Hit(Kind.CATEGORY, x, y, TAB_SIZE, TAB_SIZE, categories.get(i).ordinal(), null, true));
             }
         }
-        View[] views = View.values();
-        for (int i = 0; i < views.length; i++) {
+        List<View> views = visibleViews();
+        for (int i = 0; i < views.size(); i++) {
             int x = px + pw - 4, y = py + 12 + i * (TAB_SIZE + 3);
-            GuiDraw.sprite(g, view == views[i] ? TAB_SELECTED : TAB, x, y, TAB_SIZE, TAB_SIZE);
-            switch (views[i]) {
+            GuiDraw.sprite(g, view == views.get(i) ? TAB_SELECTED : TAB, x, y, TAB_SIZE, TAB_SIZE);
+            switch (views.get(i)) {
                 case TECHNIQUE -> GuiDraw.sprite(g, ICON_TECHNIQUE, x + 4, y + 4, 16, 16);
+                case BACKGROUND -> GuiDraw.sprite(g, ICON_BACKGROUND, x + 4, y + 4, 16, 16);
                 case PROGRESS -> GuiDraw.sprite(g, ICON_PROGRESS, x + 4, y + 4, 16, 16);
                 case TRAITS -> GuiDraw.sprite(g, ICON_TRAITS, x + 4, y + 4, 16, 16);
                 case PITY -> GuiDraw.sprite(g, ICON_PITY, x + 4, y + 4, 16, 16);
                 case SETTINGS -> GuiDraw.sprite(g, ICON_SETTINGS, x + 4, y + 4, 16, 16);
             }
-            hits.add(new Hit(Kind.VIEW, x, y, TAB_SIZE, TAB_SIZE, i, null, true));
+            hits.add(new Hit(Kind.VIEW, x, y, TAB_SIZE, TAB_SIZE, views.get(i).ordinal(), null, true));
         }
     }
 
@@ -772,12 +787,16 @@ public final class SorcererScreen extends Screen {
         Component line;
         int color;
         boolean repeatsCombat = statusResult == LoadoutResult.IN_COMBAT && data.inCombat();
+        boolean background = view == View.BACKGROUND;
         if (status != null && Util.getMillis() < statusUntil && !repeatsCombat) {
             line = status;
             color = GuiDraw.RED;
         } else if (data.inCombat()) {
-            line = Component.translatable("message.kegare.loadout.in_combat");
+            line = Component.translatable(background ? "gui.kegare.background.in_combat" : "message.kegare.loadout.in_combat");
             color = GuiDraw.RED;
+        } else if (background) {
+            line = Component.translatable(bgPicked != null ? "gui.kegare.background.hint.picked" : "gui.kegare.background.hint");
+            color = bgPicked != null ? GuiDraw.GOLD : 0xFF6B6276;
         } else {
             line = Component.translatable(inHand ? "gui.kegare.sorcerer.hint.in_hand" : "gui.kegare.sorcerer.hint");
             color = inHand ? GuiDraw.GOLD : 0xFF6B6276;
@@ -846,8 +865,10 @@ public final class SorcererScreen extends Screen {
         Hit hit = hitAt(mouseX, mouseY);
         CombatPanelLayer.SlotRect slot = slotAt(mouseX, mouseY);
         if (button == 1) {
-            if (slot != null && !slot.ultimate()) send(LoadoutService.Action.CLEAR, slot.index(), 0, null);
+            if (hit != null && hit.kind == Kind.BG_SLOT) com.cnethuka.kegare.backgroundtask.client.BackgroundClient.clear(hit.index);
+            else if (slot != null && !slot.ultimate()) send(LoadoutService.Action.CLEAR, slot.index(), 0, null);
             inHand = false;
+            bgPicked = null;
             return true;
         }
         if (button != 0) return super.mouseClicked(mouseX, mouseY, button);
@@ -876,6 +897,12 @@ public final class SorcererScreen extends Screen {
                     sliderW = hit.w;
                     slide(mouseX);
                 }
+                case BG_TASK -> bgPicked = hit.unlocked && !hit.ability.equals(bgPicked) ? hit.ability : null;
+                case BG_SLOT -> {
+                    if (bgPicked != null) com.cnethuka.kegare.backgroundtask.client.BackgroundClient.set(hit.index, bgPicked);
+                    bgPicked = null;
+                }
+                case BG_SWITCH -> com.cnethuka.kegare.backgroundtask.client.BackgroundClient.switchTo(hit.index, !hit.unlocked);
             }
             return true;
         }
@@ -961,12 +988,13 @@ public final class SorcererScreen extends Screen {
             onClose();
             return true;
         }
-        if (keyCode >= GLFW.GLFW_KEY_1 && keyCode < GLFW.GLFW_KEY_1 + View.values().length) { // 1-5: the views
-            setView(View.values()[keyCode - GLFW.GLFW_KEY_1]);
+        List<View> views = visibleViews();
+        if (keyCode >= GLFW.GLFW_KEY_1 && keyCode < GLFW.GLFW_KEY_1 + views.size()) { // 1-6: the views
+            setView(views.get(keyCode - GLFW.GLFW_KEY_1));
             return true;
         }
         if (keyCode == GLFW.GLFW_KEY_TAB) {
-            setView(View.values()[(view.ordinal() + 1) % View.values().length]);
+            setView(views.get((Math.max(0, views.indexOf(view)) + 1) % views.size()));
             return true;
         }
         return super.keyPressed(keyCode, scanCode, modifiers);
@@ -982,6 +1010,84 @@ public final class SorcererScreen extends Screen {
     private void setView(View v) {
         view = v;
         lastView = v;
+        bgPicked = null;
+    }
+
+    /** The right-edge views this player has: no Background view without Background Task slots (Severed). */
+    private List<View> visibleViews() {
+        List<View> out = new ArrayList<>();
+        boolean background = !info.severed() && com.cnethuka.kegare.backgroundtask.client.BackgroundClient.state().slotCount() > 0;
+        for (View v : View.values()) if (v != View.BACKGROUND || background) out.add(v);
+        return out;
+    }
+
+    // ---------------------------------------------------------------- background tasks (DESIGN §3.31)
+
+    private static final int BG_SLOT_H = 34, BG_SWITCH_W = 24, BG_SWITCH_H = 12;
+
+    /** Clipped to the part of the big box not scrolled away: a hit only where it shows. */
+    private void clippedHit(Kind kind, int x, int y, int w, int h, int index, @Nullable ResourceLocation id, boolean flag) {
+        int top = Math.max(y, wellY0 + 3), bottom = Math.min(y + h, wellY1 - 3);
+        if (bottom > top) hits.add(new Hit(kind, x, top, w, bottom - top, index, id, flag));
+    }
+
+    /**
+     * Your slots (as many as you have: only your own screen shows the count), each with its task, whether it's running, paused or off,
+     * and an on/off switch; then every task as a card: icon, name, drain, description, and a padlock with its requirement while locked.
+     * Click a task, then a slot; right-click a slot to empty it.
+     */
+    private int renderTasks(GuiGraphics g, int x, int y, int w, int mouseX, int mouseY) {
+        var state = com.cnethuka.kegare.backgroundtask.client.BackgroundClient.state();
+        y += GuiDraw.wrapped(g, font, Component.translatable("gui.kegare.background.intro"), x, y, w, GuiDraw.GRAY) + 2;
+        y += GuiDraw.text(g, font, Component.translatable("gui.kegare.background.slots", state.slotCount()), x, y, 0.75f, 0xFFD8D2E0) + 2;
+        int n = Math.max(1, state.slots().size());
+        int sw = (w - (n - 1) * 4) / n;
+        for (int i = 0; i < state.slots().size(); i++) {
+            var slot = state.slots().get(i);
+            int sx = x + i * (sw + 4);
+            com.cnethuka.kegare.backgroundtask.BackgroundTask task = slot.task().flatMap(com.cnethuka.kegare.backgroundtask.BackgroundTasks::find).orElse(null);
+            boolean hoverSlot = mouseX >= sx && mouseX < sx + sw && mouseY >= y && mouseY < y + BG_SLOT_H;
+            g.fill(sx, y, sx + sw, y + BG_SLOT_H, 0x80000000);
+            g.renderOutline(sx, y, sw, BG_SLOT_H, bgPicked != null ? (hoverSlot ? GuiDraw.WHITE : GuiDraw.GOLD) : 0xFF3A3242);
+            GuiDraw.text(g, font, Component.literal(String.valueOf(i + 1)), sx + sw - 7, y + 2, 0.75f, GuiDraw.GOLD);
+            if (task == null) {
+                GuiDraw.text(g, font, Component.translatable("gui.kegare.background.empty"), sx + 4, y + 4, 0.75f, 0xFF6B6276);
+            } else {
+                GuiDraw.sprite(g, task.icon(), sx + 3, y + 3, 16, 16);
+                Component status = Component.translatable(!slot.on() ? "gui.kegare.background.off" : slot.paused() ? "gui.kegare.background.paused"
+                        : "gui.kegare.background.running");
+                int color = !slot.on() ? 0xFF6B6276 : slot.paused() ? GuiDraw.GOLD : 0xFF5CFF7A;
+                GuiDraw.text(g, font, status, sx + 3, y + 22, 0.75f, color);
+                int bx = sx + sw - BG_SWITCH_W - 3, by = y + BG_SLOT_H - BG_SWITCH_H - 3;
+                boolean hover = mouseX >= bx && mouseX < bx + BG_SWITCH_W && mouseY >= by && mouseY < by + BG_SWITCH_H;
+                GuiDraw.sprite(g, slot.on() || hover ? BUTTON_LIT : BUTTON, bx, by, BG_SWITCH_W, BG_SWITCH_H);
+                GuiDraw.centered(g, font, Component.translatable(slot.on() ? "gui.kegare.settings.on" : "gui.kegare.settings.off"), bx + BG_SWITCH_W / 2,
+                        by + 3, 0.75f, slot.on() ? GuiDraw.GOLD : GuiDraw.GRAY);
+                clippedHit(Kind.BG_SWITCH, bx, by, BG_SWITCH_W, BG_SWITCH_H, i, null, slot.on());
+            }
+            clippedHit(Kind.BG_SLOT, sx, y, sw, BG_SLOT_H, i, null, true);
+        }
+        y += BG_SLOT_H + 6;
+        for (var view : state.tasks()) {
+            com.cnethuka.kegare.backgroundtask.BackgroundTask task = com.cnethuka.kegare.backgroundtask.BackgroundTasks.find(view.id()).orElse(null);
+            if (task == null) continue;
+            int top = y;
+            boolean picked = view.id().equals(bgPicked);
+            GuiDraw.sprite(g, task.icon(), x + 2, y + 2, 16, 16);
+            if (!view.unlocked()) GuiDraw.sprite(g, GuiDraw.LOCK, x + 10, y + 10, 9, 9);
+            int tx = x + 22, tw = w - 24;
+            y += 2 + GuiDraw.text(g, font, task.name(), tx, y + 2, 1f, view.unlocked() ? GuiDraw.WHITE : GuiDraw.GRAY) + 1;
+            y += GuiDraw.text(g, font, Component.translatable("gui.kegare.background.drain", String.format(java.util.Locale.ROOT, "%.1f", view.drain())),
+                    tx, y, 0.75f, 0xFFC48CF5) + 2;
+            if (!view.unlocked()) y += GuiDraw.wrapped(g, font, task.requirement(), tx, y, tw, GuiDraw.RED) + 1;
+            y += GuiDraw.wrapped(g, font, task.description(), tx, y, tw, GuiDraw.GRAY);
+            y = Math.max(y, top + 20) + 2;
+            if (picked) g.renderOutline(x, top, w, y - top, GuiDraw.GOLD);
+            clippedHit(Kind.BG_TASK, x, top, w, y - top, 0, view.id(), view.unlocked());
+            y += 4;
+        }
+        if (state.tasks().isEmpty()) y += GuiDraw.wrapped(g, font, Component.translatable("gui.kegare.background.none"), x, y, w, 0xFF6B6276);
+        return y;
     }
 
     private void press(@Nullable ResourceLocation ability, int slot, double mx, double my) {

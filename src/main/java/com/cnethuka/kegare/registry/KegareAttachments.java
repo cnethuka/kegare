@@ -61,6 +61,11 @@ public final class KegareAttachments {
             () -> AttachmentType.builder(() -> new com.cnethuka.kegare.loadout.SharedAbilityData())
                     .serialize(com.cnethuka.kegare.loadout.SharedAbilityData.CODEC).copyOnDeath().build());
 
+    /** Background Task slots (DESIGN §3.31): saved, kept on death and through rerolls. */
+    public static final Supplier<AttachmentType<com.cnethuka.kegare.backgroundtask.BackgroundTaskData>> BACKGROUND_TASKS = ATTACHMENT_TYPES.register(
+            "background_tasks", () -> AttachmentType.builder(() -> new com.cnethuka.kegare.backgroundtask.BackgroundTaskData())
+                    .serialize(com.cnethuka.kegare.backgroundtask.BackgroundTaskData.CODEC).copyOnDeath().build());
+
     public static final Supplier<AttachmentType<CastState>> CAST_STATE = ATTACHMENT_TYPES.register("cast_state",
             () -> AttachmentType.builder(() -> new CastState()).build());
 

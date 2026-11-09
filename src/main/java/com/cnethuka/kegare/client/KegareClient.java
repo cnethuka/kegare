@@ -29,6 +29,7 @@ public final class KegareClient {
         com.cnethuka.kegare.melee.client.MeleeClient.init();
         com.cnethuka.kegare.melee.client.FistTell.init(modBus);
         com.cnethuka.kegare.reinforcement.client.AuraClient.init(modBus);
+        com.cnethuka.kegare.backgroundtask.client.BackgroundClient.init();
         com.cnethuka.kegare.timing.client.ClientStamps.init(); // sub-tick timing (DESIGN §3.29)
         com.cnethuka.kegare.fists.client.BlackSparkClient.init(); // Black Spark's burst (DESIGN §3.28)
         com.cnethuka.kegare.fists.client.ZoneHud.init(); // the zone's "120%" under the crosshair

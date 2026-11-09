@@ -344,6 +344,27 @@ public final class KegareLanguageProvider extends LanguageProvider {
         add("message.kegare.rmt.unlocked", "Your body remembers how to heal.");
         add("ability.kegare.reverse_malice_technique.unlock", "Take in the green orb.");
 
+        // Background Tasks (DESIGN §3.31)
+        add("gui.kegare.sorcerer.view.background", "Background");
+        add("gui.kegare.background.intro", "Things you keep running without thinking. Weaker than the ability on your bar, but they take no slot "
+                + "and leave your hands free.");
+        add("gui.kegare.background.slots", "Slots: %s");
+        add("gui.kegare.background.empty", "Empty");
+        add("gui.kegare.background.running", "Running");
+        add("gui.kegare.background.paused", "Paused");
+        add("gui.kegare.background.off", "Off");
+        add("gui.kegare.background.drain", "Drain: %s " + MALICE + "/s");
+        add("gui.kegare.background.none", "No Background Tasks exist yet.");
+        add("gui.kegare.background.hint", "Click a task, then a slot. Right-click a slot to empty it.");
+        add("gui.kegare.background.hint.picked", "Now click a slot to put it there.");
+        add("gui.kegare.background.in_combat", "Mid-fight: switch tasks on or off, but slots stay as they are.");
+        add("message.kegare.background_task.severed", "You have no " + MALICE + " to keep anything running.");
+        add("message.kegare.background_task.in_combat", "You can't change your Background Tasks mid-fight.");
+        add("message.kegare.background_task.bad_slot", "You don't have that slot.");
+        add("message.kegare.background_task.empty_slot", "There's nothing in that slot.");
+        add("message.kegare.background_task.locked", "You haven't unlocked that yet.");
+        add("message.kegare.background_task.unknown", "There's no such Background Task.");
+
         // Reinforcement (Malice, every Malice user's)
         add("ability.kegare.reinforcement", "Reinforcement");
         add("ability.kegare.reinforcement.desc", "Toggle: route " + MALICE + " through your whole body. You take %1$s less physical damage "
@@ -724,6 +745,8 @@ public final class KegareLanguageProvider extends LanguageProvider {
         add("commands.kegare.help.debug.reroll", "Roll a player into this " + INNATE_TECHNIQUE + ", reveal and all.");
         add("commands.kegare.help.debug.shared.unlock", "Unlock a shared ability for a player.");
         add("commands.kegare.help.debug.shared.lock", "Lock a shared ability again for a player.");
+        add("commands.kegare.help.debug.task.unlock", "Unlock a Background Task for a player, whatever earns it.");
+        add("commands.kegare.help.debug.task.lock", "Lock a Background Task again for a player.");
         add("commands.kegare.help.debug.orb.spawn", "Bring a player a green orb now.");
         add("commands.kegare.help.debug.orb.status", "Show a player's next orb roll and any orb under way.");
         add("commands.kegare.help.debug.swap", "Stop swaps from reaching a player, or let them again.");
@@ -856,6 +879,12 @@ public final class KegareLanguageProvider extends LanguageProvider {
         add("commands.kegare.debug.shared.already", "%s already has %s.");
         add("commands.kegare.debug.shared.not_unlocked", "%s hasn't unlocked %s.");
         add("commands.kegare.debug.shared.severed", "%s is " + SEVERED + " and can't unlock %s.");
+        add("commands.kegare.debug.task.unknown", "Unknown Background Task: %s. Choose from %s.");
+        add("commands.kegare.debug.task.unlocked", "Unlocked %s for %s.");
+        add("commands.kegare.debug.task.locked", "Locked %s again for %s.");
+        add("commands.kegare.debug.task.already", "%s already has %s.");
+        add("commands.kegare.debug.task.not_unlocked", "%s hasn't unlocked %s.");
+        add("commands.kegare.debug.task.severed", "%s is " + SEVERED + " and can't run %s.");
         add("commands.kegare.debug.orb.spawned", "A green orb appeared for %s. Only they can see it.");
         add("commands.kegare.debug.orb.already_unlocked", "%s has already unlocked Reverse Malice Technique, so the orb never comes again.");
         add("commands.kegare.debug.orb.severed", "%s is " + SEVERED + ", so the orb never comes to them.");
