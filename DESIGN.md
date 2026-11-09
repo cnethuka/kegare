@@ -3137,23 +3137,25 @@ focus is the Read the server decides for itself, so that's the one it counts.
   player at most once a minute; a void gives nothing), `perPin` (1) for a pin (each one at most once a minute; the server checks it's real). Saved;
   fully reset when the eyes pass on or are lost, so a new bearer starts out clumsy. Shown privately on the Sorcerer screen's Progress view.
 - **Efficiency:** every Malice cost the bearer pays (casts, upkeep, toggles, Background Tasks, Reinforcement, RMT) is multiplied by 1 / (1 + x), with
-  x = `base` (0.25) + `grade` (0.35) x Grade step (0 at Grade 4, 6 at Special Grade) + `attunement` (0.8) x ln(1 + Attunement / `attunementScale` (200))
-  (`MaliceService.addCostModifier`, in the one place Malice is spent). Each step adds less than the last, so it nears free and never gets there, with
-  no cap in config (the weights are). Every cast still costs at least 1 Malice (`castCostOf`; upkeep is a little a tick, so it has no floor). Eyewear
+  x = `base` (0.25) + `grade` (0.35) x Grade step (0 at Grade 4, 6 at Special Grade) + `attunement` (1.5) x sqrt(Attunement / `attunementScale` (200))
+  (`MaliceService.addCostModifier`, in the one place Malice is spent). x climbs without end and with no flat point, so costs keep falling towards free
+  and never get there, with no cap in config (the weights are). Every cast still costs at least 1 Malice (`castCostOf`; upkeep is a little a tick, so it
+  has no floor): a 40-Malice cast reaches that floor at Special Grade and about Attunement 119,000 (33 hours of fighting). Eyewear
   and Strain never lower it. What a cast is worth is counted at its full price: spending less to do the same never makes a hit weaker (§3.23, §3.21).
   The ability cards show what it really costs them.
 
   | | x | Costs | A 40-Malice cast | RMT output |
   |---|---|---|---|---|
-  | New bearer, Grade 4, Attunement 0 | 0.25 | x0.80 (20% off) | 32 | x1.04 |
-  | Grade 2, Attunement 300 (about 5 minutes of fighting) | 2.03 | x0.33 (67% off) | 13.2 | x1.30 |
-  | Special Grade, Attunement 20,000 (about 5.5 hours of fighting) | 6.04 | x0.14 (86% off) | 5.7 | x1.91 |
-  | Special Grade, Attunement 1,000,000 | 9.16 | x0.10 (90% off) | 3.9 | x2.37 |
+  | New bearer, Grade 4, Attunement 0 | 0.25 | x0.80 (20% off) | 32 | x1.01 |
+  | Grade 2, Attunement 300 (about 5 minutes of fighting) | 3.14 | x0.24 (76% off) | 9.7 | x1.16 |
+  | Special Grade, Attunement 0 | 2.35 | x0.30 (70% off) | 11.9 | x1.12 |
+  | Special Grade, Attunement 20,000 (about 5.5 hours of fighting) | 17.35 | x0.0545 (94.6% off) | 2.2 | x1.90 |
+  | Special Grade, Attunement 1,000,000 (about 278 hours) | 108.42 | x0.009 (99.1% off) | 1 (the floor) | x6.64 |
 
-- **RMT output:** x (1 + `rmtOutputWeight` (0.15) x x), the same x, through `RmtOutput.addModifier`, past the normal 1.6x with no fixed cap: a Special
-  Grade at Attunement 20,000 and top Peak Refinement heals at about 3.05x. Injury fatigue still applies (it's taken before the modifier).
+- **RMT output:** x (1 + `rmtOutputWeight` (0.052) x x), the same x and so the same curve, through `RmtOutput.addModifier`, past the normal 1.6x with no fixed cap: a Special
+  Grade at Attunement 20,000 and top Peak Refinement heals at about 3.04x. Injury fatigue still applies (it's taken before the modifier).
 - `/kegare debug sixeyes attunement <player> <value>` sets it; `/kegare info` shows Strain, Attunement, the cost factor and the RMT factor.
-- **Tests:** `EfficiencyTest` (each Grade and each step of Attunement adding less than the last, never free; a start cost, a toggle's upkeep, RMT's start
+- **Tests:** `EfficiencyTest` (every Grade lowering costs, every quadrupling of Attunement adding more to x than the last, never free; the table above; a start cost, a toggle's upkeep, RMT's start
   and upkeep and a Background Task's drain all lowered; at least 1 Malice on a cast, upkeep still paid; eyewear and max Strain changing nothing;
   non-bearers in full; Attunement from fighting, a Read and a pin, each limited, nothing without the eyes; lost with the eyes, the heir starting from
   nothing; RMT output past 1.6, growing with Attunement, halved by fatigue).

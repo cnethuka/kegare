@@ -47,27 +47,41 @@ class EfficiencyTest {
     }
 
     @Test
-    void theCurveNearsFreeAndNeverGetsThereEachStepAddingLess() {
+    void theCurveKeepsClimbingWithNoFlatPointAndIsNeverFree() {
+        assertTrue(Efficiency.costFactor(Efficiency.x(0, 0)) < 1.0, "some waste gone from the first moment");
         double previous = Efficiency.costFactor(Efficiency.x(0, 0));
-        assertTrue(previous < 1.0, "some waste gone from the first moment");
-        double lastGain = Double.MAX_VALUE;
         for (int g = 1; g <= 6; g++) {
             double now = Efficiency.costFactor(Efficiency.x(g, 0));
-            double gain = previous - now;
-            assertTrue(gain > 0 && gain < lastGain, "each Grade adds, and less than the last: step " + g);
-            lastGain = gain;
+            assertTrue(now < previous, "each Grade lowers costs: step " + g);
             previous = now;
         }
-        lastGain = Double.MAX_VALUE;
-        previous = Efficiency.costFactor(Efficiency.x(6, 0));
-        for (double a = 500; a <= 20_000; a += 500) {
-            double now = Efficiency.costFactor(Efficiency.x(6, a));
-            double gain = previous - now;
-            assertTrue(gain > 0 && gain < lastGain, "each step of Attunement adds, and less than the last: " + a);
+        // No flat point: every quadrupling of Attunement adds more to x than the one before. (A logarithm adds the same each time, and
+        // the cost flattens out.)
+        double lastGain = 0;
+        for (double a = 100; a <= 1.0e12; a *= 4) {
+            double gain = Efficiency.x(6, a * 4) - Efficiency.x(6, a);
+            assertTrue(gain > lastGain, "each quadrupling adds more than the last: " + a);
+            assertTrue(Efficiency.costFactor(Efficiency.x(6, a * 4)) < Efficiency.costFactor(Efficiency.x(6, a)), "and costs keep falling: " + a);
             lastGain = gain;
-            previous = now;
         }
         assertTrue(Efficiency.costFactor(Efficiency.x(6, 1.0e300)) > 0, "never free, however far they go");
+    }
+
+    @Test
+    void theDesignTableHolds() {
+        // DESIGN §3.32's table, with the shipped weights: x, the cost factor, RMT's factor.
+        row(0, 0, 0.25, 0.800, 1.013);
+        row(3, 300, 3.14, 0.2417, 1.163);
+        row(6, 0, 2.35, 0.2985, 1.122);
+        row(6, 20_000, 17.35, 0.0545, 1.902);
+        row(6, 1_000_000, 108.42, 0.0091, 6.638);
+    }
+
+    private static void row(int gradeStep, double attunement, double x, double cost, double rmt) {
+        double actual = Efficiency.x(gradeStep, attunement);
+        assertEquals(x, actual, 0.005, "x at step " + gradeStep + ", Attunement " + attunement);
+        assertEquals(cost, Efficiency.costFactor(actual), 0.0005, "cost factor");
+        assertEquals(rmt, 1.0 + SixEyesConfig.RMT_OUTPUT_WEIGHT.get() * actual, 0.0005, "RMT factor");
     }
 
     @Test
@@ -114,25 +128,18 @@ class EfficiencyTest {
                 BackgroundTaskService.setOn(p, 0, false);
                 BackgroundTaskService.tick(p);
 
-                // However attuned, a cast costs at least 1; and it's never free. (A cheap cast: the curve is too slow to take the shipped
-                // 40 below 1 at any Attunement a player could reach.)
+                // However attuned, a cast costs at least 1; and it's never free.
                 GradeService.set(p, Grade.SPECIAL_GRADE);
-                Attunement.set(p, 1.0e15);
-                double onCost = ReinforcementConfig.ON_COST.get();
-                ReinforcementConfig.ON_COST.set(10.0);
-                try {
-                    assertTrue(10.0 * Efficiency.costFactor(p) < 1.0, "setup: below 1 by the curve");
-                    InnateTechniqueService.select(p, 1);
-                    before = malice(p);
-                    CastManager.handleIntent(p, CastIntent.CAST_PRESS);
-                    assertEquals(before - 1.0, malice(p), EPS, "at least 1 Malice");
-                    before = malice(p);
-                    for (int i = 0; i < 20; i++) CastManager.tick(p);
-                    assertTrue(malice(p) < before, "upkeep is still paid");
-                    CastManager.stopAll(p, EndReason.CANCELLED);
-                } finally {
-                    ReinforcementConfig.ON_COST.set(onCost);
-                }
+                Attunement.set(p, 1.0e6);
+                assertTrue(ReinforcementConfig.ON_COST.get() * Efficiency.costFactor(p) < 1.0, "setup: below 1 by the curve");
+                InnateTechniqueService.select(p, 1);
+                before = malice(p);
+                CastManager.handleIntent(p, CastIntent.CAST_PRESS);
+                assertEquals(before - 1.0, malice(p), EPS, "at least 1 Malice");
+                before = malice(p);
+                for (int i = 0; i < 20; i++) CastManager.tick(p);
+                assertTrue(malice(p) < before, "upkeep is still paid");
+                CastManager.stopAll(p, EndReason.CANCELLED);
             } finally {
                 SightTest.eyes(server, p, false);
                 TestServer.removePlayers(server);

@@ -8,10 +8,10 @@ import net.minecraft.server.level.ServerPlayer;
 /**
  * Near-zero waste (DESIGN §3.32): every Malice cost a bearer pays (casts, upkeep, toggles, Background Tasks, Reinforcement, RMT) is
  * multiplied by 1 / (1 + x), where x = {@code base} + {@code grade} x their Grade step (0 at Grade 4, 6 at Special Grade) + {@code attunement}
- * x ln(1 + Attunement / {@code attunementScale}). Each step adds less than the last, so it nears free and never gets there, with no cap in
- * config (the weights are). Every cast still costs at least 1 Malice. Eyewear and Strain never touch it.
+ * x sqrt(Attunement / {@code attunementScale}). x climbs without end and with no flat point, so the cost keeps falling towards free and never
+ * gets there, with no cap in config (the weights are). Every cast still costs at least 1 Malice. Eyewear and Strain never touch it.
  * <p>
- * RMT's output (§3.17) grows the same way, x (1 + {@code rmtOutputWeight} x x), past the normal 1.6x with no fixed cap, after injuries have
+ * RMT's output (§3.17) follows the same curve, x (1 + {@code rmtOutputWeight} x x), past the normal 1.6x with no fixed cap, after injuries have
  * taken their share.
  */
 public final class Efficiency {
@@ -30,7 +30,7 @@ public final class Efficiency {
     /** The curve's input for a Grade step and an Attunement. */
     public static double x(int gradeStep, double attunement) {
         return SixEyesConfig.EFFICIENCY_BASE.get() + SixEyesConfig.EFFICIENCY_GRADE.get() * gradeStep
-                + SixEyesConfig.EFFICIENCY_ATTUNEMENT.get() * Math.log1p(Math.max(0, attunement) / SixEyesConfig.ATTUNEMENT_SCALE.get());
+                + SixEyesConfig.EFFICIENCY_ATTUNEMENT.get() * Math.sqrt(Math.max(0, attunement) / SixEyesConfig.ATTUNEMENT_SCALE.get());
     }
 
     /** What a cost is multiplied by: above 0 always, however far they've come. */

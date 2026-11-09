@@ -53,14 +53,14 @@ public final class SixEyesConfig {
         b.pop();
 
         b.comment("Efficiency: every Malice cost the bearer pays is x 1 / (1 + x), x = base + grade x Grade step (0 at Grade 4, 6 at Special",
-                "Grade) + attunement x ln(1 + Attunement / attunementScale). Each step adds less; it nears free and never gets there. Every",
-                "cast still costs at least 1. Eyewear and Strain never touch it.").push("efficiency");
+                "Grade) + attunement x sqrt(Attunement / attunementScale). It keeps climbing with no flat point: costs near free and never get",
+                "there. Every cast still costs at least 1. Eyewear and Strain never touch it.").push("efficiency");
         EFFICIENCY_BASE = b.defineInRange("base", 0.25, 0.0, 100.0);
         EFFICIENCY_GRADE = b.defineInRange("grade", 0.35, 0.0, 100.0);
-        EFFICIENCY_ATTUNEMENT = b.defineInRange("attunement", 0.8, 0.0, 100.0);
+        EFFICIENCY_ATTUNEMENT = b.defineInRange("attunement", 1.5, 0.0, 100.0);
         ATTUNEMENT_SCALE = b.defineInRange("attunementScale", 200.0, 1.0, 1.0e9);
-        RMT_OUTPUT_WEIGHT = b.comment("Reverse Malice Technique's output x (1 + this x x), the same x: beyond the normal 1.6x, no fixed cap.",
-                "Injury fatigue still applies.").defineInRange("rmtOutputWeight", 0.15, 0.0, 100.0);
+        RMT_OUTPUT_WEIGHT = b.comment("Reverse Malice Technique's output x (1 + this x x), the same x: beyond the normal 1.6x, no fixed cap",
+                "(about x1.9 at Special Grade and Attunement 20,000). Injury fatigue still applies.").defineInRange("rmtOutputWeight", 0.052, 0.0, 100.0);
         b.pop();
 
         b.comment("Attunement grows by using the eyes, and is lost entirely when they pass on: a new bearer starts out clumsy.").push("attunement");
