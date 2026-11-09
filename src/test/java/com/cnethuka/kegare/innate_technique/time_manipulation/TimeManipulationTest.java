@@ -233,6 +233,24 @@ class TimeManipulationTest {
                 CastManager.handleIntent(caster, CastIntent.SPECIAL_PRESS);
                 assertEquals(8.5 + 4 * 0.1, pig.getX(), 1.0e-6, "the mob went back too");
 
+                // Within a block of where it was 3 seconds ago (standing still): nothing would happen, so a free fizzle, told so.
+                InnateTechniqueService.clearCooldowns(caster);
+                for (int i = 0; i < ticks + 3; i++) {
+                    pig.moveTo(8.5 + (i % 2) * 0.3, Y, 0.5, 0f, 0f); // shuffling on the spot
+                    PositionHistory.tick(server);
+                    TestServer.advanceGameTime(server, 1);
+                }
+                lookAt(caster, pig.position().add(0, 0.4, 0));
+                before = malice(caster);
+                Vec3 still = pig.position();
+                CastManager.handleIntent(caster, CastIntent.SPECIAL_PRESS);
+                assertEquals(still, pig.position(), "it stays");
+                assertEquals(before, malice(caster), EPS, "already there: free");
+                assertEquals(0, InnateTechniqueService.cooldownRemaining(caster, TimeManipulation.POINT_MAKER), "and no cooldown");
+                assertEquals("message.kegare.time.already_there",
+                        ((net.minecraft.network.chat.contents.TranslatableContents) TimeManipulation.REWIND.blockedMessage(caster).getContents()).getKey(),
+                        "\"X was already there.\"");
+
                 // No history (it's only just been seen): fizzles, nothing paid, no cooldown.
                 InnateTechniqueService.clearCooldowns(caster);
                 PositionHistory.clear();

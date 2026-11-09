@@ -20,11 +20,13 @@ import net.neoforged.neoforge.common.NeoForge;
 /**
  * Rewind (special of Point Maker, INSTANT): the player or mob you're looking at is snapped back to where it was {@code seconds} ago,
  * position only (its health, effects and facing stay as they are now), nudged out of blocks, its fall reset. Fizzles for free with no
- * unbroken record of where it was (it changed dimension, or a mob wasn't near a Time Manipulation holder that long), and on a boss
- * (DESIGN §4). Fires {@link TimeTargetEvent} first: cancelled, it fizzles keeping its Malice spent.
+ * unbroken record of where it was (it changed dimension, or a mob wasn't near a Time Manipulation holder that long), when it's within
+ * {@link #ALREADY_THERE} of where it was then (nothing would visibly happen), and on a boss (DESIGN §4). Fires {@link TimeTargetEvent} first: cancelled, it fizzles keeping its Malice spent.
  */
 public final class RewindAbility extends TimeAbility.Special {
     private static final AbilityVisuals VISUALS = AbilityVisuals.builder().cast(TimeIds.ANIM_REWIND_CAST, null).build();
+    /** Within this many blocks of where it was then, there's nowhere to send it back to: a free fizzle. */
+    static final double ALREADY_THERE = 1.0;
 
     RewindAbility() {
         super("rewind", CastType.INSTANT, () -> TimeManipulation.POINT_MAKER);
@@ -38,10 +40,18 @@ public final class RewindAbility extends TimeAbility.Special {
         return TimeConfig.ticks(TimeConfig.REWIND_SECONDS);
     }
 
+    /** Where the target goes back to, if it has an unbroken past and that's somewhere else. */
+    private static Optional<List<Vec3>> pathBack(LivingEntity target) {
+        return PositionHistory.path(target, ticks()).filter(path -> !alreadyThere(target, path));
+    }
+
+    private static boolean alreadyThere(LivingEntity target, List<Vec3> path) {
+        return path.get(0).distanceToSqr(target.position()) <= ALREADY_THERE * ALREADY_THERE;
+    }
+
     @Override
     public boolean canCast(AbilityContext ctx) {
-        return TimeTargeting.lookedAtLiving(ctx.player())
-                .filter(t -> !TimeTargeting.immune(t) && PositionHistory.path(t, ticks()).isPresent()).isPresent();
+        return TimeTargeting.lookedAtLiving(ctx.player()).filter(t -> !TimeTargeting.immune(t) && pathBack(t).isPresent()).isPresent();
     }
 
     @Override
@@ -49,6 +59,10 @@ public final class RewindAbility extends TimeAbility.Special {
         Optional<LivingEntity> target = TimeTargeting.lookedAtLiving(p);
         if (target.isEmpty()) return Component.translatable("message.kegare.time.no_target");
         if (TimeTargeting.immune(target.get())) return Component.translatable("message.kegare.time.immune", target.get().getDisplayName());
+        Optional<List<Vec3>> path = PositionHistory.path(target.get(), ticks());
+        if (path.isPresent() && alreadyThere(target.get(), path.get())) {
+            return Component.translatable("message.kegare.time.already_there", target.get().getDisplayName());
+        }
         return Component.translatable("message.kegare.time.no_history", target.get().getDisplayName());
     }
 
@@ -56,7 +70,7 @@ public final class RewindAbility extends TimeAbility.Special {
     public void execute(AbilityContext ctx) {
         ServerPlayer caster = ctx.player();
         LivingEntity target = TimeTargeting.lookedAtLiving(caster).orElse(null);
-        List<Vec3> path = target == null ? null : PositionHistory.path(target, ticks()).orElse(null);
+        List<Vec3> path = target == null ? null : pathBack(target).orElse(null);
         if (target == null || path == null || TimeTargeting.immune(target)) {
             CastManager.fizzleKeepingCost(caster);
             return;

@@ -5,6 +5,7 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.cnethuka.kegare.TestServer;
+import com.cnethuka.kegare.innate_technique.swap.Swapper;
 import com.cnethuka.kegare.combat.CombatHelper;
 import com.cnethuka.kegare.malice.MaliceService;
 import com.cnethuka.kegare.severed.client.SeveredKeys;
@@ -13,6 +14,7 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.level.levelgen.Heightmap;
+import net.minecraft.world.phys.Vec3;
 import net.neoforged.testframework.junit.EphemeralTestServerProvider;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -40,6 +42,34 @@ class BlurTest {
             Blur.tick(p, Severed.state(p));
             TestServer.advanceGameTime(server, 1);
         }
+    }
+
+    @Test
+    void wherePutByTheServerItStays(MinecraftServer server) throws Exception {
+        TestServer.onServerThread(server, () -> {
+            TestServer.ensureOverworld(server);
+            ServerLevel level = server.overworld();
+            level.getHeight(Heightmap.Types.MOTION_BLOCKING, 0, 0);
+            try {
+                ServerPlayer s = SeveredBodyTest.severed(server, level, "blur_moved");
+                s.moveTo(0.5, Y, 0.5);
+                Severed.toggleBlur(s);
+                run(server, s, SeveredConfig.BLUR_SPEED.get(), 10);
+                SeveredState state = Severed.state(s);
+                // Moved 7 blocks to the side by the server (Rewind, a swap, a command): more than Blur could run in the last few ticks,
+                // under the 8 blocks that count as a teleport by themselves. The speed check used to put them back.
+                Vec3 to = s.position().add(0, 0, 7);
+                Swapper.moveTo(s, to);
+                Severed.movedByServer(s); // what the teleport tells it (a test player's connection ignores teleports)
+                Blur.tick(s, state);
+                assertEquals(to, state.position(0), "left where the server put them");
+                // And the check carries on from there.
+                run(server, s, SeveredConfig.BLUR_SPEED.get(), 6);
+                assertEquals(to.x + 6 * SeveredConfig.BLUR_SPEED.get(), state.position(0).x, 1.0e-6, "running on from it");
+            } finally {
+                TestServer.removePlayers(server);
+            }
+        });
     }
 
     @Test

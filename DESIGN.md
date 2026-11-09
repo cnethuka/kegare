@@ -2235,7 +2235,7 @@ default table (§3.21): Point Maker and Accelerate 0, Rewind 1, Decelerate 2, Fa
 | Ability | Type | Cost | Cooldown | Effect |
 |---|---|---|---|---|
 | **Point Maker** | INSTANT, two stages | 40 mark / 60 return | 12 s | With no mark out: mark the top of the block you're looking at (`markRange` 32; only you see the mark). It snapshots where you'll stand (the top of that block), your facing, your active effects and your health, and lasts `markSeconds` (15). Second cast: return to it, facing as you faced; every effect you've gained since is removed; heal `healFraction` (30%) of MAX health, but never more than you've lost since marking (so never above the snapshot): 20 → 8 comes back to 14, 20 → 18 to 20. It never touches Malice. The mark starts no cooldown; the return does, or the mark running out. Marked in another dimension: "Your mark is in another dimension.", free. The mark is gone on death, logout and a technique change, with no cooldown. |
-| ↳ **Rewind** (R) | INSTANT | 120 | 12 s, shared | The player or mob you're looking at (`[targeting] range` 24, in line of sight, `aimTolerance` 0.3) is snapped back to where it was `seconds` (3) ago: position only (health, effects and facing stay), nudged out of blocks, its fall reset. Needs an unbroken record of those 3 s in its current level: fizzles for free without one ("X has no past here to go back to."), and on a boss ("Time won't move X."). `TimeTargetEvent` first: cancelled, it fizzles with the Malice spent. |
+| ↳ **Rewind** (R) | INSTANT | 120 | 12 s, shared | The player or mob you're looking at (`[targeting] range` 24, in line of sight, `aimTolerance` 0.3) is snapped back to where it was `seconds` (3) ago: position only (health, effects and facing stay), nudged out of blocks, its fall reset. Needs an unbroken record of those 3 s in its current level: fizzles for free without one ("X has no past here to go back to."), when it's within 1 block of where it was then, since nothing would visibly happen ("X was already there."), and on a boss ("Time won't move X."). `TimeTargetEvent` first: cancelled, it fizzles with the Malice spent. |
 | **Accelerate** | TOGGLE | 60, then 40/s | 8 s (from switching off) | Speed II (`speedAmplifier` 1), `attackSpeed` +30% (a multiplied attribute modifier), and every OTHER cooldown of your innate technique runs `cooldownRate` (1.5) times as fast (`CooldownRates`). |
 | ↳ **Fast Forward** (R) | INSTANT | 320 | 20 s, shared | `seconds` (6) off every OTHER cooldown of your technique at once: never Accelerate's own, never the ultimate's, never Burnout (it isn't a cooldown) and never a shared ability's (RMT). Switches Accelerate off if it's on, and puts it on their shared cooldown. |
 | **Decelerate** | INSTANT | 50 | 6 s | Throws a real projectile (`DecelerateEntity`, `speed` 2 blocks a tick, no gravity, gone after `flightSeconds` 1.5; blocks stop it). On a player or mob: `damage` (3, type `kegare:time_manipulation`, the caster credited), then for `seconds` (5) Slowness II and Mining Fatigue II, and (players) their ability cooldowns at `cooldownRate` 0.5. `TimeTargetEvent` comes before the cooldown slow: cancelled, the effects still land and the cooldowns don't slow. A boss takes the damage only. |
@@ -2351,7 +2351,7 @@ opening), `.stop` (Standstill: the sharp click), `.stop_tick` (the one slow tick
 inside) and `.resume` (the loud tick it ends on).
 
 **Tests:** `TimeManipulationTest` (the return's heal math; Point Maker's mark, return, expiry and its free fizzle; Rewind on a
-player and a mob, with no history, refused, and a boss; Accelerate's 1.5x clock and Fast Forward never touching the ultimate,
+player and a mob, already there, with no history, refused, and a boss; Accelerate's 1.5x clock and Fast Forward never touching the ultimate,
 Burnout or RMT; Decelerate's hit, the event guarding its cooldown slow, a boss; Stasis Field's slow and its projectiles crawling and
 restored, on leaving and at its end; Standstill freezing players and mobs but not the caster, the immune or a boss, refusing a
 second stop, a thrown projectile's flight then hang, the held damage landing as one hit, its cap, Burnout, the Insight hook, a
@@ -2396,7 +2396,10 @@ Technique Mode, unchanged (`client/SeveredKeys`). Controls lists the key as "Tec
 - **Who moves you:** the server allows it and tells the owner (`BlurPayload`); `client/BlurDrive` sets the velocity before each
   tick's move, as a dash is driven, and the game's own collision stops it, so it can't clip. The server checks every tick how far
   they really went, summed over five ticks (a late packet bunches two ticks into one, so ping can't trip it), and puts them back if
-  it's more than Blur allows. At these speeds vanilla's "moved too quickly" (10 blocks in one packet) never comes into it.
+  it's more than Blur allows. At these speeds vanilla's "moved too quickly" (10 blocks in one packet) never comes into it. Wherever
+  the server itself puts them (Rewind, a swap, a command, an ender pearl) isn't movement: every server teleport of a player tells
+  Blur (`mixin/ServerTeleportMixin`), and the check starts over from there. Without that, a move of under 8 blocks while Blurring
+  would be put back the next tick, so Rewind or Positions on a Blurring player would do nothing.
 - **Wall crash** (`WallCrash`, `[wall_crash]`): when most of the speed is gone in a tick and something solid (too high to step onto)
   is right ahead the way they were going, the speed lost
   (blocks a tick) sets the damage (`damagePerSpeed` 10 × lost − `damageGrace` 2, at most `maxDamage` 12, as `flyIntoWall`, so
@@ -2489,7 +2492,7 @@ its window and harder knockback, the recovery and cooldown, the HUD told when it
 clear line, arriving in the air in reach of them; a wall across a rising line crashes it; something living in the path stops it short;
 a swap ends it; a perfect parry spends the Strike and staggers harder; a boss is struck and never moved), `BlurTest` (G is Blur only for the Severed; the drain by distance at Blur speed, none for a walk; crashing off at
 the floor, winded, refused until food is above it; the wall crash scaling with the speed lost, a scrape doing nothing; a stun, a
-Rime freeze or no longer being Severed ending it), `SeveredBodyTest` (Strength only on a Severed hand; the Toughness split, falls least, the void, /kill and starving
+Rime freeze or no longer being Severed ending it; where the server puts them, they stay), `SeveredBodyTest` (Strength only on a Severed hand; the Toughness split, falls least, the void, /kill and starving
 untouched; Stamina on normal drain and on healing; Senses: a player standing still, a mob, an invisible one, moving, out of range,
 never an armor stand, a spectator or themself, and never for a Malice user).
 

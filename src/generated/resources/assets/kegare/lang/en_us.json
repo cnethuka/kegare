@@ -1082,6 +1082,7 @@
   "message.kegare.swap.switchback_refused": "Something stops the swap back.",
   "message.kegare.swap.too_close": "%s needs the target at least %s blocks away.",
   "message.kegare.time.already_stopped": "Time already stands still here.",
+  "message.kegare.time.already_there": "%s was already there.",
   "message.kegare.time.immune": "Time won't move %s.",
   "message.kegare.time.mark_elsewhere": "Your mark is in another dimension.",
   "message.kegare.time.no_block": "No block in sight within %s blocks.",

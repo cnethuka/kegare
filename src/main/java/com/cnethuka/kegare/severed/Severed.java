@@ -66,6 +66,11 @@ public final class Severed {
         if (is(player)) Blur.toggle(player);
     }
 
+    /** The server just put them somewhere (any teleport): that isn't Blur's movement to check (from {@code mixin/ServerTeleportMixin}). */
+    public static void movedByServer(ServerPlayer player) {
+        if (player.hasData(STATE)) Blur.movedByServer(state(player));
+    }
+
     public static boolean blurring(ServerPlayer player) {
         return player.hasData(STATE) && state(player).blur;
     }

@@ -28,6 +28,8 @@ public final class Blur {
     /** Room over Blur's speed: the game's own steering adds a little, and a slope or a jump a little more. */
     private static final double SLACK = 1.6, SLACK_FLAT = 0.25;
     private static final int CRASH_COOLDOWN = 10;
+    /** Blur's own check is putting someone back: that teleport is the check, not something to forget. */
+    private static boolean puttingBack;
 
     private Blur() {}
 
@@ -111,7 +113,12 @@ public final class Blur {
         double allowed = CHECK_TICKS * (Math.max(SeveredConfig.BLUR_SPEED.get(), ClosingLine.allowedSpeed(state, now)) * SLACK + SLACK_FLAT);
         if (back != null && was != null && Math.sqrt(sq(at.x - back.x) + sq(at.z - back.z)) > allowed && at.distanceToSqr(was) <= 64) {
             Vec3 to = state.position(0);
-            player.connection.teleport(to.x, to.y, to.z, player.getYRot(), player.getXRot());
+            puttingBack = true;
+            try {
+                player.connection.teleport(to.x, to.y, to.z, player.getYRot(), player.getXRot());
+            } finally {
+                puttingBack = false;
+            }
             at = to;
             speed = 0;
         }
@@ -150,6 +157,15 @@ public final class Blur {
         if (step.lengthSqr() < 1.0e-6) return false;
         net.minecraft.world.phys.AABB box = player.getBoundingBox().move(0, 0.05, 0).move(step.normalize().scale(0.25));
         return !player.level().noCollision(player, box) && (rush || !player.level().noCollision(player, box.move(0, 0.55, 0)));
+    }
+
+    /**
+     * The server put them somewhere (Rewind, a swap, a command, an ender pearl): where they were before isn't where they ran from, so
+     * the speed check starts over from here instead of putting them back. A Closing Line moved off its line still ends ({@link
+     * ClosingLine#tick}).
+     */
+    static void movedByServer(SeveredState state) {
+        if (!puttingBack) state.forgetMotion();
     }
 
     /** Tells the owner's client, if anything it shows or drives by changed. */

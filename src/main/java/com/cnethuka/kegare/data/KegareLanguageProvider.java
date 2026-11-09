@@ -445,6 +445,7 @@ public final class KegareLanguageProvider extends LanguageProvider {
         add("message.kegare.time.no_target", "No one in sight.");
         add("message.kegare.time.immune", "Time won't move %s.");
         add("message.kegare.time.no_history", "%s has no past here to go back to.");
+        add("message.kegare.time.already_there", "%s was already there.");
         add("message.kegare.time.refused", "Something holds it where it is.");
         add("message.kegare.time.already_stopped", "Time already stands still here.");
         add("hud.kegare.point_maker.return", "Point Maker: return %ss");
