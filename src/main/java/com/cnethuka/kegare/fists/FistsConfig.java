@@ -38,6 +38,10 @@ public final class FistsConfig {
     public static ModConfigSpec.DoubleValue GRADE_STEP;
     // The zone (DESIGN §3.28)
     public static ModConfigSpec.DoubleValue ZONE_WINDOW;
+    public static ModConfigSpec.DoubleValue ZONE_SECONDS;
+    public static ModConfigSpec.DoubleValue ZONE_DAMAGE;
+    public static ModConfigSpec.DoubleValue ZONE_RMT;
+    public static ModConfigSpec.DoubleValue RESTORE_PER_SPARK;
 
     private FistsConfig() {}
 
@@ -92,6 +96,13 @@ public final class FistsConfig {
                 .defineInRange("zoneWindow", 1.6, 1.0, 100.0);
         b.pop();
         b.pop();
+        b.pop();
+        b.comment("The zone: a Black Spark puts you in it, at 120% of your potential, where the next one comes easier.").push("zone");
+        ZONE_SECONDS = b.comment("How long it lasts. Each Black Spark in it starts it over.").defineInRange("zoneSeconds", 10.0, 0.0, 600.0);
+        ZONE_DAMAGE = b.comment("Your damage, every kind, while in it (costs unchanged).").defineInRange("damage", 1.2, 0.0, 100.0);
+        ZONE_RMT = b.comment("Your Reverse Malice Technique's healing while in it, which ignores injury fatigue too.").defineInRange("rmtHealing", 1.2, 0.0, 100.0);
+        RESTORE_PER_SPARK = b.comment("Each Black Spark landed in the zone takes this much injury fatigue away for the rest of the fight (0 to 1).")
+                .defineInRange("restorePerSpark", 0.15, 0.0, 1.0);
         b.pop();
     }
 

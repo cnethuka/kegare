@@ -52,9 +52,17 @@ public final class FistsEvents {
         return attacker.getMainHandItem().isEmpty() ? FistsConfig.FIST_BONUS.get() : FistsConfig.WEAPON_BONUS.get();
     }
 
+    /** The zone's 120%, on every kind of damage they deal, after everything else that adds to a hit. */
+    @SubscribeEvent(priority = net.neoforged.bus.api.EventPriority.LOWEST)
+    static void onIncomingZone(LivingIncomingDamageEvent event) {
+        Zone.onIncoming(event);
+    }
+
     @SubscribeEvent
     static void onPlayerTick(PlayerTickEvent.Post event) {
-        if (event.getEntity() instanceof ServerPlayer player && (FistsTell.showing(player) || ReinforcedFists.isOn(player))) FistsTell.sync(player);
+        if (!(event.getEntity() instanceof ServerPlayer player)) return;
+        Zone.tick(player);
+        if (FistsTell.showing(player) || ReinforcedFists.isOn(player) || Zone.in(player)) FistsTell.sync(player);
     }
 
     @SubscribeEvent
@@ -69,7 +77,10 @@ public final class FistsEvents {
 
     @SubscribeEvent
     static void onRespawn(PlayerEvent.PlayerRespawnEvent event) {
-        if (event.getEntity() instanceof ServerPlayer player) FistsTell.forget(player);
+        if (event.getEntity() instanceof ServerPlayer player) {
+            Zone.end(player); // a death ends the zone
+            FistsTell.forget(player);
+        }
     }
 
     @SubscribeEvent
@@ -81,6 +92,7 @@ public final class FistsEvents {
     static void onLogout(PlayerEvent.PlayerLoggedOutEvent event) {
         FistsTell.forget(event.getEntity().getUUID());
         BlackSpark.forget(event.getEntity().getUUID());
+        Zone.forget(event.getEntity().getUUID());
     }
 
     @SubscribeEvent
@@ -88,6 +100,7 @@ public final class FistsEvents {
         FistsTell.clear();
         SecondImpact.clear();
         BlackSpark.clear();
+        Zone.clear();
         com.cnethuka.kegare.timing.TimingLog.clear();
     }
 }

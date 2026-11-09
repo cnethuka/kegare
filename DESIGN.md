@@ -372,7 +372,7 @@ All timestamps use **level game time**. They persist across restarts and are ide
   - accents along the tray and crest in the technique's Malice color.
 - The selected ability's name shows above hearts/food for 2 s after a number key selects it (`kegare:combat_name`).
 - The melee layer's cues sit under the crosshair, in and out of Technique Mode and for Severed players too, only while there's something to show: **Reinforced** (gold, a Strike is ready), **Dash** and **Recovering** with thin countdown bars (§3.22). Severed players' own cues follow them there: **Blur**, **Winded** and
-  **Closing Line** (the last two with countdown bars, §3.27).
+  **Closing Line** (the last two with countdown bars, §3.27). Black Spark's zone adds **120%** with the zone's time left (§3.28).
 - Severed players never get the panel (G is Blur for them, §3.27). Everything is hidden when F1 hides the GUI and in spectator
   mode. Client config `hud.enabled` turns all of it off.
 
@@ -416,6 +416,7 @@ Every command reads `/kegare <system> <action> [player] [value]`.
 | `/kegare loadout reset [player]` | Back to the innate technique's default layout |
 | `/kegare debug spark log <on\|off>` | Every Black Spark try (its gap, the rolled offset, the window and each factor, and the power when it lands) and Parry's two timings (§3.29), to the op who asked and nobody else |
 | `/kegare debug spark force <player>` | Their next melee hit is a Black Spark, whatever the timing (for testing) |
+| `/kegare debug spark zone <player> <seconds>` | Put them in the zone for that long (0 ends it); it starts no chain (§3.28) |
 | `/kegare debug rmt fatigue <player> <amount>` | Set how much injuries take off a player's Reverse Malice Technique output (0 to 1, §3.17) |
 | `/kegare debug rmt others unlock\|lock <player>` | Teach or take away healing others (RMT's special) without its moment: the Unlocks entry `kegare:rmt_heal_others` |
 | `/kegare debug rmt moment <player> <target>` | Force the moment now: the target glows for the player for `momentSeconds`, and healing them teaches it (if the player is eligible; it says if not) |
@@ -1250,13 +1251,13 @@ negative is positive energy, which is why it heals, and why its colors are white
   out at 1.6x. Peak, not Refinement: Refinement resets on a reroll, and RMT belongs to the player, not the technique.
   **This is a deliberate exception to §3.21's rule that progression only unlocks things: in canon, how fast reverse cursed
   energy heals rides on the user's output.** Other systems change it through `RmtOutput.addModifier` (Six Eyes,
-  §3.32; Black Spark's zone).
+  §3.32; Black Spark's zone, §3.28, uses it: ×1.2 and no fatigue drag while in the zone).
 - **Injury fatigue** (`RmtFatigue`, `[reverse_malice_technique.fatigue]`): injuries piling up drag the output down.
   It comes from damage **taken** (what came off your health, any source), never from healing, and healing doesn't take it away.
   fatigue = `fatigueWeight` (0.15) x (damage taken / max health), at most `maxFatigue` (0.6), and output is multiplied by
   (1 - fatigue), so it never stops RMT outright. It resets when your last fight ends (§3.21's fight tracker), on death and on
   logout; hurt with no fight between players (mobs, a fall), it lasts until your combat tag runs out. Everyone has it. Hooks for
-  later systems: `RmtFatigue.restore(player, amount)` and `RmtFatigue.ignore(player, ticks)` (Black Spark's zone).
+  later systems: `RmtFatigue.restore(player, amount)` and `RmtFatigue.ignore(player, ticks)` (Black Spark's zone uses both, §3.28).
 - **Shown** to its owner: the Sorcerer screen's details for it read "Output 1.36x, injuries -20%" (`RmtOutputPayload`, sent
   when either changes), and `/kegare info` has the same line.
 - **Expensive:** 40 Malice to start, then **96 Malice/s**, about double a typical attack's cost. Shared abilities take
@@ -2701,6 +2702,27 @@ a millionth of a second of a hit. It isn't random, but nobody can do it at will.
 - **Tests:** `BlackSparkTest` (the power formula and table, with no cap; the offset never sent; each window factor moving it the right
   way and the cap; a try only right after Fists go on and only once, a hit and a miss by the offset, the Strike on the scale, bosses
   damaged and never moved by it, the knockback, a forced one, and the first-ever Insight paid once).
+
+**The zone** (`Zone`; numbers in `[reinforced_fists.zone]`). Canon: after a Black Flash the sorcerer is "in the zone", at 120% of their
+potential, where the next one comes easier, and consecutive Black Flashes can rebuild a sorcerer's healing output.
+- A Black Spark puts you in the zone for `zoneSeconds` (10); each one in it starts it over.
+- **120%:** while in it your damage, every kind (melee, techniques, a second impact), is ×`damage` (1.2), added after everything else
+  that adds to a hit, and your RMT healing is ×`rmtHealing` (1.2) (`RmtOutput.addModifier`, §3.17). Costs are unchanged. The hit that
+  put you in the zone isn't one of the zone's; one landed in it is.
+- **RMT and injuries:** in the zone RMT ignores injury fatigue (its output is as if there were none, and hits taken add none:
+  `RmtFatigue.ignore` for the zone's length), and each Black Spark landed in the zone takes `restorePerSpark` (0.15) of the fatigue away
+  for the rest of the fight (`RmtFatigue.restore`). One helps and a chain fixes it, with no fixed count.
+- **Wider:** the window is ×`zoneWindow` (1.6) while you're in it, so chains are possible.
+- **The chain** counts Black Sparks landed while the zone from the one before is still up (1 for the one that started it). It ends when
+  the zone does. Death ends the zone.
+- **HUD:** a small "120% · 7s" cue under the crosshair with the melee cues (§3.6), with a bar for the zone's time left (`ZoneHud`,
+  `ZonePayload`). Others see a faint flicker of black sparks round both your fists while you're in it: a few small black chips with a
+  rim of your Malice color (the face a disguise shows, as for the burn), each there for a tick and gone (`FistsPayload.ZONE`, drawn by
+  `FistBurn.drawFlicker`, at every effects setting). Not in your own first person (the cue is yours).
+- `/kegare debug spark zone <player> <seconds>` puts them in it (0 ends it); it starts no chain.
+- **Tests:** `ZoneTest` (in for its time; x1.2 on melee and a technique but not on the hit that started it; RMT x1.2 with its fatigue
+  ignored; refreshed, restoring fatigue; the chain 1, 2, then ended with the zone and starting over at 1; the command), `ZoneFatigueTest`
+  (hits in the zone add no fatigue).
 
 ### 3.29 Sub-tick timing (package `timing`)
 

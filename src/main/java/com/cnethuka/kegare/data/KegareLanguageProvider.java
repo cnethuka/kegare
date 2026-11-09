@@ -70,6 +70,7 @@ public final class KegareLanguageProvider extends LanguageProvider {
         add("hud.kegare.melee.strike", "Reinforced");
         add("hud.kegare.melee.dash", "Dash");
         add("hud.kegare.melee.recovery", "Recovering");
+        add("hud.kegare.zone", "120%% · %ss");
         add("gui.kegare.settings.dash_double_tap", "Double-tap sprint to Dash");
         add("gui.kegare.settings.dash_double_tap.200", "Fast");
         add("gui.kegare.settings.dash_double_tap.300", "Normal");
@@ -722,6 +723,9 @@ public final class KegareLanguageProvider extends LanguageProvider {
         add("commands.kegare.debug.spark.log.on", "Every Black Spark try (its gap, the rolled offset and the window) and Parry's two timings will be shown to you.");
         add("commands.kegare.debug.spark.log.off", "The Black Spark log is off.");
         add("commands.kegare.debug.spark.force", "%s's next melee hit is a Black Spark.");
+        add("commands.kegare.debug.spark.zone", "%s is in the zone for %s seconds.");
+        add("commands.kegare.debug.spark.zone.off", "%s is out of the zone.");
+        add("commands.kegare.help.debug.spark.zone", "Put the player in the zone for that many seconds (0 ends it). It starts no chain.");
         add("commands.kegare.debug.rmt.fatigue", "%s's injuries take %s off their Reverse Malice Technique: output %sx.");
         add("commands.kegare.debug.rmt.others.unlocked", "%s can heal others with Reverse Malice Technique now.");
         add("commands.kegare.debug.rmt.others.locked", "%s can no longer heal others.");

@@ -23,9 +23,9 @@ public final class FistsTell {
 
     private FistsTell() {}
 
-    /** What's there now: {@link FistsPayload#BURN} while Fists are on. */
+    /** What's there now: {@link FistsPayload#BURN} while Fists are on, {@link FistsPayload#ZONE} while they're in the zone. */
     static int flags(ServerPlayer player, boolean on) {
-        return on ? FistsPayload.BURN : 0;
+        return (on ? FistsPayload.BURN : 0) | (Zone.in(player) ? FistsPayload.ZONE : 0);
     }
 
     static void sync(ServerPlayer player) {

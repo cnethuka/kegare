@@ -43,7 +43,8 @@ import net.neoforged.neoforge.event.entity.living.LivingIncomingDamageEvent;
 public final class BlackSpark {
     @FunctionalInterface
     public interface Listener {
-        void onSpark(ServerPlayer attacker, LivingEntity target);
+        /** @param chain Black Sparks in the attacker's chain with this one (1: it started the zone) */
+        void onSpark(ServerPlayer attacker, LivingEntity target, int chain);
     }
 
     static final class State {
@@ -57,6 +58,10 @@ public final class BlackSpark {
     private static final RandomSource SECRET = RandomSource.create();
     private static final Map<UUID, State> STATES = new HashMap<>();
     private static final List<Listener> LISTENERS = new CopyOnWriteArrayList<>();
+    /** The listeners, for tests to take theirs off again. */
+    static final List<Listener> LISTENERS_FOR_TESTS = LISTENERS;
+    /** Told before the listeners: the zone, so the chain they're told is the new one. */
+    private static final List<java.util.function.Consumer<ServerPlayer>> FIRST = new CopyOnWriteArrayList<>();
     /** Victims a Black Spark is knocking back, once the attack is over (its own knockback done). */
     private static final Map<LivingEntity, ServerPlayer> KNOCK = new WeakHashMap<>();
     /** For tests: the next try's offset, instead of a secret roll. */
@@ -66,6 +71,10 @@ public final class BlackSpark {
 
     public static void listen(Listener listener) {
         LISTENERS.add(listener);
+    }
+
+    static void listenFirst(java.util.function.Consumer<ServerPlayer> listener) {
+        FIRST.add(listener);
     }
 
     static State state(ServerPlayer player) {
@@ -143,7 +152,9 @@ public final class BlackSpark {
                     hit, multiplier, amount * multiplier, target.getName().getString()));
         }
         InsightHooks.firstBlackSpark(attacker);
-        LISTENERS.forEach(listener -> listener.onSpark(attacker, target));
+        FIRST.forEach(listener -> listener.accept(attacker));
+        int chain = Zone.chain(attacker);
+        LISTENERS.forEach(listener -> listener.onSpark(attacker, target, chain));
     }
 
     /**
