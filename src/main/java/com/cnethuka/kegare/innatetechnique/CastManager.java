@@ -197,6 +197,25 @@ public final class CastManager {
     }
 
     /** Pays for a cast, and tells the shared hit path what it cost. */
+    /** Changes what an active toggle's upkeep drains each second (Sustained Flow, DESIGN §3.31). Never a start cost, never a channel. */
+    @FunctionalInterface
+    public interface ToggleUpkeepModifier {
+        double modify(ServerPlayer player, Ability ability, double perSecond);
+    }
+
+    private static final java.util.List<ToggleUpkeepModifier> TOGGLE_UPKEEP = new java.util.concurrent.CopyOnWriteArrayList<>();
+
+    public static void addToggleUpkeepModifier(ToggleUpkeepModifier modifier) {
+        TOGGLE_UPKEEP.add(modifier);
+    }
+
+    /** What an active toggle drains a second: its upkeep, then every modifier. */
+    public static double toggleUpkeep(ServerPlayer player, Ability ability) {
+        double perSecond = ability.upkeepPerSecond(player);
+        for (ToggleUpkeepModifier modifier : TOGGLE_UPKEEP) perSecond = modifier.modify(player, ability, perSecond);
+        return Math.max(0.0, perSecond);
+    }
+
     private static boolean pay(ServerPlayer player, Ability ability, double amount) {
         if (!MaliceService.trySpend(player, amount)) return false;
         Landings.spent(player, ability, amount);
@@ -317,7 +336,7 @@ public final class CastManager {
             if (unmetRequirement(player, ability).isPresent()) {
                 feedback(player, CastResult.REQUIREMENT_UNMET, ability);
                 endToggle(player, innateTechnique, toggle, EndReason.CANCELLED);
-            } else if (!pay(player, ability, ability.upkeepPerSecond(player) / 20.0)) {
+            } else if (!pay(player, ability, toggleUpkeep(player, ability) / 20.0)) {
                 endToggle(player, innateTechnique, toggle, EndReason.OUT_OF_MALICE);
             } else {
                 AbilityContext tickCtx = new AbilityContext(player, innateTechnique, ability, toggle.slot, 1f, toggle.activeTicks);

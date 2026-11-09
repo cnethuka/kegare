@@ -938,6 +938,16 @@ def icon_background_reinforcement():
     return shaped_icon(f)
 
 
+def icon_sustained_flow():
+    """Sustained Flow (DESIGN §3.31): two smooth waves of Malice flowing level inside the loop of something left running."""
+    def f(x, y):
+        for base in (6.0, 9.5):
+            if abs(y + 0.5 - (base + 1.3 * math.sin((x + 0.5) * 0.85))) <= 0.75 and 3 <= x <= 12:
+                return TEAL
+        return _loop(x, y, MALICE, r0=6.3, r1=7.3)
+    return shaped_icon(f)
+
+
 def aura_shimmer() -> "Image.Image":
     """A Six Eyes bearer's glimpse of Background RMT (DESIGN §3.31): a soft four-pointed glint, white to be tinted green (smooth)."""
     n = 32
@@ -2519,6 +2529,7 @@ def build() -> dict[str, Image.Image]:
     out["view_background"] = icon_view_background()
     out["background/background_rmt"] = icon_background_rmt()
     out["background/background_reinforcement"] = icon_background_reinforcement()
+    out["background/sustained_flow"] = icon_sustained_flow()
     out["view_progress"] = icon(ICON_VIEW_PROGRESS, TEAL)
     out["view_traits"] = icon(ICON_VIEW_TRAITS, ICE)
     out["view_pity"] = icon(ICON_VIEW_PITY, GOLD)

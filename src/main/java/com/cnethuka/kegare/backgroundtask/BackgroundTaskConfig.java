@@ -16,6 +16,9 @@ public final class BackgroundTaskConfig {
     // Background Reinforcement
     public static ModConfigSpec.DoubleValue REINFORCEMENT_STRENGTH;
     public static ModConfigSpec.DoubleValue REINFORCEMENT_DRAIN;
+    // Sustained Flow
+    public static ModConfigSpec.DoubleValue FLOW_REDUCTION;
+    public static ModConfigSpec.DoubleValue FLOW_DRAIN;
 
     private BackgroundTaskConfig() {}
 
@@ -39,6 +42,12 @@ public final class BackgroundTaskConfig {
         REINFORCEMENT_STRENGTH = b.comment("Its share of the Reinforcement ability's damage reductions and knockback resistance. With the ability on",
                 "too, they don't stack: the stronger applies.").defineInRange("backgroundStrength", 0.4, 0.0, 1.0);
         REINFORCEMENT_DRAIN = b.comment("Malice drained per second while it runs.").defineInRange("drainPerSecond", 4.0, 0.0, 100_000.0);
+        b.pop();
+
+        b.comment("Sustained Flow: a steady flow that makes your active toggles cheaper to keep up. Unlocked at Refinement 5.").push("sustained_flow");
+        FLOW_REDUCTION = b.comment("Share taken off every active toggle's per-second upkeep (Reinforced Fists, Reinforcement, Accelerate, Rime",
+                "Shell, any toggle). Never a start cost, never another Background Task.").defineInRange("flowReduction", 0.3, 0.0, 1.0);
+        FLOW_DRAIN = b.comment("Malice drained per second while it runs.").defineInRange("drainPerSecond", 1.5, 0.0, 100_000.0);
         b.pop();
 
         b.pop();

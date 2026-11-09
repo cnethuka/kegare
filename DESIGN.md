@@ -2959,6 +2959,16 @@ ability on the bar, but it takes no bar slot and leaves the hands free.
   resistance; with the ability on, the ability's and no more; back to the background's when the ability goes off; nothing when off;
   the calm aura, then the full one).
 
+**Sustained Flow** (`sustained_flow`, `SustainedFlow`; numbers in `[background_tasks.sustained_flow]`)
+- **Unlock:** Refinement 5 (an Unlocks entry, not tied to the technique: kept once earned, even after a reroll; never Severed).
+- **Effect:** while it runs, the upkeep of your active toggles drains `flowReduction` (30%) less: Reinforced Fists, the Reinforcement
+  ability, Accelerate, Rime Shell and any other toggle's per-second cost (`CastManager.toggleUpkeep`, through
+  `CastManager.addToggleUpkeepModifier`). Not other Background Tasks (they pay their own drain, outside the cast system), not a
+  channel (RMT's upkeep stays), and never a start cost. Its own drain is small: `drainPerSecond` 1.5.
+- **Nothing visible.** Icon: two waves flowing level inside the loop.
+- **Tests:** `SustainedFlowTest` (Refinement 5, kept through a reroll; Fists, Reinforcement, Rime Shell and Accelerate each 30% less
+  with it and in full without it; the real drain with two toggles on; start costs, Background RMT's drain and RMT's channel in full).
+
 - **Tests:** `BackgroundTasksTest` (with test-only tasks): 2 slots, 3 with the eyes, none Severed; losing the eyes switches off the
   third and keeps it, gaining them gives it back; slot changes refused in a fight, switching allowed; locked refused; the drain, the
   effect every tick, pausing by its own rule and when it can't pay, resuming; moving and swapping; kept through a reroll and the save

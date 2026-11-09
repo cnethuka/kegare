@@ -243,6 +243,9 @@
   "background_task.kegare.background_rmt": "Background RMT",
   "background_task.kegare.background_rmt.desc": "Reverse Malice Technique left running: it heals you slowly and steadily at %1$s of your channelled rate, even at full health, so damage is healed as it lands. It drains Malice and slows your natural Malice regeneration while it runs, and shortens any Burnout. It pauses below %2$s Malice and resumes above %3$s.",
   "background_task.kegare.background_rmt.unlock": "Heal 500 health in total with your own Reverse Malice Technique.",
+  "background_task.kegare.sustained_flow": "Sustained Flow",
+  "background_task.kegare.sustained_flow.desc": "A steady flow of Malice that makes your active toggles cheaper to keep up: their upkeep drains %1$s less (Reinforced Fists, Reinforcement, Accelerate, Rime Shell and the rest). Never a start cost, and not other Background Tasks. Nothing shows.",
+  "background_task.kegare.sustained_flow.unlock": "Reach Refinement 5.",
   "commands.kegare.assessment.add": "Added a %s (Technique use %s) against %s to %s, who is %s.",
   "commands.kegare.assessment.met": "met.",
   "commands.kegare.assessment.none": "Their next step takes no Assessment.",
@@ -782,6 +785,7 @@
   "kegare.configuration.fistBonus": "Fist Bonus",
   "kegare.configuration.flashSize": "Flash Size",
   "kegare.configuration.flightSeconds": "Flight Seconds",
+  "kegare.configuration.flowReduction": "Flow Reduction",
   "kegare.configuration.focus": "Focus",
   "kegare.configuration.followDistance": "Follow Distance",
   "kegare.configuration.followRewind": "Follow Rewind",
@@ -1080,6 +1084,7 @@
   "kegare.configuration.surviveMinDamage": "Survive Min Damage",
   "kegare.configuration.surviveSeconds": "Survive Seconds",
   "kegare.configuration.survived_standstill": "Survived Standstill",
+  "kegare.configuration.sustained_flow": "Sustained Flow",
   "kegare.configuration.swap": "Swap",
   "kegare.configuration.switchback": "Switchback",
   "kegare.configuration.takenFall": "Taken Fall",
@@ -1317,5 +1322,6 @@
   "trait.kegare.six_eyes.desc": "Eyes that see through everything. Only one bearer at a time. (No effects yet.)",
   "unlock.kegare.background_reinforcement": "Background Reinforcement",
   "unlock.kegare.background_rmt": "Background RMT",
-  "unlock.kegare.rmt_heal_others": "Healing others"
+  "unlock.kegare.rmt_heal_others": "Healing others",
+  "unlock.kegare.sustained_flow": "Sustained Flow"
 }
