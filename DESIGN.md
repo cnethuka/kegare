@@ -493,7 +493,7 @@ Malice is always shown as whole numbers (floored, like the HUD); the stored valu
   touch players' saved data, so anyone already born keeps the capacity they rolled. **Version 3** is the stronger Severed melee numbers.
   **Version 4** is the Impact System's Malice input (§3.23): its re-tuned weights and tiers, and battle damage's `strengthScale`,
   `radiusPerStrength` and slams' `strengthPerSpeed` with them (§3.24). **Version 5** is Blur's top speed, 0.56 to 0.7 (§3.27),
-  kept clearly faster than Accelerate's new clock (§3.26). A later change to a shipped default that needs the same
+  kept clearly faster than Accelerate's new clock (§3.26). **Version 6** is Six Eyes efficiency's curve (§3.32): `attunement` 0.8 to 1.5 and `rmtOutputWeight` 0.15 to 0.052. A later change to a shipped default that needs the same
   treatment adds its own table and bumps `CURRENT_VERSION`.
 
 ### 3.10 Data generation and art

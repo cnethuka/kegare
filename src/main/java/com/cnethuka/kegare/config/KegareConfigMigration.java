@@ -19,7 +19,7 @@ import net.neoforged.neoforge.common.ModConfigSpec;
  */
 public final class KegareConfigMigration {
     /** The version these numbers are for. A file with no {@code configVersion} reads as 1, from before there was one. */
-    public static final int CURRENT_VERSION = 5;
+    public static final int CURRENT_VERSION = 6;
 
     /** Version 2, the Malice rescale: every value it changed, and its default before that. The new value is always the spec's default. */
     static final Map<String, Number> RESCALE_OLD_DEFAULTS = Map.ofEntries(
@@ -118,11 +118,17 @@ public final class KegareConfigMigration {
     /** One migration: a file below {@code version} goes through it. */
     record Step(int version, Map<String, Number> oldDefaults, String what) {}
 
+    /** Version 6, efficiency's curve (DESIGN §3.32): a square root's weights, not a logarithm's. Left as they were, RMT would heal at x3.6 where x1.9 is meant. */
+    static final Map<String, Number> EFFICIENCY_CURVE_OLD_DEFAULTS = Map.ofEntries(
+            entry("six_eyes.efficiency.attunement", 0.8),
+            entry("six_eyes.efficiency.rmtOutputWeight", 0.15));
+
     static final List<Step> STEPS = List.of(
             new Step(2, RESCALE_OLD_DEFAULTS, "the rescaled Malice numbers (new tiers, costs and regen)"),
             new Step(3, SEVERED_MELEE_OLD_DEFAULTS, "the stronger Severed melee numbers"),
             new Step(4, MALICE_INPUT_OLD_DEFAULTS, "the Impact System's Malice input (its weights, tiers and battle damage scale)"),
-            new Step(5, BLUR_SPEED_OLD_DEFAULTS, "Blur's top speed, kept clearly faster than Accelerate"));
+            new Step(5, BLUR_SPEED_OLD_DEFAULTS, "Blur's top speed, kept clearly faster than Accelerate"),
+            new Step(6, EFFICIENCY_CURVE_OLD_DEFAULTS, "Six Eyes efficiency's new curve (its Attunement and RMT output weights)"));
 
     enum Action { NONE, MOVE_TO_NEW_DEFAULT, KEEP_HAND_EDITED }
 

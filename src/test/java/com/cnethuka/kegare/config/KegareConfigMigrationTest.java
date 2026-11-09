@@ -39,6 +39,15 @@ class KegareConfigMigrationTest {
     }
 
     @Test
+    void theEfficiencyCurveStepCoversItsTwoWeights() {
+        assertEquals(1.5, newDefault("six_eyes.efficiency.attunement"));
+        assertEquals(0.052, newDefault("six_eyes.efficiency.rmtOutputWeight"));
+        for (Map.Entry<String, Number> old : KegareConfigMigration.EFFICIENCY_CURVE_OLD_DEFAULTS.entrySet()) {
+            assertNotEquals(old.getValue().doubleValue(), newDefault(old.getKey()), old.getKey());
+        }
+    }
+
+    @Test
     void everyListedValueExistsAndReallyChanged() {
         assertEquals(52, KegareConfigMigration.RESCALE_OLD_DEFAULTS.size());
         for (Map.Entry<String, Number> old : KegareConfigMigration.RESCALE_OLD_DEFAULTS.entrySet()) {
