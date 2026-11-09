@@ -15,20 +15,33 @@ import net.neoforged.neoforge.event.tick.PlayerTickEvent;
 public final class RmtEvents {
     private RmtEvents() {}
 
-    /** A real hit from another player: remember it, and maybe roll for the orb. */
+    /** A real hit from another player: remember it, and maybe roll for the orb. Any hit at all: injury fatigue. */
     @SubscribeEvent
     static void onDamage(LivingDamageEvent.Post event) {
-        if (event.getNewDamage() <= 0 || !(event.getEntity() instanceof ServerPlayer victim) || victim instanceof FakePlayer) return;
+        if (event.getNewDamage() <= 0 || !(event.getEntity() instanceof ServerPlayer victim)) return;
+        if (!victim.isFakePlayer()) RmtFatigue.onDamageTaken(victim, event.getNewDamage());
+        if (victim instanceof FakePlayer) return;
         if (event.getSource().getEntity() instanceof Player attacker && attacker != victim) GreenOrbService.onHitByPlayer(victim);
     }
 
     @SubscribeEvent
     static void onPlayerTick(PlayerTickEvent.Post event) {
-        if (event.getEntity() instanceof ServerPlayer player && !(player instanceof FakePlayer)) GreenOrbService.tick(player);
+        if (event.getEntity() instanceof ServerPlayer player && !(player instanceof FakePlayer)) {
+            GreenOrbService.tick(player);
+            RmtFatigue.tick(player);
+        }
     }
 
     @SubscribeEvent
     static void onDeath(LivingDeathEvent event) {
-        if (event.getEntity() instanceof ServerPlayer player && !event.isCanceled()) GreenOrbService.clear(player);
+        if (event.getEntity() instanceof ServerPlayer player && !event.isCanceled()) {
+            GreenOrbService.clear(player);
+            RmtFatigue.reset(player);
+        }
+    }
+
+    @SubscribeEvent
+    static void onLogout(net.neoforged.neoforge.event.entity.player.PlayerEvent.PlayerLoggedOutEvent event) {
+        if (event.getEntity() instanceof ServerPlayer player) RmtFatigue.reset(player);
     }
 }

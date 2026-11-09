@@ -13,10 +13,19 @@ import net.minecraft.core.particles.ParticleTypes;
  * vanilla stand-ins for its Photon effects.
  */
 public final class RmtClient {
+    /** Their output and injury fatigue as the server last said (the Sorcerer screen's RMT details). */
+    static com.cnethuka.kegare.rmt.RmtOutputPayload output = com.cnethuka.kegare.rmt.RmtOutputPayload.NONE;
+
     private RmtClient() {}
 
     public static void init() {
         OrbPayload.setClientHandler(GreenOrbClient::handle);
+        com.cnethuka.kegare.rmt.RmtOutputPayload.setClientHandler(payload -> output = payload);
+        NeoForge.EVENT_BUS.addListener((net.neoforged.neoforge.client.event.ClientPlayerNetworkEvent.LoggingOut e) ->
+                output = com.cnethuka.kegare.rmt.RmtOutputPayload.NONE);
+        // Under its stats on the Sorcerer screen: how strongly it heals right now.
+        com.cnethuka.kegare.client.gui.SorcererScreen.addDetailLines(ability -> ability.id().equals(RmtIds.ABILITY)
+                ? java.util.List.of(outputLine(output.output(), output.fatigue())) : java.util.List.of());
         NeoForge.EVENT_BUS.addListener(GreenOrbClient::onClientTick);
         NeoForge.EVENT_BUS.addListener(GreenOrbClient::onLogout);
         VanillaFallback.register(RmtIds.FX_CHANNEL_AURA, new VanillaFallback.Spec(ParticleTypes.HAPPY_VILLAGER, 1, 6, 0.5, 0.0));
@@ -32,5 +41,13 @@ public final class RmtClient {
         VanillaFallback.register(RmtIds.FX_HEAL_PULSE_SELF, new VanillaFallback.Spec(ParticleTypes.HAPPY_VILLAGER, 0, 0, 0.6, 0.0));
         VisualHooks.registerEffect(RmtIds.FX_CHANNEL_AURA_SELF);
         VisualHooks.registerEffect(RmtIds.FX_HEAL_PULSE_SELF);
+    }
+
+    /** "Output 1.36x, injuries -20%" (the injuries only when there are any). */
+    public static net.minecraft.network.chat.Component outputLine(float output, float fatigue) {
+        String x = String.format(java.util.Locale.ROOT, "%.2f", output);
+        int injuries = Math.round(fatigue * 100);
+        return injuries > 0 ? net.minecraft.network.chat.Component.translatable("gui.kegare.rmt.output_injured", x, "-" + injuries + "%")
+                : net.minecraft.network.chat.Component.translatable("gui.kegare.rmt.output", x);
     }
 }

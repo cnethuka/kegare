@@ -18,6 +18,10 @@ public final class RmtState {
     long lastHitByPlayer = Long.MIN_VALUE;
     /** When the last heal pulse played: about once a second while it's actually healing. */
     long lastPulse = Long.MIN_VALUE;
+    /** Injury fatigue this fight (RmtFatigue), and until when damage adds none. */
+    double fatigue;
+    long fatigueIgnoredUntil = Long.MIN_VALUE;
+    @javax.annotation.Nullable RmtOutputPayload sentOutput;
 
     public boolean hasOrb() {
         return path != null;

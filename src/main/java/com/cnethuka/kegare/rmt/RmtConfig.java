@@ -11,6 +11,8 @@ public final class RmtConfig {
     public static ModConfigSpec.DoubleValue MAX_DURATION;
     public static ModConfigSpec.DoubleValue OUTPUT_GRADE_BONUS;
     public static ModConfigSpec.DoubleValue OUTPUT_PEAK_BONUS;
+    public static ModConfigSpec.DoubleValue FATIGUE_WEIGHT;
+    public static ModConfigSpec.DoubleValue MAX_FATIGUE;
 
     // The green orb (unlock)
     public static ModConfigSpec.DoubleValue ORB_HEALTH_THRESHOLD;
@@ -50,6 +52,13 @@ public final class RmtConfig {
                 "unlocking things: in canon, reverse healing rides on the user's output.").push("output");
         OUTPUT_GRADE_BONUS = b.comment("Added at Special Grade; 0 at Grade 4, evenly up the ladder between.").defineInRange("gradeBonus", 0.3, 0.0, 10.0);
         OUTPUT_PEAK_BONUS = b.comment("Added at the top Peak Refinement level; 0 at 0, evenly between.").defineInRange("peakBonus", 0.3, 0.0, 10.0);
+        b.pop();
+
+        b.comment("Injury fatigue: damage taken in a fight drags output down. fatigue = fatigueWeight x (damage taken / max health),",
+                "at most maxFatigue; output is multiplied by (1 - fatigue). Healing doesn't take it away. It resets when the fight ends,",
+                "on death and on logout.").push("fatigue");
+        FATIGUE_WEIGHT = b.defineInRange("fatigueWeight", 0.15, 0.0, 10.0);
+        MAX_FATIGUE = b.comment("Never more than this, so it never stops healing outright.").defineInRange("maxFatigue", 0.6, 0.0, 0.95);
         b.pop();
 
         b.comment("The green orb: how Reverse Malice Technique is found. Only its finder sees it.").push("orb");

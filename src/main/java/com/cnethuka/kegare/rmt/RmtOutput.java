@@ -51,9 +51,9 @@ public final class RmtOutput {
         return 1.0 + gradeBonus(GradeService.grade(player)) + peakBonus(RefinementService.peak(player));
     }
 
-    /** What their healing runs at right now. */
+    /** What their healing runs at right now: Grade and Peak, less what injuries take ({@link RmtFatigue}), then any modifiers. */
     public static double of(ServerPlayer player) {
-        double output = base(player);
+        double output = base(player) * (1.0 - RmtFatigue.of(player));
         for (Modifier modifier : MODIFIERS) output = modifier.modify(player, output);
         return Math.max(0.0, output);
     }

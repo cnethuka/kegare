@@ -122,6 +122,11 @@ public final class KegareCommand {
         List<Component> shared = new ArrayList<>();
         for (ResourceLocation id : SharedAbilityService.get(player).unlocked()) SharedAbilities.get(id).ifPresent(a -> shared.add(a.displayName()));
         lines.add(Component.translatable("commands.kegare.info.shared", join(shared)));
+        if (SharedAbilityService.isUnlocked(player, com.cnethuka.kegare.rmt.RmtIds.ABILITY)) {
+            int injuries = (int) Math.round(com.cnethuka.kegare.rmt.RmtFatigue.of(player) * 100);
+            lines.add(Component.translatable("commands.kegare.info.rmt", com.cnethuka.kegare.rmt.Rmt.REVERSE_MALICE_TECHNIQUE.displayName(),
+                    String.format(java.util.Locale.ROOT, "%.2f", com.cnethuka.kegare.rmt.RmtOutput.of(player)), injuries > 0 ? "-" + injuries + "%" : "0%"));
+        }
 
         List<Component> cooldowns = new ArrayList<>();
         innateTechnique.ifPresent(t -> innateTechniqueData.cooldowns().keySet().forEach(id -> AbilityLookup.find(t, id).ifPresent(a -> {

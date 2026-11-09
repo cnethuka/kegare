@@ -15,6 +15,7 @@ public final class Rmt {
 
     public static void init(IEventBus modBus) {
         GreenOrbService.register(modBus);
+        com.cnethuka.kegare.progression.FightTracker.addListener(report -> RmtFatigue.onFightEnded(report.player()));
         VisualHooks.registerEffect(RmtIds.FX_HEAL_PULSE);
         VisualHooks.registerEffect(RmtIds.FX_ORB);
         VisualHooks.registerEffect(RmtIds.FX_TRAIL_DOT);

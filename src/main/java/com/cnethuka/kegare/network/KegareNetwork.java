@@ -12,7 +12,7 @@ import net.neoforged.neoforge.network.registration.PayloadRegistrar;
  * decided and saved; screens are cosmetic.
  */
 public final class KegareNetwork {
-    public static final String VERSION = "20";
+    public static final String VERSION = "21";
 
     private KegareNetwork() {}
 
@@ -35,6 +35,8 @@ public final class KegareNetwork {
                 com.cnethuka.kegare.melee.MeleeHudPayload::handle);
         registrar.playToClient(com.cnethuka.kegare.severed.RushPayload.TYPE, com.cnethuka.kegare.severed.RushPayload.STREAM_CODEC,
                 com.cnethuka.kegare.severed.RushPayload::handle);
+        registrar.playToClient(com.cnethuka.kegare.rmt.RmtOutputPayload.TYPE, com.cnethuka.kegare.rmt.RmtOutputPayload.STREAM_CODEC,
+                com.cnethuka.kegare.rmt.RmtOutputPayload::handle);
         registrar.playToClient(com.cnethuka.kegare.severed.BlurPayload.TYPE, com.cnethuka.kegare.severed.BlurPayload.STREAM_CODEC,
                 com.cnethuka.kegare.severed.BlurPayload::handle);
         registrar.playToClient(com.cnethuka.kegare.severed.SensesPayload.TYPE, com.cnethuka.kegare.severed.SensesPayload.STREAM_CODEC,

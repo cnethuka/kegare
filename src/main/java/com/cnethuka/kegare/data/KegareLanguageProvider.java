@@ -335,6 +335,8 @@ public final class KegareLanguageProvider extends LanguageProvider {
         add("ability.kegare.reverse_malice_technique.desc", "Turn " + MALICE + " back on your own body. Hold to heal a little every second; "
                 + "release to stop. It drains " + MALICE + " fast. Interrupted by stuns and freezing like any channel.");
         add("message.kegare.rmt.unlocked", "Your body remembers how to heal.");
+        add("gui.kegare.rmt.output", "Output %sx");
+        add("gui.kegare.rmt.output_injured", "Output %sx, injuries %s");
 
         // Loadout
         add("ability_category.kegare.innate_technique", INNATE_TECHNIQUE);
@@ -708,6 +710,7 @@ public final class KegareLanguageProvider extends LanguageProvider {
         add("commands.kegare.info.loadout_entry", "%s %s");
         add("commands.kegare.info.loadout_empty_rest", "%s-%s empty");
         add("commands.kegare.info.shared", "Shared unlocked: %s");
+        add("commands.kegare.info.rmt", "%s: output %sx, injuries %s");
         add("commands.kegare.info.cooldowns", "Cooldowns: %s");
         add("commands.kegare.info.cooldown_entry", "%s %ss");
         add("commands.kegare.info.active", "Active: %s");

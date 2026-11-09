@@ -334,7 +334,8 @@ All timestamps use **level game time**. They persist across restarts and are ide
   cools down and how long that is) and `RushPayload` (S→C, to its owner: a Closing Line to drive, its line in three dimensions, or
   stop); G sends `MeleeIntentPayload.Action.BLUR`, and R while Blurring is the usual
   `SPECIAL_PRESS`, taken by Closing Line's cast interceptor.
-- Network version `20` (since Closing Line's line in three dimensions in `RushPayload` and its cooldown in `BlurPayload`, §3.27; `19`
+- Network version `21` (since RMT's rework, §3.17: `RmtOutputPayload`, then heal-others' `RmtLinkPayload` and `RmtMomentPayload`; `20`
+  was Closing Line's line in three dimensions in `RushPayload` and its cooldown in `BlurPayload`, §3.27; `19`
   was Severed's payloads, `18` Burnout's end time in the sync, §3.25, and Time Manipulation's payloads, §3.26). Bump it when payload formats change; mismatched clients are refused.
 
 ### 3.6 HUD
@@ -1240,6 +1241,14 @@ negative is positive energy, which is why it heals, and why its colors are white
   **This is a deliberate exception to §3.21's rule that progression only unlocks things: in canon, how fast reverse cursed
   energy heals rides on the user's output.** Other systems change it through `RmtOutput.addModifier` (Six Eyes,
   §3.32; Black Spark's zone).
+- **Injury fatigue** (`RmtFatigue`, `[reverse_malice_technique.fatigue]`): injuries piling up drag the output down.
+  It comes from damage **taken** (what came off your health, any source), never from healing, and healing doesn't take it away.
+  fatigue = `fatigueWeight` (0.15) x (damage taken / max health), at most `maxFatigue` (0.6), and output is multiplied by
+  (1 - fatigue), so it never stops RMT outright. It resets when your last fight ends (§3.21's fight tracker), on death and on
+  logout; hurt with no fight between players (mobs, a fall), it lasts until your combat tag runs out. Everyone has it. Hooks for
+  later systems: `RmtFatigue.restore(player, amount)` and `RmtFatigue.ignore(player, ticks)` (Black Spark's zone).
+- **Shown** to its owner: the Sorcerer screen's details for it read "Output 1.36x, injuries -20%" (`RmtOutputPayload`, sent
+  when either changes), and `/kegare info` has the same line.
 - **Expensive:** 40 Malice to start, then **96 Malice/s**, about double a typical attack's cost. Shared abilities take
   no innate technique's surroundings modifier.
 - **Ends** like every channel: release, out of Malice, `maxDuration` (0 = none), a stun or a freeze (interrupted). The **15 s
@@ -1266,7 +1275,8 @@ negative is positive energy, which is why it heals, and why its colors are white
   there, a hit healed as it lands, never above max or absorption; R fizzles; start cost, a twentieth a tick, healPerSecond after a
   second, upkeep; cooldown on release; a freeze interrupts it; it doesn't end healed up; a reroll resets the loadout but keeps the
   unlock; locking takes it off the bar. `RmtOutputTest`: Grade 4 at Peak 0 is 1x, Special Grade at Peak 10 is 1.6x, a reroll
-  doesn't lower it, the hook changes it.
+  doesn't lower it, the hook changes it. `RmtFatigueTest`: rising with damage taken, the cap, healing not removing it, the restore and
+  ignore hooks, reset at the fight's end, death and logout.
 
 ### 3.18 The green orb (unlocking RMT)
 `rmt.GreenOrbService` (server) and `rmt.client.GreenOrbClient`. Numbers in `[reverse_malice_technique.orb]`.
