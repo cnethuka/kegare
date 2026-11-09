@@ -341,7 +341,8 @@ All timestamps use **level game time**. They persist across restarts and are ide
   see behind where it is), and vanilla's own teleport and head packets for the delayed image.
 - **Sub-tick timing** (§3.29): `TimingNet.Stamp` (C→S, an input stamped with the client's clock, sent at the key press), `TimingNet.Ping`
   (S→C) and `TimingNet.Pong` (C→S, the client's clock), all handled on the network thread. Reinforced Fists' look is `FistsPayload` (§3.28).
-- Network version `25` (since Six Eyes, §3.32, and RMT's repair, §3.17: `Repair.Payload`, the brain meter in `ProgressionSnapshot`, and
+- Network version `26` (since Six Eyes' Reads read a body's whole state, §3.32: `ReadsPayload` gained mob health and the focus's body); `25`
+  was Six Eyes, §3.32, and RMT's repair, §3.17: `Repair.Payload`, the brain meter in `ProgressionSnapshot`, and
   Six Eyes' own (`SightPayloads`, `ReadsPayload`, `Strain.Hud`, `Strain.Collapsed`, `Edge.Spark`, `Attunement.PinPayload`); `24` was Reinforcement and Background Tasks, §3.16 and §3.31: `AuraPayload`, `BackgroundSyncPayload`,
   `BackgroundActionPayload`; `23` was too fast for the eye, §3.30:
   `SensedPositionsPayload`; `22` was Reinforced Fists and Black Spark, §3.28-3.29: `FistsPayload`, the timing stamps; `21` was RMT's rework, §3.17: `RmtOutputPayload`, then heal-others' `RmtLinkPayload` and `RmtMomentPayload`; `20`
@@ -3110,25 +3111,54 @@ for the eye" (§3.30).
     to read in falls back on what any mob shows: a pulse as it locks onto a target (LOCK), while it uses an item (LOOSE), and when its target comes into reach (SWING), again 16 ticks after a hit. That's a
     guess at when and not a reading: a ranged attack with no item shows only the lock. Vanilla's slimes, phantoms and vexes are in this group.
 - **Every setting:** the map, outlines, markers, voids and pulses don't change with Reduced or Vanilla: they're what the bearer plays by.
-**Reads** (`Reads`, `ReadsPayload`; client `ReadsClient`)
+**Reads** (`Reads`, `ReadsPayload`; client `ReadsClient`, `ReadsText`). The eyes perceive everything about what they look at, on players and mobs.
 - Every player and mob in the bearer's field of view gets a compact tag automatically, with no staring needed:
-  a player's innate technique and current Malice ("Rime · 820 Malice", in their Malice color), a mob's kind and flow ("Zombie ·
-  hostile flow", "Cow · faint flow").
+  a player's innate technique, current Malice and health ("Rime · 820 Malice · 14/20", in their Malice color), a mob's kind,
+  flow and health ("Zombie · hostile flow · 18/20", "Cow · faint flow · 10/10").
 - **Through a disguise:** a Swap disguise (Awareness, Mimic, Total Swap) still shows the borrowed face, but for a bearer the name tag and tab-list name stay the real one (`DisguiseClient`), and
-  the outline, the Read and the map are the wearer's own: the real name, color and technique. A puppet reads as what it is, in its owner's Malice color ("Steve's puppet · Puppet Manipulation"), and a Stand-In's borrowed name
-  tag says "Steve's puppet". Someone possessing a puppet keeps their name tag and is read as themself, and the puppet hidden inside them isn't read at all. What a melee or Fists tell shows stays the color of the face worn, for a
-  bearer too: the packet carries no other (§3.22).
-- The one nearest the crosshair (the server works it out from where the bearer looks: the nearest within 20 degrees and 96 blocks, walls
-  don't matter) gets full detail under its tag: what they're charging or channelling and how far ("Charging Glacial Lance 60%",
-  "Channelling Reverse Malice Technique 3.2s"), their active toggles and their cooldowns, or "Idle".
-- **Severed:** a Read only ever says "Void" (its payload holds nothing else).
-- **Never shown:** Grade (private, §3.21), traits, Refinement, Insight, and anything §1 keeps secret: the payloads have no field for them.
+  the outline, the Read and the map are the wearer's own: the real name, color and technique, and the wearer's own body (health, effects,
+  attributes: the face is all that's borrowed). A puppet reads as what it is, in its owner's Malice color ("Steve's puppet · Puppet
+  Manipulation · 12/20"), with its own body, a Stand-In too; a Stand-In's borrowed name tag says "Steve's puppet". Someone possessing a
+  puppet keeps their name tag and is read as themself, and the puppet hidden inside them isn't read at all. **A possessing player's body is
+  what they are right now:** they've taken the puppet's place, size and health, so that's the health read, with their own effects and
+  attributes, and "Possessing a puppet" in the status (possession shows to everyone anyway, the thread and the glow). What a melee
+  or Fists tell shows stays the color of the face worn, for a bearer too: the packet carries no other (§3.22).
+- **Full detail:** the one body nearest the crosshair, player or mob (the server works it out from where the bearer looks: the nearest
+  within 20 degrees and 96 blocks, walls don't matter) gets a panel beside it. First, for a player: what they're
+  charging or channelling and how far ("Charging Glacial Lance 60%", "Channelling Reverse Malice Technique 3.2s"), their active toggles
+  and their cooldowns, or "Idle". Then the body:
+  - health and max health, and absorption when there is some;
+  - armour, armour toughness and knockback resistance;
+  - attack damage, attack speed and movement speed as they are right now, every modifier counted (gear, effects, Reinforcement,
+    Accelerate), movement also as a share of the body's own base ("Move 0.130 (130%)"); an attribute it doesn't have isn't shown ("No
+    attack" for a cow);
+  - every active effect, hidden ones too, with its level and time left ("Speed II · 0:30", "∞" for one that never runs out), the
+    effect's own icon before it, green for good and red for bad. Up to three get a line each; with more they're shortened to icon, level
+    and time, three to a row, three rows at most, then "+N more";
+  - status, when there's any: burning, Freeze stacks, stunned and for how long, Burnout and its time left, possessing a puppet;
+  - for players, hunger.
+- **Severed:** a Read only ever says "Void": no health, no effects, nothing (its payloads hold nothing else: an empty energy in the
+  glance, an empty body in the focus).
+- **Never shown:** Grade (private, §3.21), Assessment, Refinement and Peak Refinement, Insight, traits, the brain meter, and anything §1
+  keeps secret: the payloads have no field for them.
 - **Readable in a six-player fight:** nearest first, at most the client setting's count (`[six_eyes] readTags`, 6; a Settings row only
   the bearer sees: 0, 3, 6, 10, 16), the focus always showing; fading with distance (full to 8 blocks, down to 30% at 64); a tag that would
-  cover the crosshair moves up out of its way, and tags that would overlap stack upward, nearest lowest. Every effects setting.
-- Sent every 4 ticks for players within 96 blocks. Mobs' tags come from what the eyes already see.
-- **Tests:** `ReadsTest` (compact Reads with technique and Malice; a void's says nothing; the focus at the crosshair, toggles and cooldowns
-  in its detail; none when nobody's there; no field for anything secret, and a Special Grade reading the same as a Grade 4).
+  cover the crosshair moves up out of its way, and tags that would overlap stack upward, nearest lowest. The panel is boxed (a dark backing
+  and a frame in the body's color), so it reads by day, at night and against the sky, and sits beside the body on the side away from the
+  crosshair, never over the box 22 pixels round it, and keeps its side while its body is within 24 pixels of the crosshair, so a body
+  crossing it doesn't make it flip back and forth; with no room either side it goes above or below, and if it fits nowhere it's drawn
+  smaller (0.75, 0.6, 0.5), never over the crosshair. Tags keep off it. It's GUI, so every effects setting shows it the same.
+- **Server-authoritative, the bearer only:** other players' effects and attributes aren't on a client, so the server sends them, to the
+  bearer only, every 4 ticks: every player within 96 blocks at a glance, the health of the mobs in view (in front of the bearer, within 80
+  degrees of where they look and 64 blocks, the nearest 24), and the body of the focus only. Nobody else is ever sent any of it.
+- **Tests:** `ReadsTest` (compact Reads with technique, Malice and health; a void's says nothing; the focus at the crosshair, toggles,
+  cooldowns and a charge in its detail; the whole body: health, absorption, armour from gear, Reinforcement's knockback resistance,
+  attack with a sword and Strength, Speed counted in movement, every effect with its level and time, a hidden one too, burning, Freeze,
+  a stun, Burnout, hunger, through the wire exactly; a zombie at a glance and in full, one behind the bearer not in view; a disguise read
+  as the wearer's own body; only the bearer is ever sent a Read; no field for anything secret, and a Special Grade reading the same as a
+  Grade 4), `ReadsTextTest` (numbers in words; many effects shortened; the panel never over the crosshair and always on screen, beside
+  its body on the far side, keeping its side as its body crosses the crosshair), `PossessionTest` (a possessing player read as themself, in
+  the puppet's body, with "Possessing a puppet").
 **Something's Missing** (Six Eyes tab, goal, hidden and silent like the rest of it): a full-detail Read of a Severed player for the first time. The
 focus is the Read the server decides for itself, so that's the one it counts.
 

@@ -102,6 +102,32 @@ class PossessionTest {
         });
     }
 
+    /** Six Eyes (DESIGN §3.32): someone possessing a puppet reads as themself, in the body they have now, the puppet's, and says so. */
+    @Test
+    void aPossessingPlayerIsReadAsThemselfInThePuppetsBody(MinecraftServer server) throws Exception {
+        TestServer.onServerThread(server, () -> {
+            ServerLevel level = setUp(server);
+            ServerPlayer p = owner(server, level, "possess_read");
+            try {
+                PuppetEntity puppet = puppetInFront(server, p, PuppetConfig.ticks(PuppetConfig.CREATION_HALF_CHARGE));
+                puppet.setHealth(puppet.getMaxHealth() - 3f);
+                Possession.possess(p, puppet);
+                assertTrue(Possession.isPossessing(p), "setup: inside it");
+                com.cnethuka.kegare.sixeyes.ReadsPayload.Energy energy = com.cnethuka.kegare.sixeyes.Reads.glance(p).energy().orElseThrow();
+                assertEquals(java.util.Optional.of(PuppetManipulation.PUPPET_MANIPULATION.getId()), energy.technique(), "read as themself");
+                assertEquals(p.getHealth(), energy.health(), "in the body they have now");
+                assertEquals(puppet.getMaxHealth() - 3f, energy.health(), 1e-4, "which is the puppet's");
+                com.cnethuka.kegare.sixeyes.ReadsPayload.Body body = com.cnethuka.kegare.sixeyes.Reads.detail(p).body().orElseThrow();
+                assertTrue(body.status().possessing(), "and it says they're possessing a puppet");
+                assertEquals(p.getMaxHealth(), body.vitals().maxHealth(), "the puppet's size of life, as theirs now");
+                Possession.release(p, Possession.Return.RETURNED);
+                assertFalse(com.cnethuka.kegare.sixeyes.Reads.detail(p).body().orElseThrow().status().possessing(), "back: not any more");
+            } finally {
+                cleanUp(server, level, p);
+            }
+        });
+    }
+
     /**
      * The possession slide: a hidden puppet trails just behind its possessor on the client, and vanilla lets any mob on the
      * client shove the players it overlaps, so it pushed them along for as long as it kept up. A possessed puppet pushes nothing.
