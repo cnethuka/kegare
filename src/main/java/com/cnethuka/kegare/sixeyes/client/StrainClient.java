@@ -64,7 +64,7 @@ public final class StrainClient {
     private static void tick() {
         Minecraft mc = Minecraft.getInstance();
         if (mc.player == null || mc.isPaused()) return;
-        if (hud.top() && ++beatClock >= BEAT_TICKS) {
+        if (hud.top() && mc.player.isAlive() && ++beatClock >= BEAT_TICKS) {
             beatClock = 0;
             mc.getSoundManager().play(SimpleSoundInstance.forUI(SoundEvents.WARDEN_HEARTBEAT, 1f, 0.8f));
         }
@@ -80,7 +80,7 @@ public final class StrainClient {
     }
 
     private static int meter(GuiGraphics g, Minecraft mc, int cx, int y) {
-        if (hud.strain() <= 0) return y; // no eyes, or nothing to show
+        if (hud.strain() <= 0 || mc.player == null || !mc.player.isAlive()) return y; // no eyes, or nothing to show
         float fill = hud.strain() / 100f;
         int color = hud.top() ? 0xFFFF5A5A : hud.strain() >= 60 ? 0xFFFFB24A : 0xFF8FC8FF;
         g.fill(cx - BAR_W / 2 - 1, y, cx + BAR_W / 2 + 1, y + 3, 0xAA000000);
@@ -96,7 +96,7 @@ public final class StrainClient {
         int w = g.guiWidth(), h = g.guiHeight();
         long now = SightClient.now();
         if (collapseUntil > now) g.fill(0, 0, w, h, 0xB0000000);
-        if (!hud.top()) return;
+        if (!hud.top() || mc.player == null || !mc.player.isAlive()) return; // (the dead have no headache: it waits for the respawn)
         // Quick swell on the beat, slower fall, as a heart goes.
         float t = (beatClock + delta.getGameTimeDeltaPartialTick(false)) / BEAT_TICKS;
         float throb = t < 0.2f ? t / 0.2f : 1f - (t - 0.2f) / 0.8f;

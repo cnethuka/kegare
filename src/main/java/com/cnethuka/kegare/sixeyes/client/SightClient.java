@@ -1,5 +1,6 @@
 package com.cnethuka.kegare.sixeyes.client;
 
+import com.cnethuka.kegare.innate_technique.puppet_manipulation.PuppetEntity;
 import com.cnethuka.kegare.sixeyes.SightPayloads;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -80,6 +81,12 @@ public final class SightClient {
         SightPayloads.Handlers.pulse = p -> PULSES.put(p.entityId(), now() + PULSE_MS);
         net.neoforged.neoforge.common.NeoForge.EVENT_BUS.addListener(
                 (net.neoforged.neoforge.client.event.ClientPlayerNetworkEvent.LoggingOut e) -> clear());
+        // A Stand-In wears its owner's name; the eyes see a puppet.
+        net.neoforged.neoforge.common.NeoForge.EVENT_BUS.addListener((net.neoforged.neoforge.client.event.RenderNameTagEvent e) -> {
+            if (bearer && e.getEntity() instanceof PuppetEntity puppet && puppet.isStandIn()) {
+                e.setContent(net.minecraft.network.chat.Component.translatable("gui.kegare.six_eyes.puppet_name", puppet.ownerName()));
+            }
+        });
     }
 
     static long now() {
@@ -154,7 +161,7 @@ public final class SightClient {
     public static final int MOB_PASSIVE = 0x6F8798, MOB_HOSTILE = 0xD8E4F0, MOB_PULSE = 0xFF3A28;
 
     /**
-     * The outline color the eyes draw on this entity (a crisp line through walls, in their Malice color; mobs in the neutral flow color),
+     * The outline color the eyes draw on this entity (a crisp line through walls, in their Malice color, a puppet's too; mobs in the neutral flow color),
      * or null for none: not a bearer, yourself, a void (voids get a distortion instead), or something the eyes don't see. A pulse flashes
      * it white.
      */
@@ -170,6 +177,7 @@ public final class SightClient {
         } else {
             Mob mob = MOBS.get(entity.getId());
             if (mob != null) color = mob.hostile() ? MOB_HOSTILE : MOB_PASSIVE;
+            if (mob != null && entity instanceof PuppetEntity puppet) color = puppet.isPossessed() ? null : Integer.valueOf(bright(puppet.maliceColor())); // its owner's energy, whatever it looks like
         }
         if (color == null) return null;
         if (StrainClient.sparks().containsKey(entity.getId())) return 0xFFC030; // the spark before a cast: gold, unlike a cast's white

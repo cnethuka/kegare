@@ -1527,6 +1527,7 @@ The HUD and Sorcerer screen show Anchor's current stage cost (throw or recall).
   - visible armor and held items, lent from the face for the length of one render (`RenderPlayerEvent`). If the
     face isn't loaded on that client, the slots are drawn empty rather than showing the wearer's own gear.
   - These are client mixins (`kegare.mixins.json`); Swap's only server ones are its tracker accessors.
+  - **A Six Eyes bearer** still sees the face, but their name tag and tab-list name stay the real one (§3.32).
 - Only disguised players see the `awareness_shimmer` loop (sent to them alone, for as long as the disguise lasts), so
   they know it's on: crisp corner brackets on their own screen (see Visuals).
 - **API** (either side): `Disguises.isDisguised(entity)`, `getRealIdentity(entity)`, `getDisguisedAs(entity)`; server:
@@ -3057,7 +3058,7 @@ for the eye" (§3.30).
 - **The minimap** (client setting `[six_eyes] minimap`, off by default; a Settings row only the bearer sees): a small north-up radar in
   the top-right corner, 2 blocks a pixel, players past its edge held at the edge.
 - **Outlines through walls:** within render distance, every player and mob the eyes see shows a crisp outline in their Malice color
-  (brought to full brightness), mobs in a neutral flow color, dim when passive and stronger when hostile. Vanilla's glow pass draws them
+  (brought to full brightness), a puppet in its owner's, mobs in a neutral flow color, dim when passive and stronger when hostile. Vanilla's glow pass draws them
   (`SixEyesGlowMixin`, `SixEyesOutlineColorMixin`: only for a bearer, only on the client), so they're crisp and work at every effects
   setting. Never on the bearer themself.
 - **Voids:** a Severed player within render distance shows as a blurred distortion, never an outline: a dark smear the shape of a body
@@ -3085,7 +3086,11 @@ for the eye" (§3.30).
 **Reads** (`Reads`, `ReadsPayload`; client `ReadsClient`)
 - Every player and mob in the bearer's field of view gets a compact tag automatically, with no staring needed:
   a player's innate technique and current Malice ("Rime · 820 Malice", in their Malice color), a mob's kind and flow ("Zombie ·
-  hostile flow", "Cow · faint flow"). The eyes read through a disguise: the real technique.
+  hostile flow", "Cow · faint flow").
+- **Through a disguise:** a Swap disguise (Awareness, Mimic, Total Swap) still shows the borrowed face, but for a bearer the name tag and tab-list name stay the real one (`DisguiseClient`), and
+  the outline, the Read and the map are the wearer's own: the real name, color and technique. A puppet reads as what it is, in its owner's Malice color ("Steve's puppet · Puppet Manipulation"), and a Stand-In's borrowed name
+  tag says "Steve's puppet". Someone possessing a puppet keeps their name tag and is read as themself, and the puppet hidden inside them isn't read at all. What a melee or Fists tell shows stays the color of the face worn, for a
+  bearer too: the packet carries no other (§3.22).
 - The one nearest the crosshair (the server works it out from where the bearer looks: the nearest within 20 degrees and 96 blocks, walls
   don't matter) gets full detail under its tag: what they're charging or channelling and how far ("Charging Glacial Lance 60%",
   "Channelling Reverse Malice Technique 3.2s"), their active toggles and their cooldowns, or "Idle".
@@ -3124,7 +3129,7 @@ focus is the Read the server decides for itself, so that's the one it counts.
   For now "top-tier" is a Special Grade player; `Edge.addTopTier` is where later systems add more, a Dominion clash among them.
 - **Max Strain:** severe brain fatigue, mental exhaustion and a risk of central nervous system overload.
   - A throbbing headache: a red pulse from the edges of the screen (14% of the shorter side, nothing in the middle) and a heartbeat sound
-    (`WARDEN_HEARTBEAT`, every 0.8 s). The map, Reads and voids stay sharp.
+    (`WARDEN_HEARTBEAT`, every 0.8 s). The map, Reads and voids stay sharp. Not on the death screen: it waits for the respawn.
   - The uncovered edge goes until Strain cools below `edgeBackBelow` (60).
   - Staying uncovered there: the chance of collapsing each second grows `riskGrowthPerSecond` (0.01: 10% a second after 10 s). A collapse is a
     stun of `collapseStun` (2 s; no casting, and movement and jumping held) plus `collapseDamage` (6) that armour doesn't stop (`kegare:eyes_collapse`,

@@ -6,6 +6,7 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.function.Supplier;
 import javax.annotation.Nullable;
+import com.cnethuka.kegare.sixeyes.client.SightClient;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.multiplayer.ClientPacketListener;
 import net.minecraft.client.multiplayer.PlayerInfo;
@@ -53,10 +54,10 @@ public final class DisguiseClient {
         return entry.as();
     }
 
-    /** The tab-list entry of who this player looks like, or null. */
+    /** The tab-list entry of who this player looks like, or null. The Six Eyes know people by their energy, so a bearer's list keeps the real name. */
     @Nullable
     public static PlayerInfo shownInfo(UUID player) {
-        UUID as = shownAs(player);
+        UUID as = SightClient.isBearer() ? null : shownAs(player);
         ClientPacketListener connection = Minecraft.getInstance().getConnection();
         return as == null || connection == null ? null : connection.getPlayerInfo(as);
     }
@@ -87,7 +88,8 @@ public final class DisguiseClient {
 
     private static void onNameTag(RenderNameTagEvent event) {
         if (!(event.getEntity() instanceof Player player)) return;
-        UUID as = shownAs(player.getUUID());
+        // The face stays, but the Six Eyes know people by their energy: a bearer reads the real name over it (DESIGN §3.32).
+        UUID as = SightClient.isBearer() ? null : shownAs(player.getUUID());
         if (as != null) event.setContent(nameOf(as));
     }
 

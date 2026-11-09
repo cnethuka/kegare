@@ -376,6 +376,8 @@ public final class KegareLanguageProvider extends LanguageProvider {
         add("gui.kegare.six_eyes.read.no_technique", "No technique");
         add("gui.kegare.six_eyes.read.mob_hostile", "%s · hostile flow");
         add("gui.kegare.six_eyes.read.mob_passive", "%s · faint flow");
+        add("gui.kegare.six_eyes.read.puppet", "%s's puppet · %s");
+        add("gui.kegare.six_eyes.puppet_name", "%s's puppet");
         add("gui.kegare.six_eyes.read.charging", "Charging %s %s");
         add("gui.kegare.six_eyes.read.channelling", "Channelling %s %s");
         add("gui.kegare.six_eyes.read.channelling_open", "Channelling %s %ss");

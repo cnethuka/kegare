@@ -131,7 +131,8 @@ public final class PossessionClient {
     // ---------------------------------------------------------------- looking like the puppet
 
     private static void onNameTag(RenderNameTagEvent event) {
-        if (event.getEntity() instanceof Player player && POSSESSING.containsKey(player.getUUID())) event.setCanRender(TriState.FALSE);
+        // (Not for the Six Eyes: they know who's in there, DESIGN §3.32.)
+        if (event.getEntity() instanceof Player player && POSSESSING.containsKey(player.getUUID()) && !com.cnethuka.kegare.sixeyes.client.SightClient.isBearer()) event.setCanRender(TriState.FALSE);
     }
 
     private static void addLayers(EntityRenderersEvent.AddLayers event) {

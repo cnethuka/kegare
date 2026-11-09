@@ -3,6 +3,8 @@ package com.cnethuka.kegare.sixeyes.client;
 import com.cnethuka.kegare.Kegare;
 import com.cnethuka.kegare.client.gui.GuiDraw;
 import com.cnethuka.kegare.config.KegareClientConfig;
+import com.cnethuka.kegare.innate_technique.puppet_manipulation.PuppetEntity;
+import com.cnethuka.kegare.innate_technique.puppet_manipulation.PuppetManipulation;
 import com.cnethuka.kegare.innatetechnique.Ability;
 import com.cnethuka.kegare.innatetechnique.CastType;
 import com.cnethuka.kegare.innatetechnique.InnateTechnique;
@@ -103,6 +105,7 @@ public final class ReadsClient {
         List<Tag> tags = new ArrayList<>();
         for (Entity e : mc.level.entitiesForRendering()) {
             if (!(e instanceof LivingEntity) || e == mc.player || !e.isAlive()) continue;
+            if (e instanceof PuppetEntity puppet && puppet.isPossessed()) continue; // hidden inside whoever possesses it: they're read instead
             boolean read = e instanceof Player ? GLANCES.containsKey(e.getId()) : SightClient.mob(e.getId()) != null;
             if (!read) continue;
             Vec3 above = e.getPosition(partial).add(0, e.getBbHeight() + 0.45, 0);
@@ -139,6 +142,10 @@ public final class ReadsClient {
                 color = SightClient.bright(technique == null ? InnateTechnique.DEFAULT_MALICE_COLOR : technique.maliceColor());
                 if (focused) lines.addAll(detail(technique));
             }
+        } else if (e instanceof PuppetEntity puppet) {
+            // A puppet is read as what it is, whatever it looks like: whose, and its technique, in its owner's color.
+            lines.add(Component.translatable("gui.kegare.six_eyes.read.puppet", puppet.ownerName(), PuppetManipulation.PUPPET_MANIPULATION.get().displayName()));
+            color = SightClient.bright(puppet.maliceColor());
         } else {
             SightClient.Mob mob = SightClient.mob(e.getId());
             Component kind = BuiltInRegistries.ENTITY_TYPE.byId(mob.type()).getDescription();
