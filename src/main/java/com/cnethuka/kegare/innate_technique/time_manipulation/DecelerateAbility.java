@@ -17,6 +17,12 @@ public final class DecelerateAbility extends TimeAbility {
     }
 
     @Override public double cost(ServerPlayer p) { return TimeConfig.DECELERATE_COST.get(); }
+    @Override
+    public Object[] descriptionArgs() {
+        return new Object[] {com.cnethuka.kegare.config.ConfigText.number(TimeConfig.DECELERATE_DAMAGE),
+                com.cnethuka.kegare.config.ConfigText.number(TimeConfig.DECELERATE_SECONDS),
+                com.cnethuka.kegare.config.ConfigText.percent(TimeConfig.DECELERATE_COOLDOWN_RATE)};
+    }
     @Override public int cooldownTicks(ServerPlayer p) { return TimeConfig.ticks(TimeConfig.DECELERATE_COOLDOWN); }
     @Override public AbilityVisuals visuals() { return VISUALS; }
     @Override public Optional<Ability> special() { return Optional.of(TimeManipulation.STASIS_FIELD); }

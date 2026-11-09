@@ -508,7 +508,7 @@ public final class SorcererScreen extends Screen {
             }
         }
         y += 4;
-        y += GuiDraw.wrapped(g, font, GuiDraw.description(ability.descriptionId()), x, y, w, refinementLocked ? GuiDraw.GRAY : 0xFFD8D2E0) + 4;
+        y += GuiDraw.wrapped(g, font, GuiDraw.description(ability), x, y, w, refinementLocked ? GuiDraw.GRAY : 0xFFD8D2E0) + 4;
 
         // Its special.
         Optional<Ability> special = ability.special();
@@ -533,7 +533,7 @@ public final class SorcererScreen extends Screen {
             if (spLocked) {
                 y += GuiDraw.wrapped(g, font, Component.translatable("message.kegare.cast.refinement_locked", spRequires), x + ix, y, w - ix, GuiDraw.RED);
             }
-            y += GuiDraw.wrapped(g, font, GuiDraw.description(sp.descriptionId()), x + ix, y, w - ix, GuiDraw.DARK_GRAY);
+            y += GuiDraw.wrapped(g, font, GuiDraw.description(sp), x + ix, y, w - ix, GuiDraw.DARK_GRAY);
             for (Requirement requirement : sp.requirements()) {
                 boolean met = spInfo != null && spInfo.available();
                 y += GuiDraw.wrapped(g, font, Component.translatable("gui.kegare.special.requires", requirement.description()), x + ix, y, w - ix,

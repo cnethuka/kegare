@@ -54,6 +54,10 @@ public final class AccelerateAbility extends TimeAbility {
     }
 
     @Override public double cost(ServerPlayer p) { return TimeConfig.ACCELERATE_COST.get(); }
+    @Override
+    public Object[] descriptionArgs() {
+        return new Object[] {com.cnethuka.kegare.config.ConfigText.number(TimeConfig.ACCELERATE_RATE)};
+    }
     @Override public double upkeepPerSecond(ServerPlayer p) { return TimeConfig.ACCELERATE_UPKEEP.get(); }
     @Override public int cooldownTicks(ServerPlayer p) { return TimeConfig.ticks(TimeConfig.ACCELERATE_COOLDOWN); }
     @Override public AbilityVisuals visuals() { return VISUALS; }

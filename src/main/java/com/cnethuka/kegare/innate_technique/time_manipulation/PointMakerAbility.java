@@ -97,4 +97,11 @@ public final class PointMakerAbility extends TimeAbility {
         TimeManipulation.fx(p, TimeManipulation.fx(TimeNet.Fx.Kind.RETURN, p.getId(), path, 0f, 0));
         if (low) TimeAdvancements.secondChanceStarted(p);
     }
+
+    @Override
+    public Object[] descriptionArgs() {
+        return new Object[] {com.cnethuka.kegare.config.ConfigText.number(TimeConfig.MARK_RANGE),
+                com.cnethuka.kegare.config.ConfigText.number(TimeConfig.MARK_SECONDS),
+                com.cnethuka.kegare.config.ConfigText.percent(TimeConfig.RETURN_HEAL)};
+    }
 }

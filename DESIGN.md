@@ -2372,7 +2372,15 @@ mark and return, Decelerate's strike), `.tick` (Accelerate running, Decelerate's
 opening), `.stop` (Standstill: the sharp click), `.stop_tick` (the one slow tick each second it stands, played by each client
 inside) and `.resume` (the loud tick it ends on).
 
-**Tests:** `TimeManipulationTest` (the return's heal math; Point Maker's mark, return, expiry and its free fizzle; Rewind on a
+**Descriptions read the config.** Every number a Time Manipulation description states (ranges, how long, how far back, the heal's
+share, Accelerate's rate, damage, the field's radius and crawl, the stop's length, reach and Burnout) is a placeholder filled from
+`[time_manipulation]` (`Ability.descriptionArgs`, `config/ConfigText`: whole numbers bare, shares as percentages). The server's
+config reaches every client when it joins, so the Sorcerer screen says what that server is set to (`rate = 3` reads "3 times
+as fast"). Severed's two advancements still state their defaults (3 kills in 60 seconds, 3 hearts): an advancement's text is
+written into its data when it's generated, so it can't follow the toml.
+
+**Tests:** `TimeDescriptionsTest` (every number in those descriptions is a placeholder, one per configured value, and they follow
+the config). `TimeManipulationTest` (the return's heal math; Point Maker's mark, return, expiry and its free fizzle; Rewind on a
 player and a mob, already there, with no history, refused, and a boss; Accelerate's one rate on every speed, an item's use and the
 other cooldowns, all back on switching off, and Fast Forward never touching the ultimate,
 Burnout or RMT; Decelerate's hit, the event guarding its cooldown slow, a boss; Stasis Field's slow and its projectiles crawling and

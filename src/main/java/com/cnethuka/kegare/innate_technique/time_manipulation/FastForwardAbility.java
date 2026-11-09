@@ -22,6 +22,10 @@ public final class FastForwardAbility extends TimeAbility.Special {
     }
 
     @Override public double cost(ServerPlayer p) { return TimeConfig.FAST_FORWARD_COST.get(); }
+    @Override
+    public Object[] descriptionArgs() {
+        return new Object[] {com.cnethuka.kegare.config.ConfigText.number(TimeConfig.FAST_FORWARD_SECONDS)};
+    }
     @Override public int cooldownTicks(ServerPlayer p) { return TimeConfig.ticks(TimeConfig.FAST_FORWARD_COOLDOWN); }
     @Override public AbilityVisuals visuals() { return VISUALS; }
     @Override public boolean hasNoTarget() { return true; }

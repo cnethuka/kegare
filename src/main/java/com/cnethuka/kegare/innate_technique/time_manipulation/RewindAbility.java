@@ -33,6 +33,11 @@ public final class RewindAbility extends TimeAbility.Special {
     }
 
     @Override public double cost(ServerPlayer p) { return TimeConfig.REWIND_COST.get(); }
+    @Override
+    public Object[] descriptionArgs() {
+        return new Object[] {com.cnethuka.kegare.config.ConfigText.number(TimeConfig.RANGE),
+                com.cnethuka.kegare.config.ConfigText.number(TimeConfig.REWIND_SECONDS)};
+    }
     @Override public int cooldownTicks(ServerPlayer p) { return TimeConfig.ticks(TimeConfig.REWIND_COOLDOWN); }
     @Override public AbilityVisuals visuals() { return VISUALS; }
 

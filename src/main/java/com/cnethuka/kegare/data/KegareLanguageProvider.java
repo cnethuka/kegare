@@ -414,29 +414,29 @@ public final class KegareLanguageProvider extends LanguageProvider {
         add("innate_technique.kegare.time_manipulation.desc", "Mark a moment to come back to, run your own clock fast and everyone "
                 + "else's slow, and at the last, stop time itself.");
         add("ability.kegare.point_maker", "Point Maker");
-        add("ability.kegare.point_maker.desc", "First cast: mark the top of the block you're looking at (up to 32 blocks away; only you "
-                + "see it, and it lasts 15 seconds). Second cast: return to it, facing as you did, shedding every effect you've gained since, "
-                + "healed by 30% of your max health but never past the health you had when you marked it.");
+        add("ability.kegare.point_maker.desc", "First cast: mark the top of the block you're looking at (up to %1$s blocks away; only you "
+                + "see it, and it lasts %2$s seconds). Second cast: return to it, facing as you did, shedding every effect you've gained since, "
+                + "healed by %3$s of your max health but never past the health you had when you marked it.");
         add("ability.kegare.rewind", "Rewind");
-        add("ability.kegare.rewind.desc", "Snap the player or mob you're looking at (up to 24 blocks) back to where it was 3 seconds ago. "
+        add("ability.kegare.rewind.desc", "Snap the player or mob you're looking at (up to %1$s blocks) back to where it was %2$s seconds ago. "
                 + "Only its place goes back: health, effects and facing stay as they are.");
         add("ability.kegare.accelerate", "Accelerate");
-        add("ability.kegare.accelerate.desc", "Toggle: your own clock runs twice as fast. You walk, sprint and swim, attack, mine, eat, drink, "
-                + "draw a bow, load a crossbow and raise a shield twice as fast, and your technique's other cooldowns run twice as fast. You "
-                + "keep full control; jumping and falling don't change. Costs Malice every second it's on.");
+        add("ability.kegare.accelerate.desc", "Toggle: your own clock runs %s times as fast, and everything you do with it: walking, sprinting "
+                + "and swimming, attacking, mining, eating, drinking, drawing a bow, loading a crossbow, raising a shield and your technique's "
+                + "other cooldowns. You keep full control; jumping and falling don't change. Costs Malice every second it's on.");
         add("ability.kegare.fast_forward", "Fast Forward");
-        add("ability.kegare.fast_forward.desc", "Take 6 seconds off every other cooldown of your technique at once, never your ultimate's. "
+        add("ability.kegare.fast_forward.desc", "Take %s seconds off every other cooldown of your technique at once, never your ultimate's. "
                 + "Switches Accelerate off and starts their shared cooldown.");
         add("ability.kegare.decelerate", "Decelerate");
-        add("ability.kegare.decelerate.desc", "Throw a spinning clock hand. A hit deals 3 damage and, for 5 seconds, slows the target, "
-                + "slows their mining and runs their ability cooldowns at half speed.");
+        add("ability.kegare.decelerate.desc", "Throw a spinning clock hand. A hit deals %1$s damage and, for %2$s seconds, slows the target, "
+                + "slows their mining and runs their ability cooldowns at %3$s of their speed.");
         add("ability.kegare.stasis_field", "Stasis Field");
-        add("ability.kegare.stasis_field.desc", "A field 4 blocks round the block you're looking at, for 5 seconds: everything inside is "
-                + "heavily slowed, and projectiles crawl through it at a twentieth of their speed (yours too) until they're out.");
+        add("ability.kegare.stasis_field.desc", "A field %1$s blocks round the block you're looking at, for %2$s seconds: everything inside is "
+                + "heavily slowed, and projectiles crawl through it at %3$s of their speed (yours too) until they're out.");
         add("ability.kegare.standstill", "Standstill");
-        add("ability.kegare.standstill.desc", "Stop time for 3 seconds within 48 blocks of you. Everything else freezes: anything you "
+        add("ability.kegare.standstill.desc", "Stop time for %1$s seconds within %2$s blocks of you. Everything else freezes: anything you "
                 + "throw hangs in the air, and every hit on the frozen lands at once when time resumes, as one blow. Anyone else with "
-                + "Time Manipulation moves too. Afterwards you're burnt out for 20 seconds.");
+                + "Time Manipulation moves too. Afterwards you're burnt out for %3$s seconds.");
         add("message.kegare.time.mark_elsewhere", "Your mark is in another dimension.");
         add("message.kegare.time.no_block", "No block in sight within %s blocks.");
         add("message.kegare.time.no_block_field", "No block in sight within %s blocks.");

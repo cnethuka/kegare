@@ -168,4 +168,9 @@ public interface Ability {
     default Component displayName() {
         return Component.translatable(descriptionId());
     }
+
+    /** What its description's placeholders read: the configured numbers it states ({@code config/ConfigText}), in order. */
+    default Object[] descriptionArgs() {
+        return new Object[0];
+    }
 }

@@ -19,6 +19,12 @@ public final class StandstillAbility extends TimeAbility {
     }
 
     @Override public double cost(ServerPlayer p) { return TimeConfig.STANDSTILL_COST.get(); }
+    @Override
+    public Object[] descriptionArgs() {
+        return new Object[] {com.cnethuka.kegare.config.ConfigText.number(TimeConfig.STANDSTILL_SECONDS),
+                com.cnethuka.kegare.config.ConfigText.number(TimeConfig.STANDSTILL_RADIUS),
+                com.cnethuka.kegare.config.ConfigText.number(TimeConfig.STANDSTILL_BURNOUT)};
+    }
     @Override public int cooldownTicks(ServerPlayer p) { return TimeConfig.ticks(TimeConfig.STANDSTILL_COOLDOWN); }
     @Override public AbilityVisuals visuals() { return VISUALS; }
     @Override public boolean hasNoTarget() { return true; }

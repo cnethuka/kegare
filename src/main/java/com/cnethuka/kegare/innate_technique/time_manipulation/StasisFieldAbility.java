@@ -21,6 +21,12 @@ public final class StasisFieldAbility extends TimeAbility.Special {
     }
 
     @Override public double cost(ServerPlayer p) { return TimeConfig.STASIS_COST.get(); }
+    @Override
+    public Object[] descriptionArgs() {
+        return new Object[] {com.cnethuka.kegare.config.ConfigText.number(TimeConfig.STASIS_RADIUS),
+                com.cnethuka.kegare.config.ConfigText.number(TimeConfig.STASIS_SECONDS),
+                com.cnethuka.kegare.config.ConfigText.percent(TimeConfig.STASIS_PROJECTILE_SPEED)};
+    }
     @Override public int cooldownTicks(ServerPlayer p) { return TimeConfig.ticks(TimeConfig.STASIS_COOLDOWN); }
     @Override public AbilityVisuals visuals() { return VISUALS; }
 

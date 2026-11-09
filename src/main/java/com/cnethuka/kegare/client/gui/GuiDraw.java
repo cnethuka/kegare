@@ -324,6 +324,11 @@ public final class GuiDraw {
         return Component.translatable(descriptionId + ".desc");
     }
 
+    /** An ability's description, with the configured numbers it states filled in. */
+    public static Component description(com.cnethuka.kegare.innatetechnique.Ability ability) {
+        return Component.translatable(ability.descriptionId() + ".desc", ability.descriptionArgs());
+    }
+
     public static String seconds(int ticks) {
         return String.format(java.util.Locale.ROOT, "%.1f", ticks / 20.0);
     }
