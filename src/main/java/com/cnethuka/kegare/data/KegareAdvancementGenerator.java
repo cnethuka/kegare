@@ -64,7 +64,10 @@ public final class KegareAdvancementGenerator implements AdvancementProvider.Adv
         // Reverse Malice Technique: hidden and silent (they would tell everyone this player can heal).
         AdvancementHolder greenLight = child(saver, awakening, KegareAdvancements.A_GREEN_LIGHT, "a_green_light",
                 Items.GLISTERING_MELON_SLICE, AdvancementType.GOAL, true);
-        child(saver, greenLight, KegareAdvancements.ITS_BEEN_A_WHILE, "its_been_a_while", Items.TOTEM_OF_UNDYING, AdvancementType.CHALLENGE, true);
+        AdvancementHolder itsBeenAWhile = child(saver, greenLight, KegareAdvancements.ITS_BEEN_A_WHILE, "its_been_a_while", Items.TOTEM_OF_UNDYING,
+                AdvancementType.CHALLENGE, true);
+        // Explaining it to the one you're fighting: hidden, but announced (it's funny, and the fight already showed the healing).
+        child(saver, itsBeenAWhile, KegareAdvancements.ARE_THEY_HIGH, "are_they_high", Items.BOOK, AdvancementType.TASK, true);
         // Background RMT unlocked (§3.31): hidden and silent too.
         child(saver, greenLight, KegareAdvancements.ALWAYS_ON, "always_on", Items.REDSTONE_TORCH, AdvancementType.GOAL, true);
 

@@ -18,6 +18,7 @@ public final class Rmt {
     public static void init(IEventBus modBus) {
         GreenOrbService.register(modBus);
         RmtOnAnother.register();
+        AreTheyHigh.init(); // "Are They High?": explaining RMT to the one you're fighting
         com.cnethuka.kegare.progression.FightTracker.addListener(report -> RmtFatigue.onFightEnded(report.player()));
         com.cnethuka.kegare.loadout.SharedAbilityService.addUnlockListener((player, ability) -> {
             if (ability == REVERSE_MALICE_TECHNIQUE) com.cnethuka.kegare.progression.InsightHooks.unlockedRmt(player);

@@ -23,6 +23,8 @@ public final class KegareAdvancements {
     // Reverse Malice Technique (Base tab, hidden and silent: they reveal that a player can heal)
     public static final ResourceLocation A_GREEN_LIGHT = Kegare.id("a_green_light");
     public static final ResourceLocation ITS_BEEN_A_WHILE = Kegare.id("its_been_a_while");
+    /** Explaining RMT to the one you're fighting (rmt.AreTheyHigh): hidden, announced. */
+    public static final ResourceLocation ARE_THEY_HIGH = Kegare.id("are_they_high");
     /** Background RMT unlocked (DESIGN §3.31). */
     public static final ResourceLocation ALWAYS_ON = Kegare.id("always_on");
     // Progression (Base tab, hidden and silent: Grade is private)

@@ -63,7 +63,7 @@ game never names a bearer, heir or killer of a secret holder.
   announcement, even though they aren't secret identities. They live in `KegareAdvancements.SILENT`, and datagen
   enforces it.
   - Current: `overflowing` (reveals Malice capacity), `chosen_by_fate` (reveals a Legendary roll), and
-    `a_green_light` / `its_been_a_while` (reveal that a player can heal), and `moving_up`, `proven`, `recognized`,
+    `a_green_light` / `its_been_a_while` / `always_on` (reveal that a player can heal), and `moving_up`, `proven`, `recognized`,
     `outside_the_ladder`, `full_kit` (Grade and Refinement are private, §3.21). The heal ones and the progression ones are
     also **hidden** until earned (`KegareAdvancements.SILENT_HIDDEN`, enforced by datagen).
   - Innate technique tab roots are silent for the same reason (§3.11).
@@ -550,6 +550,8 @@ Each tab has its own root.
 | *Running on Empty* | task | yes | visible Malice (floored, like the HUD) drops to 0 while in combat |
 | *A Green Light* | goal | hidden, **silent** (reveals a player can heal) | unlocked Reverse Malice Technique (took in the green orb, §3.18) |
 | *It's been a while, huh?* (under A Green Light) | challenge | hidden, **silent** | started a Reverse Malice Technique cast at 6 HP or less, within 10 s of being hit by a player |
+| *Are They High?* (under It's been a while) | task | hidden, announced | explained Reverse Malice Technique to the person you're fighting, in chat (§3.17); only for those with It's been a while |
+| *Always On* (under A Green Light) | goal | hidden, **silent** | unlocked Background RMT (§3.31) |
 | *Moving Up* | task | hidden, **silent** (Grade is private, §3.21) | reached Grade 3 |
 | *Proven* | goal | hidden, **silent** | reached Grade 2 |
 | *Recognized* | challenge | hidden, **silent** | reached Grade 1 |
@@ -1365,6 +1367,18 @@ negative is positive energy, which is why it heals, and why its colors are white
   `its_been_a_while` "It's been a while, huh?" (start a cast at **6 HP or less** having been hit by a player in the
   last **10 s**; challenge). Hits from players are remembered per player at runtime (`kegare:rmt_state`).
   `RmtAdvancementsTest` covers both, including 8 HP and a hit more than 10 s ago (neither counts).
+- **"Are They High?"** (`are_they_high`, `AreTheyHigh`; under It's been a while, task, hidden, **announced** in chat, and earned only by
+  those who have It's been a while, which is both its parent and a requirement): explain RMT
+  to the person you're fighting. Chat is only read (`ServerChatEvent`, lowest priority, never for a cancelled message), never blocked
+  or changed. The player's own messages from the last 20 s, taken together, must total 12 words or more and hold all four ideas:
+  "malice" or "energy"; "negative"; "multiply", "multiplying" or "multiplied"; "positive". Extra text is always fine; one message or
+  several, in their own words. Case-insensitive, with small typos allowed: edit distance 2 on a typed word of 6+ letters, 1 on a
+  shorter one (so "enemy" isn't "energy"). Sent while in a fight with a living player within 16 blocks: a hit between the two, either
+  way, within 10 s (`LivingDamageEvent.Post`, projectiles credited to their owner). Awarded at once on the message that completes it.
+  "so malice is negative energy right" then "you multiply it against itself and it turns positive" passes; "lol rmt" never does.
+  `AreTheyHighTest`: the display; two messages, awarded on the second; one message with typos, caps and extra text; never "lol rmt",
+  too few words, no fight, a hit over 10 s ago, the other past 16 blocks, more than 20 s between the halves, half from someone else,
+  without It's been a while; the typo distances.
 - **Tests:** `RmtTest`: Severed can't unlock; locked can't be slotted; swap a Rime ability for it; cast at full health, still running
   there, a hit healed as it lands, never above max or absorption; R fizzles; start cost, a twentieth a tick, healPerSecond after a
   second, upkeep; cooldown on release; a freeze interrupts it; it doesn't end healed up; a reroll resets the loadout but keeps the
