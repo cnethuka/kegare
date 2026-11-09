@@ -3116,6 +3116,15 @@ focus is the Read the server decides for itself, so that's the one it counts.
     narrow toward the temples, with diagonal folds in its shape and grey painted along their ridges. Matte and opaque. A flat overlap behind, no knot or tails.
   - The Sunglasses: two round lenses 2.9 pixels across (40 sides) on the eyes, a touch low on the nose, deep indigo, darker toward the top and a little lighter at the bottom, with a small
     highlight, see-through enough to show the eyes behind them. A hairline silver rim round each, a thin silver bridge with a small angular step, thin silver arms straight back along the head.
+- **Drawing them** (`EyewearRenderer`, Curios' `ICurioRenderer`): under the head's transform, so they follow turning, looking up and down, sneaking, swimming, crawling, sleeping and every animation that moves the
+  head. They sit outside the hat layer (4.5: the lenses at 4.53, the frame at 4.6, the cloth from 4.56 to 4.74), so hair never covers them, and close enough not to float.
+  - **Under a helmet:** no rule of their own. They sit inside a helmet's shell (5.0) and a worn skull (4.75), so a helmet shows them only through its face opening and never with anything clipping through it; a carved pumpkin or a
+    skull hides them altogether. A modded helmet with a tighter shell could cut them.
+  - Nothing draws for an invisible player or a spectator, or in your own first person (the body isn't drawn). Third person, the inventory's doll and other players' views all show them.
+  - The cloth is opaque and the lenses blended normally (never added), so neither washes out against the sky or clouds; with Rime's light floor both stay readable at night. Every effects setting: Reduced and Vanilla change nothing,
+    as they're worn items.
+  - **Disguises:** eyewear stays on the real body, not lent like armor. Someone in a Swap disguise shows their own eyewear on the face they've borrowed, and not what that face's owner wears, so eyewear can give a disguise away. Puppets
+    and a Stand-In wear none, so a Stand-In of someone in eyewear looks bare-eyed.
 - **Eyewear never reduces what the eyes see:** range, map, outlines, voids, Reads and efficiency stay full when covered. It changes only how
   fast Strain moves, and whether the uncovered edge is there.
 - **Curios' own key:** Curios opens its screen on G by default, which is Technique Mode. While it sits on G it's moved to J

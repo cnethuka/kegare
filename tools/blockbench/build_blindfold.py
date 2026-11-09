@@ -246,7 +246,7 @@ def paint():
         for tx in range(WIDTH):
             a = (tx + 0.5) / WIDTH * 2 * HALF_ROUND - HALF_ROUND
             f = fold(a, y)
-            shade = weave.uniform(-1.6, 1.6) + 1.2 * math.sin(tx * 1.9) * math.sin(ty * 2.3)
+            shade = weave.uniform(-0.7, 0.7)
             if f >= 0:
                 t = min(1.0, f * 1.15) ** 1.3
                 rgb = [c + (r - c) * t for c, r in zip(CHARCOAL, RIDGE_GREY)]
