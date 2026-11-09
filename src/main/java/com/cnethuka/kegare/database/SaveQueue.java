@@ -25,6 +25,8 @@ final class SaveQueue {
     }
 
     private final Map<UUID, Batch> waiting = new HashMap<>();
+    /** Taken by the writer and not yet in: still waiting, as far as a login or a stop is concerned. */
+    private final java.util.Set<UUID> inFlight = new java.util.HashSet<>();
 
     synchronized void offer(UUID player, UUID token, Map<String, String> changes, boolean release) {
         Batch batch = waiting.computeIfAbsent(player, p -> new Batch());
@@ -41,7 +43,14 @@ final class SaveQueue {
         if (!iterator.hasNext()) return null;
         Map.Entry<UUID, Batch> entry = iterator.next();
         iterator.remove();
+        inFlight.add(entry.getKey());
         return Map.entry(entry.getKey(), entry.getValue());
+    }
+
+    /** A batch the writer took is in the database. */
+    synchronized void done(UUID player) {
+        inFlight.remove(player);
+        notifyAll();
     }
 
     /** A write failed: back it goes, behind anything newer that's arrived since. */
@@ -53,6 +62,7 @@ final class SaveQueue {
             failed.token = newer.token;
         }
         waiting.put(player, failed);
+        inFlight.remove(player);
         notifyAll();
     }
 
@@ -64,13 +74,16 @@ final class SaveQueue {
         if (waiting.isEmpty()) wait(millis);
     }
 
+    /** Something of theirs is waiting or being written. */
     synchronized boolean has(UUID player) {
-        return waiting.containsKey(player);
+        return waiting.containsKey(player) || inFlight.contains(player);
     }
 
-    /** Players with something waiting. */
+    /** Players with something waiting or being written. */
     synchronized int size() {
-        return waiting.size();
+        java.util.Set<UUID> all = new java.util.HashSet<>(waiting.keySet());
+        all.addAll(inFlight);
+        return all.size();
     }
 
     /** Everything waiting, copied (for the spill file). */

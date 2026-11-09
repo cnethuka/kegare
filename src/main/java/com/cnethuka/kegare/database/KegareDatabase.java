@@ -610,6 +610,7 @@ public final class KegareDatabase {
                 }
                 try {
                     writeBatch(next.getKey(), next.getValue());
+                    queue.done(next.getKey());
                     backoff = 1000;
                     markUp();
                 } catch (SQLException | RuntimeException e) {

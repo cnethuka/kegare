@@ -254,6 +254,7 @@ class SavingIT {
 
                     proxy.up();
                     await("it catching up", () -> database.queueSize() == 0 && !database.isDown());
+                    await("ops to be told", () -> host.told.contains("message.kegare.db.up")); // told just after it's marked up
                     assertEquals(1, host.told.stream().filter("message.kegare.db.up"::equals).count(), "and once when it's back");
                     try (ConnectionPool direct = new ConnectionPool(TestDb.config("check"))) {
                         assertEquals(400, capacityInDatabase(direct, player.getUUID()), "the newest wins");
