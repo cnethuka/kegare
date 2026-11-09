@@ -75,16 +75,12 @@ class ImpactTest {
     }
 
     @Test
-    void aMeleeHitSoundsLikeWhatItWasHitWith(MinecraftServer server) { // the server binds the item tags
-        assertSame(com.cnethuka.kegare.sound.KegareSounds.IMPACT_PUNCH.value(), ImpactSounds.weaponSound(net.minecraft.world.item.ItemStack.EMPTY), "a fist");
-        assertSame(com.cnethuka.kegare.sound.KegareSounds.IMPACT_BLADE.value(),
-                ImpactSounds.weaponSound(new net.minecraft.world.item.ItemStack(net.minecraft.world.item.Items.IRON_SWORD)), "a sword");
-        assertSame(com.cnethuka.kegare.sound.KegareSounds.IMPACT_HEAVY.value(),
-                ImpactSounds.weaponSound(new net.minecraft.world.item.ItemStack(net.minecraft.world.item.Items.DIAMOND_AXE)), "an axe");
-        assertSame(com.cnethuka.kegare.sound.KegareSounds.IMPACT_HEAVY.value(),
-                ImpactSounds.weaponSound(new net.minecraft.world.item.ItemStack(net.minecraft.world.item.Items.MACE)), "a mace");
-        assertSame(com.cnethuka.kegare.sound.KegareSounds.IMPACT_PUNCH.value(),
-                ImpactSounds.weaponSound(new net.minecraft.world.item.ItemStack(net.minecraft.world.item.Items.STICK)), "anything else lands like a fist");
+    void onlyBigHitsHaveASoundOfTheirOwn() {
+        assertFalse(ImpactSounds.booms(ImpactTier.LIGHT), "a plain hit sounds like vanilla only");
+        assertFalse(ImpactSounds.booms(ImpactTier.MEDIUM));
+        for (ImpactTier tier : ImpactTier.values()) {
+            if (tier.ordinal() >= ImpactTier.HEAVY.ordinal()) assertTrue(ImpactSounds.booms(tier), tier + ": the boom under it");
+        }
     }
 
     @Test

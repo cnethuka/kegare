@@ -2130,18 +2130,16 @@ hit behind it (a fall, fire, `/kill`) keeps vanilla's smoke, and so does every d
 slivers. A player has no death smoke, so this is only for mobs.
 
 **Hit sounds** (`ImpactSounds`, Kegare's own from `tools/sounds/impact.py`, §3.10), at the point of contact and always with
-vanilla's own hurt sound, never instead of it. A melee hit sounds like what it was hit with: `impact.punch` (an empty hand, or
-anything that isn't a weapon: a heavy thud with a crack on top), `impact.blade` (a sword: a sharp swish with a slice),
-`impact.heavy` (an axe or a mace: a heavier thud with a crunch); louder the harder it lands. Big hits of any kind (Heavy and up)
-get `impact.boom` under them (a deep boom: 0.6 at pitch 1.1 for Heavy, 1.0 at 0.9 for the impact frame, 1.4 at 0.75 for Top).
-Curio Burst adds its own thump (§3.20). Each has three versions to pick from in `run/sounds_preview/impact/` (`--preview`); the
-first of each ships.
+vanilla's own hurt sound, never instead of it. A plain hit sounds like vanilla only: there's no punch, blade or heavy-blow sound of
+Kegare's own. Big hits of any kind (Heavy and up) get `impact.boom` under them (a deep boom: 0.6 at pitch 1.1 for Heavy, 1.0 at 0.9
+for the impact frame, 1.4 at 0.75 for Top). Curio Burst adds its own thump (§3.20). Each has three versions to pick from in
+`run/sounds_preview/impact/` (`--preview`); the first ships.
 
 **Full, Reduced and Vanilla:** Full draws everything. Reduced draws fewer spikes and no impact frame. Vanilla draws vanilla's crit
 sparks for the flash (dust in the Malice color for a technique) and no impact frame. Hit-stop and shake follow their own settings at
 every quality. The impact frame needs the setting on and Full.
 
-**Tests:** `ImpactTest` (the rule and its tiers, real hits resolving).
+**Tests:** `ImpactTest` (the rule and its tiers, real hits resolving, only Heavy and up having a sound of Kegare's own).
 
 ### 3.24 Battle damage (package `battledamage`)
 

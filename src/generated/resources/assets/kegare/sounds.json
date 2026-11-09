@@ -1,27 +1,9 @@
 {
-  "impact.blade": {
-    "sounds": [
-      "kegare:impact/blade"
-    ],
-    "subtitle": "subtitles.kegare.impact.blade"
-  },
   "impact.boom": {
     "sounds": [
       "kegare:impact/boom"
     ],
     "subtitle": "subtitles.kegare.impact.boom"
-  },
-  "impact.heavy": {
-    "sounds": [
-      "kegare:impact/heavy"
-    ],
-    "subtitle": "subtitles.kegare.impact.heavy"
-  },
-  "impact.punch": {
-    "sounds": [
-      "kegare:impact/punch"
-    ],
-    "subtitle": "subtitles.kegare.impact.punch"
   },
   "puppet_manipulation.curio_burst": {
     "sounds": [

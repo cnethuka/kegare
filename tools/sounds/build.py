@@ -2,7 +2,7 @@
 
     writes src/main/resources/assets/kegare/sounds/<technique>/<name>.ogg (mono OGG Vorbis, 44.1 kHz)
     --preview also writes the candidates to choose from (Swap's clap to run/sounds_preview/clap/, Curio Burst's burst to
-              run/sounds_preview/puppet_manipulation/, the hit sounds and Curio Burst's thump to run/sounds_preview/impact/,
+              run/sounds_preview/puppet_manipulation/, the boom under big hits and Curio Burst's thump to run/sounds_preview/impact/,
               Time Manipulation's click, tick, stop and resume to run/sounds_preview/time_manipulation/, Severed's Blur start,
               Closing Line launch and wall crash to run/sounds_preview/severed/),
               with a .wav of each to open anywhere

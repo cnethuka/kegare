@@ -45,9 +45,6 @@ public final class KegareSounds {
             "puppet_manipulation/curio_thump");
 
     // The Impact System's hit sounds (§3.23), played with vanilla's hurt sound, never instead of it.
-    public static final DeferredHolder<SoundEvent, SoundEvent> IMPACT_PUNCH = register("impact.punch", "impact/punch");
-    public static final DeferredHolder<SoundEvent, SoundEvent> IMPACT_BLADE = register("impact.blade", "impact/blade");
-    public static final DeferredHolder<SoundEvent, SoundEvent> IMPACT_HEAVY = register("impact.heavy", "impact/heavy");
     public static final DeferredHolder<SoundEvent, SoundEvent> IMPACT_BOOM = register("impact.boom", "impact/boom");
 
     // Time Manipulation (§3.26): a pocket watch's clicks and ticks, wound, run backward, whirled, and stopped.
