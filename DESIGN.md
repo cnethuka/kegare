@@ -635,9 +635,12 @@ closing it or disconnecting at any point changes nothing.
 - **Header:** the framed emblem, the name in rarity color, the epithet (§3.3), "rarity · category", then the selected category's
   abilities as tiles (the HUD's slot frames). A gold number marks the slot each tile is on, and locked shared
   abilities show a padlock. A technique ability that Refinement hasn't reached is a greyed tile with a padlock and its
-  required level; it can't be picked up (§3.21).
-- **Details box** (the large well) shows whatever ability is hovered (a tile or a bar slot). Clicking a tile keeps
-  it there. It lists:
+  required level; it can't be picked up (§3.21). On the Innate tab the ultimate follows the abilities as one more tile,
+  labelled V as on the bar: greyed with a padlock and its level while Refinement hasn't reached it, a padlock alone while it waits
+  for its Dominion (Rime, Puppet Manipulation: "Ultimate: Locked"). Clicking it keeps its card; it's never picked up, since the
+  ultimate isn't placed on the bar.
+- **Details box** (the large well) shows whatever ability is hovered (a tile or a bar slot). Clicking a tile or a bar slot (the
+  ultimate's included) keeps it there, so a long description stays while the mouse moves into the box to scroll it. It lists:
   - category and cast type;
   - current cost, upkeep and cooldown, plus the surroundings' cost factors (innate technique abilities only);
   - the description;
@@ -1190,8 +1193,8 @@ separate bar is filled from any of them.
 - **Editing** (Sorcerer screen, §3.12):
   - category tabs on the left edge (the innate technique's emblem; a silver ring for Shared). Locked shared
     abilities show a padlock and "???".
-  - the selected category's abilities as tiles in the header (a gold number marks the slot each is on). Their
-    details fill the large box.
+  - the selected category's abilities as tiles in the header (a gold number marks the slot each is on), then the
+    ultimate (V). Their details fill the large box.
   - the loadout bar is the HUD's combat panel, drawn live: slot keys, R badges, cooldowns and the fixed ultimate
     (a padlock while locked).
   - drag a tile onto a slot, or click a tile then a slot. Drag a slot onto another to swap. Drag one off the bar

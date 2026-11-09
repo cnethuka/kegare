@@ -50,8 +50,9 @@ import org.lwjgl.glfw.GLFW;
  * <ul>
  *   <li>Left edge: ability category tabs (Innate Technique, Shared).</li>
  *   <li>Header: the innate technique's emblem, name and rarity, and the selected category's abilities (padlocks for
- *       locked ones; a gold number marks the slot each is on).</li>
- *   <li>The large box: whatever ability is hovered (or clicked): category, cast type, current cost and cooldown,
+ *       locked ones; a gold number marks the slot each is on), then the technique's ultimate, labelled V.</li>
+ *   <li>The large box: whatever ability is hovered (or clicked: a tile or a bar slot, which keeps it there to scroll):
+ *       category, cast type, current cost and cooldown,
  *       description, its special and its slot; greyed out with a lock and the level it needs while Refinement hasn't
  *       unlocked it. The right-edge buttons switch the box to Progress (Grade, Assessment, Refinement, Insight, all
  *       private), Traits, Pity or Settings (client options, saved at once: which control picks abilities in Technique
@@ -93,6 +94,8 @@ public final class SorcererScreen extends Screen {
     private static final ResourceLocation ICON_TECHNIQUE = Kegare.id("view_technique");
     private static final int TILE = CombatPanelLayer.SLOT_SIZE;
     private static final int TILE_INSET = 2;
+    /** The tile and card for an ultimate still locked until its Dominion (Rime, Puppet Manipulation): there's no ability to show. */
+    private static final ResourceLocation ULTIMATE_LOCKED = Kegare.id("ultimate_locked");
     private static final int TAB_SIZE = 24;
     private static final long STATUS_MS = 3500;
 
@@ -353,6 +356,37 @@ public final class SorcererScreen extends Screen {
             }
             hits.add(new Hit(Kind.TILE, x, ty, TILE, TILE, i, ability.id(), unlocked));
         }
+        if (category == AbilityCategory.INNATE_TECHNIQUE) renderUltimateTile(g, technique, data, tx + tiles.size() * (TILE + 3), ty, mouseX, mouseY);
+    }
+
+    /**
+     * The ultimate, after the others, labelled V as on the bar. Clicking it keeps its card in the big box; it never goes in hand, since
+     * the ultimate isn't placed on the bar. Locked by Refinement: greyed, with a padlock and the level; locked until its Dominion: a
+     * padlock alone.
+     */
+    private void renderUltimateTile(GuiGraphics g, InnateTechnique technique, SyncPayload data, int x, int ty, int mouseX, int mouseY) {
+        Ability ultimate = technique.ultimate().orElse(null);
+        if ((ultimate == null && !technique.ultimateLocked()) || x + TILE > lx1) return;
+        ResourceLocation id = ultimate != null ? ultimate.id() : ULTIMATE_LOCKED;
+        boolean unlocked = ultimate != null && !ClientLoadout.isLocked(data, ultimate);
+        CombatPanelLayer.slotFrame(g, x, ty, id.equals(pinned) || (mouseX >= x && mouseX < x + TILE && mouseY >= ty && mouseY < ty + TILE));
+        if (unlocked) {
+            if (!GuiDraw.abilityIcon(g, ultimate, x + TILE_INSET, ty + TILE_INSET)) {
+                g.drawCenteredString(font, ultimate.displayName().getString().substring(0, 1), x + TILE / 2, ty + 6, GuiDraw.WHITE);
+            }
+        } else {
+            if (ultimate != null) GuiDraw.greyedAbilityIcon(g, ultimate, x + TILE_INSET, ty + TILE_INSET);
+            GuiDraw.sprite(g, GuiDraw.LOCK, x + (TILE - 11) / 2, ty + (TILE - 11) / 2, 11, 11);
+        }
+        g.pose().pushPose();
+        g.pose().translate(0, 0, 200);
+        g.drawString(font, "V", x + 2, ty + 1, unlocked ? GuiDraw.GOLD : 0xFFD8D2E0, true);
+        if (ultimate != null && !unlocked) {
+            String level = Integer.toString(ClientLoadout.lockedLevel(data, ultimate));
+            g.drawString(font, level, x + TILE - font.width(level), ty + TILE - 8, 0xFFD8D2E0, true);
+        }
+        g.pose().popPose();
+        hits.add(new Hit(Kind.TILE, x, ty, TILE, TILE, -1, id, false)); // -1: the ultimate, which is only ever pinned
     }
 
     // ---------------------------------------------------------------- right column
@@ -425,6 +459,11 @@ public final class SorcererScreen extends Screen {
         if (technique == null) {
             return y + GuiDraw.wrapped(g, font, Component.translatable(info.severed() ? "gui.kegare.sorcerer.severed.desc" : "gui.kegare.sorcerer.innate_technique.none"),
                     x, y, w, GuiDraw.GRAY);
+        }
+        if (ULTIMATE_LOCKED.equals(shown)) {
+            GuiDraw.sprite(g, GuiDraw.LOCK, x, y, 11, 11);
+            y += GuiDraw.text(g, font, Component.translatable("gui.kegare.sorcerer.ability.ultimate_locked"), x + 13, y, 1.25f, GuiDraw.GRAY) + 3;
+            return y + GuiDraw.wrapped(g, font, Component.translatable("gui.kegare.sorcerer.ability.ultimate_locked.desc"), x, y, w, GuiDraw.DARK_GRAY);
         }
         Ability ability = shown == null ? null : AbilityLookup.find(technique, shown).orElse(null);
         boolean locked = ability != null && SharedAbilities.isShared(ability.id()) && data != null && !data.sharedUnlocked().contains(ability.id());
@@ -822,7 +861,10 @@ public final class SorcererScreen extends Screen {
                 case VIEW -> setView(View.values()[hit.index]);
                 case TILE -> {
                     if (hit.unlocked) press(hit.ability, -1, mouseX, mouseY);
-                    else pinned = hit.ability; // its "locked" card
+                    else { // its "locked" card, or the ultimate's: kept in the big box, nothing in hand
+                        pinned = hit.ability;
+                        inHand = false;
+                    }
                 }
                 case RESET -> send(LoadoutService.Action.RESET, 0, 0, null);
                 case OPTION -> applyOption(hit.index / 10, hit.index % 10);
@@ -841,7 +883,10 @@ public final class SorcererScreen extends Screen {
                 inHand = false;
             } else if (!slot.ultimate()) {
                 Ability ability = ClientLoadout.abilities().size() > slot.index() ? ClientLoadout.abilities().get(slot.index()) : null;
-                press(ability != null ? ability.id() : null, slot.index(), mouseX, mouseY);
+                press(ability != null ? ability.id() : null, slot.index(), mouseX, mouseY); // a click keeps its card (on release)
+            } else {
+                ResourceLocation ultimate = hoveredAbility((int) mouseX, (int) mouseY);
+                if (ultimate != null) pinned = ultimate; // V: its card stays
             }
             return true;
         }
@@ -876,11 +921,14 @@ public final class SorcererScreen extends Screen {
         int fromSlot = pressSlot;
         pressAbility = null;
         pressSlot = -1;
-        if (!dragging) { // a click: pick up a tile (click it again to put it down)
+        if (!dragging) { // a click: pick up a tile (click it again to put it down); a slot's keeps its card in the big box
             if (fromSlot < 0 && ability != null) {
                 boolean same = ability.equals(pinned) && inHand;
                 pinned = ability;
                 inHand = !same;
+            } else if (ability != null) {
+                pinned = ability;
+                inHand = false;
             }
             return true;
         }
@@ -959,7 +1007,8 @@ public final class SorcererScreen extends Screen {
         if (slot != null && technique != null) {
             Ability ability = slot.ultimate() ? technique.ultimate().orElse(null)
                     : ClientLoadout.abilities().size() > slot.index() ? ClientLoadout.abilities().get(slot.index()) : null;
-            return ability == null ? null : ability.id();
+            if (ability == null) return slot.ultimate() && technique.ultimateLocked() ? ULTIMATE_LOCKED : null;
+            return ability.id();
         }
         return null;
     }
