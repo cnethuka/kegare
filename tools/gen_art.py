@@ -881,6 +881,31 @@ def _arrow(x, y, x0, x1, cy, right: bool, shaft=1.0, head=3.2, head_len=4):
     return lo <= x <= hi and abs(y - cy) <= shaft
 
 
+def icon_reinforcement():
+    """Reinforcement (DESIGN §3.28 Part 2): a dark figure wrapped in Malice that rises into tongues over the head and shoulders."""
+    def body(x, y):
+        if 6 <= x <= 9 and 3 <= y <= 6:
+            return (x, y) not in ((6, 3), (9, 3), (6, 6), (9, 6))
+        if 7 <= x <= 8 and y == 7:
+            return True
+        if 4 <= x <= 11 and 8 <= y <= 10:
+            return (x, y) not in ((4, 8), (11, 8))
+        return (5 <= x <= 6 or 9 <= x <= 10) and 11 <= y <= 13
+    figure = [MALICE[1]] * 7
+    def f(x, y):
+        if body(x, y):
+            return figure
+        if y <= 14 and any(body(x + dx, y + dy) for dx in (-1, 0, 1) for dy in (-1, 0, 1)):
+            return MALICE
+        # three tongues rising off the head and shoulders, leaning a little
+        for tx, top, base in ((2.6, 1.0, 9.0), (7.5, -0.2, 3.0), (12.4, 1.0, 9.0)):
+            cy = y + 0.5
+            if top <= cy <= base and abs(x + 0.5 - tx) <= 1.6 * (cy - top) / (base - top) + 0.15:
+                return MALICE
+        return None
+    return shaped_icon(f)
+
+
 def icon_positions():
     def f(x, y):
         if _arrow(x, y, 1, 13, 4.5, True, shaft=0.6, head=3.0):
@@ -2228,6 +2253,141 @@ def reveal_ash() -> Image.Image:
     return outline(img, hexc("#0e0d10"))
 
 
+# ---------------------------------------------------------------------------------------------------- the Reinforcement aura
+
+# Malice wrapped round the whole body (DESIGN §3.16), our own art: smooth and high-res (a technique's own object, not pixel art).
+# A camera-facing sheet behind the player: the body's silhouette a little way out, rising into flame tongues over the head and
+# shoulders that always flow upward, a hard, irregular near-black ink outline with flicks and small breaks, and inside a see-through
+# glow (white here, tinted with the Malice color at runtime) strongest near the outline and thin near the body. 16 looping frames.
+AURA_W, AURA_H, AURA_FRAMES = 192, 384, 16
+AURA_BLOCKS_W, AURA_BLOCKS_H, AURA_FEET = 1.6, 3.2, 0.30  # the sheet's size in blocks; the feet this far above its bottom
+AURA_INK = (14, 11, 18)
+# The tongues: where they rise (blocks from the middle), how tall at most, how wide, and where in the loop they peak.
+AURA_TONGUES = [(-0.46, 0.42, 0.13, 0.00), (-0.24, 0.62, 0.12, 0.31), (0.00, 0.86, 0.13, 0.62), (0.22, 0.66, 0.12, 0.15), (0.45, 0.46, 0.13, 0.47)]
+
+
+def _sd_box(x: float, y: float, cx: float, cy: float, hw: float, hh: float, r: float) -> float:
+    dx, dy = abs(x - cx) - hw + r, abs(y - cy) - hh + r
+    return math.hypot(max(dx, 0.0), max(dy, 0.0)) + min(max(dx, dy), 0.0) - r
+
+
+def _sd_body(x: float, y: float) -> float:
+    """A player standing, in blocks from their feet: head, torso, arms, legs."""
+    head = math.hypot(x, y - 1.56) - 0.27
+    torso = _sd_box(x, y, 0.0, 1.06, 0.30, 0.36, 0.08)
+    arms = _sd_box(abs(x), y, 0.40, 1.02, 0.11, 0.38, 0.06)
+    legs = _sd_box(x, y, 0.0, 0.36, 0.26, 0.38, 0.05)
+    return min(head, torso, arms, legs)
+
+
+def _smooth(e0: float, e1: float, v: float) -> float:
+    t = min(1.0, max(0.0, (v - e0) / (e1 - e0)))
+    return t * t * (3 - 2 * t)
+
+
+def aura_sheet(simple: bool) -> "Image.Image":
+    """The aura's frames side by side. {simple}: Reduced's, a steadier outline with no breaks or flicks."""
+    half_w, half_h = AURA_W // 2, AURA_H // 2  # the fields are worked out at half size, then enlarged smoothly
+    warp, warp2 = PeriodicNoise(4101, 64, 64, 8), PeriodicNoise(4102, 64, 64, 4)
+    thick, gaps, flick = PeriodicNoise(4103, 64, 64, 4), PeriodicNoise(4104, 64, 64, 8), PeriodicNoise(4105, 64, 64, 4)
+    tau = 2 * math.pi
+    sheet = Image.new("RGBA", (AURA_W * AURA_FRAMES, AURA_H), (0, 0, 0, 0))
+    px_blocks = AURA_BLOCKS_W / AURA_W
+    for f in range(AURA_FRAMES):
+        t = f / AURA_FRAMES
+        fields = [Image.new("F", (half_w, half_h)) for _ in range(4)]
+        fd, fw, fg, fk = (im.load() for im in fields)
+        for j in range(half_h):
+            y = (1 - (j + 0.5) / half_h) * AURA_BLOCKS_H - AURA_FEET
+            for i in range(half_w):
+                x = ((i + 0.5) / half_w - 0.5) * AURA_BLOCKS_W
+                nx, ny = x * 20, y * 20 - t * 64  # noise scrolled down a period per loop: everything flows up
+                up = 0.4 + 0.6 * min(1.0, max(0.0, y / 1.8))
+                xe = x + (warp.at(nx, ny) - 0.5) * 0.12 * up
+                lift = 0.0
+                for cx, h, w, phase in AURA_TONGUES:
+                    hk = h * (0.62 + 0.38 * math.sin(tau * (t + phase)))
+                    ck = cx + 0.04 * math.sin(tau * (2 * t + phase)) + 0.10 * (y - 1.8) * math.sin(tau * (t + phase + 0.25))
+                    lift += hk * math.exp(-((xe - ck) / w) ** 2)
+                ye = y - lift * _smooth(1.0, 1.55, y)
+                margin = 0.20 + (warp2.at(nx * 2, ny * 2) - 0.5) * 0.06
+                fd[i, j] = _sd_body(xe, ye) - margin
+                # thick enough to hold at 7 blocks and more (the texture has no mipmaps: a thin line would be skipped)
+                fw[i, j] = 0.075 if simple else 0.055 + 0.06 * thick.at(nx * 1.5, ny * 1.5)
+                # breaks and flicks are soft-edged fields (1 at their middle), so they come out smooth, not as stray pixels
+                fg[i, j] = 0.0 if simple or y < 0.45 else min(1.0, max(0.0, (0.19 - gaps.at(nx * 0.7, ny * 0.5)) / 0.04))
+                fk[i, j] = 0.0 if simple or y < 1.15 else max(0.0, 1 - abs(flick.at(nx * 2.2, ny * 0.3) - 0.5) / 0.03)
+        big = [im.resize((AURA_W, AURA_H), Image.BILINEAR).load() for im in fields]
+        frame = Image.new("RGBA", (AURA_W, AURA_H), (0, 0, 0, 0))
+        out = frame.load()
+        for j in range(AURA_H):
+            for i in range(AURA_W):
+                d, wo, gap, fl = big[0][i, j], big[1][i, j], big[2][i, j], big[3][i, j]
+                ink = min(1.0, max(0.0, (wo / 2 - abs(d)) / px_blocks + 0.5)) * (1 - gap)
+                if d > 0:  # a flick: a short brush stroke flung outward off the outline, thinning to nothing
+                    ink = max(ink, min(1.0, max(0.0, (fl - 0.45) * 3)) * max(0.0, 1 - d / 0.16))
+                if d < 0:
+                    glow = min(0.85, 0.04 + 0.78 * math.exp((d + wo / 2) / 0.09))
+                else:
+                    glow = 0.30 * max(0.0, 1 - (d - wo / 2) / 0.09)
+                a = ink + glow * (1 - ink)
+                if a <= 0.004:
+                    continue
+                r = (AURA_INK[0] * ink + 255 * glow * (1 - ink)) / a
+                g = (AURA_INK[1] * ink + 255 * glow * (1 - ink)) / a
+                b = (AURA_INK[2] * ink + 255 * glow * (1 - ink)) / a
+                out[i, j] = (int(r), int(g), int(b), int(round(a * 255)))
+        sheet.paste(frame, (f * AURA_W, 0))
+    return sheet
+
+
+def aura_wisp() -> "Image.Image":
+    """A wisp peeling off a tongue's tip: a small upward teardrop of glow with an ink edge (smooth)."""
+    w, h = 32, 64
+    img = Image.new("RGBA", (w, h), (0, 0, 0, 0))
+    out = img.load()
+    for j in range(h):
+        for i in range(w):
+            x, y = (i + 0.5) / w - 0.5, 1 - (j + 0.5) / h
+            # a teardrop: round at the bottom, drawn out to a point at the top, leaning a little
+            radius = 0.36 * (1 - y) ** 0.8 * min(1.0, y / 0.25 + 0.2)
+            d = abs(x - 0.06 * y * y) - radius
+            ink = min(1.0, max(0.0, (0.06 - abs(d)) / 0.03))
+            glow = 0.7 * min(1.0, max(0.0, -d / 0.15)) if d < 0 else 0.0
+            a = ink + glow * (1 - ink)
+            if a > 0.004:
+                c = [(AURA_INK[k] * ink + 255 * glow * (1 - ink)) / a for k in range(3)]
+                out[i, j] = (int(c[0]), int(c[1]), int(c[2]), int(round(a * 255)))
+    return img
+
+
+def aura_edge() -> "Image.Image":
+    """Your own first person: tongues of the aura rising up the left edge of the screen (mirrored for the right). Frames side by side,
+    the screen's edge at x = 0. Faint and thin: it never reaches the middle of the view."""
+    w, h, frames = 64, 256, AURA_FRAMES
+    sheet = Image.new("RGBA", (w * frames, h), (0, 0, 0, 0))
+    n1, n2 = PeriodicNoise(4201, 64, 64, 8), PeriodicNoise(4202, 64, 64, 4)
+    for f in range(frames):
+        t = f / frames
+        frame = Image.new("RGBA", (w, h), (0, 0, 0, 0))
+        out = frame.load()
+        for j in range(h):
+            v = 1 - (j + 0.5) / h
+            for i in range(w):
+                u = (i + 0.5) / w
+                reach = 0.35 + 0.45 * n1.at(v * 64 * 0.5, v * 64 - t * 64) + 0.15 * (n2.at(v * 64, v * 64 * 2 - t * 128) - 0.5)
+                reach *= 0.55 + 0.45 * v  # taller toward the top: it rises
+                d = u - reach
+                ink = 0.7 * min(1.0, max(0.0, (0.03 - abs(d)) / 0.02))  # lighter than the body's: it's the edge of your own view
+                glow = 0.6 * min(1.0, max(0.0, -d / 0.3)) if d < 0 else 0.0
+                a = ink + glow * (1 - ink)
+                if a > 0.004:
+                    c = [(AURA_INK[k] * ink + 255 * glow * (1 - ink)) / a for k in range(3)]
+                    out[i, j] = (int(c[0]), int(c[1]), int(c[2]), int(round(a * 255)))
+        sheet.paste(frame, (f * w, 0))
+    return sheet
+
+
 def save(img: Image.Image, relative: str) -> Path:
     path = TEXTURES / relative
     path.parent.mkdir(parents=True, exist_ok=True)
@@ -2654,6 +2814,10 @@ def main() -> None:
     save(puppet_glow(), "entity/puppet_glow.png")
     save(fist_flame(), "entity/fist_flame.png")
     save(fist_fire(), "entity/fist_fire.png")
+    save(aura_sheet(False), "entity/aura.png")
+    save(aura_sheet(True), "entity/aura_simple.png")
+    save(aura_wisp(), "entity/aura_wisp.png")
+    save(aura_edge(), "entity/aura_edge.png")
     save(string_braid(), "item/string_braid.png")
     for kind in ("follow", "stay", "guard", "go"):
         save(order_glyph(kind), f"gui/puppet_order/{kind}.png")
@@ -2663,7 +2827,7 @@ def main() -> None:
              "test_shockwave": icon(ICON_SHOCKWAVE, MALICE),
              "frost_shard": icon(ICON_FROST_SHARD, ICE), "glacial_lance": icon(ICON_GLACIAL_LANCE, ICE),
              "frost_field": icon(ICON_FROST_FIELD, ICE), "rime_shell": icon(ICON_RIME_SHELL, ICE),
-             "reverse_malice_technique": icon(ICON_RMT, HEAL), "reinforced_fists": icon(ICON_FISTS, MALICE),
+             "reverse_malice_technique": icon(ICON_RMT, HEAL), "reinforced_fists": icon(ICON_FISTS, MALICE), "reinforcement": icon_reinforcement(),
              "positions": icon_positions(), "switchback": icon_switchback(), "awareness": icon_awareness(),
              "mimic": icon_mimic(), "anchor": icon_anchor(), "send_off": icon_send_off(), "exchange": icon_exchange(),
              "momentum_exchange": icon_momentum_exchange(), "total_swap": icon_total_swap(),

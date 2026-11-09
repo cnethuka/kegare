@@ -344,6 +344,12 @@ public final class KegareLanguageProvider extends LanguageProvider {
         add("message.kegare.rmt.unlocked", "Your body remembers how to heal.");
         add("ability.kegare.reverse_malice_technique.unlock", "Take in the green orb.");
 
+        // Reinforcement (Malice, every Malice user's)
+        add("ability.kegare.reinforcement", "Reinforcement");
+        add("ability.kegare.reinforcement.desc", "Toggle: route " + MALICE + " through your whole body. You take %1$s less physical damage "
+                + "and %2$s less from techniques, and you're %3$s harder to knock back. It adds no damage. Turning it on costs " + MALICE
+                + ", it drains more while it runs, and it keeps running outside Technique Mode. Everyone can see it.");
+
         // Reinforced Fists (shared ability, every Malice user's)
         add("ability.kegare.reinforced_fists", "Reinforced Fists");
         add("ability.kegare.reinforced_fists.desc", "Toggle: wrap your fists in " + MALICE + ". Your melee hits deal %1$s more with an empty hand "

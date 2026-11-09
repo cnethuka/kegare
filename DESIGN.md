@@ -338,7 +338,8 @@ All timestamps use **level game time**. They persist across restarts and are ide
   see behind where it is), and vanilla's own teleport and head packets for the delayed image.
 - **Sub-tick timing** (§3.29): `TimingNet.Stamp` (C→S, an input stamped with the client's clock, sent at the key press), `TimingNet.Ping`
   (S→C) and `TimingNet.Pong` (C→S, the client's clock), all handled on the network thread. Reinforced Fists' look is `FistsPayload` (§3.28).
-- Network version `23` (since too fast for the eye, §3.30: `SensedPositionsPayload`; `22` was Reinforced Fists and Black Spark, §3.28-3.29: `FistsPayload`, the timing stamps; `21` was RMT's rework, §3.17: `RmtOutputPayload`, then heal-others' `RmtLinkPayload` and `RmtMomentPayload`; `20`
+- Network version `24` (since Reinforcement and Background Tasks, §3.16 and §3.31: `AuraPayload`; `23` was too fast for the eye, §3.30:
+  `SensedPositionsPayload`; `22` was Reinforced Fists and Black Spark, §3.28-3.29: `FistsPayload`, the timing stamps; `21` was RMT's rework, §3.17: `RmtOutputPayload`, then heal-others' `RmtLinkPayload` and `RmtMomentPayload`; `20`
   was Closing Line's line in three dimensions in `RushPayload` and its cooldown in `BlurPayload`, §3.27; `19`
   was Severed's payloads, `18` Burnout's end time in the sync, §3.25, and Time Manipulation's payloads, §3.26). Bump it when payload formats change; mismatched clients are refused.
 
@@ -1200,6 +1201,41 @@ separate bar is filled from any of them.
   unlock (`SharedAbilities.registerForEveryone`: Reinforcement, Reinforced Fists, §3.28); Severed players never have those either. A
   locked one shows in its category as a greyed tile with a padlock, and its card says what unlocks it (`Ability.unlockHint`: Reverse
   Malice Technique's "Take in the green orb.").
+- **Reinforcement** (`kegare:reinforcement`, Malice, TOGGLE; package `reinforcement`). Lore: reinforcement
+  strengthens the body by routing energy through it, improving durability and force tolerance; every sorcerer in canon does it, so every
+  Malice user has it, with nothing to unlock (Severed never). The same rules as Reinforced Fists (§3.28): turning it on costs `onCost`
+  (40), it drains `drainPerSecond` (10) and goes off when Malice runs out, `rearmCooldown` (1.5 s) after it goes off; it keeps running
+  outside Technique Mode and through Burnout; death and logout end it. Both it and Reinforced Fists can run together.
+  - **Effect** (`Reinforcement`): you take `reductionPhysical` (25%) less physical damage and `reductionTechnique` (20%) less from
+    techniques (as `MeleeHits` sorts a hit: a Kegare damage type or an attributed cast is a technique; everything else is physical),
+    taken off what's left after armour, and `knockbackResistance` (+0.4, an attribute modifier) against knockback: the force
+    tolerance. The void, /kill and starving are untouched. It adds no damage (that's Reinforced Fists). Background Reinforcement
+    (§3.31) is another source of the same thing at a share of its strength; they never stack: the stronger applies. Numbers in
+    `[reinforcement]`.
+  - **Look** (client `AuraClient`, art from `tools/gen_art.py`, Python; our own): Malice wrapped round the whole body, the way anime draws a sorcerer's energy flowing. A sheet of 16 frames
+    (`entity/aura.png`, 192×384 each, 1.6 × 3.2 blocks) hugs the player's silhouette a little way out and rises into five flame-like
+    tongues over the head and shoulders, always flowing upward (the noise scrolls up a period per loop; each tongue swells and sways in
+    its own phase). Round it a hard, near-black ink outline, irregular like a brush stroke, varying in thickness, with flicks flung off
+    it and small breaks; inside it a see-through glow in the Malice color (the white glow tinted by the vertex color; the ink stays
+    black), strongest at the outline and thin near the body so the player stays readable. Smooth, high-resolution art: its render
+    type (`AuraRenderTypes`) filters the texture linearly, translucent, unlit, no depth written. The ink outline and the moving tongues
+    are what stop it reading as glass.
+    - Drawn as an upright card facing the camera round the vertical, its feet at the player's, 0.32 blocks behind them from the camera,
+      so the body stands in front of it; scaled with the body (crouching shrinks it). Small wisps (`entity/aura_wisp.png`, an upward
+      teardrop with an ink edge) peel off the tongues' tips and rise and fade.
+    - Fuller and faster in a fight (`AuraPayload.FIGHT`, while combat-tagged): about 10% bigger, opaque instead of 85%, 18 frames a
+      second instead of 11, wisps every 3 ticks instead of 5, eased in and out.
+    - Your own first person: only a faint flow (`entity/aura_edge.png`) up both edges of the view, 13% of the width each, and a little
+      wider (19%) low on the right round your arm: never in the middle 60%. Nothing round your own body in first person.
+    - Reduced: the simpler sheet (`entity/aura_simple.png`: an even outline with no breaks or flicks) and half the wisps. Vanilla: dust
+      in the Malice color rising round the body (none round your own in first person). An invisible player shows nothing.
+    - Visible to everyone: reinforcement is open. The color follows the ready fist's rules (§3.22): the wearer sees their own Malice
+      color, everyone else the color of the face they wear (`MeleeTell.seenByOthers`), so a disguise is never given away. Sent per
+      viewer when it changes (`AuraTell`, `AuraPayload`).
+  - Its own icon (a dark figure wrapped in Malice, three tongues over it), name and text; the combat panel outlines it green while on.
+  - **Tests:** `ReinforcementTest`: everyone's, in the Malice tab, Severed never; the toggle, onCost, the drain, Burnout, re-arm, out of
+    Malice; both reductions, the void untouched, knockback resistance on and off; running with Fists (no damage added, Fists' bonus,
+    both drains); the aura's flags.
 - **The loadout** (attachment `kegare:loadout`, saved, kept on death; `LoadoutService`):
   - **nine** regular slots (`LoadoutService.SLOTS`, number keys 1–9). By default the abilities the player has unlocked
     (§3.21; at Refinement 0, the first two) fill the first ones in order and the rest stay empty, ready for later
