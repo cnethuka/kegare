@@ -15,6 +15,7 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.Mob;
+import net.minecraft.world.entity.Pose;
 import net.minecraft.world.entity.ai.Brain;
 import net.minecraft.world.entity.ai.goal.Goal;
 import net.minecraft.world.entity.ai.goal.MeleeAttackGoal;
@@ -35,6 +36,7 @@ import net.minecraft.world.entity.monster.Ghast;
 import net.minecraft.world.entity.monster.Guardian;
 import net.minecraft.world.entity.monster.SpellcasterIllager;
 import net.minecraft.world.entity.monster.Witch;
+import net.minecraft.world.entity.monster.breeze.Breeze;
 import net.minecraft.world.entity.monster.warden.Warden;
 import net.minecraft.world.item.ProjectileWeaponItem;
 import net.minecraft.world.phys.AABB;
@@ -52,7 +54,7 @@ import net.neoforged.neoforge.event.tick.ServerTickEvent;
  * <li>{@code SWING}: a melee mob {@link #SWING_LEAD} ticks before its swing, its target in reach or about to be (the first swing as it closes
  * in too): the vanilla melee goal (zombies of every kind, spiders, vindicators, endermen, silverfish, endermites, iron golems, angry wolves
  * and the like) and brain-driven melee (hoglins, zoglins, piglins, piglin brutes, the warden);</li>
- * <li>{@code CHARGE}: a ghast or blaze charging a shot;</li>
+ * <li>{@code CHARGE}: a ghast, blaze or breeze charging a shot;</li>
  * <li>{@code SPELL}: an evoker or illusioner casting;</li>
  * <li>{@code BEAM}: a guardian or elder guardian locking its beam on;</li>
  * <li>{@code SONIC_BOOM}: a warden starting its sonic boom;</li>
@@ -62,7 +64,7 @@ import net.neoforged.neoforge.event.tick.ServerTickEvent;
  * <li>{@code BULLET}: a shulker {@link #SHOT_LEAD} ticks from a bullet.</li>
  * </ul>
  * The reads go by what the AI is made of, not by species, so a modded mob built on those goals or that memory reads the same. A hostile mob
- * with AI there's nothing to read in (a modded mob's own, and vanilla's slimes, phantoms, vexes and breezes) falls back on what any mob
+ * with AI there's nothing to read in (a modded mob's own, and vanilla's slimes, phantoms and vexes) falls back on what any mob
  * shows: {@code LOCK} as it locks onto a target, {@code LOOSE} while it uses an item, and {@code SWING} when its target comes into reach,
  * again {@link #GUESS_REST} ticks after a hit. That's a guess at when, not a reading: a ranged attack with no item shows only the lock.
  */
@@ -124,6 +126,7 @@ public final class MobIntent {
         if (mob instanceof Creeper c && (c.getSwellDir() > 0 || c.isIgnited())) f |= bit(SightPayloads.Pulse.SWELL);
         if (mob instanceof Ghast g && g.isCharging()) f |= bit(SightPayloads.Pulse.CHARGE);
         if (mob instanceof Blaze b && b.isOnFire()) f |= bit(SightPayloads.Pulse.CHARGE); // a blaze "on fire" is a blaze charged to shoot
+        if (mob instanceof Breeze b && b.getPose() == Pose.SHOOTING) f |= bit(SightPayloads.Pulse.CHARGE); // breathing in for a wind charge
         if (mob instanceof SpellcasterIllager s && s.isCastingSpell()) f |= bit(SightPayloads.Pulse.SPELL);
         if (mob instanceof Guardian g && g.hasActiveAttackTarget()) f |= bit(SightPayloads.Pulse.BEAM);
         if (mob instanceof Warden w && w.getBrain().hasMemoryValue(MemoryModuleType.SONIC_BOOM_SOUND_DELAY)) f |= bit(SightPayloads.Pulse.SONIC_BOOM);
@@ -141,7 +144,7 @@ public final class MobIntent {
     /** A mob with a target: read its attack AI, or fall back on what any hostile mob shows. */
     private static int attackAi(Mob mob, LivingEntity target, double gap, double closing) {
         int f = 0;
-        boolean readable = mob instanceof Creeper || mob instanceof Ghast || mob instanceof Blaze || mob instanceof SpellcasterIllager
+        boolean readable = mob instanceof Creeper || mob instanceof Ghast || mob instanceof Blaze || mob instanceof Breeze || mob instanceof SpellcasterIllager
                 || mob instanceof Guardian || mob instanceof EnderDragon; // these have their own reads, above
         for (WrappedGoal wrapped : mob.goalSelector.getAvailableGoals()) {
             Goal goal = wrapped.getGoal();

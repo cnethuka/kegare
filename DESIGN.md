@@ -3078,11 +3078,11 @@ for the eye" (§3.30).
     piglin brutes, the warden). A melee goal that gives up when its path is done restarts with its timer at zero and swings at once, so that one comes with a tick or two of warning.
   - **Ranged, read from the timer** 10 ticks before the shot: a witch's potion and a drowned's trident (THROW; not while the witch drinks), a shulker's bullet (BULLET), the wither's skulls from all three
     heads (SKULL), anything else on the vanilla ranged goal (LOOSE). Vanilla can pause a timer (a shulker's look goal), and then it pulses again when it resumes.
-  - **Ranged, read from the body:** a hostile mob drawing or charging a weapon (LOOSE: skeletons, pillagers, piglins, illusioners), a creeper swelling (SWELL), a ghast or blaze charging (CHARGE), an
+  - **Ranged, read from the body:** a hostile mob drawing or charging a weapon (LOOSE: skeletons, pillagers, piglins, illusioners), a creeper swelling (SWELL), a ghast, blaze or breeze charging (CHARGE; a breeze from its shooting pose, as it breathes in), an
     evoker or illusioner casting (SPELL), a guardian or elder guardian locking its beam (BEAM), a warden starting its sonic boom (SONIC_BOOM), the ender dragon turning to strafe, charge or breathe (DRAGON).
   - **Modded mobs:** the reads go by what the AI is made of, not by species, so one built on the vanilla goals or the brain's attack memories reads exactly the same. A hostile mob with AI there's nothing
     to read in falls back on what any mob shows: a pulse as it locks onto a target (LOCK), while it uses an item (LOOSE), and when its target comes into reach (SWING), again 16 ticks after a hit. That's a
-    guess at when and not a reading: a ranged attack with no item shows only the lock. Vanilla's slimes, phantoms, vexes and breezes are in this group.
+    guess at when and not a reading: a ranged attack with no item shows only the lock. Vanilla's slimes, phantoms and vexes are in this group.
 - **Every setting:** the map, outlines, markers, voids and pulses don't change with Reduced or Vanilla: they're what the bearer plays by.
 **Reads** (`Reads`, `ReadsPayload`; client `ReadsClient`)
 - Every player and mob in the bearer's field of view gets a compact tag automatically, with no staring needed:
@@ -3171,7 +3171,7 @@ focus is the Read the server decides for itself, so that's the one it counts.
 - **Tests (perception):** `SightTest` (only the bearer is sent anything; a player 25 km off and a void as far, never another dimension, not themself,
   capacity carried; losing the eyes sends one "forget" and then nothing; loaded mobs with their flow; a cast pulsing once for the bearer
   only, a void never; a creeper, a skeleton and a ghast pulsing once as each begins, and not moved); `MobIntentTest` (on each mob's own AI, ticked by hand, the pulse coming before the attack: a zombie's first swing
-  and the next, the same for a hoglin, a zoglin, a piglin brute and a warden; a witch, a drowned and a shulker exactly 10 ticks before; the wither before its first skull, and unmoved; the fallback's lock, item, reach and rest, on
+  and the next, the same for a hoglin, a zoglin, a piglin brute and a warden; a breeze before its wind charge, with no lock; a witch, a drowned and a shulker exactly 10 ticks before; the wither before its first skull, and unmoved; the fallback's lock, item, reach and rest, on
   a hostile mob only).
 
 ---

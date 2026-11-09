@@ -28,6 +28,7 @@ import net.minecraft.world.entity.monster.Zombie;
 import net.minecraft.world.entity.monster.warden.AngerLevel;
 import net.minecraft.world.entity.monster.warden.Warden;
 import net.minecraft.world.entity.projectile.ShulkerBullet;
+import net.minecraft.world.entity.projectile.windcharge.BreezeWindCharge;
 import net.minecraft.world.entity.projectile.ThrownPotion;
 import net.minecraft.world.entity.projectile.ThrownTrident;
 import net.minecraft.world.entity.projectile.WitherSkull;
@@ -181,6 +182,19 @@ class MobIntentTest {
             shulker.setTarget(target);
             int lead = pulsedBefore(s, level, shulker, SightPayloads.Pulse.BULLET, () -> any(level, ShulkerBullet.class), 400);
             assertEquals(MobIntent.SHOT_LEAD, lead, "the timer's read exactly");
+        });
+    }
+
+    @Test
+    void aBreezesWindChargeIsReadFromItsShootingPose(MinecraftServer server) throws Exception {
+        scene(server, (s, level, target) -> {
+            Mob breeze = spawn(level, EntityType.BREEZE, 6.5, 0.5);
+            breeze.getBrain().setMemory(MemoryModuleType.ATTACK_TARGET, target);
+            List<SightTest.Sent> sent = SightTest.capture();
+            MobIntent.check(level, breeze);
+            assertTrue(pulses(sent, breeze).isEmpty(), "a real read now, not the fallback's lock");
+            int lead = pulsedBefore(s, level, breeze, SightPayloads.Pulse.CHARGE, () -> any(level, BreezeWindCharge.class), 600);
+            assertTrue(lead >= MobIntent.SWING_LEAD, "it breathes in first, and that's the warning: " + lead);
         });
     }
 
