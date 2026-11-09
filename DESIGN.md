@@ -1230,14 +1230,20 @@ negative is positive energy, which is why it heals, and why its colors are white
 - **Locked by default.** Found through the green orb (§3.18); `/kegare debug shared unlock|lock` for admins. Severed
   players can never unlock it (`SharedAbilityService.unlock` refuses) or cast it (the cast pipeline refuses Severed
   players for everything).
-- **CHANNELED:** hold its number key to heal **2 HP** at the end of every
-  full second held (`healPerSecond`); release to stop. Never above max health; once there is nothing left to heal
-  the channel ends by itself ("Fully healed."). At full health it is refused before anything is paid ("You aren't
-  hurt.").
+- **CHANNELED:** hold its number key to heal **`healPerSecond` (2) x output** a second, a little every tick, so damage is healed
+  as it lands; release to stop. Never above max health, never absorption. It's **not refused at full health and doesn't end
+  there**: it keeps running, draining Malice, ready for the next hit. A heal pulse plays about once a second while it's actually
+  healing, none while there's nothing to heal.
+- **Output** (`RmtOutput`, `[reverse_malice_technique.output]`): 1 + a Grade bonus (0 at Grade 4 up to `gradeBonus` 0.3 at Special
+  Grade, evenly along the ladder) + a Peak Refinement bonus (0 at 0 up to `peakBonus` 0.3 at the top level). A normal player tops
+  out at 1.6x. Peak, not Refinement: Refinement resets on a reroll, and RMT belongs to the player, not the technique.
+  **This is a deliberate exception to §3.21's rule that progression only unlocks things: in canon, how fast reverse cursed
+  energy heals rides on the user's output.** Other systems change it through `RmtOutput.addModifier` (Six Eyes,
+  §3.32; Black Spark's zone).
 - **Expensive:** 40 Malice to start, then **96 Malice/s**, about double a typical attack's cost. Shared abilities take
   no innate technique's surroundings modifier.
-- **Ends** like every channel: release, out of Malice, `maxDuration` (0 = none), a stun or a freeze (interrupted);
-  plus fully healed. The **15 s cooldown** starts when it ends.
+- **Ends** like every channel: release, out of Malice, `maxDuration` (0 = none), a stun or a freeze (interrupted). The **15 s
+  cooldown** starts when it ends.
 - **No special:** R on it fizzles at no cost.
 - **Visuals:** Photon only; **it has no player animation**, so the caster's body doesn't move. `rmt/rmt_channel_aura` (green and
   white motes rising round the body, white sparkles circling, a white-hearted glow at the chest) and `rmt/rmt_heal_pulse` (each heal:
@@ -1256,9 +1262,11 @@ negative is positive energy, which is why it heals, and why its colors are white
   `its_been_a_while` "It's been a while, huh?" (start a cast at **6 HP or less** having been hit by a player in the
   last **10 s**; challenge). Hits from players are remembered per player at runtime (`kegare:rmt_state`).
   `RmtAdvancementsTest` covers both, including 8 HP and a hit more than 10 s ago (neither counts).
-- **Tests:** `RmtTest`: Severed can't unlock; locked can't be slotted; swap a Rime ability for it; refused at full
-  health; R fizzles; start cost, heal after each full second, upkeep; cooldown on release; a freeze interrupts it;
-  ends when fully healed; a reroll resets the loadout but keeps the unlock; locking takes it off the bar.
+- **Tests:** `RmtTest`: Severed can't unlock; locked can't be slotted; swap a Rime ability for it; cast at full health, still running
+  there, a hit healed as it lands, never above max or absorption; R fizzles; start cost, a twentieth a tick, healPerSecond after a
+  second, upkeep; cooldown on release; a freeze interrupts it; it doesn't end healed up; a reroll resets the loadout but keeps the
+  unlock; locking takes it off the bar. `RmtOutputTest`: Grade 4 at Peak 0 is 1x, Special Grade at Peak 10 is 1.6x, a reroll
+  doesn't lower it, the hook changes it.
 
 ### 3.18 The green orb (unlocking RMT)
 `rmt.GreenOrbService` (server) and `rmt.client.GreenOrbClient`. Numbers in `[reverse_malice_technique.orb]`.
@@ -1738,7 +1746,8 @@ counting unloaded puppets, lowering the config.
 
 ### 3.21 Progression (package `progression`)
 What a player builds up over time: **Grade**, **Assessment**, **Refinement** and **Insight**, plus a registry for what they
-unlock. **None of it changes damage, costs, cooldowns or Malice capacity.** Every number is in `[progression]` of
+unlock. **None of it changes damage, costs, cooldowns or Malice capacity.** One deliberate exception: Reverse Malice Technique heals faster with
+Grade and Peak Refinement (its output, §3.17), because in canon reverse healing rides on the user's output. Every number is in `[progression]` of
 `kegare-server.toml`. The server decides everything; the client only displays synced values.
 
 | | Belongs to | On reroll | On death | Seen by |
@@ -1845,7 +1854,8 @@ count as Technique use 0 and roll off as new ones come in.
 players skip it. Promotion is tried after every qualifying fight, XP change and new Refinement level, and on login.
 
 #### Refinement (per technique, resets on reroll)
-Levels 0-10 (`refinement.maxLevel`). It **only unlocks things**: it never changes damage, cost or cooldown. Severed players have none.
+Levels 0-10 (`refinement.maxLevel`). It **only unlocks things**: it never changes damage, cost or cooldown (the one exception: Peak
+Refinement raises Reverse Malice Technique's output, §3.17, on purpose). Severed players have none.
 
 - **Curve:** level L costs `xpBase × L^xpExponent` (30 × L^1.6): 30, 91, 174, 276, 394, 527, 675, 836, 1009, 1194. Level 2, the third ability, takes
   121 XP in total, and level 9, the full kit, takes 4012.

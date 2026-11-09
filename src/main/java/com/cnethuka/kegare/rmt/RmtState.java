@@ -16,6 +16,8 @@ public final class RmtState {
     /** The whole route, fixed when it's rolled. */
     int followTotal;
     long lastHitByPlayer = Long.MIN_VALUE;
+    /** When the last heal pulse played: about once a second while it's actually healing. */
+    long lastPulse = Long.MIN_VALUE;
 
     public boolean hasOrb() {
         return path != null;

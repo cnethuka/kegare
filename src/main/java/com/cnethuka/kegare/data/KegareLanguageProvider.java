@@ -334,8 +334,6 @@ public final class KegareLanguageProvider extends LanguageProvider {
         add("ability.kegare.reverse_malice_technique", "Reverse Malice Technique");
         add("ability.kegare.reverse_malice_technique.desc", "Turn " + MALICE + " back on your own body. Hold to heal a little every second; "
                 + "release to stop. It drains " + MALICE + " fast. Interrupted by stuns and freezing like any channel.");
-        add("message.kegare.rmt.not_hurt", "You aren't hurt.");
-        add("message.kegare.rmt.healed", "Fully healed.");
         add("message.kegare.rmt.unlocked", "Your body remembers how to heal.");
 
         // Loadout

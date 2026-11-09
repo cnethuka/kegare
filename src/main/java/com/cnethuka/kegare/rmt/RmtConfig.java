@@ -9,6 +9,8 @@ public final class RmtConfig {
     public static ModConfigSpec.DoubleValue HEAL_PER_SECOND;
     public static ModConfigSpec.DoubleValue COOLDOWN;
     public static ModConfigSpec.DoubleValue MAX_DURATION;
+    public static ModConfigSpec.DoubleValue OUTPUT_GRADE_BONUS;
+    public static ModConfigSpec.DoubleValue OUTPUT_PEAK_BONUS;
 
     // The green orb (unlock)
     public static ModConfigSpec.DoubleValue ORB_HEALTH_THRESHOLD;
@@ -36,12 +38,19 @@ public final class RmtConfig {
         COST = b.comment("Malice to start the channel.").defineInRange("cost", 40.0, 0.0, 100_000.0);
         UPKEEP = b.comment("Malice drained per second while healing (about double a typical attack's cost).")
                 .defineInRange("upkeepPerSecond", 96.0, 0.0, 100_000.0);
-        HEAL_PER_SECOND = b.comment("Health restored at the end of every full second held (2 = one heart).")
+        HEAL_PER_SECOND = b.comment("Health restored per second held at an output of 1 (2 = one heart), a little every tick, so damage is",
+                        "healed as it lands. The real rate is this times your output.")
                 .defineInRange("healPerSecond", 2.0, 0.0, 1000.0);
-        COOLDOWN = b.comment("Starts when the channel ends (release, out of Malice, interrupted, fully healed).")
+        COOLDOWN = b.comment("Starts when the channel ends (release, out of Malice, interrupted).")
                 .defineInRange("cooldown", 15.0, 0.0, 3600.0);
-        MAX_DURATION = b.comment("Longest channel; 0 = until released, fully healed or out of Malice.")
+        MAX_DURATION = b.comment("Longest channel; 0 = until released or out of Malice. It keeps running at full health.")
                 .defineInRange("maxDuration", 0.0, 0.0, 3600.0);
+
+        b.comment("Output: how strongly it heals, 1 + a Grade bonus + a Peak Refinement bonus. An exception to progression only",
+                "unlocking things: in canon, reverse healing rides on the user's output.").push("output");
+        OUTPUT_GRADE_BONUS = b.comment("Added at Special Grade; 0 at Grade 4, evenly up the ladder between.").defineInRange("gradeBonus", 0.3, 0.0, 10.0);
+        OUTPUT_PEAK_BONUS = b.comment("Added at the top Peak Refinement level; 0 at 0, evenly between.").defineInRange("peakBonus", 0.3, 0.0, 10.0);
+        b.pop();
 
         b.comment("The green orb: how Reverse Malice Technique is found. Only its finder sees it.").push("orb");
         ORB_HEALTH_THRESHOLD = b.comment("A hit from a player that leaves you at this much health or less can bring the orb (10 = 5 hearts).")

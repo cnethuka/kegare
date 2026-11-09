@@ -77,13 +77,27 @@ class RmtTest {
             assertFalse(LoadoutService.holds(p, Rime.GLACIAL_LANCE.id()), "Glacial Lance left the bar");
             InnateTechniqueService.select(p, 1);
 
-            // Full health: refused, nothing paid.
+            // Full health: it casts all the same, and keeps running, draining Malice, ready for the next hit.
             MaliceService.refill(p);
             p.setHealth(p.getMaxHealth());
             double before = malice(p);
             CastManager.handleIntent(p, CastIntent.CAST_PRESS);
-            assertNull(CastManager.state(p).casting());
-            assertEquals(before, malice(p), EPS);
+            assertNotNull(CastManager.state(p).casting(), "cast at full health");
+            for (int i = 0; i < 40; i++) CastManager.tick(p);
+            assertNotNull(CastManager.state(p).casting(), "still running at full");
+            assertEquals(p.getMaxHealth(), p.getHealth(), 1e-4, "never above max");
+            assertEquals(0f, p.getAbsorptionAmount(), 1e-4, "never absorption");
+            assertTrue(malice(p) < before - RmtConfig.COST.get(), "and draining");
+            // A hit lands while it runs: healed as it comes in, a little every tick.
+            p.setHealth(p.getMaxHealth() - 4f);
+            CastManager.tick(p);
+            assertEquals(p.getMaxHealth() - 4f + RmtConfig.HEAL_PER_SECOND.get() / 20.0, p.getHealth(), 1e-4, "one tick's worth at once");
+            for (int i = 0; i < 60; i++) CastManager.tick(p);
+            assertEquals(p.getMaxHealth(), p.getHealth(), 1e-4, "all of it back, and no more");
+            CastManager.handleIntent(p, CastIntent.CAST_RELEASE);
+            InnateTechniqueService.clearCooldowns(p);
+            MaliceService.refill(p);
+            before = malice(p);
 
             // No special: R fizzles at no cost.
             p.setHealth(6f);
@@ -91,14 +105,15 @@ class RmtTest {
             assertNull(CastManager.state(p).casting());
             assertEquals(before, malice(p), EPS);
 
-            // Hold: start cost, then heal at the end of each full second while Malice drains.
+            // Hold: start cost, then healPerSecond x output (1 at Grade 4 and Peak 0) a second, a little every tick, while Malice drains.
             CastManager.handleIntent(p, CastIntent.CAST_PRESS);
             assertNotNull(CastManager.state(p).casting(), "channeling");
             assertEquals(before - RmtConfig.COST.get(), malice(p), EPS, "start cost");
-            for (int i = 0; i < 19; i++) CastManager.tick(p);
-            assertEquals(6f, p.getHealth(), 1e-4, "no heal before a full second");
+            assertEquals(1.0, RmtOutput.of(p), 1e-9, "setup: output 1");
             CastManager.tick(p);
-            assertEquals(6f + RmtConfig.HEAL_PER_SECOND.get(), p.getHealth(), 1e-4, "healed after one second");
+            assertEquals(6f + RmtConfig.HEAL_PER_SECOND.get() / 20.0, p.getHealth(), 1e-4, "a twentieth after one tick");
+            for (int i = 0; i < 19; i++) CastManager.tick(p);
+            assertEquals(6f + RmtConfig.HEAL_PER_SECOND.get(), p.getHealth(), 1e-4, "healPerSecond after one second");
             assertEquals(before - RmtConfig.COST.get() - RmtConfig.UPKEEP.get(), malice(p), 1e-3, "one second of upkeep");
             assertEquals(0, InnateTechniqueService.cooldownRemaining(p, rmt), "no cooldown while held");
 
@@ -120,14 +135,15 @@ class RmtTest {
             FreezeService.clear(p);
             CombatHelper.clearStun(p);
 
-            // Fully healed: the channel ends on its own.
+            // Healed up: it doesn't end on its own.
             InnateTechniqueService.clearCooldowns(p);
             MaliceService.refill(p);
             p.setHealth(p.getMaxHealth() - 1f);
             CastManager.handleIntent(p, CastIntent.CAST_PRESS);
             for (int i = 0; i < 20; i++) CastManager.tick(p);
             assertEquals(p.getMaxHealth(), p.getHealth(), 1e-4, "never above max health");
-            assertNull(CastManager.state(p).casting(), "nothing left to heal: done");
+            assertNotNull(CastManager.state(p).casting(), "nothing left to heal: still running");
+            CastManager.handleIntent(p, CastIntent.CAST_RELEASE);
 
             // A reroll resets the loadout but keeps the unlock; locking it again takes it off the bar.
             InnateTechniqueService.setInnateTechnique(p, TestInnateTechniques.KINETIC.get());
