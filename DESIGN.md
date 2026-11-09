@@ -341,7 +341,8 @@ All timestamps use **level game time**. They persist across restarts and are ide
   see behind where it is), and vanilla's own teleport and head packets for the delayed image.
 - **Sub-tick timing** (§3.29): `TimingNet.Stamp` (C→S, an input stamped with the client's clock, sent at the key press), `TimingNet.Ping`
   (S→C) and `TimingNet.Pong` (C→S, the client's clock), all handled on the network thread. Reinforced Fists' look is `FistsPayload` (§3.28).
-- Network version `26` (since Six Eyes' Reads read a body's whole state, §3.32: `ReadsPayload` gained mob health and the focus's body); `25`
+- Network version `27` (since a disguise wears the face's eyewear, §3.19 and §3.32: `Disguises.StatePayload` carries it); `26` was Six Eyes'
+  Reads reading a body's whole state, §3.32 (`ReadsPayload` gained mob health and the focus's body); `25`
   was Six Eyes, §3.32, and RMT's repair, §3.17: `Repair.Payload`, the brain meter in `ProgressionSnapshot`, and
   Six Eyes' own (`SightPayloads`, `ReadsPayload`, `Strain.Hud`, `Strain.Collapsed`, `Edge.Spark`, `Attunement.PinPayload`); `24` was Reinforcement and Background Tasks, §3.16 and §3.31: `AuraPayload`, `BackgroundSyncPayload`,
   `BackgroundActionPayload`; `23` was too fast for the eye, §3.30:
@@ -1548,8 +1549,14 @@ The HUD and Sorcerer screen show Anchor's current stage cost (throw or recall).
   - tab-list name (`PlayerTabOverlay#getNameForDisplay` mixin);
   - visible armor and held items, lent from the face for the length of one render (`RenderPlayerEvent`). If the
     face isn't loaded on that client, the slots are drawn empty rather than showing the wearer's own gear.
+  - eyewear: the eyewear the face is wearing right now, or none if it wears none (`DisguisedEyewearLayer`), and never the
+    wearer's own (`EyewearRenderer` skips it on a disguise). The server sends it with the disguise (`Entry.faceEyewear`, at once
+    when the face puts some on or takes it off), so it's right even when that client can't see the face; a face that's gone shows
+    none. It ends with the disguise, and the wearer sees their own all along. Awareness swaps both ways, so each wears the other's.
   - These are client mixins (`kegare.mixins.json`); Swap's only server ones are its tracker accessors.
-  - **A Six Eyes bearer** still sees the face, but their name tag and tab-list name stay the real one (§3.32).
+  - **A Six Eyes bearer** still sees the face, but their name tag and tab-list name stay the real one (§3.32). They see the
+    face's eyewear too, as they see its skin and gear: the eyes know who it is by the energy (name, outline, color,
+    technique, the Read), and the eyewear is part of what the face looks like.
 - Only disguised players see the `awareness_shimmer` loop (sent to them alone, for as long as the disguise lasts), so
   they know it's on: crisp corner brackets on their own screen (see Visuals).
 - **API** (either side): `Disguises.isDisguised(entity)`, `getRealIdentity(entity)`, `getDisguisedAs(entity)`; server:
@@ -3179,8 +3186,10 @@ focus is the Read the server decides for itself, so that's the one it counts.
   - Nothing draws for an invisible player or a spectator, or in your own first person (the body isn't drawn). Third person, the inventory's doll and other players' views all show them.
   - The cloth is opaque and the lenses blended normally (never added), so neither washes out against the sky or clouds; with Rime's light floor both stay readable at night. Every effects setting: Reduced and Vanilla change nothing,
     as they're worn items.
-  - **Disguises:** eyewear stays on the real body, not lent like armor. Someone in a Swap disguise shows their own eyewear on the face they've borrowed, and not what that face's owner wears, so eyewear can give a disguise away. Puppets
-    and a Stand-In wear none, so a Stand-In of someone in eyewear looks bare-eyed.
+  - **Disguises:** eyewear never gives one away. To everyone but the wearer, a Swap disguise wears the eyewear the face is wearing right now, or none,
+    never the wearer's own, under the same rules as the rest of the disguise and ending with it; a Six Eyes bearer sees it too (§3.19). Puppets
+    and a Stand-In wear none, so a Stand-In of someone in eyewear looks bare-eyed. **Tests:** `DisguiseEyewearTest` (what each client draws; the
+    face's eyewear sent, and again the moment the face changes it; through the wire; Awareness both ways).
 - **Eyewear never reduces what the eyes see:** range, map, outlines, voids, Reads and efficiency stay full when covered. It changes only how
   fast Strain moves, and whether the uncovered edge is there.
 - **Curios' own key:** Curios opens its screen on G by default, which is Technique Mode. While it sits on G it's moved to J

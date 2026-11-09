@@ -1,6 +1,7 @@
 package com.cnethuka.kegare.innate_technique.swap;
 
 import com.cnethuka.kegare.Kegare;
+import com.cnethuka.kegare.sixeyes.Eyewear;
 import com.cnethuka.kegare.network.VisualPayload;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -39,8 +40,14 @@ public final class Disguises {
     /** One disguise: {@code wearer} looks like {@code as} until {@code endTick} (game time). */
     public record Disguise(UUID wearer, UUID as, long endTick, Kind kind, UUID caster) {}
 
-    /** One synced entry: entity ID -> disguised-as UUID and end tick (plus the wearer's UUID, for the tab list). */
-    public record Entry(int entityId, UUID wearer, UUID as, long endTick) {}
+    /**
+     * One synced entry: entity ID -> disguised-as UUID and end tick (plus the wearer's UUID, for the tab list), and the eyewear the face is
+     * wearing right now: on the disguise everyone else sees that, never the wearer's own (DESIGN §3.19, §3.32).
+     */
+    public record Entry(int entityId, UUID wearer, UUID as, long endTick, Eyewear faceEyewear) {}
+
+    /** The face's eyewear as last sent, by wearer: the face putting some on or taking it off is sent at once. */
+    private static final Map<UUID, Eyewear> SENT_EYEWEAR = new HashMap<>();
 
     /** Server: by wearer. */
     private static final Map<UUID, Disguise> SERVER = new HashMap<>();
@@ -115,7 +122,7 @@ public final class Disguises {
         if (changed) sync(player.server);
     }
 
-    /** Every server tick: expired disguises end. */
+    /** Every server tick: expired disguises end, and a face's eyewear changing is sent. */
     static void tick(MinecraftServer server) {
         if (SERVER.isEmpty()) return;
         long now = server.overworld().getGameTime();
@@ -127,9 +134,17 @@ public final class Disguises {
                 ServerPlayer wearer = Switchback.find(server, d.wearer());
                 if (wearer != null) shimmer(wearer, false);
                 changed = true;
+            } else if (faceEyewear(server, d) != SENT_EYEWEAR.get(d.wearer())) {
+                changed = true;
             }
         }
         if (changed) sync(server);
+    }
+
+    /** What the face is wearing on its eyes right now; nothing if it's gone (better nothing than the wearer's own). */
+    static Eyewear faceEyewear(MinecraftServer server, Disguise d) {
+        ServerPlayer face = Switchback.find(server, d.as());
+        return face == null ? Eyewear.NONE : Eyewear.of(face);
     }
 
     /** A player joined: send them the current map. */
@@ -139,17 +154,26 @@ public final class Disguises {
 
     static void clear() {
         SERVER.clear();
+        SENT_EYEWEAR.clear();
     }
+
+    /** Told about every map sent (tests). */
+    static java.util.function.Consumer<StatePayload> sentHook;
 
     private static void sync(MinecraftServer server) {
-        PacketDistributor.sendToAllPlayers(state(server));
+        StatePayload state = state(server);
+        if (sentHook != null) sentHook.accept(state);
+        PacketDistributor.sendToAllPlayers(state);
     }
 
-    private static StatePayload state(MinecraftServer server) {
+    static StatePayload state(MinecraftServer server) {
         List<Entry> entries = new ArrayList<>();
+        SENT_EYEWEAR.keySet().retainAll(SERVER.keySet());
         for (Disguise d : SERVER.values()) {
             ServerPlayer wearer = Switchback.find(server, d.wearer());
-            if (wearer != null) entries.add(new Entry(wearer.getId(), d.wearer(), d.as(), d.endTick()));
+            Eyewear eyewear = faceEyewear(server, d);
+            SENT_EYEWEAR.put(d.wearer(), eyewear);
+            if (wearer != null) entries.add(new Entry(wearer.getId(), d.wearer(), d.as(), d.endTick(), eyewear));
         }
         return new StatePayload(entries);
     }
@@ -176,6 +200,7 @@ public final class Disguises {
                 UUIDUtil.STREAM_CODEC.encode(buf, e.wearer());
                 UUIDUtil.STREAM_CODEC.encode(buf, e.as());
                 buf.writeVarLong(e.endTick());
+                buf.writeEnum(e.faceEyewear());
             }
         }
 
@@ -183,7 +208,8 @@ public final class Disguises {
             int n = buf.readVarInt();
             List<Entry> entries = new ArrayList<>(n);
             for (int i = 0; i < n; i++) {
-                entries.add(new Entry(buf.readVarInt(), UUIDUtil.STREAM_CODEC.decode(buf), UUIDUtil.STREAM_CODEC.decode(buf), buf.readVarLong()));
+                entries.add(new Entry(buf.readVarInt(), UUIDUtil.STREAM_CODEC.decode(buf), UUIDUtil.STREAM_CODEC.decode(buf), buf.readVarLong(),
+                        buf.readEnum(Eyewear.class)));
             }
             return new StatePayload(entries);
         }
@@ -198,6 +224,16 @@ public final class Disguises {
             for (Entry e : payload.entries()) map.put(e.wearer(), e);
             client = Map.copyOf(map);
         }
+    }
+
+    /**
+     * The eyewear a disguised player shows to this client, or null to draw their own: theirs to themself and when there's no disguise, the face's to
+     * everyone else (none if the face wears none, or is gone), ending with the disguise. The same rule as everything else a disguise shows.
+     */
+    @Nullable
+    public static Eyewear eyewearShown(@Nullable Entry entry, long gameTime, boolean ownView) {
+        if (entry == null || ownView || entry.endTick() <= gameTime) return null;
+        return entry.faceEyewear();
     }
 
     /** Client: forget everything (leaving a server). */

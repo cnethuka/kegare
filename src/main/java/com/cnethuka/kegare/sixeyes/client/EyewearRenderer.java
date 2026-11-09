@@ -1,6 +1,9 @@
 package com.cnethuka.kegare.sixeyes.client;
 
 import com.cnethuka.kegare.Kegare;
+import com.cnethuka.kegare.innate_technique.swap.Disguises;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.client.Minecraft;
 import com.cnethuka.kegare.innate_technique.rime.client.LanceMesh;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
@@ -44,7 +47,20 @@ public final class EyewearRenderer implements ICurioRenderer {
                                                                           MultiBufferSource buffers, int light, float limbSwing, float limbSwingAmount,
                                                                           float partialTicks, float ageInTicks, float netHeadYaw, float headPitch) {
         LivingEntity wearer = slotContext.entity();
-        if (!(parent.getModel() instanceof HumanoidModel<?> humanoid) || wearer.isInvisible() || wearer.isSpectator()) return;
+        // On a disguise everyone else sees the face's eyewear, never the wearer's own: DisguisedEyewearLayer draws that instead.
+        if (wearer instanceof Player && Disguises.eyewearShown(Disguises.clientEntry(wearer.getUUID()), wearer.level().getGameTime(), ownView(wearer)) != null) return;
+        if (parent.getModel() instanceof HumanoidModel<?> humanoid) draw(wearer, humanoid, pose, buffers, light);
+    }
+
+    /** Whether this client is the wearer, who always sees their own. */
+    static boolean ownView(LivingEntity wearer) {
+        Minecraft mc = Minecraft.getInstance();
+        return mc.player != null && mc.player.getUUID().equals(wearer.getUUID());
+    }
+
+    /** Draws this piece on a humanoid's head, following every pose. */
+    void draw(LivingEntity wearer, HumanoidModel<?> humanoid, PoseStack pose, MultiBufferSource buffers, int light) {
+        if (wearer.isInvisible() || wearer.isSpectator()) return;
         LanceMesh.Piece mesh = model.piece(piece);
         if (mesh == null) return;
         pose.pushPose();

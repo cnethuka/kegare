@@ -22,7 +22,23 @@ public final class EyewearClient {
 
     private EyewearClient() {}
 
+    /** The renderer for a piece of eyewear, or null for none. */
+    @javax.annotation.Nullable
+    static EyewearRenderer renderer(com.cnethuka.kegare.sixeyes.Eyewear eyewear) {
+        return switch (eyewear) {
+            case BLINDFOLD -> BLINDFOLD;
+            case SUNGLASSES -> SUNGLASSES;
+            case NONE -> null;
+        };
+    }
+
     public static void init(IEventBus modBus) {
+        // A disguise wears the face's eyewear: a layer on every player renderer draws it.
+        modBus.addListener((net.neoforged.neoforge.client.event.EntityRenderersEvent.AddLayers e) -> {
+            for (net.minecraft.client.resources.PlayerSkin.Model skin : e.getSkins()) {
+                if (e.getSkin(skin) instanceof net.minecraft.client.renderer.entity.player.PlayerRenderer renderer) renderer.addLayer(new DisguisedEyewearLayer(renderer));
+            }
+        });
         modBus.addListener((FMLClientSetupEvent e) -> e.enqueueWork(EyewearClient::setup));
         modBus.addListener((RegisterClientReloadListenersEvent e) -> e.registerReloadListener((ResourceManagerReloadListener) manager -> {
             BLINDFOLD.forget();
