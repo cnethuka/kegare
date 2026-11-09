@@ -94,6 +94,13 @@ class ClosingLineTest {
                 assertNotNull(state.sent);
                 assertEquals(state.closingReadyAt, state.sent.closingReadyAt(), "the HUD's cue is told when it's ready");
                 assertEquals(SeveredConfig.ticks(SeveredConfig.CLOSING_COOLDOWN.get()), state.sent.closingCooldown(), "and how long that is");
+                // An admin's cooldown reset (/kegare cooldown reset) makes it ready, and the HUD is told at once.
+                long readyAt = state.closingReadyAt;
+                Severed.clearClosingLineCooldown(s);
+                assertEquals(0, state.closingReadyAt, "ready");
+                assertEquals(0, state.sent.closingReadyAt(), "the cue told");
+                state.closingReadyAt = readyAt; // back as it was, for the rest of this test
+                Blur.sync(s, state);
 
                 rush(server, s, expected, 10);
                 assertFalse(ClosingLine.rushing(state), "arrived");

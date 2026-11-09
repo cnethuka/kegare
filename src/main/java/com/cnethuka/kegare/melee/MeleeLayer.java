@@ -66,6 +66,17 @@ public final class MeleeLayer {
         syncHud(player);
     }
 
+    /** Ticks until Dash is ready again. */
+    public static long dashCooldownLeft(ServerPlayer player) {
+        return Math.max(0, state(player).dashReadyAt - player.level().getGameTime());
+    }
+
+    /** Dash is ready now (an admin's cooldown reset), and the HUD says so. */
+    public static void clearDashCooldown(ServerPlayer player) {
+        state(player).dashReadyAt = 0;
+        syncHud(player);
+    }
+
     /** Tells the owner what their HUD shows, if that changed. Times, so the client counts them down itself. */
     static void syncHud(ServerPlayer player) {
         MeleeState state = state(player);

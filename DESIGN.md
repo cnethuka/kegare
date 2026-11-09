@@ -411,6 +411,8 @@ Every command reads `/kegare <system> <action> [player] [value]`.
 | `/kegare malice capacity <player> <amount>` | Admin override of capacity. 0 makes them Severed |
 | `/kegare rebirth <player> [capacity]` | Wipe and re-roll everything (optionally forcing Malice capacity; 0 = Severed) |
 | `/kegare loadout reset [player]` | Back to the innate technique's default layout |
+| `/kegare cooldown reset [player]` | Every cooldown ready at once: the innate technique's abilities, specials and ultimate, shared abilities like RMT, Dash and Closing Line, and Burnout over. Selectors work (`@a`). Told to the client at once, so the panel and the HUD's cues show it ready |
+| `/kegare cooldown reset <player> <ability>` | Only that one, by short name (`point_maker`; a special's name clears the cooldown it shares with its base; `dash`, `closing_line`). Burnout stays |
 | `/kegare grade list` | The Grades, lowest first, with their short names |
 | `/kegare grade get [player]` | Grade and XP (§3.21) |
 | `/kegare grade set <player> <grade>` | Set a Grade. An admin can lower it; nothing else can |
@@ -2161,6 +2163,9 @@ Big hits damage the world. This changes fights on purpose: cover breaks and the 
 **What breaks it.** Only hits strong enough, read from the Impact System's strength (§3.23): a hit at `minimumTier` (Medium) or
 above breaks blocks round where it met the body. Light hits never break anything. Swap never does (a clean magic trick). A hit by a
 player or their technique always may; a mob's only with the `mobGriefing` gamerule on (`mobsNeedGriefing`).
+- **`/gamerule kegareBattleDamage`** (default true) switches all of it per world. False: hits break nothing (no blocks, craters,
+  wall-slam craters or spilled containers), and nothing about how they feel changes (hit-stop, shake, flashes, the impact frame).
+  Rebuilds already pending in `RESTORING` still finish. While it's true, `mode` picks how breaking works.
 - **Area blasts** (`Impacts.blast`) also break the blocks at their own centre, whether or not they hit anyone: Curio Burst and Chain
   Burst (where the puppet was), Glacial Spire (where it erupts) and Shatter Shell (round the caster). Their strength there is what
   they'd land on a 20-health body at their centre by the same rule as a hit: their full damage and push, their launch and charge,
@@ -2204,7 +2209,8 @@ within 96 blocks; the blocks change through the game's own updates):
 
 **Tests:** `BattleDamageTest` (the rule, what never breaks, the protected list, no drops, spilling, both caps, a cancelled break
 event, COSMETIC, RESTORING with contents and a restart, never over a block placed since, Swap and light hits, where a slam meets
-the wall).
+the wall, the gamerule off breaking nothing while a pending rebuild still finishes). `KegareCommandTest` covers
+`/kegare cooldown reset` (one by name, a special's name, Dash, everything for `@a`, ops only).
 
 
 ### 3.25 Burnout (`innatetechnique.Burnout`)

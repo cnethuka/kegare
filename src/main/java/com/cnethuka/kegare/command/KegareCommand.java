@@ -79,6 +79,7 @@ public final class KegareCommand {
         // Back to the innate technique's default layout.
         root.then(system("loadout")
                 .then(senderOr(Commands.literal("reset"), KegareCommand::loadoutReset)));
+        CooldownCommands.register(root);
         ProgressionCommands.register(root);
         DebugCommands.register(root);
         dispatcher.register(root);

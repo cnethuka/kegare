@@ -73,6 +73,14 @@ public final class BattleDamage {
 
     private BattleDamage() {}
 
+    /**
+     * {@code /gamerule kegareBattleDamage} (default true). False: hits break nothing (no blocks, craters, wall-slam craters or spilled
+     * containers), while how they feel is unchanged; rebuilds already under way in RESTORING still finish. When it's true,
+     * {@code [battle_damage] mode} picks how breaking works.
+     */
+    public static final GameRules.Key<GameRules.BooleanValue> RULE =
+            GameRules.register("kegareBattleDamage", GameRules.Category.MISC, GameRules.BooleanValue.create(true));
+
     public static void init() {
         NeoForge.EVENT_BUS.addListener(BattleDamage::onEntityJoin);
         Impacts.listen(BattleDamage::onImpact);
@@ -95,14 +103,21 @@ public final class BattleDamage {
         hit(blast.level(), blast.centre(), blast.strength(), blast.tier(), blast.attacker());
     }
 
-    /** A player's hit (or their technique's) always; a mob's or nobody's only where mobs may grief. */
+    /** Whether hits break anything here at all ({@link #RULE}). */
+    public static boolean on(ServerLevel level) {
+        return level.getGameRules().getBoolean(RULE);
+    }
+
+    /** With the rule on: a player's hit (or their technique's) always; a mob's or nobody's only where mobs may grief. */
     static boolean allowed(ServerLevel level, @Nullable Entity attacker) {
+        if (!on(level)) return false;
         if (attacker instanceof Player) return true;
         return !BattleDamageConfig.MOBS_NEED_GRIEFING.get() || level.getGameRules().getBoolean(GameRules.RULE_MOBGRIEFING);
     }
 
     /** A slam into a wall, floor or ceiling at {@code speed} (blocks/tick), meeting it at {@code at}: a crater, no damage. */
     static void slam(ServerLevel level, Vec3 at, double speed, @Nullable Entity attacker) {
+        if (!on(level)) return; // turned off while they flew
         double strength = BattleDamageConfig.SLAM_STRENGTH_PER_SPEED.get() * speed;
         ImpactTier tier = ImpactStrength.tier(strength);
         if (tier.ordinal() < BattleDamageConfig.MIN_TIER.get().ordinal()) return;

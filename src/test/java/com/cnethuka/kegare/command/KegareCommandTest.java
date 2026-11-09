@@ -440,6 +440,50 @@ class KegareCommandTest {
         });
     }
 
+    @Test
+    void cooldownResetClearsEverythingOrOneAndTakesSelectors(MinecraftServer server) throws Exception {
+        inGame(server, () -> {
+            ServerPlayer a = online(server, "cd_a"), b = online(server, "cd_b");
+            com.cnethuka.kegare.innatetechnique.Ability rmt = com.cnethuka.kegare.loadout.SharedAbilities.find(com.cnethuka.kegare.rmt.RmtIds.ABILITY).orElseThrow();
+            List<com.cnethuka.kegare.innatetechnique.Ability> abilities = List.of(
+                    com.cnethuka.kegare.innate_technique.time_manipulation.TimeManipulation.POINT_MAKER,
+                    com.cnethuka.kegare.innate_technique.time_manipulation.TimeManipulation.ACCELERATE,
+                    com.cnethuka.kegare.innate_technique.time_manipulation.TimeManipulation.STANDSTILL, rmt);
+            for (ServerPlayer p : List.of(a, b)) {
+                com.cnethuka.kegare.innatetechnique.InnateTechniqueService.setInnateTechnique(p,
+                        com.cnethuka.kegare.innate_technique.time_manipulation.TimeManipulation.TIME_MANIPULATION.get());
+                for (var ability : abilities) com.cnethuka.kegare.innatetechnique.InnateTechniqueService.startCooldown(p, ability);
+                com.cnethuka.kegare.innatetechnique.Burnout.apply(p, 400);
+                com.cnethuka.kegare.melee.MeleeIntentPayload.apply(p, new com.cnethuka.kegare.melee.MeleeIntentPayload(
+                        com.cnethuka.kegare.melee.MeleeIntentPayload.Action.DASH, (byte) 1, (byte) 0));
+                assertTrue(com.cnethuka.kegare.melee.MeleeLayer.dashCooldownLeft(p) > 0, "setup: Dash cooling down");
+            }
+
+            // One ability, named: only that one. Its special's name clears the cooldown they share.
+            op(server, "kegare cooldown reset cd_a rewind").ok();
+            assertEquals(0, com.cnethuka.kegare.innatetechnique.InnateTechniqueService.cooldownRemaining(a, abilities.get(0)), "Point Maker, through Rewind");
+            assertTrue(com.cnethuka.kegare.innatetechnique.InnateTechniqueService.cooldownRemaining(a, abilities.get(1)) > 0, "the rest still running");
+            assertTrue(com.cnethuka.kegare.innatetechnique.Burnout.isBurntOut(a), "and Burnout with them");
+            op(server, "kegare cooldown reset cd_a dash").ok();
+            assertEquals(0, com.cnethuka.kegare.melee.MeleeLayer.dashCooldownLeft(a), "Dash by name");
+            assertTrue(op(server, "kegare cooldown reset cd_a nothing_like_it").error().contains("nothing_like_it"), "an unknown name says so");
+
+            // Everything, for everyone a selector finds.
+            Ran ran = op(server, "kegare cooldown reset @a").ok();
+            assertFalse(ran.text().contains("commands.kegare"), ran.text());
+            for (ServerPlayer p : List.of(a, b)) {
+                for (var ability : abilities) {
+                    assertEquals(0, com.cnethuka.kegare.innatetechnique.InnateTechniqueService.cooldownRemaining(p, ability), p.getScoreboardName() + ": " + ability.id());
+                }
+                assertFalse(com.cnethuka.kegare.innatetechnique.Burnout.isBurntOut(p), "Burnout over");
+                assertEquals(0, com.cnethuka.kegare.melee.MeleeLayer.dashCooldownLeft(p), "Dash ready");
+            }
+
+            // Ops only.
+            assertNotNull(run(server, a, 0, "kegare cooldown reset").thrown(), "not for someone without permission");
+        });
+    }
+
     // ------------------------------------------------------------------ the old forms
 
     @Test
@@ -532,7 +576,7 @@ class KegareCommandTest {
                     "malice get plain_text", "malice set plain_text 5", "malice fill plain_text", "malice capacity plain_text 900",
                     "grade list", "grade get plain_text", "grade set plain_text grade_2", "grade add plain_text 1", "assessment get plain_text", "assessment add plain_text 60 someone",
                     "refinement get plain_text", "refinement set plain_text 2", "insight get plain_text", "insight add plain_text dominion 1",
-                    "loadout reset plain_text", "debug stun plain_text 1", "debug pity plain_text 3", "debug reroll plain_text swap",
+                    "loadout reset plain_text", "cooldown reset plain_text", "cooldown reset plain_text dash", "debug stun plain_text 1", "debug pity plain_text 3", "debug reroll plain_text swap",
                     "debug orb spawn plain_text", "debug orb status plain_text", "debug shared unlock plain_text reverse_malice_technique", "debug shared lock plain_text reverse_malice_technique",
                     "debug swap unswappable plain_text true", "debug swap unswappable plain_text false", "debug strings unmovable plain_text true", "debug strings unmovable plain_text false",
                     "grade set plain_text special_grade", "grade get plain_text", "progression reset plain_text", "rebirth plain_text 0", "malice get plain_text", "innate get plain_text", "info plain_text"));

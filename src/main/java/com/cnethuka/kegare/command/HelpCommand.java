@@ -84,6 +84,8 @@ final class HelpCommand {
             entry("malice capacity <player> <amount>", "commands.kegare.help.malice.capacity"),
             entry("rebirth <player> [capacity]", "commands.kegare.help.rebirth"),
             entry("loadout reset [player]", "commands.kegare.help.loadout.reset"),
+            entry("cooldown reset [player]", "commands.kegare.help.cooldown.reset"),
+            entry("cooldown reset <player> <ability>", "commands.kegare.help.cooldown.reset_one"),
             entry("grade list", "commands.kegare.help.grade.list"),
             entry("grade get [player]", "commands.kegare.help.grade.get"),
             entry("grade set <player> <grade>", "commands.kegare.help.grade.set"),

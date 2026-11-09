@@ -66,6 +66,14 @@ public final class Severed {
         if (is(player)) Blur.toggle(player);
     }
 
+    /** Closing Line is ready now (an admin's cooldown reset), and the HUD's cue says so. */
+    public static void clearClosingLineCooldown(ServerPlayer player) {
+        if (!player.hasData(STATE)) return;
+        SeveredState state = state(player);
+        state.closingReadyAt = 0;
+        Blur.sync(player, state);
+    }
+
     /** The server just put them somewhere (any teleport): that isn't Blur's movement to check (from {@code mixin/ServerTeleportMixin}). */
     public static void movedByServer(ServerPlayer player) {
         if (player.hasData(STATE)) Blur.movedByServer(state(player));

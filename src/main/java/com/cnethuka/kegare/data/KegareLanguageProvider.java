@@ -670,6 +670,8 @@ public final class KegareLanguageProvider extends LanguageProvider {
         add("commands.kegare.help.malice.capacity", "Set a player's " + MALICE + " capacity. 0 makes them " + SEVERED + ".");
         add("commands.kegare.help.rebirth", "Wipe a player and roll everything again. A capacity forces their " + MALICE + "; 0 makes them " + SEVERED + ".");
         add("commands.kegare.help.loadout.reset", "Put a player's loadout back to its default layout.");
+        add("commands.kegare.help.cooldown.reset", "Make every cooldown ready (abilities, specials, the ultimate, shared ones, Dash, Closing Line) and end Burnout.");
+        add("commands.kegare.help.cooldown.reset_one", "Make one ability's cooldown ready (dash and closing_line work too).");
         add("commands.kegare.help.grade.list", "List the Grades, lowest first.");
         add("commands.kegare.help.grade.get", "Show a player's Grade and XP.");
         add("commands.kegare.help.grade.set", "Set a player's Grade. An admin can lower it; nothing else can.");
@@ -759,6 +761,11 @@ public final class KegareLanguageProvider extends LanguageProvider {
         // /kegare rebirth and loadout
         add("commands.kegare.rebirth", "%s was reborn.");
         add("commands.kegare.loadout.reset", "Reset %s's loadout.");
+        add("gamerule.kegareBattleDamage", "Kegare: hits break blocks");
+        add("gamerule.kegareBattleDamage.description", "Big hits break blocks, leave craters and spill containers. Off: hits break nothing, and still feel the same.");
+        add("commands.kegare.cooldown.reset", "Every cooldown of %s's is ready, and any Burnout is over.");
+        add("commands.kegare.cooldown.reset_one", "%s is ready for %s.");
+        add("commands.kegare.cooldown.unknown", "Nothing with a cooldown is called %s. Press Tab for the names.");
 
         // /kegare grade, assessment, refinement, insight, progression
         add("commands.kegare.grade.list", "Grades, lowest first:");

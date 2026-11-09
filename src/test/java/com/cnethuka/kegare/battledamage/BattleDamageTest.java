@@ -21,6 +21,7 @@ import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
+import net.minecraft.world.level.GameRules;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.WallTorchBlock;
 import net.minecraft.world.level.block.entity.ChestBlockEntity;
@@ -401,6 +402,60 @@ class BattleDamageTest {
                 Impacts.blast(level, Vec3.atCenterOf(AT), null, null, 1, 0.4, 0, 0, 0, true);
                 assertSame(Blocks.DIRT, level.getBlockState(AT.below()).getBlock(), "nor does a light one");
             });
+        });
+    }
+
+    @Test
+    void theGameruleOffBreaksNothingAndRebuildsStillFinish(MinecraftServer server) throws Exception {
+        TestServer.onServerThread(server, () -> {
+            ServerLevel level = world(server);
+            GameRules.BooleanValue rule = level.getGameRules().getRule(BattleDamage.RULE);
+            double delay = BattleDamageConfig.RESTORE_DELAY.get();
+            int interval = BattleDamageConfig.RESTORE_INTERVAL.get();
+            try {
+                assertTrue(rule.get(), "on by default");
+                permanent(() -> {
+                    clear(level);
+                    rule.set(false, server);
+                    level.setBlock(AT.below(), Blocks.DIRT.defaultBlockState(), 2);
+                    level.setBlock(AT.east(), Blocks.CHEST.defaultBlockState(), 3);
+                    ((ChestBlockEntity) level.getBlockEntity(AT.east())).setItem(0, new ItemStack(Items.DIAMOND, 5));
+                    Impacts.blast(level, Vec3.atCenterOf(AT), null, null, 12, 0.7, 0, 1, 180, true); // a Full Curio Burst's worth
+                    assertSame(Blocks.DIRT, level.getBlockState(AT.below()).getBlock(), "off: no crater");
+                    assertSame(Blocks.CHEST, level.getBlockState(AT.east()).getBlock(), "no container broken");
+                    assertTrue(items(level).isEmpty(), "nothing spilled");
+                    BattleDamage.slam(level, Vec3.atCenterOf(AT), 3.0, null);
+                    assertSame(Blocks.DIRT, level.getBlockState(AT.below()).getBlock(), "no wall-slam crater");
+                    rule.set(true, server);
+                    Impacts.blast(level, Vec3.atCenterOf(AT), null, null, 12, 0.7, 0, 1, 180, true);
+                    assertTrue(level.getBlockState(AT.below()).isAir(), "on again: it breaks");
+                });
+                // A rebuild already under way when it's turned off still finishes.
+                with(Mode.RESTORING, 4096, 100_000, true, List.of(), () -> {
+                    clear(level);
+                    BattleScars scars = BattleScars.get(level);
+                    scars.forget();
+                    level.setBlock(AT.below(), Blocks.DIRT.defaultBlockState(), 3);
+                    blast(level, 3);
+                    assertTrue(level.getBlockState(AT.below()).isAir(), "setup: broken");
+                    assertTrue(scars.pending() > 0, "setup: waiting to come back");
+                    rule.set(false, server);
+                    BattleDamageConfig.RESTORE_DELAY.set(0.5);
+                    BattleDamageConfig.RESTORE_INTERVAL.set(1);
+                    TestServer.advanceGameTime(server, 40);
+                    for (int i = 0; i < 20; i++) {
+                        TestServer.advanceGameTime(server, 1);
+                        scars.tick(level);
+                    }
+                    assertEquals(0, scars.pending(), "it came back with the rule off");
+                    assertSame(Blocks.DIRT, level.getBlockState(AT.below()).getBlock());
+                });
+            } finally {
+                rule.set(true, server);
+                BattleScars.get(level).forget();
+                BattleDamageConfig.RESTORE_DELAY.set(delay);
+                BattleDamageConfig.RESTORE_INTERVAL.set(interval);
+            }
         });
     }
 
