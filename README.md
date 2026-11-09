@@ -38,6 +38,40 @@ file of each one. Minecraft refuses to start and names the missing mod if one is
   DESIGN.md §3.17–3.18.
 - Test innate techniques (`[Test] …`) stay available while `roll.includeTestInnateTechniques = true`.
 
+## Postgres storage (optional)
+
+Kegare's saved data can live in Postgres instead of the world's files, so several servers can share it and leaderboards work. It's off by default, and then nothing changes and no
+connection is opened. Only a dedicated server can use it, and the driver comes inside the mod's jar, so nobody installs anything. Vanilla's own player data (inventory, ender
+chest, health, position), other mods' data, `PuppetSavedData` and `BattleScars` stay in the world. Design: DESIGN §3.33.
+
+**Setup**
+1. Have Postgres running and make a database for Kegare: `CREATE ROLE kegare LOGIN PASSWORD '...'; CREATE DATABASE kegare OWNER kegare;`
+2. Start the server once to generate `config/kegare-database.toml`, then stop it. This file is never sent to clients; don't put these settings in `kegare-server.toml`, which is.
+3. Set `enabled = true`, `url` and `username`, and give each server sharing the database its own `serverId`. For the password, prefer the environment variable
+   `KEGARE_DB_PASSWORD`, which wins over the file's `password`.
+4. Turn the whitelist on and start the server. Kegare builds its own tables, in a schema called `kegare`, and `/kegare db status` should say it's connected.
+
+**Moving an existing world over**
+1. `/kegare db migrate dry` says what would be copied, and `/kegare db migrate` copies every player and the unique traits. It's safe to run twice and leaves the world's files alone.
+2. Now turn the whitelist off. Before this, a brand new player's roll can't see who holds a unique trait in the world. Anyone who was already on this world is safe either way:
+   a player with no rows whose world file has Kegare's data gets it imported when they log in, never a fresh roll.
+
+**Switching back**
+1. With nobody online if you can, run `/kegare db export`: everything goes back into the world's files.
+2. Stop the server straight away, set `enabled = false`, and start it again. Stats stay in the database, as a world has nowhere to keep them.
+
+**If the database goes down** the game carries on and saves are queued, with one warning to ops when it fails and one when it's back. Nobody can join until it's back (they're told why,
+and never get a fresh roll). If the server stops first, what's queued goes to `config/kegare-database-spill.json` and goes in on the next start: don't delete that file.
+
+**Several servers** share a database by each having their own `serverId`. A player can be on one at a time, and their data moves with them. Their position and inventory
+don't: those are Minecraft's. If a server dies, its players can join elsewhere after `leaseStaleSeconds` (45). Run `/kegare db migrate` on each server that has an existing world.
+
+**Stats and leaderboards.** `/kegare top <stat>` works for anyone: `pvp_kills`, `deaths`, `fights`, `damage_dealt`, `black_sparks` or `longest_chain`. For a website or a Discord bot,
+the `kegare_public` schema holds read-only views of those stats and of announced advancements, and nothing private. Make a login that can read them and nothing of Kegare's with
+`psql -d kegare -v password='...' -f tools/db/public_reader.sql`.
+
+**Backups** are yours to set up: with storage on, the database is the only copy of this data. `pg_dump` the `kegare` schema.
+
 ## Dev commands
 
 | Command | What it does |
@@ -65,6 +99,6 @@ eyes). **J** Curios' screen, for eyewear (moved off G, which is Technique Mode).
 See DESIGN.md §3.5.
 
 Commands read `/kegare <system> <action> [player] [value]` and take short names (`/kegare innate set Steve rime`).
-`/kegare help` lists what you can run: `info`, `innate`, `trait`, `malice`, `rebirth`, `loadout`, `grade`, `assessment`,
-`refinement`, `insight`, `progression`, and `debug` for anything that exists only for testing. All but `help` need
+`/kegare help` lists what you can run: `top`, `db`, `info`, `innate`, `trait`, `malice`, `rebirth`, `loadout`, `grade`, `assessment`,
+`refinement`, `insight`, `progression`, and `debug` for anything that exists only for testing. All but `help` and `top` need
 permission level 2. See DESIGN.md §3.8.

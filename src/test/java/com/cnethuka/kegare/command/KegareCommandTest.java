@@ -403,6 +403,20 @@ class KegareCommandTest {
     }
 
     @Test
+    void dbSaysSoWhenStorageIsOffAndWorksFromTheConsole(MinecraftServer server) throws Exception {
+        inGame(server, () -> {
+            assertEquals("Storage: off. Kegare's data is in the world's files.", run(server, null, OP, "kegare db status").ok().text());
+            String off = "Kegare's storage is off on this server, so there's no database to do that with.";
+            for (String command : List.of("kegare db migrate", "kegare db migrate dry", "kegare db export")) {
+                Ran ran = run(server, null, OP, command).ok();
+                assertEquals(off, ran.text(), command);
+                assertEquals(0, ran.result(), command);
+            }
+            assertNotNull(run(server, null, 0, "kegare db status").thrown(), "ops only");
+        });
+    }
+
+    @Test
     void topSaysSoWhenStorageIsOff(MinecraftServer server) throws Exception {
         inGame(server, () -> {
             assertEquals("Leaderboards need Kegare's database, and this server doesn't have it switched on.", run(server, null, 0, "kegare top pvp_kills").ok().text());

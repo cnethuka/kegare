@@ -23,10 +23,12 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 import javax.annotation.Nullable;
@@ -88,6 +90,9 @@ public final class KegareDatabase {
         static final LoginResult UNREACHABLE_NOW = new LoginResult(false, UNREACHABLE, Map.of(), null, null);
         static final LoginResult HELD_ELSEWHERE = new LoginResult(false, HELD, Map.of(), null, null);
     }
+
+    /** What {@code /kegare db status} shows. Never the password or the url. */
+    public record Status(String serverId, boolean connected, int schemaVersion, int queue, int statsWaiting, int leasesHere, int leasesEverywhere) {}
 
     /** One line of {@code /kegare top}. */
     public record TopRow(String name, double value) {}
@@ -154,7 +159,7 @@ public final class KegareDatabase {
     private final AtomicInteger unwrittenStats = new AtomicInteger();
     private final Path configDir;
     private final Host host;
-    private final ExecutorService io;
+    final ExecutorService io;
     private final ScheduledExecutorService scheduler;
     private final Thread writer;
     private final CompletableFuture<Void> ready = new CompletableFuture<>();
@@ -162,6 +167,8 @@ public final class KegareDatabase {
     private volatile boolean down;
     private volatile boolean refusedStart;
     private volatile int schemaVersion;
+    /** Exported to the world this run: player files keep Kegare's keys from here on. */
+    private volatile boolean exported;
     /** Transactions written, for the tests: an unchanged player must cost none. */
     final AtomicLong writes = new AtomicLong();
     /** Batches dropped because this server no longer owned the player. */
@@ -338,6 +345,53 @@ public final class KegareDatabase {
 
     public int schemaVersion() {
         return schemaVersion;
+    }
+
+    /** How it's doing now: this really asks the database. Off the server thread. */
+    public CompletableFuture<Status> status() {
+        return CompletableFuture.supplyAsync(() -> {
+            int everywhere = -1;
+            try {
+                awaitReady();
+                everywhere = pool.transaction(connection -> {
+                    try (PreparedStatement select = connection.prepareStatement("SELECT count(*) FROM kegare.player_lease"); ResultSet result = select.executeQuery()) {
+                        result.next();
+                        return result.getInt(1);
+                    }
+                });
+                markUp();
+            } catch (SQLException | RuntimeException e) {
+                markDown(e);
+            }
+            return new Status(config.serverId(), everywhere >= 0, schemaVersion, queue.size(), unwrittenStats.get(), leases.size(), everywhere);
+        }, io);
+    }
+
+    Host host() {
+        return host;
+    }
+
+    /** Commands wait for the storage to have started, as logins do: until then the tables may not be there. */
+    void awaitReady() throws SQLException {
+        try {
+            ready.get(config.leaseWaitSeconds(), TimeUnit.SECONDS);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new SQLException("Interrupted waiting for Kegare's storage to start");
+        } catch (ExecutionException | TimeoutException e) {
+            throw new SQLException("Kegare's storage hasn't started");
+        }
+        if (refusedStart) throw new SQLException("Kegare's storage refused to start");
+    }
+
+    /** Waits for what's queued to go in, as a server stop does. */
+    void awaitQueue() {
+        long deadline = System.currentTimeMillis() + TimeUnit.SECONDS.toMillis(config.shutdownTimeoutSeconds());
+        while ((queue.size() > 0 || traits.hasOps()) && System.currentTimeMillis() < deadline) sleep(50);
+    }
+
+    void exported() {
+        exported = true;
     }
 
     // ---------------------------------------------------------------- logging in
@@ -633,6 +687,7 @@ public final class KegareDatabase {
     public CompletableFuture<List<TopRow>> top(PublicStat stat) {
         return CompletableFuture.supplyAsync(() -> {
             try {
+                awaitReady();
                 return pool.transaction(connection -> {
                     List<TopRow> rows = new ArrayList<>();
                     try (PreparedStatement select = connection.prepareStatement(stat.query()); ResultSet result = select.executeQuery()) {
@@ -670,7 +725,7 @@ public final class KegareDatabase {
         });
     }
 
-    private void pollNetworkSafely() {
+    void pollNetworkSafely() {
         try {
             pollNetwork();
             markUp();
@@ -739,7 +794,8 @@ public final class KegareDatabase {
 
     /** A player's file is about to be written. With storage on, Kegare's keys don't go in it. */
     public static void beforePlayerFileWritten(CompoundTag file) {
-        if (isOn()) PlayerDataCodec.stripFromPlayerFile(file);
+        KegareDatabase database = current;
+        if (database != null && !database.exported) PlayerDataCodec.stripFromPlayerFile(file);
     }
 
     /** The real server behind the storage. */

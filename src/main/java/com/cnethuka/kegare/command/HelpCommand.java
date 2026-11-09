@@ -68,6 +68,10 @@ final class HelpCommand {
     static final List<Entry> ENTRIES = List.of(
             new Entry("help [system]", "commands.kegare.help.help", 0, false),
             new Entry("top <stat>", "commands.kegare.help.top", 0, false),
+            entry("db status", "commands.kegare.help.db.status"),
+            entry("db migrate", "commands.kegare.help.db.migrate"),
+            entry("db migrate dry", "commands.kegare.help.db.migrate_dry"),
+            entry("db export", "commands.kegare.help.db.export"),
             entry("info [player]", "commands.kegare.help.info"),
             entry("innate list", "commands.kegare.help.innate.list"),
             entry("innate get [player]", "commands.kegare.help.innate.get"),

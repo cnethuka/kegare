@@ -113,6 +113,15 @@ public final class PlayerDataCodec {
         decoded.forEach((type, value) -> player.setData((AttachmentType<Object>) type, value));
     }
 
+    /** Puts rows into a player's file, in place of whatever of Kegare's it has: the way back from the database. */
+    public static void toPlayerFile(CompoundTag file, Map<String, String> rows) {
+        stripFromPlayerFile(file);
+        if (rows.isEmpty()) return;
+        CompoundTag all = file.getCompound(AttachmentHolder.ATTACHMENTS_NBT_KEY);
+        rows.forEach((attachment, json) -> all.put(attachment, fromJson(JsonParser.parseString(json))));
+        file.put(AttachmentHolder.ATTACHMENTS_NBT_KEY, all);
+    }
+
     /** Takes Kegare's attachments out of a tag about to be written as a player's file. Returns what it took. */
     public static int stripFromPlayerFile(CompoundTag file) {
         if (!file.contains(AttachmentHolder.ATTACHMENTS_NBT_KEY)) return 0;
