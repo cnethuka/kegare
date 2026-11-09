@@ -2634,12 +2634,13 @@ in place of an ability like any shared one. Severed players never have it: they 
   moves anyone (bosses, §4), and in `minecraft:bypasses_cooldown`, so it lands through the hurt cooldown the Strike started, and it
   leaves that cooldown where it was rather than starting it over. It goes through the Impact System (§3.23) like any hit and plays
   the Strike's burst again where it lands. Plain Fists hits don't get one. `ReinforcedStrike.addLandedListener` is the hook.
-- **Look:** a low, steady burn on both fists in the wearer's Malice color, at every effects setting (`melee/client/FistBurn`): the
-  ready fist's pixel fire (§3.22) with only its inner tube and hot heart, so nothing breaks past the arm's outline, turning over at
-  half the rate. Your own hand in first person gets the same fire as the ready fist without the licks in front, or with something in
-  hand only the clump behind it. A ready Strike still flares the full fire on the striking fist, over the burn, so opponents can tell
-  them apart. Everyone else sees the color of the face a disguise shows (`FistsTell`, `FistsPayload`, as for the ready fist). An
-  ignite (vanilla's fire charge, pitched up) as it turns on.
+- **Look:** Malice wrapped round both fists, held there for as long as it's on: exactly the ready fist's fire (§3.22), with no
+  difference at all, on both hands instead of the striking one. The same layers, flicker and curls coming off each fist, your own hand's fire in first person and the clump round
+  the grip with something in hand, in the wearer's Malice color, at every effects setting (Vanilla: the fire, and dust instead of curls).
+  `FistTell` draws a ready Strike and Fists through the one path, per hand (`FistTell.lookOn(player, offHand)`), so they can't drift
+  apart. A ready Strike with Fists on looks the same as Fists on: the "Reinforced" cue under the crosshair is the striker's own, and
+  opponents can't tell a ready Strike from Fists by sight. Everyone else sees the color of the face a disguise shows (`FistsTell`,
+  `FistsPayload`, as for the ready fist). An ignite (vanilla's fire charge, pitched up) as it turns on.
 - **Icon and text:** `tools/gen_art.py` (`ICON_FISTS`, a clenched fist with Malice burning off the knuckles, in Malice violet).
 - **Tests:** `FistsTest` (everyone's, never Severed's; the toggle's cost, drain, Burnout, re-arm and running out; the bonuses; the
   second impact only for a Strike with Fists on, its delay and share, through the cooldown without lengthening it, never moving anyone).

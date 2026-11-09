@@ -314,6 +314,7 @@
   "commands.kegare.help.debug.shared.unlock": "Unlock a shared ability for a player.",
   "commands.kegare.help.debug.spark.force": "Make the player's next melee hit a Black Spark, for filming.",
   "commands.kegare.help.debug.spark.log": "Show you every Black Spark try (its gap, the rolled offset and the window) and Parry's two timings.",
+  "commands.kegare.help.debug.spark.log.off": "Stop showing you Black Spark's tries and Parry's timings.",
   "commands.kegare.help.debug.spark.zone": "Put the player in the zone for that many seconds (0 ends it). It starts no chain.",
   "commands.kegare.help.debug.strings": "Stop strings from moving a player, or let them again.",
   "commands.kegare.help.debug.stun": "Stun a player. 0 clears it.",

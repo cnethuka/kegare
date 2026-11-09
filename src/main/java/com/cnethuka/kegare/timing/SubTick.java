@@ -82,6 +82,7 @@ public final class SubTick {
         PlayerClock clock = CLOCKS.get(player.getUUID());
         if (clock == null || !clock.synced()) return "no clock yet";
         return String.format(java.util.Locale.ROOT, "ping %.1f ms", clock.ping());
+        // (the offset is between two monotonic clocks, so its value means nothing on its own)
     }
 
     /** What the network thread does with a ping's answer, by hand (tests, and a check of the clamp without a client). */

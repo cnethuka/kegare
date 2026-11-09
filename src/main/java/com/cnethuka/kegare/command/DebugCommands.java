@@ -115,12 +115,9 @@ final class DebugCommands {
                                                 })))))
                 // Black Spark (DESIGN §3.28): the numbers behind each try, to the op who asked, and a forced one for filming.
                 .then(Commands.literal("spark")
-                        .then(Commands.literal("log").then(Commands.argument("on", BoolArgumentType.bool()).executes(c -> {
-                            boolean on = BoolArgumentType.getBool(c, "on");
-                            com.cnethuka.kegare.timing.TimingLog.set(c.getSource().getPlayerOrException(), on);
-                            say(c.getSource(), on ? "commands.kegare.debug.spark.log.on" : "commands.kegare.debug.spark.log.off");
-                            return 1;
-                        })))
+                        .then(Commands.literal("log")
+                                .then(Commands.literal("on").executes(c -> sparkLog(c.getSource(), true)))
+                                .then(Commands.literal("off").executes(c -> sparkLog(c.getSource(), false))))
                         .then(Commands.literal("force").then(player((source, player) -> {
                             com.cnethuka.kegare.fists.BlackSpark.force(player);
                             say(source, "commands.kegare.debug.spark.force", player.getDisplayName());
@@ -161,6 +158,13 @@ final class DebugCommands {
                                                     boolean on = BoolArgumentType.getBool(c, "on");
                                                     return forEachPlayer(c, (source, player) -> unmovable(source, player, on));
                                                 }))))));
+    }
+
+    /** {@code /kegare debug spark log on|off}: to the op who asked, and nobody else. */
+    private static int sparkLog(CommandSourceStack source, boolean on) throws CommandSyntaxException {
+        com.cnethuka.kegare.timing.TimingLog.set(source.getPlayerOrException(), on);
+        say(source, on ? "commands.kegare.debug.spark.log.on" : "commands.kegare.debug.spark.log.off");
+        return 1;
     }
 
     private static final List<String> ROLES = List.of("attacker", "victim", "witness"), KINDS = List.of("melee", "technique");

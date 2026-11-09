@@ -44,7 +44,8 @@ import net.neoforged.neoforge.common.NeoForge;
 import org.joml.Vector3f;
 
 /**
- * A ready Reinforced Strike on a player's attacking hand. The server says what each client should see ({@link MeleeTell}), and this
+ * A ready Reinforced Strike on a player's attacking hand, and Reinforced Fists (DESIGN §3.28), which is the same fire on both hands for as
+ * long as it's on. The server says what each client should see ({@link MeleeTell}, {@link com.cnethuka.kegare.fists.FistsTell}), and this
  * draws it, in the arm's own space so it follows every animation: Malice burning round the hand and forearm ({@link FistFire}, and
  * {@link FistFlames} on your own hand), or for the physical tell a strained forearm with steam coming off it.
  * <p>
@@ -101,7 +102,10 @@ public final class FistTell {
         }
     }
 
-    private static final Map<Integer, Shown> SHOWN = new HashMap<>();
+    /** A ready Strike's look on each player, as the server sent it (their attacking hand). */
+    private static final Map<Integer, MeleeTell.Look> STRIKE = new HashMap<>();
+    /** What's burning on each hand that has something on it, by {@link #key}: the look, where the fist is, its curls. */
+    private static final Map<Long, Shown> SHOWN = new HashMap<>();
     private static float mainHandSwing;
     private static float mainHandEquip;
 
@@ -129,30 +133,35 @@ public final class FistTell {
     }
 
     private static void update(MeleeTellPayload payload) {
-        Shown shown = SHOWN.get(payload.entityId());
-        if (payload.look().kind() == MeleeTell.Kind.NONE) {
-            if (shown != null) shown.stopEffect();
-            SHOWN.remove(payload.entityId());
-        } else if (shown == null) {
-            SHOWN.put(payload.entityId(), new Shown(payload.look()));
-        } else if (!shown.look.equals(payload.look())) {
-            shown.stopEffect(); // tick starts the right one, in the right color
-            shown.look = payload.look();
-        }
+        if (payload.look().kind() == MeleeTell.Kind.NONE) STRIKE.remove(payload.entityId());
+        else STRIKE.put(payload.entityId(), payload.look());
+        Shown shown = SHOWN.get(key(payload.entityId(), false));
+        if (shown != null) shown.stopEffect(); // a tell that outlives the Strike would lie; tick starts the right one, in the right color
     }
 
     private static void clear() {
+        STRIKE.clear();
         SHOWN.values().forEach(Shown::stopEffect);
         SHOWN.clear();
     }
 
-    /** What to draw on this player, or null. Nothing on someone you can't see: a glow can't give away an invisible player. */
+    /** A hand of a player: their attacking (main) hand, or the other. */
+    private static long key(int entityId, boolean offHand) {
+        return ((long) entityId << 1) | (offHand ? 1L : 0L);
+    }
+
+    /**
+     * What to draw on this hand of this player, or null: a ready Strike on the attacking hand, Reinforced Fists' fire on either (the same
+     * look exactly, in the same color, §3.28). Nothing on someone you can't see: a glow can't give away an invisible player.
+     */
     @Nullable
-    static MeleeTell.Look lookOn(Player player) {
-        Shown shown = SHOWN.get(player.getId());
+    static MeleeTell.Look lookOn(Player player, boolean offHand) {
         Minecraft mc = Minecraft.getInstance();
-        if (shown == null || mc.player == null || player.isInvisibleTo(mc.player)) return null;
-        return shown.look;
+        if (mc.player == null || player.isInvisibleTo(mc.player)) return null;
+        MeleeTell.Look strike = offHand ? null : STRIKE.get(player.getId());
+        if (strike != null) return strike;
+        Integer fists = FistBurn.colorOn(player);
+        return fists == null ? null : MeleeTell.Look.glow(fists);
     }
 
     /**
@@ -179,8 +188,8 @@ public final class FistTell {
     }
 
     /** The curls off this player's fist, where they came off it, in the world as the camera sees it. */
-    static void drawWisps(Player player, MultiBufferSource buffers, float partialTick) {
-        Shown shown = SHOWN.get(player.getId());
+    static void drawWisps(Player player, boolean offHand, MultiBufferSource buffers, float partialTick) {
+        Shown shown = SHOWN.get(key(player.getId(), offHand));
         if (shown == null || shown.look.kind() != MeleeTell.Kind.GLOW || KegareClientConfig.VFX_QUALITY.get() == VfxQuality.VANILLA) return;
         Camera camera = Minecraft.getInstance().gameRenderer.getMainCamera();
         Vec3 from = camera.getPosition();
@@ -229,8 +238,8 @@ public final class FistTell {
     }
 
     /** The world position of the fist the pose is in the arm space of. {@code relative}: as the level draws it, relative to the camera. */
-    static void reportFist(Player player, Vector3f relative) {
-        Shown shown = SHOWN.get(player.getId());
+    static void reportFist(Player player, boolean offHand, Vector3f relative) {
+        Shown shown = SHOWN.get(key(player.getId(), offHand));
         if (shown == null) return;
         shown.fist = Minecraft.getInstance().gameRenderer.getMainCamera().getPosition().add(relative.x, relative.y, relative.z);
         shown.staleTicks = 0;
@@ -272,9 +281,8 @@ public final class FistTell {
             mainHandEquip = event.getEquipProgress();
             return;
         }
-        MeleeTell.Look look = lookOn(player);
-        Integer burn = FistBurn.colorOn(player); // Reinforced Fists, when no Strike is ready
-        if (look == null && burn == null) return;
+        MeleeTell.Look look = lookOn(player, false);
+        if (look == null) return;
         boolean left = player.getMainArm() == HumanoidArm.LEFT;
         float side = left ? -1f : 1f;
         float swing = mainHandSwing;
@@ -283,8 +291,8 @@ public final class FistTell {
         pose.pushPose();
         GuardHand.apply(pose, side, event.getPartialTick());
         boolean holding = !player.getMainHandItem().isEmpty();
-        if (holding && (look == null || look.kind() == MeleeTell.Kind.GLOW)) {
-            drawGripFire(pose, event, player, look, burn, side, swing, root);
+        if (holding && look.kind() == MeleeTell.Kind.GLOW) {
+            drawGripFire(pose, event, player, look, side, swing, root);
             pose.popPose();
             return;
         }
@@ -311,23 +319,17 @@ public final class FistTell {
             boolean slim = player.getSkin().model() == PlayerSkin.Model.SLIM;
             float time = player.tickCount + event.getPartialTick();
             Vector3f fist = handPassPoint(pose.last(), FistShellMesh.armCentre(slim, left), FistShellMesh.fistY(), 0f);
-            if (look == null) {
-                FistBurn.drawArm(pose, event.getMultiBufferSource(), burn, time, slim, left, fist.negate(new Vector3f()).normalize(), new Vector3f(0f, 1f, 0f), true);
-                pose.popPose();
-                return;
-            }
             drawArm(pose, event.getMultiBufferSource(), look, time, slim, left, event.getPackedLight(), fist.negate(new Vector3f()).normalize(),
                     new Vector3f(0f, 1f, 0f), true);
-            Shown shown = SHOWN.get(player.getId());
+            Shown shown = SHOWN.get(key(player.getId(), false));
             if (shown != null && look.kind() == MeleeTell.Kind.GLOW) drawWispsSelf(shown, event.getMultiBufferSource(), fist, time, WISP_SIZE_SELF);
-            reportFist(player, fist);
+            reportFist(player, false, fist);
         }
         pose.popPose();
     }
 
     /** With something in hand there's no arm to wrap: one clump round the grip, going wherever vanilla's item moves take it (renderArmWithItem's default case). */
-    private static void drawGripFire(PoseStack pose, RenderHandEvent event, AbstractClientPlayer player, @Nullable MeleeTell.Look look, @Nullable Integer burn,
-                                     float side, float swing, float root) {
+    private static void drawGripFire(PoseStack pose, RenderHandEvent event, AbstractClientPlayer player, MeleeTell.Look look, float side, float swing, float root) {
         float lift = Mth.sin(root * Mth.PI);
         pose.translate(side * -0.4f * lift, 0.2f * Mth.sin(root * Mth.TWO_PI), -0.2f * Mth.sin(swing * Mth.PI));
         pose.translate(side * 0.56f, -0.52f - mainHandEquip * 0.6f, -0.72f);
@@ -341,15 +343,11 @@ public final class FistTell {
         Vector3f right = new Vector3f(camera.getLeftVector()).negate();
         Vector3f up = new Vector3f(camera.getUpVector());
         float time = player.tickCount + event.getPartialTick();
-        if (look == null) { // Reinforced Fists' low burn
-            if (burn != null) FistFire.drawGripLow(event.getMultiBufferSource().getBuffer(FistFire.renderType()), burn, time, base, right, up);
-            return;
-        }
         FistFire.drawGrip(event.getMultiBufferSource().getBuffer(FistFire.renderType()), MeleeTell.bright(look.color()) & 0xFFFFFF, time, base, right, up);
         Vector3f middle = FistFire.gripMiddle(base, up);
-        Shown shown = SHOWN.get(player.getId());
+        Shown shown = SHOWN.get(key(player.getId(), false));
         if (shown != null) drawWispsSelf(shown, event.getMultiBufferSource(), middle, time, WISP_SIZE_GRIP);
-        reportFist(player, middle);
+        reportFist(player, false, middle);
     }
 
     private static void onClientTick(ClientTickEvent.Post event) {
@@ -359,47 +357,71 @@ public final class FistTell {
             clear();
             return;
         }
-        Iterator<Map.Entry<Integer, Shown>> entries = SHOWN.entrySet().iterator();
-        while (entries.hasNext()) {
-            Map.Entry<Integer, Shown> entry = entries.next();
-            Shown shown = entry.getValue();
-            Entity entity = level.getEntity(entry.getKey());
+        // Players gone from view or dead: forget them (the server sends it again when they're back in range).
+        java.util.Set<Integer> ids = new java.util.HashSet<>(STRIKE.keySet());
+        ids.addAll(FistBurn.ids());
+        for (int id : ids) {
+            Entity entity = level.getEntity(id);
             if (!(entity instanceof Player player) || !player.isAlive()) {
-                shown.stopEffect();
+                STRIKE.remove(id);
+                FistBurn.forget(id);
+            }
+        }
+        // Hands with nothing on them any more.
+        for (Iterator<Map.Entry<Long, Shown>> entries = SHOWN.entrySet().iterator(); entries.hasNext(); ) {
+            Map.Entry<Long, Shown> entry = entries.next();
+            boolean offHand = (entry.getKey() & 1L) != 0;
+            Entity entity = level.getEntity((int) (entry.getKey() >> 1));
+            if (!(entity instanceof Player player) || !player.isAlive() || lookOn(player, offHand) == null) {
+                entry.getValue().stopEffect();
                 entries.remove();
-                continue;
             }
-            if (lookOn(player) == null) {
-                shown.stopEffect();
-                continue;
-            }
-            Vec3 fist = shown.fist != null && shown.staleTicks < STALE_AFTER_TICKS ? shown.fist : player.position().add(0, player.getBbHeight() * 0.45, 0);
-            shown.staleTicks++;
-            boolean self = firstPersonSelf(player);
-            VfxQuality quality = KegareClientConfig.VFX_QUALITY.get();
-            if (quality == VfxQuality.VANILLA) {
-                shown.stopEffect();
-                if (!self) vanillaParticles(level, shown.look, fist);
-                continue;
-            }
-            if (shown.look.kind() == MeleeTell.Kind.GLOW) {
-                shown.stopEffect();
-                int every = self ? WISP_EVERY_TICKS_SELF : quality == VfxQuality.REDUCED ? WISP_EVERY_TICKS_REDUCED : WISP_EVERY_TICKS;
-                if (player.tickCount % every == 0) {
-                    shown.wispFrom[shown.nextWisp] = fist;
-                    shown.wispBorn[shown.nextWisp] = player.tickCount;
-                    shown.nextWisp = (shown.nextWisp + 1) % shown.wispFrom.length;
+        }
+        ids = new java.util.HashSet<>(STRIKE.keySet());
+        ids.addAll(FistBurn.ids());
+        for (int id : ids) {
+            if (!(level.getEntity(id) instanceof Player player)) continue;
+            for (boolean offHand : new boolean[] {false, true}) {
+                MeleeTell.Look look = lookOn(player, offHand);
+                if (look == null) continue;
+                Shown shown = SHOWN.computeIfAbsent(key(id, offHand), k -> new Shown(look));
+                if (!shown.look.equals(look)) {
+                    shown.stopEffect(); // tick starts the right one, in the right color
+                    shown.look = look;
                 }
-                continue;
+                tickHand(level, player, shown);
             }
-            ResourceLocation wanted = self ? MeleeIds.FX_FIST_STEAM_SELF : MeleeIds.FX_FIST_STEAM;
-            if (shown.effect == null || !wanted.equals(shown.effectId)) {
-                shown.stopEffect();
-                shown.effect = ClientVisuals.startAt(wanted, fist);
-                shown.effectId = wanted;
-            } else {
-                shown.effect.moveTo(fist);
+        }
+    }
+
+    /** One hand's curls (or a Severed forearm's steam) for this tick, from where its fist was last drawn. */
+    private static void tickHand(ClientLevel level, Player player, Shown shown) {
+        Vec3 fist = shown.fist != null && shown.staleTicks < STALE_AFTER_TICKS ? shown.fist : player.position().add(0, player.getBbHeight() * 0.45, 0);
+        shown.staleTicks++;
+        boolean self = firstPersonSelf(player);
+        VfxQuality quality = KegareClientConfig.VFX_QUALITY.get();
+        if (quality == VfxQuality.VANILLA) {
+            shown.stopEffect();
+            if (!self) vanillaParticles(level, shown.look, fist);
+            return;
+        }
+        if (shown.look.kind() == MeleeTell.Kind.GLOW) {
+            shown.stopEffect();
+            int every = self ? WISP_EVERY_TICKS_SELF : quality == VfxQuality.REDUCED ? WISP_EVERY_TICKS_REDUCED : WISP_EVERY_TICKS;
+            if (player.tickCount % every == 0) {
+                shown.wispFrom[shown.nextWisp] = fist;
+                shown.wispBorn[shown.nextWisp] = player.tickCount;
+                shown.nextWisp = (shown.nextWisp + 1) % shown.wispFrom.length;
             }
+            return;
+        }
+        ResourceLocation wanted = self ? MeleeIds.FX_FIST_STEAM_SELF : MeleeIds.FX_FIST_STEAM;
+        if (shown.effect == null || !wanted.equals(shown.effectId)) {
+            shown.stopEffect();
+            shown.effect = ClientVisuals.startAt(wanted, fist);
+            shown.effectId = wanted;
+        } else {
+            shown.effect.moveTo(fist);
         }
     }
 

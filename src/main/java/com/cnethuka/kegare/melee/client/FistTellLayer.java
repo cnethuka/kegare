@@ -13,7 +13,7 @@ import net.minecraft.world.entity.HumanoidArm;
 import org.joml.Vector3f;
 
 /**
- * The tell on a player's attacking arm, drawn from the arm as the model has it, so it follows every animation. It draws nothing of an
+ * The tell on a player's fists (a ready Strike on the attacking one, Reinforced Fists on both), drawn from the arm as the model has it, so it follows every animation. It draws nothing of an
  * item layer: it only extends that class because Player Animation Library's first-person pass, which shows your own arms during an
  * animation, draws no other layers on you but items and armor, and a ready fist has to show there too.
  */
@@ -28,33 +28,30 @@ final class FistTellLayer extends PlayerItemInHandLayer<AbstractClientPlayer, Pl
     @Override
     public void render(PoseStack pose, MultiBufferSource buffers, int light, AbstractClientPlayer player, float limbSwing, float limbSwingAmount,
                        float partialTick, float ageInTicks, float netHeadYaw, float headPitch) {
-        MeleeTell.Look look = FistTell.lookOn(player);
-        Integer burn = FistBurn.colorOn(player);
+        boolean mainLeft = player.getMainArm() == HumanoidArm.LEFT;
         Integer zone = FistBurn.zoneOn(player);
-        if (look == null && burn == null && zone == null) return;
-        boolean left = player.getMainArm() == HumanoidArm.LEFT;
-        float time = player.tickCount + partialTick;
         if (zone != null && !FistTell.firstPersonSelf(player)) { // the zone: a faint flicker of black sparks round both fists
             drawFlicker(pose, buffers, player, zone, getParentModel().leftArm, true, partialTick);
             drawFlicker(pose, buffers, player, zone, getParentModel().rightArm, false, partialTick);
         }
-        if (look == null && burn == null) return;
-        if (burn != null) { // Reinforced Fists: a low burn on the other fist, and on this one when no Strike is ready
-            drawBurn(pose, buffers, player, burn, time, !left ? getParentModel().leftArm : getParentModel().rightArm, !left, partialTick);
-            if (look == null) {
-                drawBurn(pose, buffers, player, burn, time, left ? getParentModel().leftArm : getParentModel().rightArm, left, partialTick);
-                return;
-            }
-        }
+        // A ready Strike on the attacking hand; Reinforced Fists' fire, the very same, on both (§3.28).
+        drawFist(pose, buffers, light, player, false, mainLeft, partialTick);
+        drawFist(pose, buffers, light, player, true, !mainLeft, partialTick);
+    }
+
+    private void drawFist(PoseStack pose, MultiBufferSource buffers, int light, AbstractClientPlayer player, boolean offHand, boolean left, float partialTick) {
+        MeleeTell.Look look = FistTell.lookOn(player, offHand);
+        if (look == null) return;
         ModelPart arm = left ? getParentModel().leftArm : getParentModel().rightArm;
+        float time = player.tickCount + partialTick;
         pose.pushPose();
         arm.translateAndRotate(pose);
         Vector3f fist = pose.last().pose().transformPosition(FistShellMesh.armCentre(slim, left), FistShellMesh.fistY(), 0f, new Vector3f());
         if (FistTell.inWorld(player, fist, partialTick)) {
             boolean self = FistTell.firstPersonSelf(player);
             FistTell.drawArm(pose, buffers, look, time, slim, left, light, fist.negate(new Vector3f()).normalize(), new Vector3f(0f, 1f, 0f), self);
-            FistTell.reportFist(player, fist);
-            if (!self) FistTell.drawWisps(player, buffers, partialTick);
+            FistTell.reportFist(player, offHand, fist);
+            if (!self) FistTell.drawWisps(player, offHand, buffers, partialTick);
         } else {
             FistTell.drawArm(pose, buffers, look, time, slim, left, light, new Vector3f(0f, 0f, 1f), new Vector3f(0f, -1f, 0f), false);
         }
@@ -67,20 +64,6 @@ final class FistTellLayer extends PlayerItemInHandLayer<AbstractClientPlayer, Pl
         Vector3f fist = pose.last().pose().transformPosition(FistShellMesh.armCentre(slim, leftArm), FistShellMesh.fistY(), 0f, new Vector3f());
         if (FistTell.inWorld(player, fist, partialTick)) {
             FistBurn.drawFlicker(pose, buffers, color, player.tickCount, player.getId() * 2 + (leftArm ? 1 : 0), slim, leftArm, fist.negate(new Vector3f()).normalize());
-        }
-        pose.popPose();
-    }
-
-    private void drawBurn(PoseStack pose, MultiBufferSource buffers, AbstractClientPlayer player, int color, float time, ModelPart arm, boolean leftArm,
-                          float partialTick) {
-        pose.pushPose();
-        arm.translateAndRotate(pose);
-        Vector3f fist = pose.last().pose().transformPosition(FistShellMesh.armCentre(slim, leftArm), FistShellMesh.fistY(), 0f, new Vector3f());
-        if (FistTell.inWorld(player, fist, partialTick)) {
-            FistBurn.drawArm(pose, buffers, color, time, slim, leftArm, fist.negate(new Vector3f()).normalize(), new Vector3f(0f, 1f, 0f),
-                    FistTell.firstPersonSelf(player));
-        } else {
-            FistBurn.drawArm(pose, buffers, color, time, slim, leftArm, new Vector3f(0f, 0f, 1f), new Vector3f(0f, -1f, 0f), false);
         }
         pose.popPose();
     }

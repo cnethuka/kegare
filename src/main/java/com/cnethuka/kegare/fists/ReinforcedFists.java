@@ -17,7 +17,7 @@ import net.minecraft.sounds.SoundSource;
  * outside Technique Mode, so the hotbar is free, and through Burnout (shared). Death and logout end it, like every toggle.
  * <p>
  * While on, melee hits deal more ({@link FistsEvents}), and a Reinforced Strike landed with it on hits again a moment later
- * ({@link SecondImpact}). A low burn on both fists shows it ({@link FistsTell}).
+ * ({@link SecondImpact}). The ready fist's own fire on both fists shows it ({@link FistsTell}).
  */
 public final class ReinforcedFists extends BaseAbility {
     ReinforcedFists() {

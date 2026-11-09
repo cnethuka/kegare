@@ -12,15 +12,11 @@ import net.minecraft.world.entity.player.Player;
 import org.joml.Vector3f;
 
 /**
- * Reinforced Fists on a player (DESIGN §3.28): a low, steady burn on both fists in the Malice color the server sent this client
- * ({@link com.cnethuka.kegare.fists.FistsTell}), drawn at every effects setting. The ready Strike's fire, drawn on top of it on the
- * striking fist, is bigger, so the two can be told apart.
+ * What the server says is round each player's fists (DESIGN §3.28, {@link com.cnethuka.kegare.fists.FistsTell}): Reinforced Fists, which
+ * {@link FistTell} draws as the ready fist's own fire on both hands, and the zone's flicker, drawn here.
  */
 public final class FistBurn {
     private static final Map<Integer, FistsPayload> SHOWN = new HashMap<>();
-    /** Your own hand in first person: as for the ready fist, the fire has to stay small by the camera. */
-    private static final float RADIUS = 3f / 16f;
-    private static final float RADIUS_SLIM = 2.7f / 16f;
 
     private FistBurn() {}
 
@@ -42,11 +38,21 @@ public final class FistBurn {
         return shown;
     }
 
-    /** The burn's color on this player, brightened for drawing, or null if Fists aren't on (or you can't see them). */
+    /** The Malice color Fists burn in on this player, as the technique defines it, or null if they aren't on (or you can't see them). */
     @Nullable
     static Integer colorOn(Player player) {
         FistsPayload shown = on(player);
-        return shown == null || !shown.has(FistsPayload.BURN) ? null : MeleeTell.bright(shown.color()) & 0xFFFFFF;
+        return shown == null || !shown.has(FistsPayload.BURN) ? null : shown.color() & 0xFFFFFF;
+    }
+
+    /** Everyone something has been sent about. */
+    static java.util.Set<Integer> ids() {
+        return SHOWN.keySet();
+    }
+
+    /** Gone from view: the server sends it again when they're back. */
+    static void forget(int entityId) {
+        SHOWN.remove(entityId);
     }
 
     /** Their Malice color for the zone's flicker, brightened, or null if they aren't in the zone (or you can't see them). */
@@ -97,17 +103,5 @@ public final class FistBurn {
         out.addVertex(pose, x, y, z).setColor(rgb >> 16 & 0xFF, rgb >> 8 & 0xFF, rgb & 0xFF, 255).setUv(0.5f, 0.5f)
                 .setOverlay(net.minecraft.client.renderer.texture.OverlayTexture.NO_OVERLAY).setLight(net.minecraft.client.renderer.LightTexture.FULL_BRIGHT)
                 .setNormal(0f, 1f, 0f);
-    }
-
-    /** The burn on one arm, with the pose in the arm's space. {@code ownHand}: your own, by the camera. */
-    static void drawArm(PoseStack pose, MultiBufferSource buffers, int rgb, float time, boolean slim, boolean leftArm, Vector3f toCamera, Vector3f up,
-                        boolean ownHand) {
-        float centre = FistShellMesh.armCentre(slim, leftArm);
-        if (!ownHand) {
-            FistFire.drawLow(pose.last(), buffers.getBuffer(FistFire.renderType()), rgb, time, FistShellMesh.handEnd(), centre, slim, toCamera, up);
-        } else {
-            FistFlames.drawOwnHand(pose.last(), buffers.getBuffer(FistFlames.renderType()), rgb, time * FistFire.LOW_PACE, FistShellMesh.handEnd(), centre,
-                    slim ? RADIUS_SLIM : RADIUS, toCamera, up, leftArm, true);
-        }
     }
 }

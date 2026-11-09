@@ -177,7 +177,8 @@ public final class BlackSpark {
 
     private static void log(ServerPlayer attacker, LivingEntity target, String what) {
         if (TimingLog.any()) {
-            TimingLog.send(attacker.server, "Black Spark try, " + attacker.getGameProfile().getName() + " -> " + target.getName().getString() + ": " + what);
+            TimingLog.send(attacker.server, "Black Spark try, " + attacker.getGameProfile().getName() + " (" + SubTick.describe(attacker) + ") -> "
+                    + target.getName().getString() + ": " + what);
         }
     }
 

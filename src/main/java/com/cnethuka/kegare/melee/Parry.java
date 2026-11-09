@@ -102,8 +102,9 @@ public final class Parry {
         boolean bySubTick = subTickPerfect(gap, window * 50.0);
         if (com.cnethuka.kegare.timing.TimingLog.any()) {
             com.cnethuka.kegare.timing.TimingLog.send(player.server, String.format(java.util.Locale.ROOT,
-                    "Parry %s <- %s: by ticks %s (held %d of %d ticks), sub-tick %s (swing %.1f ms after the press, window %d ms)%s",
-                    player.getGameProfile().getName(), attacker.getName().getString(), byTicks ? "PERFECT" : "no", held, window,
+                    "Parry %s (%s) <- %s (%s): by ticks %s (held %d of %d ticks), sub-tick %s (swing %.1f ms after the press, window %d ms)%s",
+                    player.getGameProfile().getName(), com.cnethuka.kegare.timing.SubTick.describe(player), attacker.getName().getString(),
+                    attacker instanceof ServerPlayer ap ? com.cnethuka.kegare.timing.SubTick.describe(ap) : "a mob", byTicks ? "PERFECT" : "no", held, window,
                     bySubTick ? "PERFECT" : "no", gap, window * 50, com.cnethuka.kegare.timing.TimingConfig.PARRY_SUB_TICK.get() ? " [sub-tick used]" : " [ticks used]"));
         }
         return com.cnethuka.kegare.timing.TimingConfig.PARRY_SUB_TICK.get() ? bySubTick : byTicks;

@@ -723,6 +723,7 @@ public final class KegareLanguageProvider extends LanguageProvider {
         add("commands.kegare.help.debug.rmt.others.unlock", "Let a player heal others with Reverse Malice Technique, without its moment.");
         add("commands.kegare.help.debug.rmt.others.lock", "Take healing others away from a player.");
         add("commands.kegare.help.debug.spark.log", "Show you every Black Spark try (its gap, the rolled offset and the window) and Parry's two timings.");
+        add("commands.kegare.help.debug.spark.log.off", "Stop showing you Black Spark's tries and Parry's timings.");
         add("commands.kegare.help.debug.spark.force", "Make the player's next melee hit a Black Spark, for filming.");
         add("commands.kegare.help.debug.rmt.moment", "Make the target glow for the player now, as their chance moment to learn healing others.");
         add("commands.kegare.debug.spark.log.on", "Every Black Spark try (its gap, the rolled offset and the window) and Parry's two timings will be shown to you.");
