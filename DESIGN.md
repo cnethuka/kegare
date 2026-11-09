@@ -1395,9 +1395,9 @@ negative is positive energy, which is why it heals, and why its colors are white
     `repairRate` (4) x the current RMT output seconds a second (Grade, Peak Refinement, injury fatigue and Black Spark's zone all
     count; on top of its own countdown). The body doesn't heal until the Burnout is gone. It costs `repairDamage` (1) a second
     (damage type `kegare:brain_repair`: armour doesn't stop it, no knockback, past the hurt cooldown and leaving none behind; it never
-    counts as an injury for fatigue; "%s's brain gave out"). Others see a nosebleed while it goes on (the tell, `NosebleedLayer`: hard red pixels on the player's own model, so it turns with the head and every setting shows it, never as dark as
-    the night round it. It starts at both nostrils and runs a pixel every quarter second, one thin line past the mouth to the chin and 5 pixels down the chest, then small dark drops fall from the chin; thin on purpose, as a wide
-    patch at the mouth reads as a blob. Readable at 7 blocks. It stays 2 s after the repair stops, then goes from the nose down. `Repair.Payload` to everyone tracking them, not in your own first person).
+    counts as an injury for fatigue; "%s's brain gave out"). Others see a nosebleed while it goes on (the tell, `NosebleedLayer`: hard red lines on the player's own model, so it turns with the head and every setting shows it, never as dark as
+    the night round it. It starts at both nostrils and runs one row every quarter second, a line half a skin pixel wide past the mouth, ending at the chin; then small hard red drops fall from there with real gravity. Thin and stopping
+    at the chin on purpose: a wide patch at the mouth reads as a blob, and a bar on down the chest as a tongue. Readable at 7 blocks on a light or a dark skin, by day and at night. It stays 2 s after the repair stops, then goes from the nose down. `Repair.Payload` to everyone tracking them, not in your own first person).
   - **The brain meter** (`BrainDamage`, attachment `kegare:brain`, 0 to 100, saved, kept on death): every second of Burnout taken away
     adds `brainPerSecond` (0.262) x sqrt(L / `dominionBurnoutAssumed`) x (1 + `brainEscalation` (1) x meter / 100), for a Burnout L
     long (the length it had when applied, saved with it): longer Burnouts cost more a second, and each repair adds more than the last

@@ -16,23 +16,21 @@ import net.minecraft.resources.ResourceLocation;
 import net.neoforged.neoforge.client.event.EntityRenderersEvent;
 
 /**
- * The nosebleed's streak (DESIGN §3.17), drawn on the player's own model at the skin's resolution with hard pixels, so it turns with the head
- * and follows any animation: both nostrils, then one thin line running down past the mouth to the chin and on down the chest. Thin on purpose:
- * a wide patch at the mouth reads as a blob, not as blood from the nose.
+ * The nosebleed's line (DESIGN §3.17), drawn on the player's own model with hard edges, so it turns with the head and follows any animation:
+ * both nostrils, then one thin line past the mouth, ending at the chin. Half a skin pixel wide on purpose: a wide patch at the mouth reads as a
+ * blob, and a bar carried on down the chest as a tongue. The drops ({@link NosebleedClient}) take it from the chin.
  */
 final class NosebleedLayer extends RenderLayer<AbstractClientPlayer, PlayerModel<AbstractClientPlayer>> {
     private static final ResourceLocation WHITE = ResourceLocation.withDefaultNamespace("textures/misc/white.png");
-    /** On the head and chest, in skin pixels from each part's pivot: out past the hat (4.5) and the jacket (2.25), so any skin shows it. */
-    private static final float FACE_OUT = 4.55f, CHEST_OUT = 2.3f;
+    /** On the head, in skin pixels from its pivot: out past the hat (4.5), so any skin shows it. */
+    private static final float FACE_OUT = 4.55f;
     /** The nostrils' row on the head, counted down from its top (8 pixels tall, its pivot at the bottom). */
     private static final int NOSE_ROW = 5;
-    private static final int MAIN_COLUMN = 0, SECOND_COLUMN = -1;
-    private static final int FACE_ROWS = 3, CHEST_ROWS = 5;
-    /** The streak's pixels, in the order they appear. */
-    static final int LENGTH = FACE_ROWS + CHEST_ROWS;
-    /** The pixel that reaches the chin: drops start falling. */
-    static final int REACHES_CHIN = FACE_ROWS;
-    private static final int BLOOD = 0xAE0A14, FRESH = 0xE0141E;
+    /** Where the line runs across the face, in skin pixels from the middle: under one nostril; the other is its mirror. */
+    private static final float LINE_LEFT = 0.25f, LINE_WIDTH = 0.5f;
+    /** Nose, mouth, chin: the line's rows, in the order they appear. At the last it's reached the chin, and drops start falling. */
+    static final int LENGTH = 3;
+    private static final int BLOOD = 0xD01018, FRESH = 0xF02028;
     private static final int MIN_BLOCK_LIGHT = 7;
 
     private NosebleedLayer(RenderLayerParent<AbstractClientPlayer, PlayerModel<AbstractClientPlayer>> parent) {
@@ -55,34 +53,26 @@ final class NosebleedLayer extends RenderLayer<AbstractClientPlayer, PlayerModel
         VertexConsumer out = buffers.getBuffer(RenderType.entityCutoutNoCull(WHITE));
         // A tell has to show: it never goes as dark as the night round it.
         light = LightTexture.pack(Math.max(LightTexture.block(light), MIN_BLOCK_LIGHT), LightTexture.sky(light));
-        PlayerModel<AbstractClientPlayer> model = getParentModel();
 
         pose.pushPose();
-        model.head.translateAndRotate(pose);
+        getParentModel().head.translateAndRotate(pose);
         PoseStack.Pose face = pose.last();
-        for (int i = from; i < Math.min(to, FACE_ROWS); i++) {
+        for (int i = from; i < to; i++) {
             float y = NOSE_ROW + i - 8; // the head's top is at -8, its pivot at 0
-            pixel(out, face, light, MAIN_COLUMN, y, -FACE_OUT, i == to - 1 ? FRESH : BLOOD);
-            if (i == 0) pixel(out, face, light, SECOND_COLUMN, y, -FACE_OUT, i == to - 1 ? FRESH : BLOOD); // the other nostril
+            int rgb = i == to - 1 ? FRESH : BLOOD;
+            line(out, face, light, LINE_LEFT, y, rgb);
+            if (i == 0) line(out, face, light, -LINE_LEFT - LINE_WIDTH, y, rgb); // the other nostril
         }
         pose.popPose();
-
-        if (to > FACE_ROWS) {
-            pose.pushPose();
-            model.body.translateAndRotate(pose);
-            PoseStack.Pose chest = pose.last();
-            for (int i = Math.max(from, FACE_ROWS); i < to; i++) pixel(out, chest, light, MAIN_COLUMN, i - FACE_ROWS, -CHEST_OUT, i == to - 1 ? FRESH : BLOOD);
-            pose.popPose();
-        }
     }
 
-    /** One skin pixel, facing forward (the model faces -z): {@code column} and {@code y} its left and top in pixels from the part's pivot. */
-    private static void pixel(VertexConsumer out, PoseStack.Pose p, int light, int column, float y, float z, int rgb) {
-        float x0 = column / 16f, x1 = (column + 1) / 16f, y0 = y / 16f, y1 = (y + 1) / 16f, zz = z / 16f;
-        vertex(out, p, light, x0, y1, zz, rgb);
-        vertex(out, p, light, x1, y1, zz, rgb);
-        vertex(out, p, light, x1, y0, zz, rgb);
-        vertex(out, p, light, x0, y0, zz, rgb);
+    /** One row of the line, facing forward (the model faces -z): {@code left} and {@code y} in skin pixels from the head's pivot. */
+    private static void line(VertexConsumer out, PoseStack.Pose p, int light, float left, float y, int rgb) {
+        float x0 = left / 16f, x1 = (left + LINE_WIDTH) / 16f, y0 = y / 16f, y1 = (y + 1) / 16f, z = -FACE_OUT / 16f;
+        vertex(out, p, light, x0, y1, z, rgb);
+        vertex(out, p, light, x1, y1, z, rgb);
+        vertex(out, p, light, x1, y0, z, rgb);
+        vertex(out, p, light, x0, y0, z, rgb);
     }
 
     private static void vertex(VertexConsumer out, PoseStack.Pose p, int light, float x, float y, float z, int rgb) {
