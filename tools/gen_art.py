@@ -1831,28 +1831,61 @@ ICON_VIEW_PITY = [  # a four-pointed star: luck and pity
 ]
 
 
-def category_shared() -> Image.Image:
-    """16x16 tab icon for the Shared ability category: a silver ring around a pale diamond core."""
-    grid = [
-        "................",
-        ".....KKKKKK.....",
-        "...KKSSSSSSKK...",
-        "..KSShhhhhhSSK..",
-        "..KSK......KSK..",
-        ".KShK..WW..KhSK.",
-        ".KShK.WPPW.KhSK.",
-        ".KShKWPPPPWKhSK.",
-        ".KShKWPPPPWKhSK.",
-        ".KShK.WPPW.KhSK.",
-        ".KShK..WW..KhSK.",
-        "..KSK......KSK..",
-        "..KSShhhhhhSSK..",
-        "...KKSSSSSSKK...",
-        ".....KKKKKK.....",
-        "................",
-    ]
-    return from_grid(grid, {"K": INK, "S": SILVER[3], "h": SILVER[5], "W": MALICE[5], "P": MALICE[6]})
-
+# The ability categories' tab icons (DESIGN §3.16): Innate, Malice, Melee.
+CATEGORY_INNATE = [  # a hand sign: two fingers raised, a sigil glowing between them
+    "................",
+    "......K..K......",
+    ".....K5KK5K.....",
+    ".....K5KK5K.....",
+    ".....K5KK5K.....",
+    "...KKK5KK5KKK...",
+    "..K66K5KK5K66K..",
+    "..K6K555555K6K..",
+    "..K6K544445K6K..",
+    "..K6K544445K6K..",
+    "..K66K5555K66K..",
+    "...K66KKKK66K...",
+    "....K666666K....",
+    ".....K4444K.....",
+    ".....K4444K.....",
+    ".....KKKKKK.....",
+]
+CATEGORY_MALICE = [  # Malice itself: a flame rising, dark heart, bright edge
+    "................",
+    ".......K........",
+    "......K6K.......",
+    "......K65K...K..",
+    ".....K654K..K6K.",
+    "..K..K6544K.K5K.",
+    ".K6K.K65444KK5K.",
+    ".K56KK654444K54K",
+    ".K5466544444K54K",
+    ".K45666544444K4K",
+    "..K4566544444KK.",
+    "..K44565444444K.",
+    "...K4455443344K.",
+    "....KK44333344K.",
+    "......KK444KKK..",
+    "........KKK.....",
+]
+CATEGORY_MELEE = [  # a clenched fist, knuckles forward
+    "................",
+    "................",
+    "...KKKKKKKKKK...",
+    "..K5K5K5K5K55K..",
+    "..K6K6K6K6K665K.",
+    "..K5K5K5K5K554K.",
+    "..KKKKKKKKKK44K.",
+    "..K4444444444K..",
+    "..K5555555554K..",
+    "...K44444444K...",
+    "....K333333K....",
+    "....K333333K....",
+    "....K333333K....",
+    "....KKKKKKKK....",
+    "................",
+    "................",
+]
 
 def env_cold() -> Image.Image:
     grid = [
@@ -2241,7 +2274,9 @@ def build() -> dict[str, Image.Image]:
     out["freeze_pip_empty"] = freeze_pip(False)
     out["badge_special"] = special_badge(True)
     out["badge_special_none"] = special_badge(False)
-    out["category_shared"] = category_shared()
+    out["category_innate"] = icon(CATEGORY_INNATE, GOLD)
+    out["category_malice"] = icon(CATEGORY_MALICE, MALICE)
+    out["category_melee"] = icon(CATEGORY_MELEE, STEEL)
     out["menu_frame"] = menu_frame()
     out["menu_well"] = menu_well()
     out["menu_tab"] = menu_tab(False)

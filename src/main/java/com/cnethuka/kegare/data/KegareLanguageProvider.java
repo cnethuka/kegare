@@ -342,6 +342,7 @@ public final class KegareLanguageProvider extends LanguageProvider {
                 + "own output, for %3$s times the " + MALICE + ". Few can: it takes enough Output Insight, and then the right moment, when "
                 + "someone near you is badly hurt.");
         add("message.kegare.rmt.unlocked", "Your body remembers how to heal.");
+        add("ability.kegare.reverse_malice_technique.unlock", "Take in the green orb.");
 
         // Reinforced Fists (shared ability, every Malice user's)
         add("ability.kegare.reinforced_fists", "Reinforced Fists");
@@ -358,10 +359,12 @@ public final class KegareLanguageProvider extends LanguageProvider {
         add("gui.kegare.rmt.output_injured", "Output %sx, injuries %s");
 
         // Loadout
-        add("ability_category.kegare.innate_technique", INNATE_TECHNIQUE);
-        add("ability_category.kegare.innate_technique.desc", "Abilities of your " + INNATE_TECHNIQUE + ". A reroll replaces them.");
-        add("ability_category.kegare.shared", "Shared");
-        add("ability_category.kegare.shared.desc", "Abilities you unlock yourself. They're yours for good, through every reroll.");
+        add("ability_category.kegare.innate", "Innate");
+        add("ability_category.kegare.innate.desc", "Abilities of your " + INNATE_TECHNIQUE + ". A reroll replaces them.");
+        add("ability_category.kegare.malice", "Malice");
+        add("ability_category.kegare.malice.desc", "Energy techniques any " + MALICE + " user can learn. Yours for good, through every reroll.");
+        add("ability_category.kegare.melee", "Melee");
+        add("ability_category.kegare.melee.desc", "Close-combat abilities. Yours for good, through every reroll.");
         add("gui.kegare.loadout.category_empty", "Nothing here yet.");
         add("gui.kegare.loadout.kind", "%s · %s");
         add("gui.kegare.loadout.reset.desc", "Put your " + INNATE_TECHNIQUE + "'s abilities back in their usual order.");
@@ -369,7 +372,6 @@ public final class KegareLanguageProvider extends LanguageProvider {
         add("gui.kegare.loadout.not_slotted", "Not on your bar");
         add("gui.kegare.loadout.slot_hint", "Drag to move · right-click to empty");
         add("gui.kegare.loadout.empty_slot_hint", "Drag an ability here");
-        add("gui.kegare.loadout.locked", "???");
         add("gui.kegare.loadout.locked.desc", "Locked. Some abilities can't be learned, only found.");
         add("gui.kegare.loadout.ultimate_fixed", "Always your " + INNATE_TECHNIQUE + "'s ultimate. This slot can't be changed.");
         add("message.kegare.loadout.in_combat", "You can't change your loadout mid-fight.");

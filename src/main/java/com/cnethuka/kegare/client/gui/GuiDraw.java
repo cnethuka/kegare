@@ -53,7 +53,8 @@ public final class GuiDraw {
     private static final int BAR_MIDDLE = BAR_TEXTURE_W - 2 * BAR_CAP;
 
     /** The Shared category's tab icon on the Sorcerer screen (16x16). */
-    public static final ResourceLocation CATEGORY_SHARED = Kegare.id("category_shared");
+    /** The ability categories' tab icons (DESIGN §3.16), by {@code AbilityCategory} order. */
+    public static final ResourceLocation[] CATEGORY_ICONS = {Kegare.id("category_innate"), Kegare.id("category_malice"), Kegare.id("category_melee")};
     public static final ResourceLocation BADGE_SPECIAL = Kegare.id("badge_special");
     public static final ResourceLocation BADGE_SPECIAL_NONE = Kegare.id("badge_special_none");
 

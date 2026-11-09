@@ -165,6 +165,16 @@ public interface Ability {
         return Util.makeDescriptionId("ability", id());
     }
 
+    /** Which tab it's under (DESIGN §3.16): an innate technique's own are {@link com.cnethuka.kegare.loadout.AbilityCategory#INNATE}. */
+    default com.cnethuka.kegare.loadout.AbilityCategory category() {
+        return com.cnethuka.kegare.loadout.AbilityCategory.INNATE;
+    }
+
+    /** What unlocks it, for its tile while it's locked (a shared ability's; the technique's own show the Refinement level instead). */
+    default Component unlockHint() {
+        return Component.translatable("gui.kegare.loadout.locked.desc");
+    }
+
     default Component displayName() {
         return Component.translatable(descriptionId());
     }

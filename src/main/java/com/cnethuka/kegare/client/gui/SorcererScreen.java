@@ -100,7 +100,7 @@ public final class SorcererScreen extends Screen {
     private static final long STATUS_MS = 3500;
 
     private static View lastView = View.TECHNIQUE;
-    private static AbilityCategory lastCategory = AbilityCategory.INNATE_TECHNIQUE;
+    private static AbilityCategory lastCategory = AbilityCategory.INNATE;
 
     private SorcererInfoPayload info;
     private View view = lastView;
@@ -270,14 +270,13 @@ public final class SorcererScreen extends Screen {
 
     private void renderEdgeTabs(GuiGraphics g, @Nullable InnateTechnique technique, int mouseX, int mouseY) {
         if (technique != null) {
-            AbilityCategory[] categories = AbilityCategory.values();
-            for (int i = 0; i < categories.length; i++) {
+            List<AbilityCategory> categories = AbilityCategory.tabsFor(info.severed());
+            for (int i = 0; i < categories.size(); i++) {
                 int x = px - TAB_SIZE + 4, y = py + 12 + i * (TAB_SIZE + 3);
-                boolean selected = view == View.TECHNIQUE && category == categories[i];
+                boolean selected = view == View.TECHNIQUE && category == categories.get(i);
                 GuiDraw.sprite(g, selected ? TAB_SELECTED : TAB, x, y, TAB_SIZE, TAB_SIZE);
-                if (categories[i] == AbilityCategory.INNATE_TECHNIQUE) GuiDraw.emblem(g, technique, x + 4, y + 4, 16);
-                else GuiDraw.sprite(g, GuiDraw.CATEGORY_SHARED, x + 4, y + 4, 16, 16);
-                hits.add(new Hit(Kind.CATEGORY, x, y, TAB_SIZE, TAB_SIZE, i, null, true));
+                GuiDraw.sprite(g, GuiDraw.CATEGORY_ICONS[categories.get(i).ordinal()], x + 4, y + 4, 16, 16);
+                hits.add(new Hit(Kind.CATEGORY, x, y, TAB_SIZE, TAB_SIZE, categories.get(i).ordinal(), null, true));
             }
         }
         View[] views = View.values();
@@ -320,7 +319,7 @@ public final class SorcererScreen extends Screen {
         if (view != View.TECHNIQUE || data == null) return;
 
         // The category's abilities.
-        List<Ability> tiles = category == AbilityCategory.INNATE_TECHNIQUE ? technique.abilities() : SharedAbilities.all();
+        List<Ability> tiles = category.abilities(technique);
         int ty = ey + 32;
         if (tiles.isEmpty()) {
             GuiDraw.text(g, font, Component.translatable("gui.kegare.loadout.category_empty"), tx, ty + 7, 1f, GuiDraw.DARK_GRAY);
@@ -329,7 +328,7 @@ public final class SorcererScreen extends Screen {
             Ability ability = tiles.get(i);
             int x = tx + i * (TILE + 3);
             if (x + TILE > lx1) break;
-            boolean ofTechnique = category == AbilityCategory.INNATE_TECHNIQUE;
+            boolean ofTechnique = category == AbilityCategory.INNATE;
             boolean unlocked = ofTechnique ? !ClientLoadout.isLocked(data, ability) : data.sharedUnlocked().contains(ability.id());
             CombatPanelLayer.slotFrame(g, x, ty, ability.id().equals(pinned) || (mouseX >= x && mouseX < x + TILE && mouseY >= ty && mouseY < ty + TILE));
             if (unlocked) {
@@ -344,7 +343,7 @@ public final class SorcererScreen extends Screen {
                     g.pose().popPose();
                 }
             } else {
-                if (ofTechnique) GuiDraw.greyedAbilityIcon(g, ability, x + TILE_INSET, ty + TILE_INSET);
+                GuiDraw.greyedAbilityIcon(g, ability, x + TILE_INSET, ty + TILE_INSET); // a locked ability shows what it is, and its requirement
                 GuiDraw.sprite(g, GuiDraw.LOCK, x + (TILE - 11) / 2, ty + (TILE - 11) / 2, 11, 11);
                 if (ofTechnique) { // the level it needs, where the bar's slots have their number
                     String level = Integer.toString(ClientLoadout.lockedLevel(data, ability));
@@ -356,7 +355,7 @@ public final class SorcererScreen extends Screen {
             }
             hits.add(new Hit(Kind.TILE, x, ty, TILE, TILE, i, ability.id(), unlocked));
         }
-        if (category == AbilityCategory.INNATE_TECHNIQUE) renderUltimateTile(g, technique, data, tx + tiles.size() * (TILE + 3), ty, mouseX, mouseY);
+        if (category == AbilityCategory.INNATE) renderUltimateTile(g, technique, data, tx + tiles.size() * (TILE + 3), ty, mouseX, mouseY);
     }
 
     /**
@@ -471,9 +470,12 @@ public final class SorcererScreen extends Screen {
             y += GuiDraw.wrapped(g, font, GuiDraw.description(technique.descriptionId()), x, y, w, 0xFFD8D2E0) + 6;
             return y + GuiDraw.wrapped(g, font, Component.translatable("gui.kegare.sorcerer.overview_hint"), x, y, w, GuiDraw.DARK_GRAY);
         }
-        if (locked) {
-            y += GuiDraw.text(g, font, Component.translatable("gui.kegare.loadout.locked"), x, y, 1.25f, GuiDraw.GRAY) + 3;
-            return y + GuiDraw.wrapped(g, font, Component.translatable("gui.kegare.loadout.locked.desc"), x, y, w, GuiDraw.DARK_GRAY);
+        if (locked) { // its name, greyed, with a padlock and what unlocks it
+            GuiDraw.sprite(g, GuiDraw.LOCK, x, y, 11, 11);
+            y += GuiDraw.text(g, font, ability.displayName(), x + 13, y, 1.25f, GuiDraw.GRAY) + 2;
+            y += GuiDraw.wrapped(g, font, ability.unlockHint(), x, y, w, GuiDraw.RED) + 1;
+            return y + GuiDraw.wrapped(g, font, Component.translatable("gui.kegare.loadout.kind", Component.translatable(ability.category().translationKey()),
+                    Component.translatable(ability.castType().translationKey())), x, y, w, GuiDraw.DARK_GRAY);
         }
         // Locked by Refinement: the same card, greyed out, with a padlock and the level it needs.
         int requires = data == null ? -1 : ClientLoadout.lockedLevel(data, ability);

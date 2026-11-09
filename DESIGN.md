@@ -1185,12 +1185,21 @@ Package `com.cnethuka.kegare.innate_technique.rime`. **Rarity: RARE.** All numbe
 ### 3.16 Loadout and ability categories
 Package `loadout`. Abilities are sorted into category tabs, and a
 separate bar is filled from any of them.
-- **Categories** (`AbilityCategory`), one tab each on the Sorcerer screen's left edge:
-  - **Innate Technique**: the current innate technique's abilities. A reroll replaces them.
-  - **Shared**: abilities a player unlocks once and keeps through every reroll (`SharedAbilities` registry,
-    unlocks in attachment `kegare:shared_abilities`, saved, kept on death). Reverse Malice Technique is the first
-    (§3.17). Some are every Malice user's, with nothing to unlock (`SharedAbilities.registerForEveryone`: Reinforced Fists,
-    §3.28); Severed players never have those either. Later categories (martial arts, cursed tools...) slot in as more enum values.
+- **Categories** (`AbilityCategory`): a category is a broad group of abilities of one kind, never one ability on its own, and holds
+  more as the mod grows. One tab each on the Sorcerer screen's left edge, in this order, each with its own icon (`tools/gen_art.py`,
+  hard pixels) and its short name as the tooltip:
+  - **Innate**: the current innate technique's abilities (the ultimate in its own V tile). A reroll replaces them.
+  - **Malice**: energy techniques any Malice user can learn and keeps through rerolls: Reinforcement and Reverse Malice Technique
+    (its special still heals others). Later: other energy techniques.
+  - **Melee**: close-combat abilities: Reinforced Fists. Later: martial arts and cursed-tool moves.
+  Every ability belongs to exactly one, declared by the ability itself (`Ability.category()`, `INNATE` unless it says otherwise), so a
+  new ability just names its own. Melee will
+  take cursed-tool moves rather than a tab of their own for now. Malice and Melee abilities live in the shared-abilities
+  registry behind them (`SharedAbilities`, unlocks in attachment `kegare:shared_abilities`, saved, kept on death): unlocked once and
+  kept through every reroll. Reverse Malice Technique is the first that's found (§3.17); some are every Malice user's, with nothing to
+  unlock (`SharedAbilities.registerForEveryone`: Reinforcement, Reinforced Fists, §3.28); Severed players never have those either. A
+  locked one shows in its category as a greyed tile with a padlock, and its card says what unlocks it (`Ability.unlockHint`: Reverse
+  Malice Technique's "Take in the green orb.").
 - **The loadout** (attachment `kegare:loadout`, saved, kept on death; `LoadoutService`):
   - **nine** regular slots (`LoadoutService.SLOTS`, number keys 1–9). By default the abilities the player has unlocked
     (§3.21; at Refinement 0, the first two) fill the first ones in order and the rest stay empty, ready for later
@@ -1213,8 +1222,8 @@ separate bar is filled from any of them.
   selected loadout slot; specials come from whatever is slotted), Technique Mode, the HUD
   combat panel, the Sorcerer screen and `/kegare info`.
 - **Editing** (Sorcerer screen, §3.12):
-  - category tabs on the left edge (the innate technique's emblem; a silver ring for Shared). Locked shared
-    abilities show a padlock and "???".
+  - category tabs on the left edge (Innate, Malice, Melee: their own icons). Locked ones show greyed with a padlock, and their card
+    says what unlocks them. Severed players see no tabs and no bar.
   - the selected category's abilities as tiles in the header (a gold number marks the slot each is on), then the
     ultimate (V). Their details fill the large box.
   - the loadout bar is the HUD's combat panel, drawn live: slot keys, R badges, cooldowns and the fixed ultimate

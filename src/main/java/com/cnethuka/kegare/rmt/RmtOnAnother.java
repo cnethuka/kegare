@@ -52,6 +52,11 @@ public final class RmtOnAnother extends SpecialAbility {
                 .build());
     }
 
+    @Override
+    public com.cnethuka.kegare.loadout.AbilityCategory category() {
+        return com.cnethuka.kegare.loadout.AbilityCategory.MALICE;
+    }
+
     @Override public double cost(ServerPlayer p) { return RmtConfig.COST.get() * RmtConfig.OTHERS_COST.get(); }
     @Override public double upkeepPerSecond(ServerPlayer p) { return RmtConfig.UPKEEP.get() * RmtConfig.OTHERS_COST.get(); }
     @Override public int maxChannelTicks(ServerPlayer p) { return RmtConfig.ticks(RmtConfig.MAX_DURATION); }

@@ -29,6 +29,7 @@ public final class ReinforcedFists extends BaseAbility {
     @Override public double upkeepPerSecond(ServerPlayer p) { return FistsConfig.DRAIN.get(); }
     @Override public int cooldownTicks(ServerPlayer p) { return FistsConfig.ticks(FistsConfig.REARM); }
     @Override public boolean hasNoTarget() { return true; }
+    @Override public com.cnethuka.kegare.loadout.AbilityCategory category() { return com.cnethuka.kegare.loadout.AbilityCategory.MELEE; }
 
     @Override
     public Object[] descriptionArgs() {

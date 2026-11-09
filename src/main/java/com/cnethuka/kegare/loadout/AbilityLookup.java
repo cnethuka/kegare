@@ -19,6 +19,6 @@ public final class AbilityLookup {
     }
 
     public static AbilityCategory category(ResourceLocation id) {
-        return SharedAbilities.find(id).isPresent() ? AbilityCategory.SHARED : AbilityCategory.INNATE_TECHNIQUE;
+        return SharedAbilities.find(id).map(com.cnethuka.kegare.innatetechnique.Ability::category).orElse(AbilityCategory.INNATE);
     }
 }

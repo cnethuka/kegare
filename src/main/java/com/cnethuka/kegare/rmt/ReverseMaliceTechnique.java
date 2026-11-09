@@ -36,6 +36,8 @@ public final class ReverseMaliceTechnique extends BaseAbility {
     @Override public int cooldownTicks(ServerPlayer p) { return RmtConfig.ticks(RmtConfig.COOLDOWN); }
     @Override public int maxChannelTicks(ServerPlayer p) { return RmtConfig.ticks(RmtConfig.MAX_DURATION); }
     @Override public AbilityVisuals visuals() { return VISUALS; }
+    @Override public com.cnethuka.kegare.loadout.AbilityCategory category() { return com.cnethuka.kegare.loadout.AbilityCategory.MALICE; }
+    @Override public net.minecraft.network.chat.Component unlockHint() { return net.minecraft.network.chat.Component.translatable("ability.kegare.reverse_malice_technique.unlock"); }
     /** R + its key: healing another player, for those who know how. */
     @Override public java.util.Optional<com.cnethuka.kegare.innatetechnique.Ability> special() { return java.util.Optional.of(Rmt.ON_ANOTHER); }
 

@@ -10,7 +10,7 @@ import java.util.Optional;
 import net.minecraft.resources.ResourceLocation;
 
 /**
- * Shared abilities ({@link AbilityCategory#SHARED}): not tied to any innate technique. A player unlocks them once
+ * Shared abilities (the {@link AbilityCategory#MALICE} and {@link AbilityCategory#MELEE} categories): not tied to any innate technique. A player unlocks them once
  * ({@link SharedAbilityService}) and keeps them through rerolls; any loadout slot can hold one. Registered in code at
  * mod construction, in display order. Reverse Malice Technique is the first.
  */
