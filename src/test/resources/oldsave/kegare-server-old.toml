@@ -1,0 +1,2677 @@
+#Which one-time fixes this file has been through. Leave it alone.
+# Default: 1
+# Range: > 1
+configVersion = 6
+
+#Malice (cursed energy). Capacity is rolled once at birth and never changes.
+[malice]
+	#Regen pauses for this many seconds after the player deals or takes damage.
+	# Default: 5.0
+	# Range: 0.0 ~ 600.0
+	regenPauseSeconds = 5.0
+	#A non-zero tier's capacity at birth: its base, plus or minus up to this percent of the base. Never reaches 0.
+	# Default: 10.0
+	# Range: 0.0 ~ 100.0
+	capacityVariationPercent = 10.0
+
+	#Birth tiers. weight = relative roll chance, base = capacity before variation,
+	#regenPercentPerSecond = reserve regenerated per second, as a percent of capacity.
+	[malice.tiers]
+
+		[malice.tiers.zero]
+			# Default: 2
+			# Range: 0 ~ 1000000
+			weight = 2
+
+		[malice.tiers.low]
+			# Default: 30
+			# Range: 0 ~ 1000000
+			weight = 30
+			# Default: 250
+			# Range: 1 ~ 1000000
+			base = 250
+			# Default: 3.0
+			# Range: 0.0 ~ 100.0
+			regenPercentPerSecond = 3.0
+
+		[malice.tiers.average]
+			# Default: 45
+			# Range: 0 ~ 1000000
+			weight = 45
+			# Default: 600
+			# Range: 1 ~ 1000000
+			base = 600
+			# Default: 2.0
+			# Range: 0.0 ~ 100.0
+			regenPercentPerSecond = 2.0
+
+		[malice.tiers.high]
+			# Default: 20
+			# Range: 0 ~ 1000000
+			weight = 20
+			# Default: 1500
+			# Range: 1 ~ 1000000
+			base = 1500
+			# Default: 1.5
+			# Range: 0.0 ~ 100.0
+			regenPercentPerSecond = 1.5
+
+		[malice.tiers.vast]
+			# Default: 3
+			# Range: 0 ~ 1000000
+			weight = 3
+			# Default: 10000
+			# Range: 1 ~ 1000000
+			base = 10000
+			# Default: 0.75
+			# Range: 0.0 ~ 100.0
+			regenPercentPerSecond = 0.75
+
+#Traits rolled at birth. Unique traits have at most one bearer per world.
+[traits]
+	#Chance (0-1) to be born with six_eyes (unique, needs Malice; its numbers are in [six_eyes]).
+	# Default: 0.01
+	# Range: 0.0 ~ 1.0
+	sixEyesBirthChance = 0.01
+	#Who inherits six_eyes when its bearer loses it (killed by a player, released, inactive).
+	#RANDOM = a random eligible online player. KILLER = the killer if eligible and online, else RANDOM.
+	#Eligible = online, not Severed, not the previous bearer. If nobody is eligible it waits for the next eligible login.
+	#Allowed Values: RANDOM, KILLER
+	sixEyesTransferMode = "RANDOM"
+	#Seconds between losing six_eyes and it opening in someone else.
+	# Default: 30.0
+	# Range: 0.0 ~ 86400.0
+	sixEyesTransferDelaySeconds = 30.0
+	#Release a unique trait if its holder hasn't logged in for this many days (fractions allowed).
+	#0 = disabled. Inheritable traits (six_eyes) then pass on as if their bearer had lost them.
+	# Default: 0.0
+	# Range: 0.0 ~ 3650.0
+	uniqueTraitInactiveDays = 0.0
+
+#Innate technique rolls (birth and rerolls).
+[roll]
+	#After this many rolls without a LEGENDARY, each further roll adds softPityIncrement to the LEGENDARY weight.
+	# Default: 30
+	# Range: 0 ~ 100000
+	softPityStart = 30
+	#LEGENDARY weight added per roll once soft pity is active.
+	# Default: 5
+	# Range: 0 ~ 1000000
+	softPityIncrement = 5
+	#This roll number (counting since the last LEGENDARY) is a guaranteed LEGENDARY. 0 disables hard pity.
+	# Default: 50
+	# Range: 0 ~ 100000
+	hardPity = 50
+	#Whether TEST innate techniques can be rolled. Turn off once real ones exist.
+	includeTestInnateTechniques = true
+
+	#Relative rarity weights. Rarities with no eligible innate technique are skipped.
+	[roll.weights]
+		# Default: 50
+		# Range: 0 ~ 1000000
+		common = 50
+		# Default: 30
+		# Range: 0 ~ 1000000
+		rare = 30
+		# Default: 15
+		# Range: 0 ~ 1000000
+		epic = 15
+		# Default: 5
+		# Range: 0 ~ 1000000
+		legendary = 5
+
+#Shared combat state used by abilities and future systems.
+[combat]
+	#A player counts as 'in combat' for this many seconds after dealing or taking damage.
+	# Default: 10.0
+	# Range: 0.0 ~ 600.0
+	combatTagSeconds = 10.0
+
+#Rime (RARE innate technique): ice projectiles, a frost cone and an ice shell. Times are in seconds.
+[rime]
+
+	[rime.frost_shard]
+		# Default: 40.0
+		# Range: 0.0 ~ 100000.0
+		cost = 40.0
+		# Default: 1.0
+		# Range: 0.0 ~ 3600.0
+		cooldown = 1.0
+		# Default: 3.0
+		# Range: 0.0 ~ 1000.0
+		damage = 3.0
+		#Blocks per tick.
+		# Default: 2.2
+		# Range: 0.1 ~ 10.0
+		speed = 2.2
+		#Flight time before it melts away.
+		# Default: 1.5
+		# Range: 0.1 ~ 30.0
+		lifetime = 1.5
+		# Default: 1.5
+		# Range: 0.0 ~ 60.0
+		slownessSeconds = 1.5
+		#0 = Slowness I.
+		# Default: 0
+		# Range: 0 ~ 10
+		slownessAmplifier = 0
+		# Default: 1
+		# Range: 0 ~ 10
+		freezeStacks = 1
+
+	[rime.glacial_lance]
+		# Default: 100.0
+		# Range: 0.0 ~ 100000.0
+		cost = 100.0
+		# Default: 6.0
+		# Range: 0.0 ~ 3600.0
+		cooldown = 6.0
+		#Release before this and it fizzles (no cost, no cooldown).
+		# Default: 0.4
+		# Range: 0.0 ~ 60.0
+		minCharge = 0.4
+		#Full charge.
+		# Default: 2.0
+		# Range: 0.05 ~ 60.0
+		maxCharge = 2.0
+		#Damage at minimum charge; scales linearly to maxDamage at full charge.
+		# Default: 4.0
+		# Range: 0.0 ~ 1000.0
+		minDamage = 4.0
+		# Default: 12.0
+		# Range: 0.0 ~ 1000.0
+		maxDamage = 12.0
+		#Blocks per tick (slower than a shard).
+		# Default: 1.4
+		# Range: 0.1 ~ 10.0
+		speed = 1.4
+		# Default: 2.5
+		# Range: 0.1 ~ 30.0
+		lifetime = 2.5
+		# Default: 3.0
+		# Range: 0.0 ~ 60.0
+		slownessSeconds = 3.0
+		# Default: 1
+		# Range: 0 ~ 10
+		slownessAmplifier = 1
+		# Default: 2
+		# Range: 0 ~ 10
+		freezeStacks = 2
+
+	[rime.frost_field]
+		#Cost to start the channel.
+		# Default: 32.0
+		# Range: 0.0 ~ 100000.0
+		cost = 32.0
+		#Drain per second while channeling.
+		# Default: 48.0
+		# Range: 0.0 ~ 100000.0
+		upkeepPerSecond = 48.0
+		#Starts when the channel ends.
+		# Default: 5.0
+		# Range: 0.0 ~ 3600.0
+		cooldown = 5.0
+		# Default: 5.0
+		# Range: 0.05 ~ 3600.0
+		maxDuration = 5.0
+		#Cone length in blocks.
+		# Default: 6.0
+		# Range: 0.5 ~ 64.0
+		range = 6.0
+		#Cone half-angle in degrees.
+		# Default: 35.0
+		# Range: 1.0 ~ 89.0
+		halfAngle = 35.0
+		# Default: 1
+		# Range: 0 ~ 10
+		slownessAmplifier = 1
+		# Default: 1
+		# Range: 0 ~ 10
+		freezeStacksPerSecond = 1
+
+	[rime.rime_shell]
+		#Cost to switch on.
+		# Default: 40.0
+		# Range: 0.0 ~ 100000.0
+		cost = 40.0
+		#Drain per second while on.
+		# Default: 16.0
+		# Range: 0.0 ~ 100000.0
+		upkeepPerSecond = 16.0
+		#Starts when switched off.
+		# Default: 8.0
+		# Range: 0.0 ~ 3600.0
+		cooldown = 8.0
+		#Fraction of incoming damage removed (0.3 = 30%).
+		# Default: 0.3
+		# Range: 0.0 ~ 1.0
+		damageReduction = 0.3
+		#Slowness for anyone who hits you in melee.
+		# Default: 2.0
+		# Range: 0.0 ~ 60.0
+		attackerSlownessSeconds = 2.0
+		# Default: 1
+		# Range: 0 ~ 10
+		attackerSlownessAmplifier = 1
+
+	#Special of Frost Shard (INSTANT): three smaller shards in a fan.
+	[rime.splinter]
+		# Default: 56.0
+		# Range: 0.0 ~ 100000.0
+		cost = 56.0
+		#Shared with Frost Shard.
+		# Default: 3.0
+		# Range: 0.0 ~ 3600.0
+		cooldown = 3.0
+		#Degrees between neighbouring shards (the fan spans twice this).
+		# Default: 9.0
+		# Range: 0.0 ~ 60.0
+		spreadAngle = 9.0
+		#Per shard. All three can hit the same target.
+		# Default: 2.0
+		# Range: 0.0 ~ 1000.0
+		damage = 2.0
+		#Blocks per tick.
+		# Default: 2.0
+		# Range: 0.1 ~ 10.0
+		speed = 2.0
+		#Flight time before a shard melts away.
+		# Default: 1.0
+		# Range: 0.1 ~ 30.0
+		lifetime = 1.0
+		#Per shard that hits.
+		# Default: 1
+		# Range: 0 ~ 10
+		freezeStacks = 1
+
+	#Special of Glacial Lance (CHARGED): an ice spike erupts from the ground where you aim.
+	[rime.glacial_spire]
+		# Default: 120.0
+		# Range: 0.0 ~ 100000.0
+		cost = 120.0
+		#Shared with Glacial Lance.
+		# Default: 8.0
+		# Range: 0.0 ~ 3600.0
+		cooldown = 8.0
+		#Release before this and it fizzles (no cost, no cooldown).
+		# Default: 0.3
+		# Range: 0.0 ~ 60.0
+		minCharge = 0.3
+		#Full charge.
+		# Default: 2.0
+		# Range: 0.05 ~ 60.0
+		maxCharge = 2.0
+		#Max distance to the aimed-at ground, in blocks. No ground in range: fizzles for free.
+		# Default: 20.0
+		# Range: 1.0 ~ 128.0
+		range = 20.0
+		#The frost warning circle shows this long before the spike erupts.
+		# Default: 0.75
+		# Range: 0.0 ~ 10.0
+		warningSeconds = 0.75
+		#Radius of the circle (and of the spike's hit area), in blocks.
+		# Default: 1.5
+		# Range: 0.25 ~ 8.0
+		radius = 1.5
+		#How far above the ground the eruption hits, in blocks.
+		# Default: 2.5
+		# Range: 0.25 ~ 16.0
+		height = 2.5
+		# Default: 6.0
+		# Range: 0.0 ~ 1000.0
+		damage = 6.0
+		# Default: 2
+		# Range: 0 ~ 10
+		freezeStacks = 2
+		#Upward launch speed at minimum charge (blocks/tick; 0.42 is a jump).
+		# Default: 0.6
+		# Range: 0.0 ~ 5.0
+		minLaunch = 0.6
+		#Upward launch speed at full charge.
+		# Default: 1.2
+		# Range: 0.0 ~ 5.0
+		maxLaunch = 1.2
+		#How long the spike stands before it shatters (visual only; no blocks).
+		# Default: 1.25
+		# Range: 0.05 ~ 30.0
+		spikeSeconds = 1.25
+
+	#Special of Frost Field (CHANNELED): slide fast over a temporary ice trail.
+	[rime.ice_path]
+		#Cost to start the channel.
+		# Default: 32.0
+		# Range: 0.0 ~ 100000.0
+		cost = 32.0
+		#Drain per second while sliding.
+		# Default: 40.0
+		# Range: 0.0 ~ 100000.0
+		upkeepPerSecond = 40.0
+		#Shared with Frost Field; starts when the slide ends.
+		# Default: 6.0
+		# Range: 0.0 ~ 3600.0
+		cooldown = 6.0
+		# Default: 3.0
+		# Range: 0.05 ~ 3600.0
+		maxDuration = 3.0
+		#Slide speed in blocks per tick (sprinting is about 0.28).
+		# Default: 0.65
+		# Range: 0.05 ~ 3.0
+		slideSpeed = 0.65
+		#How long each bit of the ice trail lasts before it melts.
+		# Default: 4.0
+		# Range: 0.05 ~ 120.0
+		trailSeconds = 4.0
+		#Anyone else within this many blocks (sideways) of the trail is on it.
+		# Default: 0.9
+		# Range: 0.1 ~ 8.0
+		trailRadius = 0.9
+		#Slowness for anyone else on the trail (0 = Slowness I).
+		# Default: 1
+		# Range: 0 ~ 10
+		slownessAmplifier = 1
+
+	#Special of Rime Shell (INSTANT): burst outward, knocking back and freezing everyone near.
+	[rime.shatter_shell]
+		#Cost while Rime Shell is on (the shell is used up).
+		# Default: 32.0
+		# Range: 0.0 ~ 100000.0
+		cost = 32.0
+		#Cost with no shell up.
+		# Default: 88.0
+		# Range: 0.0 ~ 100000.0
+		costWithoutShell = 88.0
+		#Shared with Rime Shell.
+		# Default: 8.0
+		# Range: 0.0 ~ 3600.0
+		cooldown = 8.0
+		# Default: 4.5
+		# Range: 0.5 ~ 32.0
+		radius = 4.5
+		# Default: 1.4
+		# Range: 0.0 ~ 10.0
+		knockback = 1.4
+		# Default: 2
+		# Range: 0 ~ 10
+		freezeStacks = 2
+
+	#Freeze stacks, applied by Rime to any living target.
+	[rime.freeze]
+		#At this many stacks the target is frozen solid (a stun), then stacks reset.
+		# Default: 5
+		# Range: 1 ~ 100
+		maxStacks = 5
+		#How long frozen solid lasts.
+		# Default: 1.0
+		# Range: 0.05 ~ 60.0
+		frozenSeconds = 1.0
+		#One stack melts this long after the last one was added (and every this-long after).
+		# Default: 3.0
+		# Range: 0.05 ~ 600.0
+		decaySeconds = 3.0
+		#After breaking free, no new stacks for this long (no freeze-locking).
+		# Default: 2.0
+		# Range: 0.0 ~ 600.0
+		immunitySeconds = 2.0
+
+	#Malice cost multipliers by surroundings (applied to cost and upkeep). Cold factors stack.
+	[rime.environment]
+		#Rain or snow falling on you.
+		# Default: 0.85
+		# Range: 0.05 ~ 10.0
+		precipitation = 0.85
+		#In or next to water.
+		# Default: 0.85
+		# Range: 0.05 ~ 10.0
+		water = 0.85
+		#In a cold biome.
+		# Default: 0.85
+		# Range: 0.05 ~ 10.0
+		coldBiome = 0.85
+		#A biome is cold below this temperature (where snow falls: 0.15).
+		# Default: 0.15
+		# Range: -10.0 ~ 10.0
+		coldBiomeTemperature = 0.15
+		#In a hot biome (not the Nether).
+		# Default: 1.25
+		# Range: 0.05 ~ 10.0
+		hotBiome = 1.25
+		#A biome is hot at or above this temperature (desert, badlands, savanna).
+		# Default: 1.0
+		# Range: -10.0 ~ 10.0
+		hotBiomeTemperature = 1.0
+		#In the Nether (or any ultra-warm dimension); replaces the hot-biome factor.
+		# Default: 1.5
+		# Range: 0.05 ~ 10.0
+		nether = 1.5
+		#The combined multiplier is clamped to [min, max].
+		# Default: 0.5
+		# Range: 0.01 ~ 10.0
+		min = 0.5
+		# Default: 2.0
+		# Range: 0.01 ~ 10.0
+		max = 2.0
+
+#Swap (COMMON innate technique): trade places, looks, effects and momentum with other players. Times are in seconds.
+[swap]
+
+	#Every ability that needs a player: the one you're looking at, in line of sight.
+	[swap.targeting]
+		#How far away (blocks) a player can be.
+		# Default: 24.0
+		# Range: 1.0 ~ 128.0
+		range = 24.0
+		#How far beside the crosshair (blocks) a player still counts as looked at.
+		# Default: 0.3
+		# Range: 0.0 ~ 2.0
+		aimTolerance = 0.3
+
+	#Swap positions and facing with the player you're looking at.
+	[swap.positions]
+		# Default: 48.0
+		# Range: 0.0 ~ 100000.0
+		cost = 48.0
+		# Default: 8.0
+		# Range: 0.0 ~ 3600.0
+		cooldown = 8.0
+
+	#Special of Positions: the same swap, then an automatic swap back.
+	[swap.switchback]
+		# Default: 88.0
+		# Range: 0.0 ~ 100000.0
+		cost = 88.0
+		#Seconds until the swap back.
+		# Default: 3.0
+		# Range: 0.05 ~ 600.0
+		returnDelay = 3.0
+
+	#Disguise swap: everyone else sees you as the target and the target as you. Visual only.
+	[swap.awareness]
+		# Default: 80.0
+		# Range: 0.0 ~ 100000.0
+		cost = 80.0
+		# Default: 20.0
+		# Range: 0.0 ~ 3600.0
+		cooldown = 20.0
+		# Default: 5.0
+		# Range: 0.05 ~ 600.0
+		duration = 5.0
+
+	#Special of Awareness: one-way; only you look like the target.
+	[swap.mimic]
+		# Default: 96.0
+		# Range: 0.0 ~ 100000.0
+		cost = 96.0
+		# Default: 8.0
+		# Range: 0.05 ~ 600.0
+		duration = 8.0
+
+	#First cast throws an anchor that sticks where it lands; the second swaps you with it.
+	[swap.anchor]
+		# Default: 32.0
+		# Range: 0.0 ~ 100000.0
+		throwCost = 32.0
+		#The second cast (swap with the anchor).
+		# Default: 40.0
+		# Range: 0.0 ~ 100000.0
+		recallCost = 40.0
+		#After throwing (so a double press doesn't recall at once).
+		# Default: 0.5
+		# Range: 0.0 ~ 3600.0
+		throwCooldown = 0.5
+		#After the anchor is used (recall or Send Off).
+		# Default: 12.0
+		# Range: 0.0 ~ 3600.0
+		cooldown = 12.0
+		#The anchor disappears this long after it is thrown.
+		# Default: 20.0
+		# Range: 0.05 ~ 3600.0
+		lifetime = 20.0
+		#Throw speed in blocks per tick (an ender pearl is 1.5).
+		# Default: 1.5
+		# Range: 0.1 ~ 10.0
+		throwSpeed = 1.5
+
+	#Special of Anchor: swap the player you're looking at with your anchor (uses it up).
+	[swap.send_off]
+		# Default: 72.0
+		# Range: 0.0 ~ 100000.0
+		cost = 72.0
+
+	#Give the target your worst negative effect, take their strongest positive one.
+	[swap.exchange]
+		# Default: 60.0
+		# Range: 0.0 ~ 100000.0
+		cost = 60.0
+		# Default: 15.0
+		# Range: 0.0 ~ 3600.0
+		cooldown = 15.0
+
+	#Special of Exchange: swap velocity and fall distance with the target.
+	[swap.momentum_exchange]
+		# Default: 72.0
+		# Range: 0.0 ~ 100000.0
+		cost = 72.0
+
+	#Ultimate: swap positions, disguises (as Awareness) and health percentage.
+	[swap.total_swap]
+		# Default: 240.0
+		# Range: 0.0 ~ 100000.0
+		cost = 240.0
+		# Default: 120.0
+		# Range: 0.0 ~ 3600.0
+		cooldown = 120.0
+		#The target must be at least this far away (blocks).
+		# Default: 4.0
+		# Range: 0.0 ~ 128.0
+		minDistance = 4.0
+
+#Puppet Manipulation (EPIC innate technique): half-size puppets of yourself, charged with Malice. Times are in seconds.
+[puppet_manipulation]
+
+	#The puppets themselves.
+	[puppet_manipulation.puppet]
+		#Size next to their owner (the 1.21 scale attribute). Never changes, except during Stand-In.
+		# Default: 0.5
+		# Range: 0.1 ~ 1.0
+		scale = 0.5
+		#Movement speed attribute (mob scale, not a player's): 0.42 walks a little faster than a walking player.
+		#Following puppets left behind run at 1.35x that to catch up, which keeps pace with a sprint.
+		# Default: 0.42
+		# Range: 0.01 ~ 2.0
+		movementSpeed = 0.42
+		#Damage of a puppet's punch (and of a possessed puppet's).
+		# Default: 1.0
+		# Range: 0.0 ~ 100.0
+		meleeDamage = 1.0
+		#The most puppets one player can have at once, counting ones in unloaded chunks. At the cap, Puppet Creation
+		#fizzles for free; a puppet that dies, dissolves or detonates frees its slot. Lowering this never removes puppets:
+		#a player over the new cap keeps theirs but can't make more until below it.
+		# Default: 15
+		# Range: 1 ~ 10000
+		maxPuppets = 15
+		#Following puppets walk back to their owner once they are this far away (blocks).
+		# Default: 3.0
+		# Range: 1.0 ~ 32.0
+		followDistance = 3.0
+		#Following puppets left this far behind (blocks) catch up at once, like tamed pets.
+		# Default: 24.0
+		# Range: 4.0 ~ 128.0
+		followTeleportDistance = 24.0
+		#A puppet standing still spins ("kuru kuru") after this long. Possessed puppets never spin.
+		# Default: 0.5
+		# Range: 0.0 ~ 60.0
+		spinDelay = 0.5
+
+	#Hold to charge, release to make a puppet next to you. The charge picks its tier:
+	#a tap (released before halfCharge), half (before fullCharge) or full.
+	[puppet_manipulation.puppet_creation]
+		# Default: 2.0
+		# Range: 0.0 ~ 3600.0
+		cooldown = 2.0
+		#Charge (seconds) for a half-strength puppet.
+		# Default: 0.6
+		# Range: 0.05 ~ 60.0
+		halfCharge = 0.6
+		#Charge (seconds) for a full-strength puppet (also the full charge bar).
+		# Default: 1.5
+		# Range: 0.1 ~ 60.0
+		fullCharge = 1.5
+
+		[puppet_manipulation.puppet_creation.tap]
+			# Default: 40.0
+			# Range: 0.0 ~ 100000.0
+			cost = 40.0
+			# Default: 2.0
+			# Range: 1.0 ~ 1024.0
+			health = 2.0
+
+		[puppet_manipulation.puppet_creation.half]
+			# Default: 100.0
+			# Range: 0.0 ~ 100000.0
+			cost = 100.0
+			# Default: 4.0
+			# Range: 1.0 ~ 1024.0
+			health = 4.0
+
+		[puppet_manipulation.puppet_creation.full]
+			# Default: 180.0
+			# Range: 0.0 ~ 100000.0
+			cost = 180.0
+			# Default: 8.0
+			# Range: 1.0 ~ 1024.0
+			health = 8.0
+
+	#Special of Puppet Creation: move your consciousness into a puppet (the one you look at, else your nearest).
+	#You become it; your body stays behind as a defenceless shell. R again returns.
+	[puppet_manipulation.possess]
+		# Default: 60.0
+		# Range: 0.0 ~ 100000.0
+		cost = 60.0
+		#How far away (blocks) the puppet can be.
+		# Default: 32.0
+		# Range: 1.0 ~ 256.0
+		range = 32.0
+		#Wander further than this (blocks) from your shell and you snap back.
+		# Default: 64.0
+		# Range: 4.0 ~ 1024.0
+		maxDistance = 64.0
+
+		#If the possessed puppet dies, you snap back with backlash.
+		[puppet_manipulation.possess.backlash]
+			#Nausea, seconds.
+			# Default: 4.0
+			# Range: 0.0 ~ 60.0
+			nausea = 4.0
+			#Stun (the shared stun: no casting, charges and channels interrupted), seconds.
+			# Default: 1.0
+			# Range: 0.0 ~ 30.0
+			stun = 1.0
+			#Malice lost.
+			# Default: 80.0
+			# Range: 0.0 ~ 100000.0
+			malice = 80.0
+
+	#Give every puppet in range the next order: Follow, Stay, Guard (attack whoever damages you and whatever you damage), Go (walk to the
+	#block you're looking at).
+	[puppet_manipulation.directive]
+		# Default: 20.0
+		# Range: 0.0 ~ 100000.0
+		cost = 20.0
+		# Default: 1.0
+		# Range: 0.0 ~ 3600.0
+		cooldown = 1.0
+		#Puppets this close (blocks) hear Directive and Focus; also how far Go can point.
+		# Default: 32.0
+		# Range: 1.0 ~ 256.0
+		range = 32.0
+
+	#Special of Directive: every puppet in range swarms the player or mob you're looking at.
+	[puppet_manipulation.focus]
+		# Default: 40.0
+		# Range: 0.0 ~ 100000.0
+		cost = 40.0
+		#How far away (blocks) the target can be.
+		# Default: 32.0
+		# Range: 1.0 ~ 256.0
+		targetRange = 32.0
+
+	#Detonate the puppet you're looking at. Damage and radius grow with its charge tier; full damage at the
+	#centre, half at the edge. Never hurts you or your puppets; breaks no blocks.
+	[puppet_manipulation.curio_burst]
+		# Default: 32.0
+		# Range: 0.0 ~ 100000.0
+		cost = 32.0
+		# Default: 4.0
+		# Range: 0.0 ~ 3600.0
+		cooldown = 4.0
+		#How far away (blocks) the puppet can be.
+		# Default: 32.0
+		# Range: 1.0 ~ 256.0
+		range = 32.0
+		#Push away from the blast (bosses are never pushed).
+		# Default: 0.6
+		# Range: 0.0 ~ 10.0
+		knockback = 0.6
+
+		[puppet_manipulation.curio_burst.tap]
+			# Default: 4.0
+			# Range: 0.0 ~ 1000.0
+			damage = 4.0
+			# Default: 2.5
+			# Range: 0.5 ~ 32.0
+			radius = 2.5
+
+		[puppet_manipulation.curio_burst.half]
+			# Default: 7.0
+			# Range: 0.0 ~ 1000.0
+			damage = 7.0
+			# Default: 3.0
+			# Range: 0.5 ~ 32.0
+			radius = 3.0
+
+		[puppet_manipulation.curio_burst.full]
+			# Default: 12.0
+			# Range: 0.0 ~ 1000.0
+			damage = 12.0
+			# Default: 4.0
+			# Range: 0.5 ~ 32.0
+			radius = 4.0
+
+	#Special of Curio Burst: every puppet of yours near what you're looking at detonates, one after another.
+	[puppet_manipulation.chain_burst]
+		# Default: 64.0
+		# Range: 0.0 ~ 100000.0
+		cost = 64.0
+		#Puppets this close (blocks) to the target go off.
+		# Default: 8.0
+		# Range: 1.0 ~ 64.0
+		radius = 8.0
+		#Between one detonation and the next, seconds.
+		# Default: 0.25
+		# Range: 0.0 ~ 5.0
+		delay = 0.25
+
+	#Swap places with the puppet you're looking at (fires SwapTargetEvent: a technique that blocks swaps blocks it).
+	[puppet_manipulation.understudy]
+		# Default: 40.0
+		# Range: 0.0 ~ 100000.0
+		cost = 40.0
+		# Default: 6.0
+		# Range: 0.0 ~ 3600.0
+		cooldown = 6.0
+		#How far away (blocks) the puppet can be. Stand-In uses it too.
+		# Default: 32.0
+		# Range: 1.0 ~ 256.0
+		range = 32.0
+
+	#Special of Understudy: one puppet (the one you look at, else your nearest) grows to your size and copies your
+	#movements, held items, armor and name: it looks exactly like you. Then it shrinks back.
+	[puppet_manipulation.stand_in]
+		# Default: 80.0
+		# Range: 0.0 ~ 100000.0
+		cost = 80.0
+		# Default: 8.0
+		# Range: 0.5 ~ 600.0
+		duration = 8.0
+		#How long growing (and shrinking back) takes.
+		# Default: 0.4
+		# Range: 0.0 ~ 5.0
+		grow = 0.4
+
+	#Fire a string at the player, mob or puppet you're looking at, then use it: Reel In (its key again) or Zip (its special), or, looking
+	#at a different target, Tie (its key again) or Leash (its special). Bosses can be attached to but are never moved.
+	[puppet_manipulation.strings]
+		#Stage 1: firing the string.
+		# Default: 20.0
+		# Range: 0.0 ~ 100000.0
+		fireCost = 20.0
+		# Default: 48.0
+		# Range: 0.0 ~ 100000.0
+		reelCost = 48.0
+		# Default: 80.0
+		# Range: 0.0 ~ 100000.0
+		tieCost = 80.0
+		# Default: 40.0
+		# Range: 0.0 ~ 100000.0
+		zipCost = 40.0
+		# Default: 100.0
+		# Range: 0.0 ~ 100000.0
+		leashCost = 100.0
+		#Starts at stage 2, or when a string snaps or expires without one.
+		# Default: 10.0
+		# Range: 0.0 ~ 3600.0
+		cooldown = 10.0
+		#After firing: just long enough that a double press doesn't fire and pull at once.
+		# Default: 0.25
+		# Range: 0.0 ~ 60.0
+		fireCooldown = 0.25
+		#How far away (blocks) a target can be: for firing, and for a Tie or Leash's second target.
+		# Default: 24.0
+		# Range: 1.0 ~ 256.0
+		range = 24.0
+		#How long an attached string waits for its second stage.
+		# Default: 8.0
+		# Range: 0.5 ~ 600.0
+		life = 8.0
+		#Stretched beyond this (blocks), a string snaps.
+		# Default: 32.0
+		# Range: 1.0 ~ 512.0
+		snapRange = 32.0
+		#Reel In, Zip and a Tie's first pull, blocks per tick.
+		# Default: 1.2
+		# Range: 0.1 ~ 5.0
+		pullSpeed = 1.2
+		#A pull gives up after this long (a wall in the way).
+		# Default: 2.0
+		# Range: 0.1 ~ 30.0
+		pullTimeout = 2.0
+		#Reel In and Zip stop this close (blocks).
+		# Default: 2.0
+		# Range: 0.5 ~ 16.0
+		arriveDistance = 2.0
+		#A Tie's two targets collide this close (blocks).
+		# Default: 1.2
+		# Range: 0.1 ~ 16.0
+		collideDistance = 1.2
+		#The collision's damage, to each of them. Default: a weak puppet (2 health) survives it.
+		# Default: 1.5
+		# Range: 0.0 ~ 1000.0
+		tieDamage = 1.5
+		#After colliding, a Tie's targets stay within this (blocks) of each other.
+		# Default: 3.0
+		# Range: 0.5 ~ 32.0
+		tetherDistance = 3.0
+		# Default: 4.0
+		# Range: 0.1 ~ 600.0
+		tetherDuration = 4.0
+		#How hard a Tie or Leash drags back, in blocks per tick, a block past its limit (twice that two past, up to pullSpeed).
+		#Above a sprint (0.28), or it could be outrun.
+		# Default: 0.4
+		# Range: 0.05 ~ 5.0
+		dragSpeed = 0.4
+		#A Leash's targets stay within this (blocks) of you.
+		# Default: 6.0
+		# Range: 0.5 ~ 32.0
+		leashDistance = 6.0
+		# Default: 5.0
+		# Range: 0.1 ~ 600.0
+		leashDuration = 5.0
+		#Your speed lost while leashing, as a fraction.
+		# Default: 0.35
+		# Range: 0.0 ~ 1.0
+		leashSlow = 0.35
+
+#Time Manipulation (LEGENDARY innate technique): marks to return to, the clock run fast and slow, and time stopped.
+#Times are in seconds.
+[time_manipulation]
+
+	#Rewind's target: the player or mob under the crosshair, in line of sight.
+	[time_manipulation.targeting]
+		# Default: 24.0
+		# Range: 1.0 ~ 256.0
+		range = 24.0
+		#How far off the crosshair (blocks) still counts as looking at someone.
+		# Default: 0.3
+		# Range: 0.0 ~ 2.0
+		aimTolerance = 0.3
+
+	#First cast: mark the top of the block you're looking at (only you see it). Second cast: return to it, shedding
+	#effects gained since and healing healFraction of max health, never more than you've lost since marking. Never touches
+	#Malice. The cooldown starts on the return, or when the mark runs out.
+	[time_manipulation.point_maker]
+		# Default: 40.0
+		# Range: 0.0 ~ 100000.0
+		markCost = 40.0
+		# Default: 60.0
+		# Range: 0.0 ~ 100000.0
+		returnCost = 60.0
+		#How far away (blocks) the marked block can be.
+		# Default: 32.0
+		# Range: 1.0 ~ 256.0
+		markRange = 32.0
+		#How long the mark lasts.
+		# Default: 15.0
+		# Range: 0.5 ~ 600.0
+		markSeconds = 15.0
+		#Share of max health healed on the return.
+		# Default: 0.3
+		# Range: 0.0 ~ 1.0
+		healFraction = 0.3
+		# Default: 12.0
+		# Range: 0.0 ~ 3600.0
+		cooldown = 12.0
+
+	#Special of Point Maker: snap the player or mob you're looking at back to where it was 3 seconds ago (position only).
+	#Positions are kept for players, and for mobs within historyMobRange of anyone holding Time Manipulation.
+	[time_manipulation.rewind]
+		# Default: 120.0
+		# Range: 0.0 ~ 100000.0
+		cost = 120.0
+		#How far back.
+		# Default: 3.0
+		# Range: 0.5 ~ 10.0
+		seconds = 3.0
+		#Point Maker's cooldown, started by a Rewind (they share it).
+		# Default: 12.0
+		# Range: 0.0 ~ 3600.0
+		cooldown = 12.0
+		# Default: 32.0
+		# Range: 0.0 ~ 256.0
+		historyMobRange = 32.0
+
+	#Toggle: your own clock runs faster, for Malice per second.
+	[time_manipulation.accelerate]
+		# Default: 60.0
+		# Range: 0.0 ~ 100000.0
+		cost = 60.0
+		# Default: 40.0
+		# Range: 0.0 ~ 100000.0
+		upkeepPerSecond = 40.0
+		#Starts when it's switched off.
+		# Default: 8.0
+		# Range: 0.0 ~ 3600.0
+		cooldown = 8.0
+		#How many times as fast your own clock runs while it's on, for everything about you at once: walking, sprinting and
+		#swimming, attack speed, mining speed, using an item (eating, drinking, a bow, a crossbow, a shield) and your technique's other
+		#cooldowns. Jumping and gravity don't change.
+		# Default: 2.0
+		# Range: 1.0 ~ 10.0
+		rate = 2.0
+
+	#Special of Accelerate: take time off every OTHER cooldown of your innate technique at once (never the ultimate's,
+	#Burnout or a shared ability's). Switches Accelerate off and puts it on their shared cooldown.
+	[time_manipulation.fast_forward]
+		# Default: 320.0
+		# Range: 0.0 ~ 100000.0
+		cost = 320.0
+		#Seconds taken off each.
+		# Default: 6.0
+		# Range: 0.0 ~ 600.0
+		seconds = 6.0
+		#Accelerate's cooldown, started by Fast Forward (they share it).
+		# Default: 20.0
+		# Range: 0.0 ~ 3600.0
+		cooldown = 20.0
+
+	#A spinning clock hand thrown like a blade. On a hit: damage, Slowness, Mining Fatigue, and the target's ability
+	#cooldowns run at cooldownRate for its time (bosses take the damage only).
+	[time_manipulation.decelerate]
+		# Default: 50.0
+		# Range: 0.0 ~ 100000.0
+		cost = 50.0
+		# Default: 6.0
+		# Range: 0.0 ~ 3600.0
+		cooldown = 6.0
+		# Default: 3.0
+		# Range: 0.0 ~ 1000.0
+		damage = 3.0
+		#Blocks per tick.
+		# Default: 2.0
+		# Range: 0.1 ~ 10.0
+		speed = 2.0
+		#Flight time before it's gone.
+		# Default: 1.5
+		# Range: 0.1 ~ 10.0
+		flightSeconds = 1.5
+		#How long the slow lasts.
+		# Default: 5.0
+		# Range: 0.0 ~ 60.0
+		seconds = 5.0
+		#Slowness amplifier (0 = Slowness I).
+		# Default: 1
+		# Range: 0 ~ 9
+		slownessAmplifier = 1
+		#Mining Fatigue amplifier.
+		# Default: 1
+		# Range: 0 ~ 9
+		miningFatigueAmplifier = 1
+		#How fast the target's cooldowns run meanwhile (0.5 = half speed).
+		# Default: 0.5
+		# Range: 0.0 ~ 1.0
+		cooldownRate = 0.5
+
+	#Special of Decelerate: a field where the block you're looking at is. Heavy Slowness on everything inside, and
+	#projectiles inside crawl at projectileSpeed of their speed (same direction), full speed again once out or when it ends.
+	[time_manipulation.stasis_field]
+		# Default: 140.0
+		# Range: 0.0 ~ 100000.0
+		cost = 140.0
+		#Decelerate's cooldown, started by Stasis Field (they share it).
+		# Default: 14.0
+		# Range: 0.0 ~ 3600.0
+		cooldown = 14.0
+		#How far away (blocks) its centre can be.
+		# Default: 32.0
+		# Range: 1.0 ~ 256.0
+		range = 32.0
+		# Default: 4.0
+		# Range: 0.5 ~ 32.0
+		radius = 4.0
+		# Default: 5.0
+		# Range: 0.1 ~ 60.0
+		seconds = 5.0
+		#Slowness amplifier inside.
+		# Default: 4
+		# Range: 0 ~ 9
+		slownessAmplifier = 4
+		# Default: 0.05
+		# Range: 0.0 ~ 1.0
+		projectileSpeed = 0.05
+
+	#Ultimate: time stops round you. Everything within radius freezes for its time except you and anyone holding Time
+	#Manipulation; damage to the frozen lands at once when time resumes, as one hit (at most damageCap). Then Burnout.
+	[time_manipulation.standstill]
+		# Default: 400.0
+		# Range: 0.0 ~ 100000.0
+		cost = 400.0
+		# Default: 180.0
+		# Range: 0.0 ~ 3600.0
+		cooldown = 180.0
+		# Default: 48.0
+		# Range: 1.0 ~ 256.0
+		radius = 48.0
+		# Default: 3.0
+		# Range: 0.5 ~ 60.0
+		seconds = 3.0
+		#Burnout on the caster afterwards (DESIGN §3.25).
+		# Default: 20.0
+		# Range: 0.0 ~ 3600.0
+		burnoutSeconds = 20.0
+		#The most the one hit on resume can be.
+		# Default: 40.0
+		# Range: 0.0 ~ 10000.0
+		damageCap = 40.0
+		#Ticks a projectile thrown into it flies before it hangs in the air too.
+		# Default: 3
+		# Range: 0 ~ 100
+		projectileFlightTicks = 3
+
+#Severed players: no Malice, and a superhuman body in exchange. None of it grows with Grade or Refinement.
+[severed]
+
+	#Always on.
+	[severed.body]
+		#Strength: their melee hits (fists and weapons) deal this times as much, before a Reinforced Strike's own bonus.
+		# Default: 1.25
+		# Range: 1.0 ~ 10.0
+		meleeDamage = 1.25
+		#Toughness: share of damage they take from everything that isn't a technique or a fall (hits, arrows, fire,
+		#explosions). The void, /kill and starving are never reduced.
+		# Default: 0.75
+		# Range: 0.0 ~ 1.0
+		takenPhysical = 0.75
+		#Share of damage they take from techniques (any Kegare damage type).
+		# Default: 0.9
+		# Range: 0.0 ~ 1.0
+		takenTechnique = 0.9
+		#Share of fall damage they take.
+		# Default: 0.4
+		# Range: 0.0 ~ 1.0
+		takenFall = 0.4
+		#Stamina: share of normal hunger drain (sprinting, jumping, attacking, mining, healing) they feel. Blur's own
+		#drain isn't reduced.
+		# Default: 0.5
+		# Range: 0.0 ~ 1.0
+		exhaustion = 0.5
+
+	#Senses: every player and mob this close shows to them as a faint outline through walls, still or moving, invisible
+	#or not.
+	[severed.senses]
+		# Default: 16.0
+		# Range: 0.0 ~ 64.0
+		range = 16.0
+
+	#Blur (G for Severed players): extremely fast, with momentum. Speeds in blocks per tick (a sprint is about 0.28).
+	[severed.blur]
+		#Top speed: 0.7 is about 2.5 times a sprint, 14 blocks a second. Never below 1.25 times a sprint under Accelerate's
+		#rate ([time_manipulation.accelerate] rate), so if that goes up, Blur goes up with it.
+		# Default: 0.7
+		# Range: 0.1 ~ 4.0
+		speed = 0.7
+		#How fast their velocity turns toward where they steer, degrees a tick: sharp turns overshoot.
+		# Default: 8.0
+		# Range: 0.5 ~ 180.0
+		turnDegrees = 8.0
+		#Speed gained a tick while steering.
+		# Default: 0.07
+		# Range: 0.005 ~ 4.0
+		acceleration = 0.07
+		#Speed lost a tick once they let go: the skid to a stop.
+		# Default: 0.05
+		# Range: 0.005 ~ 4.0
+		skid = 0.05
+		#Hunger it burns per block covered at Blur speed (4 is a food point). Stamina doesn't reduce it.
+		# Default: 0.2
+		# Range: 0.0 ~ 10.0
+		exhaustionPerBlock = 0.2
+		#At or below this food (6 = 3 shanks, where vanilla stops sprinting) it crashes off and can't come back
+		#on until food is above it.
+		# Default: 6
+		# Range: 0 ~ 20
+		foodFloor = 6
+		#Winded: the slowdown when it crashes off.
+		# Default: 4.0
+		# Range: 0.0 ~ 60.0
+		windedSeconds = 4.0
+		#Slowness amplifier while winded (0 = Slowness I).
+		# Default: 0
+		# Range: 0 ~ 9
+		windedSlowness = 0
+
+	#Closing Line's target: the player or mob under the crosshair, in line of sight.
+	[severed.targeting]
+		# Default: 24.0
+		# Range: 1.0 ~ 128.0
+		range = 24.0
+		#How far off the crosshair (blocks) still counts as looking at someone.
+		# Default: 0.3
+		# Range: 0.0 ~ 2.0
+		aimTolerance = 0.3
+
+	#Closing Line (R during Blur): a straight rush at where the target stood; the first melee hit after arriving carries its speed.
+	[severed.closing_line]
+		# Default: 6.0
+		# Range: 0.0 ~ 600.0
+		cooldown = 6.0
+		#Rush speed, blocks a tick: a 20-block gap in five ticks.
+		# Default: 4.0
+		# Range: 0.5 ~ 9.0
+		speed = 4.0
+		#Blocks left between you and the target when you stop: melee reach, in front of them.
+		# Default: 0.8
+		# Range: 0.0 ~ 3.0
+		stopGap = 0.8
+		#After every Closing Line: this long with no Blur speed.
+		# Default: 0.6
+		# Range: 0.0 ~ 10.0
+		recoverySeconds = 0.6
+		#Seconds after arriving that the first melee hit is a momentum hit, carrying the rush's speed.
+		# Default: 0.5
+		# Range: 0.05 ~ 10.0
+		strikeWindow = 0.5
+		#Extra damage the momentum hit carries per block/tick of the rush's speed (a full rush is 4 blocks/tick).
+		# Default: 3.25
+		# Range: 0.0 ~ 100.0
+		momentumDamage = 3.25
+		#Knockback the momentum hit carries per block/tick of the rush's speed.
+		# Default: 0.2
+		# Range: 0.0 ~ 5.0
+		carriedKnockback = 0.2
+		#A perfect parry that catches the momentum hit staggers them this long (a normal stagger is 0.5 s)...
+		# Default: 1.5
+		# Range: 0.0 ~ 30.0
+		parryStaggerSeconds = 1.5
+		#...at this Slowness amplifier (a normal stagger is 2).
+		# Default: 3
+		# Range: 0 ~ 9
+		parryStaggerSlowness = 3
+
+	#Severed advancements.
+	[severed.advancements]
+		#How cruel, don't you have a human heart?: this many different Malice users killed...
+		# Default: 3
+		# Range: 1 ~ 50
+		cruelKills = 3
+		#...within this many seconds.
+		# Default: 60.0
+		# Range: 1.0 ~ 3600.0
+		cruelWindowSeconds = 60.0
+		#Our fight is just getting started!: down to this many hearts or fewer in the fight.
+		# Default: 3.0
+		# Range: 0.5 ~ 10.0
+		startedHearts = 3.0
+
+	#A wall hit at speed (in Blur or a Closing Line): damage and a stun from the speed lost, like flying into a wall.
+	#Toughness applies to the damage.
+	[severed.wall_crash]
+		#Speed lost (blocks/tick) below which it's just a scrape: nothing.
+		# Default: 0.3
+		# Range: 0.0 ~ 10.0
+		minSpeedLost = 0.3
+		#Damage per block/tick of speed lost...
+		# Default: 10.0
+		# Range: 0.0 ~ 100.0
+		damagePerSpeed = 10.0
+		#...less this.
+		# Default: 2.0
+		# Range: 0.0 ~ 100.0
+		damageGrace = 2.0
+		# Default: 12.0
+		# Range: 0.0 ~ 1000.0
+		maxDamage = 12.0
+		#Stun seconds per block/tick of speed lost.
+		# Default: 2.0
+		# Range: 0.0 ~ 60.0
+		stunPerSpeed = 2.0
+		# Default: 2.0
+		# Range: 0.0 ~ 60.0
+		maxStunSeconds = 2.0
+
+#Dash, Parry and Reinforced Strike: shared by every player, in and out of Technique Mode.
+[melee]
+
+	[melee.dash]
+		#Malice per dash.
+		# Default: 25.0
+		# Range: 0.0 ~ 100000.0
+		cost = 25.0
+		#Seconds between dashes.
+		# Default: 3.0
+		# Range: 0.0 ~ 600.0
+		cooldown = 3.0
+		#Blocks covered, stopping short of walls.
+		# Default: 4.0
+		# Range: 0.5 ~ 32.0
+		distance = 4.0
+		#Blocks per tick while dashing.
+		# Default: 1.0
+		# Range: 0.1 ~ 4.0
+		speed = 1.0
+		#Seconds after dashing in which something aimed at where you were counts as a clean dodge.
+		# Default: 0.5
+		# Range: 0.0 ~ 10.0
+		dodgeWindow = 0.5
+
+	[melee.parry]
+		#The first seconds of holding: a melee hit is cancelled and its attacker staggered.
+		# Default: 0.3
+		# Range: 0.0 ~ 10.0
+		perfectWindow = 0.3
+		#How charged a player's swing has to be for a perfect parry of it to count as a move in Assessment. 1.0 is a full attack bar. The game itself calls anything past 0.9 full strength, if that's preferred.
+		# Default: 1.0
+		# Range: 0.0 ~ 1.0
+		assessmentCharge = 1.0
+		#How long a perfect parry slows the attacker. Their abilities aren't stopped.
+		# Default: 0.5
+		# Range: 0.0 ~ 10.0
+		staggerSeconds = 0.5
+		#Slowness amplifier of the stagger (2 = Slowness III).
+		# Default: 2
+		# Range: 0 ~ 9
+		staggerSlowness = 2
+		#Melee damage taken off while holding past the window (0.4 = 40%).
+		# Default: 0.4
+		# Range: 0.0 ~ 1.0
+		guardMeleeReduction = 0.4
+		#Technique damage taken off the whole time you hold.
+		# Default: 0.1
+		# Range: 0.0 ~ 1.0
+		guardTechniqueReduction = 0.1
+		#Malice per second while holding past the window. The guard drops when it runs out.
+		# Default: 16.0
+		# Range: 0.0 ~ 100000.0
+		guardDrain = 16.0
+		#Malice you need to raise a guard at all (it isn't spent).
+		# Default: 10.0
+		# Range: 0.0 ~ 100000.0
+		guardMinMalice = 10.0
+		#Seconds after a guard ends before you can parry again.
+		# Default: 1.0
+		# Range: 0.0 ~ 60.0
+		recovery = 1.0
+
+	[melee.reinforced_strike]
+		#Seconds to land the hit after a perfect parry or clean dodge.
+		# Default: 1.5
+		# Range: 0.05 ~ 60.0
+		window = 1.5
+		#Extra damage (0.5 = 50% more).
+		# Default: 0.5
+		# Range: 0.0 ~ 10.0
+		damageBonus = 0.5
+		#Extra knockback strength. Never on bosses.
+		# Default: 0.6
+		# Range: 0.0 ~ 10.0
+		knockback = 0.6
+		#Malice spent when it lands. Short of this, the hit stays normal and the Strike isn't used.
+		# Default: 20.0
+		# Range: 0.0 ~ 100000.0
+		cost = 20.0
+
+	#The physical version for Severed players, who trade all their Malice for superhuman abilities: stronger than standard, with no Malice cost, so everything Malice would limit has its own number. No Reinforced Strike: that's Malice, and they have none.
+	[melee.severed]
+		#Seconds between dashes.
+		# Default: 2.5
+		# Range: 0.0 ~ 600.0
+		dashCooldown = 2.5
+		#Blocks covered.
+		# Default: 6.0
+		# Range: 0.5 ~ 32.0
+		dashDistance = 6.0
+		#Seconds of perfect parry window.
+		# Default: 0.3
+		# Range: 0.0 ~ 10.0
+		perfectWindow = 0.3
+		#Melee damage taken off while holding past the window.
+		# Default: 0.5
+		# Range: 0.0 ~ 1.0
+		guardMeleeReduction = 0.5
+		#Technique damage taken off while holding: nothing to reinforce with.
+		# Default: 0.0
+		# Range: 0.0 ~ 1.0
+		guardTechniqueReduction = 0.0
+		#Seconds a guard can be held, since there's no Malice to run out of.
+		# Default: 4.0
+		# Range: 0.05 ~ 600.0
+		guardMaxSeconds = 4.0
+		#Seconds after a guard ends before you can parry again.
+		# Default: 0.75
+		# Range: 0.0 ~ 60.0
+		recovery = 0.75
+		#Seconds a Severed perfect parry staggers the attacker, longer than a standard one: no Malice to reinforce
+		#with, so the opening comes from their reflexes. They never earn a Reinforced Strike.
+		# Default: 1.0
+		# Range: 0.0 ~ 30.0
+		parryStagger = 1.0
+
+#The Impact System (hit-stop, screen shake, impact flashes and frames). A hit's strength is
+#  damageWeight * (damage dealt / the victim's max health)
+#  + knockbackWeight * (knockback beyond baseKnockback, which every hit gets)
+#  + launchWeight * (upward launch speed, blocks/tick) + chargeWeight * (the charge it was cast at, 0 to 1)
+#  + maliceWeight * (the base Malice behind it, per 100: the cast's base cost, plus what a puppet that went off cost to make;
+#    a melee hit's is 0, and so is every hit of a Severed player's),
+#and its tier is the highest whose threshold it reaches (below medium: light). The top tier is reserved for
+#Black Spark: no strength reaches it. Battle damage reads the same strength.
+[impact]
+	#Players this close (blocks) to a hit see its flash.
+	# Default: 48.0
+	# Range: 0.0 ~ 256.0
+	witnessRange = 48.0
+
+	[impact.strength]
+		# Default: 1.2
+		# Range: 0.0 ~ 100.0
+		damageWeight = 1.2
+		# Default: 1.2
+		# Range: 0.0 ~ 100.0
+		knockbackWeight = 1.2
+		#Knockback every hit gets anyway (vanilla's 0.4): only what's beyond it counts.
+		# Default: 0.4
+		# Range: 0.0 ~ 10.0
+		baseKnockback = 0.4
+		# Default: 1.0
+		# Range: 0.0 ~ 100.0
+		launchWeight = 1.0
+		#A Reinforced Strike counts as fully charged, and so does an ultimate.
+		# Default: 1.2
+		# Range: 0.0 ~ 100.0
+		chargeWeight = 1.2
+		#Per 100 Malice of base cost behind the hit.
+		# Default: 0.75
+		# Range: 0.0 ~ 100.0
+		maliceWeight = 0.75
+
+	#Where each tier starts (strength).
+	[impact.tiers]
+		# Default: 0.51
+		# Range: 0.0 ~ 1000.0
+		medium = 0.51
+		# Default: 1.98
+		# Range: 0.0 ~ 1000.0
+		heavy = 1.98
+		# Default: 2.84
+		# Range: 0.0 ~ 1000.0
+		impactFrame = 2.84
+
+	#The melee moments that aren't damage, and the tier each plays at (light, medium, heavy, impact_frame).
+	[impact.moments]
+		#A dash starts: a light shake for the one dashing.
+		#Allowed Values: LIGHT, MEDIUM, HEAVY, IMPACT_FRAME, TOP
+		dashBurst = "LIGHT"
+		#A clean dodge: a short freeze for the one who dodged.
+		#Allowed Values: LIGHT, MEDIUM, HEAVY, IMPACT_FRAME, TOP
+		cleanDodge = "MEDIUM"
+		#A perfect parry: freeze, shake and a white flash for both fighters.
+		#Allowed Values: LIGHT, MEDIUM, HEAVY, IMPACT_FRAME, TOP
+		parryPerfect = "MEDIUM"
+		#Staggered by a parry: a shake for the one staggered.
+		#Allowed Values: LIGHT, MEDIUM, HEAVY, IMPACT_FRAME, TOP
+		stagger = "MEDIUM"
+
+#Battle damage (DESIGN §3.24): big hits break the world. A hit breaks blocks round where it met the body when it's at
+#least minimumTier, using the Impact System's strength (§3.23). Its power is strengthScale x strength (topPower for
+#the top tier), falling off to nothing at its radius (baseRadius + radiusPerStrength x strength, at most maxRadius).
+#A block breaks where that power is more than its blast resistance: glass 0.3, dirt 0.5, wood 3, stone 6, obsidian 1200.
+#Blocks vanilla makes unbreakable (negative hardness) never break, nor does anything on the protected list. Each break
+#fires NeoForge's block-break event, so spawn protection and claim mods can cancel it. Broken blocks never drop
+#themselves: they shatter into rubble. Swap never breaks anything.
+[battle_damage]
+	#PERMANENT: damage stays. RESTORING: blocks rebuild themselves piece by piece some time after the fight
+	#(containers with their contents, never spilled; pending rebuilds survive a restart). COSMETIC: cracks and debris only.
+	#Allowed Values: PERMANENT, RESTORING, COSMETIC
+	mode = "PERMANENT"
+	#The weakest hit that breaks anything (light hits never do).
+	#Allowed Values: LIGHT, MEDIUM, HEAVY, IMPACT_FRAME, TOP
+	minimumTier = "MEDIUM"
+	# Default: 3.0
+	# Range: 0.0 ~ 10000.0
+	strengthScale = 3.0
+	#The top tier's power (reserved for Black Spark): ceiling level, the only thing that breaks obsidian.
+	# Default: 1500.0
+	# Range: 0.0 ~ 1000000.0
+	topPower = 1500.0
+	# Default: 0.5
+	# Range: 0.0 ~ 16.0
+	baseRadius = 0.5
+	# Default: 0.8
+	# Range: 0.0 ~ 16.0
+	radiusPerStrength = 0.8
+	# Default: 4.5
+	# Range: 0.0 ~ 16.0
+	maxRadius = 4.5
+	#A broken container spills what was in it on the ground, as TNT does (never in RESTORING: it comes back full).
+	spillContents = true
+	#Blocks that never break: ids (minecraft:glass) or tags (#minecraft:logs).
+	protected = []
+	#At most this many blocks break per hit (the nearest first)...
+	# Default: 40
+	# Range: 0 ~ 4096
+	maxBlocksPerHit = 40
+	#...and this many a second in a dimension, so a long fight can't lag the server.
+	# Default: 160
+	# Range: 0 ~ 100000
+	maxBlocksPerSecond = 160
+	#A hit by a mob (not a player or their technique) only breaks blocks with the mobGriefing gamerule on.
+	mobsNeedGriefing = true
+
+	#RESTORING mode.
+	[battle_damage.restoring]
+		#Seconds with no battle damage nearby before a scar starts rebuilding.
+		# Default: 60.0
+		# Range: 0.0 ~ 86400.0
+		delay = 60.0
+		#Ticks between one block coming back and the next (lowest first).
+		# Default: 3
+		# Range: 1 ~ 1200
+		interval = 3
+		#Battle damage this close (blocks) to a scar counts as the fight still going.
+		# Default: 32.0
+		# Range: 0.0 ~ 512.0
+		quietRadius = 32.0
+
+	#Wall slams: anything knocked hard into a wall, floor or ceiling leaves a crater where it hits, scaled by how fast it
+	#was going. Craters only: a slam does no damage of its own.
+	[battle_damage.slams]
+		enabled = true
+		#The slowest (blocks/tick) that counts as a slam. A sprinting hit knocks someone about 0.7.
+		# Default: 0.9
+		# Range: 0.0 ~ 10.0
+		minSpeed = 0.9
+		#Strength (as a hit's) per block/tick of speed.
+		# Default: 1.45
+		# Range: 0.0 ~ 100.0
+		strengthPerSpeed = 1.45
+		#Seconds after a breaking hit that its victim is watched for a slam.
+		# Default: 2.5
+		# Range: 0.0 ~ 60.0
+		windowSeconds = 2.5
+
+#Reverse Malice Technique (shared ability, CHANNELED): heal while held. Locked until found.
+#Severed players can never unlock or use it. Times are in seconds.
+[reverse_malice_technique]
+	#Malice to start the channel.
+	# Default: 40.0
+	# Range: 0.0 ~ 100000.0
+	cost = 40.0
+	#Malice drained per second while healing (about double a typical attack's cost).
+	# Default: 96.0
+	# Range: 0.0 ~ 100000.0
+	upkeepPerSecond = 96.0
+	#Health restored per second held at an output of 1 (2 = one heart), a little every tick, so damage is
+	#healed as it lands. The real rate is this times your output.
+	# Default: 2.0
+	# Range: 0.0 ~ 1000.0
+	healPerSecond = 2.0
+	#Starts when the channel ends (release, out of Malice, interrupted).
+	# Default: 15.0
+	# Range: 0.0 ~ 3600.0
+	cooldown = 15.0
+	#Longest channel; 0 = until released or out of Malice. It keeps running at full health.
+	# Default: 0.0
+	# Range: 0.0 ~ 3600.0
+	maxDuration = 0.0
+
+	#Output: how strongly it heals, 1 + a Grade bonus + a Peak Refinement bonus. An exception to progression only
+	#unlocking things: in canon, reverse healing rides on the user's output.
+	[reverse_malice_technique.output]
+		#Added at Special Grade; 0 at Grade 4, evenly up the ladder between.
+		# Default: 0.3
+		# Range: 0.0 ~ 10.0
+		gradeBonus = 0.3
+		#Added at the top Peak Refinement level; 0 at 0, evenly between.
+		# Default: 0.3
+		# Range: 0.0 ~ 10.0
+		peakBonus = 0.3
+
+	#Its special (R + its key): healing another player. Few can. Eligible with it unlocked and Output Insight at
+	#healOthersInsight or more; then learned in a chance moment, and known for good.
+	[reverse_malice_technique.others]
+		#Output Insight needed to be eligible. Unlocking RMT (5) + healing yourself out of 3 hearts (5) + a first
+		#fight against a Legendary technique (5) reach it.
+		# Default: 15
+		# Range: 0 ~ 10000
+		healOthersInsight = 15
+		#How strongly it heals another, as a share of the healer's own output now.
+		# Default: 0.75
+		# Range: 0.0 ~ 10.0
+		othersOutput = 0.75
+		#Its start cost and upkeep, as times RMT's own.
+		# Default: 1.5
+		# Range: 0.0 ~ 100.0
+		othersCost = 1.5
+		#How far (blocks, from your eyes to them) the one you heal can be, in line of sight.
+		# Default: 3.0
+		# Range: 0.5 ~ 16.0
+		range = 3.0
+		#The moment: a player this close (blocks) drops to momentHealth or less while you're eligible...
+		# Default: 8.0
+		# Range: 0.0 ~ 64.0
+		momentRange = 8.0
+		# Default: 6.0
+		# Range: 0.0 ~ 1024.0
+		momentHealth = 6.0
+		#...and this chance (0-1) comes up: they glow soft green, to you only.
+		# Default: 0.1
+		# Range: 0.0 ~ 1.0
+		momentChance = 0.1
+		#At most one roll per this many seconds, per eligible player.
+		# Default: 60.0
+		# Range: 0.0 ~ 86400.0
+		momentCooldown = 60.0
+		#Hold R and its key on them within this long to heal them, and you know it from then on.
+		# Default: 6.0
+		# Range: 0.5 ~ 600.0
+		momentSeconds = 6.0
+
+	#Output Insight it pays (amounts are in [progression.insight]).
+	[reverse_malice_technique.insight]
+		#rmt_survived_low: at this much health or less during your own channel (6 = 3 hearts), healed above it...
+		# Default: 6.0
+		# Range: 0.0 ~ 1024.0
+		lowHealth = 6.0
+		#...and alive this many seconds later.
+		# Default: 10.0
+		# Range: 0.0 ~ 600.0
+		surviveSeconds = 10.0
+
+	#Injury fatigue: damage taken in a fight drags output down. fatigue = fatigueWeight x (damage taken / max health),
+	#at most maxFatigue; output is multiplied by (1 - fatigue). Healing doesn't take it away. It resets when the fight ends,
+	#on death and on logout.
+	[reverse_malice_technique.fatigue]
+		# Default: 0.15
+		# Range: 0.0 ~ 10.0
+		fatigueWeight = 0.15
+		#Never more than this, so it never stops healing outright.
+		# Default: 0.6
+		# Range: 0.0 ~ 0.95
+		maxFatigue = 0.6
+
+	#Repairing a burnt-out technique: channelling RMT while burnt out repairs the technique first, destroying and healing
+	#the part of the brain where it's stored. Every RMT user, Six Eyes included. The brain meter (0 to 100) fills with every second
+	#of Burnout taken away (repair, or Background RMT's shortening); full, no more repair.
+	[reverse_malice_technique.repair]
+		#Seconds of Burnout repaired per second of channel at an output of 1 (times your current RMT output).
+		# Default: 4.0
+		# Range: 0.0 ~ 1000.0
+		repairRate = 4.0
+		#Damage taken per second while repairing (armour doesn't stop it).
+		# Default: 1.0
+		# Range: 0.0 ~ 1000.0
+		repairDamage = 1.0
+		#Dominions don't exist yet: the Burnout one is assumed to leave, in seconds. The brain's costs are
+		#anchored to it: a full repair of any Burnout costs what a full repair of one this long does, as every full repair gives the
+		#ultimate back. About four fit (a fifth Domain, not a sixth), whatever the technique.
+		# Default: 60.0
+		# Range: 1.0 ~ 3600.0
+		dominionBurnoutAssumed = 60.0
+		#Brain meter added per second of Burnout taken away, at an empty meter, for a Burnout of
+		#dominionBurnoutAssumed. A Burnout of length L costs dominionBurnoutAssumed / L times as much a second, so taking away a share
+		#of any Burnout costs that share of a full repair. The meter adds more the fuller it already is (brainEscalation): each repair
+		#adds more than the last.
+		# Default: 0.262
+		# Range: 0.0 ~ 100.0
+		brainPerSecond = 0.262
+		#How much a fuller meter adds: x (1 + brainEscalation x meter / 100).
+		# Default: 1.0
+		# Range: 0.0 ~ 100.0
+		brainEscalation = 1.0
+		#The meter falls this much a second out of a fight. Sleeping through a night clears it.
+		# Default: 0.15
+		# Range: 0.0 ~ 100.0
+		brainHealPerSecond = 0.15
+
+	#The green orb: how Reverse Malice Technique is found. Only its finder sees it.
+	[reverse_malice_technique.orb]
+		#A hit from a player that leaves you at this much health or less can bring the orb (10 = 5 hearts).
+		# Default: 10.0
+		# Range: 0.0 ~ 1024.0
+		healthThreshold = 10.0
+		#Chance (0-1) per roll, before Output Insight.
+		# Default: 0.15
+		# Range: 0.0 ~ 1.0
+		chance = 0.15
+		#Added to the chance per point of Output Insight.
+		# Default: 0.005
+		# Range: 0.0 ~ 1.0
+		insightBonus = 0.005
+		#The chance never goes past this with Insight.
+		# Default: 0.3
+		# Range: 0.0 ~ 1.0
+		chanceCap = 0.3
+		#At most one roll per this many seconds per player.
+		# Default: 60.0
+		# Range: 0.0 ~ 86400.0
+		rollCooldown = 60.0
+		#The orb fades after this many seconds. Time spent following it doesn't count.
+		# Default: 5.0
+		# Range: 0.5 ~ 600.0
+		lifetime = 5.0
+		#Looking at it sends it off along a random route, and it only moves on while you keep looking.
+		#This is how long the whole route takes. Reach the end to take it in.
+		# Default: 3.0
+		# Range: 0.05 ~ 60.0
+		followSeconds = 3.0
+		#Lose sight of it and it runs back along the route, this many times as fast.
+		# Default: 3
+		# Range: 0 ~ 100
+		followRewind = 3
+		#How far off-centre (degrees) still counts as looking at it.
+		# Default: 10.0
+		# Range: 1.0 ~ 45.0
+		lookAngle = 10.0
+		#How many steps the route takes. It turns between each.
+		# Default: 5
+		# Range: 1 ~ 16
+		pathLegs = 5
+		#How far each step goes, in degrees of your view. With followSeconds, this sets how fast you have to track it:
+		#pathLegs x pathStep / followSeconds degrees a second.
+		# Default: 18.0
+		# Range: 1.0 ~ 60.0
+		pathStep = 18.0
+		#How far left and right (degrees) of where you were looking the route can wander.
+		# Default: 45.0
+		# Range: 5.0 ~ 90.0
+		pathYawRange = 45.0
+		#How far up and down (degrees) it can wander.
+		# Default: 25.0
+		# Range: 5.0 ~ 45.0
+		pathPitchRange = 25.0
+		#The sharpest turn between two steps (degrees). The gentlest is a third of this.
+		# Default: 120.0
+		# Range: 3.0 ~ 170.0
+		pathMaxTurn = 120.0
+		#How far in front of the player it appears, in blocks (closer if a wall is in the way).
+		# Default: 3.0
+		# Range: 1.0 ~ 16.0
+		distance = 3.0
+		#Degrees to the left or right (random) of where the player looks: in view, but off the crosshair,
+		#so taking it in is a choice and not an accident mid-fight. Keep it above lookAngle.
+		# Default: 25.0
+		# Range: 0.0 ~ 60.0
+		sideAngle = 25.0
+		#Health restored when it is taken in (never above max).
+		# Default: 8.0
+		# Range: 0.0 ~ 1024.0
+		unlockHeal = 8.0
+
+#Reinforcement (Malice, TOGGLE): Malice routed through the body, for durability and force tolerance. Every Malice user has it.
+#It adds no damage (that's Reinforced Fists); both can run together.
+[reinforcement]
+	#Malice to turn it on.
+	# Default: 40.0
+	# Range: 0.0 ~ 100000.0
+	onCost = 40.0
+	#Malice drained per second while it's on. It turns off when Malice runs out.
+	# Default: 10.0
+	# Range: 0.0 ~ 100000.0
+	drainPerSecond = 10.0
+	#After it turns off, this long before it can go on again.
+	# Default: 1.5
+	# Range: 0.0 ~ 3600.0
+	rearmCooldown = 1.5
+	#Share of physical damage (hits, arrows, falls, fire) taken off.
+	# Default: 0.25
+	# Range: 0.0 ~ 1.0
+	reductionPhysical = 0.25
+	#Share of technique damage taken off.
+	# Default: 0.2
+	# Range: 0.0 ~ 1.0
+	reductionTechnique = 0.2
+	#Knockback resistance added (0 to 1): force tolerance.
+	# Default: 0.4
+	# Range: 0.0 ~ 1.0
+	knockbackResistance = 0.4
+
+#Background Tasks: things a sorcerer keeps running without thinking, separate from the ability bar. Weaker than the
+#ability, but no bar slot and the hands free.
+[background_tasks]
+
+	#Background RMT: Reverse Malice Technique left running, slowly.
+	[background_tasks.background_rmt]
+		#Health healed in total with your own channelled Reverse Malice Technique (healing others counts too) to
+		#unlock it.
+		# Default: 500.0
+		# Range: 0.0 ~ 1000000.0
+		healToUnlock = 500.0
+		#Its heal rate as a share of your channelled RMT's at your current output (Grade, Peak Refinement, injury
+		#fatigue and every output modifier apply). 1/6: about 1 health every 3 s at an output of 1.
+		# Default: 0.16666666666666666
+		# Range: 0.0 ~ 10.0
+		backgroundOutput = 0.16666666666666666
+		#Malice drained per second while it runs (even at full health).
+		# Default: 12.0
+		# Range: 0.0 ~ 100000.0
+		drainPerSecond = 12.0
+		#Your natural Malice regeneration is multiplied by this while it runs.
+		# Default: 0.5
+		# Range: 0.0 ~ 1.0
+		regenFactor = 0.5
+		#It pauses on its own below this share of your Malice capacity...
+		# Default: 0.2
+		# Range: 0.0 ~ 1.0
+		pauseBelow = 0.2
+		#...and resumes on its own above this share.
+		# Default: 0.3
+		# Range: 0.0 ~ 1.0
+		resumeAbove = 0.3
+		#While it runs, every Burnout applied to you lasts this share of its length.
+		# Default: 0.75
+		# Range: 0.0 ~ 1.0
+		burnoutFactor = 0.75
+
+	#Background Reinforcement: Reinforcement kept up without thinking, weaker. Unlocked at Grade 3.
+	[background_tasks.background_reinforcement]
+		#Its share of the Reinforcement ability's damage reductions and knockback resistance. With the ability on
+		#too, they don't stack: the stronger applies.
+		# Default: 0.4
+		# Range: 0.0 ~ 1.0
+		backgroundStrength = 0.4
+		#Malice drained per second while it runs.
+		# Default: 4.0
+		# Range: 0.0 ~ 100000.0
+		drainPerSecond = 4.0
+
+	#Sustained Flow: a steady flow that makes your active toggles cheaper to keep up. Unlocked at Refinement 5.
+	[background_tasks.sustained_flow]
+		#Share taken off every active toggle's per-second upkeep (Reinforced Fists, Reinforcement, Accelerate, Rime
+		#Shell, any toggle). Never a start cost, never another Background Task.
+		# Default: 0.3
+		# Range: 0.0 ~ 1.0
+		flowReduction = 0.3
+		#Malice drained per second while it runs.
+		# Default: 1.5
+		# Range: 0.0 ~ 100000.0
+		drainPerSecond = 1.5
+
+#Six Eyes: passive, always on, at full from the moment someone has it. Perception never grows and has no number here;
+#only efficiency and RMT output grow, through Grade and Attunement. Strain is 0 to 100.
+[six_eyes]
+
+	#Strain: the eyes' fatigue. It builds in a fight and falls out of one.
+	[six_eyes.strain]
+		#Strain a second in a fight with the eyes uncovered (100 / this = seconds to the top).
+		# Default: 1.25
+		# Range: 0.0 ~ 100.0
+		buildPerSecond = 1.25
+		#That, times this, with a blindfold on.
+		# Default: 0.2
+		# Range: 0.0 ~ 1.0
+		blindfoldFactor = 0.2
+		#And times this while Background RMT runs: it holds Strain back, so a bearer running it can stay uncovered
+		#a whole fight.
+		# Default: 0.2
+		# Range: 0.0 ~ 1.0
+		backgroundRmtFactor = 0.2
+		#Strain a second out of a fight, uncovered.
+		# Default: 1.0
+		# Range: 0.0 ~ 100.0
+		fallPerSecond = 1.0
+		#Out of a fight, covered (sunglasses or a blindfold).
+		# Default: 3.0
+		# Range: 0.0 ~ 100.0
+		fallCoveredPerSecond = 3.0
+		#Strain a second taken off while channelling Reverse Malice Technique (it refreshes the brain).
+		# Default: 8.0
+		# Range: 0.0 ~ 100.0
+		rmtReliefPerSecond = 8.0
+		#At the top, the uncovered edge is lost until Strain cools below this.
+		# Default: 60.0
+		# Range: 0.0 ~ 100.0
+		edgeBackBelow = 60.0
+		#Collapse risk: uncovered at the top, the chance of collapsing each second grows this much a second (0.01: 10% a
+		#second after 10 s). Covering the eyes stops it growing.
+		# Default: 0.01
+		# Range: 0.0 ~ 1.0
+		riskGrowthPerSecond = 0.01
+		#Risk a second taken off while channelling Reverse Malice Technique.
+		# Default: 0.05
+		# Range: 0.0 ~ 1.0
+		rmtRiskReliefPerSecond = 0.05
+		#A collapse: stunned this long (no moving, no casting)...
+		# Default: 2.0
+		# Range: 0.0 ~ 60.0
+		collapseStun = 2.0
+		#...and this much damage armour doesn't stop.
+		# Default: 6.0
+		# Range: 0.0 ~ 1000.0
+		collapseDamage = 6.0
+		#The uncovered edge: how far off a top-tier opponent's cast can be read before it starts.
+		# Default: 64.0
+		# Range: 1.0 ~ 100000.0
+		edgeRange = 64.0
+		#That, times this, with sunglasses on.
+		# Default: 0.5
+		# Range: 0.0 ~ 1.0
+		sunglassesFactor = 0.5
+
+	#Efficiency: every Malice cost the bearer pays is x 1 / (1 + x), x = base + grade x Grade step (0 at Grade 4, 6 at Special
+	#Grade) + attunement x sqrt(Attunement / attunementScale). It keeps climbing with no flat point: costs near free and never get
+	#there. Every cast still costs at least 1. Eyewear and Strain never touch it.
+	[six_eyes.efficiency]
+		# Default: 0.25
+		# Range: 0.0 ~ 100.0
+		base = 0.25
+		# Default: 0.35
+		# Range: 0.0 ~ 100.0
+		grade = 0.35
+		# Default: 1.5
+		# Range: 0.0 ~ 100.0
+		attunement = 1.5
+		# Default: 200.0
+		# Range: 1.0 ~ 1.0E9
+		attunementScale = 200.0
+		#Reverse Malice Technique's output x (1 + this x x), the same x: beyond the normal 1.6x, no fixed cap
+		#(about x1.9 at Special Grade and Attunement 20,000). Injury fatigue still applies.
+		# Default: 0.052
+		# Range: 0.0 ~ 100.0
+		rmtOutputWeight = 0.052
+
+	#Attunement grows by using the eyes, and is lost entirely when they pass on: a new bearer starts out clumsy.
+	[six_eyes.attunement]
+		#A second in a fight while holding the eyes.
+		# Default: 1.0
+		# Range: 0.0 ~ 1000.0
+		perFightSecond = 1.0
+		#A full-detail Read of someone new (each player at most once a minute).
+		# Default: 3.0
+		# Range: 0.0 ~ 1000.0
+		perRead = 3.0
+		#A pin (each one at most once a minute).
+		# Default: 1.0
+		# Range: 0.0 ~ 1000.0
+		perPin = 1.0
+
+#Reinforced Fists (shared, TOGGLE): every Malice user has it. Malice wrapped round the fists: melee hits deal more,
+#and a Reinforced Strike landed with it on hits again a moment later. Severed players have none (no Malice).
+[reinforced_fists]
+	#Malice to turn it on.
+	# Default: 30.0
+	# Range: 0.0 ~ 100000.0
+	onCost = 30.0
+	#Malice drained per second while it's on. It turns off when Malice runs out.
+	# Default: 12.0
+	# Range: 0.0 ~ 100000.0
+	drainPerSecond = 12.0
+	#After it turns off, this long before it can go on again (so it can't be flicked on for every swing).
+	# Default: 1.5
+	# Range: 0.0 ~ 3600.0
+	rearmCooldown = 1.5
+	#Melee damage added with an empty hand, as a share (2.0 = three times a punch).
+	# Default: 2.0
+	# Range: 0.0 ~ 100.0
+	fistBonus = 2.0
+	#Melee damage added with anything in hand, as a share (smaller than the fist's, so fists are worth using).
+	# Default: 0.2
+	# Range: 0.0 ~ 100.0
+	weaponBonus = 0.2
+	#A Reinforced Strike landed with it on hits again this much later, at the same spot.
+	# Default: 0.3
+	# Range: 0.05 ~ 5.0
+	secondImpactDelay = 0.3
+	#The second impact's damage, as a share of the Strike's.
+	# Default: 0.5
+	# Range: 0.0 ~ 10.0
+	secondImpactDamage = 0.5
+
+	#Black Spark: Fists turned on just before a melee hit lands. Each try the server secretly rolls where the spark sits, an
+	#offset in [0, jitterMs]; the hit is a Black Spark if the gap from Fists on to the attack falls in [offset, offset + window].
+	#The window is windowMs times every factor below, worked out fresh each try. All times in ms.
+	[reinforced_fists.black_spark]
+		#How far the spark's secret offset can sit.
+		# Default: 150.0
+		# Range: 1.0 ~ 5000.0
+		jitterMs = 150.0
+		#The window before its factors.
+		# Default: 25.0
+		# Range: 0.0 ~ 5000.0
+		windowMs = 25.0
+		#The window never reaches more than this share of jitterMs, whatever the factors: it's never certain.
+		# Default: 0.5
+		# Range: 0.0 ~ 0.99
+		maxWindowShare = 0.5
+		#Only the first melee hit after Fists go on is a try, and only this soon after.
+		# Default: 1000.0
+		# Range: 1.0 ~ 60000.0
+		tryMs = 1000.0
+		#Its power: the hit's damage on a scale that starts at 2 (s = 2 + damage / scaleDamage), raised to the
+		#exponent and turned back into damage (times s^(exponent - 1)). A unit, not a limit: there is no cap.
+		# Default: 4.0
+		# Range: 0.01 ~ 1000.0
+		scaleDamage = 4.0
+		#Canon's exponent.
+		# Default: 2.5
+		# Range: 1.0 ~ 10.0
+		exponent = 2.5
+		#Knockback it adds (bosses are never moved).
+		# Default: 1.2
+		# Range: 0.0 ~ 10.0
+		knockback = 1.2
+
+		#The window's factors (multipliers).
+		[reinforced_fists.black_spark.window]
+			#Your Malice, current against capacity: the factor at empty...
+			# Default: 0.85
+			# Range: 0.0 ~ 10.0
+			maliceEmpty = 0.85
+			#...and at full (fuller is wider).
+			# Default: 1.15
+			# Range: 0.0 ~ 10.0
+			maliceFull = 1.15
+			#Your opponent's Malice capacity against yours: 1 / (1 + opponentWeight x (theirs / yours - 1)), stronger
+			#is narrower. Mobs and Severed players have none.
+			# Default: 0.15
+			# Range: 0.0 ~ 10.0
+			opponentWeight = 0.15
+			# Default: 0.75
+			# Range: 0.0 ~ 10.0
+			opponentMin = 0.75
+			# Default: 1.15
+			# Range: 0.0 ~ 10.0
+			opponentMax = 1.15
+			#Your health: the factor at none (1 at full).
+			# Default: 0.8
+			# Range: 0.0 ~ 1.0
+			healthLow = 0.8
+			#Your hunger: the factor at an empty food bar (1 at full).
+			# Default: 0.9
+			# Range: 0.0 ~ 1.0
+			hungerLow = 0.9
+			#Each level of Weakness on you.
+			# Default: 0.9
+			# Range: 0.0 ~ 1.0
+			weakness = 0.9
+			#Each level of Slowness on you.
+			# Default: 0.92
+			# Range: 0.0 ~ 1.0
+			slowness = 0.92
+			#Taken off for each Freeze stack on you (never below half).
+			# Default: 0.06
+			# Range: 0.0 ~ 1.0
+			freezePerStack = 0.06
+			#Temperature and humidity (canon names them, not which way they push: an assumption). The biome temperature
+			#that's best (plains are 0.8)...
+			# Default: 0.8
+			# Range: -2.0 ~ 3.0
+			mildTemperature = 0.8
+			#...and how much narrower it is per unit of temperature away from it (at most one unit counts).
+			# Default: 0.05
+			# Range: 0.0 ~ 1.0
+			temperatureWeight = 0.05
+			#Narrower by this times the biome's rainfall (0 to 1).
+			# Default: 0.03
+			# Range: 0.0 ~ 1.0
+			humidityWeight = 0.03
+			#Raining where you are.
+			# Default: 0.97
+			# Range: 0.0 ~ 1.0
+			rain = 0.97
+			#A thunderstorm, on top of the rain.
+			# Default: 0.97
+			# Range: 0.0 ~ 1.0
+			thunder = 0.97
+			#Wider by this for each Grade above Grade 4.
+			# Default: 0.03
+			# Range: 0.0 ~ 1.0
+			gradeStep = 0.03
+			#In the zone (after a Black Spark): the window is this many times wider, so chains are possible.
+			# Default: 1.6
+			# Range: 1.0 ~ 100.0
+			zoneWindow = 1.6
+
+#The zone: a Black Spark puts you in it, at 120% of your potential, where the next one comes easier.
+[zone]
+	#How long it lasts. Each Black Spark in it starts it over.
+	# Default: 10.0
+	# Range: 0.0 ~ 600.0
+	zoneSeconds = 10.0
+	#Your damage, every kind, while in it (costs unchanged).
+	# Default: 1.2
+	# Range: 0.0 ~ 100.0
+	damage = 1.2
+	#Your Reverse Malice Technique's healing while in it, which ignores injury fatigue too.
+	# Default: 1.2
+	# Range: 0.0 ~ 100.0
+	rmtHealing = 1.2
+	#Each Black Spark landed in the zone takes this much injury fatigue away for the rest of the fight (0 to 1).
+	# Default: 0.15
+	# Range: 0.0 ~ 1.0
+	restorePerSpark = 0.15
+
+#Sub-tick timing: inputs the client stamps with its own clock, mapped to the server's, so timing can be judged finer than
+#a 50 ms tick. A stamp is never taken as earlier than (arrival - ping - toleranceMs), nor later than its arrival.
+[timing]
+	#How much earlier than its arrival less the ping a stamp may still be taken as, in ms (jitter).
+	# Default: 15.0
+	# Range: 0.0 ~ 1000.0
+	toleranceMs = 15.0
+	#A stamp further than this from its arrival, in ms (or with no clock estimate yet), isn't believed at all: its
+	#arrival time is used instead.
+	# Default: 1000.0
+	# Range: 50.0 ~ 60000.0
+	plausibleMs = 1000.0
+	#How often each player's clock is checked against the server's (a ping and its answer).
+	# Default: 2.0
+	# Range: 0.25 ~ 60.0
+	clockSyncSeconds = 2.0
+	#Judge Parry's perfect window from the defender's press against the attacker's swing, both stamped and mapped to
+	#server time, instead of from when each reached the server in ticks. Off: it was worse in some cases (DESIGN §3.29).
+	parrySubTick = false
+
+#Too fast for the eye: while a Severed player is Blurring, or a Time Manipulation player has Accelerate on, everyone else sees
+#them where they were a moment ago (the faster they go, the further behind). Their real position is never sent to a viewer who
+#shouldn't have it. A Six Eyes bearer sees the real one; hits are always judged against the real one.
+[too_fast_for_the_eye]
+	#How far behind an Accelerating player is seen, in ms.
+	# Default: 100.0
+	# Range: 0.0 ~ 2000.0
+	accelerateDelay = 100.0
+	#How far behind a Blurring player is seen, in ms.
+	# Default: 150.0
+	# Range: 0.0 ~ 2000.0
+	blurDelay = 150.0
+	#Ticks the image takes to fall behind when it starts, and to catch up again when it ends: no snap either way.
+	# Default: 4
+	# Range: 1 ~ 100
+	easeTicks = 4
+
+#Grade, Assessment, Refinement and Insight. None of this changes damage, costs or Malice capacity.
+[progression]
+	#Abilities, specials and ultimates of an innate technique unlock through Refinement. False: everything is
+	#unlocked, for testing and casual servers. Refinement is still earned, and shared abilities keep their own rules.
+	requireRefinementForAbilities = true
+
+	#Shared fight tracking. A fight is between two players, and everything below reads from it.
+	[progression.fights]
+		#A fight ends after this long with no damage between the two players (or on a death or a logout).
+		# Default: 30.0
+		# Range: 1.0 ~ 3600.0
+		timeout = 30.0
+		#You win when your opponent dies during the fight and you dealt at least this share (0..1) of the
+		#damage they took from players in it. Wins only affect Grade XP, never Assessment.
+		# Default: 0.25
+		# Range: 0.0 ~ 1.0
+		winShare = 0.25
+		#Malice spent this long before a fight starts still counts as spent in it (the cast that opened it).
+		# Default: 5.0
+		# Range: 0.0 ~ 60.0
+		openingCastSeconds = 5.0
+
+	#Grade: kept on reroll and death, only ever seen by its owner. It never goes down and never changes Malice capacity.
+	#There are no trials: no promotion requires killing or beating anyone.
+	[progression.grade]
+		#XP per point of damage dealt to a player in a fight (20 health = 40 XP).
+		# Default: 2.0
+		# Range: 0.0 ~ 1000.0
+		xpPerDamage = 2.0
+		#XP for winning a fight.
+		# Default: 40.0
+		# Range: 0.0 ~ 100000.0
+		xpWin = 40.0
+		#XP for losing one: you still learn something.
+		# Default: 15.0
+		# Range: 0.0 ~ 100000.0
+		xpLoss = 15.0
+		#XP for a fight that ended with nobody dead.
+		# Default: 20.0
+		# Range: 0.0 ~ 100000.0
+		xpSurvive = 20.0
+		#To earn xpSurvive you must both deal and take this much damage: a tap isn't a fight.
+		# Default: 1.0
+		# Range: 0.0 ~ 1000.0
+		surviveMinDamage = 1.0
+		#XP per point of damage dealt to a mob: small, so solo players progress slowly.
+		# Default: 0.1
+		# Range: 0.0 ~ 1000.0
+		xpPerMobDamage = 0.1
+		#The most XP mobs can give per rollingWindow, so a farm can't replace fighting.
+		# Default: 40.0
+		# Range: 0.0 ~ 100000.0
+		mobXpPerWindow = 40.0
+		#Seconds of history diminishing returns look back over (3600 = a rolling hour).
+		# Default: 3600.0
+		# Range: 1.0 ~ 604800.0
+		rollingWindow = 3600.0
+		#Each earlier fight against the same player in the window multiplies this one's XP by this.
+		# Default: 0.6
+		# Range: 0.0 ~ 1.0
+		fightDecay = 0.6
+		#The least diminishing returns can multiply a fight's XP by.
+		# Default: 0.05
+		# Range: 0.0 ~ 1.0
+		fightDecayFloor = 0.05
+		#Lost from a fight's XP per Grade your opponent is below you.
+		# Default: 0.35
+		# Range: 0.0 ~ 1.0
+		weakerPerGrade = 0.35
+		#The least a far weaker opponent's fight can be multiplied by: almost nothing.
+		# Default: 0.02
+		# Range: 0.0 ~ 1.0
+		weakerFloor = 0.02
+		#Added to the win XP multiplier per Grade your opponent is above you.
+		# Default: 0.5
+		# Range: 0.0 ~ 100.0
+		winBonusPerGrade = 0.5
+		#The most win XP can be multiplied by.
+		# Default: 3.0
+		# Range: 1.0 ~ 100.0
+		winBonusMax = 3.0
+
+		#XP each step costs. Grade 1 to Special Grade takes no XP at all: that one is Assessment only.
+		[progression.grade.xp_to]
+			# Default: 200.0
+			# Range: 0.0 ~ 1000000.0
+			grade_3 = 200.0
+			# Default: 500.0
+			# Range: 0.0 ~ 1000000.0
+			semi_grade_2 = 500.0
+			#Also takes an Assessment.
+			# Default: 1000.0
+			# Range: 0.0 ~ 1000000.0
+			grade_2 = 1000.0
+			# Default: 2000.0
+			# Range: 0.0 ~ 1000000.0
+			semi_grade_1 = 2000.0
+			#Also takes an Assessment.
+			# Default: 4000.0
+			# Range: 0.0 ~ 1000000.0
+			grade_1 = 4000.0
+
+	#Assessment: how well you use your technique. Each qualifying fight gets a 0-100 score; kills and wins add nothing.
+	#Capacity, rarity and traits are never inputs, so a Low Malice player can reach Special Grade.
+	[progression.assessment]
+		#A fight qualifies if it lasts this long, first event to last hit...
+		# Default: 10.0
+		# Range: 0.0 ~ 3600.0
+		qualifyMinLength = 10.0
+		#...and both players dealt at least this much damage.
+		# Default: 4.0
+		# Range: 0.0 ~ 1000.0
+		qualifyMinDamage = 4.0
+		#Damage dealt per base Malice for full marks on efficiency.
+		# Default: 0.08
+		# Range: 1.0E-4 ~ 100.0
+		efficiencyFull = 0.08
+		#Your share of the damage traded for full marks on performance (0.7 = dealing a bit over twice what you take).
+		# Default: 0.7
+		# Range: 0.01 ~ 1.0
+		performanceFullShare = 0.7
+		#What an opponent of your own Grade is worth (0..1). Must leave Special Grade reachable with no stronger opponent.
+		# Default: 0.8
+		# Range: 0.0 ~ 1.0
+		opponentEven = 0.8
+		#Added per Grade your opponent is above you.
+		# Default: 0.1
+		# Range: 0.0 ~ 1.0
+		opponentPerAbove = 0.1
+		#Taken away per Grade your opponent is below you.
+		# Default: 0.3
+		# Range: 0.0 ~ 1.0
+		opponentPerBelow = 0.3
+		#The least a far weaker opponent is worth.
+		# Default: 0.02
+		# Range: 0.0 ~ 1.0
+		opponentFloor = 0.02
+
+		#What each part of the score is worth. Severed players have no technique or Malice: melee variety takes the
+		#technique weight, efficiency drops out and the rest is rescaled to 100.
+		[progression.assessment.weights]
+			#Technique use: the main factor.
+			# Default: 50.0
+			# Range: 0.0 ~ 1000.0
+			technique = 50.0
+			#Damage dealt per BASE Malice cost of what you cast.
+			# Default: 25.0
+			# Range: 0.0 ~ 1000.0
+			efficiency = 25.0
+			#Damage dealt vs damage taken.
+			# Default: 15.0
+			# Range: 0.0 ~ 1000.0
+			performance = 15.0
+			#Fighting above your Grade counts for more; far weaker opponents for almost nothing.
+			# Default: 10.0
+			# Range: 0.0 ~ 1000.0
+			opponent = 10.0
+
+		#How Technique use splits up, always against what you have UNLOCKED. Locked abilities don't lower it.
+		[progression.assessment.technique]
+			#Distinct abilities landed.
+			# Default: 40.0
+			# Range: 0.0 ~ 1000.0
+			distinct = 40.0
+			#Distinct specials landed.
+			# Default: 25.0
+			# Range: 0.0 ~ 1000.0
+			specials = 25.0
+			#Landing both a base ability and a special.
+			# Default: 10.0
+			# Range: 0.0 ~ 1000.0
+			mixing = 10.0
+			#Combining different abilities within comboWindow.
+			# Default: 25.0
+			# Range: 0.0 ~ 1000.0
+			combos = 25.0
+			#Land this share (rounded up) of the abilities, and of the specials, in your kit for full marks.
+			#Your kit is your technique's at your Peak Refinement level, or what you have unlocked if that's more.
+			# Default: 0.6
+			# Range: 0.01 ~ 1.0
+			distinctFullShare = 0.6
+			#One move can be this share of your landings before it starts to lower the score.
+			# Default: 0.5
+			# Range: 0.0 ~ 1.0
+			spamFreeShare = 0.5
+			#What Technique use loses when one move is every landing (0.6 = down to 40%).
+			# Default: 0.6
+			# Range: 0.0 ~ 1.0
+			spamPenalty = 0.6
+			#Different abilities landed back to back, for full marks on combining.
+			#Below your Peak Refinement level it also takes this many different moves.
+			# Default: 3
+			# Range: 1 ~ 1000
+			comboTarget = 3
+			#Seconds between two landings for them to count as combined.
+			# Default: 4.0
+			# Range: 0.0 ~ 60.0
+			comboWindow = 4.0
+			#Severed players: different melee moves (a weapon, crit or sprint) for full marks on variety.
+			# Default: 4
+			# Range: 1 ~ 100
+			severedFullMoves = 4
+
+		#What each Grade asks for. peakRefinement: the highest level ever reached on any technique. It survives rerolls and
+		#Severed players skip it. Asking for more than the top Refinement level means the top level.
+		[progression.assessment.requirements]
+
+			[progression.assessment.requirements.grade_2]
+				#Average score needed...
+				# Default: 50.0
+				# Range: 0.0 ~ 100.0
+				average = 50.0
+				#...over this many of your most recent qualifying fights...
+				# Default: 5
+				# Range: 1 ~ 64
+				fights = 5
+				#...against at least this many different opponents, so one friend can't carry it.
+				# Default: 2
+				# Range: 1 ~ 64
+				opponents = 2
+				#Peak Refinement needed.
+				# Default: 2
+				# Range: 0 ~ 1000
+				peakRefinement = 2
+				#Average Technique use needed over those same fights (0-100), so one move repeated can't qualify however well it trades.
+				#A Severed player's melee variety stands in for it.
+				# Default: 40.0
+				# Range: 0.0 ~ 100.0
+				minTechniqueUse = 40.0
+
+			[progression.assessment.requirements.grade_1]
+				#Average score needed...
+				# Default: 70.0
+				# Range: 0.0 ~ 100.0
+				average = 70.0
+				#...over this many of your most recent qualifying fights...
+				# Default: 10
+				# Range: 1 ~ 64
+				fights = 10
+				#...against at least this many different opponents, so one friend can't carry it.
+				# Default: 3
+				# Range: 1 ~ 64
+				opponents = 3
+				#Peak Refinement needed.
+				# Default: 5
+				# Range: 0 ~ 1000
+				peakRefinement = 5
+				#Average Technique use needed over those same fights (0-100), so one move repeated can't qualify however well it trades.
+				#A Severed player's melee variety stands in for it.
+				# Default: 60.0
+				# Range: 0.0 ~ 100.0
+				minTechniqueUse = 60.0
+
+			[progression.assessment.requirements.special_grade]
+				#Average score needed...
+				# Default: 90.0
+				# Range: 0.0 ~ 100.0
+				average = 90.0
+				#...over this many of your most recent qualifying fights...
+				# Default: 20
+				# Range: 1 ~ 64
+				fights = 20
+				#...against at least this many different opponents, so one friend can't carry it.
+				# Default: 3
+				# Range: 1 ~ 64
+				opponents = 3
+				#Peak Refinement needed.
+				# Default: 10
+				# Range: 0 ~ 1000
+				peakRefinement = 10
+				#Average Technique use needed over those same fights (0-100), so one move repeated can't qualify however well it trades.
+				#A Severed player's melee variety stands in for it.
+				# Default: 85.0
+				# Range: 0.0 ~ 100.0
+				minTechniqueUse = 85.0
+
+	#Refinement: per technique, reset by a reroll. Earned only by landing the current technique's abilities on real targets.
+	#It only unlocks things: it never changes damage, cost or cooldown.
+	[progression.refinement]
+		#The top level.
+		# Default: 10
+		# Range: 1 ~ 1000
+		maxLevel = 10
+		#Level L costs xpBase * L^xpExponent XP. By default that puts level 2 (the third ability) about
+		#12 minutes into fighting mobs, or 4 fighting players, and level 9 (the full kit) several sessions in.
+		# Default: 30.0
+		# Range: 0.01 ~ 1000000.0
+		xpBase = 30.0
+		# Default: 1.6
+		# Range: 0.0 ~ 10.0
+		xpExponent = 1.6
+		#Overrides the level an ability, special or ultimate unlocks at, as ability=level.
+		#Example: ["kegare:frost_field=1", "kegare:total_swap=5"]
+		unlockLevelOverrides = []
+		#XP for landing a base ability or the ultimate.
+		# Default: 1.0
+		# Range: 0.0 ~ 10000.0
+		baseXp = 1.0
+		#XP for landing a special.
+		# Default: 2.5
+		# Range: 0.0 ~ 10000.0
+		specialXp = 2.5
+		#Hits on players count this many times a hit on a mob. Mobs still count, so a player can practice alone.
+		# Default: 3.0
+		# Range: 0.0 ~ 1000.0
+		playerMultiplier = 3.0
+		#Each earlier landing on the same target within grade.rollingWindow multiplies this one's XP by this.
+		# Default: 0.97
+		# Range: 0.0 ~ 1.0
+		targetDecay = 0.97
+		#The least diminishing returns can multiply a landing's XP by.
+		# Default: 0.2
+		# Range: 0.0 ~ 1.0
+		targetDecayFloor = 0.2
+
+		#Multiplies Refinement XP by Grade, so an experienced sorcerer re-learns faster after a reroll.
+		[progression.refinement.grade_multiplier]
+			# Default: 1.0
+			# Range: 0.0 ~ 1000.0
+			grade_4 = 1.0
+			# Default: 1.1
+			# Range: 0.0 ~ 1000.0
+			grade_3 = 1.1
+			# Default: 1.25
+			# Range: 0.0 ~ 1000.0
+			semi_grade_2 = 1.25
+			# Default: 1.5
+			# Range: 0.0 ~ 1000.0
+			grade_2 = 1.5
+			# Default: 1.75
+			# Range: 0.0 ~ 1000.0
+			semi_grade_1 = 1.75
+			# Default: 2.0
+			# Range: 0.0 ~ 1000.0
+			grade_1 = 2.0
+			# Default: 2.5
+			# Range: 0.0 ~ 1000.0
+			special_grade = 2.5
+
+	#Insight: each source pays once per player, ever, into one of DOMINION, WARD or OUTPUT. It's kept on reroll and death.
+	#hit_by_technique pays once per technique, first_legendary_fight once ever. The other sources wait for systems that don't exist yet.
+	[progression.insight]
+
+		[progression.insight.hit_by_technique]
+			#Which kind of Insight this pays into.
+			#Allowed Values: DOMINION, WARD, OUTPUT
+			category = "WARD"
+			#How much it pays.
+			# Default: 1
+			# Range: 0 ~ 100000
+			amount = 1
+
+		[progression.insight.first_legendary_fight]
+			#Which kind of Insight this pays into.
+			#Allowed Values: DOMINION, WARD, OUTPUT
+			category = "OUTPUT"
+			#How much it pays.
+			# Default: 5
+			# Range: 0 ~ 100000
+			amount = 5
+
+		[progression.insight.survived_standstill]
+			#Which kind of Insight this pays into.
+			#Allowed Values: DOMINION, WARD, OUTPUT
+			category = "WARD"
+			#How much it pays.
+			# Default: 5
+			# Range: 0 ~ 100000
+			amount = 5
+
+		[progression.insight.hit_by_maximum_output]
+			#Which kind of Insight this pays into.
+			#Allowed Values: DOMINION, WARD, OUTPUT
+			category = "OUTPUT"
+			#How much it pays.
+			# Default: 5
+			# Range: 0 ~ 100000
+			amount = 5
+
+		[progression.insight.caught_in_dominion]
+			#Which kind of Insight this pays into.
+			#Allowed Values: DOMINION, WARD, OUTPUT
+			category = "DOMINION"
+			#How much it pays.
+			# Default: 5
+			# Range: 0 ~ 100000
+			amount = 5
+
+		[progression.insight.clashed_with_dominion]
+			#Which kind of Insight this pays into.
+			#Allowed Values: DOMINION, WARD, OUTPUT
+			category = "DOMINION"
+			#How much it pays.
+			# Default: 5
+			# Range: 0 ~ 100000
+			amount = 5
+
+		[progression.insight.book_chapter]
+			#Which kind of Insight this pays into.
+			#Allowed Values: DOMINION, WARD, OUTPUT
+			category = "DOMINION"
+			#How much it pays.
+			# Default: 2
+			# Range: 0 ~ 100000
+			amount = 2
+
+		[progression.insight.unlocked_rmt]
+			#Which kind of Insight this pays into.
+			#Allowed Values: DOMINION, WARD, OUTPUT
+			category = "OUTPUT"
+			#How much it pays.
+			# Default: 5
+			# Range: 0 ~ 100000
+			amount = 5
+
+		[progression.insight.rmt_survived_low]
+			#Which kind of Insight this pays into.
+			#Allowed Values: DOMINION, WARD, OUTPUT
+			category = "OUTPUT"
+			#How much it pays.
+			# Default: 5
+			# Range: 0 ~ 100000
+			amount = 5
+
+		[progression.insight.healed_by_other]
+			#Which kind of Insight this pays into.
+			#Allowed Values: DOMINION, WARD, OUTPUT
+			category = "OUTPUT"
+			#How much it pays.
+			# Default: 3
+			# Range: 0 ~ 100000
+			amount = 3
+
+		[progression.insight.first_black_spark]
+			#Which kind of Insight this pays into.
+			#Allowed Values: DOMINION, WARD, OUTPUT
+			category = "OUTPUT"
+			#How much it pays.
+			# Default: 5
+			# Range: 0 ~ 100000
+			amount = 5
+
+	#The framework for shared and system unlocks, separate from a technique's own abilities.
+	[progression.unlocks]
+		#Refinement levels matching Insight takes off an unlock's requirement, per point of Insight. It rounds down, so by default 10 Insight is 1 level.
+		# Default: 0.1
+		# Range: 0.0 ~ 100.0
+		refinementLoweredPerInsight = 0.1
+		#The most Insight can take off, as a share of the requirement, rounded down. It speeds an unlock up but never removes the requirement: 1 stays 1 even at 1.0.
+		# Default: 0.5
+		# Range: 0.0 ~ 1.0
+		refinementLoweredCap = 0.5
+
+	#The shared hit path: what counts as landing an ability on a real target.
+	[progression.landing]
+		#Seconds before the same ability can land on the same target again: one volley or channel isn't twenty landings.
+		# Default: 1.0
+		# Range: 0.0 ~ 60.0
+		repeat = 1.0
+		#An ability with no target of its own only counts used this long after trading a hit with something real.
+		#Used with nobody around, it earns nothing.
+		# Default: 10.0
+		# Range: 0.0 ~ 600.0
+		noTargetWindow = 10.0
+		#A puppet's own hits earn its owner Refinement and Grade XP only this long after the owner personally landed a hit or an ability on a real target.
+		#The puppet keeps fighting either way: an idle owner just earns nothing from it.
+		# Default: 30.0
+		# Range: 0.0 ~ 3600.0
+		ownerActiveWindow = 30.0
+
+	#Bush Camper (an advancement): steal another person's kill.
+	[progression.bush_camper]
+		#Another player dealt at least this share of the damage the victim took in the window, and you (who landed the
+		#killing blow) dealt the rest or less.
+		# Default: 0.75
+		# Range: 0.5 ~ 1.0
+		stealShare = 0.75
+		#The window, in seconds.
+		# Default: 30.0
+		# Range: 1.0 ~ 3600.0
+		stealWindow = 30.0
+
+#TEST CONTENT: numbers for the placeholder test abilities. Delete with the test innate techniques.
+[test_abilities]
+
+	[test_abilities.dash]
+		# Default: 40.0
+		# Range: 0.0 ~ 100000.0
+		cost = 40.0
+		#Seconds.
+		# Default: 3.0
+		# Range: 0.0 ~ 3600.0
+		cooldown = 3.0
+		#Horizontal launch speed (blocks/tick).
+		# Default: 1.4
+		# Range: 0.0 ~ 10.0
+		strength = 1.4
+		#Vertical launch speed (blocks/tick).
+		# Default: 0.25
+		# Range: 0.0 ~ 10.0
+		lift = 0.25
+
+	[test_abilities.burst]
+		# Default: 60.0
+		# Range: 0.0 ~ 100000.0
+		cost = 60.0
+		#Seconds.
+		# Default: 6.0
+		# Range: 0.0 ~ 3600.0
+		cooldown = 6.0
+		#Seconds of charge needed before release fires.
+		# Default: 0.25
+		# Range: 0.0 ~ 60.0
+		minCharge = 0.25
+		#Seconds to reach full charge.
+		# Default: 1.5
+		# Range: 0.05 ~ 60.0
+		maxCharge = 1.5
+		# Default: 3.0
+		# Range: 0.0 ~ 64.0
+		minRadius = 3.0
+		# Default: 6.0
+		# Range: 0.0 ~ 64.0
+		maxRadius = 6.0
+		# Default: 0.5
+		# Range: 0.0 ~ 10.0
+		minKnockback = 0.5
+		# Default: 1.5
+		# Range: 0.0 ~ 10.0
+		maxKnockback = 1.5
+
+	[test_abilities.hover]
+		#Cost to start the channel.
+		# Default: 20.0
+		# Range: 0.0 ~ 100000.0
+		cost = 20.0
+		#Drain per second while channeling.
+		# Default: 32.0
+		# Range: 0.0 ~ 100000.0
+		upkeepPerSecond = 32.0
+		#Seconds.
+		# Default: 5.0
+		# Range: 0.05 ~ 3600.0
+		maxDuration = 5.0
+		#Seconds, starts when the channel ends.
+		# Default: 4.0
+		# Range: 0.0 ~ 3600.0
+		cooldown = 4.0
+		#Levitation amplifier (0 = Levitation I).
+		# Default: 0
+		# Range: 0 ~ 10
+		levitationAmplifier = 0
+		#Seconds of Slow Falling after the channel ends (0 = none).
+		# Default: 3.0
+		# Range: 0.0 ~ 60.0
+		landingSlowFall = 3.0
+
+	[test_abilities.aura]
+		#Cost to switch on.
+		# Default: 20.0
+		# Range: 0.0 ~ 100000.0
+		cost = 20.0
+		#Drain per second while active.
+		# Default: 12.0
+		# Range: 0.0 ~ 100000.0
+		upkeepPerSecond = 12.0
+		#Seconds, starts when switched off.
+		# Default: 2.0
+		# Range: 0.0 ~ 3600.0
+		cooldown = 2.0
+		#Speed amplifier while active (0 = Speed I).
+		# Default: 0
+		# Range: 0 ~ 10
+		speedAmplifier = 0
+
+	#Special of Dash (R). Needs Aura switched on. Shares Dash's cooldown.
+	[test_abilities.blink]
+		# Default: 32.0
+		# Range: 0.0 ~ 100000.0
+		cost = 32.0
+		#Max teleport distance in blocks (stops short of walls).
+		# Default: 8.0
+		# Range: 0.5 ~ 64.0
+		distance = 8.0
+
+	#Special of Hover (R, hold to charge). Needs the trait in DESIGN.md. Shares Hover's cooldown.
+	[test_abilities.updraft]
+		# Default: 48.0
+		# Range: 0.0 ~ 100000.0
+		cost = 48.0
+		#Seconds of charge needed before release fires.
+		# Default: 0.25
+		# Range: 0.0 ~ 60.0
+		minCharge = 0.25
+		#Seconds to reach full charge.
+		# Default: 1.0
+		# Range: 0.05 ~ 60.0
+		maxCharge = 1.0
+		#Upward speed at no charge (blocks/tick).
+		# Default: 0.6
+		# Range: 0.0 ~ 10.0
+		minLaunch = 0.6
+		#Upward speed at full charge (blocks/tick).
+		# Default: 1.4
+		# Range: 0.0 ~ 10.0
+		maxLaunch = 1.4
+
+	[test_abilities.shockwave]
+		# Default: 240.0
+		# Range: 0.0 ~ 100000.0
+		cost = 240.0
+		#Seconds.
+		# Default: 30.0
+		# Range: 0.0 ~ 3600.0
+		cooldown = 30.0
+		# Default: 8.0
+		# Range: 0.0 ~ 64.0
+		radius = 8.0
+		# Default: 2.0
+		# Range: 0.0 ~ 10.0
+		knockback = 2.0

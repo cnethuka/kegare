@@ -1,6 +1,7 @@
 package com.cnethuka.kegare.client.gui;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.cnethuka.kegare.innate_technique.puppet_manipulation.PuppetManipulation;
@@ -36,11 +37,11 @@ class EpithetTest {
     }
 
     @Test
-    void everyTechniqueHasOneAndTestOnesSayTest(MinecraftServer server) throws IOException {
+    void everyTechniqueHasOne(MinecraftServer server) throws IOException {
         JsonObject lang = lang();
         for (InnateTechnique technique : KegareRegistries.INNATE_TECHNIQUE) {
             assertTrue(lang.has(technique.epithetId()), technique.epithetId());
-            if (technique.isTestContent()) assertEquals("[Test]", lang.get(technique.epithetId()).getAsString());
+            assertFalse(lang.get(technique.epithetId()).getAsString().isBlank(), technique.epithetId());
         }
     }
 

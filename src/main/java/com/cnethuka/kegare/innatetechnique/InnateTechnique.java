@@ -29,7 +29,6 @@ public class InnateTechnique {
     private final List<Ability> abilities;
     @Nullable
     private final Ability ultimate;
-    private final boolean testContent;
     private final ItemLike tabIcon;
     private final boolean ultimateLocked;
     private final int maliceColor;
@@ -45,7 +44,6 @@ public class InnateTechnique {
         this.rarity = builder.rarity;
         this.abilities = List.copyOf(builder.abilities);
         this.ultimate = builder.ultimate;
-        this.testContent = builder.testContent;
         this.tabIcon = builder.tabIcon;
         this.ultimateLocked = builder.ultimate == null && builder.ultimateLocked;
         this.maliceColor = builder.maliceColor & 0xFFFFFF;
@@ -122,17 +120,16 @@ public class InnateTechnique {
         return out;
     }
 
-    /** Whether this technique says what its abilities unlock at. Datagen fails if a non-test technique doesn't. */
+    /** Whether this technique says what its abilities unlock at. Datagen fails if one doesn't. */
     public final boolean hasUnlockLevels() {
-        return testContent || defaultUnlockLevels || !unlockLevelOverrides.isEmpty();
+        return defaultUnlockLevels || !unlockLevelOverrides.isEmpty();
     }
 
     /**
      * The Refinement level that unlocks this ability, special or ultimate, as the definition has it (config can override
-     * it: {@link com.cnethuka.kegare.progression.TechniqueUnlocks#requiredLevel}). Test content is all unlocked.
+     * it: {@link com.cnethuka.kegare.progression.TechniqueUnlocks#requiredLevel}).
      */
     public final int unlockLevel(Ability ability) {
-        if (testContent) return 0;
         if (unlockLevels == null) {
             Map<ResourceLocation, Integer> levels = new HashMap<>();
             for (int i = 0; i < abilities.size(); i++) {
@@ -148,11 +145,6 @@ public class InnateTechnique {
             unlockLevels = levels;
         }
         return unlockLevels.getOrDefault(ability.id(), 0);
-    }
-
-    /** Test/placeholder content; excluded from rolls when {@code roll.includeTestInnateTechniques=false}. */
-    public final boolean isTestContent() {
-        return testContent;
     }
 
     /** Icon of this innate technique's own advancement tab. */
@@ -193,7 +185,6 @@ public class InnateTechnique {
         private final List<Ability> abilities = new ArrayList<>();
         @Nullable
         private Ability ultimate;
-        private boolean testContent;
         private ItemLike tabIcon = Items.ENCHANTED_BOOK;
         private boolean ultimateLocked;
         private int maliceColor = DEFAULT_MALICE_COLOR;
@@ -249,11 +240,6 @@ public class InnateTechnique {
         /** One ability, special or ultimate unlocks at this Refinement level instead of where the table puts it. */
         public Builder unlockLevel(Ability ability, int level) {
             this.unlockLevelOverrides.put(ability.id(), level);
-            return this;
-        }
-
-        public Builder testContent() {
-            this.testContent = true;
             return this;
         }
 

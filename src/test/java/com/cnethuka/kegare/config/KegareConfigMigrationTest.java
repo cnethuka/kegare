@@ -1,6 +1,7 @@
 package com.cnethuka.kegare.config;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -16,6 +17,27 @@ class KegareConfigMigrationTest {
         ModConfigSpec.ConfigValue<?> value = KegareServerConfig.SPEC.getValues().get(path);
         assertNotNull(value, path);
         return ((Number) assertInstanceOf(Number.class, value.getDefault(), path)).doubleValue();
+    }
+
+    /** A real kegare-server.toml written by the build that still had the test techniques. */
+    private static final java.nio.file.Path OLD_TOML = java.nio.file.Path.of(System.getProperty("kegare.projectDir", "."))
+            .resolve("src/test/resources/oldsave/kegare-server-old.toml");
+
+    @Test
+    void anOldTomlWithTheTestTechniquesInItStillLoads() {
+        com.electronwill.nightconfig.core.CommentedConfig old = new com.electronwill.nightconfig.toml.TomlParser()
+                .parse(OLD_TOML, com.electronwill.nightconfig.core.file.FileNotFoundAction.THROW_ERROR);
+        assertTrue(old.contains("roll.includeTestInnateTechniques") && old.contains("test_abilities.dash.cost"), "setup: the old keys are in it");
+        Object hardPity = old.get("roll.hardPity");
+        assertFalse(KegareServerConfig.SPEC.isCorrect(old), "it has keys this version doesn't");
+        java.util.List<String> removed = new java.util.ArrayList<>();
+        KegareServerConfig.SPEC.correct(old, (action, path, incorrect, corrected) -> {
+            if (action == com.electronwill.nightconfig.core.ConfigSpec.CorrectionAction.REMOVE) removed.add(String.join(".", path));
+        });
+        assertEquals(java.util.Set.of("roll.includeTestInnateTechniques", "test_abilities"), java.util.Set.copyOf(removed), "those keys go, and nothing else");
+        assertTrue(KegareServerConfig.SPEC.isCorrect(old), "and then it's a correct file");
+        assertFalse(old.contains("test_abilities"));
+        assertEquals(hardPity, old.get("roll.hardPity"), "the rest as it was");
     }
 
     @Test
@@ -49,7 +71,7 @@ class KegareConfigMigrationTest {
 
     @Test
     void everyListedValueExistsAndReallyChanged() {
-        assertEquals(52, KegareConfigMigration.RESCALE_OLD_DEFAULTS.size());
+        assertEquals(43, KegareConfigMigration.RESCALE_OLD_DEFAULTS.size());
         for (Map.Entry<String, Number> old : KegareConfigMigration.RESCALE_OLD_DEFAULTS.entrySet()) {
             assertNotEquals(old.getValue().doubleValue(), newDefault(old.getKey()), old.getKey());
         }

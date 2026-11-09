@@ -35,49 +35,9 @@ public final class KegareServerConfig {
     public static final ModConfigSpec.IntValue SOFT_PITY_START;
     public static final ModConfigSpec.IntValue SOFT_PITY_INCREMENT;
     public static final ModConfigSpec.IntValue HARD_PITY;
-    public static final ModConfigSpec.BooleanValue INCLUDE_TEST_INNATE_TECHNIQUES;
 
     // ---- combat ----
     public static final ModConfigSpec.DoubleValue COMBAT_TAG_SECONDS;
-
-    // ---- test abilities (TEST CONTENT) ----
-    public static final ModConfigSpec.DoubleValue DASH_COST;
-    public static final ModConfigSpec.DoubleValue DASH_COOLDOWN;
-    public static final ModConfigSpec.DoubleValue DASH_STRENGTH;
-    public static final ModConfigSpec.DoubleValue DASH_LIFT;
-
-    public static final ModConfigSpec.DoubleValue BURST_COST;
-    public static final ModConfigSpec.DoubleValue BURST_COOLDOWN;
-    public static final ModConfigSpec.DoubleValue BURST_MIN_CHARGE;
-    public static final ModConfigSpec.DoubleValue BURST_MAX_CHARGE;
-    public static final ModConfigSpec.DoubleValue BURST_MIN_RADIUS;
-    public static final ModConfigSpec.DoubleValue BURST_MAX_RADIUS;
-    public static final ModConfigSpec.DoubleValue BURST_MIN_KNOCKBACK;
-    public static final ModConfigSpec.DoubleValue BURST_MAX_KNOCKBACK;
-
-    public static final ModConfigSpec.DoubleValue HOVER_COST;
-    public static final ModConfigSpec.DoubleValue HOVER_UPKEEP;
-    public static final ModConfigSpec.DoubleValue HOVER_MAX_DURATION;
-    public static final ModConfigSpec.DoubleValue HOVER_COOLDOWN;
-    public static final ModConfigSpec.IntValue HOVER_LEVITATION_LEVEL;
-    public static final ModConfigSpec.DoubleValue HOVER_LANDING_SLOW_FALL;
-
-    public static final ModConfigSpec.DoubleValue AURA_COST;
-    public static final ModConfigSpec.DoubleValue AURA_UPKEEP;
-    public static final ModConfigSpec.DoubleValue AURA_COOLDOWN;
-    public static final ModConfigSpec.IntValue AURA_SPEED_LEVEL;
-    public static final ModConfigSpec.DoubleValue BLINK_COST;
-    public static final ModConfigSpec.DoubleValue BLINK_DISTANCE;
-    public static final ModConfigSpec.DoubleValue UPDRAFT_COST;
-    public static final ModConfigSpec.DoubleValue UPDRAFT_MIN_CHARGE;
-    public static final ModConfigSpec.DoubleValue UPDRAFT_MAX_CHARGE;
-    public static final ModConfigSpec.DoubleValue UPDRAFT_MIN_LAUNCH;
-    public static final ModConfigSpec.DoubleValue UPDRAFT_MAX_LAUNCH;
-
-    public static final ModConfigSpec.DoubleValue SHOCKWAVE_COST;
-    public static final ModConfigSpec.DoubleValue SHOCKWAVE_COOLDOWN;
-    public static final ModConfigSpec.DoubleValue SHOCKWAVE_RADIUS;
-    public static final ModConfigSpec.DoubleValue SHOCKWAVE_KNOCKBACK;
 
     static {
         ModConfigSpec.Builder b = new ModConfigSpec.Builder();
@@ -133,8 +93,6 @@ public final class KegareServerConfig {
                 .defineInRange("softPityIncrement", 5, 0, 1_000_000);
         HARD_PITY = b.comment("This roll number (counting since the last LEGENDARY) is a guaranteed LEGENDARY. 0 disables hard pity.")
                 .defineInRange("hardPity", 50, 0, 100_000);
-        INCLUDE_TEST_INNATE_TECHNIQUES = b.comment("Whether TEST innate techniques can be rolled. Turn off once real ones exist.")
-                .define("includeTestInnateTechniques", true);
         b.pop();
 
         b.comment("Shared combat state used by abilities and future systems.").push("combat");
@@ -159,61 +117,6 @@ public final class KegareServerConfig {
         com.cnethuka.kegare.sight.SightConfig.define(b);
         com.cnethuka.kegare.progression.ProgressionConfig.define(b);
 
-        b.comment("TEST CONTENT: numbers for the placeholder test abilities. Delete with the test innate techniques.").push("test_abilities");
-        b.push("dash");
-        DASH_COST = b.defineInRange("cost", 40.0, 0.0, 100_000.0);
-        DASH_COOLDOWN = b.comment("Seconds.").defineInRange("cooldown", 3.0, 0.0, 3600.0);
-        DASH_STRENGTH = b.comment("Horizontal launch speed (blocks/tick).").defineInRange("strength", 1.4, 0.0, 10.0);
-        DASH_LIFT = b.comment("Vertical launch speed (blocks/tick).").defineInRange("lift", 0.25, 0.0, 10.0);
-        b.pop();
-
-        b.push("burst");
-        BURST_COST = b.defineInRange("cost", 60.0, 0.0, 100_000.0);
-        BURST_COOLDOWN = b.comment("Seconds.").defineInRange("cooldown", 6.0, 0.0, 3600.0);
-        BURST_MIN_CHARGE = b.comment("Seconds of charge needed before release fires.").defineInRange("minCharge", 0.25, 0.0, 60.0);
-        BURST_MAX_CHARGE = b.comment("Seconds to reach full charge.").defineInRange("maxCharge", 1.5, 0.05, 60.0);
-        BURST_MIN_RADIUS = b.defineInRange("minRadius", 3.0, 0.0, 64.0);
-        BURST_MAX_RADIUS = b.defineInRange("maxRadius", 6.0, 0.0, 64.0);
-        BURST_MIN_KNOCKBACK = b.defineInRange("minKnockback", 0.5, 0.0, 10.0);
-        BURST_MAX_KNOCKBACK = b.defineInRange("maxKnockback", 1.5, 0.0, 10.0);
-        b.pop();
-
-        b.push("hover");
-        HOVER_COST = b.comment("Cost to start the channel.").defineInRange("cost", 20.0, 0.0, 100_000.0);
-        HOVER_UPKEEP = b.comment("Drain per second while channeling.").defineInRange("upkeepPerSecond", 32.0, 0.0, 100_000.0);
-        HOVER_MAX_DURATION = b.comment("Seconds.").defineInRange("maxDuration", 5.0, 0.05, 3600.0);
-        HOVER_COOLDOWN = b.comment("Seconds, starts when the channel ends.").defineInRange("cooldown", 4.0, 0.0, 3600.0);
-        HOVER_LEVITATION_LEVEL = b.comment("Levitation amplifier (0 = Levitation I).").defineInRange("levitationAmplifier", 0, 0, 10);
-        HOVER_LANDING_SLOW_FALL = b.comment("Seconds of Slow Falling after the channel ends (0 = none).").defineInRange("landingSlowFall", 3.0, 0.0, 60.0);
-        b.pop();
-
-        b.push("aura");
-        AURA_COST = b.comment("Cost to switch on.").defineInRange("cost", 20.0, 0.0, 100_000.0);
-        AURA_UPKEEP = b.comment("Drain per second while active.").defineInRange("upkeepPerSecond", 12.0, 0.0, 100_000.0);
-        AURA_COOLDOWN = b.comment("Seconds, starts when switched off.").defineInRange("cooldown", 2.0, 0.0, 3600.0);
-        AURA_SPEED_LEVEL = b.comment("Speed amplifier while active (0 = Speed I).").defineInRange("speedAmplifier", 0, 0, 10);
-        b.pop();
-
-        b.comment("Special of Dash (R). Needs Aura switched on. Shares Dash's cooldown.").push("blink");
-        BLINK_COST = b.defineInRange("cost", 32.0, 0.0, 100_000.0);
-        BLINK_DISTANCE = b.comment("Max teleport distance in blocks (stops short of walls).").defineInRange("distance", 8.0, 0.5, 64.0);
-        b.pop();
-
-        b.comment("Special of Hover (R, hold to charge). Needs the trait in DESIGN.md. Shares Hover's cooldown.").push("updraft");
-        UPDRAFT_COST = b.defineInRange("cost", 48.0, 0.0, 100_000.0);
-        UPDRAFT_MIN_CHARGE = b.comment("Seconds of charge needed before release fires.").defineInRange("minCharge", 0.25, 0.0, 60.0);
-        UPDRAFT_MAX_CHARGE = b.comment("Seconds to reach full charge.").defineInRange("maxCharge", 1.0, 0.05, 60.0);
-        UPDRAFT_MIN_LAUNCH = b.comment("Upward speed at no charge (blocks/tick).").defineInRange("minLaunch", 0.6, 0.0, 10.0);
-        UPDRAFT_MAX_LAUNCH = b.comment("Upward speed at full charge (blocks/tick).").defineInRange("maxLaunch", 1.4, 0.0, 10.0);
-        b.pop();
-
-        b.push("shockwave");
-        SHOCKWAVE_COST = b.defineInRange("cost", 240.0, 0.0, 100_000.0);
-        SHOCKWAVE_COOLDOWN = b.comment("Seconds.").defineInRange("cooldown", 30.0, 0.0, 3600.0);
-        SHOCKWAVE_RADIUS = b.defineInRange("radius", 8.0, 0.0, 64.0);
-        SHOCKWAVE_KNOCKBACK = b.defineInRange("knockback", 2.0, 0.0, 10.0);
-        b.pop();
-        b.pop();
 
         SPEC = b.build();
     }

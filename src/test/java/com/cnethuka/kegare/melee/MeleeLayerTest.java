@@ -14,8 +14,6 @@ import com.cnethuka.kegare.innate_technique.swap.Swap;
 import com.cnethuka.kegare.innatetechnique.CastIntent;
 import com.cnethuka.kegare.innatetechnique.CastManager;
 import com.cnethuka.kegare.innatetechnique.InnateTechniqueService;
-import com.cnethuka.kegare.innatetechnique.test.TestAbilities;
-import com.cnethuka.kegare.innatetechnique.test.TestInnateTechniques;
 import com.cnethuka.kegare.malice.MaliceService;
 import com.cnethuka.kegare.melee.MeleeIntentPayload.Action;
 import com.cnethuka.kegare.player.BirthService;
@@ -473,14 +471,14 @@ class MeleeLayerTest {
             assertTrue(MeleeLayer.state(swap).isGuarding(), "no target");
 
             ServerPlayer p = player(server, "parry_toggle", 1000);
-            InnateTechniqueService.setInnateTechnique(p, TestInnateTechniques.APEX.get());
+            InnateTechniqueService.setInnateTechnique(p, Rime.RIME.get());
             MaliceService.refill(p);
-            InnateTechniqueService.select(p, 3); // Aura
+            InnateTechniqueService.select(p, 3); // Rime Shell
             CastManager.handleIntent(p, CastIntent.CAST_PRESS);
-            assertTrue(CastManager.isToggleActive(p, TestAbilities.AURA), "setup: on");
+            assertTrue(CastManager.isToggleActive(p, Rime.RIME_SHELL), "setup: on");
             send(p, Action.PARRY_PRESS);
             CastManager.handleIntent(p, CastIntent.CAST_PRESS);
-            assertFalse(CastManager.isToggleActive(p, TestAbilities.AURA), "setup: off");
+            assertFalse(CastManager.isToggleActive(p, Rime.RIME_SHELL), "setup: off");
             assertTrue(MeleeLayer.state(p).isGuarding(), "switching a toggle off isn't a cast starting");
         });
     }
@@ -489,7 +487,7 @@ class MeleeLayerTest {
     void everyTypeOfCastThatStartsDropsTheGuard(MinecraftServer server) throws Exception {
         TestServer.onServerThread(server, () -> {
             ServerPlayer p = player(server, "parry_each_type", 1000);
-            InnateTechniqueService.setInnateTechnique(p, TestInnateTechniques.APEX.get()); // Dash, Burst, Hover, Aura
+            InnateTechniqueService.setInnateTechnique(p, Rime.RIME.get()); // instant, charged, channelled, toggle
             MaliceService.refill(p);
             for (int slot = 0; slot < 4; slot++) {
                 MeleeLayer.state(p).recoveryUntil = 0;

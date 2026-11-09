@@ -23,8 +23,8 @@ import net.neoforged.neoforge.common.data.LanguageProvider;
 /**
  * Generates {@code assets/kegare/lang/en_us.json}. This is the ONLY place player-facing names live.
  * Rename a display term by changing the constant below and rerunning {@code ./gradlew runData}.
- * Fails datagen if a registered innate technique, ability or trait has no name or one-line description ({@code .desc}), or a
- * non-test innate technique has no epithet ({@code .epithet}).
+ * Fails datagen if a registered innate technique, ability or trait has no name or one-line description ({@code .desc}), or an
+ * innate technique has no epithet ({@code .epithet}).
  */
 public final class KegareLanguageProvider extends LanguageProvider {
     // ---- Display terms. Code IDs match them: malice / innate_technique / dominion / severed. ----
@@ -281,33 +281,6 @@ public final class KegareLanguageProvider extends LanguageProvider {
         add("environment.kegare.rime.hot_biome", "Hot biome");
         add("environment.kegare.rime.nether", "The Nether");
 
-        // TEST CONTENT names
-        add("innate_technique.kegare.test_kinetic", "[Test] Kinetic");
-        add("innate_technique.kegare.test_flux", "[Test] Flux");
-        add("innate_technique.kegare.test_apex", "[Test] Apex");
-        add("innate_technique.kegare.test_prism", "[Test] Prism");
-        add("innate_technique.kegare.test_kinetic.desc", "Placeholder: raw motion. A dash and a charged knockback burst.");
-        add("innate_technique.kegare.test_flux.desc", "Placeholder: lift and flow. Hover in place or run with a speed aura.");
-        add("innate_technique.kegare.test_prism.desc", "Placeholder: an Epic test card. Burst, hover and a shockwave ultimate.");
-        add("innate_technique.kegare.test_apex.desc", "Placeholder: every cast type in one, plus a shockwave ultimate.");
-        add("innate_technique.kegare.test_kinetic.epithet", "[Test]");
-        add("innate_technique.kegare.test_flux.epithet", "[Test]");
-        add("innate_technique.kegare.test_prism.epithet", "[Test]");
-        add("innate_technique.kegare.test_apex.epithet", "[Test]");
-        add("ability.kegare.test_dash", "[Test] Dash");
-        add("ability.kegare.test_burst", "[Test] Burst");
-        add("ability.kegare.test_hover", "[Test] Hover");
-        add("ability.kegare.test_aura", "[Test] Aura");
-        add("ability.kegare.test_shockwave", "[Test] Shockwave");
-        add("ability.kegare.test_dash.desc", "Launch forward in the direction you face.");
-        add("ability.kegare.test_burst.desc", "Hold to charge, release to knock nearby creatures away.");
-        add("ability.kegare.test_hover.desc", "Hold to levitate. Drains " + MALICE + " while held.");
-        add("ability.kegare.test_aura.desc", "Toggle a speed aura that drains " + MALICE + " every second.");
-        add("ability.kegare.test_shockwave.desc", "A huge knockback wave around you.");
-        add("ability.kegare.test_blink", "[Test] Blink");
-        add("ability.kegare.test_blink.desc", "Special of Dash: teleport a short way forward. Needs Aura switched on.");
-        add("ability.kegare.test_updraft", "[Test] Updraft");
-        add("ability.kegare.test_updraft.desc", "Special of Hover: hold to charge, release to shoot straight up. Needs a rare trait.");
 
         // Traits
         add("trait.kegare.six_eyes", SIX_EYES);
@@ -1039,7 +1012,6 @@ public final class KegareLanguageProvider extends LanguageProvider {
         add("kegare.configuration.title", "Kegare Configuration");
         add("kegare.configuration.malice", MALICE);
         add("kegare.configuration.hud", "HUD");
-        add("kegare.configuration.test_abilities", "Test Abilities (test content)");
         add("kegare.configuration.vfxQuality", "VFX Quality");
         configLabels(KegareServerConfig.SPEC.getValues());
         configLabels(KegareClientConfig.SPEC.getValues());
@@ -1078,7 +1050,7 @@ public final class KegareLanguageProvider extends LanguageProvider {
         for (InnateTechnique innateTechnique : KegareRegistries.INNATE_TECHNIQUE) {
             if (!written.contains(innateTechnique.descriptionId())) missing.add(innateTechnique.descriptionId());
             if (!written.contains(innateTechnique.descriptionId() + ".desc")) missing.add(innateTechnique.descriptionId() + ".desc");
-            if (!innateTechnique.isTestContent() && !written.contains(innateTechnique.epithetId())) missing.add(innateTechnique.epithetId());
+            if (!written.contains(innateTechnique.epithetId())) missing.add(innateTechnique.epithetId());
             List<Ability> abilities = new ArrayList<>(innateTechnique.abilities());
             innateTechnique.ultimate().ifPresent(abilities::add);
             for (Ability ability : abilities) {

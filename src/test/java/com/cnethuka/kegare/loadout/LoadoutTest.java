@@ -14,8 +14,7 @@ import com.cnethuka.kegare.innatetechnique.CastIntent;
 import com.cnethuka.kegare.innatetechnique.CastManager;
 import com.cnethuka.kegare.innatetechnique.EndReason;
 import com.cnethuka.kegare.innatetechnique.InnateTechniqueService;
-import com.cnethuka.kegare.innatetechnique.test.TestAbilities;
-import com.cnethuka.kegare.innatetechnique.test.TestInnateTechniques;
+import com.cnethuka.kegare.innate_technique.swap.Swap;
 import com.cnethuka.kegare.malice.MaliceService;
 import com.cnethuka.kegare.player.BirthService;
 import java.util.List;
@@ -77,7 +76,7 @@ class LoadoutTest {
             assertEquals(LoadoutResult.BAD_SLOT, edit(p, LoadoutService.Action.CLEAR, -1, 0, null));
 
             // Abilities of another innate technique, or unknown ones, are not available.
-            assertEquals(LoadoutResult.UNAVAILABLE, edit(p, LoadoutService.Action.SET, 0, 0, TestAbilities.DASH.id()));
+            assertEquals(LoadoutResult.UNAVAILABLE, edit(p, LoadoutService.Action.SET, 0, 0, Swap.POSITIONS.id()));
             assertEquals(LoadoutResult.UNAVAILABLE, edit(p, LoadoutService.Action.SET, 0, 0, ResourceLocation.fromNamespaceAndPath("kegare", "nope")));
 
             // Mid-cast and in combat: refused, nothing changes.
@@ -102,13 +101,13 @@ class LoadoutTest {
             assertFalse(Rime.RIME_SHELL.isActive(p), "removed from the bar: switched off");
 
             // A new innate technique resets the loadout to its default layout.
-            InnateTechniqueService.setInnateTechnique(p, TestInnateTechniques.KINETIC.get());
-            assertEquals(bar(id(TestAbilities.DASH), id(TestAbilities.BURST)), LoadoutService.slots(p));
+            InnateTechniqueService.setInnateTechnique(p, Swap.SWAP.get());
+            assertEquals(bar(Swap.SWAP.get().abilities().stream().map(a -> id(a)).toArray(Optional[]::new)), LoadoutService.slots(p));
             assertEquals(0, InnateTechniqueService.get(p).selectedSlot());
 
             // Login repair: a layout built for another technique is rebuilt.
             InnateTechniqueService.setInnateTechnique(p, Rime.RIME.get());
-            LoadoutService.get(p).builtFor = TestInnateTechniques.KINETIC.getId();
+            LoadoutService.get(p).builtFor = Swap.SWAP.getId();
             LoadoutService.validate(p);
             assertEquals(LoadoutService.SLOTS, LoadoutService.size(p));
             assertEquals(id(Rime.FROST_SHARD), LoadoutService.slots(p).get(0));

@@ -136,15 +136,9 @@ final class CommandArgs {
                 .map(registry::get);
     }
 
-    /** Test techniques only exist here while the config lets them be rolled. */
-    private static boolean available(InnateTechnique technique) {
-        return !technique.isTestContent() || KegareServerConfig.INCLUDE_TEST_INNATE_TECHNIQUES.get();
-    }
-
     /** Lowest rarity first. */
     static List<InnateTechnique> innates() {
         return KegareRegistries.INNATE_TECHNIQUE.stream()
-                .filter(CommandArgs::available)
                 .sorted(Comparator.comparing(InnateTechnique::rarity).thenComparing(t -> shortName(t.id())))
                 .toList();
     }
@@ -155,7 +149,7 @@ final class CommandArgs {
 
     static InnateTechnique innate(CommandContext<CommandSourceStack> c, String argument) throws CommandSyntaxException {
         String typed = typedName(c, argument);
-        return byShortName(KegareRegistries.INNATE_TECHNIQUE, typed).filter(CommandArgs::available).orElseThrow(() -> UNKNOWN_INNATE.create(typed));
+        return byShortName(KegareRegistries.INNATE_TECHNIQUE, typed).orElseThrow(() -> UNKNOWN_INNATE.create(typed));
     }
 
     static Trait trait(CommandContext<CommandSourceStack> c, String argument) throws CommandSyntaxException {

@@ -48,8 +48,8 @@ public final class RollService {
     }
 
     /**
-     * Rolls and assigns a new innate technique. Excludes the current innate technique (never "reroll into yourself")
-     * and test innate techniques when disabled in config. Pity is read and updated according to {@code reason}
+     * Rolls and assigns a new innate technique. Excludes the current innate technique (never "reroll into yourself"),
+     * so a rarity whose only technique they hold can't come up. Pity is read and updated according to {@code reason}
      * (see {@link RollReason}, {@link PityState}). Empty if nothing is eligible (nothing changes then).
      */
     public static Optional<Outcome> rollInnateTechnique(ServerPlayer player, RollReason reason) {
@@ -71,11 +71,9 @@ public final class RollService {
             KegareAdvancements.awardIfPresent(player, KegareAdvancements.innateTechniqueRoot(forced.id()));
             return Optional.of(new Outcome(forced, counter + 1, false, reason));
         }
-        boolean includeTest = KegareServerConfig.INCLUDE_TEST_INNATE_TECHNIQUES.get();
         Map<InnateTechniqueRarity, List<InnateTechnique>> pool = new EnumMap<>(InnateTechniqueRarity.class);
         for (InnateTechnique innateTechnique : KegareRegistries.INNATE_TECHNIQUE) {
             if (innateTechnique == current) continue;
-            if (innateTechnique.isTestContent() && !includeTest) continue;
             pool.computeIfAbsent(innateTechnique.rarity(), r -> new ArrayList<>()).add(innateTechnique);
         }
         boolean[] available = new boolean[InnateTechniqueRarity.values().length];
@@ -93,7 +91,7 @@ public final class RollService {
 
         roll.set(roll.state().after(chosen.rarity(), reason));
         InnateTechniqueService.setInnateTechnique(player, chosen);
-        // Its own advancement tab unlocks on the first roll (test innate techniques have no tab).
+        // Its own advancement tab unlocks on the first roll.
         KegareAdvancements.awardIfPresent(player, KegareAdvancements.innateTechniqueRoot(chosen.id()));
         return Optional.of(new Outcome(chosen, counter + 1, result.get().byHardPity(), reason));
     }

@@ -36,7 +36,6 @@ file of each one. Minecraft refuses to start and names the missing mod if one is
   changes no damage, costs or capacity. See DESIGN.md §3.21.
 - **Reverse Malice Technique:** a shared healing ability, found through a green orb only its finder can see. See
   DESIGN.md §3.17–3.18.
-- Test innate techniques (`[Test] …`) stay available while `roll.includeTestInnateTechniques = true`.
 
 ## Postgres storage (optional)
 

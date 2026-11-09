@@ -43,6 +43,15 @@ public final class DatabaseTestAccess {
         return SavingIT.rows(database.pool, player);
     }
 
+    /** Rows straight into the database, as another server or an older build left them. */
+    public static void put(KegareDatabase database, UUID player, Map<String, String> rows) throws Exception {
+        database.awaitReady(); // its tables are there
+        database.pool.transaction(c -> {
+            PlayerStore.write(c, player, rows);
+            return null;
+        });
+    }
+
     public static void corrupt(KegareDatabase database, UUID player, String attachment, String json) throws Exception {
         database.pool.transaction(c -> {
             try (PreparedStatement update = c.prepareStatement("UPDATE kegare.player_data SET data = ?::jsonb WHERE player = ? AND attachment = ?")) {

@@ -19,7 +19,6 @@ import com.cnethuka.kegare.innatetechnique.CastSlot;
 import com.cnethuka.kegare.innatetechnique.InnateTechnique;
 import com.cnethuka.kegare.innatetechnique.InnateTechniqueRarity;
 import com.cnethuka.kegare.innatetechnique.InnateTechniqueService;
-import com.cnethuka.kegare.innatetechnique.test.TestInnateTechniques;
 import com.cnethuka.kegare.loadout.LoadoutResult;
 import com.cnethuka.kegare.loadout.LoadoutService;
 import com.cnethuka.kegare.loadout.SharedAbilities;
@@ -125,9 +124,8 @@ class TechniqueUnlocksTest {
             assertEquals(8, time.unlockLevel(TimeManipulation.STANDSTILL), "Standstill: the ultimate's level, like Total Swap");
             assertFalse(time.ultimateLocked());
 
-            assertEquals(0, TestInnateTechniques.APEX.get().unlockLevel(TestInnateTechniques.APEX.get().abilities().get(3)), "test techniques: everything");
             assertFalse(InnateTechnique.builder(InnateTechniqueRarity.COMMON).ability(Rime.FROST_SHARD).build().hasUnlockLevels(), "what datagen refuses");
-            assertTrue(InnateTechnique.builder(InnateTechniqueRarity.COMMON).ability(Rime.FROST_SHARD).testContent().build().hasUnlockLevels());
+            assertTrue(InnateTechnique.builder(InnateTechniqueRarity.COMMON).ability(Rime.FROST_SHARD).unlockLevel(Rime.FROST_SHARD, 2).build().hasUnlockLevels(), "levels of its own");
         });
     }
 
@@ -274,15 +272,6 @@ class TechniqueUnlocksTest {
             } finally {
                 ProgressionConfig.REFINEMENT_MAX_LEVEL.set(10);
             }
-        });
-    }
-
-    @Test
-    void testTechniquesAreAllUnlocked(MinecraftServer server) throws Exception {
-        TestServer.onServerThread(server, () -> {
-            ServerPlayer p = fresh(server, "kit_test", TestInnateTechniques.APEX.get());
-            assertEquals(4, bar(p).size());
-            TestInnateTechniques.APEX.get().everyAbility().forEach(a -> assertTrue(TechniqueUnlocks.isUnlocked(p, a)));
         });
     }
 }

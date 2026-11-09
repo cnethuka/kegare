@@ -30,16 +30,6 @@ public final class KegareConfigMigration {
             entry("malice.tiers.average.base", 100),
             entry("malice.tiers.high.base", 150),
             entry("malice.tiers.vast.base", 250),
-            // The test techniques: costs and upkeep, x4.
-            entry("test_abilities.aura.cost", 5.0),
-            entry("test_abilities.aura.upkeepPerSecond", 3.0),
-            entry("test_abilities.blink.cost", 8.0),
-            entry("test_abilities.burst.cost", 15.0),
-            entry("test_abilities.dash.cost", 10.0),
-            entry("test_abilities.hover.cost", 5.0),
-            entry("test_abilities.hover.upkeepPerSecond", 8.0),
-            entry("test_abilities.shockwave.cost", 60.0),
-            entry("test_abilities.updraft.cost", 12.0),
             // Rime: costs and upkeep, x4.
             entry("rime.frost_field.cost", 8.0),
             entry("rime.frost_field.upkeepPerSecond", 12.0),

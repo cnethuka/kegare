@@ -17,7 +17,6 @@ import com.cnethuka.kegare.innatetechnique.CastIntent;
 import com.cnethuka.kegare.innatetechnique.CastManager;
 import com.cnethuka.kegare.innatetechnique.EndReason;
 import com.cnethuka.kegare.innatetechnique.InnateTechniqueService;
-import com.cnethuka.kegare.innatetechnique.test.TestInnateTechniques;
 import com.cnethuka.kegare.loadout.LoadoutResult;
 import com.cnethuka.kegare.loadout.LoadoutService;
 import com.cnethuka.kegare.innatetechnique.visual.VisualPhase;
@@ -146,7 +145,7 @@ class RmtTest {
             CastManager.handleIntent(p, CastIntent.CAST_RELEASE);
 
             // A reroll resets the loadout but keeps the unlock; locking it again takes it off the bar.
-            InnateTechniqueService.setInnateTechnique(p, TestInnateTechniques.KINETIC.get());
+            InnateTechniqueService.setInnateTechnique(p, com.cnethuka.kegare.innate_technique.swap.Swap.SWAP.get());
             assertFalse(LoadoutService.holds(p, rmt.id()), "reset to the new default");
             assertTrue(SharedAbilityService.isUnlocked(p, rmt.id()), "unlock kept");
             assertEquals(LoadoutResult.OK, LoadoutService.edit(p, LoadoutService.Action.SET, 0, 0, Optional.of(rmt.id())));

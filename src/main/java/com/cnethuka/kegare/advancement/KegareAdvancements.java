@@ -79,7 +79,7 @@ public final class KegareAdvancements {
 
     /**
      * Root of an innate technique's own advancement tab: {@code <namespace>:innate_technique/<path>}.
-     * Generated for every non-test innate technique and awarded the first time the player rolls it.
+     * Generated for every innate technique of Kegare's and awarded the first time the player rolls it.
      */
     public static ResourceLocation innateTechniqueRoot(ResourceLocation innateTechniqueId) {
         return ResourceLocation.fromNamespaceAndPath(innateTechniqueId.getNamespace(), "innate_technique/" + innateTechniqueId.getPath());
@@ -89,7 +89,7 @@ public final class KegareAdvancements {
         awardInternal(player, id, true);
     }
 
-    /** Awards if the advancement exists; silently does nothing otherwise (e.g. test innate techniques have no tab). */
+    /** Awards if the advancement exists; silently does nothing otherwise (e.g. another mod's innate technique has no tab). */
     public static void awardIfPresent(ServerPlayer player, ResourceLocation id) {
         awardInternal(player, id, false);
     }

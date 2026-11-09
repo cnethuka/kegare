@@ -17,7 +17,6 @@ import com.cnethuka.kegare.innate_technique.swap.SwapDebug;
 import com.cnethuka.kegare.innatetechnique.InnateTechnique;
 import com.cnethuka.kegare.innatetechnique.InnateTechniqueRarity;
 import com.cnethuka.kegare.innatetechnique.InnateTechniqueService;
-import com.cnethuka.kegare.innatetechnique.test.TestInnateTechniques;
 import com.cnethuka.kegare.loadout.SharedAbilityService;
 import com.cnethuka.kegare.malice.MaliceService;
 import com.cnethuka.kegare.player.BirthService;
@@ -227,27 +226,17 @@ class KegareCommandTest {
     }
 
     @Test
-    void testTechniquesFollowTheConfig(MinecraftServer server) throws Exception {
+    void theInnateCommandsKnowEveryRealTechniqueAndNothingElse(MinecraftServer server) throws Exception {
         inGame(server, () -> {
-            ServerPlayer p = online(server, "tester_one");
-            InnateTechnique kinetic = TestInnateTechniques.KINETIC.get();
-            boolean before = KegareServerConfig.INCLUDE_TEST_INNATE_TECHNIQUES.get();
-            try {
-                KegareServerConfig.INCLUDE_TEST_INNATE_TECHNIQUES.set(true);
-                op(server, "kegare innate set tester_one test_kinetic").ok();
-                assertEquals(kinetic, InnateTechniqueService.current(p).orElseThrow());
-                assertTrue(names(suggestions(server, OP, "kegare innate set tester_one ")).contains("test_kinetic"));
-                assertTrue(op(server, "kegare innate list").ok().text().contains("test_kinetic"));
-
-                KegareServerConfig.INCLUDE_TEST_INNATE_TECHNIQUES.set(false);
-                assertTrue(op(server, "kegare innate set tester_one test_kinetic").error().startsWith("Unknown Innate Technique: test_kinetic."));
-                assertTrue(op(server, "kegare debug reroll tester_one test_kinetic").error().startsWith("Unknown Innate Technique: test_kinetic."));
-                assertFalse(names(suggestions(server, OP, "kegare innate set tester_one ")).contains("test_kinetic"));
-                assertFalse(op(server, "kegare innate list").ok().text().contains("test_kinetic"));
-                assertTrue(op(server, "kegare innate get tester_one").ok().text().contains(kinetic.displayName().getString()), "someone already holding one still shows it");
-            } finally {
-                KegareServerConfig.INCLUDE_TEST_INNATE_TECHNIQUES.set(before);
-            }
+            online(server, "tester_one");
+            List<String> real = com.cnethuka.kegare.registry.KegareRegistries.INNATE_TECHNIQUE.stream().map(t -> t.id().getPath()).sorted().toList();
+            assertEquals(List.of("puppet_manipulation", "rime", "swap", "time_manipulation"), real, "the real pool");
+            assertEquals(real, names(suggestions(server, OP, "kegare innate set tester_one ")).stream().sorted().toList());
+            String list = op(server, "kegare innate list").ok().text();
+            for (String name : real) assertTrue(list.contains(name), list);
+            // The test techniques are gone: a name that used to work is unknown now.
+            assertTrue(op(server, "kegare innate set tester_one test_kinetic").error().startsWith("Unknown Innate Technique: test_kinetic."));
+            assertTrue(op(server, "kegare debug reroll tester_one test_apex").error().startsWith("Unknown Innate Technique: test_apex."));
         });
     }
 

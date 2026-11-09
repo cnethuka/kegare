@@ -29,7 +29,7 @@ import net.neoforged.neoforge.common.data.ExistingFileHelper;
  * <ul>
  *   <li>Base tab (root {@code awakening})</li>
  *   <li>Six Eyes tab (root {@code clear_sight}, secret identity: hidden and silent)</li>
- *   <li>one tab per non-test innate technique (root {@code innate_technique/<id>}, unlocked on the first roll)</li>
+ *   <li>one tab per innate technique (root {@code innate_technique/<id>}, unlocked on the first roll)</li>
  * </ul>
  * Secret-identity rule: any ID in {@link KegareAdvancements#SECRET_IDENTITY} is forced hidden and never announced
  * to chat, and generation fails if one slips through.
@@ -101,11 +101,11 @@ public final class KegareAdvancementGenerator implements AdvancementProvider.Adv
 
         // Shrine (vessel_of_the_king, unworthy_heir, unsealed): reserved in SECRET_IDENTITY, added with the Shrine.
 
-        // ---- One tab per innate technique: root unlocks on the first roll. Test content gets no tab. ----
+        // ---- One tab per innate technique: root unlocks on the first roll. ----
         // Silent in chat: announcing it would tell every opponent which innate technique a player rolled.
         java.util.Map<ResourceLocation, AdvancementHolder> techniqueRoots = new java.util.HashMap<>();
         for (InnateTechnique innateTechnique : KegareRegistries.INNATE_TECHNIQUE) {
-            if (innateTechnique.isTestContent() || !innateTechnique.id().getNamespace().equals(Kegare.MODID)) continue;
+            if (!innateTechnique.id().getNamespace().equals(Kegare.MODID)) continue;
             AdvancementHolder techniqueRoot = Advancement.Builder.advancement()
                     .display(innateTechnique.tabIcon(), innateTechnique.displayName(),
                             Component.translatable("advancements.kegare.innate_technique_root.description"),

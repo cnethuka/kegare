@@ -35,7 +35,7 @@ public final class TechniqueUnlocks {
     /** The level this part of the technique unlocks at. */
     public static int requiredLevel(InnateTechnique technique, Ability ability) {
         OptionalInt override = ProgressionConfig.unlockOverride(ability.id());
-        int level = override.isPresent() && !technique.isTestContent() ? override.getAsInt() : technique.unlockLevel(ability);
+        int level = override.isPresent() ? override.getAsInt() : technique.unlockLevel(ability);
         return Math.min(level, RefinementService.maxLevel()); // a server with a lower top level mustn't lock something forever
     }
 
@@ -119,7 +119,7 @@ public final class TechniqueUnlocks {
      */
     static void checkFullKit(ServerPlayer player) {
         InnateTechnique technique = InnateTechniqueService.current(player).orElse(null);
-        if (technique == null || technique.isTestContent()) return;
+        if (technique == null) return;
         int level = RefinementService.level(player);
         for (Ability a : technique.abilities()) {
             if (level < requiredLevel(technique, a)) return;

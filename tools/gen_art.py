@@ -509,98 +509,6 @@ def icon(grid: list[str], r: list) -> Image.Image:
     return from_grid(grid, pal)
 
 
-ICON_DASH = [
-    "................",
-    "................",
-    "........KK......",
-    "........K5K.....",
-    "..K3333.K66K....",
-    "........K656K...",
-    ".K444444K6656K..",
-    "..K55555K66665K.",
-    ".K444444K6656K..",
-    "........K656K...",
-    "..K3333.K66K....",
-    "........K5K.....",
-    "........KK......",
-    "................",
-    "................",
-    "................",
-]
-ICON_BURST = [
-    "................",
-    ".......KK.......",
-    "..K....K6K...K..",
-    ".K6K...K5K..K6K.",
-    "..K5K..K4K.K5K..",
-    "...K4KKK4KKK4K..",
-    "....KK6665KK....",
-    ".KKKK656665KKKK.",
-    "K6544666665K456K",
-    ".KKKK565556KKKK.",
-    "....KK5555KK....",
-    "...K4KKK4KKK4K..",
-    "..K5K..K4K..K5K.",
-    ".K6K...K5K...K6K",
-    "..K....K6K....K.",
-    ".......KK.......",
-]
-ICON_HOVER = [
-    ".......KK.......",
-    "......K66K......",
-    ".....K6556K.....",
-    "....K655556K....",
-    "...KKK6556KKK...",
-    ".....K6556K.....",
-    "....KK6556KK....",
-    "...K66K55K66K...",
-    "..K6556KK6556K..",
-    ".K655556K55556K.",
-    "..KKK55K..K5KKK.",
-    "....K55K..K55K..",
-    "....K44K..K44K..",
-    "...K3333KK3333K.",
-    "..K33..33K3..33K",
-    "...KK..KK.KK.KK.",
-]
-ICON_AURA = [
-    "........K.......",
-    ".......K6K......",
-    "......K656K..K..",
-    "..K...K565K.K6K.",
-    ".K6K.K45654KK5K.",
-    ".K5KK4556554K5K.",
-    ".K45K556665K54K.",
-    "..K4556666655K..",
-    "..K4556666655K..",
-    ".K455566665554K.",
-    ".K445556665544K.",
-    "..K44555555444K.",
-    "...K334444433K..",
-    "....KK33333KK...",
-    "......KKKKK.....",
-    "................",
-]
-ICON_SHOCKWAVE = [
-    "....KKKKKKKK....",
-    "..KK55555555KK..",
-    ".K55KKKKKKKK55K.",
-    "K5KK.KKKKKK.KK5K",
-    "K5K.K666666K.K5K",
-    "K5KK66KKKK66KK5K",
-    "K5K66K5555K66K5K",
-    "K5K6K566665K6K5K",
-    "K5K6K566665K6K5K",
-    "K5K66K5555K66K5K",
-    "K5KK66KKKK66KK5K",
-    "K5K.K666666K.K5K",
-    "K5KK.KKKKKK.KK5K",
-    ".K55KKKKKKKK55K.",
-    "..KK55555555KK..",
-    "....KKKKKKKK....",
-]
-
-
 def talisman_item() -> Image.Image:
     grid = [
         "...KKKKKKKKKK...",
@@ -632,85 +540,6 @@ def talisman_item() -> Image.Image:
 
 
 # ---------------------------------------------------------------------------------------------------- innate technique emblems (48x48 card art)
-
-def emblem_kinetic() -> Image.Image:
-    img = vignette(48, SILVER, seed=101)
-    fg = new(48, 48)
-    for i, x0 in enumerate((10, 19, 28)):  # three brush chevrons
-        brush(fg, [(x0, 12), (x0 + 10, 24), (x0, 36)], 2.6 - i * 0.2, SILVER[3:], seed=103 + i, wobble=0.5)
-    for y, x1 in ((15, 9), (24, 6), (33, 9)):  # speed lines
-        brush(fg, [(2, y), (x1, y)], 0.8, SILVER[2:5], seed=111 + y, taper=(0.6, 0.1))
-    paste(img, rim_light(outline(fg), SILVER[-1]))
-    return img
-
-
-def emblem_flux() -> Image.Image:
-    img = vignette(48, STEEL, seed=121)
-    fg = new(48, 48)
-    pts = []
-    for i in range(70):  # inward spiral
-        a = i * 0.18
-        r = 18 - i * 0.22
-        pts.append((24 + math.cos(a) * r, 24 + math.sin(a) * r * 0.85))
-    brush(fg, pts, 2.8, STEEL[3:], seed=123, taper=(0.15, 0.5), dry=0.12, wobble=0.4)
-    for (x, y) in ((8, 10), (38, 36), (40, 12)):
-        brush(fg, [(x, y), (x + 5, y - 2)], 0.8, STEEL[3:6], seed=127 + x)
-    paste(img, rim_light(outline(fg), STEEL[-1]))
-    return img
-
-
-def emblem_prism() -> Image.Image:
-    img = vignette(48, MALICE, seed=141)
-    fg = new(48, 48)
-    poly = [(24, 5), (35, 16), (31, 40), (17, 40), (13, 16)]
-
-    def inside(px: float, py: float, p: list) -> bool:
-        c = False
-        j = len(p) - 1
-        for i in range(len(p)):
-            (xi, yi), (xj, yj) = p[i], p[j]
-            if (yi > py) != (yj > py) and px < (xj - xi) * (py - yi) / (yj - yi) + xi:
-                c = not c
-            j = i
-        return c
-
-    for y in range(48):
-        for x in range(48):
-            if inside(x + 0.5, y + 0.5, poly):
-                # facets: left lit, centre bright, right dark
-                if x < 20:
-                    t = 0.82
-                elif x < 26:
-                    t = 0.98 if y < 22 else 0.7
-                else:
-                    t = 0.45
-                fg.putpixel((x, y), dither(MALICE, t - (y / 48) * 0.25, x, y))
-    for y in range(8, 40):  # facet edges, slightly wobbly
-        put(fg, 20 + (1 if y % 9 == 0 else 0), y, MALICE[6])
-        put(fg, 26, y, MALICE[3])
-    paste(img, rim_light(outline(fg), MALICE[-1]))
-    for (x, y) in ((9, 9), (39, 30), (36, 7)):
-        paste(img, sparkle().resize((5, 5), Image.NEAREST), x, y)
-    return img
-
-
-def emblem_apex() -> Image.Image:
-    img = vignette(48, GOLD, seed=161)
-    fg = new(48, 48)
-    for k in range(12):  # rays
-        a = k * math.tau / 12 - math.pi / 2
-        r0, r1 = 11, 21 if k % 2 == 0 else 16
-        brush(fg, [(24 + math.cos(a) * r0, 24 + math.sin(a) * r0), (24 + math.cos(a) * r1, 24 + math.sin(a) * r1)],
-              2.2 if k % 2 == 0 else 1.4, GOLD[3:], seed=163 + k, taper=(0.1, 0.7))
-    for y in range(48):  # core
-        for x in range(48):
-            d = math.hypot(x - 23.5, y - 23.5)
-            if d <= 8.5:
-                t = 0.95 - d / 8.5 * 0.5 + (0.12 if x + y < 46 else -0.1)
-                fg.putpixel((x, y), dither(GOLD, t, x, y))
-    paste(img, rim_light(outline(fg), GOLD[-1]))
-    return img
-
 
 # ---------------------------------------------------------------------------------------------------- Rime
 
@@ -3076,10 +2905,7 @@ def main() -> None:
     for kind in ("follow", "stay", "guard", "go"):
         save(order_glyph(kind), f"gui/puppet_order/{kind}.png")
 
-    icons = {"test_dash": icon(ICON_DASH, MALICE), "test_burst": icon(ICON_BURST, MALICE),
-             "test_hover": icon(ICON_HOVER, MALICE), "test_aura": icon(ICON_AURA, MALICE),
-             "test_shockwave": icon(ICON_SHOCKWAVE, MALICE),
-             "frost_shard": icon(ICON_FROST_SHARD, ICE), "glacial_lance": icon(ICON_GLACIAL_LANCE, ICE),
+    icons = {"frost_shard": icon(ICON_FROST_SHARD, ICE), "glacial_lance": icon(ICON_GLACIAL_LANCE, ICE),
              "frost_field": icon(ICON_FROST_FIELD, ICE), "rime_shell": icon(ICON_RIME_SHELL, ICE),
              "reverse_malice_technique": icon(ICON_RMT, HEAL), "reinforced_fists": icon(ICON_FISTS, MALICE), "reinforcement": icon_reinforcement(),
              "positions": icon_positions(), "switchback": icon_switchback(), "awareness": icon_awareness(),
@@ -3095,8 +2921,7 @@ def main() -> None:
              "standstill": icon_standstill()}
     for name, img in icons.items():
         save(img, f"gui/ability/{name}.png")
-    emblems = {"test_kinetic": emblem_kinetic(), "test_flux": emblem_flux(),
-               "test_prism": emblem_prism(), "test_apex": emblem_apex(), "rime": emblem_rime(),
+    emblems = {"rime": emblem_rime(),
                "swap": emblem_swap(), "puppet_manipulation": emblem_puppet_manipulation(),
                "time_manipulation": emblem_time_manipulation()}
     for name, img in emblems.items():

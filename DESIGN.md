@@ -29,8 +29,8 @@ config keys, lang keys and command names.
 - **"Kegare" is the mod name.** It is reserved as the name of the future hostile spirit mobs, and is never used for
   the energy.
 - **Safety nets:**
-  - Datagen fails if any registered innate technique, ability or trait has no lang entry, or if a non-test innate
-    technique has no epithet (§3.3).
+  - Datagen fails if any registered innate technique, ability or trait has no lang entry, or if an innate technique has
+    no epithet (§3.3).
   - `LangKeysTest` fails if code uses a message/command/HUD/key lang key that isn't in `en_us.json`.
 - **Known exception:** config comments (`kegare-server.toml`, and the config screen tooltips that fall back to them)
   are written in code.
@@ -185,11 +185,10 @@ All timestamps use **level game time**. They persist across restarts and are ide
     `#9D4EDD`, `InnateTechnique.DEFAULT_MALICE_COLOR`). It colors the Malice bar's fill, glow and ghost fill on the
     HUD and the Sorcerer screen, and the Technique Mode glow. Display only: definitions are registry-synced, so the
     client looks it up from the synced innate technique ID, and it changes the moment the technique does (reroll,
-    admin, rebirth). Rime uses deep blue `#1E3A8A`; the test techniques keep the default.
+    admin, rebirth). Rime uses deep blue `#1E3A8A`.
   - an **epithet** (lang key `innate_technique.<namespace>.<id>.epithet`, read with `epithet()`): one short line that
     says what the technique feels like, shown under its name on the Sorcerer screen and typed out in the Epic and
-    Legendary reveals (§3.12). **Every non-test innate technique sets one; datagen fails without it.** Test techniques
-    use "[Test]". Rime: "Breath Turned to Glass". Swap: "Nothing Stays Where It Was". Puppet Manipulation: "Strings
+    Legendary reveals (§3.12). **Every innate technique sets one; datagen fails without it.** Rime: "Breath Turned to Glass". Swap: "Nothing Stays Where It Was". Puppet Manipulation: "Strings
     Without a Stage". Time Manipulation: "The Clock Forgets to Tick".
   - an optional **signature animation** (`Builder.signatureAnimation(id)`, a PAL animation, read with
     `signatureAnimation()`): what the player model does beside the emblem on the reveal's name card. Without one the model
@@ -224,21 +223,22 @@ All timestamps use **level game time**. They persist across restarts and are ide
 - Charges, channels and toggles are runtime-only and end on death, logout and innate technique change.
 - **Every cast runs inside a `CastScope`** (execute, tick and end), which is what traces a hit, an effect or a spawned
   entity back to its ability. It's how every technique gets Refinement and Assessment with no code of its own (§3.21).
-- **Unlock levels:** every non-test technique calls `Builder.defaultUnlockLevels()` and/or `Builder.unlockLevel(ability, level)`;
+- **Unlock levels:** every technique calls `Builder.defaultUnlockLevels()` and/or `Builder.unlockLevel(ability, level)`;
   datagen fails without one (§3.21).
-- **TEST CONTENT** (`innatetechnique/test/`, config `[test_abilities]`, everything unlocked):
-
-  | Innate technique | Rarity | Abilities |
-  |---|---|---|
-  | `test_kinetic` | Common | Dash (instant), Burst (charged) |
-  | `test_flux` | Rare | Hover (channeled), Aura (toggle) |
-  | `test_prism` | Epic | Burst (charged), Hover (channeled), plus Shockwave (instant ultimate) |
-  | `test_apex` | Legendary | all four, plus Shockwave (instant ultimate) |
-
-  There is one per rarity, so every reveal can be shown. Two test specials exercise §3.15: **Blink** (special of
-  Dash, instant short teleport, requires Aura to be active) and **Updraft** (special of Hover, charged upward launch,
-  requires the `six_eyes` trait). Burst, Aura and Shockwave have none, so R fizzles on them.
-  Set `includeTestInnateTechniques=false` once real innate techniques exist.
+- **Kegare ships no test techniques** (`test_kinetic`, `test_flux`, `test_prism` and `test_apex`, their abilities, the
+  `[test_abilities]` config and `roll.includeTestInnateTechniques`): real techniques cover every cast type and rarity. An old
+  `kegare-server.toml` still loads (NeoForge drops the keys). A player whose save still holds one gets a **free reroll on login**
+  (`RollReason.REPLACEMENT`, the path any removed technique takes): the normal roll pipeline with its reveal, no talisman, nothing
+  on pity or their roll total, and no Reawakening. It does what any reroll does (the new technique's loadout, Refinement back to 0
+  for it with Peak Refinement kept, unlocks tied to the old technique gone) and nothing else of theirs changes. Everything else that
+  names a removed technique or ability (loadout slots, cooldowns, Assessment history) loads as plain IDs, and the login check drops
+  what no longer resolves. The same with Postgres storage on. Framework features no real ability uses yet (a special that needs a
+  toggle on, one that needs a trait) keep their tests with a small fixture in `src/test` only (`SpecialFixtures`).
+  **Tests:** `RemovedTechniqueTest` (a real player file from the build that had them, holding `test_apex`: loaded and rerolled for
+  free, the rest unchanged, once only), `RemovedTechniqueIT` (the same from Postgres), `RealPoolRollTest` (the pool is the four real
+  techniques, one per rarity; a roll never lands on the held technique or, as its rarity has nothing else, that rarity; hard pity
+  waits while they hold the only Legendary; a replacement can land on any rarity, for free; each rarity's reveal with a real
+  technique), `KegareConfigMigrationTest` (a real old toml loads, losing only those keys).
 
 ### 3.4 Rolls and pity
 - Weighted rarity roll (Common 50 / Rare 30 / Epic 15 / Legendary 5), then a uniform pick within that rarity.
@@ -471,8 +471,8 @@ Malice is always shown as whole numbers (floored, like the HUD); the stored valu
 ### 3.9 Config
 - **Server TOML** (`config/kegare-server.toml`, where NeoForge 21.1 keeps server configs; synced to clients and
   hot-reloaded when edited) holds **every balance number**.
-  - Sections: `malice` (with `tiers`), `traits`, `roll` (with `weights`, and `includeTestInnateTechniques`),
-    `combat`, `rime` (§3.14), `swap` (§3.19), `melee` (§3.22), `impact` (§3.23), `battle_damage` (§3.24), `reverse_malice_technique` (§3.17), `reinforced_fists` (§3.28), `timing` (§3.29), `too_fast_for_the_eye` (§3.30), `progression` (§3.21), `test_abilities`.
+  - Sections: `malice` (with `tiers`), `traits`, `roll` (with `weights`),
+    `combat`, `rime` (§3.14), `swap` (§3.19), `puppet_manipulation` (§3.20), `time_manipulation` (§3.26), `severed` (§3.27), `melee` (§3.22), `impact` (§3.23), `battle_damage` (§3.24), `reverse_malice_technique` (§3.17), `reinforcement` (§3.16), `background_tasks` (§3.31), `six_eyes` (§3.32), `reinforced_fists` (§3.28), `timing` (§3.29), `too_fast_for_the_eye` (§3.30), `progression` (§3.21).
   - The `traits` section includes:
     - `sixEyesBirthChance`
     - `sixEyesTransferMode` (RANDOM | KILLER)
@@ -584,7 +584,7 @@ Each tab has its own root.
 | *Something's Missing* | goal | a full-detail Read of a Severed player (§3.32) |
 
 **Rule: every innate technique gets its own tab, whose root unlocks the first time the player rolls it.**
-- It's automatic. Datagen generates the root `kegare:innate_technique/<path>` for every non-test innate technique:
+- It's automatic. Datagen generates the root `kegare:innate_technique/<path>` for every innate technique of Kegare's:
   - title: its name, in rarity color
   - icon: `InnateTechnique.Builder.tabIcon(...)`, default an enchanted book
   - background: black concrete
@@ -593,7 +593,6 @@ Each tab has its own root.
 - Give that innate technique's own advancements this root as their parent.
 - The root is **silent in chat**. Announcing it would tell every opponent which innate technique a player rolled. The
   same goes for everything in the tab: datagen fails if any advancement under `innate_technique/` announces.
-- Test innate techniques get no tab.
 - Tabs so far: Rime (§3.14), Swap (§3.19), Puppet Manipulation (§3.20), Time Manipulation (§3.26).
 
 **Who sees which tab:** vanilla only shows a tab once the player has earned something in it.
@@ -808,7 +807,7 @@ closing it or disconnecting at any point changes nothing.
 
 ### 3.14 Rime
 Package `com.cnethuka.kegare.innate_technique.rime`. **Rarity: RARE.** All numbers are in `[rime]` of
-`kegare-server.toml`; the defaults are below. Test innate techniques stay behind `includeTestInnateTechniques`.
+`kegare-server.toml`; the defaults are below.
 
 | Ability | Type | What it does (defaults) |
 |---|---|---|
@@ -1198,7 +1197,9 @@ Package `com.cnethuka.kegare.innate_technique.rime`. **Rarity: RARE.** All numbe
   (`HudClearance`). The panel's R badge marks slots whose ability has a special. A special's charge/channel outlines its
   base slot, and a TOGGLE special lights the base slot green.
 - **Tests:** `SpecialsTest` (in-game JUnit) covers fizzles without cost, both requirement kinds, the release
-  re-check and the shared cooldown both ways.
+  re-check and the shared cooldown both ways: Rime's real specials for the plain cases, and for the requirements, which no real
+  special has yet, `SpecialFixtures` (test-only shared abilities: a toggle, an instant whose special needs it on, a channel whose
+  charged special needs the Six Eyes). `InstantCastPipelineTest` runs every cast type on Rime.
 
 ### 3.16 Loadout and ability categories
 Package `loadout`. Abilities are sorted into category tabs, and a
@@ -2074,7 +2075,7 @@ The same ability landing on the same target counts once per `landing.repeat` (1 
 #### Extension technique unlocks
 Abilities, specials and the ultimate of an innate technique unlock through Refinement. Each technique defines the level in its definition
 (`UnlockTable`, `Builder.defaultUnlockLevels()`, `Builder.unlockLevel`), and `refinement.unlockLevelOverrides` overrides any of them from the
-config (`["kegare:frost_field=1"]`). **Datagen fails if a non-test technique sets none.**
+config (`["kegare:frost_field=1"]`). **Datagen fails if a technique sets none.**
 
 | Level | Default | Rime | Swap | Puppet Manipulation | Time Manipulation |
 |---|---|---|---|---|---|
@@ -2089,7 +2090,7 @@ config (`["kegare:frost_field=1"]`). **Datagen fails if a non-test technique set
 | 8 | ultimate | locked until Dominions | Total Swap | locked until Dominions | Standstill |
 | 9 | special of 5 | | | Zip and Leash | |
 
-Test techniques have everything unlocked. A level past `maxLevel` means `maxLevel`; abilities past the fifth wait for level 10 unless set; an
+A level past `maxLevel` means `maxLevel`; abilities past the fifth wait for level 10 unless set; an
 ultimate's special comes with the ultimate.
 
 - Casting a locked ability or special **fizzles at no cost and no cooldown**, with "Requires Refinement X."
@@ -3335,8 +3336,7 @@ numbers exact, a row that won't decode changing nothing, only Kegare's keys out 
 
 ## 5. Future (TBD)
 
-- **Innate techniques:** more real ones after Rime (§3.14) and Swap (§3.19), with their abilities, balance and visuals.
-  Remove the test content.
+- **Innate techniques:** more real ones, with their abilities, balance and visuals.
 - **Rime's Dominion** (its ultimate; the slot is locked until then).
 - **Dominions:** expansion, guaranteed-hit rules, clashes, counters, burnout.
 - **What progression waits for (§3.21):** later unlocks, Dominions among them, register through `Unlocks`, their first-time sources call

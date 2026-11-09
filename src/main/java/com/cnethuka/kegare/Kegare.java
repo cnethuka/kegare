@@ -10,7 +10,6 @@ import com.cnethuka.kegare.registry.KegareAttachments;
 import com.cnethuka.kegare.registry.KegareItems;
 import com.cnethuka.kegare.registry.KegareRegistries;
 import com.cnethuka.kegare.innate_technique.rime.Rime;
-import com.cnethuka.kegare.innatetechnique.test.TestInnateTechniques;
 import com.cnethuka.kegare.trait.KegareTraits;
 import net.minecraft.resources.ResourceLocation;
 import net.neoforged.bus.api.IEventBus;
@@ -53,7 +52,6 @@ public final class Kegare {
         com.cnethuka.kegare.sight.DelayedSight.init(); // too fast for the eye: Blur and Accelerate seen where they were (DESIGN §3.30)
         com.cnethuka.kegare.impact.Impacts.init(); // hit-stop, shake, flashes and impact frames (DESIGN §3.23)
         com.cnethuka.kegare.battledamage.BattleDamage.init(); // big hits break the world (DESIGN §3.24)
-        TestInnateTechniques.INNATE_TECHNIQUES.register(modBus); // TEST CONTENT
 
         com.cnethuka.kegare.progression.Progression.init();
         modBus.addListener(KegareNetwork::register);
