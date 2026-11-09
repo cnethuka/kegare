@@ -699,7 +699,10 @@ public final class SorcererScreen extends Screen {
         y = optionRow(g, 8, "gui.kegare.settings.impact_frames", ON_OFF, KegareClientConfig.IMPACT_FRAMES.get() ? 0 : 1, x, y, w, mouseX, mouseY) + 5;
         y = optionRow(g, 3, "gui.kegare.settings.reveal", ON_OFF, KegareClientConfig.REVEAL_ANIMATION.get() ? 0 : 1, x, y, w, mouseX, mouseY) + 5;
         y = optionRow(g, 5, "gui.kegare.settings.reveal_always_full", ON_OFF, KegareClientConfig.REVEAL_ALWAYS_FULL.get() ? 0 : 1, x, y, w, mouseX, mouseY) + 5;
-        return optionRow(g, 6, "gui.kegare.settings.reveal_reduced_motion", ON_OFF, KegareClientConfig.REVEAL_REDUCED_MOTION.get() ? 0 : 1, x, y, w, mouseX, mouseY);
+        y = optionRow(g, 6, "gui.kegare.settings.reveal_reduced_motion", ON_OFF, KegareClientConfig.REVEAL_REDUCED_MOTION.get() ? 0 : 1, x, y, w, mouseX, mouseY);
+        if (!com.cnethuka.kegare.sixeyes.client.SightClient.isBearer()) return y;
+        // Only for the eyes' bearer (DESIGN §3.32): nobody else has anything to set.
+        return optionRow(g, 9, "gui.kegare.settings.six_eyes_minimap", ON_OFF, KegareClientConfig.SIX_EYES_MINIMAP.get() ? 0 : 1, x, y + 5, w, mouseX, mouseY);
     }
 
     // ---------------------------------------------------------------- the shake slider
@@ -778,6 +781,7 @@ public final class SorcererScreen extends Screen {
             case 6 -> KegareClientConfig.REVEAL_REDUCED_MOTION.set(value == 0);
             case 7 -> KegareClientConfig.DASH_DOUBLE_TAP_MILLIS.set(DOUBLE_TAP_MILLIS[value]);
             case 8 -> KegareClientConfig.IMPACT_FRAMES.set(value == 0);
+            case 9 -> KegareClientConfig.SIX_EYES_MINIMAP.set(value == 0);
             default -> {
                 return;
             }

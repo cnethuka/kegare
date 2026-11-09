@@ -36,6 +36,9 @@ public final class KegareClient {
         com.cnethuka.kegare.melee.client.DashFeel.init(modBus);
         com.cnethuka.kegare.rmt.client.RmtClient.init();
         com.cnethuka.kegare.rmt.client.NosebleedClient.init(); // a repair's tell (DESIGN §3.17)
+        com.cnethuka.kegare.sixeyes.client.SightClient.init(); // Six Eyes (DESIGN §3.32)
+        com.cnethuka.kegare.sixeyes.client.SightRender.init();
+        com.cnethuka.kegare.sixeyes.client.SightHud.init(modBus);
         com.cnethuka.kegare.innate_technique.swap.client.SwapClient.init(modBus);
         com.cnethuka.kegare.innate_technique.puppet_manipulation.client.PuppetClient.init(modBus);
         com.cnethuka.kegare.innate_technique.time_manipulation.client.TimeClient.init(modBus);

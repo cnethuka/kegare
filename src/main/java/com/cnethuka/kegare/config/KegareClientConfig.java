@@ -8,6 +8,9 @@ public final class KegareClientConfig {
     public static final ModConfigSpec SPEC;
 
     public static final ModConfigSpec.BooleanValue HUD_ENABLED;
+    /** Six Eyes (DESIGN §3.32): a small radar in the corner (off by default), and how many compact Reads show at once. */
+    public static final ModConfigSpec.BooleanValue SIX_EYES_MINIMAP;
+    public static final ModConfigSpec.IntValue SIX_EYES_READ_TAGS;
     public static final ModConfigSpec.BooleanValue REVEAL_ANIMATION;
     public static final ModConfigSpec.BooleanValue REVEAL_ALWAYS_FULL;
     public static final ModConfigSpec.BooleanValue REVEAL_REDUCED_MOTION;
@@ -44,6 +47,11 @@ public final class KegareClientConfig {
         ModConfigSpec.Builder b = new ModConfigSpec.Builder();
         b.push("hud");
         HUD_ENABLED = b.define("enabled", true);
+        b.pop();
+        b.push("six_eyes");
+        SIX_EYES_MINIMAP = b.comment("Only with the eyes: a small radar of what they see in the top-right corner.").define("minimap", false);
+        SIX_EYES_READ_TAGS = b.comment("Only with the eyes: how many compact Reads (a tag over a player or mob in view) show at once, nearest",
+                "first.").defineInRange("readTags", 6, 0, 32);
         b.pop();
         b.push("reveal");
         REVEAL_ANIMATION = b.comment("Play the roll reveal's scenes. Off = show the result instantly.").define("animation", true);

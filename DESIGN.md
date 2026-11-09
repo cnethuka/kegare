@@ -164,7 +164,7 @@ All timestamps use **level game time**. They persist across restarts and are ide
   - RANDOM picks any eligible player. KILLER picks the killer if eligible, otherwise random.
   - If nobody is eligible, the next eligible player to log in gets it.
   - Admin `trait give` overrides a pending succession.
-- **`kegare:six_eyes`** (unique, requiresMalice, inheritable, lostOnPvpDeath, 1% birth, **no gameplay effects**):
+- **`kegare:six_eyes`** (unique, requiresMalice, inheritable, lostOnPvpDeath, 1% birth; its gameplay is §3.32):
   - **Killed by another player** (direct hit, or kill credit, e.g. knocked into the void): it is stripped before
     respawn, and after `sixEyesTransferDelaySeconds` (30) it opens in an heir per `sixEyesTransferMode`.
     Everyone sees the anonymous broadcast *"The eyes have closed... and opened elsewhere."*
@@ -3022,6 +3022,62 @@ ability on the bar, but it takes no bar slot and leaves the hands free.
   third and keeps it, gaining them gives it back; slot changes refused in a fight, switching allowed; locked refused; the drain, the
   effect every tick, pausing by its own rule and when it can't pay, resuming; moving and swapping; kept through a reroll and the save
   round trip; each player's state sent to them alone, the count with it.
+
+### 3.32 Six Eyes (package `sixeyes`)
+
+The trait (`kegare:six_eyes`, §3.2) given its gameplay. Canon and Kegare's rules: passive and always on, at **full** from the moment
+someone has it. It sees cursed energy (Malice) everywhere in detail, identifies people by it, sees what has none as a void, and lets its
+bearer use energy with near-zero waste. Uncovered too long, the brain tires; in canon, constant reverse cursed technique keeps it refreshed.
+It never gives a faster body or faster cooldowns. Perception never grows:
+only efficiency and RMT output grow, through Grade and Attunement. Numbers in `[six_eyes]` of `kegare-server.toml`.
+
+**Server-authoritative and private.** The server sends the bearer only what the eyes see, in their own payloads (`SightPayloads`), and
+nothing to anyone else: a modified client without the eyes gets nothing to draw. Losing the eyes sends one last "forget everything".
+Covered in other sections: the third Background Task slot and the green Background RMT shimmer (§3.31), and seeing past "too fast
+for the eye" (§3.30).
+
+**Perception: the map, outlines, voids and markers** (`Sight`, `MobIntent`; client `sixeyes.client`)
+- **Range: the whole dimension,** with no number, no growth and no config cap (canon says the eyes "easily" see several kilometres: what's
+  easy, not where they stop). Other dimensions are never seen. Every other player in the bearer's dimension is always shown (spectators
+  aren't there to see); mobs only exist where an area is loaded, so every living mob loaded in the dimension shows. Players are sent every
+  2 ticks (eased between), mobs every 10.
+- **The map** (`SixEyesMapScreen`, key **M**, rebindable as "Six Eyes: map"; does nothing without the eyes): a dark, top-down Malice radar,
+  not a terrain map, north up, the bearer an arrow in the middle. Players are glowing dots in their Malice color, sized by capacity
+  (3 + 2.2 x log10(capacity / 100) pixels: Low about 4, Vast about 7); mobs small dim dots, a faint trace when passive and a clearer one
+  when hostile (everything living gives off Malice; hostility is negative emotion: `Enemy` mobs); Severed players voids, a dark hole with a
+  pale rim, at the same range as everyone. Scroll zooms round the mouse from 16 pixels a block to the whole world border on screen; drag
+  looks round, right-click comes back. Range rings with round distances. Hover a dot: name (the real one: the eyes know people by their
+  energy, whatever face a disguise puts on them) or the mob's kind, "Void" for a Severed player, and the distance. Click to pin.
+- **Pins:** a private HUD arrow round the crosshair (38 pixels out, never on it) points to each pin, with its name and distance
+  (`SightHud`). A pinned player or mob also gets a marker wherever it is. Pins are the client's own and go when it disconnects.
+- **The minimap** (client setting `[six_eyes] minimap`, off by default; a Settings row only the bearer sees): a small north-up radar in
+  the top-right corner, 2 blocks a pixel, players past its edge held at the edge.
+- **Outlines through walls:** within render distance, every player and mob the eyes see shows a crisp outline in their Malice color
+  (brought to full brightness), mobs in a neutral flow color, dim when passive and stronger when hostile. Vanilla's glow pass draws them
+  (`SixEyesGlowMixin`, `SixEyesOutlineColorMixin`: only for a bearer, only on the client), so they're crisp and work at every effects
+  setting. Never on the bearer themself.
+- **Voids:** a Severed player within render distance shows as a blurred distortion, never an outline: a dark smear the shape of a body
+  with pale ripples where the flow bends (`entity/void_distortion.png`, 8 frames, smooth), drawn only where something stands in front of
+  them (a depth test that passes behind walls), plus a faint trace of it round them in the open so the body itself stays plain to see.
+- **Markers past render distance:** a glowing marker in the player's Malice color where they really are (a void's is dark), and one for
+  every pin. Drawn along the true line but no further than half the render distance (past the far clip plane and into the fog they'd
+  vanish), sized to look the same.
+- **Intent pulses:** a player's outline (and marker) flashes white the moment they start charging, channelling, casting or turning on a
+  toggle: the server sends it to the bearer from inside the cast's start, before its tell plays (`CastManager.addStartListener`).
+  Severed players never pulse (they have no casts).
+- **Hostile mob intent:** the eyes read a hostile mob's flow before it acts, so its outline pulses just before the attack, once as each
+  begins (checked every tick within 64 blocks of a bearer): a skeleton of any kind drawing its bow, a pillager or piglin charging a
+  crossbow (LOOSE); a creeper starting to swell (SWELL); any mob attacking with the vanilla melee goal (zombies of every kind, spiders,
+  vindicators, endermen, silverfish, endermites, iron golems, angry wolves...) 4 ticks before its swing with its target in reach (SWING; the
+  first swing as one closes in comes with no warning: the goal swings at once); a ghast or blaze charging a shot (CHARGE); an evoker or
+  illusioner casting (SPELL); a guardian or elder guardian locking its beam (BEAM); a warden starting its sonic boom (SONIC_BOOM); the ender
+  dragon turning to strafe, charge or breathe (DRAGON). Not covered: the wither's skulls (no wind-up), brain-driven melee (hoglins,
+  zoglins, piglin brutes, the warden's melee), witches, shulkers, drowned throwing tridents. Bosses are read like anything else; reading
+  never moves, slows or disables anything.
+- **Every setting:** the map, outlines, markers, voids and pulses don't change with Reduced or Vanilla: they're what the bearer plays by.
+- **Tests:** `SightTest` (only the bearer is sent anything; a player 25 km off and a void as far, never another dimension, not themself,
+  capacity carried; losing the eyes sends one "forget" and then nothing; loaded mobs with their flow; a cast pulsing once for the bearer
+  only, a void never; a creeper, a skeleton and a ghast pulsing once as each begins, and not moved).
 
 ---
 

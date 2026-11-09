@@ -18,6 +18,8 @@ public final class KegareKeys {
     public static final KeyMapping SORCERER = key("key.kegare.sorcerer", GLFW.GLFW_KEY_K);
     /** Hold to parry, then guard (DESIGN §3.22). */
     public static final KeyMapping PARRY = key("key.kegare.parry", GLFW.GLFW_KEY_X);
+    /** Six Eyes' map (DESIGN §3.32): does nothing without the eyes. */
+    public static final KeyMapping SIX_EYES_MAP = key("key.kegare.six_eyes_map", GLFW.GLFW_KEY_M);
     /** Dash on a key of its own. Nothing by default: the default is double-tapping sprint. */
     public static final KeyMapping DASH = new KeyMapping("key.kegare.dash", KeyConflictContext.IN_GAME, InputConstants.UNKNOWN, CATEGORY);
 
@@ -34,5 +36,6 @@ public final class KegareKeys {
         event.register(SORCERER);
         event.register(PARRY);
         event.register(DASH);
+        event.register(SIX_EYES_MAP);
     }
 }

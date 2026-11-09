@@ -16,7 +16,8 @@
     "MobSightMixin",
     "PathNavigationSightMixin",
     "LookControlSightMixin",
-    "PathNavigationAccessor"
+    "PathNavigationAccessor",
+    "MeleeAttackGoalAccessor"
   ],
   "client": [
     "client.PlayerInfoMixin",
@@ -25,7 +26,9 @@
     "client.OwnEffectParticlesMixin",
     "client.GameRendererMixin",
     "client.DeathPoofMixin",
-    "client.LevelRendererMixin"
+    "client.LevelRendererMixin",
+    "client.SixEyesGlowMixin",
+    "client.SixEyesOutlineColorMixin"
   ],
   "injectors": {
     "defaultRequire": 1

@@ -948,6 +948,101 @@ def icon_sustained_flow():
     return shaped_icon(f)
 
 
+def sight_marker() -> "Image.Image":
+    """Six Eyes (DESIGN §3.32): a player past render distance, seen where they really are: a soft glow round a bright core with a thin
+    ring, white to be tinted with their Malice color (smooth: drawn in the world)."""
+    n = 64
+    img = Image.new("RGBA", (n, n), (0, 0, 0, 0))
+    out = img.load()
+    for j in range(n):
+        for i in range(n):
+            x, y = (i + 0.5) / n * 2 - 1, (j + 0.5) / n * 2 - 1
+            r = math.hypot(x, y)
+            core = max(0.0, 1 - r / 0.22) ** 1.5
+            glow = max(0.0, 1 - r) ** 2.2 * 0.55
+            ring = max(0.0, 1 - abs(r - 0.72) / 0.05) * 0.8
+            a = min(1.0, core + glow + ring)
+            if a > 0.004:
+                out[i, j] = (255, 255, 255, int(round(a * 255)))
+    return img
+
+
+def void_distortion() -> "Image.Image":
+    """Six Eyes (DESIGN §3.32): a Severed player, a void in the flow, seen through walls as a blurred distortion: a dark smear the
+    shape of a body, soft-edged, with faint pale ripples round it where the flow bends (smooth). 8 frames side by side."""
+    w, h, frames = 64, 128, 8
+    sheet = Image.new("RGBA", (w * frames, h), (0, 0, 0, 0))
+    for f in range(frames):
+        t = f / frames
+        frame = Image.new("RGBA", (w, h), (0, 0, 0, 0))
+        out = frame.load()
+        for j in range(h):
+            for i in range(w):
+                x, y = (i + 0.5) / w * 2 - 1, (j + 0.5) / h * 2 - 1
+                # a body-ish capsule, wobbling
+                wob = 0.06 * math.sin(2 * math.pi * (t + y * 0.9)) + 0.04 * math.sin(2 * math.pi * (2 * t - y * 1.7))
+                d = math.hypot((x - wob) / 0.62, y / 0.9)
+                dark = max(0.0, 1 - d) ** 0.8
+                ripple = max(0.0, 1 - abs(d - (1.05 + 0.08 * math.sin(2 * math.pi * t))) / 0.07) * 0.35
+                a = min(1.0, dark * 0.9 + ripple)
+                if a <= 0.004:
+                    continue
+                v = int(255 * ripple / a) if a > 0 else 0  # the ripple pale, the middle black
+                out[i, j] = (v, v, int(min(255, v * 1.1)), int(round(a * 255)))
+        sheet.paste(frame, (f * w, 0))
+    return sheet
+
+
+def six_eyes_sprites():
+    """Six Eyes' map (DESIGN §3.32), hard pixels: a dot and its glow (white, tinted), a void, the bearer's own arrow, a pin ring and the
+    HUD arrow."""
+    out = {}
+    dot = new(9, 9)
+    for j in range(9):
+        for i in range(9):
+            r = math.hypot(i - 4, j - 4)
+            if r <= 4.2:
+                v = 255 if r <= 2.2 else 200
+                dot.putpixel((i, j), (v, v, v, 255))
+    out["six_eyes/dot"] = dot
+    glow = new(15, 15)
+    for j in range(15):
+        for i in range(15):
+            r = math.hypot(i - 7, j - 7)
+            a = 0 if r > 7.4 else int(255 * (0.5 if r > 5.5 else 0.75 if r > 3.5 else 1.0))
+            if a:
+                glow.putpixel((i, j), (255, 255, 255, a))
+    out["six_eyes/glow"] = glow
+    void = new(11, 11)
+    for j in range(11):
+        for i in range(11):
+            r = math.hypot(i - 5, j - 5)
+            if r <= 5.4:
+                void.putpixel((i, j), (150, 150, 165, 255) if r > 4.3 else (0, 0, 0, 255))
+    out["six_eyes/void"] = void
+    ring = new(13, 13)
+    for j in range(13):
+        for i in range(13):
+            r = math.hypot(i - 6, j - 6)
+            if 4.6 <= r <= 6.2:
+                ring.putpixel((i, j), (255, 255, 255, 255))
+    out["six_eyes/pin"] = ring
+    arrow = from_grid([
+        "....K....",
+        "...KWK...",
+        "..KWWWK..",
+        ".KWWWWWK.",
+        "KWWWWWWWK",
+        "KKKWWWKKK",
+        "..KWWWK..",
+        "..KWWWK..",
+        "..KKKKK..",
+    ], {"K": INK, "W": (255, 255, 255, 255)})
+    out["six_eyes/arrow"] = arrow
+    out["six_eyes/self"] = arrow
+    return out
+
+
 def aura_shimmer() -> "Image.Image":
     """A Six Eyes bearer's glimpse of Background RMT (DESIGN §3.31): a soft four-pointed glint, white to be tinted green (smooth)."""
     n = 32
@@ -2528,6 +2623,7 @@ def build() -> dict[str, Image.Image]:
     out["view_technique"] = icon(ICON_VIEW_TECHNIQUE, MALICE)
     out["view_background"] = icon_view_background()
     out["background/background_rmt"] = icon_background_rmt()
+    out.update(six_eyes_sprites())
     out["background/background_reinforcement"] = icon_background_reinforcement()
     out["background/sustained_flow"] = icon_sustained_flow()
     out["view_progress"] = icon(ICON_VIEW_PROGRESS, TEAL)
@@ -2906,6 +3002,8 @@ def main() -> None:
     save(aura_sheet(True), "entity/aura_simple.png")
     save(aura_wisp(), "entity/aura_wisp.png")
     save(aura_shimmer(), "entity/aura_shimmer.png")
+    save(sight_marker(), "entity/sight_marker.png")
+    save(void_distortion(), "entity/void_distortion.png")
     save(aura_edge(), "entity/aura_edge.png")
     save(string_braid(), "item/string_braid.png")
     for kind in ("follow", "stay", "guard", "go"):

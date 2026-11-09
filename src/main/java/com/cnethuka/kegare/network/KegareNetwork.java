@@ -71,6 +71,12 @@ public final class KegareNetwork {
                 com.cnethuka.kegare.fists.FistsPayload::handle);
         registrar.playToClient(com.cnethuka.kegare.backgroundtask.BackgroundSyncPayload.TYPE,
                 com.cnethuka.kegare.backgroundtask.BackgroundSyncPayload.STREAM_CODEC, com.cnethuka.kegare.backgroundtask.BackgroundSyncPayload::handle);
+        registrar.playToClient(com.cnethuka.kegare.sixeyes.SightPayloads.Players.TYPE, com.cnethuka.kegare.sixeyes.SightPayloads.Players.STREAM_CODEC,
+                com.cnethuka.kegare.sixeyes.SightPayloads.Players::handle);
+        registrar.playToClient(com.cnethuka.kegare.sixeyes.SightPayloads.Mobs.TYPE, com.cnethuka.kegare.sixeyes.SightPayloads.Mobs.STREAM_CODEC,
+                com.cnethuka.kegare.sixeyes.SightPayloads.Mobs::handle);
+        registrar.playToClient(com.cnethuka.kegare.sixeyes.SightPayloads.Pulse.TYPE, com.cnethuka.kegare.sixeyes.SightPayloads.Pulse.STREAM_CODEC,
+                com.cnethuka.kegare.sixeyes.SightPayloads.Pulse::handle);
         registrar.playToClient(com.cnethuka.kegare.rmt.Repair.Payload.TYPE, com.cnethuka.kegare.rmt.Repair.Payload.STREAM_CODEC,
                 com.cnethuka.kegare.rmt.Repair.Payload::handle);
         registrar.playToClient(com.cnethuka.kegare.reinforcement.AuraPayload.TYPE, com.cnethuka.kegare.reinforcement.AuraPayload.STREAM_CODEC,

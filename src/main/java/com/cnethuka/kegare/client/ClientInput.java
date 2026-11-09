@@ -165,6 +165,12 @@ public final class ClientInput {
         ultimateHeld = edge(CastKeys.down(consumeAndCheck(KegareKeys.ULTIMATE), ultimateHeld, TechniqueMode.isActive()),
                 ultimateHeld, CastIntent.ULTIMATE_PRESS, CastIntent.ULTIMATE_RELEASE);
         while (KegareKeys.SORCERER.consumeClick()) PacketDistributor.sendToServer(SorcererRequestPayload.INSTANCE);
+        // Six Eyes' map: nothing without the eyes (DESIGN §3.32).
+        while (KegareKeys.SIX_EYES_MAP.consumeClick()) {
+            if (com.cnethuka.kegare.sixeyes.client.SightClient.isBearer()) {
+                net.minecraft.client.Minecraft.getInstance().setScreen(new com.cnethuka.kegare.sixeyes.client.SixEyesMapScreen());
+            }
+        }
     }
 
     /**

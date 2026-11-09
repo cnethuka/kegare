@@ -65,6 +65,7 @@ public final class KegareLanguageProvider extends LanguageProvider {
         add("key.kegare.special", "Special (with a number key)");
         add("key.kegare.technique_mode", "Technique Mode / Blur");
         add("key.kegare.parry", "Parry");
+        add("key.kegare.six_eyes_map", "Six Eyes: map");
         add("key.kegare.dash", "Dash");
         add("message.kegare.melee.no_malice", "Not enough Malice to %s.");
         add("hud.kegare.melee.strike", "Reinforced");
@@ -349,6 +350,15 @@ public final class KegareLanguageProvider extends LanguageProvider {
         add("gui.kegare.sorcerer.brain.desc", "Repairing a burnt-out technique with Reverse Malice Technique wears the brain. It heals slowly out of a "
                 + "fight, and a night's sleep clears it. Full, no more repairs.");
         add("ability.kegare.reverse_malice_technique.unlock", "Take in the green orb.");
+
+        // Six Eyes (DESIGN §3.32): only its bearer ever sees these.
+        add("gui.kegare.six_eyes.map", "What the eyes see");
+        add("gui.kegare.six_eyes.map.hint", "Scroll to zoom, drag to look round, right-click to come back. Click a dot to pin it.");
+        add("gui.kegare.six_eyes.void", "Void");
+        add("gui.kegare.six_eyes.pin", "Click to pin");
+        add("gui.kegare.six_eyes.unpin", "Click to unpin");
+        add("gui.kegare.six_eyes.pin_label", "%s %s");
+        add("gui.kegare.settings.six_eyes_minimap", "Minimap of what the eyes see");
 
         // Background Tasks (DESIGN §3.31)
         add("gui.kegare.sorcerer.view.background", "Background");
