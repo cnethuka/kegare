@@ -41,6 +41,9 @@ public final class PlayerEvents {
 
     /** Login handling, callable directly by in-game tests (which use fake players the event skips). */
     static void handleLogin(ServerPlayer player) {
+        // Their real data isn't on them: they're sent away and nothing rolls. What's in the database stays theirs (DESIGN §3.33).
+        var database = com.cnethuka.kegare.database.KegareDatabase.current();
+        if (database != null && !database.admit(player)) return;
         TraitSuccession.markSeen(player);
         // Reconcile first: applies offline revocations and releases stale unique claims before any re-roll.
         TraitService.reconcile(player);
@@ -153,7 +156,7 @@ public final class PlayerEvents {
 
     @SubscribeEvent
     static void onServerAboutToStart(net.neoforged.neoforge.event.server.ServerAboutToStartEvent event) {
-        com.cnethuka.kegare.database.KegareDatabase.serverStarting();
+        com.cnethuka.kegare.database.KegareDatabase.serverStarting(event.getServer());
     }
 
     @SubscribeEvent

@@ -23,7 +23,8 @@
     "WitherBossAccessor",
     "MobAttackBoxInvoker",
     "AttachmentTypeAccessor",
-    "PlayerDataStorageMixin"
+    "PlayerDataStorageMixin",
+    "PlayerListLoadMixin"
   ],
   "client": [
     "client.PlayerInfoMixin",

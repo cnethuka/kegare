@@ -77,7 +77,7 @@ class DatabaseConfigTest {
     void offMeansNoStorageAndNoConnection() {
         assertNull(KegareDatabase.current(), "off in a server with no settings saying otherwise");
         long before = ConnectionPool.OPENED.get();
-        KegareDatabase.serverStarting(); // writes the file if it has to; it's off, so nothing else
+        KegareDatabase.serverStarting(null); // writes the file if it has to; it's off, so nothing else
         assertNull(KegareDatabase.current(), "still off");
         assertEquals(before, ConnectionPool.OPENED.get(), "no connection was opened");
     }

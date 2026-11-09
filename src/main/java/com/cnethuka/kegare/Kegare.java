@@ -60,6 +60,7 @@ public final class Kegare {
         modBus.addListener(KegareDataGen::gather);
 
         modBus.addListener(KegareConfigMigration::onConfigLoading);
+        modBus.addListener(com.cnethuka.kegare.database.LoginTask::register);
         container.registerConfig(ModConfig.Type.SERVER, KegareServerConfig.SPEC);
         container.registerConfig(ModConfig.Type.CLIENT, KegareClientConfig.SPEC);
     }

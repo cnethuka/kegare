@@ -3210,7 +3210,19 @@ takes it, and anything like it in a url, out of failure text. All SQL uses param
 
 With it on, Kegare's per-player keys aren't written to the world's playerdata files (`PlayerDataStorageMixin`).
 
-**Tests:** `DatabaseConfigTest` (generated off with an empty password, the environment wins, no password in any text, nothing of it in any registered config, off opens no connection), `PlayerDataCodecTest` (every attachment with a serializer covered, real data through a round trip, big whole
+**Loading.** A player's data is loaded before they enter the world: `LoginTask`, a configuration task, holds them in the configuration phase while the storage's own threads read their rows, without holding up the server thread. Right after their world file is read,
+before anything else can read their data (`PlayerListLoadMixin`), it goes on them, so nothing rolls for them first. A player with no rows whose world file has Kegare's data gets it copied in first, in the same transaction, before they enter.
+
+**Never a fresh roll.** A fresh Malice or technique roll over real data is the worst failure there is. If their data can't be loaded they're kept out ("Kegare can't reach its database. Your data is safe; try again shortly."). If it can't be decoded, or there's data but no birth in it, they're kept out too, and only someone whose
+real data is on them (`admit`) is ever rolled or saved: a refused player's logout writes nothing.
+
+**Saving.** The server thread never waits on the database during play. Every `saveIntervalSeconds` (5, spread out by player so a full server doesn't do everyone in one tick) it takes a snapshot of each online player's saved attachments, hashes them and queues only what changed, a row that's gone included (a death clears some). A thread of its own
+writes each player's batch as one transaction. Logout saves everything; server stop waits up to `shutdownTimeoutSeconds` (20).
+
+**Outages.** The game keeps running. Queued saves wait in memory (`SaveQueue`), newest per attachment wins, and retry with backoff up to 30 s. Ops get one warning when it fails and one when it recovers, not a flood. If the server stops during an outage, what's queued goes to `config/kegare-database-spill.json` (`SpillFile`, player data only, no password), and the next
+start replays it before anyone joins: logins wait for that.
+
+**Tests:** `SavingIT` and `FreshRollIT` (need `KEGARE_TEST_DB_URL`; the outage ones cut a real connection with a proxy): data back on the next login; unchanged data costing no write, a rejoin included; a row going with its attachment; the server thread not waiting on a dead database, the newest winning, one warning each way, catching up; the spill file with no password, replayed before a login; the login handling never rolling someone with nothing loaded, a row that won't decode or data with no birth in it, and not saving them either; a world file imported, not rolled; a dead database refusing a login. `DatabaseConfigTest` (generated off with an empty password, the environment wins, no password in any text, nothing of it in any registered config, off opens no connection), `PlayerDataCodecTest` (every attachment with a serializer covered, real data through a round trip, big whole
 numbers exact, a row that won't decode changing nothing, only Kegare's keys out of a player file), `SchemaIT` (needs `KEGARE_TEST_DB_URL`: migrating twice, a newer database refused, all or nothing, JSONB keeping what the codec wrote).
 
 ---

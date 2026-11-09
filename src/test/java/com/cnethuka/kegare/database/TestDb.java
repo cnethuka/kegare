@@ -30,6 +30,23 @@ final class TestDb {
         return new DatabaseConfig(true, url, "", "", 4, serverId, 2, 5, 5, 5, 3, 3, 1, 1);
     }
 
+    /** The same, with a short wait on server stop: for outages, where nothing will come of waiting. */
+    static DatabaseConfig quickStop(String serverId, String url) {
+        return new DatabaseConfig(true, url, "", "", 4, serverId, 3, 3, 5, 1, 10, 3, 1, 1);
+    }
+
+    /** {@code KEGARE_TEST_DB_URL}, pointing somewhere else: through a proxy that can be cut. */
+    static String urlVia(int port) {
+        return URL.replaceFirst("//[^/]+/", "//127.0.0.1:" + port + "/");
+    }
+
+    /** The real database's host and port. */
+    static String[] hostAndPort() {
+        java.util.regex.Matcher m = java.util.regex.Pattern.compile("//([^:/]+):(\\d+)/").matcher(URL);
+        if (!m.find()) throw new IllegalStateException("KEGARE_TEST_DB_URL needs a host and a port");
+        return new String[] {m.group(1), m.group(2)};
+    }
+
     /** An empty database, then Kegare's schema. */
     static void wipe() throws SQLException {
         try (ConnectionPool pool = new ConnectionPool(config("wipe"))) {

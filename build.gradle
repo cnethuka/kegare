@@ -257,6 +257,8 @@ idea {
 
 tasks.named('test', Test).configure {
     useJUnitPlatform()
+    // The integration tests run or skip by this: Gradle must not call a run without it up to date with one that had it (DESIGN §3.33).
+    inputs.property('kegareTestDatabase', System.getenv('KEGARE_TEST_DB_URL') != null)
     // Every test player keeps a full record of all ~1,470 advancements for the life of the shared test server (measured: 413 players,
     // about 508 MB still in use at the end). The default 512 MB left the suite thrashing in full GCs, then out of memory.
     maxHeapSize = '1G'

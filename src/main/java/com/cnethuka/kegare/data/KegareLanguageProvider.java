@@ -355,6 +355,9 @@ public final class KegareLanguageProvider extends LanguageProvider {
 
         // Eyewear (DESIGN §3.32): anyone's.
         add("itemGroup.kegare", "Kegare");
+        add("disconnect.kegare.db.unreachable", "Kegare can't reach its database. Your data is safe; try again shortly.");
+        add("message.kegare.db.down", "Kegare can't reach its database. The game carries on and saves are queued.");
+        add("message.kegare.db.up", "Kegare's database is back. Queued saves are going in.");
         add("item.kegare.blindfold", "Blindfold");
         add("item.kegare.sunglasses", "Sunglasses");
         add("curios.identifier.eyes", "Eyes");
