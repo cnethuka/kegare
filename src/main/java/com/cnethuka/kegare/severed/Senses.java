@@ -21,10 +21,13 @@ public final class Senses {
     /** How often the set is worked out again: four times a second. */
     static final int EVERY = 5;
     private static final Map<UUID, List<Integer>> SENT = new HashMap<>();
+    /** Who's been sent real positions (too fast for the eye), so an empty set goes once when that stops. */
+    private static final java.util.Set<UUID> SENT_POSITIONS = new java.util.HashSet<>();
 
     private Senses() {}
 
     static void tick(ServerPlayer player) {
+        positions(player);
         if (player.tickCount % EVERY != 0) return;
         List<Integer> ids = Severed.is(player) && player.isAlive() && !player.isSpectator() ? ids(player) : List.of();
         List<Integer> was = SENT.get(player.getUUID());
@@ -32,6 +35,30 @@ public final class Senses {
         if (ids.isEmpty()) SENT.remove(player.getUUID());
         else SENT.put(player.getUUID(), ids);
         if (player.connection != null) PacketDistributor.sendToPlayer(player, new SensesPayload(ids));
+    }
+
+    /**
+     * Every tick: the real positions of what they sense that eyes see behind where it is (DESIGN §3.30). Sensing isn't seeing, so the
+     * outline goes where they really are; the body itself they see where everyone does.
+     */
+    private static void positions(ServerPlayer player) {
+        List<Integer> ids = SENT.get(player.getUUID());
+        List<SensedPositionsPayload.Entry> entries = ids == null ? List.of() : realPositions(player, ids);
+        if (entries.isEmpty() && !SENT_POSITIONS.remove(player.getUUID())) return;
+        if (!entries.isEmpty()) SENT_POSITIONS.add(player.getUUID());
+        if (player.connection != null) PacketDistributor.sendToPlayer(player, new SensedPositionsPayload(entries));
+    }
+
+    /** Of these sensed entities, the real positions of the ones eyes see behind where they are (DESIGN §3.30). Public for the tests. */
+    public static List<SensedPositionsPayload.Entry> realPositions(ServerPlayer player, List<Integer> ids) {
+        List<SensedPositionsPayload.Entry> entries = new ArrayList<>();
+        for (int id : ids) {
+            net.minecraft.world.entity.Entity e = player.serverLevel().getEntity(id);
+            if (e != null && com.cnethuka.kegare.sight.DelayedSight.hidden(e) && !com.cnethuka.kegare.sight.DelayedSight.seesReal(player, e)) {
+                entries.add(new SensedPositionsPayload.Entry(id, e.position()));
+            }
+        }
+        return entries;
     }
 
     /** Who a Severed player senses right now, nearest first. Nothing for anyone else. Package-visible for the tests. */
@@ -55,9 +82,11 @@ public final class Senses {
 
     static void forget(UUID player) {
         SENT.remove(player);
+        SENT_POSITIONS.remove(player);
     }
 
     static void clear() {
         SENT.clear();
+        SENT_POSITIONS.clear();
     }
 }

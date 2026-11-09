@@ -44,6 +44,8 @@ public final class SensesClient {
     /** How bright the farthest outline is, against the nearest. */
     private static final float FAR = 0.3f;
     private static final Set<Integer> SENSED = new HashSet<>();
+    /** Real positions of what's sensed but seen behind where it is (DESIGN §3.30): the last two the server sent, for smooth drawing. */
+    private static final java.util.Map<Integer, Vec3[]> REAL = new java.util.HashMap<>();
     @Nullable private static PostChain chain;
     private static boolean broken;
     private static int width, height;
@@ -55,8 +57,20 @@ public final class SensesClient {
             SENSED.clear();
             SENSED.addAll(p.ids());
         });
+        com.cnethuka.kegare.severed.SensedPositionsPayload.setClientHandler(p -> {
+            java.util.Map<Integer, Vec3[]> next = new java.util.HashMap<>();
+            for (var e : p.entries()) {
+                Vec3[] was = REAL.get(e.id());
+                next.put(e.id(), new Vec3[] {was == null ? e.pos() : was[1], e.pos()});
+            }
+            REAL.clear();
+            REAL.putAll(next);
+        });
         NeoForge.EVENT_BUS.addListener(SensesClient::onRender);
-        NeoForge.EVENT_BUS.addListener((ClientPlayerNetworkEvent.LoggingOut e) -> SENSED.clear());
+        NeoForge.EVENT_BUS.addListener((ClientPlayerNetworkEvent.LoggingOut e) -> {
+            SENSED.clear();
+            REAL.clear();
+        });
     }
 
     /** Who's sensed right now (for the tests and the HUD). */
@@ -94,7 +108,8 @@ public final class SensesClient {
                 if (e == null || e == mc.player || !e.isAlive()) continue;
                 double d = e.position().distanceTo(mc.player.position());
                 silhouette.shade = Mth.clamp((float) (1.0 - (1.0 - FAR) * d / range), FAR, 1f);
-                Vec3 at = e.getPosition(partial).subtract(cam);
+                Vec3[] real = REAL.get(id); // sensing isn't seeing: where they really are, not where eyes see them
+                Vec3 at = (real != null ? real[0].lerp(real[1], partial) : e.getPosition(partial)).subtract(cam);
                 boolean invisible = e.isInvisible();
                 if (invisible) e.setInvisible(false); // sensed, not seen: an invisible body is there all the same
                 try {

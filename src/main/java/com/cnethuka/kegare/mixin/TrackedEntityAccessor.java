@@ -9,4 +9,8 @@ import org.spongepowered.asm.mixin.gen.Accessor;
 public interface TrackedEntityAccessor {
     @Accessor("serverEntity")
     ServerEntity kegare$serverEntity();
+
+    /** Who's watching it (too fast for the eye, DESIGN §3.30, sends each of them its own image). */
+    @Accessor("seenBy")
+    java.util.Set<net.minecraft.server.network.ServerPlayerConnection> kegare$seenBy();
 }

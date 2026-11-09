@@ -334,9 +334,11 @@ All timestamps use **level game time**. They persist across restarts and are ide
   cools down and how long that is) and `RushPayload` (S→C, to its owner: a Closing Line to drive, its line in three dimensions, or
   stop); G sends `MeleeIntentPayload.Action.BLUR`, and R while Blurring is the usual
   `SPECIAL_PRESS`, taken by Closing Line's cast interceptor.
+- **Too fast for the eye** (§3.30): `SensedPositionsPayload` (S→C, to a Severed player: the real positions of what they sense that eyes
+  see behind where it is), and vanilla's own teleport and head packets for the delayed image.
 - **Sub-tick timing** (§3.29): `TimingNet.Stamp` (C→S, an input stamped with the client's clock, sent at the key press), `TimingNet.Ping`
   (S→C) and `TimingNet.Pong` (C→S, the client's clock), all handled on the network thread. Reinforced Fists' look is `FistsPayload` (§3.28).
-- Network version `22` (since Reinforced Fists and Black Spark, §3.28-3.29: `FistsPayload`, the timing stamps; `21` was RMT's rework, §3.17: `RmtOutputPayload`, then heal-others' `RmtLinkPayload` and `RmtMomentPayload`; `20`
+- Network version `23` (since too fast for the eye, §3.30: `SensedPositionsPayload`; `22` was Reinforced Fists and Black Spark, §3.28-3.29: `FistsPayload`, the timing stamps; `21` was RMT's rework, §3.17: `RmtOutputPayload`, then heal-others' `RmtLinkPayload` and `RmtMomentPayload`; `20`
   was Closing Line's line in three dimensions in `RushPayload` and its cooldown in `BlurPayload`, §3.27; `19`
   was Severed's payloads, `18` Burnout's end time in the sync, §3.25, and Time Manipulation's payloads, §3.26). Bump it when payload formats change; mismatched clients are refused.
 
@@ -458,7 +460,7 @@ Malice is always shown as whole numbers (floored, like the HUD); the stored valu
 - **Server TOML** (`config/kegare-server.toml`, where NeoForge 21.1 keeps server configs; synced to clients and
   hot-reloaded when edited) holds **every balance number**.
   - Sections: `malice` (with `tiers`), `traits`, `roll` (with `weights`, and `includeTestInnateTechniques`),
-    `combat`, `rime` (§3.14), `swap` (§3.19), `melee` (§3.22), `impact` (§3.23), `battle_damage` (§3.24), `reverse_malice_technique` (§3.17), `reinforced_fists` (§3.28), `timing` (§3.29), `progression` (§3.21), `test_abilities`.
+    `combat`, `rime` (§3.14), `swap` (§3.19), `melee` (§3.22), `impact` (§3.23), `battle_damage` (§3.24), `reverse_malice_technique` (§3.17), `reinforced_fists` (§3.28), `timing` (§3.29), `too_fast_for_the_eye` (§3.30), `progression` (§3.21), `test_abilities`.
   - The `traits` section includes:
     - `sixEyesBirthChance`
     - `sixEyesTransferMode` (RANDOM | KILLER)
@@ -2407,7 +2409,8 @@ Standstill's gray stay at every setting: they're what you play by).
 - **Rewind:** the target snaps back (never sliding) while bronze afterimages run back down its path, a clock face snapping up on it
   with both hands swept round counter-clockwise, a backward tick.
 - **Accelerate:** a winding click as it goes on; while it runs, a quick tick five times a second and a faint silver afterimage left
-  behind every few ticks when the caster moves.
+  behind every few ticks when the caster moves. While it's on, everyone but a Six Eyes bearer sees the caster 100 ms behind where they
+  are, and hears the ticking from there (too fast for the eye, §3.30).
 - **Fast Forward:** a clock face round the caster, turned toward whoever watches (laid flat at the waist in the caster's own first
   person), three hands whirling forward faster and faster; a whirr of ticks.
 - **Decelerate:** the thrown clock hand (`DecelerateRenderer`): a slim silver-white blade with a spade and a fine point, a bronze
@@ -2492,12 +2495,15 @@ no glow, no Innate color. None of it grows with Grade or Refinement, because the
 through walls, still or moving, invisible ones included. They're sensed through hearing, smell and the air, not seen. The server
 works out who that is four times a second (nearest first; not armor stands, spectators or themself) and sends the set to that
 player alone (`SensesPayload`, only when it changes; an empty set once they stop being Severed); a Malice user is never sent one.
+Sensing isn't seeing: a Blurring or Accelerating player, whom eyes see behind where they are (§3.30), is outlined where they really
+are (`SensedPositionsPayload`, every tick).
 The client draws each sensed body's silhouette into a mask (invisible ones as if they weren't), its brightness how near it is, and
 `shaders/post/senses.json` lays a dim, pale, neutral two-pixel outline just outside each silhouette: never vanilla glowing, no team
 or Malice color, no names or labels, nothing that tells a technique or trait (§1). It shows at every effects setting, because it's
 what they play by.
 
-**Blur** (G for Severed players; `Blur`, `client/BlurDrive`, `client/BlurFeel`, `client/BlurFx`). For everyone else G stays
+**Blur** (G for Severed players; `Blur`, `client/BlurDrive`, `client/BlurFeel`, `client/BlurFx`). While Blurring, everyone but a Six
+Eyes bearer sees them 150 ms behind where they are (too fast for the eye, §3.30). For everyone else G stays
 Technique Mode, unchanged (`client/SeveredKeys`). Controls lists the key as "Technique Mode / Blur".
 - **Movement:** extremely fast (`[blur] speed` 0.7 blocks a tick, about 2.5 times a sprint, 14 blocks a second). It never drops
   below 1.25 times a sprint under Accelerate's `rate` (`Blur.topSpeed`), so it stays clearly faster than Accelerate (whose sprint
@@ -2785,6 +2791,50 @@ A shared system so timing can be judged finer than a 50 ms tick. Numbers in `[ti
 - **Tests:** `SubTickTest` (the estimate from the pings; an honest stamp taken, an early-claiming one clamped, a future one held to its
   arrival, an implausible or unsynced one falling back; a missing stamp falling back to when it's handled; a stale one never matched; a
   stamp used once; the gap), `ParryTimingTest` (both judgments on real hits with stamped latencies, and the switch).
+
+### 3.30 Too fast for the eye (package `sight`)
+
+While a Severed player is Blurring (§3.27), or a Time Manipulation player has Accelerate on (§3.26), everyone else sees them where they
+were a moment ago: `accelerateDelay` (100 ms) behind for Accelerate, `blurDelay` (150 ms) for Blur. A delay in time, so the faster they
+move, the further behind the image is: at Blur's top speed (0.7 blocks a tick) 2.1 blocks, at an Accelerated sprint (0.56) 1.1 blocks.
+Numbers in `[too_fast_for_the_eye]` of `kegare-server.toml`.
+- **On the server** (`DelayedSight`): every player's position, rotation and head turn are recorded at the end of every tick. While one
+  is delayed, the viewers who shouldn't see the real position get **no** movement packets for them at all (the tracker's moves,
+  teleports, head turns and motion are held back from them, `TrackedEntityBroadcastMixin`), only where the player was: an absolute
+  teleport and the head's turn, every tick. A viewer who starts watching meanwhile is spawned at the image (`ServerEntityPairingMixin`).
+  So the real position never reaches a viewer who shouldn't have it. Head and body rotation, animations and afterimages all follow the
+  image on the viewer's client, since they're drawn on the body where it's shown. The sounds a delayed player makes as they go (Blur's
+  wind, Accelerate's ticking) are heard from the image too (`DelayedSight.playSound`).
+- **No snap:** the delay eases in over `easeTicks` (4) when Blur or Accelerate starts and back out over the same when it ends, so the
+  image slows a little, then catches up (at most the player's speed times 1 + delay ÷ ease). Once it has caught up, every viewer gets
+  the real position at once and the tracker counts from it again, so vanilla's own updates line up for everyone.
+- **Who sees the real position:** the player themself; a Six Eyes bearer (the `SixEyesTrait` holder sees it at all times, on vanilla's
+  own packets); bosses (§4). A Severed player's Senses outlines (§3.27) show the real position, since sensing isn't seeing: the server
+  sends them the real positions of what they sense that eyes see behind (`SensedPositionsPayload`, every tick while there's any), and
+  the outline is drawn there. Their eyes see the image like everyone's.
+- **Mobs** see the image: they turn to it (`LookControlSightMixin`), path to it (`PathNavigationSightMixin`, every navigation that paths
+  to an entity its own way) and judge their melee reach against it (`MobSightMixin`), so they swing at where you were; the swing lands
+  only if you're really in reach too. Bosses see the real position.
+- **Hits** stay server-authoritative against the real position, and no reach is widened. Measured (`DelayedSightTest`, the server's
+  own reach check: a swing lands if the real body is within reach + 1, so 4 blocks of the attacker's eyes; the attacker's client only
+  lets them swing at what's within 3), feet to feet from the attacker to the image:
+
+  | | Blur (2.1 blocks behind) | Accelerate (1.1 blocks behind) |
+  |---|---|---|
+  | Melee at the image, 2 blocks | lands, whichever way they run | lands |
+  | 3 blocks | lands running across or toward; misses running away (the real body is past 4) | lands |
+  | 4 blocks | can't swing (past the client's reach) | can't swing |
+  | Arrow from 12 blocks at the image | misses | misses |
+  | Arrow led ahead of the image | hits | hits |
+
+  The server takes a melee hit by distance, not by where the crosshair was, so a swing at the image close in still lands on the real
+  body; one at a runner's image near the edge of reach doesn't. Arrows are physics against the real body, so they have to be led by the
+  delay as well as the flight.
+- **Not covered:** a mob's ranged aim (a skeleton's arrows) is still at the real position, and particles the server sends during a state
+  are at the real position (Blur's start and Closing Line's moments, which happen at the state's edges).
+- **Tests:** `DelayedSightTest` (the image to a normal viewer, 150 ms and 100 ms behind; the real position to the mover, to a Six Eyes
+  bearer and in Senses; the spawn packet; the ease back with no snap; nothing delayed with neither state on; a mob turning, pathing and
+  swinging at the image and missing; a boss the real one; the hit measurements above).
 
 ---
 

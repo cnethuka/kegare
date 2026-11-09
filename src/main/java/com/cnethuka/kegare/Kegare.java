@@ -46,6 +46,7 @@ public final class Kegare {
         com.cnethuka.kegare.severed.Severed.init(modBus); // a Severed player's body (DESIGN §3.27)
         com.cnethuka.kegare.rmt.Rmt.init(modBus); // registers Reverse Malice Technique as a shared ability
         com.cnethuka.kegare.fists.Fists.init(modBus); // Reinforced Fists, every Malice user's (DESIGN §3.28)
+        com.cnethuka.kegare.sight.DelayedSight.init(); // too fast for the eye: Blur and Accelerate seen where they were (DESIGN §3.30)
         com.cnethuka.kegare.impact.Impacts.init(); // hit-stop, shake, flashes and impact frames (DESIGN §3.23)
         com.cnethuka.kegare.battledamage.BattleDamage.init(); // big hits break the world (DESIGN §3.24)
         TestInnateTechniques.INNATE_TECHNIQUES.register(modBus); // TEST CONTENT

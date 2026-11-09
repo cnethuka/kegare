@@ -91,7 +91,9 @@ public final class AccelerateAbility extends TimeAbility {
     public void tick(AbilityContext ctx) {
         ServerPlayer p = ctx.player();
         long now = p.level().getGameTime();
-        if (now % 5 == 0) TimeManipulation.sound(p, KegareSounds.TIME_TICK, 0.35f, 1.6f); // the clock running fast
+        if (now % 5 == 0) { // the clock running fast, heard where each listener sees them (too fast for the eye, §3.30)
+            com.cnethuka.kegare.sight.DelayedSight.playSound(p, KegareSounds.TIME_TICK, net.minecraft.sounds.SoundSource.PLAYERS, 0.35f, 1.6f);
+        }
         Long since = ON_SINCE.get(p.getUUID());
         if (since != null && now - since >= TimeAdvancements.OVERCLOCK_TICKS) TimeAdvancements.award(p, TimeAdvancements.OVERCLOCK);
     }

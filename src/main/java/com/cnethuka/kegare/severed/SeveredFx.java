@@ -43,8 +43,9 @@ final class SeveredFx {
         sound(player, KegareSounds.SEVERED_BLUR_ON, 0.9f, 1f);
     }
 
-    static void wind(ServerPlayer player) {
-        sound(player, KegareSounds.SEVERED_BLUR_WIND, 0.5f, 0.9f + player.getRandom().nextFloat() * 0.2f);
+    static void wind(ServerPlayer player) { // heard where each listener sees them (too fast for the eye, §3.30)
+        com.cnethuka.kegare.sight.DelayedSight.playSound(player, KegareSounds.SEVERED_BLUR_WIND, SoundSource.PLAYERS, 0.5f,
+                0.9f + player.getRandom().nextFloat() * 0.2f);
     }
 
     static void winded(ServerPlayer player) {

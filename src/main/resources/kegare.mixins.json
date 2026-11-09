@@ -10,7 +10,13 @@
     "PlayerExhaustionMixin",
     "FoodDataMixin",
     "ServerTeleportMixin",
-    "PlayerAttackMixin"
+    "PlayerAttackMixin",
+    "TrackedEntityBroadcastMixin",
+    "ServerEntityPairingMixin",
+    "MobSightMixin",
+    "PathNavigationSightMixin",
+    "LookControlSightMixin",
+    "PathNavigationAccessor"
   ],
   "client": [
     "client.PlayerInfoMixin",
