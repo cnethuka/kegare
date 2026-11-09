@@ -113,8 +113,8 @@ final class RmtLinkClient {
             Vec3 a = from.add(axis.scale(t0)), b = from.add(axis.scale(t1));
             Vec3 side = axis.cross(a.subtract(cam)).normalize();
             float pulse = 0.65f + 0.35f * Mth.sin((float) (t0 * Math.PI * 4) - time * 0.35f);
-            ribbon(out, m, cam, a, b, side, 0.13, GLOW, (int) (95 * pulse));
-            ribbon(out, m, cam, a, b, side, 0.035, CORE, (int) (235 * pulse));
+            ribbon(out, m, cam, a, b, side, 0.2, GLOW, (int) (110 * pulse));
+            ribbon(out, m, cam, a, b, side, 0.055, CORE, (int) (240 * pulse));
         }
     }
 

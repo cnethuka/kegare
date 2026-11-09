@@ -484,6 +484,24 @@ class KegareCommandTest {
         });
     }
 
+    @Test
+    void rmtDebugCommands(MinecraftServer server) throws Exception {
+        inGame(server, () -> {
+            ServerPlayer a = online(server, "rmt_cmd_a"), b = online(server, "rmt_cmd_b");
+            op(server, "kegare debug rmt fatigue rmt_cmd_a 0.3").ok();
+            assertEquals(0.3, com.cnethuka.kegare.rmt.RmtFatigue.of(a), 1e-9, "fatigue set");
+            op(server, "kegare debug rmt others unlock rmt_cmd_a").ok();
+            assertTrue(com.cnethuka.kegare.progression.Unlocks.has(a, com.cnethuka.kegare.rmt.RmtIds.ON_ANOTHER_UNLOCK), "taught");
+            assertTrue(op(server, "kegare debug rmt others unlock rmt_cmd_a").text().contains("already"), "already knows");
+            op(server, "kegare debug rmt others lock rmt_cmd_a").ok();
+            assertFalse(com.cnethuka.kegare.progression.Unlocks.has(a, com.cnethuka.kegare.rmt.RmtIds.ON_ANOTHER_UNLOCK), "taken away");
+            String moment = op(server, "kegare debug rmt moment rmt_cmd_a rmt_cmd_b").ok().text();
+            assertTrue(moment.contains("rmt_cmd_b glows for rmt_cmd_a"), moment);
+            assertTrue(op(server, "kegare debug rmt moment rmt_cmd_a rmt_cmd_a").text().contains("themself"), "not on yourself");
+            assertNotNull(b);
+        });
+    }
+
     // ------------------------------------------------------------------ the old forms
 
     @Test
@@ -578,7 +596,7 @@ class KegareCommandTest {
                     "refinement get plain_text", "refinement set plain_text 2", "insight get plain_text", "insight add plain_text dominion 1",
                     "loadout reset plain_text", "cooldown reset plain_text", "cooldown reset plain_text dash", "debug stun plain_text 1", "debug pity plain_text 3", "debug reroll plain_text swap",
                     "debug orb spawn plain_text", "debug orb status plain_text", "debug shared unlock plain_text reverse_malice_technique", "debug shared lock plain_text reverse_malice_technique",
-                    "debug swap unswappable plain_text true", "debug swap unswappable plain_text false", "debug strings unmovable plain_text true", "debug strings unmovable plain_text false",
+                    "debug swap unswappable plain_text true", "debug swap unswappable plain_text false", "debug rmt fatigue plain_text 0.3", "debug rmt others unlock plain_text", "debug rmt others lock plain_text", "debug strings unmovable plain_text true", "debug strings unmovable plain_text false",
                     "grade set plain_text special_grade", "grade get plain_text", "progression reset plain_text", "rebirth plain_text 0", "malice get plain_text", "innate get plain_text", "info plain_text"));
             for (HelpCommand.Entry entry : HelpCommand.ENTRIES) commands.add("help " + entry.system());
             for (String command : commands) {

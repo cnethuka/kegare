@@ -412,6 +412,9 @@ Every command reads `/kegare <system> <action> [player] [value]`.
 | `/kegare malice capacity <player> <amount>` | Admin override of capacity. 0 makes them Severed |
 | `/kegare rebirth <player> [capacity]` | Wipe and re-roll everything (optionally forcing Malice capacity; 0 = Severed) |
 | `/kegare loadout reset [player]` | Back to the innate technique's default layout |
+| `/kegare debug rmt fatigue <player> <amount>` | Set how much injuries take off a player's Reverse Malice Technique output (0 to 1, §3.17) |
+| `/kegare debug rmt others unlock\|lock <player>` | Teach or take away healing others (RMT's special) without its moment: the Unlocks entry `kegare:rmt_heal_others` |
+| `/kegare debug rmt moment <player> <target>` | Force the moment now: the target glows for the player for `momentSeconds`, and healing them teaches it (if the player is eligible; it says if not) |
 | `/kegare cooldown reset [player]` | Every cooldown ready at once: the innate technique's abilities, specials and ultimate, shared abilities like RMT, Dash and Closing Line, and Burnout over. Selectors work (`@a`). Told to the client at once, so the panel and the HUD's cues show it ready |
 | `/kegare cooldown reset <player> <ability>` | Only that one, by short name (`point_maker`; a special's name clears the cooldown it shares with its base; `dash`, `closing_line`). Burnout stays |
 | `/kegare grade list` | The Grades, lowest first, with their short names |
@@ -1274,6 +1277,13 @@ negative is positive energy, which is why it heals, and why its colors are white
     blocks."
   - **The tell** (§3.15): a white-and-green link from your hand to them, seen by everyone, and a soft chime as it starts.
   - The Sorcerer screen's details for RMT say whether you can heal others.
+  - **Look** (`client/RmtLinkClient`, our own mesh, so it draws at every effects setting: the link is the tell and
+    the glow is what you play by). The link: a camera-facing ribbon, a narrow white core in a wider
+    soft green glow fading to nothing at its edges, a slow brightening running along it toward the healed one, from the healer's right
+    hand to their chest. In your own first person it starts low and to the right in front of you, never at your eyes. The moment's glow:
+    a soft green halo drawn behind them at their middle, so their own body hides its centre and it shows round their silhouette,
+    breathing, fading out over its last second; only the eligible player is sent it. White and green, never Malice violet. The healed one
+    gets RMT's heal pulse (their own quieter version in first person).
 - **Visuals:** Photon only; **it has no player animation**, so the caster's body doesn't move. `rmt/rmt_channel_aura` (green and
   white motes rising round the body, white sparkles circling, a white-hearted glow at the chest) and `rmt/rmt_heal_pulse` (each heal:
   a green ring on the ground with a white one inside it, rising white glints, a soft green flash with a white heart), authored in

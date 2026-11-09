@@ -346,6 +346,7 @@ public final class KegareLanguageProvider extends LanguageProvider {
         add("message.kegare.rmt.dont_know", "You don't know how to do that yet.");
         add("message.kegare.rmt.no_one_to_heal", "No one to heal within %s blocks.");
         add("message.kegare.rmt.learned_others", "You know how to heal others now.");
+        add("unlock.kegare.rmt_heal_others", "Healing others");
         add("gui.kegare.rmt.output_injured", "Output %sx, injuries %s");
 
         // Loadout
@@ -702,6 +703,18 @@ public final class KegareLanguageProvider extends LanguageProvider {
         add("commands.kegare.help.debug.orb.spawn", "Bring a player a green orb now.");
         add("commands.kegare.help.debug.orb.status", "Show a player's next orb roll and any orb under way.");
         add("commands.kegare.help.debug.swap", "Stop swaps from reaching a player, or let them again.");
+        add("commands.kegare.help.debug.rmt.fatigue", "Set how much a player's injuries take off their Reverse Malice Technique (0 to 1).");
+        add("commands.kegare.help.debug.rmt.others.unlock", "Let a player heal others with Reverse Malice Technique, without its moment.");
+        add("commands.kegare.help.debug.rmt.others.lock", "Take healing others away from a player.");
+        add("commands.kegare.help.debug.rmt.moment", "Make the target glow for the player now, as their chance moment to learn healing others.");
+        add("commands.kegare.debug.rmt.fatigue", "%s's injuries take %s off their Reverse Malice Technique: output %sx.");
+        add("commands.kegare.debug.rmt.others.unlocked", "%s can heal others with Reverse Malice Technique now.");
+        add("commands.kegare.debug.rmt.others.locked", "%s can no longer heal others.");
+        add("commands.kegare.debug.rmt.others.already", "%s already knows how to heal others.");
+        add("commands.kegare.debug.rmt.others.not_known", "%s doesn't know how to heal others.");
+        add("commands.kegare.debug.rmt.moment", "%s glows for %s now, for %s seconds.");
+        add("commands.kegare.debug.rmt.moment.not_eligible", "%s glows for %s now, for %s seconds, but they aren't eligible, so they can't learn from it.");
+        add("commands.kegare.debug.rmt.moment.self", "%s can't glow for themself.");
         add("commands.kegare.help.debug.strings", "Stop strings from moving a player, or let them again.");
         add("commands.kegare.help.debug.impact", "Play an impact tier (light, medium, heavy, impact_frame, top) on a player's own screen as the attacker, victim or witness of a melee or technique hit, to tune how it feels. Nothing lands.");
         add("commands.kegare.help.debug.battle.restore", "Start rebuilding every block battle damage broke (restoring mode) now.");

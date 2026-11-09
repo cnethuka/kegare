@@ -115,6 +115,21 @@ final class DebugCommands {
                                                 })))))
                 // Battle damage's pending rebuilds (RESTORING mode): start them all now instead of after the fight's delay.
                 .then(Commands.literal("battle").then(Commands.literal("restore").executes(c -> battleRestore(c.getSource()))))
+                // Reverse Malice Technique (DESIGN §3.17): injury fatigue, knowing how to heal others, and a forced moment.
+                .then(Commands.literal("rmt")
+                        .then(Commands.literal("fatigue").then(player()
+                                .then(Commands.argument("amount", com.mojang.brigadier.arguments.DoubleArgumentType.doubleArg(0.0, 1.0)).executes(c -> {
+                                    double amount = com.mojang.brigadier.arguments.DoubleArgumentType.getDouble(c, "amount");
+                                    return forEachPlayer(c, (source, player) -> rmtFatigue(source, player, amount));
+                                }))))
+                        .then(Commands.literal("others")
+                                .then(Commands.literal("unlock").then(player((source, player) -> rmtOthers(source, player, true))))
+                                .then(Commands.literal("lock").then(player((source, player) -> rmtOthers(source, player, false)))))
+                        .then(Commands.literal("moment").then(player()
+                                .then(Commands.argument("target", net.minecraft.commands.arguments.EntityArgument.player()).executes(c -> {
+                                    ServerPlayer target = net.minecraft.commands.arguments.EntityArgument.getPlayer(c, "target");
+                                    return forEachPlayer(c, (source, player) -> rmtMoment(source, player, target));
+                                })))))
                 .then(Commands.literal("strings")
                         .then(Commands.literal("unmovable")
                                 .then(player()
@@ -126,6 +141,31 @@ final class DebugCommands {
     }
 
     private static final List<String> ROLES = List.of("attacker", "victim", "witness"), KINDS = List.of("melee", "technique");
+
+    private static int rmtFatigue(CommandSourceStack source, ServerPlayer player, double amount) {
+        com.cnethuka.kegare.rmt.RmtFatigue.set(player, amount);
+        say(source, "commands.kegare.debug.rmt.fatigue", player.getDisplayName(), Math.round(com.cnethuka.kegare.rmt.RmtFatigue.of(player) * 100) + "%",
+                String.format(java.util.Locale.ROOT, "%.2f", com.cnethuka.kegare.rmt.RmtOutput.of(player)));
+        return 1;
+    }
+
+    private static int rmtOthers(CommandSourceStack source, ServerPlayer player, boolean unlock) {
+        net.minecraft.resources.ResourceLocation id = com.cnethuka.kegare.rmt.RmtIds.ON_ANOTHER_UNLOCK;
+        boolean changed = unlock ? com.cnethuka.kegare.progression.Unlocks.grant(player, id) : com.cnethuka.kegare.progression.Unlocks.revoke(player, id);
+        if (!changed) return fail(source, unlock ? "commands.kegare.debug.rmt.others.already" : "commands.kegare.debug.rmt.others.not_known", player.getDisplayName());
+        say(source, unlock ? "commands.kegare.debug.rmt.others.unlocked" : "commands.kegare.debug.rmt.others.locked", player.getDisplayName());
+        return 1;
+    }
+
+    private static int rmtMoment(CommandSourceStack source, ServerPlayer player, ServerPlayer target) {
+        if (player == target) return fail(source, "commands.kegare.debug.rmt.moment.self", player.getDisplayName());
+        com.cnethuka.kegare.rmt.RmtOnAnother.startMoment(player, target);
+        String seconds = com.cnethuka.kegare.config.ConfigText.number(com.cnethuka.kegare.rmt.RmtConfig.MOMENT_SECONDS);
+        boolean canLearn = com.cnethuka.kegare.progression.Unlocks.eligible(player, com.cnethuka.kegare.rmt.RmtIds.ON_ANOTHER_UNLOCK);
+        say(source, canLearn ? "commands.kegare.debug.rmt.moment" : "commands.kegare.debug.rmt.moment.not_eligible",
+                target.getDisplayName(), player.getDisplayName(), seconds);
+        return 1;
+    }
 
     /** {@code impact <player> <tier> <role> <kind>}: a tier as that player sees it in that role, a plain hit's white or a technique's color. */
     private static com.mojang.brigadier.builder.RequiredArgumentBuilder<CommandSourceStack, ?> impactTiers() {

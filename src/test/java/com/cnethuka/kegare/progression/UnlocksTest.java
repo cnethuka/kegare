@@ -95,6 +95,16 @@ class UnlocksTest {
         assertEquals(java.util.Set.of(com.cnethuka.kegare.rmt.RmtIds.ON_ANOTHER_UNLOCK), java.util.Set.copyOf(Unlocks.registered()));
     }
 
+    /** The toast a new unlock brings names it: every real entry has a name in the lang file. */
+    @Test
+    void everyEntryHasAName() throws java.io.IOException {
+        java.nio.file.Path lang = java.nio.file.Path.of(System.getProperty("kegare.projectDir", "."), "src/generated/resources/assets/kegare/lang/en_us.json");
+        com.google.gson.JsonObject names = com.google.gson.JsonParser.parseString(java.nio.file.Files.readString(lang)).getAsJsonObject();
+        for (ResourceLocation id : Unlocks.registered()) {
+            assertTrue(names.has(net.minecraft.Util.makeDescriptionId("unlock", id)), id + " has a name for its toast");
+        }
+    }
+
     @Test
     void registeringTwiceIsABug(MinecraftServer server) throws Exception {
         TestServer.onServerThread(server, () -> {

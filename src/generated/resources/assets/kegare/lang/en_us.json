@@ -246,6 +246,14 @@
   "commands.kegare.debug.orb.status.unlocked": "unlocked",
   "commands.kegare.debug.orb.status.yes": "yes",
   "commands.kegare.debug.pity": "Set %s's pity counter to %s.",
+  "commands.kegare.debug.rmt.fatigue": "%s's injuries take %s off their Reverse Malice Technique: output %sx.",
+  "commands.kegare.debug.rmt.moment": "%s glows for %s now, for %s seconds.",
+  "commands.kegare.debug.rmt.moment.not_eligible": "%s glows for %s now, for %s seconds, but they aren't eligible, so they can't learn from it.",
+  "commands.kegare.debug.rmt.moment.self": "%s can't glow for themself.",
+  "commands.kegare.debug.rmt.others.already": "%s already knows how to heal others.",
+  "commands.kegare.debug.rmt.others.locked": "%s can no longer heal others.",
+  "commands.kegare.debug.rmt.others.not_known": "%s doesn't know how to heal others.",
+  "commands.kegare.debug.rmt.others.unlocked": "%s can heal others with Reverse Malice Technique now.",
   "commands.kegare.debug.screen": "Playing %s on %s's screen for %s s.",
   "commands.kegare.debug.screen.stopped": "Stopped %s on %s's screen.",
   "commands.kegare.debug.shared.already": "%s already has %s.",
@@ -280,6 +288,10 @@
   "commands.kegare.help.debug.orb.status": "Show a player's next orb roll and any orb under way.",
   "commands.kegare.help.debug.pity": "Set a player's pity counter.",
   "commands.kegare.help.debug.reroll": "Roll a player into this Innate Technique, reveal and all.",
+  "commands.kegare.help.debug.rmt.fatigue": "Set how much a player's injuries take off their Reverse Malice Technique (0 to 1).",
+  "commands.kegare.help.debug.rmt.moment": "Make the target glow for the player now, as their chance moment to learn healing others.",
+  "commands.kegare.help.debug.rmt.others.lock": "Take healing others away from a player.",
+  "commands.kegare.help.debug.rmt.others.unlock": "Let a player heal others with Reverse Malice Technique, without its moment.",
   "commands.kegare.help.debug.screen": "Play a whole-screen effect (grayscale) on a player's screen for a time. 0 stops it.",
   "commands.kegare.help.debug.shared.lock": "Lock a shared ability again for a player.",
   "commands.kegare.help.debug.shared.unlock": "Unlock a shared ability for a player.",
@@ -1176,5 +1188,6 @@
   "toast.kegare.unlocked.special": "Special unlocked",
   "toast.kegare.unlocked.ultimate": "Ultimate unlocked",
   "trait.kegare.six_eyes": "Six Eyes",
-  "trait.kegare.six_eyes.desc": "Eyes that see through everything. Only one bearer at a time. (No effects yet.)"
+  "trait.kegare.six_eyes.desc": "Eyes that see through everything. Only one bearer at a time. (No effects yet.)",
+  "unlock.kegare.rmt_heal_others": "Healing others"
 }

@@ -109,6 +109,10 @@ final class HelpCommand {
             entry("debug impact log <on>", "commands.kegare.help.debug.impact.log"),
             entry("debug screen <player> <effect> <seconds>", "commands.kegare.help.debug.screen"),
             entry("debug battle restore", "commands.kegare.help.debug.battle.restore"),
+            entry("debug rmt fatigue <player> <amount>", "commands.kegare.help.debug.rmt.fatigue"),
+            entry("debug rmt others unlock <player>", "commands.kegare.help.debug.rmt.others.unlock"),
+            entry("debug rmt others lock <player>", "commands.kegare.help.debug.rmt.others.lock"),
+            entry("debug rmt moment <player> <target>", "commands.kegare.help.debug.rmt.moment"),
             entry("debug strings unmovable <player> <on>", "commands.kegare.help.debug.strings"),
             devClient("debug fx export", "commands.kegare.help.debug.fx.export"),
             devClient("debug fx play <name> [where]", "commands.kegare.help.debug.fx.play"));
