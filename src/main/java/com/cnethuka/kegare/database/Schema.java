@@ -67,6 +67,39 @@ final class Schema {
                 player uuid,
                 created_at timestamptz NOT NULL DEFAULT now()
             );
+            """,
+            """
+            CREATE TABLE kegare.player_name (
+                player uuid PRIMARY KEY,
+                name text NOT NULL,
+                updated_at timestamptz NOT NULL DEFAULT now()
+            );
+            CREATE TABLE kegare.stat_event (
+                id bigserial PRIMARY KEY,
+                at timestamptz NOT NULL,
+                server_id text NOT NULL,
+                player uuid NOT NULL,
+                kind text NOT NULL,
+                amount double precision NOT NULL,
+                detail text,
+                announced boolean NOT NULL DEFAULT false
+            );
+            CREATE INDEX stat_event_player_kind ON kegare.stat_event (player, kind);
+            CREATE SCHEMA kegare_public;
+            CREATE VIEW kegare_public.player_stats AS
+                SELECT n.name,
+                    count(*) FILTER (WHERE e.kind = 'pvp_kill') AS pvp_kills,
+                    count(*) FILTER (WHERE e.kind = 'death') AS deaths,
+                    count(*) FILTER (WHERE e.kind = 'fight') AS fights,
+                    coalesce(sum(e.amount) FILTER (WHERE e.kind = 'damage_dealt'), 0) AS damage_dealt,
+                    count(*) FILTER (WHERE e.kind = 'black_spark') AS black_sparks,
+                    coalesce(max(e.amount) FILTER (WHERE e.kind = 'black_spark'), 0)::bigint AS longest_chain
+                FROM kegare.player_name n JOIN kegare.stat_event e ON e.player = n.player
+                GROUP BY n.player, n.name;
+            CREATE VIEW kegare_public.announced_advancements AS
+                SELECT n.name, e.detail AS advancement, e.at AS earned_at
+                FROM kegare.stat_event e JOIN kegare.player_name n ON n.player = e.player
+                WHERE e.kind = 'advancement' AND e.announced;
             """);
 
     static int current() {

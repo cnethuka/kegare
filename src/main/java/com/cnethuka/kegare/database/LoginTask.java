@@ -42,7 +42,7 @@ public final class LoginTask implements ConfigurationTask {
             return;
         }
         var player = listener.getOwner().getId();
-        database.login(player).whenComplete((result, failure) -> server.execute(() -> {
+        database.login(player, listener.getOwner().getName()).whenComplete((result, failure) -> server.execute(() -> {
             if (failure != null || result == null || !result.admitted()) {
                 listener.disconnect(Component.translatable(result == null || result.refusal() == null ? KegareDatabase.UNREACHABLE : result.refusal()));
                 return;

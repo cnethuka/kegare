@@ -6,7 +6,13 @@ import com.cnethuka.kegare.trait.TraitSuccession;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.Timestamp;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -14,11 +20,14 @@ import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionException;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 import javax.annotation.Nullable;
 import net.minecraft.ChatFormatting;
@@ -80,6 +89,54 @@ public final class KegareDatabase {
         static final LoginResult HELD_ELSEWHERE = new LoginResult(false, HELD, Map.of(), null, null);
     }
 
+    /** One line of {@code /kegare top}. */
+    public record TopRow(String name, double value) {}
+
+    /** What {@code /kegare top} can show, each with its own fixed query on the public view: that's all of it, and all of it's public. */
+    public enum PublicStat {
+        PVP_KILLS("pvp_kills", "commands.kegare.top.stat.pvp_kills"),
+        DEATHS("deaths", "commands.kegare.top.stat.deaths"),
+        FIGHTS("fights", "commands.kegare.top.stat.fights"),
+        DAMAGE_DEALT("damage_dealt", "commands.kegare.top.stat.damage_dealt"),
+        BLACK_SPARKS("black_sparks", "commands.kegare.top.stat.black_sparks"),
+        LONGEST_CHAIN("longest_chain", "commands.kegare.top.stat.longest_chain");
+
+        private final String statName, langKey;
+
+        PublicStat(String statName, String langKey) {
+            this.statName = statName;
+            this.langKey = langKey;
+        }
+
+        public String statName() {
+            return statName;
+        }
+
+        public String langKey() {
+            return langKey;
+        }
+
+        @Nullable
+        public static PublicStat byName(String name) {
+            for (PublicStat stat : values()) if (stat.statName.equals(name)) return stat;
+            return null;
+        }
+
+        public static List<String> names() {
+            return Arrays.stream(values()).map(PublicStat::statName).toList();
+        }
+
+        String query() {
+            return "SELECT name, " + statName + " FROM kegare_public.player_stats WHERE " + statName + " > 0 ORDER BY " + statName + " DESC, name LIMIT 10"; // statName is this enum's own constant
+        }
+    }
+
+    private record StatRow(long at, UUID player, String kind, double amount, @Nullable String detail, boolean announced) {}
+
+    /** How many stat events wait in memory during an outage. Past this the oldest go: they aren't player data. */
+    private static final int MAX_WAITING_STATS = 20_000;
+    private static final int STATS_PER_WRITE = 500;
+
     public static final String UNREACHABLE = "disconnect.kegare.db.unreachable";
     public static final String HELD = "disconnect.kegare.db.held";
     public static final String LEASE_LOST = "disconnect.kegare.db.lease_lost";
@@ -92,6 +149,9 @@ public final class KegareDatabase {
     final ConnectionPool pool;
     final SaveQueue queue = new SaveQueue();
     final NetworkTraits traits;
+    private final ConcurrentLinkedQueue<StatRow> stats = new ConcurrentLinkedQueue<>();
+    /** Recorded and not yet in the database, counting any batch being written now. */
+    private final AtomicInteger unwrittenStats = new AtomicInteger();
     private final Path configDir;
     private final Host host;
     private final ExecutorService io;
@@ -228,7 +288,7 @@ public final class KegareDatabase {
     /** Waits for the queue, up to shutdownTimeout; what's left goes to the spill file. Server stop only. */
     public void stop() {
         long deadline = System.currentTimeMillis() + TimeUnit.SECONDS.toMillis(config.shutdownTimeoutSeconds());
-        while ((queue.size() > 0 || traits.hasOps()) && System.currentTimeMillis() < deadline) sleep(50);
+        while ((queue.size() > 0 || traits.hasOps() || (!down && statsWaiting())) && System.currentTimeMillis() < deadline) sleep(50);
         running = false;
         scheduler.shutdownNow();
         writer.interrupt();
@@ -287,6 +347,11 @@ public final class KegareDatabase {
      * A player with no rows whose world file has Kegare's data gets it copied in first, in the same transaction: never a fresh roll.
      */
     public CompletableFuture<LoginResult> login(UUID player) {
+        return login(player, null);
+    }
+
+    /** @param name what public stats call them, if there's a name to go by */
+    public CompletableFuture<LoginResult> login(UUID player, @Nullable String name) {
         return CompletableFuture.supplyAsync(() -> {
             try {
                 ready.get(config.leaseWaitSeconds(), TimeUnit.SECONDS);
@@ -300,6 +365,7 @@ public final class KegareDatabase {
                     LoginResult result = pool.transaction(connection -> {
                         UUID token = LeaseStore.acquire(connection, player, config.serverId(), config.leaseStaleSeconds());
                         if (token == null) return LoginResult.HELD_ELSEWHERE;
+                        if (name != null) rememberName(connection, player, name);
                         Map<String, String> found = PlayerStore.load(connection, player);
                         Set<ResourceLocation> won = null;
                         if (found.isEmpty()) {
@@ -330,6 +396,16 @@ public final class KegareDatabase {
                 return LoginResult.UNREACHABLE_NOW;
             }
         }, io);
+    }
+
+    private static void rememberName(Connection connection, UUID player, String name) throws SQLException {
+        try (PreparedStatement upsert = connection.prepareStatement("""
+                INSERT INTO kegare.player_name (player, name) VALUES (?, ?)
+                ON CONFLICT (player) DO UPDATE SET name = EXCLUDED.name, updated_at = now()""")) {
+            upsert.setObject(1, player);
+            upsert.setString(2, name);
+            upsert.executeUpdate();
+        }
     }
 
     private Map<String, String> fromWorldFile(UUID player) throws SQLException {
@@ -460,8 +536,18 @@ public final class KegareDatabase {
                     continue;
                 }
                 var next = queue.take();
-                if (next == null) {
-                    queue.awaitWork(250);
+                if (next == null) { // player data first, always: stats only when there's none waiting
+                    try {
+                        if (writeStats()) {
+                            backoff = 1000;
+                            markUp();
+                        }
+                        queue.awaitWork(250);
+                    } catch (SQLException | RuntimeException e) {
+                        markDown(e);
+                        Thread.sleep(backoff);
+                        backoff = Math.min(MAX_BACKOFF_MILLIS, backoff * 2);
+                    }
                     continue;
                 }
                 try {
@@ -499,6 +585,66 @@ public final class KegareDatabase {
             leaseLost(player, batch.token);
         }
         if (batch.release) leases.remove(player, batch.token);
+    }
+
+    // ---------------------------------------------------------------- stats
+
+    /** An event for the stats. Any thread, and never waits: the writer thread puts it in. */
+    public void recordStat(UUID player, String kind, double amount, @Nullable String detail, boolean announced) {
+        stats.add(new StatRow(System.currentTimeMillis(), player, kind, amount, detail, announced));
+        if (unwrittenStats.incrementAndGet() > MAX_WAITING_STATS && stats.poll() != null) unwrittenStats.decrementAndGet();
+    }
+
+    boolean statsWaiting() {
+        return unwrittenStats.get() > 0;
+    }
+
+    /** Puts in some of what's waiting; false if nothing was. On failure they stay waiting. Writer thread. */
+    private boolean writeStats() throws SQLException {
+        if (stats.isEmpty()) return false;
+        List<StatRow> batch = new ArrayList<>();
+        for (StatRow row; batch.size() < STATS_PER_WRITE && (row = stats.poll()) != null; ) batch.add(row);
+        try {
+            pool.transaction(connection -> {
+                try (PreparedStatement insert = connection.prepareStatement("INSERT INTO kegare.stat_event (at, server_id, player, kind, amount, detail, announced) VALUES (?, ?, ?, ?, ?, ?, ?)")) {
+                    for (StatRow event : batch) {
+                        insert.setTimestamp(1, new Timestamp(event.at()));
+                        insert.setString(2, config.serverId());
+                        insert.setObject(3, event.player());
+                        insert.setString(4, event.kind());
+                        insert.setDouble(5, event.amount());
+                        insert.setString(6, event.detail());
+                        insert.setBoolean(7, event.announced());
+                        insert.addBatch();
+                    }
+                    insert.executeBatch();
+                }
+                return null;
+            });
+        } catch (SQLException | RuntimeException e) {
+            stats.addAll(batch);
+            throw e;
+        }
+        unwrittenStats.addAndGet(-batch.size());
+        return true;
+    }
+
+    /** The top ten of a public stat. Off the server thread. */
+    public CompletableFuture<List<TopRow>> top(PublicStat stat) {
+        return CompletableFuture.supplyAsync(() -> {
+            try {
+                return pool.transaction(connection -> {
+                    List<TopRow> rows = new ArrayList<>();
+                    try (PreparedStatement select = connection.prepareStatement(stat.query()); ResultSet result = select.executeQuery()) {
+                        while (result.next()) rows.add(new TopRow(result.getString(1), result.getDouble(2)));
+                    }
+                    return rows;
+                });
+            } catch (SQLException e) {
+                markDown(e);
+                throw new CompletionException(e);
+            }
+        }, io);
     }
 
     // ---------------------------------------------------------------- the network

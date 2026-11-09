@@ -64,6 +64,7 @@ public final class KegareCommand {
     public static void register(CommandDispatcher<CommandSourceStack> dispatcher) {
         LiteralArgumentBuilder<CommandSourceStack> root = Commands.literal("kegare");
         HelpCommand.register(root);
+        TopCommand.register(root);
         root.then(senderOr(system("info"), KegareCommand::info));
         InnateCommands.register(root);
         TraitCommands.register(root);

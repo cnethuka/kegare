@@ -380,11 +380,11 @@ class KegareCommandTest {
     // ------------------------------------------------------------------ who may use it
 
     @Test
-    void onlyHelpIsOpenToEveryone(MinecraftServer server) throws Exception {
+    void onlyHelpAndTopAreOpenToEveryone(MinecraftServer server) throws Exception {
         inGame(server, () -> {
-            Set<String> justHelp = new TreeSet<>(List.of("help", "help <system>"));
-            assertEquals(justHelp, usages(server, 0));
-            assertEquals(justHelp, usages(server, 1));
+            Set<String> open = new TreeSet<>(List.of("help", "help <system>", "top <stat>"));
+            assertEquals(open, usages(server, 0));
+            assertEquals(open, usages(server, 1));
             assertTrue(usages(server, OP).size() > 40, "an operator gets the rest");
 
             ServerPlayer p = online(server, "plain_player");
@@ -403,6 +403,15 @@ class KegareCommandTest {
     }
 
     @Test
+    void topSaysSoWhenStorageIsOff(MinecraftServer server) throws Exception {
+        inGame(server, () -> {
+            assertEquals("Leaderboards need Kegare's database, and this server doesn't have it switched on.", run(server, null, 0, "kegare top pvp_kills").ok().text());
+            assertEquals("There's no public stat called grade. There's pvp_kills, deaths, fights, damage_dealt, black_sparks, longest_chain.", run(server, null, 0, "kegare top grade").ok().text());
+            assertEquals(List.of("black_sparks", "damage_dealt", "deaths", "fights", "longest_chain", "pvp_kills"), names(suggestions(server, 0, "kegare top ")));
+        });
+    }
+
+    @Test
     void helpListsOnlyWhatTheSenderCanRun(MinecraftServer server) throws Exception {
         inGame(server, () -> {
             String plain = run(server, null, 0, "kegare help").ok().text();
@@ -412,7 +421,7 @@ class KegareCommandTest {
                 assertTrue(op(server, "kegare help").ok().text().contains("/kegare " + system), system);
                 assertEquals("Unknown system: " + system + ". Use /kegare help to see them all.", run(server, null, 0, "kegare help " + system).error());
             }
-            assertEquals(List.of("help"), names(suggestions(server, 0, "kegare help ")));
+            assertEquals(List.of("help", "top"), names(suggestions(server, 0, "kegare help ")));
             assertTrue(names(suggestions(server, OP, "kegare help ")).containsAll(List.of("innate", "debug", "progression")));
 
             String innate = op(server, "kegare help innate").ok().text();
