@@ -357,7 +357,10 @@ class DirectiveTest {
                 for (int i = 0; i < 120; i++) tick(server, b);
                 assertTrue(b.distanceTo(owner) < 4.0, "Follow: it caught up (" + b.distanceTo(owner) + ")");
 
-                // Guard: a mob hurts the owner; the guards go for it, and punch it (barely).
+                // Guard: a mob hurts the owner; the guards go for it, and punch it (barely). The owner has walked 10 blocks toward
+                // the far puppet since, so it's put back out of Directive's range of where they stand now (it only passed before
+                // because its chunk's entities were out of every search, TestServer.testAreaReady).
+                far.moveTo(0.5, ground, owner.getZ() - 36, 0f, 0f);
                 DirectiveAbility.give(owner, PuppetOrder.GUARD, null);
                 cow.moveTo(owner.getX() + 2, ground, owner.getZ(), 0f, 0f);
                 level.addFreshEntity(cow);

@@ -94,18 +94,57 @@ public final class TestServer {
         // Nor does the world break under them: a test's big hits would leave holes where the next test stands. BattleDamageTest sets
         // each mode itself.
         com.cnethuka.kegare.battledamage.BattleDamageConfig.MODE.set(com.cnethuka.kegare.battledamage.BattleDamageConfig.Mode.COSMETIC);
-        if (server.overworld() != null) return;
-        try {
-            Method createLevels = MinecraftServer.class.getDeclaredMethod("createLevels", ChunkProgressListener.class);
-            createLevels.setAccessible(true);
-            createLevels.invoke(server, new ChunkProgressListener() {
-                @Override public void updateSpawnPos(ChunkPos center) {}
-                @Override public void onStatusChange(ChunkPos pos, @Nullable ChunkStatus status) {}
-                @Override public void start() {}
-                @Override public void stop() {}
-            });
-        } catch (ReflectiveOperationException e) {
-            throw new IllegalStateException("couldn't create the test server's levels", e);
+        if (server.overworld() == null) {
+            try {
+                Method createLevels = MinecraftServer.class.getDeclaredMethod("createLevels", ChunkProgressListener.class);
+                createLevels.setAccessible(true);
+                createLevels.invoke(server, new ChunkProgressListener() {
+                    @Override public void updateSpawnPos(ChunkPos center) {}
+                    @Override public void onStatusChange(ChunkPos pos, @Nullable ChunkStatus status) {}
+                    @Override public void start() {}
+                    @Override public void stop() {}
+                });
+            } catch (ReflectiveOperationException e) {
+                throw new IllegalStateException("couldn't create the test server's levels", e);
+            }
+        }
+        testAreaReady(server.overworld());
+    }
+
+    /** The chunks round the origin the tests work in, held loaded for the whole run. */
+    private static final int AREA = 2;
+
+    /**
+     * The tests' area, chunks -2 to 2 each way round the origin, held loaded (forced) with its entities ticking before a test runs.
+     * A chunk only loaded on the spot (by a block lookup in the test itself) wasn't: its entities stay out of every area search
+     * ({@code getEntitiesOfClass}) until the chunk system gets round to it, which inside one task on the server thread happened or
+     * not depending on its worker threads. A sweep then found nobody beside its target, and the Standstill sweep test failed now and
+     * then. Waits here, pumping the chunk system, until every chunk's entities tick.
+     */
+    private static void testAreaReady(net.minecraft.server.level.ServerLevel level) {
+        boolean ready = true;
+        for (int x = -AREA; x <= AREA && ready; x++) {
+            for (int z = -AREA; z <= AREA && ready; z++) ready = level.isPositionEntityTicking(new net.minecraft.core.BlockPos(x * 16, 0, z * 16));
+        }
+        if (ready) return;
+        for (int x = -AREA; x <= AREA; x++) for (int z = -AREA; z <= AREA; z++) level.setChunkForced(x, z, true);
+        long deadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(30);
+        for (int x = -AREA; x <= AREA; x++) {
+            for (int z = -AREA; z <= AREA; z++) {
+                net.minecraft.core.BlockPos pos = new net.minecraft.core.BlockPos(x * 16, 0, z * 16);
+                while (!level.isPositionEntityTicking(pos)) {
+                    if (System.nanoTime() > deadline) throw new IllegalStateException("the test area's chunk at " + pos + " never got its entities ticking");
+                    if (!level.getChunkSource().pollTask()) java.util.concurrent.locks.LockSupport.parkNanos(1_000_000);
+                }
+            }
+        }
+        // What generating them put there (a flat world's cows and sheep on the ground), never there while their entities were out of
+        // sight: no test expects them, and with no player between tests nothing spawns again.
+        net.minecraft.world.phys.AABB area = new net.minecraft.world.phys.AABB(-AREA * 16, level.getMinBuildHeight(), -AREA * 16,
+                (AREA + 1) * 16, level.getMaxBuildHeight(), (AREA + 1) * 16);
+        for (net.minecraft.world.entity.Entity e : level.getEntitiesOfClass(net.minecraft.world.entity.Entity.class, area,
+                e -> !(e instanceof net.minecraft.world.entity.player.Player))) {
+            e.discard();
         }
     }
 
