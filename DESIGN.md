@@ -423,6 +423,7 @@ Every command reads `/kegare <system> <action> [player] [value]`.
 | `/kegare debug spark force <player>` | Their next melee hit is a Black Spark, whatever the timing (for testing) |
 | `/kegare debug spark zone <player> <seconds>` | Put them in the zone for that long (0 ends it); it starts no chain (§3.28) |
 | `/kegare debug rmt fatigue <player> <amount>` | Set how much injuries take off a player's Reverse Malice Technique output (0 to 1, §3.17) |
+| `/kegare debug rmt healed <player> <amount>` | Set how much a player has healed with their own RMT; Background RMT unlocks at 500 (§3.31) |
 | `/kegare debug rmt others unlock\|lock <player>` | Teach or take away healing others (RMT's special) without its moment: the Unlocks entry `kegare:rmt_heal_others` |
 | `/kegare debug rmt moment <player> <target>` | Force the moment now: the target glows for the player for `momentSeconds`, and healing them teaches it (if the player is eligible; it says if not) |
 | `/kegare cooldown reset [player]` | Every cooldown ready at once: the innate technique's abilities, specials and ultimate, shared abilities like RMT, Dash and Closing Line, and Burnout over. Selectors work (`@a`). Told to the client at once, so the panel and the HUD's cues show it ready |
@@ -2913,7 +2914,37 @@ ability on the bar, but it takes no bar slot and leaves the hands free.
   as a card (icon, name, drain, description, and a padlock with its requirement while locked). Click a task, then a slot; right-click
   a slot to empty it. A small status icon per running task sits under the crosshair with the other status lines (lit while it runs,
   greyed with a pause mark while paused), shown only to its owner (`BackgroundClient`).
-- **Commands:** `/kegare debug task unlock|lock <player> <task>` gives or takes a task's unlock whatever earns it.
+- **Commands:** `/kegare debug task unlock|lock <player> <task>` gives or takes a task's unlock whatever earns it;
+  `/kegare debug rmt healed <player> <amount>` sets Background RMT's count.
+
+**Background RMT** (`background_rmt`, `BackgroundRmt`; numbers in `[background_tasks.background_rmt]`)
+- **Unlock:** heal `healToUnlock` (500) health in total with your own channelled Reverse Malice Technique, healing others included
+  (`RmtHealed`, attachment `kegare:rmt_healed`, saved and kept: every heal `ReverseMaliceTechnique.heal` does is counted for its
+  caster, only what it actually healed). Its Unlocks entry's condition: RMT unlocked, not Severed, the count reached; checked the
+  moment the count crosses it. Kept once earned. Unlocking it awards **Always On** (Base tab, under A Green Light, Goal, hidden and
+  never announced, like RMT's own: "Heal enough with Reverse Malice Technique that it keeps going on its own").
+- **Effect:** heals `backgroundOutput` (1/6) of channelled RMT's rate at your current output (`RmtOutput.of`: Grade, Peak Refinement,
+  injury fatigue, Black Spark's zone and every other output modifier apply): `healPerSecond` 2 × output × 1/6, about 1 health every
+  3 s for an output of 1, a little every tick. Like the channel it keeps running at full health and heals damage as it lands. Never
+  above max health, never absorption, and no pulse, chime or effect (the channel's heal pulse isn't played).
+- **Cost:** `drainPerSecond` (12; the channel's upkeep is 96), even at full health, and natural Malice regeneration ×`regenFactor` (0.5)
+  while it runs (`MaliceService.addRegenModifier`).
+- **Auto-pause:** below `pauseBelow` (20%) of capacity it pauses, and resumes on its own above `resumeAbove` (30%). Only low Malice
+  stops it: stuns and Burnout don't. A player frozen in a Standstill (§3.26, `TimeStops.frozen`) has it paused while time is stopped
+  for them, and it resumes with it.
+- **Burnout:** while it runs, every Burnout applied to you lasts ×`burnoutFactor` (0.75), through `Burnout.Modifier` (§3.25):
+  Standstill's now, Dominions' later.
+- **Who can tell:** nobody, except a Six Eyes bearer, who sees a faint green shimmer on anyone running it: small soft glints
+  (`entity/aura_shimmer.png`, smooth) coming and going over the body and drifting up, in RMT's green; Reduced half as many, Vanilla a
+  few specks of green dust. Sent per viewer (`AuraPayload.SHIMMER`, only to Six Eyes viewers, `AuraTell.addShimmer`).
+- **Hooks, not built:** `BackgroundRmt.addHook` is told every tick it runs, for the Six Eyes step (holding Strain back, easing the
+  overload) and later techniques.
+- **Icon:** RMT's green cross inside the loop of something left running.
+- **Tests:** `BackgroundRmtTest` (the count from the channel, RMT first, Severed never, Always On; the rate from RMT output with
+  fatigue; full health, drain, no absorption, healed as it lands; regenFactor; the 20%/30% pause and resume; stuns and Burnout not
+  stopping it; Burnout shortened only while it runs; the shimmer only for the Six Eyes), `BackgroundRmtStandstillTest` (paused while
+  frozen, resumed with time), `RmtHealCountTest` (healing others counts for the caster, only what's healed).
+
 - **Tests:** `BackgroundTasksTest` (with test-only tasks): 2 slots, 3 with the eyes, none Severed; losing the eyes switches off the
   third and keeps it, gaining them gives it back; slot changes refused in a fight, switching allowed; locked refused; the drain, the
   effect every tick, pausing by its own rule and when it can't pay, resuming; moving and swapping; kept through a reroll and the save

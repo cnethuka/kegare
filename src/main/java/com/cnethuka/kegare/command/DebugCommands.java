@@ -148,6 +148,11 @@ final class DebugCommands {
                                     double amount = com.mojang.brigadier.arguments.DoubleArgumentType.getDouble(c, "amount");
                                     return forEachPlayer(c, (source, player) -> rmtFatigue(source, player, amount));
                                 }))))
+                        .then(Commands.literal("healed").then(player()
+                                .then(Commands.argument("amount", com.mojang.brigadier.arguments.DoubleArgumentType.doubleArg(0.0)).executes(c -> {
+                                    double amount = com.mojang.brigadier.arguments.DoubleArgumentType.getDouble(c, "amount");
+                                    return forEachPlayer(c, (source, player) -> rmtHealed(source, player, amount));
+                                }))))
                         .then(Commands.literal("others")
                                 .then(Commands.literal("unlock").then(player((source, player) -> rmtOthers(source, player, true))))
                                 .then(Commands.literal("lock").then(player((source, player) -> rmtOthers(source, player, false)))))
@@ -174,6 +179,14 @@ final class DebugCommands {
     }
 
     private static final List<String> ROLES = List.of("attacker", "victim", "witness"), KINDS = List.of("melee", "technique");
+
+    /** Background RMT's unlock count (DESIGN §3.31): set it, and the unlock is checked. */
+    private static int rmtHealed(CommandSourceStack source, ServerPlayer player, double amount) {
+        com.cnethuka.kegare.backgroundtask.RmtHealed.set(player, amount);
+        say(source, "commands.kegare.debug.rmt.healed", player.getDisplayName(), Math.round(amount),
+                Math.round(com.cnethuka.kegare.backgroundtask.BackgroundTaskConfig.RMT_HEAL_TO_UNLOCK.get()));
+        return 1;
+    }
 
     private static int rmtFatigue(CommandSourceStack source, ServerPlayer player, double amount) {
         com.cnethuka.kegare.rmt.RmtFatigue.set(player, amount);

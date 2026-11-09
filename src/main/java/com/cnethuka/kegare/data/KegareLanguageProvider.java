@@ -365,6 +365,14 @@ public final class KegareLanguageProvider extends LanguageProvider {
         add("message.kegare.background_task.locked", "You haven't unlocked that yet.");
         add("message.kegare.background_task.unknown", "There's no such Background Task.");
 
+        // Background RMT (DESIGN §3.31)
+        add("background_task.kegare.background_rmt", "Background RMT");
+        add("background_task.kegare.background_rmt.desc", "Reverse Malice Technique left running: it heals you slowly and steadily at %1$s of "
+                + "your channelled rate, even at full health, so damage is healed as it lands. It drains " + MALICE + " and slows your natural "
+                + MALICE + " regeneration while it runs, and shortens any Burnout. It pauses below %2$s " + MALICE + " and resumes above %3$s.");
+        add("background_task.kegare.background_rmt.unlock", "Heal 500 health in total with your own Reverse Malice Technique.");
+        add("unlock.kegare.background_rmt", "Background RMT");
+
         // Reinforcement (Malice, every Malice user's)
         add("ability.kegare.reinforcement", "Reinforcement");
         add("ability.kegare.reinforcement.desc", "Toggle: route " + MALICE + " through your whole body. You take %1$s less physical damage "
@@ -576,6 +584,7 @@ public final class KegareLanguageProvider extends LanguageProvider {
         advancement("rime.home_field", "Home Field", "Cast a Rime ability during snowfall in a cold biome");
         advancement("a_green_light", "A Green Light", "Unlock Reverse Malice Technique");
         advancement("its_been_a_while", "It's been a while, huh?", "Use Reverse Malice Technique on the brink of death");
+        advancement("always_on", "Always On", "Heal enough with Reverse Malice Technique that it keeps going on its own");
         advancement("rime.splinter", "Splinter", "Hit one player with all 3 Splinter shards");
         advancement("rime.sky_high", "Sky High", "Launch a player with Glacial Spire and hit them with Frost Shard before they land");
         advancement("rime.slip_n_slide", "Slip 'n Slide", "Travel 100 blocks with Ice Path");
@@ -751,6 +760,7 @@ public final class KegareLanguageProvider extends LanguageProvider {
         add("commands.kegare.help.debug.orb.status", "Show a player's next orb roll and any orb under way.");
         add("commands.kegare.help.debug.swap", "Stop swaps from reaching a player, or let them again.");
         add("commands.kegare.help.debug.rmt.fatigue", "Set how much a player's injuries take off their Reverse Malice Technique (0 to 1).");
+        add("commands.kegare.help.debug.rmt.healed", "Set how much a player has healed with their own Reverse Malice Technique (Background RMT unlocks at 500).");
         add("commands.kegare.help.debug.rmt.others.unlock", "Let a player heal others with Reverse Malice Technique, without its moment.");
         add("commands.kegare.help.debug.rmt.others.lock", "Take healing others away from a player.");
         add("commands.kegare.help.debug.spark.log", "Show you every Black Spark try (its gap, the rolled offset and the window) and Parry's two timings.");
@@ -764,6 +774,7 @@ public final class KegareLanguageProvider extends LanguageProvider {
         add("commands.kegare.debug.spark.zone.off", "%s is out of the zone.");
         add("commands.kegare.help.debug.spark.zone", "Put the player in the zone for that many seconds (0 ends it). It starts no chain.");
         add("commands.kegare.debug.rmt.fatigue", "%s's injuries take %s off their Reverse Malice Technique: output %sx.");
+        add("commands.kegare.debug.rmt.healed", "%s has healed %s with their own Reverse Malice Technique (%s unlocks Background RMT).");
         add("commands.kegare.debug.rmt.others.unlocked", "%s can heal others with Reverse Malice Technique now.");
         add("commands.kegare.debug.rmt.others.locked", "%s can no longer heal others.");
         add("commands.kegare.debug.rmt.others.already", "%s already knows how to heal others.");

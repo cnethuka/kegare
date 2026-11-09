@@ -54,6 +54,11 @@ public final class AuraTell {
         return flags;
     }
 
+    /** Whether this viewer sees a shimmer on this player (Background RMT to the Six Eyes). */
+    public static boolean shimmerSeenBy(ServerPlayer viewer, ServerPlayer player) {
+        return (withShimmer(0, viewer, player) & AuraPayload.SHIMMER) != 0;
+    }
+
     private static int withShimmer(int flags, ServerPlayer viewer, ServerPlayer player) {
         for (BiPredicate<ServerPlayer, ServerPlayer> shimmer : SHIMMERS) {
             if (shimmer.test(viewer, player)) return flags | AuraPayload.SHIMMER;

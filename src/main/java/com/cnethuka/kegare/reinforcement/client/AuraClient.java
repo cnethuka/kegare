@@ -59,6 +59,9 @@ public final class AuraClient {
     static final ResourceLocation SHEET_SIMPLE = Kegare.id("textures/entity/aura_simple.png");
     static final ResourceLocation WISP = Kegare.id("textures/entity/aura_wisp.png");
     static final ResourceLocation EDGE = Kegare.id("textures/entity/aura_edge.png");
+    static final ResourceLocation SHIMMER = Kegare.id("textures/entity/aura_shimmer.png");
+    /** Background RMT's shimmer, as a Six Eyes bearer sees it: RMT's green. */
+    static final int SHIMMER_RGB = 0x4ED873;
     static final ResourceLocation LAYER = Kegare.id("aura_edges");
     /** gen_art.py's sheet: frames, size in blocks, and the feet's height above its bottom edge, for a body 1.8 tall. */
     static final int FRAMES = 16;
@@ -97,14 +100,21 @@ public final class AuraClient {
         boolean calm() {
             return !payload.has(AuraPayload.FULL) && payload.has(AuraPayload.CALM);
         }
+
+        boolean shimmer() {
+            return payload.has(AuraPayload.SHIMMER);
+        }
+
+        int shimmerClock;
     }
 
-    /** A wisp off a tongue: where it is in the world, how it drifts, its age. */
+    /** A wisp off a tongue (or a shimmer's glint): where it is in the world, how it drifts, its age. */
     private static final class Wisp {
         Vec3 at, prev;
         final Vec3 drift;
         final int rgb, life;
         final float size, alpha;
+        boolean glint;
         int age;
 
         Wisp(Vec3 at, Vec3 drift, int rgb, int life, float size, float alpha) {
@@ -191,8 +201,10 @@ public final class AuraClient {
                 entry.phase -= FRAMES * 64;
                 entry.prevPhase -= FRAMES * 64;
             }
-            if (!(level.getEntity(e.getKey()) instanceof Player player) || !player.isAlive() || on(player) == null || !entry.aura()) continue;
+            if (!(level.getEntity(e.getKey()) instanceof Player player) || !player.isAlive() || on(player) == null) continue;
             boolean mine = firstPerson(mc, player);
+            if (entry.shimmer() && !mine) shimmer(level, player, entry);
+            if (!entry.aura()) continue;
             int rgb = MeleeTell.bright(entry.payload.color()) & 0xFFFFFF;
             if (quality() == VfxQuality.VANILLA) {
                 if (!mine) dust(level, player, entry, rgb);
@@ -230,6 +242,27 @@ public final class AuraClient {
         WISPS.add(new Wisp(at, drift, rgb, 12 + RANDOM.nextInt(8), (0.10f + RANDOM.nextFloat() * 0.07f) * s, alpha));
     }
 
+    /**
+     * Background RMT as a Six Eyes bearer sees it (DESIGN §3.31): a faint green shimmer, small soft glints coming and going over the body
+     * and drifting up. Reduced: half as many. Vanilla: a few specks of green dust.
+     */
+    private static void shimmer(ClientLevel level, Player player, Entry entry) {
+        int every = quality() == VfxQuality.FULL ? 3 : quality() == VfxQuality.REDUCED ? 6 : 5;
+        if (++entry.shimmerClock < every) return;
+        entry.shimmerClock = 0;
+        double w = player.getBbWidth() * 0.6;
+        double x = player.getX() + (RANDOM.nextDouble() - 0.5) * 2 * w, z = player.getZ() + (RANDOM.nextDouble() - 0.5) * 2 * w;
+        double y = player.getY() + 0.1 + RANDOM.nextDouble() * player.getBbHeight();
+        if (quality() == VfxQuality.VANILLA) {
+            level.addParticle(new DustParticleOptions(new Vector3f(0.31f, 0.85f, 0.45f), 0.5f), x, y, z, 0, 0.2, 0);
+            return;
+        }
+        Wisp glint = new Wisp(new Vec3(x, y, z), new Vec3(0, 0.01 + RANDOM.nextDouble() * 0.01, 0), SHIMMER_RGB, 10 + RANDOM.nextInt(8),
+                0.06f + RANDOM.nextFloat() * 0.05f, 0.55f);
+        glint.glint = true;
+        WISPS.add(glint);
+    }
+
     /** Vanilla: dust in the Malice color rising round the body. */
     private static void dust(ClientLevel level, Player player, Entry entry, int rgb) {
         int count = entry.calm() ? (RANDOM.nextInt(3) == 0 ? 1 : 0) : entry.fight > 0.5f ? 3 : 2;
@@ -247,6 +280,7 @@ public final class AuraClient {
 
     private static void render(Camera camera, float partial) {
         if (SHOWN.isEmpty() && WISPS.isEmpty()) return;
+        // (the shimmer's glints are wisps too; Vanilla draws neither, only dust)
         Minecraft mc = Minecraft.getInstance();
         ClientLevel level = mc.level;
         if (level == null || quality() == VfxQuality.VANILLA) return;
@@ -261,19 +295,24 @@ public final class AuraClient {
             body(pose, buffers, entry, player, cam, partial, simple);
         }
         if (!WISPS.isEmpty()) {
-            VertexConsumer out = buffers.getBuffer(AuraRenderTypes.SMOOTH.apply(WISP));
             Vector3f right = new Vector3f(camera.getLeftVector()).negate(), up = new Vector3f(camera.getUpVector());
-            for (Wisp w : WISPS) {
-                float t = (w.age + partial) / w.life;
-                float alpha = w.alpha * (t < 0.15f ? t / 0.15f : 1f - (t - 0.15f) / 0.85f);
-                float size = w.size * (1f - 0.45f * t);
-                Vec3 at = w.prev.lerp(w.at, partial).subtract(cam);
-                quad(out, pose.last().pose(), at, right, up, size, size * 2f, 0f, 1f, w.rgb, alpha);
+            for (boolean glints : new boolean[] {false, true}) {
+                VertexConsumer out = buffers.getBuffer(AuraRenderTypes.SMOOTH.apply(glints ? SHIMMER : WISP));
+                for (Wisp w : WISPS) {
+                    if (w.glint != glints) continue;
+                    float t = (w.age + partial) / w.life;
+                    float alpha = w.glint ? w.alpha * Mth.sin((float) Math.PI * t) // a glint comes and goes
+                            : w.alpha * (t < 0.15f ? t / 0.15f : 1f - (t - 0.15f) / 0.85f);
+                    float size = w.glint ? w.size : w.size * (1f - 0.45f * t);
+                    Vec3 at = w.prev.lerp(w.at, partial).subtract(cam);
+                    quad(out, pose.last().pose(), at, right, up, size, w.glint ? size : size * 2f, 0f, 1f, w.rgb, alpha);
+                }
             }
         }
         buffers.endBatch(AuraRenderTypes.SMOOTH.apply(SHEET));
         buffers.endBatch(AuraRenderTypes.SMOOTH.apply(SHEET_SIMPLE));
         buffers.endBatch(AuraRenderTypes.SMOOTH.apply(WISP));
+        buffers.endBatch(AuraRenderTypes.SMOOTH.apply(SHIMMER));
     }
 
     /** The card behind the body, facing the camera round the vertical, the feet at the player's feet. */

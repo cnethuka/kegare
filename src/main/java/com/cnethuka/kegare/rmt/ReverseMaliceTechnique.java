@@ -25,6 +25,12 @@ public final class ReverseMaliceTechnique extends BaseAbility {
             .build();
     /** A heal pulse at most this often while it's healing. */
     static final int PULSE_TICKS = 20;
+    /** Told whenever a player's own channelled RMT heals (themselves or another): Background RMT's unlock counts it (DESIGN §3.31). */
+    private static final java.util.List<java.util.function.BiConsumer<ServerPlayer, Float>> HEAL_LISTENERS = new java.util.concurrent.CopyOnWriteArrayList<>();
+
+    public static void addHealListener(java.util.function.BiConsumer<ServerPlayer, Float> listener) {
+        HEAL_LISTENERS.add(listener);
+    }
 
     public ReverseMaliceTechnique() {
         super(RmtIds.ABILITY, CastType.CHANNELED);
@@ -76,6 +82,7 @@ public final class ReverseMaliceTechnique extends BaseAbility {
         target.heal((float) amount);
         float healed = target.getHealth() - before;
         if (healed <= 0f) return 0f;
+        for (var listener : HEAL_LISTENERS) listener.accept(caster, healed);
         RmtState state = GreenOrbService.state(caster);
         long now = caster.level().getGameTime();
         if (now - state.lastPulse >= PULSE_TICKS) {

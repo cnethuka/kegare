@@ -65,6 +65,8 @@ public final class KegareAdvancementGenerator implements AdvancementProvider.Adv
         AdvancementHolder greenLight = child(saver, awakening, KegareAdvancements.A_GREEN_LIGHT, "a_green_light",
                 Items.GLISTERING_MELON_SLICE, AdvancementType.GOAL, true);
         child(saver, greenLight, KegareAdvancements.ITS_BEEN_A_WHILE, "its_been_a_while", Items.TOTEM_OF_UNDYING, AdvancementType.CHALLENGE, true);
+        // Background RMT unlocked (§3.31): hidden and silent too.
+        child(saver, greenLight, KegareAdvancements.ALWAYS_ON, "always_on", Items.REDSTONE_TORCH, AdvancementType.GOAL, true);
 
         // Progression: hidden and silent, since Grade is private.
         child(saver, awakening, KegareAdvancements.MOVING_UP, "moving_up", Items.IRON_NUGGET, AdvancementType.TASK, true);

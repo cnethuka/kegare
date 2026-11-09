@@ -11,6 +11,7 @@ public final class BackgroundTaskEvents {
     private BackgroundTaskEvents() {}
 
     public static void init() {
+        BackgroundRmt.init();
         NeoForge.EVENT_BUS.addListener((PlayerTickEvent.Post e) -> {
             if (e.getEntity() instanceof ServerPlayer p && p.isAlive()) BackgroundTaskService.tick(p);
         });
@@ -20,7 +21,10 @@ public final class BackgroundTaskEvents {
                 BackgroundTaskSync.sync(p);
             }
         });
-        NeoForge.EVENT_BUS.addListener((PlayerEvent.PlayerLoggedOutEvent e) -> BackgroundTaskSync.forget(e.getEntity().getUUID()));
+        NeoForge.EVENT_BUS.addListener((PlayerEvent.PlayerLoggedOutEvent e) -> {
+            BackgroundTaskSync.forget(e.getEntity().getUUID());
+            BackgroundRmt.forget(e.getEntity().getUUID());
+        });
         NeoForge.EVENT_BUS.addListener((ServerStoppedEvent e) -> BackgroundTaskSync.clear());
     }
 }

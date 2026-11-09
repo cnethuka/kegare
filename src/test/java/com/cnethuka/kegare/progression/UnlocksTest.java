@@ -90,9 +90,11 @@ class UnlocksTest {
     }
 
     @Test
-    void theOnlyRealEntryIsHealingOthers() {
-        // The first real one (DESIGN §3.17); Maximum Output, Cradle, Threshold and the rest plug in when they're built.
-        assertEquals(java.util.Set.of(com.cnethuka.kegare.rmt.RmtIds.ON_ANOTHER_UNLOCK), java.util.Set.copyOf(Unlocks.registered()));
+    void theRealEntriesAreHealingOthersAndTheBackgroundTasks() {
+        // Healing others (DESIGN §3.17) and the Background Tasks (§3.31); Maximum Output, Cradle, Threshold and the rest plug in when
+        // they're built.
+        assertEquals(java.util.Set.of(com.cnethuka.kegare.rmt.RmtIds.ON_ANOTHER_UNLOCK, com.cnethuka.kegare.backgroundtask.BackgroundRmt.ID),
+                java.util.Set.copyOf(Unlocks.registered()));
     }
 
     /** The toast a new unlock brings names it: every real entry has a name in the lang file. */

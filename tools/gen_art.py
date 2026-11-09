@@ -900,6 +900,48 @@ def icon_view_background():
     return shaped_icon(f)
 
 
+def _loop(x, y, ramp, r0=4.6, r1=6.9, gap=(300, 345)):
+    """Part of a loop round the icon's edge (with a gap where its arrowhead goes), or None: Background Tasks' shared mark."""
+    cx, cy = x + 0.5 - 8.0, y + 0.5 - 8.0
+    r = math.hypot(cx, cy)
+    a = math.degrees(math.atan2(cy, cx)) % 360
+    if r0 <= r <= r1 and not (gap[0] <= a <= gap[1]):
+        return ramp
+    hx, hy = 8.0 + (r0 + r1) / 2 * math.cos(math.radians(gap[0])), 8.0 + (r0 + r1) / 2 * math.sin(math.radians(gap[0]))
+    tx, ty = x + 0.5 - hx, y + 0.5 - hy
+    along = tx * math.cos(math.radians(30)) + ty * math.sin(math.radians(30))
+    across = -tx * math.sin(math.radians(30)) + ty * math.cos(math.radians(30))
+    if -0.5 <= along <= 2.8 and abs(across) <= 2.4 * (2.8 - along) / 3.3:
+        return ramp
+    return None
+
+
+def icon_background_rmt():
+    """Background RMT (DESIGN §3.31): Reverse Malice Technique's green cross inside the loop of something left running."""
+    def f(x, y):
+        if (7 <= x <= 8 and 5 <= y <= 10) or (5 <= x <= 10 and 7 <= y <= 8):
+            return HEAL
+        return _loop(x, y, HEAL, r0=5.7, r1=7.0)
+    return shaped_icon(f)
+
+
+def aura_shimmer() -> "Image.Image":
+    """A Six Eyes bearer's glimpse of Background RMT (DESIGN §3.31): a soft four-pointed glint, white to be tinted green (smooth)."""
+    n = 32
+    img = Image.new("RGBA", (n, n), (0, 0, 0, 0))
+    out = img.load()
+    for j in range(n):
+        for i in range(n):
+            x, y = (i + 0.5) / n * 2 - 1, (j + 0.5) / n * 2 - 1
+            r = math.hypot(x, y)
+            core = max(0.0, 1 - r / 0.45) ** 2
+            star = max(0.0, 1 - abs(x) / 0.09) * max(0.0, 1 - abs(y)) + max(0.0, 1 - abs(y) / 0.09) * max(0.0, 1 - abs(x))
+            a = min(1.0, core * 0.9 + star * 0.7)
+            if a > 0.004:
+                out[i, j] = (255, 255, 255, int(round(a * 255)))
+    return img
+
+
 def icon_reinforcement():
     """Reinforcement (DESIGN §3.28 Part 2): a dark figure wrapped in Malice that rises into tongues over the head and shoulders."""
     def body(x, y):
@@ -2462,6 +2504,7 @@ def build() -> dict[str, Image.Image]:
     out["menu_tab_selected"] = menu_tab(True)
     out["view_technique"] = icon(ICON_VIEW_TECHNIQUE, MALICE)
     out["view_background"] = icon_view_background()
+    out["background/background_rmt"] = icon_background_rmt()
     out["view_progress"] = icon(ICON_VIEW_PROGRESS, TEAL)
     out["view_traits"] = icon(ICON_VIEW_TRAITS, ICE)
     out["view_pity"] = icon(ICON_VIEW_PITY, GOLD)
@@ -2837,6 +2880,7 @@ def main() -> None:
     save(aura_sheet(False), "entity/aura.png")
     save(aura_sheet(True), "entity/aura_simple.png")
     save(aura_wisp(), "entity/aura_wisp.png")
+    save(aura_shimmer(), "entity/aura_shimmer.png")
     save(aura_edge(), "entity/aura_edge.png")
     save(string_braid(), "item/string_braid.png")
     for kind in ("follow", "stay", "guard", "go"):

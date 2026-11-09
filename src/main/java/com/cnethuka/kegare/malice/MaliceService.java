@@ -53,12 +53,21 @@ public final class MaliceService {
         setCurrent(player, get(player).capacity());
     }
 
+    /** Multipliers on natural regeneration (Background RMT slows it while it runs, DESIGN §3.31). */
+    private static final java.util.List<java.util.function.ToDoubleFunction<ServerPlayer>> REGEN_MODIFIERS = new java.util.concurrent.CopyOnWriteArrayList<>();
+
+    public static void addRegenModifier(java.util.function.ToDoubleFunction<ServerPlayer> modifier) {
+        REGEN_MODIFIERS.add(modifier);
+    }
+
     /** Called every server tick: regenerates a % of capacity per second (by tier) unless paused by recent combat. */
     public static void tickRegen(ServerPlayer player) {
         MaliceData malice = get(player);
         if (!malice.isBorn() || malice.isSevered() || malice.current() >= malice.capacity()) return;
         if (CombatHelper.isRegenPaused(player)) return;
-        setCurrent(player, malice.current() + MaliceRules.regenPerTick(malice.capacity(), KegareServerConfig.regenPercent(malice.tier())));
+        double regen = MaliceRules.regenPerTick(malice.capacity(), KegareServerConfig.regenPercent(malice.tier()));
+        for (java.util.function.ToDoubleFunction<ServerPlayer> modifier : REGEN_MODIFIERS) regen *= modifier.applyAsDouble(player);
+        setCurrent(player, malice.current() + regen);
     }
 
     /** Birth roll. The ONLY normal way capacity is ever set. */
