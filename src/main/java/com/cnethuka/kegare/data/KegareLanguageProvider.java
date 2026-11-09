@@ -171,6 +171,7 @@ public final class KegareLanguageProvider extends LanguageProvider {
         add("subtitles.kegare.puppet_manipulation.curio_burst", "Puppet bursts apart");
         add("subtitles.kegare.puppet_manipulation.curio_thump", "Heavy thump");
         add("subtitles.kegare.impact.boom", "Deep boom");
+        add("subtitles.kegare.black_spark.crack", "Black spark cracks");
         add("message.kegare.swap.switchback_refused", "Something stops the swap back.");
         // Puppet Manipulation
         add("innate_technique.kegare.puppet_manipulation", "Puppet Manipulation");
@@ -715,7 +716,12 @@ public final class KegareLanguageProvider extends LanguageProvider {
         add("commands.kegare.help.debug.rmt.fatigue", "Set how much a player's injuries take off their Reverse Malice Technique (0 to 1).");
         add("commands.kegare.help.debug.rmt.others.unlock", "Let a player heal others with Reverse Malice Technique, without its moment.");
         add("commands.kegare.help.debug.rmt.others.lock", "Take healing others away from a player.");
+        add("commands.kegare.help.debug.spark.log", "Show you every Black Spark try (its gap, the rolled offset and the window) and Parry's two timings.");
+        add("commands.kegare.help.debug.spark.force", "Make the player's next melee hit a Black Spark, for filming.");
         add("commands.kegare.help.debug.rmt.moment", "Make the target glow for the player now, as their chance moment to learn healing others.");
+        add("commands.kegare.debug.spark.log.on", "Every Black Spark try (its gap, the rolled offset and the window) and Parry's two timings will be shown to you.");
+        add("commands.kegare.debug.spark.log.off", "The Black Spark log is off.");
+        add("commands.kegare.debug.spark.force", "%s's next melee hit is a Black Spark.");
         add("commands.kegare.debug.rmt.fatigue", "%s's injuries take %s off their Reverse Malice Technique: output %sx.");
         add("commands.kegare.debug.rmt.others.unlocked", "%s can heal others with Reverse Malice Technique now.");
         add("commands.kegare.debug.rmt.others.locked", "%s can no longer heal others.");

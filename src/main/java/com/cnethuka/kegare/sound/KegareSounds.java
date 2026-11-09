@@ -47,6 +47,9 @@ public final class KegareSounds {
     // The Impact System's hit sounds (§3.23), played with vanilla's hurt sound, never instead of it.
     public static final DeferredHolder<SoundEvent, SoundEvent> IMPACT_BOOM = register("impact.boom", "impact/boom");
 
+    // Black Spark (§3.28): one sharp crack at the point of contact.
+    public static final DeferredHolder<SoundEvent, SoundEvent> BLACK_SPARK = register("black_spark.crack", "black_spark/crack");
+
     // Time Manipulation (§3.26): a pocket watch's clicks and ticks, wound, run backward, whirled, and stopped.
     /** A watch's sharp click: Point Maker's mark and return, Decelerate's hand striking. */
     public static final DeferredHolder<SoundEvent, SoundEvent> TIME_CLICK = time("click");

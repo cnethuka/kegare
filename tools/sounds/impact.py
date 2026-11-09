@@ -8,6 +8,9 @@ Curio Burst's thump is in puppet_manipulation.py. Everything is made here from n
 """
 from __future__ import annotations
 
+import math
+import random
+
 from synth import RATE, bandpass, bursts, fade_tail, highpass, lowpass, mix, mul, noise, normalize, room, tone, trim
 
 
@@ -28,6 +31,34 @@ def _crack(seconds: float, seed: int, centre: float, length: float = 0.004, leve
     """A crack: a few milliseconds of bright noise, starting hard."""
     n = int(seconds * RATE)
     return mul(highpass(bandpass(noise(seconds, seed), centre, 0.8), 700), bursts(n, [0.0], length, levels=[level]))
+
+
+def _swish(seconds: float, seed: int, length: float, low: float, high: float) -> list[float]:
+    """Air cut fast: noise swelling and falling away, its pitch rising through it (three bands, each a little later and higher).
+    Severed's sounds use it (DESIGN §3.27)."""
+    n = int(seconds * RATE)
+    out = [0.0] * n
+    for k, f in enumerate((low, math.sqrt(low * high), high)):
+        band = bandpass(noise(seconds, seed + k), f, 2.2)
+        peak = length * (0.35 + 0.22 * k)
+        env = [0.0] * n
+        for i in range(n):
+            t = i / RATE
+            if t < peak:
+                env[i] = (t / peak) ** 2
+            else:
+                env[i] = math.exp(-(t - peak) / (length * 0.22))
+        out = mix((1.0, out), (0.8, mul(band, env)))
+    return out
+
+
+def _crunch(seconds: float, seed: int, start: float, spread: float, count: int, centre: float) -> list[float]:
+    """Something giving way: a fast scatter of tiny hard clicks, crowded at the front. Severed's sounds use it (DESIGN §3.27)."""
+    n = int(seconds * RATE)
+    rng = random.Random(seed)
+    times = sorted(start + spread * rng.random() ** 2.2 for _ in range(count))
+    levels = [0.5 + 0.5 * rng.random() for _ in times]
+    return mul(bandpass(noise(seconds, seed + 7), centre, 1.1), bursts(n, times, 0.0025, levels=levels))
 
 
 def _rumble(seconds: float, seed: int, decay: float, cutoff: float = 140.0) -> list[float]:

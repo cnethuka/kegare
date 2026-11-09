@@ -43,6 +43,11 @@ public final class InsightHooks {
         return pay(player, InsightSource.HEALED_BY_OTHER, "");
     }
 
+    /** Their first Black Spark ever, on anything living (DESIGN §3.28). Once ever. */
+    public static boolean firstBlackSpark(ServerPlayer player) {
+        return pay(player, InsightSource.FIRST_BLACK_SPARK, "");
+    }
+
     /** For the future Standstill. */
     public static boolean survivedStandstill(ServerPlayer player) {
         return pay(player, InsightSource.SURVIVED_STANDSTILL, "");

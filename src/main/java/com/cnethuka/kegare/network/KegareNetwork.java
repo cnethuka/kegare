@@ -59,6 +59,8 @@ public final class KegareNetwork {
         registrar.playToClient(TalismanPromptPayload.TYPE, TalismanPromptPayload.STREAM_CODEC, TalismanPromptPayload::handle);
         registrar.playToClient(ProgressionToastPayload.TYPE, ProgressionToastPayload.STREAM_CODEC, ProgressionToastPayload::handle);
         registrar.playToClient(LoadoutResultPayload.TYPE, LoadoutResultPayload.STREAM_CODEC, LoadoutResultPayload::handle);
+        registrar.playToClient(com.cnethuka.kegare.fists.BlackSparkPayload.TYPE, com.cnethuka.kegare.fists.BlackSparkPayload.STREAM_CODEC,
+                com.cnethuka.kegare.fists.BlackSparkPayload::handle);
         registrar.playToClient(com.cnethuka.kegare.fists.FistsPayload.TYPE, com.cnethuka.kegare.fists.FistsPayload.STREAM_CODEC,
                 com.cnethuka.kegare.fists.FistsPayload::handle);
         registrar.playToClient(com.cnethuka.kegare.rmt.OrbPayload.TYPE, com.cnethuka.kegare.rmt.OrbPayload.STREAM_CODEC,

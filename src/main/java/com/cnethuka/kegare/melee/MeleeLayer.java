@@ -94,4 +94,9 @@ public final class MeleeLayer {
         PacketDistributor.sendToPlayer(player, new MeleeHudPayload(state.dashReadyAt, numbers.dashCooldownTicks(), state.recoveryUntil, numbers.recoveryTicks(),
                 state.strikeUntil, state.strikeTicks, true));
     }
+
+    /** They swung a melee attack this tick (the hit being handled is from a real swing, not just a damage source). */
+    public static boolean swungThisTick(ServerPlayer player) {
+        return player.hasData(ATTACHMENT) && state(player).swingTick == player.level().getGameTime();
+    }
 }

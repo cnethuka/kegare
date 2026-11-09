@@ -4,7 +4,7 @@
     --preview also writes the candidates to choose from (Swap's clap to run/sounds_preview/clap/, Curio Burst's burst to
               run/sounds_preview/puppet_manipulation/, the boom under big hits and Curio Burst's thump to run/sounds_preview/impact/,
               Time Manipulation's click, tick, stop and resume to run/sounds_preview/time_manipulation/, Severed's Blur start,
-              Closing Line launch and wall crash to run/sounds_preview/severed/),
+              Closing Line launch and wall crash to run/sounds_preview/severed/, Black Spark's crack to run/sounds_preview/black_spark/),
               with a .wav of each to open anywhere
 
 A new sound: add a recipe to the technique's module (SOUNDS), run this, add its SoundEvent to KegareSounds and its subtitle to
@@ -15,6 +15,7 @@ import wave
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent))
+import black_spark  # noqa: E402
 import impact  # noqa: E402
 import ogg  # noqa: E402
 import puppet_manipulation  # noqa: E402
@@ -26,10 +27,10 @@ from synth import RATE  # noqa: E402
 ROOT = Path(__file__).resolve().parents[2]
 OUT = ROOT / "src/main/resources/assets/kegare/sounds"
 TECHNIQUES = {"swap": swap.SOUNDS, "puppet_manipulation": puppet_manipulation.SOUNDS, "impact": impact.SOUNDS,
-              "time_manipulation": time_manipulation.SOUNDS, "severed": severed.SOUNDS}
+              "time_manipulation": time_manipulation.SOUNDS, "severed": severed.SOUNDS, "black_spark": black_spark.SOUNDS}
 PREVIEWS = {"clap": swap.CLAP_CANDIDATES, "puppet_manipulation": puppet_manipulation.BURST_CANDIDATES,
             "impact": {**impact.CANDIDATES, **puppet_manipulation.THUMP_CANDIDATES},
-            "time_manipulation": time_manipulation.CANDIDATES, "severed": severed.CANDIDATES}
+            "time_manipulation": time_manipulation.CANDIDATES, "severed": severed.CANDIDATES, "black_spark": black_spark.CANDIDATES}
 
 
 def wav(path: Path, samples: list[float]) -> None:

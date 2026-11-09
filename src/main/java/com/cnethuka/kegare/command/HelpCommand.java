@@ -109,6 +109,8 @@ final class HelpCommand {
             entry("debug impact log <on>", "commands.kegare.help.debug.impact.log"),
             entry("debug screen <player> <effect> <seconds>", "commands.kegare.help.debug.screen"),
             entry("debug battle restore", "commands.kegare.help.debug.battle.restore"),
+            entry("debug spark log <on>", "commands.kegare.help.debug.spark.log"),
+            entry("debug spark force <player>", "commands.kegare.help.debug.spark.force"),
             entry("debug rmt fatigue <player> <amount>", "commands.kegare.help.debug.rmt.fatigue"),
             entry("debug rmt others unlock <player>", "commands.kegare.help.debug.rmt.others.unlock"),
             entry("debug rmt others lock <player>", "commands.kegare.help.debug.rmt.others.lock"),

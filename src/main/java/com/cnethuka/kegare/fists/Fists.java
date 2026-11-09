@@ -18,6 +18,7 @@ public final class Fists {
     public static void init(IEventBus modBus) {
         com.cnethuka.kegare.melee.ReinforcedStrike.addLandedListener(SecondImpact::onStrike);
         onTurnedOn(player -> com.cnethuka.kegare.timing.SubTick.mark(player, com.cnethuka.kegare.timing.TimedInput.FISTS_ON)); // §3.29
+        onTurnedOn(BlackSpark::onFistsOn);
     }
 
     public static void onTurnedOn(Consumer<ServerPlayer> listener) {

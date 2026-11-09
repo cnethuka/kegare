@@ -13,7 +13,8 @@ public enum InsightSource {
     BOOK_CHAPTER(InsightCategory.DOMINION, 2),
     UNLOCKED_RMT(InsightCategory.OUTPUT, 5),
     RMT_SURVIVED_LOW(InsightCategory.OUTPUT, 5),
-    HEALED_BY_OTHER(InsightCategory.OUTPUT, 3);
+    HEALED_BY_OTHER(InsightCategory.OUTPUT, 3),
+    FIRST_BLACK_SPARK(InsightCategory.OUTPUT, 5);
 
     final InsightCategory defaultCategory;
     final int defaultAmount;

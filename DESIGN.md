@@ -414,6 +414,8 @@ Every command reads `/kegare <system> <action> [player] [value]`.
 | `/kegare malice capacity <player> <amount>` | Admin override of capacity. 0 makes them Severed |
 | `/kegare rebirth <player> [capacity]` | Wipe and re-roll everything (optionally forcing Malice capacity; 0 = Severed) |
 | `/kegare loadout reset [player]` | Back to the innate technique's default layout |
+| `/kegare debug spark log <on\|off>` | Every Black Spark try (its gap, the rolled offset, the window and each factor, and the power when it lands) and Parry's two timings (§3.29), to the op who asked and nobody else |
+| `/kegare debug spark force <player>` | Their next melee hit is a Black Spark, whatever the timing (for testing) |
 | `/kegare debug rmt fatigue <player> <amount>` | Set how much injuries take off a player's Reverse Malice Technique output (0 to 1, §3.17) |
 | `/kegare debug rmt others unlock\|lock <player>` | Teach or take away healing others (RMT's special) without its moment: the Unlocks entry `kegare:rmt_heal_others` |
 | `/kegare debug rmt moment <player> <target>` | Force the moment now: the target glows for the player for `momentSeconds`, and healing them teaches it (if the player is eligible; it says if not) |
@@ -1134,6 +1136,7 @@ Package `com.cnethuka.kegare.innate_technique.rime`. **Rarity: RARE.** All numbe
   | Fast Forward (Accelerate) | its own sweep round the clock (`fast_forward_cast`), where Accelerate winds a crown; ticks running together into a whirr (`time_manipulation.whirl`); a clock face round the caster, three hands whirling forward faster and faster |
   | Stasis Field (Decelerate) | its own palm pushed at the ground (`stasis_field_cast`), where Decelerate flicks a blade; a slowed, ringing tick (`time_manipulation.stasis`); a glassy bronze dome snapping open over a clock face laid on the ground, and projectiles crawling through it |
   | Closing Line (Blur, Severed, §3.27) | a planted push-off (`closing_line_launch`), a crack and a burst of dust and grit off the ground where they left, and a heavy launch everyone nearby hears (`severed.closing_line_launch`, loud); on arrival a skid (`closing_line_arrive`, `severed.closing_line_arrive`) and dust where they stop |
+  | Black Spark (Reinforced Fists, §3.28; not a special, but it gets a tell all the same) | black sparks and crackling black arcs bursting from the point of contact, fringed in the attacker's Malice color, for one sharp moment, at every effects setting, and a sharp crack (`black_spark.crack`) everyone near hears |
   | Reverse Malice Technique, on another (RMT, §3.17) | a white-and-green link from the healer's hand to the one healed, seen by everyone for as long as it lasts (`RmtLinkClient`, our own mesh, every effects setting), and a soft chime as it starts (an amethyst chime, high) |
 
   Standstill isn't a special, but it has a tell of its own all the same: the raised watch (`standstill_cast`), the sharp click
@@ -1982,6 +1985,7 @@ player, ever, saved per player. Which category each source pays into, and how mu
 | `unlocked_rmt` | Output 5 | ever (unlocking Reverse Malice Technique, any way; anyone who unlocked it before this paid is paid on login) | wired |
 | `rmt_survived_low` | Output 5 | ever (at 3 hearts or less during your own RMT, healed above it, alive 10 s later) | wired |
 | `healed_by_other` | Output 3 | ever (healed by another player's RMT, §3.17) | wired |
+| `first_black_spark` | Output 5 | ever (your first Black Spark, on anything living, §3.28) | wired |
 
 The hook-only ones wait for systems that don't exist yet: those systems call the `InsightHooks` method. **Insight does not change extension
 technique unlock levels.** It lowers only framework requirements (below).
@@ -2140,7 +2144,7 @@ move. Everything that landed on one victim in one server tick is added up (`Impa
   | Medium | 0.51 | a sprinting or critical sword hit, a fist's Reinforced Strike, Shatter Shell's push (1.44 with the shell up, 1.86 without), the least Glacial Spire, Send Off, Switchback |
   | Heavy | 1.98 | an iron-sword Reinforced Strike (2.10), a full Glacial Lance (2.67), a Half Curio Burst |
   | Impact frame | 2.84 | a full Glacial Spire (3.66), a Full Curio Burst (3.57 a block away), every Total Swap (3.00 at equal health, 4.32 between 9/20 and 20/20) |
-  | Top | never reached | reserved for Black Spark (not built): only a hit that asks for it |
+  | Top | never reached | reserved: only a hit that asks for it. Black Spark (§3.28) doesn't: it goes through the rule like any hit |
 
   The numbers in brackets come from `/kegare debug impact log`. The weights were chosen so the rule itself puts each
   of those where it is, with no per-move minimum. The closest calls, about 5% from the line: a full Glacial Lance (2.67) and a Total
@@ -2632,6 +2636,72 @@ in place of an ability like any shared one. Severed players never have it: they 
 - **Tests:** `FistsTest` (everyone's, never Severed's; the toggle's cost, drain, Burnout, re-arm and running out; the bonuses; the
   second impact only for a Strike with Fists on, its delay and share, through the cooldown without lengthening it, never moving anyone).
 
+**Black Spark** (`BlackSpark`; numbers in `[reinforced_fists.black_spark]`). Canon: a Black Flash happens when cursed energy lands within
+a millionth of a second of a hit. It isn't random, but nobody can do it at will. Ours is Malice landing within a hair of the hit.
+- **The try:** Reinforced Fists turned on just before a melee hit lands on a living target (`Attribution.isRealTarget`: not an armour
+  stand, not your own). Only the first melee hit after each turn-on is a try, and only within `tryMs` (1000) of it. The gap is the
+  sub-tick time from Fists going on to the attack (§3.29: both stamped at the key press and mapped to server time).
+- **Never at will:** each try, the server secretly rolls where the spark sits, an offset in [0, `jitterMs` (150)], from a random source
+  of its own. The hit is a Black Spark if the gap falls in [offset, offset + window]. The offset is never sent to any client (no payload
+  carries it; `BlackSparkTest` checks the payloads' fields), so even a perfect macro lands it only window ÷ jitter of the time. Skill
+  is keeping the gap short and steady (any gap from the window's width to the jitter has the best chance; shorter is worse, and past
+  jitter + window there's none); luck decides the rest.
+- **The window** (`SparkWindow`) is `windowMs` (25) times one factor for each condition behind it, worked out fresh each try, and never
+  more than `maxWindowShare` (0.5) of the jitter, so it's never certain whatever the factors:
+  - your Malice, current against capacity: from `maliceEmpty` (0.85) to `maliceFull` (1.15), fuller is wider;
+  - your opponent's Malice capacity against yours: 1 ÷ (1 + `opponentWeight` (0.15) × (theirs ÷ yours − 1)), held between
+    `opponentMin` (0.75) and `opponentMax` (1.15); stronger is narrower. Mobs and Severed players have none, so they're the widest,
+    and Severed players can be hit;
+  - your physical condition: health (`healthLow` 0.8 at none, 1 at full), hunger (`hungerLow` 0.9 at an empty bar), each level of
+    Weakness (0.9) and Slowness (0.92), and each Freeze stack (−0.06, never below half);
+  - temperature and humidity where you stand: −`temperatureWeight` (0.05) per unit of biome temperature away from `mildTemperature`
+    (0.8, plains; at most one unit counts), −`humidityWeight` (0.03) × the biome's rainfall, and rain there now (0.97) and a storm
+    (0.97 more). Canon names temperature and humidity, not which way they push: here mild and dry are the best,
+    and every nudge is small (the worst weather there is takes about 12% off);
+  - your Grade: +`gradeStep` (0.03) for each Grade above Grade 4 (Special Grade: 1.18), never enough to guarantee it (the cap);
+  - the zone: ×`zoneWindow` while you're in it (below).
+  At Grade 4, full Malice, unhurt, fed, against an equal in the plains on a clear day, the window is about 28 ms: a try with a good gap
+  lands about one time in five or six.
+- **Power, canon's exponent with no ceiling:** the hit's damage, everything that adds to it included (Fists' bonus, a crit, Strength,
+  and a Strike about to go off), is put on a scale that starts at 2 (s = 2 + damage ÷ `scaleDamage` (4)), raised to `exponent` (2.5)
+  and turned back into damage: the hit times s^1.5 (s = 2: about 2.8×, 3: about 5.2×, 4: 8×). `scaleDamage` is a unit, not a limit:
+  a fully charged netherite sword's 8 is 4 on the scale, canon's "strong hit". There is no cap and no limit on what it may kill. It's
+  added to the hit before the target's defences, and they're what stop it, as in canon: armour (vanilla's own formula, which lets a
+  bigger hit through more), a guard, a perfect parry (the hit is cancelled before the try), Toughness, Rime Shell. A Strike's own
+  multiplier still comes after the defences, as always.
+
+  | Hit (Fists on) | Its damage on the scale | × | 20 HP, unarmoured | Full netherite | In the zone, unarmoured | In the zone, netherite | Without a spark (unarmoured / netherite) |
+  |---|---|---|---|---|---|---|---|
+  | Punch (1, bare fist) | 3.0 (s 2.75) | 4.56 | 13.7 | 4.2 | 16.4 | 5.4 | 3.0 / 0.7 |
+  | Iron sword (6) | 7.2 (s 3.80) | 7.41 | 53.3 | 33.4 | 64.0 | 45.6 | 7.2 / 1.9 |
+  | Netherite sword (8) | 9.6 (s 4.40) | 9.23 | 88.6 | 74.4 | 106.3 | 89.3 | 9.6 / 2.7 |
+  | Reinforced Strike, bare fist | 4.5 (s 3.13) | 5.52 | 24.9 | 8.3 | 29.8 | 10.7 | 4.5 / 1.0 |
+  | Reinforced Strike, netherite sword | 14.4 (s 5.60) | 13.25 | 190.8 | 160.3 | 229.0 | 192.4 | 14.4 / 4.0 |
+
+  Fully charged hits, no crit, Fists' `weaponBonus` on the swords. Damage before a 20 HP body's health runs out (a spark past 20 kills).
+- **Knockback:** `knockback` (1.2) on top, at the end of the tick the hit landed in, once the hit's own pushes are done (so nothing
+  halves it), and before the Impact System adds the tick up. Bosses (§4) take the damage and are never moved by it. It's what throws
+  someone into a wall hard enough for a wall-slam crater (§3.24, "Lights Out").
+- **Impact System** (§3.23): a Black Spark counts as fully charged (`Impacts.charge`), with nothing forced: it goes through the rule
+  like any hit. Strengths on a 20 HP player: unarmoured, a bare-fisted punch 3.22, an iron sword 5.60, a netherite sword 7.72, a
+  bare-fisted Strike 4.07, a netherite Strike 14.03, all the impact frame. A bare-fisted punch reaches it only through the knockback
+  (2.02 without it, Heavy). Against full netherite a bare-fisted punch doesn't (2.65, Heavy); a bare-fisted Strike does (3.08), and
+  every sword does. Top stays unreached: nothing asks for it.
+- **Mobs** can be Black Sparked; the advancements (§3.28's zone and chain, "Lights Out") count players only.
+- **Insight:** the first Black Spark ever, on anything living, pays `first_black_spark` (Output 5) once (§3.21).
+- **Look and tell** (§3.15; `BlackSparkFx`, `BlackSparkPayload`, `fists/client/BlackSparkClient`): for one sharp moment (6 ticks),
+  crackling black arcs and black sparks burst from the point of contact, every one fringed in the attacker's Malice color, round a black
+  star at its heart. The arcs are crooked lines redrawn every tick, so they crackle; they shoot out on the first tick and break up as they
+  go; the sparks are black chips with a rim of color, thrown out and falling. Solid and full-bright, so the black holds by day, at night
+  and against the sky. Our own: nothing like the anime's red-and-black lightning. The attacker sees their own color, everyone else (within
+  48 blocks) the color of the face a disguise shows. Never on your own body in your own first person (the Impact System gives you the hit).
+  Reduced: 4 arcs and 6 sparks, gone in 4 ticks. Vanilla: black dust, dust in the color, and crit sparks. A sharp crack everyone near
+  hears (`black_spark.crack`, `tools/sounds/black_spark.py`: a hard snap, a spray of crackle and the body's thump; three versions in
+  `run/sounds_preview/black_spark/`, the first ships).
+- **Tests:** `BlackSparkTest` (the power formula and table, with no cap; the offset never sent; each window factor moving it the right
+  way and the cap; a try only right after Fists go on and only once, a hit and a miss by the offset, the Strike on the scale, bosses
+  damaged and never moved by it, the knockback, a forced one, and the first-ever Insight paid once).
+
 ### 3.29 Sub-tick timing (package `timing`)
 
 A shared system so timing can be judged finer than a 50 ms tick. Numbers in `[timing]` of `kegare-server.toml`.
@@ -2693,6 +2763,8 @@ A shared system so timing can be judged finer than a 50 ms tick. Numbers in `[ti
     pushed, pulled or disabled; Stand-In copies only its owner. Pulling Strings, Out of Body, Kuru Kuru and Get Over Here count
     anything (not your own puppet, for Get Over Here); Nobody Home, Decoy, Who's Real?, Curiosity Killed, Little Me, Tied Up, Walkies
     and Strings Attached need a player.
+  - Reinforced Fists and Black Spark follow it (§3.28): Fists' bonus and Black Spark land on mobs; bosses take the damage and the
+    second impact but are never moved by either (the second impact has no knockback, and Black Spark's is never given to a boss).
   - Time Manipulation follows it (§3.26): Rewind, Decelerate, Stasis Field and Standstill take mobs; bosses take Decelerate's
     damage but are never Rewound, slowed or stopped (so nothing is ever held for one). Its two task ones (The World Stood Still,
     Overclock) need no target; the goals and the challenge (Second Chance, Slow Motion, Not So Fast, Frozen in Flight, Same Clock,

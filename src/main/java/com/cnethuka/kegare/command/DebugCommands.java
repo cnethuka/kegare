@@ -113,6 +113,19 @@ final class DebugCommands {
                                                     double seconds = DoubleArgumentType.getDouble(c, "seconds");
                                                     return forEachPlayer(c, (source, player) -> screen(source, player, effect, seconds));
                                                 })))))
+                // Black Spark (DESIGN §3.28): the numbers behind each try, to the op who asked, and a forced one for filming.
+                .then(Commands.literal("spark")
+                        .then(Commands.literal("log").then(Commands.argument("on", BoolArgumentType.bool()).executes(c -> {
+                            boolean on = BoolArgumentType.getBool(c, "on");
+                            com.cnethuka.kegare.timing.TimingLog.set(c.getSource().getPlayerOrException(), on);
+                            say(c.getSource(), on ? "commands.kegare.debug.spark.log.on" : "commands.kegare.debug.spark.log.off");
+                            return 1;
+                        })))
+                        .then(Commands.literal("force").then(player((source, player) -> {
+                            com.cnethuka.kegare.fists.BlackSpark.force(player);
+                            say(source, "commands.kegare.debug.spark.force", player.getDisplayName());
+                            return 1;
+                        }))))
                 // Battle damage's pending rebuilds (RESTORING mode): start them all now instead of after the fight's delay.
                 .then(Commands.literal("battle").then(Commands.literal("restore").executes(c -> battleRestore(c.getSource()))))
                 // Reverse Malice Technique (DESIGN §3.17): injury fatigue, knowing how to heal others, and a forced moment.

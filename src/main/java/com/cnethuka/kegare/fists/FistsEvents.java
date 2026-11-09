@@ -35,6 +35,18 @@ public final class FistsEvents {
         event.setAmount(event.getAmount() * (float) (1.0 + bonus(attacker)));
     }
 
+    /** Black Spark's try, after the Fists bonus (DESIGN §3.28). */
+    @SubscribeEvent(priority = net.neoforged.bus.api.EventPriority.LOW)
+    static void onIncomingSpark(LivingIncomingDamageEvent event) {
+        BlackSpark.onIncoming(event);
+    }
+
+    /** Ahead of the Impact System's own end of the tick, so it counts the push. */
+    @SubscribeEvent(priority = net.neoforged.bus.api.EventPriority.HIGH)
+    static void onServerTickEnd(ServerTickEvent.Post event) {
+        BlackSpark.knockBack();
+    }
+
     /** What Fists add to this player's melee hits right now, as a share: bigger with an empty hand. */
     public static double bonus(ServerPlayer attacker) {
         return attacker.getMainHandItem().isEmpty() ? FistsConfig.FIST_BONUS.get() : FistsConfig.WEAPON_BONUS.get();
@@ -68,11 +80,14 @@ public final class FistsEvents {
     @SubscribeEvent
     static void onLogout(PlayerEvent.PlayerLoggedOutEvent event) {
         FistsTell.forget(event.getEntity().getUUID());
+        BlackSpark.forget(event.getEntity().getUUID());
     }
 
     @SubscribeEvent
     static void onStopped(ServerStoppedEvent event) {
         FistsTell.clear();
         SecondImpact.clear();
+        BlackSpark.clear();
+        com.cnethuka.kegare.timing.TimingLog.clear();
     }
 }

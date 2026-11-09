@@ -1,4 +1,10 @@
 {
+  "black_spark.crack": {
+    "sounds": [
+      "kegare:black_spark/crack"
+    ],
+    "subtitle": "subtitles.kegare.black_spark.crack"
+  },
   "impact.boom": {
     "sounds": [
       "kegare:impact/boom"
