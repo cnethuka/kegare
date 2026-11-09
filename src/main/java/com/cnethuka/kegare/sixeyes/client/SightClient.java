@@ -151,7 +151,7 @@ public final class SightClient {
     }
 
     /** The neutral flow color of mobs: dim when passive, stronger when hostile. */
-    public static final int MOB_PASSIVE = 0x6F8798, MOB_HOSTILE = 0xD8E4F0;
+    public static final int MOB_PASSIVE = 0x6F8798, MOB_HOSTILE = 0xD8E4F0, MOB_PULSE = 0xFF3A28;
 
     /**
      * The outline color the eyes draw on this entity (a crisp line through walls, in their Malice color; mobs in the neutral flow color),
@@ -172,7 +172,9 @@ public final class SightClient {
             if (mob != null) color = mob.hostile() ? MOB_HOSTILE : MOB_PASSIVE;
         }
         if (color == null) return null;
-        if (pulsing(entity.getId()) && (now() / 75) % 2 == 0) return 0xFFFFFF;
+        if (StrainClient.sparks().containsKey(entity.getId())) return 0xFFC030; // the spark before a cast: gold, unlike a cast's white
+        // A pulse flashes: white on a player, danger red on a mob (a hostile mob's outline is near white already).
+        if (pulsing(entity.getId()) && (now() / 75) % 2 == 0) return entity instanceof Player ? 0xFFFFFF : MOB_PULSE;
         return color;
     }
 

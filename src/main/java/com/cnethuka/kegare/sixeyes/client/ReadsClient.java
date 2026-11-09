@@ -92,6 +92,9 @@ public final class ReadsClient {
 
     private record Tag(Entity entity, double distance, float x, float y) {}
 
+    /** Tags placed so far this frame: x, y, half width, height. */
+    private static final List<float[]> PLACED = new ArrayList<>();
+
     private static void render(GuiGraphics g, DeltaTracker delta) {
         Minecraft mc = Minecraft.getInstance();
         if (!SightClient.isBearer() || mc.player == null || mc.level == null || mc.options.hideGui || mc.screen != null) return;
@@ -109,6 +112,7 @@ public final class ReadsClient {
         }
         tags.sort(Comparator.comparingDouble(Tag::distance));
         int shown = 0, limit = KegareClientConfig.SIX_EYES_READ_TAGS.get();
+        PLACED.clear();
         for (Tag tag : tags) {
             boolean focused = focus != null && focus.entityId() == tag.entity().getId();
             if (shown >= limit && !focused) continue; // the focus always shows
@@ -150,6 +154,18 @@ public final class ReadsClient {
         float halfW = 0;
         for (Component c : lines) halfW = Math.max(halfW, mc.font.width(c) * scale / 2f);
         if (Math.abs(x - cx) < halfW + 4 && y < cy + CLEAR_OF_CROSSHAIR && y + total > cy - CLEAR_OF_CROSSHAIR) y = cy - CLEAR_OF_CROSSHAIR - total;
+        // Nearest first, and never on top of one already placed: a crowded fight stacks them upward.
+        boolean moved = true;
+        while (moved) {
+            moved = false;
+            for (float[] r : PLACED) {
+                if (Math.abs(x - r[0]) < halfW + r[2] + 2 && y < r[1] + r[3] && y + total > r[1]) {
+                    y = r[1] - total - 1;
+                    moved = true;
+                }
+            }
+        }
+        PLACED.add(new float[] {x, y, halfW, total});
         int a = Mth.clamp((int) (alpha * 255), 0, 255) << 24;
         for (int i = 0; i < lines.size(); i++) {
             int c = i == 0 ? color : 0xD8D8E0;

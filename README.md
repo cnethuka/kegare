@@ -60,7 +60,8 @@ Requires JDK 21 (e.g. Temurin). Point `JAVA_HOME` at it if it isn't your default
 
 Keys: **G** Technique Mode (shows the combat panel). In it, a number key casts that slot (hold to charge or channel), **R** +
 number key casts its special, **R** alone casts the selected ability's special, and **V** is the ultimate. The scroll wheel stays on
-the hotbar. Out of the mode, number keys are the hotbar and nothing casts. **K** Sorcerer screen. Right-click is always vanilla.
+the hotbar. Out of the mode, number keys are the hotbar and nothing casts. **K** Sorcerer screen. **M** the Six Eyes' map (only with the
+eyes). **J** Curios' screen, for eyewear (moved off G, which is Technique Mode). Right-click is always vanilla.
 See DESIGN.md §3.5.
 
 Commands read `/kegare <system> <action> [player] [value]` and take short names (`/kegare innate set Steve rime`).

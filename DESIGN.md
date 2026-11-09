@@ -342,7 +342,7 @@ All timestamps use **level game time**. They persist across restarts and are ide
 - **Sub-tick timing** (§3.29): `TimingNet.Stamp` (C→S, an input stamped with the client's clock, sent at the key press), `TimingNet.Ping`
   (S→C) and `TimingNet.Pong` (C→S, the client's clock), all handled on the network thread. Reinforced Fists' look is `FistsPayload` (§3.28).
 - Network version `25` (since Six Eyes, §3.32, and RMT's repair, §3.17: `Repair.Payload`, the brain meter in `ProgressionSnapshot`, and
-  Six Eyes' own payloads; `24` was Reinforcement and Background Tasks, §3.16 and §3.31: `AuraPayload`, `BackgroundSyncPayload`,
+  Six Eyes' own (`SightPayloads`, `ReadsPayload`, `Strain.Hud`, `Strain.Collapsed`, `Edge.Spark`, `Attunement.PinPayload`); `24` was Reinforcement and Background Tasks, §3.16 and §3.31: `AuraPayload`, `BackgroundSyncPayload`,
   `BackgroundActionPayload`; `23` was too fast for the eye, §3.30:
   `SensedPositionsPayload`; `22` was Reinforced Fists and Black Spark, §3.28-3.29: `FistsPayload`, the timing stamps; `21` was RMT's rework, §3.17: `RmtOutputPayload`, then heal-others' `RmtLinkPayload` and `RmtMomentPayload`; `20`
   was Closing Line's line in three dimensions in `RushPayload` and its cooldown in `BlurPayload`, §3.27; `19`
@@ -609,6 +609,7 @@ a result back; they only send requests the server re-validates. All text comes f
 | Screen | Opens when | Data | Sends |
 |---|---|---|---|
 | Roll reveal (`RevealScreen`, `RevealScript`, `RevealLayout`) | the server finished a roll: Awakening, Reawakening, admin reroll, replacement | `RevealPayload`, sent only to that player | nothing |
+| Six Eyes' map (`SixEyesMapScreen`) | key **M**, only with the eyes (§3.32) | what the eyes see (`SightPayloads`), sent to the bearer alone | pins (for Attunement) |
 | Sorcerer (`SorcererScreen`) | key **K** | `SorcererInfoPayload`, computed by the server, plus the live sync (loadout, Malice, cooldowns) and your Background Tasks (`BackgroundSyncPayload`) | the open request (again whenever the sync shows an unlock, reroll or trait change); loadout edit requests (§3.16); Background Task requests (§3.31) |
 | Talisman confirm (`TalismanConfirmScreen`) | using a Purification Talisman (nothing consumed yet) | `TalismanPromptPayload` | a confirm request |
 
@@ -2990,8 +2991,7 @@ ability on the bar, but it takes no bar slot and leaves the hands free.
 - **Who can tell:** nobody, except a Six Eyes bearer, who sees a faint green shimmer on anyone running it: small soft glints
   (`entity/aura_shimmer.png`, smooth, 0.11 to 0.19 blocks, one every 2 ticks) coming and going over the body and drifting up, in
   RMT's green; Reduced half as many, Vanilla a few specks of green dust. Sent per viewer (`AuraPayload.SHIMMER`, only to Six Eyes viewers, `AuraTell.addShimmer`).
-- **Hooks, not built:** `BackgroundRmt.addHook` is told every tick it runs, for the Six Eyes step (holding Strain back, easing the
-  overload) and later techniques.
+- **Hooks:** `BackgroundRmt.addHook` is told every tick it runs. Six Eyes uses it to hold Strain back (§3.32); later techniques can use it too.
 - **Icon:** RMT's green cross inside the loop of something left running.
 - **Tests:** `BackgroundRmtTest` (the count from the channel, RMT first, Severed never, Always On; the rate from RMT output with
   fatigue; full health, drain, no absorption, healed as it lands; regenFactor; the 20%/30% pause and resume; stuns and Burnout not
@@ -3069,7 +3069,7 @@ for the eye" (§3.30).
 - **Intent pulses:** a player's outline (and marker) flashes white the moment they start charging, channelling, casting or turning on a
   toggle: the server sends it to the bearer from inside the cast's start, before its tell plays (`CastManager.addStartListener`).
   Severed players never pulse (they have no casts).
-- **Hostile mob intent:** the eyes read a hostile mob's flow before it acts, so its outline pulses just before the attack, once as each
+- **Hostile mob intent:** the eyes read a hostile mob's flow before it acts, so its outline pulses danger red just before the attack (a hostile outline is near white already), once as each
   begins (checked every tick within 64 blocks of a bearer): a skeleton of any kind drawing its bow, a pillager or piglin charging a
   crossbow (LOOSE); a creeper starting to swell (SWELL); any mob attacking with the vanilla melee goal (zombies of every kind, spiders,
   vindicators, endermen, silverfish, endermites, iron golems, angry wolves...) 4 ticks before its swing with its target in reach (SWING; the
@@ -3090,7 +3090,7 @@ for the eye" (§3.30).
 - **Never shown:** Grade (private, §3.21), traits, Refinement, Insight, and anything §1 keeps secret: the payloads have no field for them.
 - **Readable in a six-player fight:** nearest first, at most the client setting's count (`[six_eyes] readTags`, 6; a Settings row only
   the bearer sees: 0, 3, 6, 10, 16), the focus always showing; fading with distance (full to 8 blocks, down to 30% at 64); a tag that would
-  cover the crosshair moves up out of its way. Every effects setting.
+  cover the crosshair moves up out of its way, and tags that would overlap stack upward, nearest lowest. Every effects setting.
 - Sent every 4 ticks for players within 96 blocks. Mobs' tags come from what the eyes already see.
 - **Tests:** `ReadsTest` (compact Reads with technique and Malice; a void's says nothing; the focus at the crosshair, toggles and cooldowns
   in its detail; none when nobody's there; no field for anything secret, and a Special Grade reading the same as a Grade 4).
@@ -3115,7 +3115,7 @@ focus is the Read the server decides for itself, so that's the one it counts.
   RMT refreshing the brain, as in canon.
 - **The uncovered edge:** only uncovered, against a top-tier opponent, the bearer sees the spark before a cast. The client stamps every cast key
   (`TimedInput.CAST`, §3.29) the moment it goes down; the stamp is handled on the network thread as it reaches the server, ahead of the intent
-  itself and so of the cast's own tell, and the cue goes out there and then (`Edge.Spark`: a white-gold flash at their head, through walls, with
+  itself and so of the cast's own tell, and the cue goes out there and then (`Edge.Spark`: for half a second their outline turns gold, unlike a cast's white pulse, with a gold flash at their head, through walls, and
   a chime; the network thread reads a snapshot each tick leaves, so it touches no live game state). It's a key press read, so it also shows
   for a cast that goes on to fizzle. Within `edgeRange` (64). Covered, they see the cast when it starts, like everyone (the outline's pulse, above).
   For now "top-tier" is a Special Grade player; `Edge.addTopTier` is where later systems add more, a Dominion clash among them.
@@ -3125,7 +3125,7 @@ focus is the Read the server decides for itself, so that's the one it counts.
   - The uncovered edge goes until Strain cools below `edgeBackBelow` (60).
   - Staying uncovered there: the chance of collapsing each second grows `riskGrowthPerSecond` (0.01: 10% a second after 10 s). A collapse is a
     stun of `collapseStun` (2 s; no casting, and movement and jumping held) plus `collapseDamage` (6) that armour doesn't stop (`kegare:eyes_collapse`,
-    "%s's mind gave out"), with a dark flash on their own screen; the risk starts over. Covering the eyes stops it growing and stops the
+    "%s's mind gave out"), with a dark flash on their own screen (our addition, so a stun you can't move through is plain); the risk starts over. Covering the eyes stops it growing and stops the
     rolls; channelling RMT lowers it (`rmtRiskReliefPerSecond`, 0.05); below the top it's gone.
 - `/kegare debug sixeyes strain <player> <value>` sets it.
 - **Tests:** `StrainTest` (players have the slot, anyone can wear either, it proves nothing; Strain's three build rates and two fall rates; the same

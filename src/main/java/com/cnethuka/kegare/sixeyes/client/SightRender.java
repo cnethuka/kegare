@@ -76,8 +76,8 @@ public final class SightRender {
             if (e == null) continue;
             float left = Mth.clamp((spark.getValue() - now) / (float) StrainClient.SPARK_MS, 0f, 1f);
             Vec3 at = e.getPosition(partial).add(0, e.getBbHeight() + 0.2, 0).subtract(cam);
-            float size = (float) Math.max(0.35, at.length() * 0.03) * (1.4f - 0.4f * left);
-            quad(markers, pose.last().pose(), at, right, up, size, size, 0f, 1f, 0xFFF0B0, left);
+            float size = (float) Math.max(0.7, at.length() * 0.07) * (1.5f - 0.5f * left);
+            quad(markers, pose.last().pose(), at, right, up, size, size, 0f, 1f, 0xFFD060, Math.min(1f, left * 1.5f));
         }
         buffers.endBatch(SightRenderTypes.THROUGH_WALLS.apply(MARKER));
 

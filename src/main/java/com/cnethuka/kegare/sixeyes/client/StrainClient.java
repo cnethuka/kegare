@@ -41,7 +41,7 @@ public final class StrainClient {
     private static long collapseUntil;
     /** Sparks showing: entity id to when they end (ms). */
     private static final Map<Integer, Long> SPARKS = new HashMap<>();
-    static final long SPARK_MS = 350;
+    static final long SPARK_MS = 500;
 
     private StrainClient() {}
 
@@ -80,7 +80,7 @@ public final class StrainClient {
     }
 
     private static int meter(GuiGraphics g, Minecraft mc, int cx, int y) {
-        if (hud.strain() < 0) return y;
+        if (hud.strain() <= 0) return y; // no eyes, or nothing to show
         float fill = hud.strain() / 100f;
         int color = hud.top() ? 0xFFFF5A5A : hud.strain() >= 60 ? 0xFFFFB24A : 0xFF8FC8FF;
         g.fill(cx - BAR_W / 2 - 1, y, cx + BAR_W / 2 + 1, y + 3, 0xAA000000);
