@@ -8,6 +8,8 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
+import javax.annotation.Nullable;
+import com.cnethuka.kegare.database.KegareDatabase;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
@@ -29,10 +31,28 @@ import net.minecraft.world.level.saveddata.SavedData;
  */
 public final class UniqueTraitSavedData extends SavedData {
     /**
+     * With Postgres storage on (DESIGN §3.33) this record is network-wide: it answers from memory and never waits, and tells a backend what changes,
+     * which is what's really in charge. Nothing of it goes in the world then.
+     */
+    public interface Backend {
+        void claimed(ResourceLocation trait, UUID player, boolean force);
+
+        void released(ResourceLocation trait, UUID player);
+
+        void succession(ResourceLocation trait, Pending pending);
+
+        void revoked(UUID player, ResourceLocation trait);
+
+        void revocationsTaken(UUID player);
+
+        void seen(UUID player, long epochMillis);
+    }
+
+    /**
      * A trait between bearers.
      *
      * @param killer  the player who caused the loss, if any (KILLER transfer mode)
-     * @param dueTick overworld game time when it may pass on
+     * @param dueTick when it may pass on: overworld game time, or with Postgres storage on wall-clock time in ticks (game time differs per server)
      */
     public record Pending(UUID previousBearer, Optional<UUID> killer, long dueTick) {}
 
@@ -44,9 +64,64 @@ public final class UniqueTraitSavedData extends SavedData {
     private final Map<ResourceLocation, Pending> pending = new LinkedHashMap<>();
     private final Map<UUID, Set<ResourceLocation>> revoked = new HashMap<>();
     private final Map<UUID, Long> lastSeen = new HashMap<>();
+    @Nullable
+    private final Backend backend;
+    /** Everyone online across the network, with Postgres storage on. */
+    private final Set<UUID> networkOnline = new HashSet<>();
+
+    public UniqueTraitSavedData() {
+        this(null);
+    }
+
+    public UniqueTraitSavedData(@Nullable Backend backend) {
+        this.backend = backend;
+    }
 
     public static UniqueTraitSavedData get(MinecraftServer server) {
+        KegareDatabase database = KegareDatabase.current();
+        return database != null ? database.traitRecord() : inWorld(server);
+    }
+
+    /** The world's own copy, whatever the storage is doing: what a migration reads and an export writes. */
+    public static UniqueTraitSavedData inWorld(MinecraftServer server) {
         return server.overworld().getDataStorage().computeIfAbsent(FACTORY, NAME);
+    }
+
+    /** Is this the network's record, not one world's? */
+    public boolean isNetworked() {
+        return backend != null;
+    }
+
+    /** Online anywhere on the network, this server or another. */
+    public boolean onlineOnNetwork(UUID player) {
+        return networkOnline.contains(player);
+    }
+
+    /** What the network's record holds now. */
+    public void replaceAll(Map<ResourceLocation, UUID> bearers, Map<ResourceLocation, Pending> pending, Map<UUID, Set<ResourceLocation>> revoked, Map<UUID, Long> lastSeen, Set<UUID> online) {
+        this.bearers.clear();
+        this.bearers.putAll(bearers);
+        this.pending.clear();
+        this.pending.putAll(pending);
+        this.revoked.clear();
+        revoked.forEach((player, traits) -> this.revoked.put(player, new HashSet<>(traits)));
+        this.lastSeen.putAll(lastSeen);
+        this.networkOnline.clear();
+        this.networkOnline.addAll(online);
+    }
+
+    /** Whoever's waiting on a revocation, on the network's record. */
+    public Set<UUID> revokedPlayers() {
+        return Set.copyOf(revoked.keySet());
+    }
+
+    /** What an import or export needs to read. */
+    public Map<UUID, Set<ResourceLocation>> revokedView() {
+        return Collections.unmodifiableMap(revoked);
+    }
+
+    public Map<UUID, Long> lastSeenView() {
+        return Collections.unmodifiableMap(lastSeen);
     }
 
     // ------------------------------------------------------------------ bearers
@@ -65,7 +140,8 @@ public final class UniqueTraitSavedData extends SavedData {
         if (current != null) return current.equals(player);
         if (pending.containsKey(trait)) return false;
         bearers.put(trait, player);
-        setDirty();
+        if (backend != null) backend.claimed(trait, player, false);
+        else setDirty();
         return true;
     }
 
@@ -75,7 +151,8 @@ public final class UniqueTraitSavedData extends SavedData {
         if (current != null && !current.equals(player)) return false;
         pending.remove(trait);
         bearers.put(trait, player);
-        setDirty();
+        if (backend != null) backend.claimed(trait, player, true);
+        else setDirty();
         return true;
     }
 
@@ -83,7 +160,8 @@ public final class UniqueTraitSavedData extends SavedData {
     public void release(ResourceLocation trait, UUID player) {
         if (player.equals(bearers.get(trait))) {
             bearers.remove(trait);
-            setDirty();
+            if (backend != null) backend.released(trait, player);
+            else setDirty();
         }
     }
 
@@ -107,21 +185,24 @@ public final class UniqueTraitSavedData extends SavedData {
 
     public void startSuccession(ResourceLocation trait, Pending entry) {
         pending.put(trait, entry);
-        setDirty();
+        if (backend != null) backend.succession(trait, entry);
+        else setDirty();
     }
 
     // ------------------------------------------------------------------ offline revocation
 
     public void revoke(UUID player, ResourceLocation trait) {
         revoked.computeIfAbsent(player, u -> new HashSet<>()).add(trait);
-        setDirty();
+        if (backend != null) backend.revoked(player, trait);
+        else setDirty();
     }
 
     /** Returns and clears the traits revoked from {@code player} while they were offline. */
     public Set<ResourceLocation> takeRevocations(UUID player) {
         Set<ResourceLocation> out = revoked.remove(player);
         if (out == null) return Set.of();
-        setDirty();
+        if (backend != null) backend.revocationsTaken(player);
+        else setDirty();
         return out;
     }
 
@@ -133,7 +214,8 @@ public final class UniqueTraitSavedData extends SavedData {
 
     public void markSeen(UUID player, long epochMillis) {
         lastSeen.put(player, epochMillis);
-        setDirty();
+        if (backend != null) backend.seen(player, epochMillis);
+        else setDirty();
     }
 
     // ------------------------------------------------------------------ persistence

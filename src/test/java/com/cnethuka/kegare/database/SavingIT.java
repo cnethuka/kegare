@@ -61,7 +61,7 @@ class SavingIT {
     static void join(KegareDatabase database, ServerPlayer player) throws Exception {
         KegareDatabase.LoginResult result = database.login(player.getUUID()).get();
         assertTrue(result.admitted(), "let in");
-        database.loginLoaded(player.getUUID(), result.rows());
+        database.loginLoaded(player.getUUID(), result);
         database.applyOnJoin(player);
         assertTrue(database.admit(player), "with their data on them");
     }

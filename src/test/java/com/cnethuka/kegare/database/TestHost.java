@@ -32,6 +32,27 @@ final class TestHost implements KegareDatabase.Host {
         }
     }
 
+    final List<String> kicked = new CopyOnWriteArrayList<>();
+    final List<String> events = new CopyOnWriteArrayList<>();
+
+    @Override
+    public void kick(UUID player, String langKey) {
+        kicked.add(player + " " + langKey);
+    }
+
+    @Override
+    public void claimRefused(net.minecraft.resources.ResourceLocation trait, UUID player) {
+        events.add("refused " + trait + " " + player);
+    }
+
+    @Override
+    public void networkEvent(String kind, net.minecraft.resources.ResourceLocation trait, UUID player) {
+        events.add(kind + " " + trait + " " + player);
+    }
+
+    @Override
+    public void traitsRefreshed() {}
+
     @Override
     public void tellOps(String langKey) {
         told.add(langKey);

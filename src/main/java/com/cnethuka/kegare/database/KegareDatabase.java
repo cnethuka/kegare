@@ -2,6 +2,7 @@ package com.cnethuka.kegare.database;
 
 import com.cnethuka.kegare.Kegare;
 import com.cnethuka.kegare.malice.MaliceService;
+import com.cnethuka.kegare.trait.TraitSuccession;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -13,8 +14,10 @@ import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 import javax.annotation.Nullable;
@@ -24,6 +27,7 @@ import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.NbtAccounter;
 import net.minecraft.nbt.NbtIo;
 import net.minecraft.network.chat.Component;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.level.storage.LevelResource;
@@ -52,14 +56,33 @@ public final class KegareDatabase {
         /** Where this player's world file is, if it could be there. */
         @Nullable
         Path playerFile(UUID player);
+
+        /** Sends someone away, if they're here. */
+        void kick(UUID player, String langKey);
+
+        /** The database refused a claim: someone else has the trait. */
+        void claimRefused(ResourceLocation trait, UUID player);
+
+        /** Something happened on the network: a trait passed on, or the word of it. */
+        void networkEvent(String kind, ResourceLocation trait, @Nullable UUID player);
+
+        /** The trait record's fresh: apply any revocations waiting for players here. */
+        void traitsRefreshed();
     }
 
-    /** How a login went: the player's rows, or that they're to be kept out. */
-    public record LoginResult(boolean admitted, Map<String, String> rows) {
-        static final LoginResult REFUSED = new LoginResult(false, Map.of());
+    /**
+     * How a login went: the player's rows and their lease's token, or why they're to be kept out.
+     *
+     * @param preRolledBirth nothing was anywhere for them: this is a first join, and these unique traits were already rolled and won
+     */
+    public record LoginResult(boolean admitted, @Nullable String refusal, Map<String, String> rows, @Nullable UUID token, @Nullable Set<ResourceLocation> preRolledBirth) {
+        static final LoginResult UNREACHABLE_NOW = new LoginResult(false, UNREACHABLE, Map.of(), null, null);
+        static final LoginResult HELD_ELSEWHERE = new LoginResult(false, HELD, Map.of(), null, null);
     }
 
     public static final String UNREACHABLE = "disconnect.kegare.db.unreachable";
+    public static final String HELD = "disconnect.kegare.db.held";
+    public static final String LEASE_LOST = "disconnect.kegare.db.lease_lost";
     private static final long MAX_BACKOFF_MILLIS = 30_000;
 
     @Nullable
@@ -68,9 +91,11 @@ public final class KegareDatabase {
     final DatabaseConfig config;
     final ConnectionPool pool;
     final SaveQueue queue = new SaveQueue();
+    final NetworkTraits traits;
     private final Path configDir;
     private final Host host;
     private final ExecutorService io;
+    private final ScheduledExecutorService scheduler;
     private final Thread writer;
     private final CompletableFuture<Void> ready = new CompletableFuture<>();
     private volatile boolean running = true;
@@ -79,21 +104,39 @@ public final class KegareDatabase {
     private volatile int schemaVersion;
     /** Transactions written, for the tests: an unchanged player must cost none. */
     final AtomicLong writes = new AtomicLong();
+    /** Batches dropped because this server no longer owned the player. */
+    final AtomicLong refusedWrites = new AtomicLong();
 
     // Server thread only, from here down.
     /** What's been loaded for players on their way in. */
-    private final Map<UUID, Map<String, String>> loaded = new HashMap<>();
+    private final Map<UUID, Loaded> loaded = new HashMap<>();
+    /** First joins whose unique traits were rolled before they came in. */
+    private final Set<UUID> preRolled = new HashSet<>();
     /** Whose data is really on them: only these are ever saved. */
     private final Set<UUID> admitted = new HashSet<>();
     private final Map<UUID, Map<String, Long>> lastSaved = new HashMap<>();
 
+    /** Everything this server holds a lease on: player to token. Any thread. */
+    private final Map<UUID, UUID> leases = new ConcurrentHashMap<>();
+
+    private record Loaded(Map<String, String> rows, UUID token, long at) {}
+
+    /** A client gets this long between its data loading and its entering the world. */
+    private static final long LOADED_EXPIRES_MILLIS = 60_000;
+
     public KegareDatabase(DatabaseConfig config, Path configDir, Host host) {
         this.config = config;
+        this.traits = new NetworkTraits(config.leaseStaleSeconds());
         this.pool = new ConnectionPool(config);
         this.configDir = configDir;
         this.host = host;
         this.io = Executors.newFixedThreadPool(Math.max(2, config.poolSize()), runnable -> {
             Thread thread = new Thread(runnable, "Kegare database");
+            thread.setDaemon(true);
+            return thread;
+        });
+        this.scheduler = Executors.newSingleThreadScheduledExecutor(runnable -> {
+            Thread thread = new Thread(runnable, "Kegare database network");
             thread.setDaemon(true);
             return thread;
         });
@@ -152,10 +195,19 @@ public final class KegareDatabase {
         while (running) {
             try {
                 schemaVersion = Schema.migrate(pool);
-                Map<UUID, SaveQueue.Batch> spilled = SpillFile.read(configDir);
-                for (var entry : spilled.entrySet()) writeBatch(entry.getKey(), entry.getValue());
+                SpillFile.Contents spilled = SpillFile.read(configDir);
+                for (var entry : spilled.batches().entrySet()) writeBatch(entry.getKey(), entry.getValue());
+                traits.addAll(spilled.traitOps());
+                traits.flush(pool, applier());
                 SpillFile.delete(configDir);
-                if (!spilled.isEmpty()) Kegare.LOGGER.info("Kegare's storage replayed {} players' unsaved data from the last run", spilled.size());
+                if (!spilled.batches().isEmpty()) Kegare.LOGGER.info("Kegare's storage replayed {} players' unsaved data from the last run", spilled.batches().size());
+                pool.transaction(connection -> {
+                    LeaseStore.releaseAll(connection, config.serverId()); // nobody's on a server that's only now starting
+                    return null;
+                });
+                pollNetwork();
+                scheduler.scheduleWithFixedDelay(this::heartbeat, config.heartbeatSeconds(), config.heartbeatSeconds(), TimeUnit.SECONDS);
+                scheduler.scheduleWithFixedDelay(this::pollNetworkSafely, config.pollSeconds(), config.pollSeconds(), TimeUnit.SECONDS);
                 Kegare.LOGGER.info("Kegare's storage is on Postgres, as {}, schema version {}", config.serverId(), schemaVersion);
                 markUp();
                 ready.complete(null);
@@ -176,8 +228,9 @@ public final class KegareDatabase {
     /** Waits for the queue, up to shutdownTimeout; what's left goes to the spill file. Server stop only. */
     public void stop() {
         long deadline = System.currentTimeMillis() + TimeUnit.SECONDS.toMillis(config.shutdownTimeoutSeconds());
-        while (queue.size() > 0 && System.currentTimeMillis() < deadline) sleep(50);
+        while ((queue.size() > 0 || traits.hasOps()) && System.currentTimeMillis() < deadline) sleep(50);
         running = false;
+        scheduler.shutdownNow();
         writer.interrupt();
         try {
             writer.join(TimeUnit.SECONDS.toMillis(config.socketTimeoutSeconds()));
@@ -185,9 +238,10 @@ public final class KegareDatabase {
             Thread.currentThread().interrupt();
         }
         Map<UUID, SaveQueue.Batch> left = queue.copy();
-        if (!left.isEmpty()) {
+        List<NetworkTraits.Op> opsLeft = traits.opsCopy();
+        if (!left.isEmpty() || !opsLeft.isEmpty()) {
             try {
-                SpillFile.write(configDir, left);
+                SpillFile.write(configDir, left, opsLeft);
                 Kegare.LOGGER.warn("Kegare's database is unreachable: {} players' data is in {} and goes in on the next start", left.size(), SpillFile.FILE_NAME);
             } catch (IOException e) {
                 Kegare.LOGGER.error("Kegare couldn't save {} players' data to {}: {}", left.size(), SpillFile.FILE_NAME, e.getClass().getSimpleName());
@@ -236,30 +290,44 @@ public final class KegareDatabase {
         return CompletableFuture.supplyAsync(() -> {
             try {
                 ready.get(config.leaseWaitSeconds(), TimeUnit.SECONDS);
-                if (refusedStart) return LoginResult.REFUSED;
+                if (refusedStart) return LoginResult.UNREACHABLE_NOW;
                 long deadline = System.currentTimeMillis() + TimeUnit.SECONDS.toMillis(config.leaseWaitSeconds());
-                while (queue.has(player)) {
-                    if (System.currentTimeMillis() > deadline) return LoginResult.REFUSED;
+                while (queue.has(player)) { // their last logout here is still going in
+                    if (System.currentTimeMillis() > deadline) return LoginResult.UNREACHABLE_NOW;
                     Thread.sleep(50);
                 }
-                Map<String, String> rows = pool.transaction(connection -> {
-                    Map<String, String> found = PlayerStore.load(connection, player);
-                    if (!found.isEmpty()) return found;
-                    Map<String, String> inFile = fromWorldFile(player);
-                    if (!inFile.isEmpty()) {
-                        Kegare.LOGGER.info("Bringing {}'s Kegare data in from their world file", player);
-                        PlayerStore.writeMissing(connection, player, inFile);
+                while (true) {
+                    LoginResult result = pool.transaction(connection -> {
+                        UUID token = LeaseStore.acquire(connection, player, config.serverId(), config.leaseStaleSeconds());
+                        if (token == null) return LoginResult.HELD_ELSEWHERE;
+                        Map<String, String> found = PlayerStore.load(connection, player);
+                        Set<ResourceLocation> won = null;
+                        if (found.isEmpty()) {
+                            found = fromWorldFile(player);
+                            if (!found.isEmpty()) {
+                                Kegare.LOGGER.info("Bringing {}'s Kegare data in from their world file", player);
+                                PlayerStore.writeMissing(connection, player, found);
+                            } else {
+                                won = traits.preRollBirth(connection, player);
+                            }
+                        }
+                        return new LoginResult(true, null, found, token, won);
+                    });
+                    if (result.admitted()) {
+                        leases.put(player, result.token());
+                        pollNetworkSafely(); // their traits are as the network has them when they come in
+                        markUp();
+                        return result;
                     }
-                    return inFile;
-                });
-                markUp();
-                return new LoginResult(true, rows);
+                    if (System.currentTimeMillis() > deadline) return result; // another server's still got them
+                    Thread.sleep(500);
+                }
             } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
-                return LoginResult.REFUSED;
+                return LoginResult.UNREACHABLE_NOW;
             } catch (Exception e) {
                 markDown(e);
-                return LoginResult.REFUSED;
+                return LoginResult.UNREACHABLE_NOW;
             }
         }, io);
     }
@@ -276,17 +344,28 @@ public final class KegareDatabase {
     }
 
     /** The second half, on the server thread, with the task's result: they may come in. */
-    public void loginLoaded(UUID player, Map<String, String> rows) {
-        loaded.put(player, rows);
+    public void loginLoaded(UUID player, LoginResult result) {
+        loaded.put(player, new Loaded(result.rows(), result.token(), System.currentTimeMillis()));
+        if (result.preRolledBirth() != null) preRolled.add(player);
+    }
+
+    /** Was this first join's unique trait roll done before they came in? Then the birth doesn't roll them again. */
+    public boolean preRolledBirth(UUID player) {
+        return preRolled.contains(player);
+    }
+
+    public void birthFinished(UUID player) {
+        preRolled.remove(player);
     }
 
     /** Right after their world file was read, before anything can read their data: puts it on them. */
     public void applyOnJoin(ServerPlayer player) {
-        Map<String, String> rows = loaded.remove(player.getUUID());
-        if (rows == null) {
+        Loaded entry = loaded.remove(player.getUUID());
+        if (entry == null) {
             Kegare.LOGGER.error("{} came in with nothing loaded for them", player.getGameProfile().getName());
             return;
         }
+        Map<String, String> rows = entry.rows();
         try {
             PlayerDataCodec.apply(player, rows, host.registries());
         } catch (PlayerDataCodec.DecodeException e) {
@@ -333,15 +412,20 @@ public final class KegareDatabase {
                 changes.put(attachment, null);
             }
         }
-        if (!changes.isEmpty()) queue.offer(player.getUUID(), changes, false);
+        UUID token = leases.get(player.getUUID());
+        if (!changes.isEmpty() && token != null) queue.offer(player.getUUID(), token, changes, false);
     }
 
     /** They've left: everything goes in, and the server stops watching them. */
     public void logout(ServerPlayer player) {
         snapshot(player);
-        if (admitted.remove(player.getUUID())) queue.offer(player.getUUID(), Map.of(), true);
+        UUID token = leases.get(player.getUUID());
+        // A refused player's lease goes too, with nothing written: what's in the database is safe, and now they can try again.
+        if (token != null) queue.offer(player.getUUID(), token, Map.of(), true);
+        admitted.remove(player.getUUID());
         lastSaved.remove(player.getUUID());
         loaded.remove(player.getUUID());
+        preRolled.remove(player.getUUID());
     }
 
     /** Is it this player's turn to be checked this tick? Spread out, so a full server doesn't do everyone in one tick. */
@@ -363,9 +447,21 @@ public final class KegareDatabase {
         long backoff = 1000;
         while (running) {
             try {
+                try {
+                    if (traits.hasOps()) {
+                        traits.flush(pool, applier());
+                        backoff = 1000;
+                        markUp();
+                    }
+                } catch (SQLException | RuntimeException e) {
+                    markDown(e);
+                    Thread.sleep(backoff);
+                    backoff = Math.min(MAX_BACKOFF_MILLIS, backoff * 2);
+                    continue;
+                }
                 var next = queue.take();
                 if (next == null) {
-                    queue.awaitWork(1000);
+                    queue.awaitWork(250);
                     continue;
                 }
                 try {
@@ -384,13 +480,105 @@ public final class KegareDatabase {
         }
     }
 
-    /** One player's batch is one transaction. */
+    /**
+     * One player's batch is one transaction, and carries the token: if this server no longer owns them it does nothing, so a stale server can't write
+     * over newer data.
+     */
     private void writeBatch(UUID player, SaveQueue.Batch batch) throws SQLException {
-        pool.transaction(connection -> {
+        boolean written = pool.transaction(connection -> {
+            if (!LeaseStore.owns(connection, player, batch.token)) return false;
             PlayerStore.write(connection, player, batch.changes);
-            return null;
+            if (batch.release) LeaseStore.release(connection, player, batch.token);
+            return true;
         });
-        writes.incrementAndGet();
+        if (written) {
+            writes.incrementAndGet();
+        } else {
+            refusedWrites.incrementAndGet();
+            Kegare.LOGGER.warn("Dropped a save for {}: this server no longer owns them", player);
+            leaseLost(player, batch.token);
+        }
+        if (batch.release) leases.remove(player, batch.token);
+    }
+
+    // ---------------------------------------------------------------- the network
+
+    private void heartbeat() {
+        try {
+            Map<UUID, UUID> held = pool.transaction(connection -> LeaseStore.heartbeat(connection, config.serverId()));
+            markUp();
+            for (Map.Entry<UUID, UUID> lease : leases.entrySet()) {
+                if (!lease.getValue().equals(held.get(lease.getKey()))) leaseLost(lease.getKey(), lease.getValue());
+            }
+        } catch (SQLException | RuntimeException e) {
+            markDown(e);
+        }
+    }
+
+    /** Another server has them now: this one must not keep playing them, since nothing it saves will count. */
+    private void leaseLost(UUID player, UUID token) {
+        if (!leases.remove(player, token)) return;
+        host.onServerThread(() -> {
+            admitted.remove(player);
+            host.kick(player, LEASE_LOST);
+        });
+    }
+
+    private void pollNetworkSafely() {
+        try {
+            pollNetwork();
+            markUp();
+        } catch (SQLException | RuntimeException e) {
+            markDown(e);
+        }
+    }
+
+    private synchronized void pollNetwork() throws SQLException {
+        traits.runSuccession(pool);
+        List<NetworkTraits.Event> events = traits.newEvents(pool);
+        long changesWhenRead = traits.changeCount();
+        NetworkTraits.Snapshot snapshot = traits.read(pool);
+        NetworkTraits.Applier applier = applier();
+        host.onServerThread(() -> {
+            if (traits.applyIfUnchanged(snapshot, changesWhenRead)) applier.refreshed();
+            events.forEach(applier::event);
+        });
+    }
+
+    private NetworkTraits.Applier applier() {
+        return new NetworkTraits.Applier() {
+            @Override
+            public void refused(ResourceLocation trait, UUID player) {
+                host.onServerThread(() -> host.claimRefused(trait, player));
+            }
+
+            @Override
+            public void event(NetworkTraits.Event event) {
+                host.networkEvent(event.kind(), event.trait(), event.player());
+            }
+
+            @Override
+            public void refreshed() {
+                host.traitsRefreshed();
+            }
+        };
+    }
+
+    /** The trait record, read and changed through memory, with Postgres behind it. */
+    public com.cnethuka.kegare.trait.UniqueTraitSavedData traitRecord() {
+        return traits.view();
+    }
+
+    /** A login that loaded and then never came in: lets go of what it held. Server thread, now and then. */
+    public void expireLoaded() {
+        long now = System.currentTimeMillis();
+        for (var iterator = loaded.entrySet().iterator(); iterator.hasNext(); ) {
+            var entry = iterator.next();
+            if (now - entry.getValue().at() < LOADED_EXPIRES_MILLIS) continue;
+            iterator.remove();
+            preRolled.remove(entry.getKey());
+            queue.offer(entry.getKey(), entry.getValue().token(), Map.of(), true);
+        }
     }
 
     private static void sleep(long millis) {
@@ -433,6 +621,27 @@ public final class KegareDatabase {
         @Override
         public Path playerFile(UUID player) {
             return server.getWorldPath(LevelResource.PLAYER_DATA_DIR).resolve(player + ".dat");
+        }
+
+        @Override
+        public void kick(UUID player, String langKey) {
+            ServerPlayer online = server.getPlayerList().getPlayer(player);
+            if (online != null) online.connection.disconnect(Component.translatable(langKey));
+        }
+
+        @Override
+        public void claimRefused(ResourceLocation trait, UUID player) {
+            TraitSuccession.claimRefused(server, trait, player);
+        }
+
+        @Override
+        public void networkEvent(String kind, ResourceLocation trait, @Nullable UUID player) {
+            TraitSuccession.networkEvent(server, kind, trait, player);
+        }
+
+        @Override
+        public void traitsRefreshed() {
+            TraitSuccession.networkRefreshed(server);
         }
     }
 }

@@ -472,6 +472,8 @@
   "death.attack.kegare.time_manipulation": "%1$s was cut down by %2$s's clock hand",
   "death.attack.kegare.time_manipulation.item": "%1$s was cut down by %2$s's clock hand",
   "death.attack.kegare.time_manipulation.player": "%1$s was cut down by a clock hand while fighting %2$s",
+  "disconnect.kegare.db.held": "Your data is still being saved on another server. Try again in a moment.",
+  "disconnect.kegare.db.lease_lost": "Your data has moved to another server.",
   "disconnect.kegare.db.unreachable": "Kegare can't reach its database. Your data is safe; try again shortly.",
   "entity.kegare.decelerate": "Clock Hand",
   "entity.kegare.frost_shard": "Frost Shard",

@@ -32,6 +32,41 @@ final class Schema {
                 updated_at timestamptz NOT NULL DEFAULT now(),
                 PRIMARY KEY (player, attachment)
             );
+            """,
+            """
+            CREATE TABLE kegare.player_lease (
+                player uuid PRIMARY KEY,
+                server_id text NOT NULL,
+                token uuid NOT NULL,
+                heartbeat timestamptz NOT NULL DEFAULT now()
+            );
+            CREATE INDEX player_lease_server ON kegare.player_lease (server_id);
+            CREATE TABLE kegare.unique_trait (
+                trait text PRIMARY KEY,
+                bearer uuid NOT NULL
+            );
+            CREATE TABLE kegare.trait_pending (
+                trait text PRIMARY KEY,
+                previous uuid NOT NULL,
+                killer uuid,
+                due_at timestamptz NOT NULL
+            );
+            CREATE TABLE kegare.trait_revoked (
+                player uuid NOT NULL,
+                trait text NOT NULL,
+                PRIMARY KEY (player, trait)
+            );
+            CREATE TABLE kegare.player_seen (
+                player uuid PRIMARY KEY,
+                seen_at timestamptz NOT NULL
+            );
+            CREATE TABLE kegare.network_event (
+                id bigserial PRIMARY KEY,
+                kind text NOT NULL,
+                trait text NOT NULL,
+                player uuid,
+                created_at timestamptz NOT NULL DEFAULT now()
+            );
             """);
 
     static int current() {

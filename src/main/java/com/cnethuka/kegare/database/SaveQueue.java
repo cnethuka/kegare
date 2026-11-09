@@ -16,6 +16,8 @@ final class SaveQueue {
     static final class Batch {
         final Map<String, String> changes = new LinkedHashMap<>();
         boolean release;
+        /** The lease this was made under: a write under any other does nothing. */
+        UUID token;
 
         boolean isEmpty() {
             return changes.isEmpty() && !release;
@@ -24,8 +26,9 @@ final class SaveQueue {
 
     private final Map<UUID, Batch> waiting = new HashMap<>();
 
-    synchronized void offer(UUID player, Map<String, String> changes, boolean release) {
+    synchronized void offer(UUID player, UUID token, Map<String, String> changes, boolean release) {
         Batch batch = waiting.computeIfAbsent(player, p -> new Batch());
+        batch.token = token;
         batch.changes.putAll(changes);
         batch.release |= release;
         if (batch.isEmpty()) waiting.remove(player);
@@ -47,8 +50,13 @@ final class SaveQueue {
         if (newer != null) {
             failed.changes.putAll(newer.changes);
             failed.release |= newer.release;
+            failed.token = newer.token;
         }
         waiting.put(player, failed);
+        notifyAll();
+    }
+
+    synchronized void wake() {
         notifyAll();
     }
 
@@ -72,6 +80,7 @@ final class SaveQueue {
             Batch copy = new Batch();
             copy.changes.putAll(batch.changes);
             copy.release = batch.release;
+            copy.token = batch.token;
             out.put(player, copy);
         });
         return out;

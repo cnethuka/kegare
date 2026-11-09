@@ -112,7 +112,7 @@ class FreshRollIT {
             Map<String, String> before = DatabaseTestAccess.rows(database, first.getUUID());
 
             ServerPlayer back = TestServer.damageable(server, "roll_corrupt");
-            database.loginLoaded(back.getUUID(), before);
+            database.loginLoaded(back.getUUID(), new KegareDatabase.LoginResult(true, null, before, java.util.UUID.randomUUID(), null));
             database.applyOnJoin(back);
             PlayerEvents.handleLogin(back);
             assertFalse(MaliceService.get(back).isBorn(), "nothing rolled");
@@ -126,7 +126,7 @@ class FreshRollIT {
     void dataWithNoBirthInItKeepsThemOut(MinecraftServer server) throws Exception {
         scene(server, database -> {
             ServerPlayer player = TestServer.damageable(server, "roll_partial");
-            database.loginLoaded(player.getUUID(), Map.of("kegare:brain", "{\"meter\":5.0}"));
+            database.loginLoaded(player.getUUID(), new KegareDatabase.LoginResult(true, null, Map.of("kegare:brain", "{\"meter\":5.0}"), java.util.UUID.randomUUID(), null));
             database.applyOnJoin(player);
             PlayerEvents.handleLogin(player);
             assertFalse(MaliceService.get(player).isBorn(), "rows but no birth: kept out, not rolled");

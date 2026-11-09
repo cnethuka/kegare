@@ -44,10 +44,10 @@ public final class LoginTask implements ConfigurationTask {
         var player = listener.getOwner().getId();
         database.login(player).whenComplete((result, failure) -> server.execute(() -> {
             if (failure != null || result == null || !result.admitted()) {
-                listener.disconnect(Component.translatable(KegareDatabase.UNREACHABLE));
+                listener.disconnect(Component.translatable(result == null || result.refusal() == null ? KegareDatabase.UNREACHABLE : result.refusal()));
                 return;
             }
-            database.loginLoaded(player, result.rows());
+            database.loginLoaded(player, result);
             listener.finishCurrentTask(TYPE);
         }));
     }

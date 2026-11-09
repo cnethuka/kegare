@@ -33,6 +33,7 @@ public final class DatabaseEvents {
         KegareDatabase database = KegareDatabase.current();
         if (database == null) return;
         long tick = event.getServer().getTickCount();
+        if (tick % 20 == 0) database.expireLoaded();
         for (ServerPlayer player : event.getServer().getPlayerList().getPlayers()) {
             if (database.dueThisTick(player.getUUID(), tick)) database.snapshot(player);
         }

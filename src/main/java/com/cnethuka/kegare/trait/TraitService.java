@@ -1,6 +1,7 @@
 package com.cnethuka.kegare.trait;
 
 import com.cnethuka.kegare.Kegare;
+import com.cnethuka.kegare.database.KegareDatabase;
 import com.cnethuka.kegare.malice.MaliceService;
 import com.cnethuka.kegare.network.PlayerSync;
 import com.cnethuka.kegare.registry.KegareAttachments;
@@ -81,12 +82,26 @@ public final class TraitService {
      */
     public static List<Trait> rollBirthTraits(ServerPlayer player) {
         boolean severed = MaliceService.isSevered(player);
+        // With Postgres storage on, a first join's unique traits were rolled before they came in, and the database has said yes (DESIGN §3.33).
+        KegareDatabase database = KegareDatabase.current();
+        boolean preRolled = database != null && database.preRolledBirth(player.getUUID());
+        UniqueTraitSavedData saved = UniqueTraitSavedData.get(player.server);
         List<Trait> granted = new ArrayList<>();
         for (Trait trait : KegareRegistries.TRAIT) {
             double chance = trait.birthChance();
             if (!TraitRules.canRollAtBirth(chance, trait.requiresMalice(), severed) || !trait.canRollFor(player)) continue;
-            if (player.getRandom().nextDouble() >= chance) continue;
+            if (trait.isUnique() && preRolled) {
+                if (!saved.bearer(trait.id()).filter(player.getUUID()::equals).isPresent()) continue;
+            } else if (player.getRandom().nextDouble() >= chance) {
+                continue;
+            }
             if (add(player, trait, Trait.AddReason.BIRTH) == AddResult.ADDED) granted.add(trait);
+        }
+        if (preRolled) {
+            for (ResourceLocation id : saved.heldBy(player.getUUID())) {
+                if (!get(player).has(id)) saved.release(id, player.getUUID()); // won it, then rolled Severed
+            }
+            database.birthFinished(player.getUUID());
         }
         return granted;
     }
@@ -124,7 +139,14 @@ public final class TraitService {
             }
         }
         for (ResourceLocation id : saved.heldBy(uuid)) {
-            if (!data.has(id)) saved.release(id, uuid);
+            if (data.has(id)) continue;
+            // On a network the record is the truth: they inherited it while hopping between servers. Unborn, it's their first join's, and birth will grant it.
+            Trait trait = KegareRegistries.TRAIT.get(id);
+            if (saved.isNetworked() && trait != null) {
+                if (MaliceService.get(player).isBorn() && add(player, trait, Trait.AddReason.INHERITED) != AddResult.ADDED) saved.release(id, uuid);
+            } else {
+                saved.release(id, uuid);
+            }
         }
     }
 

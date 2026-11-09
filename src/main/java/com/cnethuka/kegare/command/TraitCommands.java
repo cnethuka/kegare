@@ -132,7 +132,7 @@ final class TraitCommands {
         if (holder.isPresent()) {
             say(source, "commands.kegare.trait.status.held", trait.displayName(), holderName(source, holder.get()));
         } else if (pending.isPresent()) {
-            long remaining = Math.max(0, pending.get().dueTick() - source.getServer().overworld().getGameTime());
+            long remaining = Math.max(0, pending.get().dueTick() - com.cnethuka.kegare.trait.TraitSuccession.now(source.getServer()));
             if (remaining > 0) say(source, "commands.kegare.trait.status.passing", trait.displayName(), CastManager.seconds((int) remaining));
             else say(source, "commands.kegare.trait.status.waiting", trait.displayName());
         } else {
