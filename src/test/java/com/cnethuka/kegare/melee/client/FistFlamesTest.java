@@ -212,6 +212,6 @@ class FistFlamesTest {
     @Test
     void theShellIsGone() {
         assertFalse(Files.exists(TEXTURES.resolve("fist_shell.png")), "the smooth shell's texture");
-        assertTrue(Files.exists(TEXTURES.resolve("fist_strain.png")), "a Severed fist keeps its strain");
+        assertFalse(Files.exists(TEXTURES.resolve("fist_strain.png")), "and a Severed fist's strain, with their Strike (DESIGN §3.27)");
     }
 }

@@ -17,12 +17,6 @@ made them the first time, by driving a running Blockbench through `cdp.py`; run 
 `string_animations.bbmodel` has its own plain mannequin rig (PAL's bone names and pivots, no skin), so nothing of the
 Emotecraft template is in the repo.
 
-## The fist shell
-
-`art/blockbench/fist_shell.bbmodel` carries a Severed player's strained forearm (DESIGN.md §3.22); a ready fist's Malice is sprites now, not
-this shell. `build_fist_shell.py` writes the project and both
-OBJs (`models/fx/fist_shell_regular.obj`, `fist_shell_slim.obj`): regular and slim differ only in width. Hand at y=0, faded out by y=6.6 px.
-
 ## Glacial Lance: the Python is the source
 
 The Rime rework's style test (DESIGN.md §3.14). `lance_shapes.py` makes the chunks and shards as clusters of convex crystals

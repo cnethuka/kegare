@@ -29,6 +29,7 @@ public final class Severed {
     public static void init(IEventBus modBus) {
         ATTACHMENTS.register(modBus);
         NeoForge.EVENT_BUS.addListener(SeveredBody::onIncoming);
+        NeoForge.EVENT_BUS.addListener(net.neoforged.bus.api.EventPriority.LOW, ClosingLine::onIncoming); // after Strength
         com.cnethuka.kegare.innatetechnique.CastManager.addInterceptor(ClosingLine::intercept); // R while Blurring
         SeveredAdvancements.init();
         NeoForge.EVENT_BUS.addListener(SeveredBody::onDamage);
@@ -46,6 +47,7 @@ public final class Severed {
         NeoForge.EVENT_BUS.addListener((PlayerEvent.PlayerChangedDimensionEvent e) -> {
             if (e.getEntity() instanceof ServerPlayer p && p.hasData(STATE)) {
                 ClosingLine.cancel(p, state(p));
+                state(p).momentumUntil = 0;
                 state(p).forgetMotion();
             }
         });

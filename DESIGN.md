@@ -371,7 +371,7 @@ All timestamps use **level game time**. They persist across restarts and are ide
     slots show only their number. Grade and XP are never on the combat HUD;
   - accents along the tray and crest in the technique's Malice color.
 - The selected ability's name shows above hearts/food for 2 s after a number key selects it (`kegare:combat_name`).
-- The melee layer's cues sit under the crosshair, in and out of Technique Mode and for Severed players too, only while there's something to show: **Reinforced** (gold, a Strike is ready), **Dash** and **Recovering** with thin countdown bars (§3.22). Severed players' own cues follow them there: **Blur**, **Winded** and
+- The melee layer's cues sit under the crosshair, in and out of Technique Mode and for Severed players too, only while there's something to show: **Reinforced** (gold, a Strike is ready; never for the Severed, who have no Strike), **Dash** and **Recovering** with thin countdown bars (§3.22). Severed players' own cues follow them there: **Blur**, **Winded** and
   **Closing Line** (the last two with countdown bars, §3.27). Black Spark's zone adds **120%** with the zone's time left (§3.28).
 - Severed players never get the panel (G is Blur for them, §3.27). Everything is hidden when F1 hides the GUI and in spectator
   mode. Client config `hud.enabled` turns all of it off.
@@ -547,7 +547,7 @@ Each tab has its own root.
 | *Recognized* | challenge | hidden, **silent** | reached Grade 1 |
 | *Outside the Ladder* | challenge | hidden, **silent** | reached Special Grade |
 | *Full Kit* | goal | hidden, **silent** | Refinement reached the level that unlocks every ability and special of the current technique (the ultimate doesn't count) |
-| *Locked in* | challenge | hidden | 3 Reinforced Strikes in a row on players, no plain melee hit on a player between them, in one fight; anyone, Severed too (§3.28) |
+| *Locked in* | challenge | hidden | 3 Reinforced Strikes in a row on players, no plain melee hit on a player between them, in one fight; Malice users only, since a Severed player never has a Strike (§3.28) |
 | *120%* | challenge | hidden | a chain of 2 Black Sparks on players (§3.28) |
 | *Nothing to Celebrate* (under 120%) | challenge | hidden | a chain of 4 |
 | *Blessed by the Sparks* (under Nothing to Celebrate) | challenge | hidden | a chain of 7 |
@@ -2086,12 +2086,12 @@ Without the Malice the hit stays normal and the Strike waits until it expires. E
 - *Reading it:* hard edges and depth writes, no additive light, which washes out against a bright sky, and no soft alpha: every texel is solid or a hole, because soft alpha reads as glass. About a third of the fire is near-black, along the shaded side of each tongue and in flecks, grey dark enough to stay near-black after tinting. That's what holds the shape against a sky of nearly its own color (Puppet and Rime). Tips stay lit, and the bottom row of the fire never runs dark, because a run of near-black there reads as a bar under the fist. The heart goes only about a third of the way to white, because any paler and Rime looks like ice. It ignores the world's light, so it burns the same at night.
 - *First person:* the hand is too close to the camera for the arm layers, which stretch into big slabs filling the corner. So your own empty hand has flat fire from `textures/entity/fist_flame.png` (`client/FistFlames`): quads on the arm's axis turned to face the camera, the mass behind and licks and a heart in front, at half the width and 0.6 of the height. With something held vanilla draws no arm, so `FistFire.drawGrip` burns one upright clump round the grip, facing the camera: a layer behind what's held and a layer in front, with gaps so the item shows through, all of it on screen in the lower right. Its own frames in `fist_fire.png`, with a rounded bottom. Vanilla's hand pass comes out relative to the camera along the world's axes, so anything that faces the camera there has to use the camera's own axes. Curls come off the clump, small and in close.
 - *Tint:* both sheets are tinted at runtime. Strike effects are authored white too; `PhotonEffects.tint` sets the start color of every emitter named `tint*` on that instance. The fire shows at all three effect settings; the curls come at full and half rate on full and Reduced, and Vanilla has dust instead (none in first person). An invisible player shows nothing.
-- *Disguises:* the server sends everyone but the wearer the look of the face they're wearing (`seenByOthers`), and the wearer their own. Nothing in the packet carries the real color. A Severed face shows the physical tell; a face that has gone gets the neutral default color, never the real one. `seenByOthers` is the one place a future deception would hook in.
-- *Severed* have no Malice to show, so theirs is physical and doesn't glow: a strained, darkened forearm (`fist_strain.png`, lit like the skin), steam off the fist (`melee/fist_steam`) readable at 7 blocks day and night, and dust and grit on a landed Strike (`melee/strike_impact_physical`).
+- *Disguises:* the server sends everyone but the wearer the look of the face they're wearing (`seenByOthers`), and the wearer their own. Nothing in the packet carries the real color. A Severed face shows nothing (no Malice, no Strike); a face that has gone gets the neutral default color, never the real one. `seenByOthers` is the one place a future deception would hook in.
+- *Severed* never have a ready fist: "Reinforced" is Malice routed through the body, and they have none at all. Their strength is the raw body (below).
 - *Colors of the impacts:* the Strike impact takes the Innate color: it's what was on the fist going off, and gold under an Innate burst reads as two separate effects. The parry stays gold: it's the same cue whoever parried, and pale blue and lavender go thin against the sky.
 - *Information:* the color says which Innate you have before you've cast anything. §1 keeps techniques out of secret identity, so that's allowed, but it's a deliberate exception to silent PvP information, and it's only ever shown after a parry or dodge.
 
-**Severed** trade all their Malice for superhuman abilities, so their melee is stronger than standard, with no costs. `[melee.severed]` has their own numbers: dash 6 blocks every 2.5 s; perfect window 0.3 s; guard 50% off melee and nothing off techniques, held at most 4 s (no Malice to run out of); recovery 0.75 s; Strike +75% with more knockback than standard (0.9 against 0.6). A config file from before these numbers moves to them unless a value was changed by hand (`KegareConfigMigration`, version 3).
+**Severed** trade all their Malice for superhuman abilities, so their melee is stronger than standard, with no costs. `[melee.severed]` has their own numbers: dash 6 blocks every 2.5 s; perfect window 0.3 s; guard 50% off melee and nothing off techniques, held at most 4 s (no Malice to run out of); recovery 0.75 s. **No Reinforced Strike**, by any way (a perfect parry, a clean dodge, Closing Line): it's Malice, and they have none (`ReinforcedStrike.earn` refuses them), so they never get the "Reinforced" cue either. Instead a Severed perfect parry staggers the attacker for `parryStagger` (1.0 s against a standard 0.5 s, at the same Slowness): the opening comes from their reflexes. Dodges stay as they are. Closing Line's arrival gives a momentum hit instead (§3.27). A config file from before these numbers moves to them unless a value was changed by hand (`KegareConfigMigration`, version 3); the Strike's three old keys (`strikeWindow`, `strikeDamageBonus`, `strikeKnockback`) are dropped from an existing file by NeoForge's own correction when it loads, and `parryStagger` is added.
 
 **Impact moments** (`MeleeImpact`): `DASH_BURST`, `CLEAN_DODGE`, `PARRY_PERFECT`, `GUARD_HIT`, `STAGGER`, `STRIKE_HIT`, fired on the server tick the effect is applied. Sounds and effects hang off them, and `MeleeImpact.listen` is where the Impact System (§3.23) hooks in: each moment's listener gets both fighters where it has two (a parry's attacker, a Strike's striker).
 
@@ -2132,13 +2132,13 @@ move. Everything that landed on one victim in one server tick is added up (`Impa
   ultimate), and Shatter Shell's push. Abilities that never touch a body (Directive, Focus, Possess, Understudy, Stand-In, Strings'
   pulls, Awareness, Mimic, Anchor) make none.
 - A hit the guard took some of (`GUARD_HIT`) lands one tier softer.
-- Severed players' hits go through the same rule. They have no Malice, so that input is always 0 for them (nothing stands in for it).
-  Their hits still reach every tier through damage, knockback and a Strike's full charge, and their Strike always lands harder than
-  the same standard one (their bigger bonus and knockback). With their Strength (§3.27), on a 20-health player: a punch
-  0.08 (Light), an iron sword 0.45 (Light), a netherite sword 0.60 (Medium, where it was Light before Strength), a sprinting
-  netherite hit 0.96 (Medium). Before Strength an iron-sword Strike was Heavy (2.37 against a standard player's 2.10) and a critical
-  netherite Strike reached the impact frame (3.00); a Closing Line Strike reaches it with an iron sword and no crit (3.01, §3.27). A
-  Malice user reaches it with a full Glacial Spire, a Full Curio Burst or any Total Swap.
+- Severed players' hits go through the same rule. They have no Malice, so that input is always 0 for them (nothing stands in for it),
+  and no Reinforced Strike. Their hits still reach every tier through damage and knockback, and Closing Line's momentum hit through the
+  rush it carries: its speed as damage and knockback, and as its charge (§3.27). With their Strength (§3.27), on a
+  20-health player: a punch 0.08 (Light), an iron sword 0.45 (Light), a netherite sword 0.60 (Medium), a sprinting netherite hit 0.96
+  (Medium). A momentum hit after a full-speed Closing Line, fully charged swings with no crit and no sprint, measured through the rule
+  (`ClosingLineTest`): a fist 2.54 (Heavy), an iron sword 2.91 (the impact frame), a netherite sword 3.06. A Malice user reaches it
+  with a full Glacial Spire, a Full Curio Burst or any Total Swap.
 - The animations mark no impact tick of their own: they're timed to the server's moment (a melee reaction's key pose is its first
   frame; a clap meets as the swap lands), so the Impact System fires on those server moments.
 
@@ -2551,31 +2551,36 @@ Technique Mode, unchanged (`client/SeveredKeys`). Controls lists the key as "Tec
   by the server like Blur. It doesn't home: a target that dashes away makes you miss. R reaches the server as the usual
   `SPECIAL_PRESS` (`ClientInput.addSpecialKeyNeeded` while Blurring) and Closing Line's cast interceptor takes it.
 - You stop `stopGap` (0.8) blocks short of the target's edge, along the line: melee reach, in front of it. **Walls** stop it: the
-  game's own collision holds you at the wall, and a wall stopping you at that speed is a wall crash (no Strike), whether the line
+  game's own collision holds you at the wall, and a wall stopping you at that speed is a wall crash (no momentum hit), whether the line
   is level or rising (the speed lost against the wall is what counts). For a rush, anything solid just ahead the way its line heads
   is a wall: a rising rush held at a wall slides on up its face (the game moves you up before across), so how near its top you got
   doesn't make it a step. A lip no higher than a step (a slab, a stair, the edge of a
   ledge the line just grazes) is stepped over, as a run would; the game only steps a player up on the ground, and most of a leap is
   in the air (`RushDrive.stepOver`). The ground under a line that dips, or a ceiling over one that rises, only holds you, and the
-  drive draws you back onto the line once past it; held more than 2.5 blocks off it, it's over with no Strike, as a swap ends it.
+  drive draws you back onto the line once past it; held more than 2.5 blocks off it, it's over with no momentum hit, as a swap ends it.
   **Anything living in the path** stops you in reach of it, where your box would first touch its box less `stopGap` (worked out at
   the cast, and checked every tick for anything that steps in). Projectiles and
   techniques hit you normally on the way, with no invulnerability. Moved off the line by something else (a swap) or stopped by a
-  stun or a freeze (Rime's, a Standstill's), it's over with no Strike; a Decelerate hit or a Stasis Field slow it like any movement.
-- **Arriving** (in reach of the target or of whatever stopped you) earns a Reinforced Strike (Severed numbers) for `strikeWindow`
-  (0.5 s) that carries the rush's speed as extra knockback (`carriedKnockback` 0.2 per block a tick: 0.8 on top of a Severed
-  Strike's 0.9). The ready fist shows as usual. `ReinforcedStrike.earnFromRush`.
-- **Impact System (§3.23):** the Strike counts as fully charged and the carried speed adds knockback, so through the rule alone (no
-  per-move tier) a Closing Line Strike lands harder than any other Severed hit. Measured live on a 20-health player with no armour
-  (`/kegare debug impact log`): a fist 2.35 (Heavy), an iron sword 3.01 (the impact frame, with no crit), a netherite sword 3.27. The
-  carried push is halved by the hit's own (vanilla stacking), which is why it's 0.2: at 0.1 the iron sword came to 2.77, short of
-  2.84.
-- **Counter:** a perfect parry that catches that Strike spends it and staggers the Severed harder than a normal stagger
+  stun or a freeze (Rime's, a Standstill's), it's over with no momentum hit; a Decelerate hit or a Stasis Field slow it like any
+  movement.
+- **Arriving** (in reach of the target or of whatever stopped you) makes the first melee hit within `strikeWindow` (0.5 s) a
+  **momentum hit**: the rush's speed carried into it. No Reinforced Strike: that's Malice, and a Severed player has none.
+  - extra damage: `momentumDamage` (3.25) per block a tick of the rush's speed, added to the hit after their Strength and before the
+    target's defences (a full rush, 4 blocks a tick: +13);
+  - knockback: `carriedKnockback` (0.2) per block a tick (0.8 at full speed), with the hit as the Strike's was, so the hit's own push
+    halves it (vanilla stacking); never on a boss;
+  - charge for the Impact System: the rush's speed against Closing Line's full `speed` (a full rush is fully charged).
+  `ClosingLine.onIncoming`; `ClosingLine.momentumReady` and `spendMomentum` for the rest of the game.
+- **Impact System (§3.23):** through the rule alone (no per-move tier, no override), on a 20-health player with no armour, fully
+  charged swings with no crit and no sprint: a fist 2.54 (Heavy, 14.25 damage), an iron sword 2.91 (the impact frame, 20.5 damage), a
+  netherite sword 3.06 (23 damage). `momentumDamage` 3.25 is what keeps the iron sword over 2.84 with room: at 3.0 it would be 2.85.
+  The momentum hit is big: an iron-sword one kills an unarmoured 20-health player outright.
+- **Counter:** a perfect parry that catches the momentum hit spends it and staggers the Severed harder than a normal stagger
   (`parryStaggerSeconds` 1.5 at Slowness `parryStaggerSlowness` 3, against 0.5 s at 2).
 - **After every Closing Line** (arrived or not): `recoverySeconds` (0.6) with no Blur speed, and a `cooldown` of 6 s, shown under
   the crosshair as "Closing Line" with a countdown bar, as Dash's is (`BlurPayload` carries when it's ready), and on an R pressed
   too soon ("Closing Line isn't ready (Xs).").
-- **Bosses (§4):** it rushes at them and the Strike damages them; they're never moved (the Strike never pushes a boss).
+- **Bosses (§4):** it rushes at them and the momentum hit damages them; they're never moved (its knockback never reaches a boss).
 
 **Look and sound** (all of it physical: dust, grit, wind streaks, afterimages; no glow, no Innate color, no Photon). The moments
 fire on the server (`SeveredFx`): dust and grit are vanilla block particles of the ground they're on, so they read the same at every
@@ -2604,10 +2609,10 @@ never counts. Numbers in `[advancements]`.
 
 **Tests:** `SeveredAdvancementsTest` (three different Malice users in time; mobs, a Severed victim, the same player again
 and kills outside the window don't count; brought low by a Malice user then killing them in the fight; a mob, a different player, a
-totem, or the fight ending first don't count; a Malice user never earns either), `SeveredAnimationsTest` (PAL loads all five, each with one first-person rule), `ClosingLineTest` (the rush to melee reach of where the target stood, arriving, the Strike from the rush with
-its window and harder knockback, the recovery and cooldown, the HUD told when it's ready; a leap up to someone on a pillar along a
+totem, or the fight ending first don't count; a Malice user never earns either), `SeveredAnimationsTest` (PAL loads all five, each with one first-person rule), `ClosingLineTest` (the rush to melee reach of where the target stood, arriving, the momentum hit with its window, its
+damage, knockback and charge, spent on the first hit, never a Strike; its strengths with a fist, an iron sword and a netherite sword, the recovery and cooldown, the HUD told when it's ready; a leap up to someone on a pillar along a
 clear line, arriving in the air in reach of them; a wall across a rising line crashes it; something living in the path stops it short;
-a swap ends it; a perfect parry spends the Strike and staggers harder; a boss is struck and never moved), `BlurTest` (G is Blur only for the Severed; the drain by distance at Blur speed, none for a walk; crashing off at
+a swap ends it; a perfect parry spends the momentum hit and staggers harder; a boss is struck and never moved), `BlurTest` (G is Blur only for the Severed; the drain by distance at Blur speed, none for a walk; crashing off at
 the floor, winded, refused until food is above it; the wall crash scaling with the speed lost, a scrape doing nothing; a stun, a
 Rime freeze or no longer being Severed ending it; where the server puts them, they stay), `SeveredBodyTest` (Strength only on a Severed hand; the Toughness split, falls least, the void, /kill and starving
 untouched; Stamina on normal drain and on healing; Senses: a player standing still, a mob, an invisible one, moving, out of range,
@@ -2731,7 +2736,8 @@ potential, where the next one comes easier, and consecutive Black Flashes can re
 - **Advancements** (`FistsAdvancements`; Base tab, §3.11): all hidden, announced in chat, Challenge, players only, awarded from code.
   None needs a kill or a win (§3.21).
   - *Locked in*: 3 Reinforced Strikes in a row on players, with no plain melee hit on a player between them, in one fight (the streak
-    ends when the striker's fight does). Anyone can earn it, Severed included. Strikes on mobs don't count, and don't break it.
+    ends when the striker's fight does). Malice users only: a Severed player never has a Reinforced Strike (§3.27). Strikes on mobs
+    don't count, and don't break it.
   - *120%*, *Nothing to Celebrate* and *Blessed by the Sparks*: a chain of 2, 4 and 7 Black Sparks on players. The chain is the zone's
     (above): a spark on a mob keeps the zone up but isn't counted, and the count ends with the zone.
   - *Lights Out*: a Black Spark sends a player into a block hard enough to make a wall-slam crater (§3.24), within the slam window of

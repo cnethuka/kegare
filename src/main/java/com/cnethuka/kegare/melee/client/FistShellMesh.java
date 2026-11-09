@@ -12,41 +12,14 @@ import net.minecraft.client.renderer.texture.OverlayTexture;
 import net.minecraft.resources.ResourceLocation;
 
 /**
- * The strained forearm of a Severed player's ready fist, read from its Blockbench OBJ export ({@code art/blockbench/fist_shell.bbmodel}).
- * Modeled on an arm hanging down with the hand at y=0; drawn in a player model's arm space, so it follows whatever pose the arm is in.
- * It fades out by height toward the elbow, per vertex.
+ * Where a ready fist's fire goes on a player's arm, in the arm's own space (the model's arm cube, hanging down, hand at its end). The arm
+ * geometry the fire is drawn round; it used to carry a Severed player's strained forearm too, which went with their Strike (DESIGN §3.27).
  */
 final class FistShellMesh {
     /** A player arm's cube ends here in its own space: 10 pixels below the pivot. */
     private static final float HAND_END = 10f / 16f;
-    private static final float FADE_FROM = 2.8f / 16f;
-    private static final float FADE_TO = 6.6f / 16f;
-    /** x y z u v nx ny nz, four to a quad. */
-    private static final int STRIDE = 8;
 
-    private static FistShellMesh regular;
-    private static FistShellMesh slim;
-
-    private final float[] vertices;
-
-    private FistShellMesh(float[] vertices) {
-        this.vertices = vertices;
-    }
-
-    static FistShellMesh of(boolean slimArm) {
-        if (slimArm) {
-            if (slim == null) slim = load(Kegare.id("models/fx/fist_shell_slim.obj"));
-            return slim;
-        }
-        if (regular == null) regular = load(Kegare.id("models/fx/fist_shell_regular.obj"));
-        return regular;
-    }
-
-    /** After a resource reload. */
-    static void forget() {
-        regular = null;
-        slim = null;
-    }
+    private FistShellMesh() {}
 
     /** Where the arm's middle is in its own space: a right arm's cube is off-centre toward the body's outside. */
     static float armCentre(boolean slimArm, boolean leftArm) {
@@ -62,63 +35,5 @@ final class FistShellMesh {
     /** The middle of the fist, just past the knuckles, in the arm's space. */
     static float fistY() {
         return HAND_END + 0.5f / 16f;
-    }
-
-    /** @param grow how much bigger round the arm's axis (1 = as modeled) */
-    void draw(PoseStack.Pose pose, VertexConsumer out, boolean leftArm, float centre, float grow, int light) {
-        float mirror = leftArm ? -1f : 1f;
-        for (int i = 0; i < vertices.length; i += STRIDE) {
-            float y = vertices[i + 1];
-            float x = vertices[i] * grow * mirror + centre;
-            float z = vertices[i + 2] * grow;
-            out.addVertex(pose, x, HAND_END - y, z).setColor(255, 255, 255, Math.round(255f * fade(y))).setUv(vertices[i + 3], vertices[i + 4])
-                    .setOverlay(OverlayTexture.NO_OVERLAY).setLight(light).setNormal(pose, vertices[i + 5] * mirror, -vertices[i + 6], vertices[i + 7]);
-        }
-    }
-
-    /** 1 up to the wrist, easing to 0 at the elbow. */
-    static float fade(float y) {
-        float t = Math.max(0f, Math.min(1f, (y - FADE_FROM) / (FADE_TO - FADE_FROM)));
-        return 1f - t * t * (3f - 2f * t);
-    }
-
-    private static FistShellMesh load(ResourceLocation id) {
-        List<float[]> positions = new ArrayList<>();
-        List<float[]> uvs = new ArrayList<>();
-        List<float[]> normals = new ArrayList<>();
-        List<Float> out = new ArrayList<>();
-        try (BufferedReader reader = Minecraft.getInstance().getResourceManager().openAsReader(id)) {
-            String line;
-            while ((line = reader.readLine()) != null) {
-                String[] parts = line.trim().split("\\s+");
-                switch (parts[0]) {
-                    case "v" -> positions.add(floats(parts));
-                    case "vt" -> uvs.add(floats(parts));
-                    case "vn" -> normals.add(floats(parts));
-                    case "f" -> {
-                        if (parts.length != 5) continue; // quads only: a triangle has no place in this mesh
-                        for (int i = 1; i <= 4; i++) {
-                            String[] index = parts[i].split("/");
-                            float[] p = positions.get(Integer.parseInt(index[0]) - 1);
-                            float[] t = uvs.get(Integer.parseInt(index[1]) - 1);
-                            float[] n = normals.get(Integer.parseInt(index[2]) - 1);
-                            for (float value : new float[] {p[0], p[1], p[2], t[0], t[1], n[0], n[1], n[2]}) out.add(value);
-                        }
-                    }
-                    default -> { }
-                }
-            }
-        } catch (IOException | RuntimeException e) {
-            Kegare.LOGGER.warn("Couldn't read {}; no strain on a ready fist", id, e);
-        }
-        float[] vertices = new float[out.size()];
-        for (int i = 0; i < vertices.length; i++) vertices[i] = out.get(i);
-        return new FistShellMesh(vertices);
-    }
-
-    private static float[] floats(String[] parts) {
-        float[] values = new float[parts.length - 1];
-        for (int i = 1; i < parts.length; i++) values[i - 1] = Float.parseFloat(parts[i]);
-        return values;
     }
 }

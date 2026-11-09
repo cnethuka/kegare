@@ -64,6 +64,13 @@ class ClosingLineTest {
         }
     }
 
+    /** As if a full-speed Closing Line had just arrived. */
+    private static void arrived(ServerPlayer s, ServerLevel level) {
+        SeveredState state = Severed.state(s);
+        state.momentumUntil = level.getGameTime() + 10;
+        state.momentumSpeed = SeveredConfig.CLOSING_SPEED.get();
+    }
+
     private static ServerPlayer blurring(MinecraftServer server, ServerLevel level, String name) {
         ServerPlayer s = SeveredBodyTest.severed(server, level, name);
         s.moveTo(0.5, Y, 0.5, -90f, 0f);
@@ -74,7 +81,7 @@ class ClosingLineTest {
     }
 
     @Test
-    void itRushesArrivesAndEarnsAStrikeCarryingItsSpeed(MinecraftServer server) throws Exception {
+    void itRushesArrivesAndItsFirstHitCarriesItsSpeed(MinecraftServer server) throws Exception {
         TestServer.onServerThread(server, () -> {
             TestServer.ensureOverworld(server);
             ServerLevel level = server.overworld();
@@ -104,17 +111,40 @@ class ClosingLineTest {
 
                 rush(server, s, expected, 10);
                 assertFalse(ClosingLine.rushing(state), "arrived");
-                assertTrue(ReinforcedStrike.fromRush(s), "a Strike, from the rush");
+                assertTrue(ClosingLine.momentumReady(s), "a momentum hit, from the rush");
+                assertFalse(ReinforcedStrike.isReady(s), "and never a Reinforced Strike: that's Malice");
                 assertTrue(state.recoveryUntil > level.getGameTime(), "and the recovery with no Blur speed");
-                assertEquals(SeveredConfig.ticks(SeveredConfig.CLOSING_STRIKE_WINDOW.get()), ReinforcedStrike.ticksLeft(s), 1, "for its window");
+                assertEquals(SeveredConfig.ticks(SeveredConfig.CLOSING_STRIKE_WINDOW.get()), state.momentumUntil - level.getGameTime(), 1, "for its window");
 
-                // Its hit knocks harder than a plain Severed Strike: it carries the rush's speed.
-                target.setDeltaMovement(Vec3.ZERO);
+                // Its hit carries the rush's speed: as damage, and as knockback (halved by the hit's own 0.4, as the Strike's was), and
+                // counts as charged by the rush.
+                double speed = state.momentumSpeed;
+                assertEquals(SeveredConfig.CLOSING_SPEED.get(), speed, 1.0e-6, "a full rush");
+                java.util.List<com.cnethuka.kegare.impact.Impact> impacts = new java.util.ArrayList<>();
+                java.util.function.Consumer<com.cnethuka.kegare.impact.Impact> listener = impacts::add;
+                com.cnethuka.kegare.impact.Impacts.listen(listener);
+                try {
+                    com.cnethuka.kegare.impact.Impacts.flush();
+                    impacts.clear();
+                    target.setDeltaMovement(Vec3.ZERO);
+                    target.setHealth(target.getMaxHealth());
+                    target.invulnerableTime = 0;
+                    target.hurt(s.damageSources().playerAttack(s), 1f);
+                    float dealt = target.getMaxHealth() - target.getHealth();
+                    assertEquals(1f * SeveredBody.strength() + SeveredConfig.MOMENTUM_DAMAGE.get() * speed, dealt, 1.0e-3, "Strength, then the momentum on top");
+                    double rushed = target.getDeltaMovement().horizontalDistance();
+                    assertEquals(SeveredConfig.CLOSING_CARRY.get() * speed / 2 + 0.4, rushed, 0.02, "the carried knockback, as it always was");
+                    com.cnethuka.kegare.impact.Impacts.flush();
+                    assertEquals(1, impacts.size());
+                    assertEquals(1.0, impacts.get(0).charge(), 1.0e-6, "charged by a full rush");
+                } finally {
+                    com.cnethuka.kegare.impact.Impacts.remove(listener);
+                }
+                assertFalse(ClosingLine.momentumReady(s), "spent on the first hit");
+                target.setHealth(target.getMaxHealth());
+                target.invulnerableTime = 0;
                 target.hurt(s.damageSources().playerAttack(s), 1f);
-                double rushed = target.getDeltaMovement().horizontalDistance();
-                // A plain Severed Strike's push halves under the hit's own 0.4: what this one beats.
-                double plain = MeleeConfig.SEVERED_STRIKE_KNOCKBACK.get() / 2 + 0.4;
-                assertTrue(rushed > plain + 0.05, "knocked back harder than a plain Severed Strike: " + rushed + " against " + plain);
+                assertEquals(SeveredBody.strength(), target.getMaxHealth() - target.getHealth(), 1.0e-3, "the next is a plain hit");
 
                 // The window runs out.
                 Severed.toggleBlur(s);
@@ -128,9 +158,9 @@ class ClosingLineTest {
                 TestServer.advanceGameTime(server, 1);
                 ClosingLine.request(s);
                 rush(server, s, expected, 10);
-                assertTrue(ReinforcedStrike.fromRush(s));
+                assertTrue(ClosingLine.momentumReady(s));
                 TestServer.advanceGameTime(server, SeveredConfig.ticks(SeveredConfig.CLOSING_STRIKE_WINDOW.get()));
-                assertFalse(ReinforcedStrike.isReady(s), "gone once its window is over");
+                assertFalse(ClosingLine.momentumReady(s), "gone once its window is over");
             } finally {
                 TestServer.removePlayers(server);
             }
@@ -167,7 +197,7 @@ class ClosingLineTest {
                 assertFalse(ClosingLine.rushing(state), "stopped");
                 assertTrue(CombatHelper.isStunned(s), "a wall crash: stunned");
                 assertTrue(s.getHealth() < s.getMaxHealth(), "and hurt");
-                assertFalse(ReinforcedStrike.isReady(s), "no Strike");
+                assertFalse(ClosingLine.momentumReady(s), "no momentum hit");
                 for (int i = 0; i < 3; i++) level.setBlock(wall.above(i), Blocks.AIR.defaultBlockState(), 3);
                 s.moveTo(0.5, Y, -30.5); // out of everyone's sight
 
@@ -200,7 +230,7 @@ class ClosingLineTest {
                 s3.setPos(0.5, Y, 8.5);
                 Blur.tick(s3, state3);
                 assertFalse(ClosingLine.rushing(state3), "swapped away: ended");
-                assertFalse(ReinforcedStrike.isReady(s3), "no Strike");
+                assertFalse(ClosingLine.momentumReady(s3), "no momentum hit");
             } finally {
                 pig.discard();
                 for (int i = 0; i < 3; i++) level.setBlock(wall.above(i), Blocks.AIR.defaultBlockState(), 3);
@@ -236,7 +266,7 @@ class ClosingLineTest {
                 rush(server, s, state.rushDistance, 10);
                 assertFalse(ClosingLine.rushing(state), "arrived");
                 assertFalse(CombatHelper.isStunned(s), "no crash");
-                assertTrue(ReinforcedStrike.fromRush(s), "a Strike, from the rush");
+                assertTrue(ClosingLine.momentumReady(s), "a momentum hit, from the rush");
                 assertTrue(s.getY() > Y + 3, "up there with them, in the air (gravity has them from here)");
                 assertTrue(s.getEyePosition().distanceTo(target.getBoundingBox().getCenter()) < 3.0, "within melee reach");
                 // The rush's own end, its skid carrying them up against the pillar: not a wall crash.
@@ -247,6 +277,52 @@ class ClosingLineTest {
                 assertTrue(state.blur, "still Blurring");
             } finally {
                 for (int i = 0; i < 5; i++) level.setBlock(base.above(i), Blocks.AIR.defaultBlockState(), 3);
+                TestServer.removePlayers(server);
+            }
+        });
+    }
+
+    /**
+     * The momentum hit through the Impact System's rule (DESIGN §3.27), with a fist, an iron sword and a netherite sword on a 20-health
+     * player with no armour: fully charged swings (the weapon's own damage), no crit, no sprint. An iron-sword one reaches the impact frame.
+     */
+    @Test
+    void theMomentumHitsStrengths(MinecraftServer server) throws Exception {
+        TestServer.onServerThread(server, () -> {
+            TestServer.ensureOverworld(server);
+            ServerLevel level = server.overworld();
+            level.getHeight(Heightmap.Types.MOTION_BLOCKING, 0, 0);
+            server.setPvpAllowed(true);
+            java.util.List<com.cnethuka.kegare.impact.Impact> impacts = new java.util.ArrayList<>();
+            java.util.function.Consumer<com.cnethuka.kegare.impact.Impact> listener = impacts::add;
+            com.cnethuka.kegare.impact.Impacts.listen(listener);
+            try {
+                ServerPlayer s = SeveredBodyTest.severed(server, level, "cl_strengths");
+                ServerPlayer target = SeveredBodyTest.maliceUser(server, level, "cl_strengths_target");
+                s.moveTo(0.5, Y, 0.5);
+                target.moveTo(2.0, Y, 0.5);
+                double[] strengths = new double[3];
+                float[] weapons = {1f, 6f, 8f}; // a fist, an iron sword, a netherite sword: their full-charge damage
+                for (int i = 0; i < 3; i++) {
+                    com.cnethuka.kegare.impact.Impacts.flush();
+                    impacts.clear();
+                    target.setHealth(target.getMaxHealth());
+                    target.setDeltaMovement(Vec3.ZERO);
+                    target.invulnerableTime = 0;
+                    arrived(s, level);
+                    target.hurt(s.damageSources().playerAttack(s), weapons[i]);
+                    com.cnethuka.kegare.impact.Impacts.flush();
+                    strengths[i] = impacts.get(0).strength();
+                    var im = impacts.get(0);
+                    System.out.printf(java.util.Locale.ROOT, "  weapon %.0f: damage %.2f, knockback %.2f, charge %.2f, strength %.2f%n", weapons[i], im.damage(),
+                            im.knockback(), im.charge(), im.strength());
+                }
+                System.out.printf(java.util.Locale.ROOT, "Momentum hit strengths: fist %.2f, iron sword %.2f, netherite sword %.2f%n",
+                        strengths[0], strengths[1], strengths[2]);
+                assertTrue(strengths[1] >= com.cnethuka.kegare.impact.ImpactConfig.IMPACT_FRAME.get(), "an iron-sword one reaches the impact frame: " + strengths[1]);
+                assertTrue(strengths[0] < strengths[1] && strengths[1] < strengths[2]);
+            } finally {
+                com.cnethuka.kegare.impact.Impacts.remove(listener);
                 TestServer.removePlayers(server);
             }
         });
@@ -265,7 +341,7 @@ class ClosingLineTest {
                 ServerPlayer defender = SeveredBodyTest.maliceUser(server, level, "cl_defender");
                 s.moveTo(0.5, Y, 0.5);
                 defender.moveTo(2.0, Y, 0.5);
-                ReinforcedStrike.earnFromRush(s, 10, 0.4);
+                arrived(s, level);
                 MeleeIntentPayload.apply(defender, new MeleeIntentPayload(MeleeIntentPayload.Action.PARRY_PRESS, (byte) 0, (byte) 0));
                 assertFalse(defender.hurt(s.damageSources().playerAttack(s), 4f), "parried");
                 MobEffectInstance slow = s.getEffect(MobEffects.MOVEMENT_SLOWDOWN);
@@ -273,20 +349,20 @@ class ClosingLineTest {
                 assertEquals(SeveredConfig.ticks(SeveredConfig.PARRY_STAGGER_SECONDS.get()), slow.getDuration(), "longer than a normal stagger");
                 assertTrue(slow.getDuration() > Math.round(MeleeConfig.PARRY_STAGGER_SECONDS.get() * 20));
                 assertEquals(SeveredConfig.PARRY_STAGGER_SLOWNESS.get().intValue(), slow.getAmplifier(), "and heavier");
-                assertFalse(ReinforcedStrike.isReady(s), "the Strike was spent on it");
+                assertFalse(ClosingLine.momentumReady(s), "the momentum hit was spent on it");
 
                 // A boss: struck, never moved.
                 s.removeAllEffects();
                 wither.moveTo(3.5, Y, 4.5, 0f, 0f);
                 wither.setNoGravity(true);
                 level.addFreshEntity(wither);
-                ReinforcedStrike.earnFromRush(s, 10, 0.4);
+                arrived(s, level);
                 float health = wither.getHealth();
                 wither.setDeltaMovement(Vec3.ZERO);
                 wither.hurt(s.damageSources().playerAttack(s), 4f);
                 assertTrue(wither.getHealth() < health, "damaged");
-                // Only the hit's own vanilla push (0.4): the Strike's knockback, its carried speed included, never reaches a boss.
-                assertTrue(wither.getDeltaMovement().horizontalDistance() <= 0.4 + 1.0e-6, "never moved by the Strike");
+                // Only the hit's own vanilla push (0.4): the carried knockback never reaches a boss.
+                assertTrue(wither.getDeltaMovement().horizontalDistance() <= 0.4 + 1.0e-6, "never moved by the momentum");
             } finally {
                 wither.discard();
                 TestServer.removePlayers(server);

@@ -90,9 +90,8 @@ public final class KegareConfigMigration {
             entry("melee.severed.perfectWindow", 0.25),
             entry("melee.severed.guardMeleeReduction", 0.3),
             entry("melee.severed.guardMaxSeconds", 2.5),
-            entry("melee.severed.recovery", 1.25),
-            entry("melee.severed.strikeDamageBonus", 0.35),
-            entry("melee.severed.strikeKnockback", 0.4)
+            entry("melee.severed.recovery", 1.25)
+            // (strikeDamageBonus and strikeKnockback were here too: the Severed Reinforced Strike is gone, and NeoForge drops its keys)
     );
 
     /**
@@ -153,6 +152,7 @@ public final class KegareConfigMigration {
         List<String> kept = new ArrayList<>();
         for (Map.Entry<String, Number> old : step.oldDefaults().entrySet()) {
             ModConfigSpec.ConfigValue<?> value = KegareServerConfig.SPEC.getValues().get(old.getKey());
+            if (value == null) continue; // an option since removed: nothing to move
             double current = ((Number) value.get()).doubleValue();
             double newDefault = ((Number) value.getDefault()).doubleValue();
             switch (decide(current, old.getValue().doubleValue(), newDefault)) {

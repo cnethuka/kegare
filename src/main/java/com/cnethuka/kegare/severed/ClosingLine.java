@@ -1,7 +1,13 @@
 package com.cnethuka.kegare.severed;
 
+import com.cnethuka.kegare.combat.CombatHelper;
+import com.cnethuka.kegare.impact.Impacts;
+import com.cnethuka.kegare.melee.MeleeHits;
+import com.cnethuka.kegare.progression.Attribution;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.world.entity.LivingEntity;
+import net.neoforged.neoforge.event.entity.living.LivingIncomingDamageEvent;
 import com.cnethuka.kegare.innatetechnique.CastIntent;
-import com.cnethuka.kegare.melee.ReinforcedStrike;
 import java.util.Optional;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
@@ -18,9 +24,10 @@ import net.neoforged.neoforge.network.PacketDistributor;
  * but is real travel, driven on the owner's client like a dash ({@code client/RushDrive}), so the game's own collision stops it: a
  * wall stopping you at that speed is a wall crash ({@link Blur}).
  * It doesn't home: a target that moves away makes you miss. Anything living in the path stops you there; projectiles and techniques
- * hit you on the way, with no invulnerability. Arriving (in reach of the target, or of whatever stopped you) earns a Reinforced Strike
- * for {@code strikeWindow} that carries the rush's speed as knockback. After every one, {@code recoverySeconds} with no Blur speed,
- * and a cooldown. A boss can be rushed at and struck, never moved (the Strike's own rule).
+ * hit you on the way, with no invulnerability. Arriving (in reach of the target, or of whatever stopped you) makes the first melee hit
+ * within {@code strikeWindow} a momentum hit: the rush's speed carried into it as extra damage and knockback, and as the rush's charge for
+ * the Impact System. No Reinforced Strike: that's Malice, and a Severed player has none. After every one, {@code recoverySeconds} with no
+ * Blur speed, and a cooldown. A boss can be rushed at and struck, never moved.
  */
 public final class ClosingLine {
     /** Off the line by more than this, they were moved by something else (a swap): it's over. */
@@ -141,15 +148,52 @@ public final class ClosingLine {
         }
     }
 
-    /** They got there: a Strike carrying the rush's speed, a skid, and the recovery. */
+    /** They got there: the next melee hit carries the rush's speed, a skid, and the recovery. */
     static void arrive(ServerPlayer player, SeveredState state, double speed) {
         end(player, state, speed);
-        ReinforcedStrike.earnFromRush(player, SeveredConfig.ticks(SeveredConfig.CLOSING_STRIKE_WINDOW.get()), speed * SeveredConfig.CLOSING_CARRY.get());
+        state.momentumUntil = player.level().getGameTime() + SeveredConfig.ticks(SeveredConfig.CLOSING_STRIKE_WINDOW.get());
+        state.momentumSpeed = speed;
         SeveredFx.arrive(player, state.rushDirection != null ? state.rushDirection : player.getLookAngle());
         Blur.sync(player, state);
     }
 
-    /** Stopped short of arriving (a wall, a swap, a stun): no Strike, the recovery all the same. */
+    /** Is a momentum hit waiting on them (a Closing Line arrived within {@code strikeWindow})? */
+    public static boolean momentumReady(ServerPlayer player) {
+        if (!player.hasData(Severed.STATE)) return false;
+        return player.level().getGameTime() < Severed.state(player).momentumUntil;
+    }
+
+    /** A perfect parry caught it: spent, with nothing landed. Returns whether there was one. */
+    public static boolean spendMomentum(ServerPlayer player) {
+        if (!momentumReady(player)) return false;
+        Severed.state(player).momentumUntil = 0;
+        return true;
+    }
+
+    /**
+     * The first melee hit after arriving, on something living that's a real target: the rush's speed carried into it, as
+     * {@code momentumDamage} per block/tick of extra damage (added to the hit, before the target's defences), as {@code carriedKnockback}
+     * per block/tick of knockback (with the hit, as the Strike's was; never a boss), and as the rush's charge for the Impact System
+     * (its speed against Closing Line's full speed). After the Strength bonus, so the momentum isn't scaled by it.
+     */
+    static void onIncoming(LivingIncomingDamageEvent event) {
+        LivingEntity target = event.getEntity();
+        if (!(target.level() instanceof ServerLevel level) || !(event.getSource().getEntity() instanceof ServerPlayer attacker)) return;
+        if (!momentumReady(attacker) || MeleeHits.of(event.getSource(), level) != MeleeHits.Kind.MELEE) return;
+        if (!Attribution.isRealTarget(attacker, target) || !target.isAlive()) return;
+        SeveredState state = Severed.state(attacker);
+        double speed = state.momentumSpeed;
+        state.momentumUntil = 0;
+        event.setAmount(event.getAmount() + (float) (SeveredConfig.MOMENTUM_DAMAGE.get() * speed));
+        double knockback = SeveredConfig.CLOSING_CARRY.get() * speed;
+        if (!CombatHelper.isBoss(target) && knockback > 0) {
+            target.knockback(knockback, attacker.getX() - target.getX(), attacker.getZ() - target.getZ());
+            target.hurtMarked = true;
+        }
+        Impacts.charge(target, Math.min(1.0, speed / SeveredConfig.CLOSING_SPEED.get()));
+    }
+
+    /** Stopped short of arriving (a wall, a swap, a stun): no momentum hit, the recovery all the same. */
     static void cancel(ServerPlayer player, SeveredState state) {
         if (!rushing(state)) return;
         end(player, state, state.rushSpeed);

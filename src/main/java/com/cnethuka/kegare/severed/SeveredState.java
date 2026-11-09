@@ -24,6 +24,9 @@ public final class SeveredState {
     int rushTicksLeft;
     int rushTarget = -1;
     long rushAllowedUntil;
+    /** A Closing Line arrived: until when the first melee hit is a momentum hit, and the rush speed it carries (blocks/tick). */
+    long momentumUntil;
+    double momentumSpeed;
     // What the owner's client was last told
     @Nullable BlurPayload sent;
 

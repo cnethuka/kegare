@@ -27,6 +27,6 @@ public record MeleeNumbers(double dashCost, int dashCooldownTicks, double dashDi
         return new MeleeNumbers(0, MeleeConfig.ticks(MeleeConfig.SEVERED_DASH_COOLDOWN.get()), MeleeConfig.SEVERED_DASH_DISTANCE.get(),
                 MeleeConfig.ticks(MeleeConfig.SEVERED_PERFECT_WINDOW.get()), MeleeConfig.SEVERED_GUARD_MELEE_REDUCTION.get(), MeleeConfig.SEVERED_GUARD_TECHNIQUE_REDUCTION.get(),
                 0, 0, Math.max(1, MeleeConfig.ticks(MeleeConfig.SEVERED_GUARD_MAX.get())), MeleeConfig.ticks(MeleeConfig.SEVERED_RECOVERY.get()),
-                MeleeConfig.ticks(MeleeConfig.SEVERED_STRIKE_WINDOW.get()), MeleeConfig.SEVERED_STRIKE_BONUS.get(), MeleeConfig.SEVERED_STRIKE_KNOCKBACK.get(), 0);
+                0, 0, 0, 0); // no Reinforced Strike: Malice, which they have none of
     }
 }

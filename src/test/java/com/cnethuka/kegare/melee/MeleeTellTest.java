@@ -16,7 +16,6 @@ import com.cnethuka.kegare.melee.MeleeTell.Kind;
 import com.cnethuka.kegare.melee.MeleeTell.Look;
 import com.cnethuka.kegare.player.BirthService;
 import io.netty.buffer.Unpooled;
-import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
@@ -59,12 +58,12 @@ class MeleeTellTest {
     }
 
     @Test
-    void severedHaveAPhysicalTellNotAGlow(MinecraftServer server) throws Exception {
+    void severedHaveNothingToShow(MinecraftServer server) throws Exception {
         TestServer.onServerThread(server, () -> {
             ServerPlayer severed = player(server, "SeveredOne", null);
             assertTrue(MaliceService.isSevered(severed));
-            assertEquals(Kind.PHYSICAL, MeleeTell.of(severed).kind());
-            assertEquals(Kind.PHYSICAL, MeleeTell.seenByOthers(severed).kind());
+            assertEquals(Look.NONE, MeleeTell.of(severed), "no Malice, no Strike, nothing on the fist");
+            assertEquals(Look.NONE, MeleeTell.seenByOthers(severed));
         });
     }
 
@@ -106,12 +105,12 @@ class MeleeTellTest {
     }
 
     @Test
-    void wearingASeveredFaceShowsThePhysicalTell(MinecraftServer server) throws Exception {
+    void wearingASeveredFaceShowsNothing(MinecraftServer server) throws Exception {
         TestServer.onServerThread(server, () -> {
             ServerPlayer wearer = player(server, "WearerTwo", Swap.SWAP.get());
             ServerPlayer face = face(server, "FaceTwo", null);
             Disguises.apply(wearer, face, 200, Disguises.Kind.MIMIC, wearer);
-            assertEquals(Kind.PHYSICAL, MeleeTell.seenByOthers(wearer).kind());
+            assertEquals(Kind.NONE, MeleeTell.seenByOthers(wearer).kind(), "a Severed face has no Malice to show");
             assertEquals(Kind.GLOW, MeleeTell.of(wearer).kind());
             Disguises.endInvolving(wearer);
             leave(face);
@@ -143,7 +142,7 @@ class MeleeTellTest {
 
     @Test
     void thePayloadCarriesTheLook() {
-        for (Look look : List.of(Look.NONE, Look.PHYSICAL, Look.glow(0x14B8A6))) {
+        for (Look look : List.of(Look.NONE, Look.glow(0x14B8A6))) {
             FriendlyByteBuf buf = new FriendlyByteBuf(Unpooled.buffer());
             MeleeTellPayload.STREAM_CODEC.encode(buf, new MeleeTellPayload(42, look));
             assertEquals(new MeleeTellPayload(42, look), MeleeTellPayload.STREAM_CODEC.decode(buf));
@@ -160,30 +159,19 @@ class MeleeTellTest {
 
     @Test
     void everyNewEffectIsThere() {
-        for (String name : List.of("fist_steam", "fist_steam_self", "strike_impact", "strike_burst", "strike_impact_physical")) {
+        for (String name : List.of("strike_impact", "strike_burst")) {
             assertTrue(Files.isRegularFile(FX.resolve(name + ".fx")), name);
+        }
+        for (String name : List.of("fist_steam", "fist_steam_self", "strike_impact_physical")) {
+            assertTrue(!Files.exists(FX.resolve(name + ".fx")), name + ": went with the Severed Strike");
         }
         assertTrue(!Files.exists(FX.resolve("strike_ready.fx")), "the gold motes are gone");
         assertTrue(!Files.exists(FX.resolve("fist_wisps.fx")), "the fist's curls are drawn with its flames now");
     }
 
     @Test
-    void slimAndRegularShellsDifferOnlyInWidth() throws IOException {
-        List<double[]> regular = vertices(MODELS.resolve("fist_shell_regular.obj"));
-        List<double[]> slim = vertices(MODELS.resolve("fist_shell_slim.obj"));
-        assertEquals(regular.size(), slim.size());
-        assertTrue(width(regular) > width(slim), "a slim arm is narrower");
-        for (int i = 0; i < regular.size(); i++) assertEquals(regular.get(i)[1], slim.get(i)[1], 1.0e-6, "same height");
-    }
-
-    private static double width(List<double[]> vertices) {
-        return vertices.stream().mapToDouble(v -> v[0]).max().orElseThrow() - vertices.stream().mapToDouble(v -> v[0]).min().orElseThrow();
-    }
-
-    private static List<double[]> vertices(Path obj) throws IOException {
-        return Files.readAllLines(obj).stream().filter(l -> l.startsWith("v ")).map(l -> {
-            String[] p = l.trim().split("\\s+");
-            return new double[] {Double.parseDouble(p[1]), Double.parseDouble(p[2]), Double.parseDouble(p[3])};
-        }).toList();
+    void theStrainedForearmIsGone() {
+        assertTrue(!Files.exists(MODELS.resolve("fist_shell_regular.obj")) && !Files.exists(MODELS.resolve("fist_shell_slim.obj")),
+                "a Severed player's strained forearm went with their Strike");
     }
 }

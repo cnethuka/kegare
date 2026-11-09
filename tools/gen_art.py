@@ -2590,28 +2590,6 @@ def fist_fire() -> "Image.Image":
     return img
 
 
-def fist_strain() -> "Image.Image":
-    """A Severed player's ready fist (entity texture, lit by the world, never glowing): a forearm under strain. Dark, bruised skin
-    with veins standing out, wrapping seamlessly both ways."""
-    size = 64
-    img = Image.new("RGBA", (size, size), (0, 0, 0, 0))
-    tau = 2 * math.pi
-    layers = noise_stack(seed=907, px=size, py=size, cells=(8, 4))
-    for y in range(size):
-        for x in range(size):
-            vein = 0.0
-            for fx, wobble, phase, width in ((2, 2.4, 0.4, 0.09), (3, 1.8, 2.3, 0.07), (5, 1.2, 4.4, 0.05)):
-                wob = wobble * math.sin(tau * y / size + phase) + 0.5 * wobble * math.sin(3 * tau * y / size + phase * 1.7)
-                s = abs(math.sin(math.pi * fx * x / size + wob * 0.5))
-                vein = max(vein, max(0.0, 1.0 - s / width))
-            mottle = fbm(layers, x, y)
-            base = (54 + int(26 * mottle), 26 + int(14 * mottle), 28 + int(14 * mottle))
-            high = (20, 8, 12)
-            r, g, b = (int(base[i] + (high[i] - base[i]) * vein) for i in range(3))
-            img.putpixel((x, y), (r, g, b, int(255 * (0.62 + 0.38 * vein))))
-    return img
-
-
 def main() -> None:
     sprites = build()
     borders = {"panel": 12,
@@ -2641,7 +2619,6 @@ def main() -> None:
     save(puppet_glow(), "entity/puppet_glow.png")
     save(fist_flame(), "entity/fist_flame.png")
     save(fist_fire(), "entity/fist_fire.png")
-    save(fist_strain(), "entity/fist_strain.png")
     save(string_braid(), "item/string_braid.png")
     for kind in ("follow", "stay", "guard", "go"):
         save(order_glyph(kind), f"gui/puppet_order/{kind}.png")

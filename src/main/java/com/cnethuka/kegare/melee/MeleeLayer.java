@@ -33,9 +33,6 @@ public final class MeleeLayer {
         VisualHooks.registerEffect(MeleeIds.FX_GUARD_HIT_SELF);
         VisualHooks.registerEffect(MeleeIds.FX_STRIKE_IMPACT);
         VisualHooks.registerEffect(MeleeIds.FX_STRIKE_BURST);
-        VisualHooks.registerEffect(MeleeIds.FX_STRIKE_IMPACT_PHYSICAL);
-        VisualHooks.registerEffect(MeleeIds.FX_FIST_STEAM);
-        VisualHooks.registerEffect(MeleeIds.FX_FIST_STEAM_SELF);
     }
 
     public static MeleeState state(ServerPlayer player) {

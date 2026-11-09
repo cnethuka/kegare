@@ -34,26 +34,15 @@ public final class ReinforcedStrike {
         earn(player, MeleeLayer.state(player));
     }
 
+    /**
+     * Readies one. Never for a Severed player: "Reinforced" is Malice routed through the body, and they have none at all (their strength is
+     * the raw body: a longer stagger on a perfect parry, and Closing Line's momentum hit, DESIGN §3.27).
+     */
     static void earn(ServerPlayer player, MeleeState state) {
+        if (MaliceService.isSevered(player)) return;
         MeleeNumbers numbers = MeleeNumbers.of(player);
         state.strikeUntil = player.level().getGameTime() + numbers.strikeTicks();
         state.strikeTicks = numbers.strikeTicks();
-        state.strikeExtraKnockback = 0;
-        state.strikeFromRush = false;
-        MeleeTell.sync(player, state, true);
-        MeleeLayer.syncHud(player);
-    }
-
-    /**
-     * A Closing Line's arrival (DESIGN §3.27): a Strike for {@code ticks}, carrying {@code extraKnockback} of the rush's speed on top
-     * of its own. The ready fist shows as for any Strike.
-     */
-    public static void earnFromRush(ServerPlayer player, int ticks, double extraKnockback) {
-        MeleeState state = MeleeLayer.state(player);
-        state.strikeUntil = player.level().getGameTime() + ticks;
-        state.strikeTicks = ticks;
-        state.strikeExtraKnockback = Math.max(0, extraKnockback);
-        state.strikeFromRush = true;
         MeleeTell.sync(player, state, true);
         MeleeLayer.syncHud(player);
     }
@@ -62,11 +51,6 @@ public final class ReinforcedStrike {
     public static int ticksLeft(ServerPlayer player) {
         if (!player.hasData(MeleeLayer.ATTACHMENT)) return 0;
         return (int) Math.max(0, MeleeLayer.state(player).strikeUntil - player.level().getGameTime());
-    }
-
-    /** A Closing Line's Strike is ready on them. */
-    public static boolean fromRush(ServerPlayer player) {
-        return isReady(player) && MeleeLayer.state(player).strikeFromRush;
     }
 
     public static boolean isReady(ServerPlayer player) {
@@ -86,8 +70,6 @@ public final class ReinforcedStrike {
     static void clear(ServerPlayer player, MeleeState state) {
         if (state.strikeUntil == 0) return;
         state.strikeUntil = 0;
-        state.strikeExtraKnockback = 0;
-        state.strikeFromRush = false;
         MeleeTell.sync(player, state, false);
         MeleeLayer.syncHud(player);
     }
@@ -102,10 +84,9 @@ public final class ReinforcedStrike {
         if (!isReady(attacker, state)) return damage;
         MeleeNumbers numbers = MeleeNumbers.of(attacker);
         if (!MaliceService.trySpend(attacker, numbers.strikeCost())) return damage;
-        double extraKnockback = state.strikeExtraKnockback;
         clear(attacker, state);
         Landings.markStrike(attacker, target);
-        double knockback = numbers.strikeKnockback() + extraKnockback; // a Closing Line's carries its rush (§3.27)
+        double knockback = numbers.strikeKnockback();
         if (!CombatHelper.isBoss(target) && knockback > 0) { // bosses: damaged, never moved
             target.knockback(knockback, attacker.getX() - target.getX(), attacker.getZ() - target.getZ());
             target.hurtMarked = true;

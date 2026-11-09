@@ -15,19 +15,19 @@ import net.minecraft.world.phys.Vec3;
 import net.neoforged.neoforge.network.PacketDistributor;
 
 /**
- * What a ready Reinforced Strike looks like on a player: Malice in their Innate Technique's color round the attacking hand, or for a
- * Severed player, with no Malice to show, a physical tell. The color is read from the technique, so a new one gets it by itself.
+ * What a ready Reinforced Strike looks like on a player: Malice in their Innate Technique's color round the attacking hand. The color is
+ * read from the technique, so a new one gets it by itself. A Severed player never has a Strike (it's Malice, and they have none), so there's
+ * nothing to show on them, and a disguise wearing a Severed face shows nothing either.
  * <p>
  * <b>A disguise can't be given away by it.</b> Everyone but the wearer is sent the look of whoever the wearer looks like, and that's
  * all their client ever gets: there's nothing in the packet for a modified client to read the real color from. The wearer sees their own.
  */
 public final class MeleeTell {
-    public enum Kind { NONE, GLOW, PHYSICAL }
+    public enum Kind { NONE, GLOW }
 
     /** @param color RGB, as the technique defines it; {@link Kind#GLOW} only */
     public record Look(Kind kind, int color) {
         public static final Look NONE = new Look(Kind.NONE, 0);
-        public static final Look PHYSICAL = new Look(Kind.PHYSICAL, 0);
 
         public static Look glow(int rgb) {
             return new Look(Kind.GLOW, rgb & 0xFFFFFF);
@@ -36,9 +36,9 @@ public final class MeleeTell {
 
     private MeleeTell() {}
 
-    /** How a player's own Malice looks: their technique's color, or the physical tell if they're Severed. */
+    /** How a player's own Malice looks: their technique's color. A Severed player has none to show (and never a Strike). */
     public static Look of(ServerPlayer player) {
-        if (MaliceService.isSevered(player)) return Look.PHYSICAL;
+        if (MaliceService.isSevered(player)) return Look.NONE;
         return Look.glow(InnateTechniqueService.current(player).map(InnateTechnique::maliceColor).orElse(InnateTechnique.DEFAULT_MALICE_COLOR));
     }
 
@@ -89,7 +89,7 @@ public final class MeleeTell {
     }
 
     /**
-     * The Strike lands: the impact and a burst of Malice in the same color as the glow, at the target. Severed: dust and grit. Tried in gold
+     * The Strike lands: the impact and a burst of Malice in the same color as the glow, at the target. Tried in gold
      * against the Innate color: gold under an Innate burst reads as two effects, and this reads as what was on the fist going off.
      */
     public static void playStrikeImpact(ServerPlayer attacker, Vec3 at) {
@@ -99,9 +99,7 @@ public final class MeleeTell {
     }
 
     private static Visual impact(Look look) {
-        return look.kind() == Kind.GLOW
-                ? Visual.effect(MeleeIds.FX_STRIKE_IMPACT, Visual.Anchor.BODY).tinted(bright(look.color()))
-                : Visual.effect(MeleeIds.FX_STRIKE_IMPACT_PHYSICAL, Visual.Anchor.BODY);
+        return look.kind() == Kind.GLOW ? Visual.effect(MeleeIds.FX_STRIKE_IMPACT, Visual.Anchor.BODY).tinted(bright(look.color())) : Visual.NONE;
     }
 
     private static Visual burst(Look look) {

@@ -64,7 +64,7 @@ class KegareConfigMigrationTest {
 
     @Test
     void theSeveredMeleeStepCoversValuesThatReallyChanged() {
-        assertEquals(8, KegareConfigMigration.SEVERED_MELEE_OLD_DEFAULTS.size());
+        assertEquals(6, KegareConfigMigration.SEVERED_MELEE_OLD_DEFAULTS.size(), "the Severed Strike's two went with it");
         for (Map.Entry<String, Number> old : KegareConfigMigration.SEVERED_MELEE_OLD_DEFAULTS.entrySet()) {
             assertNotEquals(old.getValue().doubleValue(), newDefault(old.getKey()), old.getKey());
         }

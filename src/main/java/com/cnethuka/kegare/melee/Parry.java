@@ -130,15 +130,17 @@ public final class Parry {
         state.guardLoopAt = player.level().getGameTime() + MeleeIds.PARRY_PERFECT_TICKS;
         VisualService.playOnce(player, Visual.animation(MeleeIds.ANIM_PARRY_PERFECT));
         MeleeImpact.PARRY_PERFECT.fire(player.serverLevel(), contact(player, attacker), player, attacker);
-        if (attacker instanceof ServerPlayer rusher && ReinforcedStrike.fromRush(rusher)) {
-            // A Closing Line's Strike caught (DESIGN §3.27): it's spent, and they're staggered harder for having committed to it.
-            ReinforcedStrike.clear(rusher, MeleeLayer.state(rusher));
+        if (attacker instanceof ServerPlayer rusher && com.cnethuka.kegare.severed.ClosingLine.spendMomentum(rusher)) {
+            // A Closing Line's momentum hit caught (DESIGN §3.27): it's spent, and they're staggered harder for having committed to it.
             stagger(attacker, com.cnethuka.kegare.severed.SeveredConfig.ticks(com.cnethuka.kegare.severed.SeveredConfig.PARRY_STAGGER_SECONDS.get()),
                     com.cnethuka.kegare.severed.SeveredConfig.PARRY_STAGGER_SLOWNESS.get());
+        } else if (MaliceService.isSevered(player)) {
+            // A Severed perfect parry: no Strike to earn (that's Malice), so the opening is a longer stagger, from their reflexes.
+            stagger(attacker, MeleeConfig.ticks(MeleeConfig.SEVERED_PARRY_STAGGER.get()), MeleeConfig.PARRY_STAGGER_SLOWNESS.get());
         } else {
             stagger(attacker);
         }
-        ReinforcedStrike.earn(player, state);
+        ReinforcedStrike.earn(player, state); // never for a Severed player
         if (attacker instanceof ServerPlayer opponent && Attribution.isRealTarget(player, opponent) && swungFullyCharged(opponent)) {
             FightTracker.meleeMove(player, opponent, MeleeMoves.PERFECT_PARRY);
         }

@@ -47,13 +47,12 @@ import org.joml.Vector3f;
  * A ready Reinforced Strike on a player's attacking hand, and Reinforced Fists (DESIGN §3.28), which is the same fire on both hands for as
  * long as it's on. The server says what each client should see ({@link MeleeTell}, {@link com.cnethuka.kegare.fists.FistsTell}), and this
  * draws it, in the arm's own space so it follows every animation: Malice burning round the hand and forearm ({@link FistFire}, and
- * {@link FistFlames} on your own hand), or for the physical tell a strained forearm with steam coming off it.
+ * {@link FistFlames} on your own hand). A Severed player never has one (DESIGN §3.27).
  * <p>
  * Whatever comes off the fist goes where the hand really is, reported each frame from where it was drawn. In first person there are two
  * ways that happens: while an animation shows your own body the layer draws as usual, and otherwise the hand pass does ({@link #onRenderHand}).
  */
 public final class FistTell {
-    private static final ResourceLocation STRAIN = Kegare.id("textures/entity/fist_strain.png");
     /** No report of where the fist is for this long (off screen): go by the body, so nothing's left behind. */
     private static final int STALE_AFTER_TICKS = 3;
     /** How far off where the player is a fist can be and still be in the world. Further than that, this is a screen drawing them. */
@@ -82,8 +81,6 @@ public final class FistTell {
 
     private static final class Shown {
         MeleeTell.Look look;
-        @Nullable ClientVisuals.PositionalEffect effect;
-        @Nullable ResourceLocation effectId;
         @Nullable Vec3 fist;
         int staleTicks;
         /** A ring of the curls that are off the fist: where each came off, and when. */
@@ -95,10 +92,8 @@ public final class FistTell {
             this.look = look;
         }
 
+        /** Nothing of it is left behind in the world (the curls are drawn from the ring, which goes with it). */
         void stopEffect() {
-            if (effect != null) effect.stop(true); // a tell that outlives the Strike would lie to the other player
-            effect = null;
-            effectId = null;
         }
     }
 
@@ -115,7 +110,6 @@ public final class FistTell {
         MeleeTellPayload.setClientHandler(FistTell::update);
         com.cnethuka.kegare.fists.FistsPayload.setClientHandler(FistBurn::update);
         modBus.addListener(FistTell::addLayers);
-        modBus.addListener((RegisterClientReloadListenersEvent e) -> e.registerReloadListener((ResourceManagerReloadListener) manager -> FistShellMesh.forget()));
         NeoForge.EVENT_BUS.addListener(FistTell::onClientTick);
         NeoForge.EVENT_BUS.addListener(FistTell::onRenderHand);
         NeoForge.EVENT_BUS.addListener((ClientPlayerNetworkEvent.LoggingOut e) -> {
@@ -173,17 +167,14 @@ public final class FistTell {
      */
     static void drawArm(PoseStack pose, MultiBufferSource buffers, MeleeTell.Look look, float time, boolean slim, boolean leftArm, int light,
                         Vector3f toCamera, Vector3f up, boolean ownHand) {
+        if (look.kind() != MeleeTell.Kind.GLOW) return;
         float centre = FistShellMesh.armCentre(slim, leftArm);
-        if (look.kind() == MeleeTell.Kind.GLOW) {
-            int rgb = MeleeTell.bright(look.color()) & 0xFFFFFF;
-            if (!ownHand) {
-                FistFire.drawArm(pose.last(), buffers.getBuffer(FistFire.renderType()), rgb, time, FistShellMesh.handEnd(), centre, slim, toCamera, up);
-            } else {
-                FistFlames.drawOwnHand(pose.last(), buffers.getBuffer(FistFlames.renderType()), rgb, time, FistShellMesh.handEnd(), centre,
-                        slim ? RADIUS_SLIM : RADIUS, toCamera, up, leftArm);
-            }
+        int rgb = MeleeTell.bright(look.color()) & 0xFFFFFF;
+        if (!ownHand) {
+            FistFire.drawArm(pose.last(), buffers.getBuffer(FistFire.renderType()), rgb, time, FistShellMesh.handEnd(), centre, slim, toCamera, up);
         } else {
-            FistShellMesh.of(slim).draw(pose.last(), buffers.getBuffer(RenderType.entityTranslucent(STRAIN)), leftArm, centre, 1.08f, light);
+            FistFlames.drawOwnHand(pose.last(), buffers.getBuffer(FistFlames.renderType()), rgb, time, FistShellMesh.handEnd(), centre,
+                    slim ? RADIUS_SLIM : RADIUS, toCamera, up, leftArm);
         }
     }
 
@@ -248,7 +239,7 @@ public final class FistTell {
     /**
      * Where a point in vanilla's first-person hand pass is, from the camera along the world's axes, which is what {@link #reportFist} wants.
      * The hand pass starts its pose with the camera's own rotation, so what comes out is already turned the world's way. Turning it again
-     * put a Severed player's own steam off to one side or behind them whenever they weren't facing north.
+     * put your own curls off to one side or behind you whenever you weren't facing north.
      */
     static Vector3f handPassPoint(PoseStack.Pose pose, float x, float y, float z) {
         return pose.pose().transformPosition(x, y, z, new Vector3f());
@@ -290,13 +281,11 @@ public final class FistTell {
         PoseStack pose = event.getPoseStack();
         pose.pushPose();
         GuardHand.apply(pose, side, event.getPartialTick());
-        boolean holding = !player.getMainHandItem().isEmpty();
-        if (holding && look.kind() == MeleeTell.Kind.GLOW) {
+        if (!player.getMainHandItem().isEmpty()) { // no arm drawn: round what's held
             drawGripFire(pose, event, player, look, side, swing, root);
             pose.popPose();
             return;
         }
-        if (holding) pose.translate(side * GRIP_ACROSS, GRIP_UP, 0f); // no arm drawn: round what's held
         pose.translate(side * (-0.3f * Mth.sin(root * Mth.PI) + 0.64000005f), 0.4f * Mth.sin(root * Mth.TWO_PI) - 0.6f - mainHandEquip * 0.6f,
                 -0.4f * Mth.sin(swing * Mth.PI) - 0.71999997f);
         pose.mulPose(Axis.YP.rotationDegrees(side * 45f));
@@ -394,44 +383,27 @@ public final class FistTell {
         }
     }
 
-    /** One hand's curls (or a Severed forearm's steam) for this tick, from where its fist was last drawn. */
+    /** One hand's curls for this tick, from where its fist was last drawn. */
     private static void tickHand(ClientLevel level, Player player, Shown shown) {
         Vec3 fist = shown.fist != null && shown.staleTicks < STALE_AFTER_TICKS ? shown.fist : player.position().add(0, player.getBbHeight() * 0.45, 0);
         shown.staleTicks++;
         boolean self = firstPersonSelf(player);
         VfxQuality quality = KegareClientConfig.VFX_QUALITY.get();
         if (quality == VfxQuality.VANILLA) {
-            shown.stopEffect();
             if (!self) vanillaParticles(level, shown.look, fist);
             return;
         }
-        if (shown.look.kind() == MeleeTell.Kind.GLOW) {
-            shown.stopEffect();
-            int every = self ? WISP_EVERY_TICKS_SELF : quality == VfxQuality.REDUCED ? WISP_EVERY_TICKS_REDUCED : WISP_EVERY_TICKS;
-            if (player.tickCount % every == 0) {
-                shown.wispFrom[shown.nextWisp] = fist;
-                shown.wispBorn[shown.nextWisp] = player.tickCount;
-                shown.nextWisp = (shown.nextWisp + 1) % shown.wispFrom.length;
-            }
-            return;
-        }
-        ResourceLocation wanted = self ? MeleeIds.FX_FIST_STEAM_SELF : MeleeIds.FX_FIST_STEAM;
-        if (shown.effect == null || !wanted.equals(shown.effectId)) {
-            shown.stopEffect();
-            shown.effect = ClientVisuals.startAt(wanted, fist);
-            shown.effectId = wanted;
-        } else {
-            shown.effect.moveTo(fist);
+        int every = self ? WISP_EVERY_TICKS_SELF : quality == VfxQuality.REDUCED ? WISP_EVERY_TICKS_REDUCED : WISP_EVERY_TICKS;
+        if (player.tickCount % every == 0) {
+            shown.wispFrom[shown.nextWisp] = fist;
+            shown.wispBorn[shown.nextWisp] = player.tickCount;
+            shown.nextWisp = (shown.nextWisp + 1) % shown.wispFrom.length;
         }
     }
 
     private static void vanillaParticles(ClientLevel level, MeleeTell.Look look, Vec3 at) {
-        if (look.kind() == MeleeTell.Kind.GLOW) {
-            int rgb = MeleeTell.bright(look.color());
-            level.addParticle(new DustParticleOptions(new Vector3f((rgb >> 16 & 0xFF) / 255f, (rgb >> 8 & 0xFF) / 255f, (rgb & 0xFF) / 255f), 0.8f),
-                    at.x, at.y, at.z, 0, 0.02, 0);
-        } else if (level.getGameTime() % 2 == 0) {
-            level.addParticle(ParticleTypes.CLOUD, at.x, at.y, at.z, 0, 0.03, 0);
-        }
+        int rgb = MeleeTell.bright(look.color());
+        level.addParticle(new DustParticleOptions(new Vector3f((rgb >> 16 & 0xFF) / 255f, (rgb >> 8 & 0xFF) / 255f, (rgb & 0xFF) / 255f), 0.8f),
+                at.x, at.y, at.z, 0, 0.02, 0);
     }
 }

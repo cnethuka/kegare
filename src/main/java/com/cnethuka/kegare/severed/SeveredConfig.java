@@ -33,6 +33,7 @@ public final class SeveredConfig {
     public static ModConfigSpec.DoubleValue CLOSING_RECOVERY;
     public static ModConfigSpec.DoubleValue CLOSING_STRIKE_WINDOW;
     public static ModConfigSpec.DoubleValue CLOSING_CARRY;
+    public static ModConfigSpec.DoubleValue MOMENTUM_DAMAGE;
     public static ModConfigSpec.DoubleValue PARRY_STAGGER_SECONDS;
     public static ModConfigSpec.IntValue PARRY_STAGGER_SLOWNESS;
     // advancements
@@ -89,15 +90,17 @@ public final class SeveredConfig {
         AIM_TOLERANCE = b.comment("How far off the crosshair (blocks) still counts as looking at someone.").defineInRange("aimTolerance", 0.3, 0.0, 2.0);
         b.pop();
 
-        b.comment("Closing Line (R during Blur): a straight rush at where the target stood, a Reinforced Strike on arrival.").push("closing_line");
+        b.comment("Closing Line (R during Blur): a straight rush at where the target stood; the first melee hit after arriving carries its speed.").push("closing_line");
         CLOSING_COOLDOWN = b.defineInRange("cooldown", 6.0, 0.0, 600.0);
         CLOSING_SPEED = b.comment("Rush speed, blocks a tick: a 20-block gap in five ticks.").defineInRange("speed", 4.0, 0.5, 9.0);
         CLOSING_GAP = b.comment("Blocks left between you and the target when you stop: melee reach, in front of them.").defineInRange("stopGap", 0.8, 0.0, 3.0);
         CLOSING_RECOVERY = b.comment("After every Closing Line: this long with no Blur speed.").defineInRange("recoverySeconds", 0.6, 0.0, 10.0);
-        CLOSING_STRIKE_WINDOW = b.comment("How long the Strike it earns waits.").defineInRange("strikeWindow", 0.5, 0.05, 10.0);
-        CLOSING_CARRY = b.comment("Knockback the Strike carries per block/tick of the rush's speed, on top of a Severed Strike's own.")
-                .defineInRange("carriedKnockback", 0.2, 0.0, 5.0);
-        PARRY_STAGGER_SECONDS = b.comment("A perfect parry that catches the Strike staggers them this long (a normal stagger is 0.5 s)...")
+        CLOSING_STRIKE_WINDOW = b.comment("Seconds after arriving that the first melee hit is a momentum hit, carrying the rush's speed.")
+                .defineInRange("strikeWindow", 0.5, 0.05, 10.0);
+        MOMENTUM_DAMAGE = b.comment("Extra damage the momentum hit carries per block/tick of the rush's speed (a full rush is 4 blocks/tick).")
+                .defineInRange("momentumDamage", 3.25, 0.0, 100.0);
+        CLOSING_CARRY = b.comment("Knockback the momentum hit carries per block/tick of the rush's speed.").defineInRange("carriedKnockback", 0.2, 0.0, 5.0);
+        PARRY_STAGGER_SECONDS = b.comment("A perfect parry that catches the momentum hit staggers them this long (a normal stagger is 0.5 s)...")
                 .defineInRange("parryStaggerSeconds", 1.5, 0.0, 30.0);
         PARRY_STAGGER_SLOWNESS = b.comment("...at this Slowness amplifier (a normal stagger is 2).").defineInRange("parryStaggerSlowness", 3, 0, 9);
         b.pop();

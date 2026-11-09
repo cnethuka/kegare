@@ -45,9 +45,6 @@ public final class MeleeFxAuthoring {
         out.put(MeleeIds.FX_GUARD_HIT_SELF, MeleeFxAuthoring::guardHitSelf);
         out.put(MeleeIds.FX_STRIKE_IMPACT, MeleeFxAuthoring::strikeImpact);
         out.put(MeleeIds.FX_STRIKE_BURST, MeleeFxAuthoring::strikeBurst);
-        out.put(MeleeIds.FX_STRIKE_IMPACT_PHYSICAL, MeleeFxAuthoring::strikeImpactPhysical);
-        out.put(MeleeIds.FX_FIST_STEAM, MeleeFxAuthoring::fistSteam);
-        out.put(MeleeIds.FX_FIST_STEAM_SELF, MeleeFxAuthoring::fistSteamSelf);
         return out;
     }
 
@@ -256,59 +253,5 @@ public final class MeleeFxAuthoring {
         m.color = new HDRColor(r, g, b, a, 1f);
         m.worldLight = true;
         return m;
-    }
-
-    /** A Severed player's Strike: nothing glows. A burst of dust, with grit thrown out of it. */
-    private static FX strikeImpactPhysical() {
-        ParticleEmitter dust = burstEmitter("dust", 16, 16);
-        ParticleConfig c = dust.config;
-        c.setSimulationSpace(ParticleConfig.Space.World);
-        c.setStartLifetime(range(10, 18));
-        c.setStartSpeed(range(1.5f, 3.6f));
-        c.setStartSize(uniform(range(0.4f, 0.8f)));
-        c.shape.setShape(sphere(0.2f));
-        c.colorOverLifetime.setEnable(true);
-        c.colorOverLifetime.setColor(gradient(0xC0FFFFFF, 0x80E0E0E0, 0x00C0C0C0));
-        grow(c, 0.4f);
-        material(dust, physical(0.62f, 0.55f, 0.46f, 0.95f));
-        ParticleEmitter grit = burstEmitter("grit", 26, 26);
-        ParticleConfig g = grit.config;
-        g.setSimulationSpace(ParticleConfig.Space.World);
-        g.setStartLifetime(range(8, 15));
-        g.setStartSpeed(range(4f, 9f));
-        g.setStartSize(uniform(range(0.04f, 0.08f)));
-        g.shape.setShape(sphere(0.08f));
-        g.renderer.setRenderMode(ParticleRendererSetting.Mode.StretchedBillboard);
-        g.renderer.setLengthScale(2.5f);
-        fadeOut(g, 0xFFFFFFFF, 0x00FFFFFF);
-        material(grit, physical(0.24f, 0.2f, 0.17f, 1f));
-        return fx(dust, grit);
-    }
-
-    private static ParticleEmitter steam(String name, float rate, int max, float sizeMin, float sizeMax, float radius, int peak) {
-        ParticleEmitter e = emitter(name, true, 20);
-        ParticleConfig c = e.config;
-        c.setSimulationSpace(ParticleConfig.Space.World);
-        c.setMaxParticles(max);
-        c.setStartLifetime(range(9, 15));
-        c.setStartSpeed(NumberFunction.constant(0.15f));
-        c.setStartSize(uniform(range(sizeMin, sizeMax)));
-        c.emission.setEmissionRate(NumberFunction.constant(rate));
-        c.shape.setShape(sphere(radius));
-        c.velocityOverLifetime.setEnable(true);
-        c.velocityOverLifetime.setLinear(new NumberFunction3(0, 1f, 0));
-        fadeInOut(c, peak, 0x00FFFFFF);
-        grow(c, 0.45f);
-        material(e, physical(0.93f, 0.93f, 0.91f, 0.95f));
-        return e;
-    }
-
-    /** A Severed player's ready fist: no Malice, so no glow. Steam off an overworked arm, which reads from across a fight and goes dark at night like anything else. */
-    private static FX fistSteam() {
-        return fx(steam("steam", 1.5f, 30, 0.26f, 0.5f, 0.1f, 0xB0FFFFFF));
-    }
-
-    private static FX fistSteamSelf() {
-        return fx(steam("steam", 0.5f, 10, 0.07f, 0.13f, 0.06f, 0x50FFFFFF));
     }
 }

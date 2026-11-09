@@ -35,9 +35,7 @@ public final class MeleeConfig {
     public static ModConfigSpec.DoubleValue SEVERED_GUARD_TECHNIQUE_REDUCTION;
     public static ModConfigSpec.DoubleValue SEVERED_GUARD_MAX;
     public static ModConfigSpec.DoubleValue SEVERED_RECOVERY;
-    public static ModConfigSpec.DoubleValue SEVERED_STRIKE_WINDOW;
-    public static ModConfigSpec.DoubleValue SEVERED_STRIKE_BONUS;
-    public static ModConfigSpec.DoubleValue SEVERED_STRIKE_KNOCKBACK;
+    public static ModConfigSpec.DoubleValue SEVERED_PARRY_STAGGER;
 
     private MeleeConfig() {}
 
@@ -79,7 +77,7 @@ public final class MeleeConfig {
                 .defineInRange("cost", 20.0, 0.0, 100000.0);
         b.pop();
 
-        b.comment("The physical version for Severed players, who trade all their Malice for superhuman abilities: stronger than standard, with no Malice cost, so everything Malice would limit has its own number.").push("severed");
+        b.comment("The physical version for Severed players, who trade all their Malice for superhuman abilities: stronger than standard, with no Malice cost, so everything Malice would limit has its own number. No Reinforced Strike: that's Malice, and they have none.").push("severed");
         SEVERED_DASH_COOLDOWN = b.comment("Seconds between dashes.").defineInRange("dashCooldown", 2.5, 0.0, 600.0);
         SEVERED_DASH_DISTANCE = b.comment("Blocks covered.").defineInRange("dashDistance", 6.0, 0.5, 32.0);
         SEVERED_PERFECT_WINDOW = b.comment("Seconds of perfect parry window.").defineInRange("perfectWindow", 0.3, 0.0, 10.0);
@@ -89,9 +87,8 @@ public final class MeleeConfig {
                 .defineInRange("guardTechniqueReduction", 0.0, 0.0, 1.0);
         SEVERED_GUARD_MAX = b.comment("Seconds a guard can be held, since there's no Malice to run out of.").defineInRange("guardMaxSeconds", 4.0, 0.05, 600.0);
         SEVERED_RECOVERY = b.comment("Seconds after a guard ends before you can parry again.").defineInRange("recovery", 0.75, 0.0, 60.0);
-        SEVERED_STRIKE_WINDOW = b.comment("Seconds to land the hit.").defineInRange("strikeWindow", 1.5, 0.05, 60.0);
-        SEVERED_STRIKE_BONUS = b.comment("Extra damage.").defineInRange("strikeDamageBonus", 0.75, 0.0, 10.0);
-        SEVERED_STRIKE_KNOCKBACK = b.comment("Extra knockback strength, more than the standard Strike's.").defineInRange("strikeKnockback", 0.9, 0.0, 10.0);
+        SEVERED_PARRY_STAGGER = b.comment("Seconds a Severed perfect parry staggers the attacker, longer than a standard one: no Malice to reinforce",
+                "with, so the opening comes from their reflexes. They never earn a Reinforced Strike.").defineInRange("parryStagger", 1.0, 0.0, 30.0);
         b.pop();
 
         b.pop();

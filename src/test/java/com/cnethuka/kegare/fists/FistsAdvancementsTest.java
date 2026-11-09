@@ -106,10 +106,14 @@ class FistsAdvancementsTest {
                 strike(p, q);
                 assertTrue(has(server, p, FistsAdvancements.LOCKED_IN), "three in a row");
 
-                // Severed too.
+                // Malice users only: a Severed player never has a Reinforced Strike to land.
                 ServerPlayer s = player(server, "locked_s", 0);
-                for (int i = 0; i < 3; i++) strike(s, q);
-                assertTrue(has(server, s, FistsAdvancements.LOCKED_IN), "a Severed player earns it");
+                for (int i = 0; i < 3; i++) {
+                    ReinforcedStrike.earn(s);
+                    assertFalse(ReinforcedStrike.isReady(s), "no Strike for the Severed");
+                    hit(s, q);
+                }
+                assertFalse(has(server, s, FistsAdvancements.LOCKED_IN), "so never Locked in");
             } finally {
                 golem.discard();
                 FistsAdvancements.clear();

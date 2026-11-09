@@ -61,17 +61,23 @@ class ImpactTest {
     }
 
     /**
-     * A Severed player has no Malice, so that input is always 0 for them; their hits still reach the same tiers through damage, knockback
-     * and the Strike's full charge, and their Strike lands above a standard one.
+     * A Severed player has no Malice, so that input is always 0 for them, and no Reinforced Strike; their hits still reach the same tiers
+     * through damage and knockback, and Closing Line's momentum hit through the rush it carries (DESIGN §3.27): its speed as damage and
+     * knockback, and as its charge. An iron-sword one reaches the impact frame with no crit.
      */
     @Test
     void severedHitsReachTheSameTiersWithoutMalice() {
-        assertEquals(ImpactTier.LIGHT, tier(1, 0.4, 0, 0, 0), "a punch");
-        assertEquals(ImpactTier.MEDIUM, tier(8, stack(0.4, 0.5), 0, 0, 0), "a sprinting netherite sword hit");
-        assertEquals(ImpactTier.HEAVY, tier(6 * 1.75, stack(0.9, 0.4), 0, 1, 0), "an iron-sword Strike (75% more, 0.9 knockback)");
-        assertEquals(ImpactTier.IMPACT_FRAME, tier(8 * 1.5 * 1.75, stack(0.9, 0.4), 0, 1, 0), "a critical netherite Strike: 21 damage");
-        assertTrue(strength(6 * 1.75, stack(0.9, 0.4), 0, 1, 0) > strength(6 * 1.5, stack(0.6, 0.4), 0, 1, 0),
-                "the same Strike lands harder for a Severed player");
+        double strength = com.cnethuka.kegare.severed.SeveredConfig.MELEE_DAMAGE.getDefault();
+        double speed = com.cnethuka.kegare.severed.SeveredConfig.CLOSING_SPEED.getDefault();
+        double momentum = com.cnethuka.kegare.severed.SeveredConfig.MOMENTUM_DAMAGE.getDefault() * speed;
+        double carried = com.cnethuka.kegare.severed.SeveredConfig.CLOSING_CARRY.getDefault() * speed;
+        assertEquals(ImpactTier.LIGHT, tier(1 * strength, 0.4, 0, 0, 0), "a punch");
+        assertEquals(ImpactTier.MEDIUM, tier(8 * strength, stack(0.4, 0.5), 0, 0, 0), "a sprinting netherite sword hit");
+        assertEquals(ImpactTier.HEAVY, tier(1 * strength + momentum, stack(carried, 0.4), 0, 1, 0), "a bare-fisted momentum hit");
+        assertEquals(ImpactTier.IMPACT_FRAME, tier(6 * strength + momentum, stack(carried, 0.4), 0, 1, 0), "an iron-sword one, with no crit");
+        assertEquals(ImpactTier.IMPACT_FRAME, tier(8 * strength + momentum, stack(carried, 0.4), 0, 1, 0), "a netherite one");
+        assertTrue(strength(6 * strength + momentum, stack(carried, 0.4), 0, 1, 0) > ImpactConfig.IMPACT_FRAME.getDefault() + 0.05,
+                "with room to spare: " + strength(6 * strength + momentum, stack(carried, 0.4), 0, 1, 0));
     }
 
     @Test

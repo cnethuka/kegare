@@ -771,18 +771,17 @@ class MeleeLayerTest {
         assertEquals(0.0, defaultOf("severed.guardTechniqueReduction"), 1e-9);
         assertEquals(4.0, defaultOf("severed.guardMaxSeconds"), 1e-9);
         assertEquals(0.75, defaultOf("severed.recovery"), 1e-9);
-        assertEquals(0.75, defaultOf("severed.strikeDamageBonus"), 1e-9);
+        assertEquals(1.0, defaultOf("severed.parryStagger"), 1e-9);
         assertTrue(defaultOf("severed.dashDistance") > defaultOf("dash.distance"));
         assertTrue(defaultOf("severed.dashCooldown") < defaultOf("dash.cooldown"));
         assertEquals(defaultOf("parry.perfectWindow"), defaultOf("severed.perfectWindow"), 1e-9);
         assertTrue(defaultOf("severed.guardMeleeReduction") > defaultOf("parry.guardMeleeReduction"));
         assertTrue(defaultOf("severed.recovery") < defaultOf("parry.recovery"));
-        assertTrue(defaultOf("severed.strikeDamageBonus") > defaultOf("reinforced_strike.damageBonus"));
-        assertTrue(defaultOf("severed.strikeKnockback") > defaultOf("reinforced_strike.knockback"), "more knockback than standard");
+        assertTrue(defaultOf("severed.parryStagger") > defaultOf("parry.staggerSeconds"), "their parry staggers longer: the opening is their reflexes");
     }
 
     @Test
-    void severedPlayersGetAPhysicalVersionWithNoMalice(MinecraftServer server) throws Exception {
+    void severedPlayersGetAPhysicalVersionWithNoMaliceAndNoStrike(MinecraftServer server) throws Exception {
         TestServer.onServerThread(server, () -> {
             ServerLevel level = world(server);
             ServerPlayer p = player(server, "severed", 0);
@@ -803,9 +802,14 @@ class MeleeLayerTest {
                 assertTrue(state.isGuarding(), "guards with no Malice");
                 advance(server, p, MeleeConfig.ticks(MeleeConfig.SEVERED_PERFECT_WINDOW.get()) - 1);
                 assertEquals(0f, melee(p, attacker, 6f), EPS, "parries in its own window");
-                assertTrue(ReinforcedStrike.isReady(p), "earns a Strike");
-                assertEquals(4f * com.cnethuka.kegare.severed.SeveredConfig.MELEE_DAMAGE.get().floatValue()
-                        * (1f + MeleeConfig.SEVERED_STRIKE_BONUS.get().floatValue()), melee(cow, p, 4f), EPS, "its own bonus, for free, on their Strength");
+                assertFalse(ReinforcedStrike.isReady(p), "no Strike: that's Malice, and they have none");
+                assertEquals(MeleeConfig.ticks(MeleeConfig.SEVERED_PARRY_STAGGER.get()), attacker.getEffect(MobEffects.MOVEMENT_SLOWDOWN).getDuration(),
+                        "the attacker staggered for longer instead");
+                assertTrue(MeleeConfig.SEVERED_PARRY_STAGGER.get() > MeleeConfig.PARRY_STAGGER_SECONDS.get());
+                ReinforcedStrike.earn(p); // what a clean dodge or anything else would do
+                assertFalse(ReinforcedStrike.isReady(p), "never, by any way");
+                assertEquals(4f * com.cnethuka.kegare.severed.SeveredConfig.MELEE_DAMAGE.get().floatValue(), melee(cow, p, 4f), EPS,
+                        "a plain hit on their Strength, no Strike bonus");
 
                 advance(server, p, 1);
                 assertEquals(6f * (1f - MeleeConfig.SEVERED_GUARD_MELEE_REDUCTION.get().floatValue())

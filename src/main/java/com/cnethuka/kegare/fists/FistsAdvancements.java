@@ -24,7 +24,7 @@ import net.neoforged.neoforge.event.entity.living.LivingDamageEvent;
  * from here. None needs a kill or a win.
  * <ul>
  *   <li>{@code locked_in}: three Reinforced Strikes in a row on players, no plain melee hit on a player between them, in one fight.
- *       Anyone (Severed too).</li>
+ *       Malice users only: a Severed player never has a Reinforced Strike (DESIGN §3.27).</li>
  *   <li>{@code 120_percent}, {@code nothing_to_celebrate}, {@code blessed_by_the_sparks}: a chain of 2, 4 and 7 Black Sparks on
  *       players (§3.28's chain; sparks on mobs don't count, and it ends with the zone).</li>
  *   <li>{@code lights_out}: a Black Spark sends a player into a block hard enough for a wall-slam crater (§3.24), whether or not
