@@ -91,6 +91,9 @@ public final class TestServer {
         // Tests of an ability's own behaviour start from a fresh player, who has every ability unlocked here. The tests
         // of the unlocks themselves turn this back on (see WithLocks).
         com.cnethuka.kegare.progression.ProgressionConfig.REQUIRE_REFINEMENT.set(false);
+        // Nobody's born with the Six Eyes by chance (1% a rebirth): a stray bearer pays less for everything and sees what others don't. Tests
+        // that want a bearer give the eyes themselves.
+        com.cnethuka.kegare.config.KegareServerConfig.SIX_EYES_BIRTH_CHANCE.set(0.0);
         // Nor does the world break under them: a test's big hits would leave holes where the next test stands. BattleDamageTest sets
         // each mode itself.
         com.cnethuka.kegare.battledamage.BattleDamageConfig.MODE.set(com.cnethuka.kegare.battledamage.BattleDamageConfig.Mode.COSMETIC);

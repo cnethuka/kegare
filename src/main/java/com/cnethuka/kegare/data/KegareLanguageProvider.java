@@ -359,6 +359,18 @@ public final class KegareLanguageProvider extends LanguageProvider {
         add("gui.kegare.six_eyes.unpin", "Click to unpin");
         add("gui.kegare.six_eyes.pin_label", "%s %s");
         add("gui.kegare.settings.six_eyes_minimap", "Minimap of what the eyes see");
+        add("gui.kegare.settings.six_eyes_read_tags", "Reads shown at once: %s");
+        add("gui.kegare.six_eyes.read.player", "%s · %s " + MALICE);
+        add("gui.kegare.six_eyes.read.no_technique", "No technique");
+        add("gui.kegare.six_eyes.read.mob_hostile", "%s · hostile flow");
+        add("gui.kegare.six_eyes.read.mob_passive", "%s · faint flow");
+        add("gui.kegare.six_eyes.read.charging", "Charging %s %s");
+        add("gui.kegare.six_eyes.read.channelling", "Channelling %s %s");
+        add("gui.kegare.six_eyes.read.channelling_open", "Channelling %s %ss");
+        add("gui.kegare.six_eyes.read.toggles", "On: %s");
+        add("gui.kegare.six_eyes.read.cooldowns", "Cooling: %s");
+        add("gui.kegare.six_eyes.read.cooldown", "%s %ss");
+        add("gui.kegare.six_eyes.read.idle", "Idle");
 
         // Background Tasks (DESIGN §3.31)
         add("gui.kegare.sorcerer.view.background", "Background");

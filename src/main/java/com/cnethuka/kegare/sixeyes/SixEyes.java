@@ -37,5 +37,6 @@ public final class SixEyes {
     public static void init() {
         Sight.init();
         MobIntent.init();
+        Reads.init();
     }
 }

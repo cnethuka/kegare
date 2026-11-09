@@ -702,7 +702,30 @@ public final class SorcererScreen extends Screen {
         y = optionRow(g, 6, "gui.kegare.settings.reveal_reduced_motion", ON_OFF, KegareClientConfig.REVEAL_REDUCED_MOTION.get() ? 0 : 1, x, y, w, mouseX, mouseY);
         if (!com.cnethuka.kegare.sixeyes.client.SightClient.isBearer()) return y;
         // Only for the eyes' bearer (DESIGN §3.32): nobody else has anything to set.
-        return optionRow(g, 9, "gui.kegare.settings.six_eyes_minimap", ON_OFF, KegareClientConfig.SIX_EYES_MINIMAP.get() ? 0 : 1, x, y + 5, w, mouseX, mouseY);
+        y = optionRow(g, 9, "gui.kegare.settings.six_eyes_minimap", ON_OFF, KegareClientConfig.SIX_EYES_MINIMAP.get() ? 0 : 1, x, y + 5, w, mouseX, mouseY) + 5;
+        return sliderlessReadTags(g, x, y, w, mouseX, mouseY);
+    }
+
+    private static final int[] READ_TAG_VALUES = {0, 3, 6, 10, 16};
+
+    /** How many compact Reads show at once: a row of buttons. */
+    private int sliderlessReadTags(GuiGraphics g, int x, int y, int w, int mouseX, int mouseY) {
+        int current = 0, have = KegareClientConfig.SIX_EYES_READ_TAGS.get();
+        for (int i = 0; i < READ_TAG_VALUES.length; i++) if (Math.abs(READ_TAG_VALUES[i] - have) < Math.abs(READ_TAG_VALUES[current] - have)) current = i;
+        y += GuiDraw.wrapped(g, font, Component.translatable("gui.kegare.settings.six_eyes_read_tags", have), x, y, w, 0xFFD8D2E0) + 2;
+        int bx = x;
+        for (int v = 0; v < READ_TAG_VALUES.length; v++) {
+            Component label = Component.literal(String.valueOf(READ_TAG_VALUES[v]));
+            int bw = font.width(label) + 12;
+            int top = Math.max(y, wellY0 + 3), bottom = Math.min(y + BUTTON_H, wellY1 - 3);
+            boolean hover = bottom > top && mouseX >= bx && mouseX < bx + bw && mouseY >= top && mouseY < bottom;
+            boolean selected = v == current;
+            GuiDraw.sprite(g, selected ? BUTTON_LIT : BUTTON, bx, y, bw, BUTTON_H);
+            GuiDraw.centered(g, font, label, bx + bw / 2, y + 4, 1f, selected ? GuiDraw.GOLD : hover ? GuiDraw.WHITE : GuiDraw.GRAY);
+            if (bottom > top) hits.add(new Hit(Kind.OPTION, bx, top, bw, bottom - top, 10 * 10 + v, null, true));
+            bx += bw + 3;
+        }
+        return y + BUTTON_H + 3;
     }
 
     // ---------------------------------------------------------------- the shake slider
@@ -782,6 +805,7 @@ public final class SorcererScreen extends Screen {
             case 7 -> KegareClientConfig.DASH_DOUBLE_TAP_MILLIS.set(DOUBLE_TAP_MILLIS[value]);
             case 8 -> KegareClientConfig.IMPACT_FRAMES.set(value == 0);
             case 9 -> KegareClientConfig.SIX_EYES_MINIMAP.set(value == 0);
+            case 10 -> KegareClientConfig.SIX_EYES_READ_TAGS.set(READ_TAG_VALUES[value]);
             default -> {
                 return;
             }

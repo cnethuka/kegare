@@ -105,7 +105,7 @@ public final class KegareServerConfig {
         b.pop(2);
 
         b.comment("Traits rolled at birth. Unique traits have at most one bearer per world.").push("traits");
-        SIX_EYES_BIRTH_CHANCE = b.comment("Chance (0-1) to be born with six_eyes (unique, needs Malice; no effects yet).")
+        SIX_EYES_BIRTH_CHANCE = b.comment("Chance (0-1) to be born with six_eyes (unique, needs Malice; its numbers are in [six_eyes]).")
                 .defineInRange("sixEyesBirthChance", 0.01, 0.0, 1.0);
         SIX_EYES_TRANSFER_MODE = b.comment(
                         "Who inherits six_eyes when its bearer loses it (killed by a player, released, inactive).",

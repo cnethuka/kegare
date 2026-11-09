@@ -3075,7 +3075,22 @@ for the eye" (§3.30).
   zoglins, piglin brutes, the warden's melee), witches, shulkers, drowned throwing tridents. Bosses are read like anything else; reading
   never moves, slows or disables anything.
 - **Every setting:** the map, outlines, markers, voids and pulses don't change with Reduced or Vanilla: they're what the bearer plays by.
-- **Tests:** `SightTest` (only the bearer is sent anything; a player 25 km off and a void as far, never another dimension, not themself,
+**Reads** (`Reads`, `ReadsPayload`; client `ReadsClient`)
+- Every player and mob in the bearer's field of view gets a compact tag automatically, with no staring needed:
+  a player's innate technique and current Malice ("Rime · 820 Malice", in their Malice color), a mob's kind and flow ("Zombie ·
+  hostile flow", "Cow · faint flow"). The eyes read through a disguise: the real technique.
+- The one nearest the crosshair (the server works it out from where the bearer looks: the nearest within 20 degrees and 96 blocks, walls
+  don't matter) gets full detail under its tag: what they're charging or channelling and how far ("Charging Glacial Lance 60%",
+  "Channelling Reverse Malice Technique 3.2s"), their active toggles and their cooldowns, or "Idle".
+- **Severed:** a Read only ever says "Void" (its payload holds nothing else).
+- **Never shown:** Grade (private, §3.21), traits, Refinement, Insight, and anything §1 keeps secret: the payloads have no field for them.
+- **Readable in a six-player fight:** nearest first, at most the client setting's count (`[six_eyes] readTags`, 6; a Settings row only
+  the bearer sees: 0, 3, 6, 10, 16), the focus always showing; fading with distance (full to 8 blocks, down to 30% at 64); a tag that would
+  cover the crosshair moves up out of its way. Every effects setting.
+- Sent every 4 ticks for players within 96 blocks. Mobs' tags come from what the eyes already see.
+- **Tests:** `ReadsTest` (compact Reads with technique and Malice; a void's says nothing; the focus at the crosshair, toggles and cooldowns
+  in its detail; none when nobody's there; no field for anything secret, and a Special Grade reading the same as a Grade 4).
+- **Tests (perception):** `SightTest` (only the bearer is sent anything; a player 25 km off and a void as far, never another dimension, not themself,
   capacity carried; losing the eyes sends one "forget" and then nothing; loaded mobs with their flow; a cast pulsing once for the bearer
   only, a void never; a creeper, a skeleton and a ghast pulsing once as each begins, and not moved).
 
