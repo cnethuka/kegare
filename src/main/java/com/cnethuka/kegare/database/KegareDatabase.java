@@ -167,6 +167,10 @@ public final class KegareDatabase {
     private volatile boolean down;
     private volatile boolean refusedStart;
     private volatile int schemaVersion;
+    private volatile boolean started;
+    private final Object backOffLock = new Object();
+    /** Players on a server anywhere on the network, as of the last poll. */
+    private volatile int networkLeases;
     /** Exported to the world this run: player files keep Kegare's keys from here on. */
     private volatile boolean exported;
     /** Transactions written, for the tests: an unchanged player must cost none. */
@@ -276,6 +280,7 @@ public final class KegareDatabase {
                 scheduler.scheduleWithFixedDelay(this::heartbeat, config.heartbeatSeconds(), config.heartbeatSeconds(), TimeUnit.SECONDS);
                 scheduler.scheduleWithFixedDelay(this::pollNetworkSafely, config.pollSeconds(), config.pollSeconds(), TimeUnit.SECONDS);
                 Kegare.LOGGER.info("Kegare's storage is on Postgres, as {}, schema version {}", config.serverId(), schemaVersion);
+                started = true;
                 markUp();
                 ready.complete(null);
                 return;
@@ -328,9 +333,20 @@ public final class KegareDatabase {
         host.tellOps("message.kegare.db.down");
     }
 
+    /** The writer's wait between tries, cut short the moment anything sees the database back. */
+    private void backOff(long millis) throws InterruptedException {
+        long until = System.currentTimeMillis() + millis;
+        synchronized (backOffLock) {
+            for (long left = millis; down && left > 0; left = until - System.currentTimeMillis()) backOffLock.wait(left);
+        }
+    }
+
     private void markUp() {
         if (!down) return;
         down = false;
+        synchronized (backOffLock) {
+            backOffLock.notifyAll();
+        }
         Kegare.LOGGER.info("Kegare's database is back. Queued saves are going in.");
         host.tellOps("message.kegare.db.up");
     }
@@ -347,24 +363,12 @@ public final class KegareDatabase {
         return schemaVersion;
     }
 
-    /** How it's doing now: this really asks the database. Off the server thread. */
-    public CompletableFuture<Status> status() {
-        return CompletableFuture.supplyAsync(() -> {
-            int everywhere = -1;
-            try {
-                awaitReady();
-                everywhere = pool.transaction(connection -> {
-                    try (PreparedStatement select = connection.prepareStatement("SELECT count(*) FROM kegare.player_lease"); ResultSet result = select.executeQuery()) {
-                        result.next();
-                        return result.getInt(1);
-                    }
-                });
-                markUp();
-            } catch (SQLException | RuntimeException e) {
-                markDown(e);
-            }
-            return new Status(config.serverId(), everywhere >= 0, schemaVersion, queue.size(), unwrittenStats.get(), leases.size(), everywhere);
-        }, io);
+    /**
+     * How it's doing, as of the last time it asked (every {@code pollSeconds}). Answers at once from memory, so it never waits and works over RCON, which only
+     * hears what a command says before it returns.
+     */
+    public Status status() {
+        return new Status(config.serverId(), started && !down, schemaVersion, queue.size(), unwrittenStats.get(), leases.size(), networkLeases);
     }
 
     Host host() {
@@ -585,7 +589,7 @@ public final class KegareDatabase {
                     }
                 } catch (SQLException | RuntimeException e) {
                     markDown(e);
-                    Thread.sleep(backoff);
+                    backOff(backoff);
                     backoff = Math.min(MAX_BACKOFF_MILLIS, backoff * 2);
                     continue;
                 }
@@ -599,7 +603,7 @@ public final class KegareDatabase {
                         queue.awaitWork(250);
                     } catch (SQLException | RuntimeException e) {
                         markDown(e);
-                        Thread.sleep(backoff);
+                        backOff(backoff);
                         backoff = Math.min(MAX_BACKOFF_MILLIS, backoff * 2);
                     }
                     continue;
@@ -611,7 +615,7 @@ public final class KegareDatabase {
                 } catch (SQLException | RuntimeException e) {
                     queue.putBack(next.getKey(), next.getValue());
                     markDown(e);
-                    Thread.sleep(backoff);
+                    backOff(backoff);
                     backoff = Math.min(MAX_BACKOFF_MILLIS, backoff * 2);
                 }
             } catch (InterruptedException e) {
@@ -739,6 +743,7 @@ public final class KegareDatabase {
         List<NetworkTraits.Event> events = traits.newEvents(pool);
         long changesWhenRead = traits.changeCount();
         NetworkTraits.Snapshot snapshot = traits.read(pool);
+        networkLeases = snapshot.online().size();
         NetworkTraits.Applier applier = applier();
         host.onServerThread(() -> {
             if (traits.applyIfUnchanged(snapshot, changesWhenRead)) applier.refreshed();

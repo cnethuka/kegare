@@ -796,15 +796,15 @@ public final class KegareLanguageProvider extends LanguageProvider {
         add("commands.kegare.db.status.queue", "Queue: saves for %s players, %s stat events.");
         add("commands.kegare.db.status.leases", "Leases: %s players on this server, %s across the network.");
         add("commands.kegare.db.status.leases_here", "Leases: %s players on this server.");
-        add("commands.kegare.db.migrate.started", "Copying this world into the database...");
-        add("commands.kegare.db.migrate.started_dry", "Dry run: reading this world, and writing nothing...");
+        add("commands.kegare.db.migrate.started", "Copying this world into the database. The result goes to you and the server's log.");
+        add("commands.kegare.db.migrate.started_dry", "Dry run: reading this world and writing nothing. The result goes to you and the server's log.");
         add("commands.kegare.db.migrate.players", "Players: %s files read, %s imported (%s rows), %s already in the database, %s with no Kegare data.");
         add("commands.kegare.db.migrate.players_dry", "Players: %s files read, %s would be imported (%s rows), %s already in the database, %s with no Kegare data.");
         add("commands.kegare.db.migrate.traits", "Unique traits: added %s bearers, %s pending, %s revocations and %s last-seen times. The world's copy stays as it was.");
         add("commands.kegare.db.migrate.traits_dry", "Unique traits: would add %s bearers, %s pending, %s revocations and %s last-seen times.");
         add("commands.kegare.db.migrate.conflicts", "%s bearers in this world aren't who the database has. The database's stand.");
         add("commands.kegare.db.migrate.failed", "%s files couldn't be read, and were left alone: %s");
-        add("commands.kegare.db.export.started", "Copying the database into this world...");
+        add("commands.kegare.db.export.started", "Copying the database into this world. The result goes to you and the server's log.");
         add("commands.kegare.db.export.players", "Players: %s in the database, %s files written, %s new files at spawn for players new to this world, %s online who go in at their next save.");
         add("commands.kegare.db.export.traits", "Unique traits: %s bearers, %s pending and %s players' revocations written to the world.");
         add("commands.kegare.db.export.failed", "%s players' files couldn't be written: %s");

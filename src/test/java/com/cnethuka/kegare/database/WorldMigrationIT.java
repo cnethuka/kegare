@@ -248,16 +248,16 @@ class WorldMigrationIT {
             try {
                 UUID player = UUID.randomUUID();
                 assertTrue(database.login(player).get().admitted(), "setup");
-                KegareDatabase.Status status = database.status().get();
+                SavingIT.await("the next poll to count the lease", () -> database.status().leasesEverywhere() == 1);
+                KegareDatabase.Status status = database.status();
                 assertTrue(status.connected());
                 assertEquals(Schema.current(), status.schemaVersion());
                 assertEquals("status", status.serverId());
                 assertEquals(1, status.leasesHere());
                 assertEquals(1, status.leasesEverywhere());
                 proxy.down();
-                KegareDatabase.Status down = database.status().get();
-                assertFalse(down.connected(), "it really asks");
-                assertEquals(1, down.leasesHere(), "and still knows what it holds");
+                SavingIT.await("it to notice", () -> !database.status().connected());
+                assertEquals(1, database.status().leasesHere(), "it still knows what it holds");
                 proxy.up();
             } finally {
                 database.stop();

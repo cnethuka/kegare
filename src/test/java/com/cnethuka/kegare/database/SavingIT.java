@@ -193,6 +193,38 @@ class SavingIT {
     }
 
     @Test
+    void aLongOutageCatchesUpAsSoonAsItsBack(MinecraftServer server) throws Exception {
+        onServer(server, () -> {
+            try (ToggleProxy proxy = new ToggleProxy()) {
+                KegareDatabase database = started(server, TestDb.quickStop("a", TestDb.urlVia(proxy.port())), new TestHost(server, null));
+                try {
+                    ServerPlayer player = TestServer.damageable(server, "save_long_out");
+                    join(database, player);
+                    BirthService.rebirth(player, OptionalInt.of(100));
+                    database.snapshot(player);
+                    await("the first save", () -> database.queueSize() == 0 && database.writes.get() >= 1);
+
+                    proxy.down();
+                    MaliceService.adminBirth(player, 321);
+                    database.snapshot(player);
+                    Thread.sleep(16_000); // the writer's backoff is up to 16 s by now
+                    proxy.up();
+                    long back = System.nanoTime();
+                    await("it catching up", () -> database.queueSize() == 0 && !database.isDown());
+                    long took = (System.nanoTime() - back) / 1_000_000;
+                    assertTrue(took < 6_000, "the writer doesn't sleep out its backoff once the database is back: " + took + " ms");
+                    try (ConnectionPool direct = new ConnectionPool(TestDb.config("check"))) {
+                        assertEquals(321, capacityInDatabase(direct, player.getUUID()));
+                    }
+                } finally {
+                    proxy.up();
+                    database.stop();
+                }
+            }
+        });
+    }
+
+    @Test
     void anOutageQueuesKeepsTheNewestWarnsOnceAndCatchesUp(MinecraftServer server) throws Exception {
         onServer(server, () -> {
             try (ToggleProxy proxy = new ToggleProxy()) {
