@@ -1374,7 +1374,7 @@ negative is positive energy, which is why it heals, and why its colors are white
   "malice" or "energy"; "negative"; "multiply", "multiplying" or "multiplied"; "positive". Extra text is always fine; one message or
   several, in their own words. Case-insensitive, with small typos allowed: edit distance 2 on a typed word of 6+ letters, 1 on a
   shorter one (so "enemy" isn't "energy"). Sent while in a fight with a living player within 16 blocks: a hit between the two, either
-  way, within 10 s (`LivingDamageEvent.Post`, projectiles credited to their owner). Awarded at once on the message that completes it.
+  way, within 10 s (`LivingDamageEvent.Post`, projectiles credited to their owner). Awarded at once on the message that completes it (read at the end of the next server tick, so that message's own broadcast goes first and the announcement follows it in chat).
   "so malice is negative energy right" then "you multiply it against itself and it turns positive" passes; "lol rmt" never does.
   `AreTheyHighTest`: the display; two messages, awarded on the second; one message with typos, caps and extra text; never "lol rmt",
   too few words, no fight, a hit over 10 s ago, the other past 16 blocks, more than 20 s between the halves, half from someone else,
@@ -2949,8 +2949,8 @@ ability on the bar, but it takes no bar slot and leaves the hands free.
 - **Burnout:** while it runs, every Burnout applied to you lasts ×`burnoutFactor` (0.75), through `Burnout.Modifier` (§3.25):
   Standstill's now, Dominions' later.
 - **Who can tell:** nobody, except a Six Eyes bearer, who sees a faint green shimmer on anyone running it: small soft glints
-  (`entity/aura_shimmer.png`, smooth) coming and going over the body and drifting up, in RMT's green; Reduced half as many, Vanilla a
-  few specks of green dust. Sent per viewer (`AuraPayload.SHIMMER`, only to Six Eyes viewers, `AuraTell.addShimmer`).
+  (`entity/aura_shimmer.png`, smooth, 0.11 to 0.19 blocks, one every 2 ticks) coming and going over the body and drifting up, in
+  RMT's green; Reduced half as many, Vanilla a few specks of green dust. Sent per viewer (`AuraPayload.SHIMMER`, only to Six Eyes viewers, `AuraTell.addShimmer`).
 - **Hooks, not built:** `BackgroundRmt.addHook` is told every tick it runs, for the Six Eyes step (holding Strain back, easing the
   overload) and later techniques.
 - **Icon:** RMT's green cross inside the loop of something left running.

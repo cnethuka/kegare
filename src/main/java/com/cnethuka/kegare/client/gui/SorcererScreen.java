@@ -1054,6 +1054,9 @@ public final class SorcererScreen extends Screen {
                 GuiDraw.text(g, font, Component.translatable("gui.kegare.background.empty"), sx + 4, y + 4, 0.75f, 0xFF6B6276);
             } else {
                 GuiDraw.sprite(g, task.icon(), sx + 3, y + 3, 16, 16);
+                g.enableScissor(sx + 21, y + 1, sx + sw - 9, y + 20); // (nested in the box's own: the name stays inside the slot)
+                GuiDraw.wrapped(g, font, task.name(), sx + 21, y + 3, sw - 30, GuiDraw.WHITE);
+                g.disableScissor();
                 Component status = Component.translatable(!slot.on() ? "gui.kegare.background.off" : slot.paused() ? "gui.kegare.background.paused"
                         : "gui.kegare.background.running");
                 int color = !slot.on() ? 0xFF6B6276 : slot.paused() ? GuiDraw.GOLD : 0xFF5CFF7A;

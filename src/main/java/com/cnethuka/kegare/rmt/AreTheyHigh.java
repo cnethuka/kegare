@@ -42,6 +42,9 @@ public final class AreTheyHigh {
     private record Message(long tick, String text) {}
 
     private static final Map<UUID, Deque<Message>> SAID = new HashMap<>();
+    private record Pending(ServerPlayer player, String text, int tick) {}
+    /** Messages said, waiting for the end of the tick after (so their broadcast goes first). */
+    private static final List<Pending> PENDING = new ArrayList<>();
     /** When each player last hit each other player: attacker → victim → game tick. */
     private static final Map<UUID, Map<UUID, Long>> HITS = new HashMap<>();
 
@@ -52,8 +55,18 @@ public final class AreTheyHigh {
         NeoForge.EVENT_BUS.addListener(EventPriority.LOWEST, (ServerChatEvent e) -> {
             ServerPlayer player = e.getPlayer();
             String text = e.getRawText();
-            if (player.server.isSameThread()) onChat(player, text);
-            else player.server.execute(() -> onChat(player, text));
+            // Read at the end of the next server tick, not here: the message is broadcast first (its broadcast is itself queued after
+            // this event), so the announcement follows the line that earned it, 50 ms later at most.
+            synchronized (PENDING) {
+                PENDING.add(new Pending(player, text, player.server.getTickCount() + 1));
+            }
+        });
+        NeoForge.EVENT_BUS.addListener((net.neoforged.neoforge.event.tick.ServerTickEvent.Post e) -> {
+            List<Pending> due = new ArrayList<>();
+            synchronized (PENDING) {
+                PENDING.removeIf(p -> p.tick() <= e.getServer().getTickCount() && due.add(p));
+            }
+            for (Pending p : due) if (!p.player().isRemoved()) onChat(p.player(), p.text());
         });
         NeoForge.EVENT_BUS.addListener((LivingDamageEvent.Post e) -> {
             if (e.getEntity() instanceof ServerPlayer victim && attacker(e.getSource()) instanceof ServerPlayer attacker && attacker != victim) {
@@ -160,6 +173,9 @@ public final class AreTheyHigh {
     }
 
     public static void clear() {
+        synchronized (PENDING) {
+            PENDING.clear();
+        }
         SAID.clear();
         HITS.clear();
     }

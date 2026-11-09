@@ -247,7 +247,7 @@ public final class AuraClient {
      * and drifting up. Reduced: half as many. Vanilla: a few specks of green dust.
      */
     private static void shimmer(ClientLevel level, Player player, Entry entry) {
-        int every = quality() == VfxQuality.FULL ? 3 : quality() == VfxQuality.REDUCED ? 6 : 5;
+        int every = quality() == VfxQuality.FULL ? 2 : quality() == VfxQuality.REDUCED ? 4 : 4;
         if (++entry.shimmerClock < every) return;
         entry.shimmerClock = 0;
         double w = player.getBbWidth() * 0.6;
@@ -257,8 +257,8 @@ public final class AuraClient {
             level.addParticle(new DustParticleOptions(new Vector3f(0.31f, 0.85f, 0.45f), 0.5f), x, y, z, 0, 0.2, 0);
             return;
         }
-        Wisp glint = new Wisp(new Vec3(x, y, z), new Vec3(0, 0.01 + RANDOM.nextDouble() * 0.01, 0), SHIMMER_RGB, 10 + RANDOM.nextInt(8),
-                0.06f + RANDOM.nextFloat() * 0.05f, 0.55f);
+        Wisp glint = new Wisp(new Vec3(x, y, z), new Vec3(0, 0.01 + RANDOM.nextDouble() * 0.01, 0), SHIMMER_RGB, 12 + RANDOM.nextInt(8),
+                0.11f + RANDOM.nextFloat() * 0.08f, 0.8f);
         glint.glint = true;
         WISPS.add(glint);
     }
