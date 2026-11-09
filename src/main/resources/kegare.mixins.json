@@ -9,7 +9,8 @@
     "TrackedEntityAccessor",
     "PlayerExhaustionMixin",
     "FoodDataMixin",
-    "ServerTeleportMixin"
+    "ServerTeleportMixin",
+    "PlayerAttackMixin"
   ],
   "client": [
     "client.PlayerInfoMixin",

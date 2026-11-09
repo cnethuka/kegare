@@ -50,6 +50,8 @@ final class TimeEvents {
         NeoForge.EVENT_BUS.addListener(TimeStops::onImpact);
         // First: what reaches the frozen is held at its full amount, and nothing else sees it until it lands.
         NeoForge.EVENT_BUS.addListener(EventPriority.HIGHEST, TimeStops::onIncomingDamage);
+        NeoForge.EVENT_BUS.addListener(EventPriority.HIGHEST, TimeStops::onKnockBack);
+        NeoForge.EVENT_BUS.addListener(TimeStops::onEnderTeleport);
 
         // A frozen player does nothing.
         NeoForge.EVENT_BUS.addListener((AttackEntityEvent e) -> refuse(e.getEntity(), e));

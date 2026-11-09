@@ -2279,6 +2279,20 @@ breaks the record. Runtime only.
   everything else apply once, to the sum), dealt as the biggest single source of it, at most `damageCap` (40), so the Impact System
   and battle damage see one blow. The hurt cooldown is cleared before and after it, so the projectiles hanging round them land
   whole right after.
+- **Every hit on something frozen counts** toward its held hit. A player's swing at it is held, so `hurt()` says no, and vanilla's
+  `Player.attack` would take that for a miss: no sweep (its hits on anything else frozen would be lost), no crit, the "no damage" sound, no
+  wear on the weapon. `mixin/PlayerAttackMixin` counts a held hit as landed, so the swing does all of that and the sweep's hits on
+  the frozen beside it are held too. A full iron-sword swing across two frozen zombies lands 5.9 on the one hit and 0.94 on
+  the one swept. Full charge, a partial swing and a crit all add up on a zombie, skeleton, spider, iron golem, wolf,
+  enderman and creeper alike.
+- **When time resumes** everything that was frozen has its hurt cooldown cleared: otherwise a mob hit just before the cast would keep the one that
+  hit gave it, stand still with it, and throw away the first swings after the resume.
+- **Nothing frozen acts.** Its tick doesn't run (no blow, no arrow, no swell, no leap), nothing pushes it (knockback on the frozen
+  is cancelled; the held hit brings its own), it never teleports (an enderman hit by the caster's still-flying arrow), and it hurts
+  nobody: damage whose attacker is frozen is dropped (the thorns on its armour, a slime's or magma cube's touch, a guardian's
+  spikes, all of which reach the caster without the mob ticking). Six provoked mobs (zombie, spider, skeleton, iron golem,
+  wolf, enderman) deal nothing during the stop; a zombie and a spider attacking when it was cast hit again 0.45 and 0.6 s after
+  the resume, their own attack cooldown carrying on where it stopped.
 - **Immune** players move, attack, cast and see in colour; damage between them and the caster lands at once.
 - **Ends early** if the caster dies, logs out or changes dimension (what was held lands then). A frozen player who logs out or is
   sent to another level is let go and takes what was held for them right then, before they're gone (on a trip, before it starts),
@@ -2364,7 +2378,10 @@ Burnout or RMT; Decelerate's hit, the event guarding its cooldown slow, a boss; 
 restored, on leaving and at its end; Standstill freezing players and mobs but not the caster, the immune or a boss, refusing a
 second stop, a thrown projectile's flight then hang, the held damage landing as one hit, its cap, Burnout, the Insight hook, a
 frozen player logging out or sent to another level taking the held hit as they go, even when it kills them, one who dies having
-nothing left to land, and the caster dying). `TimeAdvancementsTest` (each loads hidden and silent, only a holder earns them, and
+nothing left to land, and the caster dying). `StandstillHitsTest` (real swings through `Player.attack` on seven kinds of mob: full,
+partial and a crit all held and landed; a sweep's hit on the frozen beside it held; a mob hit just before the cast taking the first
+swing after the resume in full; a frozen mob's blow, thorns and a magma cube's touch never hurting the caster, nothing frozen pushed,
+an enderman never teleporting). `TimeAdvancementsTest` (each loads hidden and silent, only a holder earns them, and
 each is earned the way it says, a mob not counting where a player is needed). `TimeVisualsTest` (PAL loads every animation the code plays, each has one
 first-person rule; the mark's hour marks run down and its hands are painted where they stood). `TechniqueUnlocksTest` checks its
 unlock levels.

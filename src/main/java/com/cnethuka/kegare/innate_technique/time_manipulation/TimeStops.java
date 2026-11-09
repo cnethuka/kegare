@@ -33,6 +33,7 @@ import net.neoforged.neoforge.common.util.FakePlayer;
 import net.neoforged.neoforge.event.entity.EntityJoinLevelEvent;
 import net.neoforged.neoforge.event.entity.ProjectileImpactEvent;
 import net.neoforged.neoforge.event.entity.living.LivingIncomingDamageEvent;
+import net.neoforged.neoforge.event.entity.living.LivingKnockBackEvent;
 import net.neoforged.neoforge.event.tick.EntityTickEvent;
 import net.neoforged.neoforge.network.PacketDistributor;
 
@@ -120,6 +121,8 @@ public final class TimeStops {
     private static final Map<UUID, Integer> VOLLEY_HITS = new HashMap<>();
     /** The one being dealt their held hit right now: that hit is let through, not held again. */
     @Nullable private static LivingEntity landing;
+    /** The last one whose hit was just held, for {@link #heldJustNow} (a player's swing reads it as soon as {@code hurt} returns). */
+    @Nullable private static Entity heldNow;
     /** Grayscale is asked for this much longer than the stop, so it never fades out early: the end snaps it off. */
     private static final int GRAY_SLACK = 40;
 
@@ -157,6 +160,10 @@ public final class TimeStops {
     /** Time resumes: everyone let go, every held hit dealt, the caster burnt out. {@code early}: the caster died, left, or went. */
     static void end(Stop stop, boolean early) {
         if (STOPS.get(stop.level.dimension()) != stop) return;
+        // Everything frozen in it, while the stop still says so: its hurt cooldown was stopped with it (a hit just before the cast
+        // left one), and with no time passed for it, it would throw away the first swings after the resume.
+        List<LivingEntity> wasFrozen = stop.level.getEntitiesOfClass(LivingEntity.class, new AABB(stop.centre, stop.centre).inflate(stop.radius),
+                stop::frozen);
         STOPS.remove(stop.level.dimension());
         long now = stop.level.getGameTime();
         PacketDistributor.sendToPlayersInDimension(stop.level, TimeNet.Stop.none());
@@ -165,6 +172,7 @@ public final class TimeStops {
         stop.level.playSound(null, stop.centre.x, stop.centre.y, stop.centre.z, KegareSounds.TIME_RESUME.value(), SoundSource.PLAYERS, volume, 1f);
         // Everything lands at once.
         for (Map.Entry<LivingEntity, Queued> e : stop.queued.entrySet()) land(e.getKey(), e.getValue());
+        for (LivingEntity e : wasFrozen) e.invulnerableTime = 0;
         for (ServerPlayer p : stop.held.keySet()) if (p.isAlive() && !p.isRemoved()) InsightHooks.survivedStandstill(p);
         for (UUID owner : stop.hung.values()) VOLLEY_HITS.remove(owner); // each stop's volley counts on its own
         for (Map.Entry<Entity, UUID> e : stop.hung.entrySet()) {
@@ -315,8 +323,15 @@ public final class TimeStops {
         LivingEntity victim = event.getEntity();
         if (victim.level().isClientSide) return;
         Stop stop = STOPS.get(victim.level().dimension());
-        if (stop == null || victim == landing || !stop.frozen(victim)) return;
+        if (stop == null || victim == landing) return;
         DamageSource source = event.getSource();
+        // Something frozen never hurts anyone: no thorns off its armour, no touch of a slime, no guardian's spikes.
+        Entity by = source.getEntity() != null ? source.getEntity() : source.getDirectEntity();
+        if (by != null && by != victim && stop.frozen(by) && !source.is(DamageTypeTags.BYPASSES_INVULNERABILITY)) {
+            event.setCanceled(true);
+            return;
+        }
+        if (!stop.frozen(victim)) return;
         if (source.is(DamageTypeTags.BYPASSES_INVULNERABILITY)) return;
         event.setCanceled(true);
         if (source.getEntity() == null && source.getDirectEntity() == null) return;
@@ -325,10 +340,33 @@ public final class TimeStops {
         Queued q = stop.queued.computeIfAbsent(victim, v -> new Queued());
         q.total += amount;
         q.hits++;
+        heldNow = victim;
         if (q.source == null || amount > q.biggest) {
             q.biggest = amount;
             q.source = source;
         }
+    }
+
+    /**
+     * Whether the hit just dealt to {@code target} was held for the resume (and forgets it). A player's swing reads it right after
+     * {@code hurt} returns ({@code mixin/PlayerAttackMixin}): a held hit landed as far as the swing goes, so its sweep, crit, sounds and
+     * the weapon's wear all happen, and the sweep's hits on anything frozen are held too.
+     */
+    public static boolean heldJustNow(@Nullable Entity target) {
+        boolean held = target != null && heldNow == target;
+        heldNow = null;
+        return held;
+    }
+
+    /** Nothing frozen is pushed: a swing's knockback (or a sweep's) waits for nothing; the held hit brings its own when it lands. */
+    static void onKnockBack(LivingKnockBackEvent event) {
+        LivingEntity e = event.getEntity();
+        if (!e.level().isClientSide && e != landing && frozen(e)) event.setCanceled(true);
+    }
+
+    /** Nothing frozen moves itself: an enderman hit by one of the caster's still-flying projectiles stays where it stands. */
+    static void onEnderTeleport(net.neoforged.neoforge.event.entity.EntityTeleportEvent.EnderEntity event) {
+        if (!event.getEntity().level().isClientSide && frozen(event.getEntity())) event.setCanceled(true);
     }
 
     /** Pre-Planned: a projectile that hung in a stop hitting a player once time runs again. */
