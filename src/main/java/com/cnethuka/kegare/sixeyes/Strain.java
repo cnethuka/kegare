@@ -55,7 +55,10 @@ public final class Strain {
 
     static void init() {
         NeoForge.EVENT_BUS.addListener((ServerTickEvent.Post e) -> {
-            for (ServerPlayer p : SixEyes.bearers(e.getServer())) tick(p);
+            for (ServerPlayer p : SixEyes.bearers(e.getServer())) {
+                tick(p);
+                Attunement.tick(p);
+            }
             releaseHolds(e.getServer());
         });
         BackgroundRmt.addHook(p -> HELD_BACK.put(p.getUUID(), p.level().getGameTime()));

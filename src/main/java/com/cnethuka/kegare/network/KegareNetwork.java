@@ -32,6 +32,8 @@ public final class KegareNetwork {
         registrar.playToServer(SorcererRequestPayload.TYPE, SorcererRequestPayload.STREAM_CODEC, SorcererRequestPayload::handle);
         registrar.playToServer(TalismanConfirmPayload.TYPE, TalismanConfirmPayload.STREAM_CODEC, TalismanConfirmPayload::handle);
         registrar.playToServer(LoadoutEditPayload.TYPE, LoadoutEditPayload.STREAM_CODEC, LoadoutEditPayload::handle);
+        registrar.playToServer(com.cnethuka.kegare.sixeyes.Attunement.PinPayload.TYPE, com.cnethuka.kegare.sixeyes.Attunement.PinPayload.STREAM_CODEC,
+                com.cnethuka.kegare.sixeyes.Attunement.PinPayload::handle);
         registrar.playToServer(com.cnethuka.kegare.backgroundtask.BackgroundActionPayload.TYPE,
                 com.cnethuka.kegare.backgroundtask.BackgroundActionPayload.STREAM_CODEC, com.cnethuka.kegare.backgroundtask.BackgroundActionPayload::handle);
         registrar.playToServer(com.cnethuka.kegare.melee.MeleeIntentPayload.TYPE, com.cnethuka.kegare.melee.MeleeIntentPayload.STREAM_CODEC,

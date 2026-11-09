@@ -24,12 +24,50 @@ public final class MaliceService {
         return get(player).isSevered();
     }
 
-    public static boolean canAfford(Player player, double amount) {
-        return amount <= 0 || get(player).current() + EPSILON >= amount;
+    /** Changes what a cost really takes from a player (Six Eyes' near-zero waste, DESIGN §3.32). */
+    @FunctionalInterface
+    public interface CostModifier {
+        double modify(ServerPlayer player, double amount);
     }
 
-    /** Spends {@code amount} if the reserve covers it. Returns false (and spends nothing) otherwise. */
+    private static final java.util.List<CostModifier> COST_MODIFIERS = new java.util.concurrent.CopyOnWriteArrayList<>();
+
+    public static void addCostModifier(CostModifier modifier) {
+        COST_MODIFIERS.add(modifier);
+    }
+
+    /** What a cost of {@code amount} really takes from this player. */
+    public static double costOf(Player player, double amount) {
+        if (amount <= 0 || !(player instanceof ServerPlayer server)) return amount;
+        for (CostModifier modifier : COST_MODIFIERS) amount = modifier.modify(server, amount);
+        return amount;
+    }
+
+    /** What a cast's cost really takes: every cast costs at least 1 Malice, however little it wastes (a cast that costs nothing stays free). */
+    public static double castCostOf(Player player, double amount) {
+        return amount <= 0 ? amount : Math.max(Math.min(1.0, amount), costOf(player, amount));
+    }
+
+    public static boolean canAfford(Player player, double amount) {
+        return amount <= 0 || get(player).current() + EPSILON >= costOf(player, amount);
+    }
+
+    /** Can they pay a cast of this cost? */
+    public static boolean canAffordCast(Player player, double amount) {
+        return amount <= 0 || get(player).current() + EPSILON >= castCostOf(player, amount);
+    }
+
+    /** Spends {@code amount} (as {@link #costOf} says) if the reserve covers it. Returns false (and spends nothing) otherwise. */
     public static boolean trySpend(ServerPlayer player, double amount) {
+        return spendExactly(player, costOf(player, amount));
+    }
+
+    /** Spends a cast's cost (as {@link #castCostOf} says): at least 1. */
+    public static boolean trySpendCast(ServerPlayer player, double amount) {
+        return spendExactly(player, castCostOf(player, amount));
+    }
+
+    private static boolean spendExactly(ServerPlayer player, double amount) {
         if (amount <= 0) return true;
         MaliceData malice = get(player);
         if (malice.current() + EPSILON < amount) return false;

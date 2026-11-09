@@ -428,6 +428,7 @@ Every command reads `/kegare <system> <action> [player] [value]`.
 | `/kegare debug rmt fatigue <player> <amount>` | Set how much injuries take off a player's Reverse Malice Technique output (0 to 1, §3.17) |
 | `/kegare debug brain <player> <value>` | Set the brain meter, 0 to 100 (§3.17) |
 | `/kegare debug sixeyes strain <player> <value>` | Set a player's Strain, 0 to 100 (§3.32) |
+| `/kegare debug sixeyes attunement <player> <value>` | Set a player's Attunement (§3.32) |
 | `/kegare debug rmt healed <player> <amount>` | Set how much a player has healed with their own RMT; Background RMT unlocks at 500 (§3.31) |
 | `/kegare debug rmt others unlock\|lock <player>` | Teach or take away healing others (RMT's special) without its moment: the Unlocks entry `kegare:rmt_heal_others` |
 | `/kegare debug rmt moment <player> <target>` | Force the moment now: the target glows for the player for `momentSeconds`, and healing them teaches it (if the player is eligible; it says if not) |
@@ -3127,6 +3128,31 @@ for the eye" (§3.30).
   seen and the same Reads covered; Background RMT holding it back; channelling lowering it; the edge only uncovered and only against a Special
   Grade, lost at the top until it cools, the later hook; the risk growing uncovered at the top, not covered, lowered by channelling; a collapse
   stunning, holding movement and hurting through armour, and letting go; Strain wiped with the eyes).
+**Efficiency, Attunement and RMT** (`Efficiency`, `Attunement`)
+- **Attunement** grows by using the eyes: `perFightSecond` (1) in a fight while holding them, `perRead` (3) for a full-detail Read of someone (each
+  player at most once a minute; a void gives nothing), `perPin` (1) for a pin (each one at most once a minute; the server checks it's real). Saved;
+  fully reset when the eyes pass on or are lost, so a new bearer starts out clumsy. Shown privately on the Sorcerer screen's Progress view.
+- **Efficiency:** every Malice cost the bearer pays (casts, upkeep, toggles, Background Tasks, Reinforcement, RMT) is multiplied by 1 / (1 + x), with
+  x = `base` (0.25) + `grade` (0.35) x Grade step (0 at Grade 4, 6 at Special Grade) + `attunement` (0.8) x ln(1 + Attunement / `attunementScale` (200))
+  (`MaliceService.addCostModifier`, in the one place Malice is spent). Each step adds less than the last, so it nears free and never gets there, with
+  no cap in config (the weights are). Every cast still costs at least 1 Malice (`castCostOf`; upkeep is a little a tick, so it has no floor). Eyewear
+  and Strain never lower it. What a cast is worth is counted at its full price: spending less to do the same never makes a hit weaker (§3.23, §3.21).
+  The ability cards show what it really costs them.
+
+  | | x | Costs | A 40-Malice cast | RMT output |
+  |---|---|---|---|---|
+  | New bearer, Grade 4, Attunement 0 | 0.25 | x0.80 (20% off) | 32 | x1.04 |
+  | Grade 2, Attunement 300 (about 5 minutes of fighting) | 2.03 | x0.33 (67% off) | 13.2 | x1.30 |
+  | Special Grade, Attunement 20,000 (about 5.5 hours of fighting) | 6.04 | x0.14 (86% off) | 5.7 | x1.91 |
+  | Special Grade, Attunement 1,000,000 | 9.16 | x0.10 (90% off) | 3.9 | x2.37 |
+
+- **RMT output:** x (1 + `rmtOutputWeight` (0.15) x x), the same x, through `RmtOutput.addModifier`, past the normal 1.6x with no fixed cap: a Special
+  Grade at Attunement 20,000 and top Peak Refinement heals at about 3.05x. Injury fatigue still applies (it's taken before the modifier).
+- `/kegare debug sixeyes attunement <player> <value>` sets it; `/kegare info` shows Strain, Attunement, the cost factor and the RMT factor.
+- **Tests:** `EfficiencyTest` (each Grade and each step of Attunement adding less than the last, never free; a start cost, a toggle's upkeep, RMT's start
+  and upkeep and a Background Task's drain all lowered; at least 1 Malice on a cast, upkeep still paid; eyewear and max Strain changing nothing;
+  non-bearers in full; Attunement from fighting, a Read and a pin, each limited, nothing without the eyes; lost with the eyes, the heir starting from
+  nothing; RMT output past 1.6, growing with Attunement, halved by fatigue).
 - **Tests (perception):** `SightTest` (only the bearer is sent anything; a player 25 km off and a void as far, never another dimension, not themself,
   capacity carried; losing the eyes sends one "forget" and then nothing; loaded mobs with their flow; a cast pulsing once for the bearer
   only, a void never; a creeper, a skeleton and a ghast pulsing once as each begins, and not moved).

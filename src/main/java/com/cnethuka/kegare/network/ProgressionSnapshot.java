@@ -27,10 +27,14 @@ import net.minecraft.server.level.ServerPlayer;
  * @param refinementXpNeeded to the next level; 0 at the top
  * @param locked what of their technique is still locked, with the level each one needs
  * @param brain the brain meter (DESIGN §3.17), rounded, 0 to 100
+ * @param eyes a Six Eyes bearer's Attunement and what it's worth (DESIGN §3.32); nobody else has any
  */
 public record ProgressionSnapshot(int grade, float gradeXp, float gradeXpNeeded, Optional<Assessment> assessment,
                                   int refinement, float refinementXp, float refinementXpNeeded, int peakRefinement, int maxRefinement,
-                                  int dominion, int ward, int output, Map<ResourceLocation, Integer> locked, int brain) {
+                                  int dominion, int ward, int output, Map<ResourceLocation, Integer> locked, int brain, Optional<Eyes> eyes) {
+    /** @param costFactor what a Malice cost is multiplied by; @param rmtFactor what RMT's output is */
+    public record Eyes(int attunement, float costFactor, float rmtFactor) {}
+
     public record Assessment(float average, float averageNeeded, float technique, float techniqueNeeded, int fights, int fightsNeeded,
                              int opponents, int opponentsNeeded, int peak, int peakNeeded, boolean severed) {}
 
@@ -47,7 +51,9 @@ public record ProgressionSnapshot(int grade, float gradeXp, float gradeXpNeeded,
                 refinement.level(), (float) refinement.xp(), refinement.level() >= max ? 0f : (float) RefinementService.xpForLevel(refinement.level() + 1),
                 refinement.peak(), max,
                 Insight.get(player, InsightCategory.DOMINION), Insight.get(player, InsightCategory.WARD), Insight.get(player, InsightCategory.OUTPUT), locked,
-                (int) Math.round(com.cnethuka.kegare.rmt.BrainDamage.get(player)));
+                (int) Math.round(com.cnethuka.kegare.rmt.BrainDamage.get(player)),
+                com.cnethuka.kegare.sixeyes.SixEyes.isBearer(player) ? Optional.of(new Eyes((int) Math.floor(com.cnethuka.kegare.sixeyes.Attunement.get(player)),
+                        (float) com.cnethuka.kegare.sixeyes.Efficiency.costFactor(player), (float) com.cnethuka.kegare.sixeyes.Efficiency.rmtFactor(player))) : Optional.empty());
     }
 
     /** The Refinement level this needs, or -1 if it isn't locked. */
@@ -82,6 +88,11 @@ public record ProgressionSnapshot(int grade, float gradeXp, float gradeXpNeeded,
         buf.writeVarInt(output);
         buf.writeMap(locked, FriendlyByteBuf::writeResourceLocation, FriendlyByteBuf::writeVarInt);
         buf.writeVarInt(brain);
+        buf.writeOptional(eyes, (b, e) -> {
+            b.writeVarInt(e.attunement());
+            b.writeFloat(e.costFactor());
+            b.writeFloat(e.rmtFactor());
+        });
     }
 
     static ProgressionSnapshot read(FriendlyByteBuf buf) {
@@ -90,6 +101,7 @@ public record ProgressionSnapshot(int grade, float gradeXp, float gradeXpNeeded,
                         b.readVarInt(), b.readVarInt(), b.readVarInt(), b.readVarInt(), b.readBoolean())),
                 buf.readVarInt(), buf.readFloat(), buf.readFloat(), buf.readVarInt(), buf.readVarInt(),
                 buf.readVarInt(), buf.readVarInt(), buf.readVarInt(),
-                buf.readMap(FriendlyByteBuf::readResourceLocation, FriendlyByteBuf::readVarInt), buf.readVarInt());
+                buf.readMap(FriendlyByteBuf::readResourceLocation, FriendlyByteBuf::readVarInt), buf.readVarInt(),
+                buf.readOptional(b -> new Eyes(b.readVarInt(), b.readFloat(), b.readFloat())));
     }
 }

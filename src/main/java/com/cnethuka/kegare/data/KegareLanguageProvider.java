@@ -311,7 +311,9 @@ public final class KegareLanguageProvider extends LanguageProvider {
 
         // Traits
         add("trait.kegare.six_eyes", SIX_EYES);
-        add("trait.kegare.six_eyes.desc", "Eyes that see through everything. Only one bearer at a time. (No effects yet.)");
+        add("trait.kegare.six_eyes.desc", "Eyes that see through everything: " + MALICE + " everywhere in your dimension on a map, outlines through "
+                + "walls, a glance's Read of anyone, and those with none as voids. Your energy goes almost entirely unwasted, more so as you grow into "
+                + "them. Left uncovered in a fight, they strain the brain. Only one bearer at a time.");
         add("message.kegare.trait.lost", "The eyes have closed.");
         add("message.kegare.trait.inherited", "The eyes have opened.");
         add("message.kegare.trait.six_eyes.succession", "The eyes have closed... and opened elsewhere.");
@@ -360,6 +362,8 @@ public final class KegareLanguageProvider extends LanguageProvider {
 
         // Six Eyes (DESIGN §3.32): only its bearer ever sees these.
         add("hud.kegare.six_eyes.strain_top", "Your head is splitting");
+        add("gui.kegare.sorcerer.eyes", "The eyes: Attunement %s");
+        add("gui.kegare.sorcerer.eyes.values", MALICE + " costs at %s, Reverse Malice Technique's output x%s.");
         add("gui.kegare.six_eyes.map", "What the eyes see");
         add("gui.kegare.six_eyes.map.hint", "Scroll to zoom, drag to look round, right-click to come back. Click a dot to pin it.");
         add("gui.kegare.six_eyes.void", "Void");
@@ -851,6 +855,7 @@ public final class KegareLanguageProvider extends LanguageProvider {
         add("commands.kegare.info.shared", "Shared unlocked: %s");
         add("commands.kegare.info.rmt", "%s: output %sx, injuries %s");
         add("commands.kegare.info.brain", "Brain: %s worn by repairs");
+        add("commands.kegare.info.six_eyes", "Six Eyes: Strain %s, Attunement %s, costs at %s, RMT output x%s");
         add("commands.kegare.info.cooldowns", "Cooldowns: %s");
         add("commands.kegare.info.cooldown_entry", "%s %ss");
         add("commands.kegare.info.active", "Active: %s");
@@ -943,6 +948,8 @@ public final class KegareLanguageProvider extends LanguageProvider {
         add("commands.kegare.debug.task.unknown", "Unknown Background Task: %s. Choose from %s.");
         add("commands.kegare.debug.brain", "%s's brain meter is now %s.");
         add("commands.kegare.debug.sixeyes.strain", "%s's Strain is now %s.");
+        add("commands.kegare.debug.sixeyes.attunement", "%s's Attunement is now %s.");
+        add("commands.kegare.help.debug.sixeyes.attunement", "Set a player's Attunement.");
         add("commands.kegare.help.debug.sixeyes.strain", "Set a player's Strain (0 to 100).");
         add("commands.kegare.help.debug.brain", "Set a player's brain meter (0 to 100): what repairing burnt-out techniques has cost.");
         add("commands.kegare.debug.task.unlocked", "Unlocked %s for %s.");

@@ -51,5 +51,7 @@ public final class SixEyes {
         Reads.init();
         Strain.init();
         Edge.init();
+        Efficiency.init();
+        Attunement.init();
     }
 }

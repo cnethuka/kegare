@@ -127,6 +127,11 @@ public final class KegareCommand {
             lines.add(Component.translatable("commands.kegare.info.rmt", com.cnethuka.kegare.rmt.Rmt.REVERSE_MALICE_TECHNIQUE.displayName(),
                     String.format(java.util.Locale.ROOT, "%.2f", com.cnethuka.kegare.rmt.RmtOutput.of(player)), injuries > 0 ? "-" + injuries + "%" : "0%"));
         }
+        if (com.cnethuka.kegare.sixeyes.SixEyes.isBearer(player)) {
+            lines.add(Component.translatable("commands.kegare.info.six_eyes", Math.round(com.cnethuka.kegare.sixeyes.Strain.data(player).strain()),
+                    Math.round(com.cnethuka.kegare.sixeyes.Attunement.get(player)), Math.round(com.cnethuka.kegare.sixeyes.Efficiency.costFactor(player) * 100) + "%",
+                    String.format(java.util.Locale.ROOT, "%.2f", com.cnethuka.kegare.sixeyes.Efficiency.rmtFactor(player))));
+        }
         // The brain meter (DESIGN §3.17): private, so here and on the Sorcerer screen only.
         if (com.cnethuka.kegare.rmt.BrainDamage.get(player) > 0 || SharedAbilityService.isUnlocked(player, com.cnethuka.kegare.rmt.RmtIds.ABILITY)) {
             lines.add(Component.translatable("commands.kegare.info.brain", Math.round(com.cnethuka.kegare.rmt.BrainDamage.get(player)) + "%"));

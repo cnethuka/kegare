@@ -110,7 +110,8 @@ class SpecialsTest {
             CastManager.handleIntent(p, CastIntent.SPECIAL_PRESS);
             TestServer.advanceGameTime(server, TestAbilities.UPDRAFT.maxChargeTicks(p));
             CastManager.handleIntent(p, CastIntent.SPECIAL_RELEASE);
-            assertEquals(before - KegareServerConfig.UPDRAFT_COST.get(), malice(p), EPS, "Updraft paid on release");
+            // (Updraft needs the Six Eyes, and a bearer's energy goes less to waste, DESIGN §3.32.)
+            assertEquals(before - MaliceService.castCostOf(p, KegareServerConfig.UPDRAFT_COST.get()), malice(p), EPS, "Updraft paid on release");
             assertTrue(InnateTechniqueService.cooldownRemaining(p, TestAbilities.HOVER) > 0, "Hover shares Updraft's cooldown");
 
             // The technique lists specials for lookups (HUD, sync, visuals).

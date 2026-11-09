@@ -121,7 +121,7 @@ public final class CastManager {
         if (CombatHelper.isStunned(player)) return CastResult.STUNNED;
         if (InnateTechniqueService.cooldownRemaining(player, ability) > 0) return CastResult.ON_COOLDOWN;
         if (unmetRequirement(player, ability).isPresent()) return CastResult.REQUIREMENT_UNMET;
-        if (!MaliceService.canAfford(player, ability.cost(player))) return CastResult.NOT_ENOUGH_MALICE;
+        if (!MaliceService.canAffordCast(player, ability.cost(player))) return CastResult.NOT_ENOUGH_MALICE;
         if (!ability.canCast(ctx)) return CastResult.BLOCKED;
         return CastResult.OK;
     }
@@ -155,7 +155,7 @@ public final class CastManager {
         long now = player.level().getGameTime();
         switch (ability.castType()) {
             case INSTANT -> {
-                if (!pay(player, ability, ability.cost(player))) return;
+                if (!payCast(player, ability, ability.cost(player))) return;
                 started(player);
                 state.noCooldown = false;
                 CastScope.run(player, ability, () -> ability.execute(ctx));
@@ -174,7 +174,7 @@ public final class CastManager {
                 VisualService.ability(player, ability, VisualPhase.CHARGE_LOOP, ability.maxChargeTicks(player));
             }
             case CHANNELED -> {
-                if (!pay(player, ability, ability.cost(player))) return;
+                if (!payCast(player, ability, ability.cost(player))) return;
                 started(player);
                 state.casting = new CastState.Active(ability, slot, now);
                 CastScope.run(player, ability, () -> ability.execute(ctx));
@@ -183,7 +183,7 @@ public final class CastManager {
                 VisualService.ability(player, ability, VisualPhase.CHANNEL_LOOP);
             }
             case TOGGLE -> {
-                if (!pay(player, ability, ability.cost(player))) return;
+                if (!payCast(player, ability, ability.cost(player))) return;
                 started(player);
                 state.toggles.put(ability.id(), new CastState.Active(ability, slot, now));
                 CastScope.run(player, ability, () -> ability.execute(ctx));
@@ -216,11 +216,24 @@ public final class CastManager {
         return Math.max(0.0, perSecond);
     }
 
+    /** A cast's start or release cost: at least 1 Malice, whatever lowers it. */
+    private static boolean payCast(ServerPlayer player, Ability ability, double amount) {
+        if (!MaliceService.trySpendCast(player, amount)) return false;
+        paid(player, ability, amount);
+        return true;
+    }
+
+    /** Upkeep, a little a tick. */
     private static boolean pay(ServerPlayer player, Ability ability, double amount) {
         if (!MaliceService.trySpend(player, amount)) return false;
+        paid(player, ability, amount);
+        return true;
+    }
+
+    /** What was paid for counts at its full price: spending less to do the same never makes a cast weaker. */
+    private static void paid(ServerPlayer player, Ability ability, double amount) {
         Landings.spent(player, ability, amount);
         com.cnethuka.kegare.impact.CastMalice.paid(player, ability, amount); // the Impact System's Malice input (DESIGN §3.23)
-        return true;
     }
 
     /** The cast actually went off: an ability with no target of its own has now done all it will. */
@@ -440,7 +453,7 @@ public final class CastManager {
         // Toggle upkeep may have drained the reserve while charging, and a charge may cost more the longer it was
         // held (Ability#releaseCost): re-check at release.
         double cost = ability.releaseCost(player, ctx.charge());
-        if (!pay(player, ability, cost)) {
+        if (!payCast(player, ability, cost)) {
             ability.onEnd(ctx, EndReason.OUT_OF_MALICE);
             player.displayClientMessage(Component.translatable(CastResult.NOT_ENOUGH_MALICE.translationKey(),
                     Integer.toString((int) Math.ceil(cost - 1.0e-6)), Integer.toString((int) Math.floor(MaliceService.get(player).current()))), true);

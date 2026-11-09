@@ -80,9 +80,9 @@ public record SorcererInfoPayload(
 
     private static AbilityInfo info(ServerPlayer player, Ability ability, boolean ultimate) {
         Optional<SpecialInfo> special = ability.special().map(s -> new SpecialInfo(s.id(), s.castType().ordinal(),
-                (float) s.shownCost(player), (float) s.upkeepPerSecond(player), CastManager.unmetRequirement(player, s).isEmpty()));
-        return new AbilityInfo(ability.id(), ability.castType().ordinal(), (float) ability.shownCost(player),
-                (float) ability.upkeepPerSecond(player), ability.shownCooldownTicks(player), ultimate, special);
+                (float) MaliceService.castCostOf(player, s.shownCost(player)), (float) MaliceService.costOf(player, s.upkeepPerSecond(player)), CastManager.unmetRequirement(player, s).isEmpty()));
+        return new AbilityInfo(ability.id(), ability.castType().ordinal(), (float) MaliceService.castCostOf(player, ability.shownCost(player)),
+                (float) MaliceService.costOf(player, ability.upkeepPerSecond(player)), ability.shownCooldownTicks(player), ultimate, special);
     }
 
     private void write(FriendlyByteBuf buf) {

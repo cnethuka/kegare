@@ -620,7 +620,15 @@ public final class SorcererScreen extends Screen {
         y += 5 + GuiDraw.text(g, font, Component.translatable("gui.kegare.sorcerer.brain", p.brain() + "%"), x, y + 5, 1f, 0xFFD8D2E0) + 1;
         GuiDraw.progress(g, x, y, w, 6, p.brain() / 100f, p.brain() >= 100 ? 0xFF6B6B : 0xC0506A);
         y += 8;
-        return y + GuiDraw.wrapped(g, font, Component.translatable("gui.kegare.sorcerer.brain.desc"), x, y, w, GuiDraw.DARK_GRAY);
+        y += GuiDraw.wrapped(g, font, Component.translatable("gui.kegare.sorcerer.brain.desc"), x, y, w, GuiDraw.DARK_GRAY);
+        // Six Eyes (DESIGN §3.32): only a bearer has this.
+        if (p.eyes().isPresent()) {
+            ProgressionSnapshot.Eyes eyes = p.eyes().get();
+            y += 5 + GuiDraw.text(g, font, Component.translatable("gui.kegare.sorcerer.eyes", eyes.attunement()), x, y + 5, 1f, 0xFFD8D2E0) + 1;
+            y += GuiDraw.wrapped(g, font, Component.translatable("gui.kegare.sorcerer.eyes.values", Math.round(eyes.costFactor() * 100) + "%",
+                    String.format(java.util.Locale.ROOT, "%.2f", eyes.rmtFactor())), x, y, w, GuiDraw.GRAY);
+        }
+        return y;
     }
 
     /** Assessment against the requirement, each line green once it's met. Two columns where the box is wide enough. */
