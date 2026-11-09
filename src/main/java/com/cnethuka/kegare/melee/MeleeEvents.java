@@ -34,7 +34,7 @@ public final class MeleeEvents {
         if (!(event.getEntity() instanceof ServerPlayer player) || !player.hasData(MeleeLayer.ATTACHMENT)) return;
         MeleeState state = MeleeLayer.state(player);
         DamageSource source = event.getSource();
-        if (!Parry.inPerfectWindow(player, state) || !(source.getEntity() instanceof LivingEntity attacker) || attacker == player) return;
+        if (!(source.getEntity() instanceof LivingEntity attacker) || attacker == player || !Parry.inPerfectWindow(player, state, attacker)) return;
         if (MeleeHits.of(source, (ServerLevel) player.level()) != MeleeHits.Kind.MELEE) return;
         if (CombatHelper.isBoss(attacker)) return; // a boss's hit is only reduced, in onDamage
         event.setCanceled(true);

@@ -28,6 +28,7 @@ public final class KegareClient {
         com.cnethuka.kegare.innate_technique.rime.client.RimeClient.init(modBus);
         com.cnethuka.kegare.melee.client.MeleeClient.init();
         com.cnethuka.kegare.melee.client.FistTell.init(modBus);
+        com.cnethuka.kegare.timing.client.ClientStamps.init(); // sub-tick timing (DESIGN §3.29)
         com.cnethuka.kegare.melee.client.DashFeel.init(modBus);
         com.cnethuka.kegare.rmt.client.RmtClient.init();
         com.cnethuka.kegare.innate_technique.swap.client.SwapClient.init(modBus);

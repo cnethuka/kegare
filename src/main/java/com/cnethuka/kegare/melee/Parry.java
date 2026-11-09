@@ -35,6 +35,7 @@ public final class Parry {
         }
         state.guarding = true;
         state.guardStart = now;
+        state.guardStartMs = com.cnethuka.kegare.timing.SubTick.mark(player, com.cnethuka.kegare.timing.TimedInput.PARRY);
         state.parriedThisGuard = false;
         state.guardLoopAt = 0;
         VisualService.startLoop(player, MeleeIds.GUARD_LOOP, Visual.animation(MeleeIds.ANIM_PARRY_GUARD), 0);
@@ -85,6 +86,41 @@ public final class Parry {
 
     static boolean inPerfectWindow(ServerPlayer player, MeleeState state) {
         return holding(player, state) && player.level().getGameTime() - state.guardStart < MeleeNumbers.of(player).perfectTicks();
+    }
+
+    /**
+     * Is a hit from {@code attacker} landing now in the perfect window? By ticks (how long ago the press reached the server), unless
+     * {@code [timing] parrySubTick} is on: then the defender's press against the attacker's swing, both stamped and mapped to server time
+     * (DESIGN §3.29), 0 to the window's length apart. Both are worked out every time, for the log.
+     */
+    static boolean inPerfectWindow(ServerPlayer player, MeleeState state, LivingEntity attacker) {
+        if (!holding(player, state)) return false;
+        int window = MeleeNumbers.of(player).perfectTicks();
+        long held = player.level().getGameTime() - state.guardStart;
+        boolean byTicks = held < window;
+        double gap = swingMs(attacker) - state.guardStartMs;
+        boolean bySubTick = subTickPerfect(gap, window * 50.0);
+        if (com.cnethuka.kegare.timing.TimingLog.any()) {
+            com.cnethuka.kegare.timing.TimingLog.send(player.server, String.format(java.util.Locale.ROOT,
+                    "Parry %s <- %s: by ticks %s (held %d of %d ticks), sub-tick %s (swing %.1f ms after the press, window %d ms)%s",
+                    player.getGameProfile().getName(), attacker.getName().getString(), byTicks ? "PERFECT" : "no", held, window,
+                    bySubTick ? "PERFECT" : "no", gap, window * 50, com.cnethuka.kegare.timing.TimingConfig.PARRY_SUB_TICK.get() ? " [sub-tick used]" : " [ticks used]"));
+        }
+        return com.cnethuka.kegare.timing.TimingConfig.PARRY_SUB_TICK.get() ? bySubTick : byTicks;
+    }
+
+    /** The sub-tick rule: the swing came after the press, and less than the window after it. */
+    static boolean subTickPerfect(double swingAfterPressMs, double windowMs) {
+        return swingAfterPressMs >= 0 && swingAfterPressMs < windowMs;
+    }
+
+    /** When the attacker swung: a player's stamped attack if it's this tick's, else now (a mob's hit has no stamp). */
+    private static double swingMs(LivingEntity attacker) {
+        if (attacker instanceof ServerPlayer p && p.hasData(MeleeLayer.ATTACHMENT) && MeleeLayer.state(p).swingTick == p.level().getGameTime()) {
+            var at = com.cnethuka.kegare.timing.SubTick.time(p, com.cnethuka.kegare.timing.TimedInput.ATTACK);
+            if (at.isPresent()) return at.getAsDouble();
+        }
+        return com.cnethuka.kegare.timing.SubTick.nowMs();
     }
 
     /** A melee hit met in the perfect window. Bosses never get here: their hits are only reduced. */

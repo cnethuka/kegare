@@ -17,6 +17,8 @@ public final class MeleeState {
     // Parry
     boolean guarding;
     long guardStart;
+    /** When the press that put the guard up happened, on sub-tick timing's clock (DESIGN §3.29). */
+    double guardStartMs;
     /** How charged their last swing was, and when: the attack has reset the charge by the time its hit is handled. */
     float swingCharge;
     long swingTick = -1;

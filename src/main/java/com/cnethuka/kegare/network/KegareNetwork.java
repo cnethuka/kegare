@@ -18,6 +18,14 @@ public final class KegareNetwork {
 
     public static void register(RegisterPayloadHandlersEvent event) {
         PayloadRegistrar registrar = event.registrar(VERSION);
+        // Sub-tick timing (DESIGN §3.29): handled on the network thread as they arrive, so a tick's wait never gets into a time.
+        PayloadRegistrar timing = event.registrar(VERSION).executesOn(net.neoforged.neoforge.network.registration.HandlerThread.NETWORK);
+        timing.playToServer(com.cnethuka.kegare.timing.TimingNet.Stamp.TYPE, com.cnethuka.kegare.timing.TimingNet.Stamp.STREAM_CODEC,
+                com.cnethuka.kegare.timing.TimingNet.Stamp::handle);
+        timing.playToClient(com.cnethuka.kegare.timing.TimingNet.Ping.TYPE, com.cnethuka.kegare.timing.TimingNet.Ping.STREAM_CODEC,
+                com.cnethuka.kegare.timing.TimingNet.Ping::handle);
+        timing.playToServer(com.cnethuka.kegare.timing.TimingNet.Pong.TYPE, com.cnethuka.kegare.timing.TimingNet.Pong.STREAM_CODEC,
+                com.cnethuka.kegare.timing.TimingNet.Pong::handle);
         // client -> server (requests)
         registrar.playToServer(IntentPayload.TYPE, IntentPayload.STREAM_CODEC, IntentPayload::handle);
         registrar.playToServer(SelectAbilityPayload.TYPE, SelectAbilityPayload.STREAM_CODEC, SelectAbilityPayload::handle);

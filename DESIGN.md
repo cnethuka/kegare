@@ -334,6 +334,8 @@ All timestamps use **level game time**. They persist across restarts and are ide
   cools down and how long that is) and `RushPayload` (S→C, to its owner: a Closing Line to drive, its line in three dimensions, or
   stop); G sends `MeleeIntentPayload.Action.BLUR`, and R while Blurring is the usual
   `SPECIAL_PRESS`, taken by Closing Line's cast interceptor.
+- **Sub-tick timing** (§3.29): `TimingNet.Stamp` (C→S, an input stamped with the client's clock, sent at the key press), `TimingNet.Ping`
+  (S→C) and `TimingNet.Pong` (C→S, the client's clock), all handled on the network thread. Reinforced Fists' look is `FistsPayload` (§3.28).
 - Network version `22` (since Reinforced Fists and Black Spark, §3.28-3.29: `FistsPayload`, the timing stamps; `21` was RMT's rework, §3.17: `RmtOutputPayload`, then heal-others' `RmtLinkPayload` and `RmtMomentPayload`; `20`
   was Closing Line's line in three dimensions in `RushPayload` and its cooldown in `BlurPayload`, §3.27; `19`
   was Severed's payloads, `18` Burnout's end time in the sync, §3.25, and Time Manipulation's payloads, §3.26). Bump it when payload formats change; mismatched clients are refused.
@@ -453,7 +455,7 @@ Malice is always shown as whole numbers (floored, like the HUD); the stored valu
 - **Server TOML** (`config/kegare-server.toml`, where NeoForge 21.1 keeps server configs; synced to clients and
   hot-reloaded when edited) holds **every balance number**.
   - Sections: `malice` (with `tiers`), `traits`, `roll` (with `weights`, and `includeTestInnateTechniques`),
-    `combat`, `rime` (§3.14), `swap` (§3.19), `melee` (§3.22), `impact` (§3.23), `battle_damage` (§3.24), `reverse_malice_technique` (§3.17), `reinforced_fists` (§3.28), `progression` (§3.21), `test_abilities`.
+    `combat`, `rime` (§3.14), `swap` (§3.19), `melee` (§3.22), `impact` (§3.23), `battle_damage` (§3.24), `reverse_malice_technique` (§3.17), `reinforced_fists` (§3.28), `timing` (§3.29), `progression` (§3.21), `test_abilities`.
   - The `traits` section includes:
     - `sixEyesBirthChance`
     - `sixEyesTransferMode` (RANDOM | KILLER)
@@ -2055,7 +2057,8 @@ A real hit from any entity in the window ends it; your own swings, shots, areas 
 
 **Parry** (hold X, rebindable). All timed on the server from when the press arrived.
 - **First 0.3 s, the perfect window (free):** a melee hit is cancelled, the attacker staggered (0.5 s of Slowness III, a player's attack cooldown restarted, nothing done to their abilities; a mob's own attack cooldown has
-  just started anyway), and a Strike earned. Techniques and projectiles are never parried.
+  just started anyway), and a Strike earned. Techniques and projectiles are never parried. The window is timed in ticks from when the press reached the server; sub-tick
+  timing judges it too, for comparison, and stays off (§3.29).
 - **After that, the guard:** 40% off melee, draining 16 Malice/s; it drops when the Malice runs out. Holding needs 10 Malice to begin (not spent).
 - **The whole time:** 10% off technique damage. Plain arrows get nothing.
 - **Letting go:** 1 s recovery with no parry. Casting, attacking, dashing, a stun or running out of Malice also bring it down. A guard that caught nothing plays the exposed recovery animation.
@@ -2628,6 +2631,43 @@ in place of an ability like any shared one. Severed players never have it: they 
 - **Icon and text:** `tools/gen_art.py` (`ICON_FISTS`, a clenched fist with Malice burning off the knuckles, in Malice violet).
 - **Tests:** `FistsTest` (everyone's, never Severed's; the toggle's cost, drain, Burnout, re-arm and running out; the bonuses; the
   second impact only for a Strike with Fists on, its delay and share, through the cooldown without lengthening it, never moving anyone).
+
+### 3.29 Sub-tick timing (package `timing`)
+
+A shared system so timing can be judged finer than a 50 ms tick. Numbers in `[timing]` of `kegare-server.toml`.
+- **Stamps:** the client stamps the inputs that need it (`TimedInput`: Reinforced Fists turning on, a melee attack, the guard going up)
+  with its own monotonic clock in ms (`timing/client/ClientStamps`), the moment the key or button goes down, and sends the stamp there
+  and then (`TimingNet.Stamp`), ahead of the packet that does the thing at the next client tick. Sent at the press, its trip to the
+  server is only the network's. An attack is stamped when the button goes down with an entity under the crosshair; Fists' number key
+  in Technique Mode when Fists are in that slot. A stamp nothing claims within half a second is dropped. How fine a stamp is depends on
+  the frame rate: the game reads keys once a frame.
+- **The clock:** the server pings each player (`TimingNet.Ping`, answered at once with their clock, `TimingNet.Pong`) every
+  `clockSyncSeconds` (2), and five times 200 ms apart when they join. Stamps, pings and answers are handled on the network thread as they
+  arrive (their own `executesOn(NETWORK)` registrar), so a tick's wait never gets into a time. From the last eight answers: the offset
+  from the quickest round trip (the one least held up), the ping as the median round trip (so one slow answer doesn't widen what a
+  stamp may claim).
+- **Mapping:** a stamp plus the offset, clamped between (arrival - ping - `toleranceMs` (15)) and its arrival, so a modified client
+  can't claim to be earlier than it could have been, nor later than it arrived. With no stamp, a stamp further than `plausibleMs`
+  (1000) from its arrival either way, or no clock estimate yet, the arrival time stands (or, with no stamp at all, when the server
+  handled the input): never worse than the tick.
+- **API for later systems** (Six Eyes will use it): `SubTick.time(player, input)` (the latest, on the server's monotonic clock in ms)
+  and `SubTick.gap(player, inputA, inputB)`; `SubTick.mark(player, input)` where the server handles a new one.
+- **Parry** (§3.22) is judged both ways on every hit that meets a guard (`Parry.inPerfectWindow`): by ticks (the hit handled less than
+  the window's ticks after the press was), and by sub-tick timing (the defender's press against the attacker's swing, both mapped to
+  server time, 0 to the window's length apart; a mob's swing, which has no stamp, is when its hit is handled). Ticks are the rule
+  (`parrySubTick = false`), because sub-tick timing makes Parry worse in two cases:
+  - an attacker's lag gave the defender time: a press made after the swing that still reached the server before the hit parries by
+    ticks, and is too late by sub-tick timing (`ParryTimingTest`, a 150 ms attacker and a 10 ms defender);
+  - against a mob, sub-tick timing counts the defender's own trip to the server and the wait for the tick against them: a press made
+    290 ms before a mob's hit can be out of the window by sub-tick timing (the press's stamp is earlier than its arrival) where ticks
+    count from the arrival.
+  It's better at the window's far edge: ticks start the window at the tick the press is handled, so a hit 250 to 300 ms after the press
+  is sometimes out by ticks and always in by sub-tick timing. Sub-tick timing is latency-neutral (neither player's ping moves the
+  window); ticks hand the defender the attacker's lag and charge them their own. `parrySubTick = true` switches it over to try.
+  `/kegare debug spark log on` shows both judgments for every hit on a guard.
+- **Tests:** `SubTickTest` (the estimate from the pings; an honest stamp taken, an early-claiming one clamped, a future one held to its
+  arrival, an implausible or unsynced one falling back; a missing stamp falling back to when it's handled; a stale one never matched; a
+  stamp used once; the gap), `ParryTimingTest` (both judgments on real hits with stamped latencies, and the switch).
 
 ---
 
