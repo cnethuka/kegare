@@ -16,6 +16,9 @@ public final class Rmt {
     public static void init(IEventBus modBus) {
         GreenOrbService.register(modBus);
         com.cnethuka.kegare.progression.FightTracker.addListener(report -> RmtFatigue.onFightEnded(report.player()));
+        com.cnethuka.kegare.loadout.SharedAbilityService.addUnlockListener((player, ability) -> {
+            if (ability == REVERSE_MALICE_TECHNIQUE) com.cnethuka.kegare.progression.InsightHooks.unlockedRmt(player);
+        });
         VisualHooks.registerEffect(RmtIds.FX_HEAL_PULSE);
         VisualHooks.registerEffect(RmtIds.FX_ORB);
         VisualHooks.registerEffect(RmtIds.FX_TRAIL_DOT);

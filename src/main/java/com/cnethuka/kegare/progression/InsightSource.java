@@ -10,7 +10,10 @@ public enum InsightSource {
     HIT_BY_MAXIMUM_OUTPUT(InsightCategory.OUTPUT, 5),
     CAUGHT_IN_DOMINION(InsightCategory.DOMINION, 5),
     CLASHED_WITH_DOMINION(InsightCategory.DOMINION, 5),
-    BOOK_CHAPTER(InsightCategory.DOMINION, 2);
+    BOOK_CHAPTER(InsightCategory.DOMINION, 2),
+    UNLOCKED_RMT(InsightCategory.OUTPUT, 5),
+    RMT_SURVIVED_LOW(InsightCategory.OUTPUT, 5),
+    HEALED_BY_OTHER(InsightCategory.OUTPUT, 3);
 
     final InsightCategory defaultCategory;
     final int defaultAmount;

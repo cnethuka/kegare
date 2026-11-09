@@ -1275,13 +1275,15 @@ negative is positive energy, which is why it heals, and why its colors are white
   there, a hit healed as it lands, never above max or absorption; R fizzles; start cost, a twentieth a tick, healPerSecond after a
   second, upkeep; cooldown on release; a freeze interrupts it; it doesn't end healed up; a reroll resets the loadout but keeps the
   unlock; locking takes it off the bar. `RmtOutputTest`: Grade 4 at Peak 0 is 1x, Special Grade at Peak 10 is 1.6x, a reroll
-  doesn't lower it, the hook changes it. `RmtFatigueTest`: rising with damage taken, the cap, healing not removing it, the restore and
+  doesn't lower it, the hook changes it. `RmtInsightTest`: the orb's chance with Output Insight and its cap; unlocked_rmt,
+  rmt_survived_low (not if they die first) and healed_by_other each paying once. `RmtFatigueTest`: rising with damage taken, the cap, healing not removing it, the restore and
   ignore hooks, reset at the fight's end, death and logout.
 
 ### 3.18 The green orb (unlocking RMT)
 `rmt.GreenOrbService` (server) and `rmt.client.GreenOrbClient`. Numbers in `[reverse_malice_technique.orb]`.
 - **When:** a real hit **from another player** that leaves someone at **10 HP (5 hearts) or less**
-  (`healthThreshold`) rolls a **15%** chance (`chance`). At most **one roll per 60 s** per player (`rollCooldown`; the
+  (`healthThreshold`) rolls a **15%** chance (`chance`), plus `insightBonus` (0.5%) per point of Output Insight (§3.21), never past
+  `chanceCap` (30%). At most **one roll per 60 s** per player (`rollCooldown`; the
   roll counts whether or not the orb comes; last roll saved in `kegare:shared_abilities`). Only for players who
   are born, **not Severed**, haven't unlocked RMT, and have no orb waiting.
 - **Where:** the server rolls a **route**. It starts **3 blocks** in front of the eyes (`distance`), **25° to the left or right**
@@ -1942,6 +1944,9 @@ player, ever, saved per player. Which category each source pays into, and how mu
 | `caught_in_dominion` | Dominion 5 | technique | hook only |
 | `clashed_with_dominion` | Dominion 5 | technique | hook only |
 | `book_chapter` | Dominion 2 | chapter of a later system | hook only |
+| `unlocked_rmt` | Output 5 | ever (unlocking Reverse Malice Technique, any way) | wired |
+| `rmt_survived_low` | Output 5 | ever (at 3 hearts or less during your own RMT, healed above it, alive 10 s later) | wired |
+| `healed_by_other` | Output 3 | ever (healed by another player's RMT, §3.17) | wired |
 
 The hook-only ones wait for systems that don't exist yet: those systems call the `InsightHooks` method. **Insight does not change extension
 technique unlock levels.** It lowers only framework requirements (below).

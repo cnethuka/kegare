@@ -63,6 +63,11 @@ public final class RmtFatigue {
 
     /** Every second: hurt with no fight between players (mobs, a fall), it lasts until the combat tag runs out. */
     static void tick(ServerPlayer player) {
+        RmtState state = GreenOrbService.state(player);
+        if (player.level().getGameTime() >= state.survivedLowAt) { // rmt_survived_low: healed out of 3 hearts, and still alive
+            state.survivedLowAt = Long.MAX_VALUE;
+            if (player.isAlive()) com.cnethuka.kegare.progression.InsightHooks.rmtSurvivedLow(player);
+        }
         if (player.tickCount % 20 != 0) return;
         if (GreenOrbService.state(player).fatigue > 0 && FightTracker.of(player).isEmpty() && !CombatHelper.isInCombat(player)) reset(player);
         else sync(player);

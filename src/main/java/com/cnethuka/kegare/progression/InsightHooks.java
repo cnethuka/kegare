@@ -28,6 +28,21 @@ public final class InsightHooks {
         if (technique != null && technique.rarity() == InnateTechniqueRarity.LEGENDARY) pay(player, InsightSource.FIRST_LEGENDARY_FIGHT, "");
     }
 
+    /** Reverse Malice Technique unlocked, by any way (DESIGN §3.17). Once ever. */
+    public static boolean unlockedRmt(ServerPlayer player) {
+        return pay(player, InsightSource.UNLOCKED_RMT, "");
+    }
+
+    /** At 3 hearts or less during their own RMT, healed above it, and alive 10 s later. Once ever. */
+    public static boolean rmtSurvivedLow(ServerPlayer player) {
+        return pay(player, InsightSource.RMT_SURVIVED_LOW, "");
+    }
+
+    /** Healed by another player's RMT (its special). Once ever. */
+    public static boolean healedByOther(ServerPlayer player) {
+        return pay(player, InsightSource.HEALED_BY_OTHER, "");
+    }
+
     /** For the future Standstill. */
     public static boolean survivedStandstill(ServerPlayer player) {
         return pay(player, InsightSource.SURVIVED_STANDSTILL, "");

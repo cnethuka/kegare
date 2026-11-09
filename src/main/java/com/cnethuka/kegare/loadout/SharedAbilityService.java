@@ -29,8 +29,19 @@ public final class SharedAbilityService {
     public static boolean unlock(ServerPlayer player, Ability ability) {
         if (!SharedAbilities.isShared(ability.id()) || MaliceService.isSevered(player) || !MaliceService.get(player).isBorn()) return false;
         boolean added = get(player).unlocked.add(ability.id());
-        if (added) PlayerSync.markDirty(player);
+        if (added) {
+            PlayerSync.markDirty(player);
+            for (java.util.function.BiConsumer<ServerPlayer, Ability> listener : UNLOCK_LISTENERS) listener.accept(player, ability);
+        }
         return added;
+    }
+
+    private static final java.util.List<java.util.function.BiConsumer<ServerPlayer, Ability>> UNLOCK_LISTENERS =
+            new java.util.concurrent.CopyOnWriteArrayList<>();
+
+    /** Told when a player newly unlocks a shared ability, however it happened. */
+    public static void addUnlockListener(java.util.function.BiConsumer<ServerPlayer, Ability> listener) {
+        UNLOCK_LISTENERS.add(listener);
     }
 
     /** Admin/debug: locks it again, takes it off the loadout and ends it if it is running. */

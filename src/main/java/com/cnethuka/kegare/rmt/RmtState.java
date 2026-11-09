@@ -22,6 +22,9 @@ public final class RmtState {
     double fatigue;
     long fatigueIgnoredUntil = Long.MIN_VALUE;
     @javax.annotation.Nullable RmtOutputPayload sentOutput;
+    /** rmt_survived_low: they were at lowHealth or less during their own channel; then, healed above it, until when they must live. */
+    boolean lowDuringChannel;
+    long survivedLowAt = Long.MAX_VALUE;
 
     public boolean hasOrb() {
         return path != null;

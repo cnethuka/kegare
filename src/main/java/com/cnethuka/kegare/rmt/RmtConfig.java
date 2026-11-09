@@ -30,6 +30,10 @@ public final class RmtConfig {
     public static ModConfigSpec.DoubleValue ORB_DISTANCE;
     public static ModConfigSpec.DoubleValue ORB_SIDE_ANGLE;
     public static ModConfigSpec.DoubleValue ORB_UNLOCK_HEAL;
+    public static ModConfigSpec.DoubleValue ORB_INSIGHT_BONUS;
+    public static ModConfigSpec.DoubleValue ORB_CHANCE_CAP;
+    public static ModConfigSpec.DoubleValue LOW_HEALTH;
+    public static ModConfigSpec.DoubleValue SURVIVE_SECONDS;
 
     private RmtConfig() {}
 
@@ -54,6 +58,12 @@ public final class RmtConfig {
         OUTPUT_PEAK_BONUS = b.comment("Added at the top Peak Refinement level; 0 at 0, evenly between.").defineInRange("peakBonus", 0.3, 0.0, 10.0);
         b.pop();
 
+        b.comment("Output Insight it pays (amounts are in [progression.insight]).").push("insight");
+        LOW_HEALTH = b.comment("rmt_survived_low: at this much health or less during your own channel (6 = 3 hearts), healed above it...")
+                .defineInRange("lowHealth", 6.0, 0.0, 1024.0);
+        SURVIVE_SECONDS = b.comment("...and alive this many seconds later.").defineInRange("surviveSeconds", 10.0, 0.0, 600.0);
+        b.pop();
+
         b.comment("Injury fatigue: damage taken in a fight drags output down. fatigue = fatigueWeight x (damage taken / max health),",
                 "at most maxFatigue; output is multiplied by (1 - fatigue). Healing doesn't take it away. It resets when the fight ends,",
                 "on death and on logout.").push("fatigue");
@@ -64,7 +74,9 @@ public final class RmtConfig {
         b.comment("The green orb: how Reverse Malice Technique is found. Only its finder sees it.").push("orb");
         ORB_HEALTH_THRESHOLD = b.comment("A hit from a player that leaves you at this much health or less can bring the orb (10 = 5 hearts).")
                 .defineInRange("healthThreshold", 10.0, 0.0, 1024.0);
-        ORB_CHANCE = b.comment("Chance (0-1) per roll.").defineInRange("chance", 0.15, 0.0, 1.0);
+        ORB_CHANCE = b.comment("Chance (0-1) per roll, before Output Insight.").defineInRange("chance", 0.15, 0.0, 1.0);
+        ORB_INSIGHT_BONUS = b.comment("Added to the chance per point of Output Insight.").defineInRange("insightBonus", 0.005, 0.0, 1.0);
+        ORB_CHANCE_CAP = b.comment("The chance never goes past this with Insight.").defineInRange("chanceCap", 0.3, 0.0, 1.0);
         ORB_ROLL_COOLDOWN = b.comment("At most one roll per this many seconds per player.").defineInRange("rollCooldown", 60.0, 0.0, 86_400.0);
         ORB_LIFETIME = b.comment("The orb fades after this many seconds. Time spent following it doesn't count.").defineInRange("lifetime", 5.0, 0.5, 600.0);
         ORB_FOLLOW_SECONDS = b.comment("Looking at it sends it off along a random route, and it only moves on while you keep looking.",

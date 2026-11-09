@@ -71,7 +71,14 @@ public final class GreenOrbService {
         long cooldown = RmtConfig.ticks(RmtConfig.ORB_ROLL_COOLDOWN);
         if (data.lastOrbRoll() != Long.MIN_VALUE && now - data.lastOrbRoll() < cooldown) return;
         data.setLastOrbRoll(now);
-        if (victim.getRandom().nextDouble() < RmtConfig.ORB_CHANCE.get()) spawn(victim);
+        if (victim.getRandom().nextDouble() < chance(victim)) spawn(victim);
+    }
+
+    /** The chance a roll brings it: {@code chance}, plus {@code insightBonus} per point of Output Insight, at most {@code chanceCap}. */
+    public static double chance(ServerPlayer player) {
+        double base = RmtConfig.ORB_CHANCE.get();
+        double bonus = RmtConfig.ORB_INSIGHT_BONUS.get() * com.cnethuka.kegare.progression.Insight.get(player, com.cnethuka.kegare.progression.InsightCategory.OUTPUT);
+        return Math.min(Math.max(base, RmtConfig.ORB_CHANCE_CAP.get()), base + bonus);
     }
 
     /** Debug: an orb now, regardless of chance and roll cooldown (still never for the ineligible). */

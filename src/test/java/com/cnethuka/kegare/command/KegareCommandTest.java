@@ -686,8 +686,9 @@ class KegareCommandTest {
             var fights = AssessmentService.recent(p, 2);
             assertEquals(60.0, fights.get(0).technique(), 1e-6, "technique use defaults to the score");
             assertEquals(35.0, fights.get(1).technique(), 1e-6);
+            int outputBefore = Insight.get(p, InsightCategory.OUTPUT); // unlocking RMT above paid some (unlocked_rmt)
             op(server, "kegare insight add mover output 4").ok();
-            assertEquals(4, Insight.get(p, InsightCategory.OUTPUT));
+            assertEquals(outputBefore + 4, Insight.get(p, InsightCategory.OUTPUT));
             assertEquals(1, op(server, "kegare loadout reset mover").ok().result());
             op(server, "kegare progression reset mover").ok();
             assertEquals(Grade.GRADE_4, GradeService.grade(p));

@@ -37,11 +37,15 @@ public final class RmtEvents {
         if (event.getEntity() instanceof ServerPlayer player && !event.isCanceled()) {
             GreenOrbService.clear(player);
             RmtFatigue.reset(player);
+            GreenOrbService.state(player).survivedLowAt = Long.MAX_VALUE; // dead before the 10 s: rmt_survived_low doesn't count
         }
     }
 
     @SubscribeEvent
     static void onLogout(net.neoforged.neoforge.event.entity.player.PlayerEvent.PlayerLoggedOutEvent event) {
-        if (event.getEntity() instanceof ServerPlayer player) RmtFatigue.reset(player);
+        if (event.getEntity() instanceof ServerPlayer player) {
+            RmtFatigue.reset(player);
+            GreenOrbService.state(player).survivedLowAt = Long.MAX_VALUE;
+        }
     }
 }

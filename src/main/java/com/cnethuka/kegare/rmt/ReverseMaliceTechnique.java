@@ -47,7 +47,19 @@ public final class ReverseMaliceTechnique extends BaseAbility {
     @Override
     public void tick(AbilityContext ctx) {
         ServerPlayer p = ctx.player();
+        RmtState state = GreenOrbService.state(p);
+        double low = RmtConfig.LOW_HEALTH.get();
+        if (p.getHealth() <= low) state.lowDuringChannel = true;
         heal(p, p, RmtConfig.HEAL_PER_SECOND.get() * RmtOutput.of(p) / 20.0);
+        if (state.lowDuringChannel && p.getHealth() > low) { // healed themselves out of it: alive in 10 s, and it counts
+            state.lowDuringChannel = false;
+            state.survivedLowAt = p.level().getGameTime() + RmtConfig.ticks(RmtConfig.SURVIVE_SECONDS);
+        }
+    }
+
+    @Override
+    public void onEnd(AbilityContext ctx, com.cnethuka.kegare.innatetechnique.EndReason reason) {
+        GreenOrbService.state(ctx.player()).lowDuringChannel = false; // still low when it stopped: not healed out of it
     }
 
     /**
