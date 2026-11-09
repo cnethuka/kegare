@@ -19,7 +19,8 @@ public final class RmtEvents {
     @SubscribeEvent
     static void onDamage(LivingDamageEvent.Post event) {
         if (event.getNewDamage() <= 0 || !(event.getEntity() instanceof ServerPlayer victim)) return;
-        if (!victim.isFakePlayer()) RmtFatigue.onDamageTaken(victim, event.getNewDamage());
+        // A repair's own toll isn't an injury: it never slows the repair it comes from.
+        if (!victim.isFakePlayer() && !event.getSource().is(Repair.DAMAGE)) RmtFatigue.onDamageTaken(victim, event.getNewDamage());
         double low = RmtConfig.MOMENT_HEALTH.get();
         if (victim.isAlive() && victim.getHealth() <= low && victim.getHealth() + event.getNewDamage() > low) RmtOnAnother.onDroppedLow(victim);
         if (victim instanceof FakePlayer) return;
@@ -31,6 +32,7 @@ public final class RmtEvents {
         if (event.getEntity() instanceof ServerPlayer player && !(player instanceof FakePlayer)) {
             GreenOrbService.tick(player);
             RmtFatigue.tick(player);
+            BrainDamage.tick(player);
         }
     }
 
@@ -39,6 +41,7 @@ public final class RmtEvents {
         if (event.getEntity() instanceof ServerPlayer player && !event.isCanceled()) {
             GreenOrbService.clear(player);
             RmtFatigue.reset(player);
+            Repair.stop(player);
             GreenOrbService.state(player).survivedLowAt = Long.MAX_VALUE; // dead before the 10 s: rmt_survived_low doesn't count
         }
     }
@@ -63,6 +66,23 @@ public final class RmtEvents {
         if (event.getEntity() instanceof ServerPlayer player) {
             RmtFatigue.reset(player);
             GreenOrbService.state(player).survivedLowAt = Long.MAX_VALUE;
+            Repair.forget(player.getUUID());
         }
+    }
+
+    @SubscribeEvent
+    static void onStartTracking(net.neoforged.neoforge.event.entity.player.PlayerEvent.StartTracking event) {
+        if (event.getEntity() instanceof ServerPlayer viewer) Repair.onStartTracking(viewer, event.getTarget());
+    }
+
+    /** A night slept through clears the brain meter of everyone who slept it. */
+    @SubscribeEvent
+    static void onNightSlept(net.neoforged.neoforge.event.level.SleepFinishedTimeEvent event) {
+        if (event.getLevel() instanceof net.minecraft.server.level.ServerLevel level) BrainDamage.nightSlept(level);
+    }
+
+    @SubscribeEvent
+    static void onStopped(net.neoforged.neoforge.event.server.ServerStoppedEvent event) {
+        Repair.clear();
     }
 }

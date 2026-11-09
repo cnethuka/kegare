@@ -102,6 +102,7 @@ final class HelpCommand {
             entry("debug reroll <player> <innate>", "commands.kegare.help.debug.reroll"),
             entry("debug shared unlock <player> <ability>", "commands.kegare.help.debug.shared.unlock"),
             entry("debug shared lock <player> <ability>", "commands.kegare.help.debug.shared.lock"),
+            entry("debug brain <player> <value>", "commands.kegare.help.debug.brain"),
             entry("debug task unlock <player> <task>", "commands.kegare.help.debug.task.unlock"),
             entry("debug task lock <player> <task>", "commands.kegare.help.debug.task.lock"),
             entry("debug orb spawn [player]", "commands.kegare.help.debug.orb.spawn"),

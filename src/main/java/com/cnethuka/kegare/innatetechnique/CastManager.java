@@ -245,6 +245,16 @@ public final class CastManager {
         return Optional.empty();
     }
 
+    /** The charge or channel in progress, if any (read only). */
+    public static java.util.Optional<CastState.Active> currentCast(ServerPlayer player) {
+        return java.util.Optional.ofNullable(state(player).casting);
+    }
+
+    /** Every running toggle (read only). */
+    public static java.util.Collection<CastState.Active> activeToggles(ServerPlayer player) {
+        return state(player).toggles().values();
+    }
+
     public static boolean isToggleActive(ServerPlayer player, Ability toggle) {
         return state(player).toggles.containsKey(toggle.id());
     }

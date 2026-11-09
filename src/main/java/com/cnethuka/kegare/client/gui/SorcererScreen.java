@@ -611,10 +611,16 @@ public final class SorcererScreen extends Screen {
         y += 5;
 
         y += GuiDraw.text(g, font, Component.translatable("gui.kegare.sorcerer.progress.insight"), x, y, 1f, 0xFFD8D2E0) + 1;
-        return y + GuiDraw.wrapped(g, font, Component.translatable("gui.kegare.sorcerer.progress.insight.values",
+        y += GuiDraw.wrapped(g, font, Component.translatable("gui.kegare.sorcerer.progress.insight.values",
                 Component.translatable(InsightCategory.DOMINION.translationKey()), p.dominion(),
                 Component.translatable(InsightCategory.WARD.translationKey()), p.ward(),
                 Component.translatable(InsightCategory.OUTPUT.translationKey()), p.output()), x, y, w, GuiDraw.GRAY);
+        if (data.severed()) return y;
+        // The brain meter (DESIGN §3.17): private, here and in /kegare info.
+        y += 5 + GuiDraw.text(g, font, Component.translatable("gui.kegare.sorcerer.brain", p.brain() + "%"), x, y + 5, 1f, 0xFFD8D2E0) + 1;
+        GuiDraw.progress(g, x, y, w, 6, p.brain() / 100f, p.brain() >= 100 ? 0xFF6B6B : 0xC0506A);
+        y += 8;
+        return y + GuiDraw.wrapped(g, font, Component.translatable("gui.kegare.sorcerer.brain.desc"), x, y, w, GuiDraw.DARK_GRAY);
     }
 
     /** Assessment against the requirement, each line green once it's met. Two columns where the box is wide enough. */

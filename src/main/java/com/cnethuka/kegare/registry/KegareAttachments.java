@@ -66,6 +66,11 @@ public final class KegareAttachments {
             "background_tasks", () -> AttachmentType.builder(() -> new com.cnethuka.kegare.backgroundtask.BackgroundTaskData())
                     .serialize(com.cnethuka.kegare.backgroundtask.BackgroundTaskData.CODEC).copyOnDeath().build());
 
+    /** The brain meter (DESIGN §3.17): what repairing a burnt-out technique has cost. Saved, kept on death. */
+    public static final Supplier<AttachmentType<com.cnethuka.kegare.rmt.BrainDamage.Data>> BRAIN = ATTACHMENT_TYPES.register(
+            "brain", () -> AttachmentType.builder(() -> new com.cnethuka.kegare.rmt.BrainDamage.Data())
+                    .serialize(com.cnethuka.kegare.rmt.BrainDamage.Data.CODEC).copyOnDeath().build());
+
     /** Health healed with your own channelled RMT, in total (DESIGN §3.31): saved, kept on death. */
     public static final Supplier<AttachmentType<com.cnethuka.kegare.backgroundtask.RmtHealed>> RMT_HEALED = ATTACHMENT_TYPES.register(
             "rmt_healed", () -> AttachmentType.builder(() -> new com.cnethuka.kegare.backgroundtask.RmtHealed())

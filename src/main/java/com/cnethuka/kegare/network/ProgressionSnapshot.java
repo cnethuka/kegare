@@ -26,10 +26,11 @@ import net.minecraft.server.level.ServerPlayer;
  * @param assessment where they stand against the next step's Assessment, if it takes one
  * @param refinementXpNeeded to the next level; 0 at the top
  * @param locked what of their technique is still locked, with the level each one needs
+ * @param brain the brain meter (DESIGN §3.17), rounded, 0 to 100
  */
 public record ProgressionSnapshot(int grade, float gradeXp, float gradeXpNeeded, Optional<Assessment> assessment,
                                   int refinement, float refinementXp, float refinementXpNeeded, int peakRefinement, int maxRefinement,
-                                  int dominion, int ward, int output, Map<ResourceLocation, Integer> locked) {
+                                  int dominion, int ward, int output, Map<ResourceLocation, Integer> locked, int brain) {
     public record Assessment(float average, float averageNeeded, float technique, float techniqueNeeded, int fights, int fightsNeeded,
                              int opponents, int opponentsNeeded, int peak, int peakNeeded, boolean severed) {}
 
@@ -45,7 +46,8 @@ public record ProgressionSnapshot(int grade, float gradeXp, float gradeXpNeeded,
         return new ProgressionSnapshot(grade.ordinal(), (float) GradeService.get(player).xp(), grade.next().map(GradeService::xpCost).orElse(0.0).floatValue(), assessment,
                 refinement.level(), (float) refinement.xp(), refinement.level() >= max ? 0f : (float) RefinementService.xpForLevel(refinement.level() + 1),
                 refinement.peak(), max,
-                Insight.get(player, InsightCategory.DOMINION), Insight.get(player, InsightCategory.WARD), Insight.get(player, InsightCategory.OUTPUT), locked);
+                Insight.get(player, InsightCategory.DOMINION), Insight.get(player, InsightCategory.WARD), Insight.get(player, InsightCategory.OUTPUT), locked,
+                (int) Math.round(com.cnethuka.kegare.rmt.BrainDamage.get(player)));
     }
 
     /** The Refinement level this needs, or -1 if it isn't locked. */
@@ -79,6 +81,7 @@ public record ProgressionSnapshot(int grade, float gradeXp, float gradeXpNeeded,
         buf.writeVarInt(ward);
         buf.writeVarInt(output);
         buf.writeMap(locked, FriendlyByteBuf::writeResourceLocation, FriendlyByteBuf::writeVarInt);
+        buf.writeVarInt(brain);
     }
 
     static ProgressionSnapshot read(FriendlyByteBuf buf) {
@@ -87,6 +90,6 @@ public record ProgressionSnapshot(int grade, float gradeXp, float gradeXpNeeded,
                         b.readVarInt(), b.readVarInt(), b.readVarInt(), b.readVarInt(), b.readBoolean())),
                 buf.readVarInt(), buf.readFloat(), buf.readFloat(), buf.readVarInt(), buf.readVarInt(),
                 buf.readVarInt(), buf.readVarInt(), buf.readVarInt(),
-                buf.readMap(FriendlyByteBuf::readResourceLocation, FriendlyByteBuf::readVarInt));
+                buf.readMap(FriendlyByteBuf::readResourceLocation, FriendlyByteBuf::readVarInt), buf.readVarInt());
     }
 }

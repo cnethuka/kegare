@@ -62,7 +62,13 @@ public final class BackgroundRmt extends BackgroundTask {
             if (ID.equals(id)) KegareAdvancements.award(player, ALWAYS_ON);
         });
         MaliceService.addRegenModifier(player -> running(player) ? BackgroundTaskConfig.RMT_REGEN_FACTOR.get() : 1.0);
-        Burnout.addModifier((player, ticks) -> running(player) ? (int) Math.round(ticks * BackgroundTaskConfig.RMT_BURNOUT_FACTOR.get()) : ticks);
+        // Shorter Burnouts, paid for on the brain meter like a repair (DESIGN §3.17): nothing gets around the limit.
+        Burnout.addModifier((player, ticks) -> {
+            if (!running(player)) return ticks;
+            int shorter = (int) Math.round(ticks * BackgroundTaskConfig.RMT_BURNOUT_FACTOR.get());
+            double allowed = com.cnethuka.kegare.rmt.BrainDamage.take(player, (ticks - shorter) / 20.0, ticks / 20.0);
+            return ticks - (int) Math.floor(allowed * 20.0 + 1.0e-6);
+        });
         // Only the Six Eyes see it: a faint green shimmer on anyone running it.
         AuraTell.addShimmer((viewer, player) -> running(player) && TraitService.has(viewer, KegareTraits.SIX_EYES.get()),
                 player -> BackgroundTaskService.isActive(player, ID));

@@ -32,6 +32,13 @@ public final class ReverseMaliceTechnique extends BaseAbility {
         HEAL_LISTENERS.add(listener);
     }
 
+    /** Told every tick a player channels RMT (Six Eyes: Strain and collapse risk fall while the brain is refreshed). */
+    private static final java.util.List<java.util.function.Consumer<ServerPlayer>> CHANNEL_LISTENERS = new java.util.concurrent.CopyOnWriteArrayList<>();
+
+    public static void addChannelListener(java.util.function.Consumer<ServerPlayer> listener) {
+        CHANNEL_LISTENERS.add(listener);
+    }
+
     public ReverseMaliceTechnique() {
         super(RmtIds.ABILITY, CastType.CHANNELED);
     }
@@ -60,7 +67,9 @@ public final class ReverseMaliceTechnique extends BaseAbility {
         RmtState state = GreenOrbService.state(p);
         double low = RmtConfig.LOW_HEALTH.get();
         if (p.getHealth() <= low) state.lowDuringChannel = true;
-        heal(p, p, RmtConfig.HEAL_PER_SECOND.get() * RmtOutput.of(p) / 20.0);
+        for (var listener : CHANNEL_LISTENERS) listener.accept(p);
+        // Burnt out: the technique is repaired first, and the body waits (DESIGN §3.17).
+        if (!Repair.tick(p)) heal(p, p, RmtConfig.HEAL_PER_SECOND.get() * RmtOutput.of(p) / 20.0);
         if (state.lowDuringChannel && p.getHealth() > low) { // healed themselves out of it: alive in 10 s, and it counts
             state.lowDuringChannel = false;
             state.survivedLowAt = p.level().getGameTime() + RmtConfig.ticks(RmtConfig.SURVIVE_SECONDS);
@@ -70,6 +79,7 @@ public final class ReverseMaliceTechnique extends BaseAbility {
     @Override
     public void onEnd(AbilityContext ctx, com.cnethuka.kegare.innatetechnique.EndReason reason) {
         GreenOrbService.state(ctx.player()).lowDuringChannel = false; // still low when it stopped: not healed out of it
+        Repair.stop(ctx.player());
     }
 
     /**

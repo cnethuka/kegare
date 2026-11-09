@@ -12,6 +12,13 @@ public final class RmtConfig {
     public static ModConfigSpec.DoubleValue OUTPUT_GRADE_BONUS;
     public static ModConfigSpec.DoubleValue OUTPUT_PEAK_BONUS;
     public static ModConfigSpec.DoubleValue FATIGUE_WEIGHT;
+    // Repairing a burnt-out technique, and the brain's limit (DESIGN §3.17)
+    public static ModConfigSpec.DoubleValue REPAIR_RATE;
+    public static ModConfigSpec.DoubleValue REPAIR_DAMAGE;
+    public static ModConfigSpec.DoubleValue DOMINION_BURNOUT_ASSUMED;
+    public static ModConfigSpec.DoubleValue BRAIN_PER_SECOND;
+    public static ModConfigSpec.DoubleValue BRAIN_ESCALATION;
+    public static ModConfigSpec.DoubleValue BRAIN_HEAL_PER_SECOND;
     public static ModConfigSpec.DoubleValue MAX_FATIGUE;
 
     // The green orb (unlock)
@@ -94,6 +101,23 @@ public final class RmtConfig {
                 "on death and on logout.").push("fatigue");
         FATIGUE_WEIGHT = b.defineInRange("fatigueWeight", 0.15, 0.0, 10.0);
         MAX_FATIGUE = b.comment("Never more than this, so it never stops healing outright.").defineInRange("maxFatigue", 0.6, 0.0, 0.95);
+        b.pop();
+
+        b.comment("Repairing a burnt-out technique: channelling RMT while burnt out repairs the technique first, destroying and healing",
+                "the part of the brain where it's stored. Every RMT user, Six Eyes included. The brain meter (0 to 100) fills with every second",
+                "of Burnout taken away (repair, or Background RMT's shortening); full, no more repair.").push("repair");
+        REPAIR_RATE = b.comment("Seconds of Burnout repaired per second of channel at an output of 1 (times your current RMT output).")
+                .defineInRange("repairRate", 4.0, 0.0, 1000.0);
+        REPAIR_DAMAGE = b.comment("Damage taken per second while repairing (armour doesn't stop it).").defineInRange("repairDamage", 1.0, 0.0, 1000.0);
+        DOMINION_BURNOUT_ASSUMED = b.comment("Dominions don't exist yet: the Burnout one is assumed to leave, in seconds. The brain's costs are",
+                "anchored to it: about four repairs of one fit (a fifth Domain, not a sixth).").defineInRange("dominionBurnoutAssumed", 60.0, 1.0, 3600.0);
+        BRAIN_PER_SECOND = b.comment("Brain meter added per second of Burnout taken away, at an empty meter, for a Burnout of",
+                "dominionBurnoutAssumed. A Burnout of length L costs sqrt(L / dominionBurnoutAssumed) times as much a second (longer ones",
+                "cost more), and the meter adds more the fuller it already is (brainEscalation): each repair adds more than the last.")
+                .defineInRange("brainPerSecond", 0.262, 0.0, 100.0);
+        BRAIN_ESCALATION = b.comment("How much a fuller meter adds: x (1 + brainEscalation x meter / 100).").defineInRange("brainEscalation", 1.0, 0.0, 100.0);
+        BRAIN_HEAL_PER_SECOND = b.comment("The meter falls this much a second out of a fight. Sleeping through a night clears it.")
+                .defineInRange("brainHealPerSecond", 0.15, 0.0, 100.0);
         b.pop();
 
         b.comment("The green orb: how Reverse Malice Technique is found. Only its finder sees it.").push("orb");

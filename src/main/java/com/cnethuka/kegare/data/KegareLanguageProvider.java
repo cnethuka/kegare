@@ -342,6 +342,12 @@ public final class KegareLanguageProvider extends LanguageProvider {
                 + "own output, for %3$s times the " + MALICE + ". Few can: it takes enough Output Insight, and then the right moment, when "
                 + "someone near you is badly hurt.");
         add("message.kegare.rmt.unlocked", "Your body remembers how to heal.");
+        add("message.kegare.rmt.brain_full", "Your brain can't take another repair.");
+        add("death.attack.kegare.brain_repair", "%1$s's brain gave out");
+        add("death.attack.kegare.brain_repair.player", "%1$s's brain gave out while fighting %2$s");
+        add("gui.kegare.sorcerer.brain", "Brain: %s worn by repairs");
+        add("gui.kegare.sorcerer.brain.desc", "Repairing a burnt-out technique with Reverse Malice Technique wears the brain. It heals slowly out of a "
+                + "fight, and a night's sleep clears it. Full, no more repairs.");
         add("ability.kegare.reverse_malice_technique.unlock", "Take in the green orb.");
 
         // Background Tasks (DESIGN §3.31)
@@ -814,6 +820,7 @@ public final class KegareLanguageProvider extends LanguageProvider {
         add("commands.kegare.info.loadout_empty_rest", "%s-%s empty");
         add("commands.kegare.info.shared", "Shared unlocked: %s");
         add("commands.kegare.info.rmt", "%s: output %sx, injuries %s");
+        add("commands.kegare.info.brain", "Brain: %s worn by repairs");
         add("commands.kegare.info.cooldowns", "Cooldowns: %s");
         add("commands.kegare.info.cooldown_entry", "%s %ss");
         add("commands.kegare.info.active", "Active: %s");
@@ -904,6 +911,8 @@ public final class KegareLanguageProvider extends LanguageProvider {
         add("commands.kegare.debug.shared.not_unlocked", "%s hasn't unlocked %s.");
         add("commands.kegare.debug.shared.severed", "%s is " + SEVERED + " and can't unlock %s.");
         add("commands.kegare.debug.task.unknown", "Unknown Background Task: %s. Choose from %s.");
+        add("commands.kegare.debug.brain", "%s's brain meter is now %s.");
+        add("commands.kegare.help.debug.brain", "Set a player's brain meter (0 to 100): what repairing burnt-out techniques has cost.");
         add("commands.kegare.debug.task.unlocked", "Unlocked %s for %s.");
         add("commands.kegare.debug.task.locked", "Locked %s again for %s.");
         add("commands.kegare.debug.task.already", "%s already has %s.");

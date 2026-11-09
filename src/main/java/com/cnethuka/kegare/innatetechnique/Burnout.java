@@ -29,17 +29,21 @@ public final class Burnout {
     /** The attachment ({@code kegare:burnout}): ticks left, counted down while online. */
     public static final class Data {
         public static final Codec<Data> CODEC = RecordCodecBuilder.create(i -> i.group(
-                Codec.INT.optionalFieldOf("remaining", 0).forGetter(d -> d.remaining)
+                Codec.INT.optionalFieldOf("remaining", 0).forGetter(d -> d.remaining),
+                Codec.INT.optionalFieldOf("length", 0).forGetter(d -> d.length)
         ).apply(i, Data::new));
 
         int remaining;
+        /** How long it was when it was applied (repair's brain cost reads it: longer Burnouts cost more). */
+        int length;
 
         public Data() {
-            this(0);
+            this(0, 0);
         }
 
-        private Data(int remaining) {
+        private Data(int remaining, int length) {
             this.remaining = Math.max(0, remaining);
+            this.length = Math.max(this.remaining, length);
         }
     }
 
@@ -65,6 +69,7 @@ public final class Burnout {
         Data data = player.getData(KegareAttachments.BURNOUT);
         if (ticks <= data.remaining) return;
         data.remaining = ticks;
+        data.length = ticks;
         PlayerSync.markDirty(player);
     }
 
@@ -75,6 +80,11 @@ public final class Burnout {
     /** Ticks left, 0 if none. Reading never creates the attachment. */
     public static int remaining(ServerPlayer player) {
         return player.hasData(KegareAttachments.BURNOUT) ? player.getData(KegareAttachments.BURNOUT).remaining : 0;
+    }
+
+    /** How long the running Burnout was when it was applied, in ticks; 0 if none. */
+    public static int length(ServerPlayer player) {
+        return isBurntOut(player) ? Math.max(remaining(player), player.getData(KegareAttachments.BURNOUT).length) : 0;
     }
 
     /** Takes {@code ticks} off a running Burnout. */

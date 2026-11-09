@@ -85,6 +85,7 @@ game never names a bearer, heir or killer of a secret holder.
 | `kegare:insight` | yes | yes | Dominion, Ward and Output values, the first-time keys already paid (§3.21) |
 | `kegare:unlocks` | yes | yes | IDs held in the unlock framework (§3.21) |
 | `kegare:background_tasks` | yes | yes | three Background Task slots, each a task ID or nothing, on or off (§3.31) |
+| `kegare:brain` | yes | yes | the brain meter, 0 to 100: what repairing burnt-out techniques has cost (§3.17) |
 | `kegare:cast_state` | no | no | runtime: active charge/channel, active toggles |
 | `kegare:sync_state` | no | no | runtime: "needs sync" flag |
 | `kegare:landing_state` | no | no | runtime: when each ability last landed on each target, who the player last traded hits with |
@@ -339,7 +340,8 @@ All timestamps use **level game time**. They persist across restarts and are ide
   see behind where it is), and vanilla's own teleport and head packets for the delayed image.
 - **Sub-tick timing** (§3.29): `TimingNet.Stamp` (C→S, an input stamped with the client's clock, sent at the key press), `TimingNet.Ping`
   (S→C) and `TimingNet.Pong` (C→S, the client's clock), all handled on the network thread. Reinforced Fists' look is `FistsPayload` (§3.28).
-- Network version `24` (since Reinforcement and Background Tasks, §3.16 and §3.31: `AuraPayload`, `BackgroundSyncPayload`,
+- Network version `25` (since Six Eyes, §3.32, and RMT's repair, §3.17: `Repair.Payload`, the brain meter in `ProgressionSnapshot`, and
+  Six Eyes' own payloads; `24` was Reinforcement and Background Tasks, §3.16 and §3.31: `AuraPayload`, `BackgroundSyncPayload`,
   `BackgroundActionPayload`; `23` was too fast for the eye, §3.30:
   `SensedPositionsPayload`; `22` was Reinforced Fists and Black Spark, §3.28-3.29: `FistsPayload`, the timing stamps; `21` was RMT's rework, §3.17: `RmtOutputPayload`, then heal-others' `RmtLinkPayload` and `RmtMomentPayload`; `20`
   was Closing Line's line in three dimensions in `RushPayload` and its cooldown in `BlurPayload`, §3.27; `19`
@@ -423,6 +425,7 @@ Every command reads `/kegare <system> <action> [player] [value]`.
 | `/kegare debug spark force <player>` | Their next melee hit is a Black Spark, whatever the timing (for testing) |
 | `/kegare debug spark zone <player> <seconds>` | Put them in the zone for that long (0 ends it); it starts no chain (§3.28) |
 | `/kegare debug rmt fatigue <player> <amount>` | Set how much injuries take off a player's Reverse Malice Technique output (0 to 1, §3.17) |
+| `/kegare debug brain <player> <value>` | Set the brain meter, 0 to 100 (§3.17) |
 | `/kegare debug rmt healed <player> <amount>` | Set how much a player has healed with their own RMT; Background RMT unlocks at 500 (§3.31) |
 | `/kegare debug rmt others unlock\|lock <player>` | Teach or take away healing others (RMT's special) without its moment: the Unlocks entry `kegare:rmt_heal_others` |
 | `/kegare debug rmt moment <player> <target>` | Force the moment now: the target glows for the player for `momentSeconds`, and healing them teaches it (if the player is eligible; it says if not) |
@@ -1379,6 +1382,37 @@ negative is positive energy, which is why it heals, and why its colors are white
   `AreTheyHighTest`: the display; two messages, awarded on the second; one message with typos, caps and extra text; never "lol rmt",
   too few words, no fight, a hit over 10 s ago, the other past 16 blocks, more than 20 s between the halves, half from someone else,
   without It's been a while; the typo distances.
+- **Repairing a burnt-out technique** (`Repair`, numbers in `[reverse_malice_technique.repair]`). Canon: a technique burnt out
+  by a Domain can be repaired with reverse cursed technique, destroying and healing the part of the brain where the technique is
+  stored. It has a cost (the user's wounds go unhealed while they do it, and the brain bleeds), and the brain can stand only so
+  many repairs. So, for every RMT user:
+  - **Channelling RMT while burnt out (§3.25) repairs the technique first.** No extra key. The Burnout counts down faster by
+    `repairRate` (4) x the current RMT output seconds a second (Grade, Peak Refinement, injury fatigue and Black Spark's zone all
+    count; on top of its own countdown). The body doesn't heal until the Burnout is gone. It costs `repairDamage` (1) a second
+    (damage type `kegare:brain_repair`: armour doesn't stop it, no knockback, past the hurt cooldown and leaving none behind; it never
+    counts as an injury for fatigue; "%s's brain gave out"). Others see a nosebleed while it goes on (the tell: dark red drops running
+    from under the eyes, plain dust particles so every setting shows it; `Repair.Payload` to everyone tracking them, not in your own
+    first person).
+  - **The brain meter** (`BrainDamage`, attachment `kegare:brain`, 0 to 100, saved, kept on death): every second of Burnout taken away
+    adds `brainPerSecond` (0.262) x sqrt(L / `dominionBurnoutAssumed`) x (1 + `brainEscalation` (1) x meter / 100), for a Burnout L
+    long (the length it had when applied, saved with it): longer Burnouts cost more a second, and each repair adds more than the last
+    (the same tissue destroyed again). Background RMT's passive shortening (§3.31) adds the same way, so nothing gets around the limit.
+  - **Full:** "Your brain can't take another repair." on the action bar, repair stops and the Burnout runs its full length (RMT heals the
+    body again: there's nothing left it can do for the technique). A repair that fills it stops where
+    it filled. Background RMT shortens nothing while it's full. `BrainDamage.refusesDominion` is the hook for Dominions (later) to
+    refuse to open. Six Eyes gets no exemption.
+  - **Healing:** `brainHealPerSecond` (0.15) a second out of a fight (full to empty in about 11 minutes); a night slept through clears
+    it for everyone who slept it (`SleepFinishedTimeEvent`).
+  - **The anchor:** Dominions don't exist yet, so a Domain's Burnout is assumed to be `dominionBurnoutAssumed` (60 s). From an empty
+    meter, four full repairs of that fit (the meter at 17, 37, 60 and 87), and the fifth stops 24.6 s in: a fifth Domain, not a sixth.
+    The count doesn't depend on how strong the player is (a strong one repairs faster, for the same cost a second). Standstill's 20 s
+    Burnout: 22 full repairs.
+  - **Private:** the meter shows only on the Sorcerer screen's Progress view (a bar, "Brain: 37% worn by repairs", in the private
+    progression sync) and in `/kegare info`. `/kegare debug brain <player> <value>` sets it.
+  - **Tests:** `RepairTest` (repairRate x output, halved by fatigue; no body healing, repairDamage through armour; healing again and
+    the tell gone once repaired; each repair costing more than the last, longer ones more a second; four Domain repairs, more of 20 s;
+    Background RMT's shortening on the meter, none when full; full refusing, the body healed, the Dominion hook, a Six Eyes bearer no
+    different; nearly full repairing until full; healing out of a fight, none in one; a night's sleep clearing it).
 - **Tests:** `RmtTest`: Severed can't unlock; locked can't be slotted; swap a Rime ability for it; cast at full health, still running
   there, a hit healed as it lands, never above max or absorption; R fizzles; start cost, a twentieth a tick, healPerSecond after a
   second, upkeep; cooldown on release; a freeze interrupts it; it doesn't end healed up; a reroll resets the loadout but keeps the
@@ -2367,7 +2401,8 @@ Dominions later.
 - **API:** `Burnout.apply(player, ticks)` (never shortens one already running: the longer stands), `isBurntOut`, `remaining`,
   `shorten(player, ticks)` and `clear`. A `Burnout.Modifier` (`addModifier`) changes every Burnout's length as it's applied: the
   hook Background RMT uses to shorten it (§3.31).
-- **Saved** (attachment `kegare:burnout`, ticks left), so it survives logging out; it only counts down while they're online, so
+- **Repair:** channelling Reverse Malice Technique while burnt out repairs it faster, at a cost to the brain (§3.17).
+- **Saved** (attachment `kegare:burnout`, ticks left and the length it had when applied), so it survives logging out; it only counts down while they're online, so
   logging out never waits it out. **Cleared on death** (it isn't copied to the respawned player).
 - **HUD:** "Burnt out 12.3s" under the crosshair, in and out of Technique Mode (`BurnoutHud`), and the combat panel greys over its
   innate technique slots and the ultimate (shared abilities stay lit). The end time travels in the sync (`SyncPayload.burntOutUntil`).
