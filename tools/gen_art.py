@@ -949,21 +949,27 @@ def icon_sustained_flow():
 
 
 def sight_marker() -> "Image.Image":
-    """Six Eyes (DESIGN §3.32): a player past render distance, seen where they really are: a soft glow round a bright core with a thin
-    ring, white to be tinted with their Malice color (smooth: drawn in the world)."""
+    """Six Eyes (DESIGN §3.32): where someone past render distance really is. Three frames side by side, each white so it can be tinted on its
+    own (smooth: drawn in the world): the color (a bright core, a ring and a faint glow), the edge lines round those two, and a backing disc.
+    A tint can't darken what it multiplies by more than the texture says, so the edge and the backing are drawn in their own color: that's what
+    makes it read against a bright sky, where a glow washes out."""
     n = 64
-    img = Image.new("RGBA", (n, n), (0, 0, 0, 0))
+    img = Image.new("RGBA", (n * 3, n), (0, 0, 0, 0))
     out = img.load()
+
+    def band(r, centre, half, soft=0.045):
+        return max(0.0, min(1.0, (half - abs(r - centre)) / soft + 0.5))
+
     for j in range(n):
         for i in range(n):
             x, y = (i + 0.5) / n * 2 - 1, (j + 0.5) / n * 2 - 1
             r = math.hypot(x, y)
-            core = max(0.0, 1 - r / 0.22) ** 1.5
-            glow = max(0.0, 1 - r) ** 2.2 * 0.55
-            ring = max(0.0, 1 - abs(r - 0.72) / 0.05) * 0.8
-            a = min(1.0, core + glow + ring)
-            if a > 0.004:
-                out[i, j] = (255, 255, 255, int(round(a * 255)))
+            color = min(1.0, band(r, 0.0, 0.20) + band(r, 0.70, 0.075) + max(0.0, 1 - r / 0.9) ** 2 * 0.22)
+            edge = max(band(r, 0.0, 0.28), band(r, 0.70, 0.15))
+            backing = band(r, 0.0, 0.78) * 0.42
+            for f, a in enumerate((color, edge, backing)):
+                if a > 0.004:
+                    out[i + f * n, j] = (255, 255, 255, int(round(a * 255)))
     return img
 
 

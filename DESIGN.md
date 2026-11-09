@@ -3064,9 +3064,10 @@ for the eye" (§3.30).
 - **Voids:** a Severed player within render distance shows as a blurred distortion, never an outline: a dark smear the shape of a body
   with pale ripples where the flow bends (`entity/void_distortion.png`, 8 frames, smooth), drawn only where something stands in front of
   them (a depth test that passes behind walls), plus a faint trace of it round them in the open so the body itself stays plain to see.
-- **Markers past render distance:** a glowing marker in the player's Malice color where they really are (a void's is dark), and one for
-  every pin. Drawn along the true line but no further than half the render distance (past the far clip plane and into the fog they'd
-  vanish), sized to look the same.
+- **Markers past render distance:** a marker in the player's Malice color where they really are, and one for every pin: a bright core and ring with a dark edge and a dark
+  backing disc, which is what reads against a bright sky, where a color or a glow alone washes out (a void's is dark with a pale edge, as dark on dark would be nothing at night). The same size on
+  screen at any distance, never bigger up close (a pin's a quarter bigger). Drawn along the true line but no further than half the render distance (past the far clip plane and into the fog they'd
+  vanish).
 - **Intent pulses:** a player's outline (and marker) flashes white the moment they start charging, channelling, casting or turning on a
   toggle: the server sends it to the bearer from inside the cast's start, before its tell plays (`CastManager.addStartListener`).
   Severed players never pulse (they have no casts).

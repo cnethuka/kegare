@@ -21,8 +21,8 @@ import org.joml.Vector3f;
 /**
  * What the eyes draw in the world (DESIGN §3.32), through walls, only for a bearer and at every effects setting:
  * <ul>
- * <li>past render distance, a glowing marker in a player's Malice color where they really are (and for every pin); a void's marker is a
- * dark ring;</li>
+ * <li>past render distance, a marker in a player's Malice color with a dark edge where they really are (and for every pin); a void's is
+ * dark with a pale edge;</li>
  * <li>within it, a Severed player shows as a blurred distortion, a dark smear the shape of a body with pale ripples where the flow bends,
  * never an outline. (Everyone else's outline is vanilla's glow pass, colored by {@link SightClient#outlineColor}.)</li>
  * </ul>
@@ -31,6 +31,11 @@ public final class SightRender {
     static final ResourceLocation MARKER = Kegare.id("textures/entity/sight_marker.png");
     static final ResourceLocation VOID = Kegare.id("textures/entity/void_distortion.png");
     static final int VOID_FRAMES = 8;
+    /** The marker's texture has three frames side by side: its color, its edge, its backing. */
+    private static final float FRAME = 1f / 3f;
+    /** Half its width on screen, as a share of how far off it's drawn: the same however far. */
+    private static final double MARKER_SIZE = 0.04;
+    private static final int MARKER_DARK = 0x08080C, MARKER_PALE = 0xC4C4D4;
 
     private SightRender() {}
 
@@ -64,11 +69,11 @@ public final class SightRender {
             boolean pinned = SightClient.pinned(seen);
             if (e != null && e.distanceTo(mc.player) <= far && !pinned) continue; // here: the outline (or the void) shows them
             marker(markers, pose, at.add(0, 1.0, 0).subtract(cam), right, up, seen.severed ? 0x101018 : SightClient.bright(seen.color),
-                    seen.severed ? 0.9f : 1f, pinned, SightClient.pulsing(seen.entityId));
+                    1f, pinned, SightClient.pulsing(seen.entityId), seen.severed);
         }
         for (SightClient.Pin pin : SightClient.pins()) {
             if (pin.name() != null) continue; // players were drawn above
-            marker(markers, pose, pin.pos().add(0, 0.6, 0).subtract(cam), right, up, pin.color(), 0.9f, true, SightClient.pulsing(pin.entityId()));
+            marker(markers, pose, pin.pos().add(0, 0.6, 0).subtract(cam), right, up, pin.color(), 1f, true, SightClient.pulsing(pin.entityId()), false);
         }
         // The uncovered edge: the spark before a top-tier opponent's cast, a white-gold flash at their head that fades as it goes.
         for (var spark : StrainClient.sparks().entrySet()) {
@@ -77,7 +82,7 @@ public final class SightRender {
             float left = Mth.clamp((spark.getValue() - now) / (float) StrainClient.SPARK_MS, 0f, 1f);
             Vec3 at = e.getPosition(partial).add(0, e.getBbHeight() + 0.2, 0).subtract(cam);
             float size = (float) Math.max(0.7, at.length() * 0.07) * (1.5f - 0.5f * left);
-            quad(markers, pose.last().pose(), at, right, up, size, size, 0f, 1f, 0xFFD060, Math.min(1f, left * 1.5f));
+            quad(markers, pose.last().pose(), at, right, up, size, size, 0f, FRAME, 0xFFD060, Math.min(1f, left * 1.5f));
         }
         buffers.endBatch(SightRenderTypes.THROUGH_WALLS.apply(MARKER));
 
@@ -106,16 +111,21 @@ public final class SightRender {
     }
 
     /**
-     * A marker: the same size on screen however far, bigger when pinned, flashing on a pulse. Drawn along the right line but no further
-     * than half the render distance, so neither the far clip plane nor the fog swallows it (past it, a player is hundreds of blocks off).
+     * A marker: the same size on screen at any distance, bigger when pinned, flashing on a pulse. Its dark edge and backing are what make it
+     * read against a bright sky, where its color alone washes out; a void's edge is pale, as dark on dark would be nothing at night. Drawn along
+     * the right line but no further than half the render distance, so neither the far clip plane nor the fog swallows it (past it, a player is
+     * hundreds of blocks off).
      */
-    private static void marker(VertexConsumer out, PoseStack pose, Vec3 at, Vector3f right, Vector3f up, int rgb, float alpha, boolean pinned, boolean pulse) {
+    private static void marker(VertexConsumer out, PoseStack pose, Vec3 at, Vector3f right, Vector3f up, int rgb, float alpha, boolean pinned, boolean pulse, boolean severed) {
         double distance = at.length();
         double drawn = Math.min(distance, Math.max(6.0, renderDistance() * 0.5));
         if (distance > 1.0e-3 && drawn < distance) at = at.scale(drawn / distance);
-        float size = (float) Math.max(0.5, drawn * 0.035) * (pinned ? 1.25f : 1f);
+        float size = (float) (drawn * MARKER_SIZE) * (pinned ? 1.25f : 1f);
         if (pulse && (SightClient.now() / 75) % 2 == 0) rgb = 0xFFFFFF;
-        quad(out, pose.last().pose(), at, right, up, size, size, 0f, 1f, rgb, alpha);
+        Matrix4f m = pose.last().pose();
+        quad(out, m, at, right, up, size, size, 2 * FRAME, 3 * FRAME, MARKER_DARK, alpha); // (in this order: the three sit in one plane, and sorting keeps it)
+        quad(out, m, at, right, up, size, size, FRAME, 2 * FRAME, severed ? MARKER_PALE : MARKER_DARK, alpha);
+        quad(out, m, at, right, up, size, size, 0f, FRAME, rgb, alpha);
     }
 
     static void quad(VertexConsumer out, Matrix4f pose, Vec3 at, Vector3f right, Vector3f up, float halfW, float halfH, float u0, float u1, int rgb, float alpha) {
