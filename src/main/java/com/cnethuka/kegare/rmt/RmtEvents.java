@@ -43,6 +43,21 @@ public final class RmtEvents {
         }
     }
 
+    /**
+     * Unlocked before unlocking it paid Output Insight (DESIGN §3.21): paid now, once. {@code unlocked_rmt} pays only once ever, so
+     * this does nothing for anyone already paid.
+     */
+    @SubscribeEvent
+    static void onLogin(net.neoforged.neoforge.event.entity.player.PlayerEvent.PlayerLoggedInEvent event) {
+        if (event.getEntity() instanceof ServerPlayer player) payUnlockedRmt(player);
+    }
+
+    static void payUnlockedRmt(ServerPlayer player) {
+        if (com.cnethuka.kegare.loadout.SharedAbilityService.isUnlocked(player, RmtIds.ABILITY)) {
+            com.cnethuka.kegare.progression.InsightHooks.unlockedRmt(player);
+        }
+    }
+
     @SubscribeEvent
     static void onLogout(net.neoforged.neoforge.event.entity.player.PlayerEvent.PlayerLoggedOutEvent event) {
         if (event.getEntity() instanceof ServerPlayer player) {

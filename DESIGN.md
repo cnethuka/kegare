@@ -1976,7 +1976,7 @@ player, ever, saved per player. Which category each source pays into, and how mu
 | `caught_in_dominion` | Dominion 5 | technique | hook only |
 | `clashed_with_dominion` | Dominion 5 | technique | hook only |
 | `book_chapter` | Dominion 2 | chapter of a later system | hook only |
-| `unlocked_rmt` | Output 5 | ever (unlocking Reverse Malice Technique, any way) | wired |
+| `unlocked_rmt` | Output 5 | ever (unlocking Reverse Malice Technique, any way; anyone who unlocked it before this paid is paid on login) | wired |
 | `rmt_survived_low` | Output 5 | ever (at 3 hearts or less during your own RMT, healed above it, alive 10 s later) | wired |
 | `healed_by_other` | Output 3 | ever (healed by another player's RMT, §3.17) | wired |
 

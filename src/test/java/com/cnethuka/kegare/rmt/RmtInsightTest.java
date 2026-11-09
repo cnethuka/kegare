@@ -67,6 +67,29 @@ class RmtInsightTest {
     }
 
     @Test
+    void unlockedBeforeItPaidIsPaidOnLogin(MinecraftServer server) throws Exception {
+        TestServer.onServerThread(server, () -> {
+            TestServer.ensureOverworld(server);
+            try {
+                ServerPlayer p = player(server, server.overworld(), "rmt_paid_late");
+                SharedAbilityService.unlock(p, Rmt.REVERSE_MALICE_TECHNIQUE);
+                Insight.reset(p); // as if unlocked before unlocking paid anything
+                assertTrue(SharedAbilityService.isUnlocked(p, Rmt.REVERSE_MALICE_TECHNIQUE.id()), "setup: unlocked");
+                assertEquals(0, output(p), "setup: never paid");
+                net.neoforged.neoforge.common.NeoForge.EVENT_BUS.post(new net.neoforged.neoforge.event.entity.player.PlayerEvent.PlayerLoggedInEvent(p));
+                assertEquals(5, output(p), "paid on login");
+                net.neoforged.neoforge.common.NeoForge.EVENT_BUS.post(new net.neoforged.neoforge.event.entity.player.PlayerEvent.PlayerLoggedInEvent(p));
+                assertEquals(5, output(p), "once");
+                ServerPlayer locked = player(server, server.overworld(), "rmt_never_unlocked");
+                net.neoforged.neoforge.common.NeoForge.EVENT_BUS.post(new net.neoforged.neoforge.event.entity.player.PlayerEvent.PlayerLoggedInEvent(locked));
+                assertEquals(0, output(locked), "nothing without RMT");
+            } finally {
+                TestServer.removePlayers(server);
+            }
+        });
+    }
+
+    @Test
     void eachSourcePaysOnce(MinecraftServer server) throws Exception {
         TestServer.onServerThread(server, () -> {
             TestServer.ensureOverworld(server);
