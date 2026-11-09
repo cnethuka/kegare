@@ -49,10 +49,11 @@ class BlurTest {
         var rate = com.cnethuka.kegare.innate_technique.time_manipulation.TimeConfig.ACCELERATE_RATE;
         double was = rate.get();
         try {
-            assertEquals(0.7, Blur.topSpeed(), 1.0e-9, "the default: about 2.5 times a sprint, 14 blocks a second");
-            assertTrue(Blur.topSpeed() >= 0.28 * rate.get() * Blur.ABOVE_ACCELERATE - 1.0e-9, "a quarter faster than a sprint under Accelerate");
+            assertEquals(0.7, Blur.topSpeed(), 0.005, "the default: about 2.5 times a sprint, 14 blocks a second");
+            assertTrue(Blur.topSpeed() >= Blur.VANILLA_SPRINT * rate.get() * Blur.ABOVE_ACCELERATE - 1.0e-9,
+                    "at least a quarter faster than a sprint under Accelerate");
             rate.set(3.0);
-            assertEquals(0.28 * 3.0 * Blur.ABOVE_ACCELERATE, Blur.topSpeed(), 1.0e-9, "Accelerate's rate goes up: Blur goes up with it");
+            assertEquals(Blur.VANILLA_SPRINT * 3.0 * Blur.ABOVE_ACCELERATE, Blur.topSpeed(), 1.0e-9, "Accelerate's rate goes up: Blur goes up with it");
         } finally {
             rate.set(was);
         }

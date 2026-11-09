@@ -23,8 +23,11 @@ import net.neoforged.neoforge.network.PacketDistributor;
 public final class Blur {
     /** A sprint, in blocks a tick: faster than this is Blur's doing, and what its drain counts. */
     static final double SPRINT = 0.3;
-    /** A vanilla sprint as measured (5.5 blocks a second), in blocks a tick. */
-    private static final double VANILLA_SPRINT = 0.28;
+    /**
+     * A vanilla sprint on level ground, blocks a tick: each tick's push (0.13 at 0.98) against the ground's drag (0.6 x 0.91), at the
+     * speed where the two balance. 5.6 blocks a second; measured 5.5, and 11.2 under Accelerate's 2.
+     */
+    static final double VANILLA_SPRINT = 0.13 * 0.98 / (1 - 0.6 * 0.91);
     /** How much faster than a sprint under Accelerate Blur always is: clearly faster, never the same. */
     static final double ABOVE_ACCELERATE = 1.25;
     /** Ticks of movement the server sums to check it (a late packet bunches two ticks into one). */

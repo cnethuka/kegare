@@ -2416,10 +2416,11 @@ what they play by.
 Technique Mode, unchanged (`client/SeveredKeys`). Controls lists the key as "Technique Mode / Blur".
 - **Movement:** extremely fast (`[blur] speed` 0.7 blocks a tick, about 2.5 times a sprint, 14 blocks a second). It never drops
   below 1.25 times a sprint under Accelerate's `rate` (`Blur.topSpeed`), so it stays clearly faster than Accelerate (whose sprint
-  is 2 times a sprint at its default rate of 2): if that rate goes up, Blur goes up with it. Side by side: Blur 16.5 blocks a second, Accelerate's
-  sprint 11.1 to 11.5. Blur runs above its 14 because vanilla's own walking push (about 0.12 a tick) still adds on top of the
-  velocity Blur sets, as it always has. At that speed a wall still crashes it, an 8° turn still swings wide, and nothing tripped
-  "moved too quickly". Momentum: the velocity turns toward where
+  is 2 times a sprint at its default rate of 2): if that rate goes up, Blur goes up with it. A sprint here is vanilla's on level
+  ground worked out exactly (0.13 x 0.98 / (1 - 0.6 x 0.91), 0.2806 a tick), so at the defaults the floor is 0.7015 and wins by a
+  hair. The drive takes off the push vanilla's own move adds from the movement keys (`BlurDrive.walkingPush`, the game's
+  `getInputVector` worked out the same way), so the speed set is the speed run: Blur runs 14.0 to 14.3 blocks a second, Accelerate's sprint 11.2. At that speed a wall
+  still crashes it, an 8° turn still swings wide, and nothing trips "moved too quickly". Momentum: the velocity turns toward where
   you steer at most `turnDegrees` (8) a tick, so a sharp turn overshoots; steering gains `acceleration` (0.07) a tick up to top speed;
   letting go skids to a stop, losing `skid` (0.05) a tick. Anything that slows movement (Slowness, a Decelerate hit, a Stasis Field)
   slows it by the same share (a Stasis Field takes it to about a quarter, a Decelerate hit to about two thirds). A hit's

@@ -80,7 +80,38 @@ public final class BlurDrive {
             speed = Math.max(0, speed - state.skid());
             velocity = speed < 1.0e-3 ? Vec3.ZERO : velocity.normalize().scale(speed);
         }
-        if (velocity.lengthSqr() > 0) player.setDeltaMovement(velocity.x, player.getDeltaMovement().y, velocity.z);
+        if (velocity.lengthSqr() > 0) {
+            // The game adds the movement keys' own push on top of what's set here; set that much less, so the move is the velocity.
+            Vec3 push = walkingPush(player);
+            player.setDeltaMovement(velocity.x - push.x, player.getDeltaMovement().y, velocity.z - push.z);
+        }
+    }
+
+    /**
+     * The push vanilla's own move adds from the movement keys ({@code LivingEntity.travel}: the keys at 0.98, at the ground's
+     * friction-adjusted speed, or the air's), on top of any velocity set before it. Without taking it off, Blur ran at its top speed
+     * plus a walk (16.5 blocks a second for 0.7 a tick). Read from this tick's keys as they stand before the move.
+     */
+    static Vec3 walkingPush(LocalPlayer player) {
+        float amount;
+        if (player.onGround()) {
+            net.minecraft.core.BlockPos below = player.getBlockPosBelowThatAffectsMyMovement();
+            float friction = player.level().getBlockState(below).getFriction(player.level(), below, player);
+            amount = player.getSpeed() * (0.21600002F / (friction * friction * friction));
+        } else {
+            amount = player.isSprinting() ? 0.025999999F : 0.02F;
+        }
+        return inputVector(player.input.leftImpulse * 0.98F, player.input.forwardImpulse * 0.98F, amount, player.getYRot());
+    }
+
+    /** Vanilla's {@code Entity.getInputVector} for the keys alone (no up or down), as it works it out. */
+    static Vec3 inputVector(float left, float forward, float amount, float yaw) {
+        Vec3 relative = new Vec3(left, 0, forward);
+        double sq = relative.lengthSqr();
+        if (sq < 1.0E-7) return Vec3.ZERO;
+        Vec3 v = (sq > 1.0 ? relative.normalize() : relative).scale(amount);
+        float sin = Mth.sin(yaw * (float) (Math.PI / 180.0)), cos = Mth.cos(yaw * (float) (Math.PI / 180.0));
+        return new Vec3(v.x * cos - v.z * sin, v.y, v.z * cos + v.x * sin);
     }
 
     /** What their movement speed is now against what it normally is (a sprint's own boost aside): Slowness 0.85, a Stasis Field 0.25. */
