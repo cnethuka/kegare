@@ -30,9 +30,10 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 
 /**
- * Closing Line (DESIGN §3.27): R while Blurring rushes at where the target stood; arriving earns a Strike for its window, carrying the
- * rush's speed; a wall mid-rush is a crash; anything living in the path stops it; a swap ends it; a perfect parry of its Strike
- * staggers harder; a boss is struck but never moved.
+ * Closing Line (DESIGN §3.27): R while Blurring rushes in a straight line at where the target stood, up to one on a pillar when the
+ * line is clear; arriving earns a Strike for its window, carrying the rush's speed; the HUD is told its cooldown; a wall mid-rush,
+ * level or rising, is a crash; anything living in the path stops it; a swap ends it; a perfect parry of its Strike staggers harder;
+ * a boss is struck but never moved.
  */
 @ExtendWith(EphemeralTestServerProvider.class)
 class ClosingLineTest {
@@ -46,11 +47,18 @@ class ClosingLineTest {
         p.setYHeadRot(yaw);
     }
 
-    /** The client carrying the rush out: {@code ticks} ticks of moving +X at its speed (or to {@code stopAtX}), the server checking each. */
-    private static void rush(MinecraftServer server, ServerPlayer p, double stopAtX, int ticks) {
+    /**
+     * The client carrying the rush out: {@code ticks} ticks of moving along its line at its speed (held at {@code stopAlong} along it,
+     * where the game's collision would stop them), the server checking each.
+     */
+    private static void rush(MinecraftServer server, ServerPlayer p, double stopAlong, int ticks) {
         SeveredState state = Severed.state(p);
+        Vec3 from = state.rushFrom, dir = state.rushDirection;
+        double along = 0;
         for (int i = 0; i < ticks && ClosingLine.rushing(state); i++) {
-            p.setPos(Math.min(stopAtX, p.getX() + state.rushSpeed), p.getY(), p.getZ());
+            along = Math.min(stopAlong, along + state.rushSpeed);
+            Vec3 at = from.add(dir.scale(along));
+            p.setPos(at.x, at.y, at.z);
             Blur.tick(p, state);
             TestServer.advanceGameTime(server, 1);
         }
@@ -81,9 +89,13 @@ class ClosingLineTest {
                 assertTrue(ClosingLine.rushing(state), "rushing");
                 double expected = 12.0 - ClosingLine.reachGap(s, target);
                 assertEquals(expected, state.rushDistance, 1.0e-6, "to melee reach in front of where the target stood");
+                assertEquals(0.0, state.rushDirection.y, 1.0e-9, "level ground, a level line");
                 assertTrue(state.closingReadyAt > level.getGameTime(), "a cooldown");
+                assertNotNull(state.sent);
+                assertEquals(state.closingReadyAt, state.sent.closingReadyAt(), "the HUD's cue is told when it's ready");
+                assertEquals(SeveredConfig.ticks(SeveredConfig.CLOSING_COOLDOWN.get()), state.sent.closingCooldown(), "and how long that is");
 
-                rush(server, s, 0.5 + expected, 10);
+                rush(server, s, expected, 10);
                 assertFalse(ClosingLine.rushing(state), "arrived");
                 assertTrue(ReinforcedStrike.fromRush(s), "a Strike, from the rush");
                 assertTrue(state.recoveryUntil > level.getGameTime(), "and the recovery with no Blur speed");
@@ -108,7 +120,7 @@ class ClosingLineTest {
                 Blur.tick(s, state);
                 TestServer.advanceGameTime(server, 1);
                 ClosingLine.request(s);
-                rush(server, s, 0.5 + expected, 10);
+                rush(server, s, expected, 10);
                 assertTrue(ReinforcedStrike.fromRush(s));
                 TestServer.advanceGameTime(server, SeveredConfig.ticks(SeveredConfig.CLOSING_STRIKE_WINDOW.get()));
                 assertFalse(ReinforcedStrike.isReady(s), "gone once its window is over");
@@ -128,21 +140,29 @@ class ClosingLineTest {
             BlockPos wall = new BlockPos(7, 120, 0);
             try {
                 ServerPlayer target = SeveredBodyTest.maliceUser(server, level, "cl_wall_target");
-                target.moveTo(13.5, Y + 3, 0.5); // seen over the wall
+                target.moveTo(13.5, Y + 4, 0.5); // seen over the wall, and the line rises toward them
                 ServerPlayer s = blurring(server, level, "cl_wall");
                 face(s, target);
-                level.setBlock(wall, Blocks.STONE.defaultBlockState(), 3);
-                level.setBlock(wall.above(), Blocks.STONE.defaultBlockState(), 3);
+                for (int i = 0; i < 3; i++) level.setBlock(wall.above(i), Blocks.STONE.defaultBlockState(), 3);
                 ClosingLine.request(s);
                 SeveredState state = Severed.state(s);
                 assertTrue(ClosingLine.rushing(state), "it doesn't stop for walls: the wall stops it");
-                rush(server, s, 7.0 - 0.3, 10); // the game's collision holds them at the wall
+                assertTrue(state.rushDirection.y > 0.2, "rising: " + state.rushDirection);
+                // Their feet meet the wall well under its top (more than a step), so the game's collision holds them at it.
+                double atWall = (7.0 - 0.3 - 0.5) / state.rushDirection.x;
+                assertTrue(state.rushFrom.y + state.rushDirection.y * atWall + s.maxUpStep() < Y + 3, "the wall is in the line's way");
+                rush(server, s, atWall, 1); // the first tick, short of it
+                // The next, the game's collision holds them at its face while the rise carries on up it (it moves them up before
+                // across), to within a step of its top: still a wall, not a lip.
+                s.setPos(7.0 - 0.3, Y + 3 - 0.4, 0.5);
+                Blur.tick(s, state);
+                TestServer.advanceGameTime(server, 1);
                 assertFalse(ClosingLine.rushing(state), "stopped");
                 assertTrue(CombatHelper.isStunned(s), "a wall crash: stunned");
                 assertTrue(s.getHealth() < s.getMaxHealth(), "and hurt");
                 assertFalse(ReinforcedStrike.isReady(s), "no Strike");
-                level.setBlock(wall, Blocks.AIR.defaultBlockState(), 3);
-                level.setBlock(wall.above(), Blocks.AIR.defaultBlockState(), 3);
+                for (int i = 0; i < 3; i++) level.setBlock(wall.above(i), Blocks.AIR.defaultBlockState(), 3);
+                s.moveTo(0.5, Y, -30.5); // out of everyone's sight
 
                 // Something living in the path: it stops short of it.
                 ServerPlayer s2 = blurring(server, level, "cl_path");
@@ -159,6 +179,7 @@ class ClosingLineTest {
                 SeveredState state2 = Severed.state(s2);
                 assertTrue(ClosingLine.rushing(state2), "rushing at " + look);
                 assertEquals(6.0 - ClosingLine.reachGap(s2, pig), state2.rushDistance, 0.05, "stops in reach of what's in the way");
+                assertEquals(target.getId(), state2.rushTarget, "rushing at the target, over the pig");
                 pig.discard();
 
                 // A swap mid-rush: moved off the line by something else, it's over.
@@ -175,8 +196,50 @@ class ClosingLineTest {
                 assertFalse(ReinforcedStrike.isReady(s3), "no Strike");
             } finally {
                 pig.discard();
-                level.setBlock(wall, Blocks.AIR.defaultBlockState(), 3);
-                level.setBlock(wall.above(), Blocks.AIR.defaultBlockState(), 3);
+                for (int i = 0; i < 3; i++) level.setBlock(wall.above(i), Blocks.AIR.defaultBlockState(), 3);
+                TestServer.removePlayers(server);
+            }
+        });
+    }
+
+    @Test
+    void itLeapsUpToATargetOnAPillarWhenTheLineIsClear(MinecraftServer server) throws Exception {
+        TestServer.onServerThread(server, () -> {
+            TestServer.ensureOverworld(server);
+            ServerLevel level = server.overworld();
+            level.getHeight(Heightmap.Types.MOTION_BLOCKING, 0, 0);
+            BlockPos base = new BlockPos(10, 120, 0);
+            try {
+                for (int i = 0; i < 5; i++) level.setBlock(base.above(i), Blocks.STONE.defaultBlockState(), 3);
+                ServerPlayer target = SeveredBodyTest.maliceUser(server, level, "cl_pillar_target");
+                target.moveTo(10.5, Y + 5, 0.5); // on top of the pillar
+                ServerPlayer s = blurring(server, level, "cl_pillar");
+                face(s, target);
+                ClosingLine.request(s);
+                SeveredState state = Severed.state(s);
+                assertTrue(ClosingLine.rushing(state), "rushing at someone up on a pillar");
+                Vec3 line = target.position().subtract(s.position());
+                assertEquals(line.length() - ClosingLine.reachGap(s, target), state.rushDistance, 1.0e-6, "in a straight line to melee reach of them");
+                assertEquals(line.normalize().y, state.rushDirection.y, 1.0e-9, "up, the way to where they stand");
+                // Nothing in the line's way: the pillar is beside its end, not across it.
+                for (double t = 0; t <= state.rushDistance; t += 0.25) {
+                    assertTrue(level.noCollision(s, s.getBoundingBox().move(state.rushDirection.scale(t))), "the line is clear at " + t);
+                }
+
+                rush(server, s, state.rushDistance, 10);
+                assertFalse(ClosingLine.rushing(state), "arrived");
+                assertFalse(CombatHelper.isStunned(s), "no crash");
+                assertTrue(ReinforcedStrike.fromRush(s), "a Strike, from the rush");
+                assertTrue(s.getY() > Y + 3, "up there with them, in the air (gravity has them from here)");
+                assertTrue(s.getEyePosition().distanceTo(target.getBoundingBox().getCenter()) < 3.0, "within melee reach");
+                // The rush's own end, its skid carrying them up against the pillar: not a wall crash.
+                s.setPos(10.0 - 0.3, s.getY() - 0.1, 0.5);
+                Blur.tick(s, state);
+                TestServer.advanceGameTime(server, 1);
+                assertFalse(CombatHelper.isStunned(s), "its own end at the pillar's side isn't a crash");
+                assertTrue(state.blur, "still Blurring");
+            } finally {
+                for (int i = 0; i < 5; i++) level.setBlock(base.above(i), Blocks.AIR.defaultBlockState(), 3);
                 TestServer.removePlayers(server);
             }
         });

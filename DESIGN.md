@@ -294,7 +294,8 @@ All timestamps use **level game time**. They persist across restarts and are ide
   wheel stays on the hotbar, the combat panel takes the hotbar's place and the hotbar becomes a column on the left (§3.6).
 
   It ends when you press G again, die, or become Severed (or lose your innate technique), and on logout. For Severed
-  players G is Blur instead (§3.27), sent as `MeleeIntentPayload.Action.BLUR`; for everyone else it stays Technique Mode. Nothing else ends it: chat, any other screen, a command and a dimension change leave the
+  players G is Blur instead (§3.27), sent as `MeleeIntentPayload.Action.BLUR`; for everyone else it stays Technique Mode (Controls
+  lists the key as "Technique Mode / Blur"). Nothing else ends it: chat, any other screen, a command and a dimension change leave the
   mode and the panel as they were. Input and the HUD read one state (`TechniqueMode.isActive`), and it lives on the
   client only: the server has no copy to fall out of step, and turning it on is free, so nothing rides on enforcing it.
 
@@ -329,11 +330,12 @@ All timestamps use **level game time**. They persist across restarts and are ide
   player who starts tracking an entity gets its running loops with their full `growTicks` and the time already gone, so
   they see each one where everyone else does: a growing loop part-grown, Switchback's countdown at the real time left.
 - Severed players (§3.27) get `SensesPayload` (S→C, to that player only: who they sense) and `BlurPayload` (S→C, to its owner:
-  Blur on or off, how it moves, until when they're winded, until when a Closing Line's recovery lasts) and `RushPayload` (S→C, to
-  its owner: a Closing Line to drive, or stop); G sends `MeleeIntentPayload.Action.BLUR`, and R while Blurring is the usual
+  Blur on or off, how it moves, until when they're winded, until when a Closing Line's recovery lasts, until when Closing Line
+  cools down and how long that is) and `RushPayload` (S→C, to its owner: a Closing Line to drive, its line in three dimensions, or
+  stop); G sends `MeleeIntentPayload.Action.BLUR`, and R while Blurring is the usual
   `SPECIAL_PRESS`, taken by Closing Line's cast interceptor.
-- Network version `19` (since Severed's payloads, §3.27; `18` was Burnout's end time in the sync, §3.25, and Time Manipulation's
-  payloads, §3.26). Bump it when payload formats change; mismatched clients are refused.
+- Network version `20` (since Closing Line's line in three dimensions in `RushPayload` and its cooldown in `BlurPayload`, §3.27; `19`
+  was Severed's payloads, `18` Burnout's end time in the sync, §3.25, and Time Manipulation's payloads, §3.26). Bump it when payload formats change; mismatched clients are refused.
 
 ### 3.6 HUD
 **Rule: the combat HUD does not exist until the player asks for it** (art in `gen_art.py` → `textures/gui/combat/`).
@@ -366,8 +368,9 @@ All timestamps use **level game time**. They persist across restarts and are ide
     slots show only their number. Grade and XP are never on the combat HUD;
   - accents along the tray and crest in the technique's Malice color.
 - The selected ability's name shows above hearts/food for 2 s after a number key selects it (`kegare:combat_name`).
-- The melee layer's cues sit under the crosshair, in and out of Technique Mode and for Severed players too, only while there's something to show: **Reinforced** (gold, a Strike is ready), **Dash** and **Recovering** with thin countdown bars (§3.22).
-- Severed players never get the panel (G does nothing). Everything is hidden when F1 hides the GUI and in spectator
+- The melee layer's cues sit under the crosshair, in and out of Technique Mode and for Severed players too, only while there's something to show: **Reinforced** (gold, a Strike is ready), **Dash** and **Recovering** with thin countdown bars (§3.22). Severed players' own cues follow them there: **Blur**, **Winded** and
+  **Closing Line** (the last two with countdown bars, §3.27).
+- Severed players never get the panel (G is Blur for them, §3.27). Everything is hidden when F1 hides the GUI and in spectator
   mode. Client config `hud.enabled` turns all of it off.
 
 ### 3.7 Combat state (`CombatHelper`)
@@ -2384,7 +2387,7 @@ or Malice color, no names or labels, nothing that tells a technique or trait (§
 what they play by.
 
 **Blur** (G for Severed players; `Blur`, `client/BlurDrive`, `client/BlurFeel`, `client/BlurFx`). For everyone else G stays
-Technique Mode, unchanged (`client/SeveredKeys`).
+Technique Mode, unchanged (`client/SeveredKeys`). Controls lists the key as "Technique Mode / Blur".
 - **Movement:** extremely fast (`[blur] speed` 0.56 blocks a tick, about twice a sprint). Momentum: the velocity turns toward where
   you steer at most `turnDegrees` (8) a tick, so a sharp turn overshoots; steering gains `acceleration` (0.07) a tick up to top speed;
   letting go skids to a stop, losing `skid` (0.05) a tick. Anything that slows movement (Slowness, a Decelerate hit, a Stasis Field)
@@ -2399,7 +2402,8 @@ Technique Mode, unchanged (`client/SeveredKeys`).
   (blocks a tick) sets the damage (`damagePerSpeed` 10 × lost − `damageGrace` 2, at most `maxDamage` 12, as `flyIntoWall`, so
   Toughness takes its share) and a stun (`stunPerSpeed` 2 s per block a tick, at most 2 s). A scrape along a wall keeps most of its
   speed and does nothing below `minSpeedLost` (0.3). Then Blur is off. The server judges it this way because the client stops
-  itself at the wall and only reports the shorter move, so the server never sees a collision of its own.
+  itself at the wall and only reports the shorter move, so the server never sees a collision of its own. It isn't judged during a
+  Closing Line's recovery: the rush's own end takes its speed off by design, often right at the side of the ledge it leapt to.
 - **Cost:** hunger. It burns `exhaustionPerBlock` (0.2) per block covered faster than a sprint, straight to the food bar (Stamina
   doesn't cut it). At `foodFloor` (6, three shanks, where vanilla stops sprinting) it crashes off: **winded** (`windedSeconds` 4 of
   Slowness I) and it can't come back on until the food is above 6 and the winding is over ("Too winded to Blur.").
@@ -2414,17 +2418,28 @@ Technique Mode, unchanged (`client/SeveredKeys`).
   so your own smear shows in third person only, and someone blurring past or through you never fills your view with grey. **In first person** (`BlurFeel`): the view opens up to 12% wider the faster you go, and needle streaks run round the
   screen's edge, flowing from where you're headed; nothing is drawn inside the middle 60% of the screen. Half of it at Reduced, none
   at Vanilla, and vanilla's FOV Effects slider scales the widening.
-- **HUD:** "Blur" under the crosshair with the melee cues while it's on, and "Winded" with a countdown bar while it can't come back.
+- **HUD:** "Blur" under the crosshair with the melee cues while it's on, "Winded" with a countdown bar while it can't come back, and
+  "Closing Line" with a countdown bar while Closing Line cools down (below).
 
 **Closing Line** (R while Blurring; `ClosingLine`, `client/RushDrive`, `[closing_line]`, `[targeting]`).
 - R while Blur is on, looking at a player or mob (`[targeting] range` 24, `aimTolerance` 0.3, in line of sight, the nearest under
   the crosshair), rushes you in a straight line toward where it stood when you cast it, at `speed` (4 blocks a tick: a 20-block gap
-  in five ticks). It looks like a teleport but it's real travel, driven on the owner's client like a dash (`RushPayload`), checked
+  in five ticks). The line runs in three dimensions, from your feet to where its feet were: on level ground a level rush, and at
+  someone up on a pillar or a ledge (or down below one) a leap there, when the line is clear. Gravity takes over once it's done,
+  arrived or stopped: a little of its speed is kept for the skid and none of it upward, so a leap at someone on a pillar ends in the
+  air beside it, in reach, and you fall as normal (a fall's damage too, Toughness cutting it). It looks like a teleport but it's real travel, driven on the owner's client like a dash (`RushPayload`), checked
   by the server like Blur. It doesn't home: a target that dashes away makes you miss. R reaches the server as the usual
   `SPECIAL_PRESS` (`ClientInput.addSpecialKeyNeeded` while Blurring) and Closing Line's cast interceptor takes it.
-- You stop `stopGap` (0.8) blocks short of the target's edge: melee reach, in front of it. **Walls** stop it: the game's own
-  collision holds you at the wall, and a wall stopping you at that speed is a wall crash (no Strike). **Anything living in the
-  path** stops you in reach of it (worked out at the cast, and checked every tick for anything that steps in). Projectiles and
+- You stop `stopGap` (0.8) blocks short of the target's edge, along the line: melee reach, in front of it. **Walls** stop it: the
+  game's own collision holds you at the wall, and a wall stopping you at that speed is a wall crash (no Strike), whether the line
+  is level or rising (the speed lost against the wall is what counts). For a rush, anything solid just ahead the way its line heads
+  is a wall: a rising rush held at a wall slides on up its face (the game moves you up before across), so how near its top you got
+  doesn't make it a step. A lip no higher than a step (a slab, a stair, the edge of a
+  ledge the line just grazes) is stepped over, as a run would; the game only steps a player up on the ground, and most of a leap is
+  in the air (`RushDrive.stepOver`). The ground under a line that dips, or a ceiling over one that rises, only holds you, and the
+  drive draws you back onto the line once past it; held more than 2.5 blocks off it, it's over with no Strike, as a swap ends it.
+  **Anything living in the path** stops you in reach of it, where your box would first touch its box less `stopGap` (worked out at
+  the cast, and checked every tick for anything that steps in). Projectiles and
   techniques hit you normally on the way, with no invulnerability. Moved off the line by something else (a swap) or stopped by a
   stun or a freeze (Rime's, a Standstill's), it's over with no Strike; a Decelerate hit or a Stasis Field slow it like any movement.
 - **Arriving** (in reach of the target or of whatever stopped you) earns a Reinforced Strike (Severed numbers) for `strikeWindow`
@@ -2437,8 +2452,9 @@ Technique Mode, unchanged (`client/SeveredKeys`).
   2.84.
 - **Counter:** a perfect parry that catches that Strike spends it and staggers the Severed harder than a normal stagger
   (`parryStaggerSeconds` 1.5 at Slowness `parryStaggerSlowness` 3, against 0.5 s at 2).
-- **After every Closing Line** (arrived or not): `recoverySeconds` (0.6) with no Blur speed, and a `cooldown` of 6 s ("Closing Line
-  isn't ready (Xs).").
+- **After every Closing Line** (arrived or not): `recoverySeconds` (0.6) with no Blur speed, and a `cooldown` of 6 s, shown under
+  the crosshair as "Closing Line" with a countdown bar, as Dash's is (`BlurPayload` carries when it's ready), and on an R pressed
+  too soon ("Closing Line isn't ready (Xs).").
 - **Bosses (§4):** it rushes at them and the Strike damages them; they're never moved (the Strike never pushes a boss).
 
 **Look and sound** (all of it physical: dust, grit, wind streaks, afterimages; no glow, no Innate color, no Photon). The moments
@@ -2469,7 +2485,8 @@ never counts. Numbers in `[advancements]`.
 **Tests:** `SeveredAdvancementsTest` (three different Malice users in time; mobs, a Severed victim, the same player again
 and kills outside the window don't count; brought low by a Malice user then killing them in the fight; a mob, a different player, a
 totem, or the fight ending first don't count; a Malice user never earns either), `SeveredAnimationsTest` (PAL loads all five, each with one first-person rule), `ClosingLineTest` (the rush to melee reach of where the target stood, arriving, the Strike from the rush with
-its window and harder knockback, the recovery and cooldown; a wall mid-rush crashes it; something living in the path stops it short;
+its window and harder knockback, the recovery and cooldown, the HUD told when it's ready; a leap up to someone on a pillar along a
+clear line, arriving in the air in reach of them; a wall across a rising line crashes it; something living in the path stops it short;
 a swap ends it; a perfect parry spends the Strike and staggers harder; a boss is struck and never moved), `BlurTest` (G is Blur only for the Severed; the drain by distance at Blur speed, none for a walk; crashing off at
 the floor, winded, refused until food is above it; the wall crash scaling with the speed lost, a scrape doing nothing; a stun, a
 Rime freeze or no longer being Severed ending it), `SeveredBodyTest` (Strength only on a Severed hand; the Toughness split, falls least, the void, /kill and starving

@@ -13,8 +13,10 @@ import net.neoforged.neoforge.network.PacketDistributor;
 
 /**
  * Closing Line (R while Blurring, DESIGN §3.27): a straight rush at where the player or mob you're looking at stood when you cast it,
- * covering the gap in a few ticks. It looks like a teleport but is real travel, driven on the owner's client like a dash
- * ({@code client/RushDrive}), so the game's own collision stops it: a wall stopping you at that speed is a wall crash ({@link Blur}).
+ * covering the gap in a few ticks. The line runs from your feet to theirs in three dimensions, so it's a leap up to a target on a
+ * pillar or a ledge, or down to one below, when nothing's in the way; gravity takes over once it's done. It looks like a teleport
+ * but is real travel, driven on the owner's client like a dash ({@code client/RushDrive}), so the game's own collision stops it: a
+ * wall stopping you at that speed is a wall crash ({@link Blur}).
  * It doesn't home: a target that moves away makes you miss. Anything living in the path stops you there; projectiles and techniques
  * hit you on the way, with no invulnerability. Arriving (in reach of the target, or of whatever stopped you) earns a Reinforced Strike
  * for {@code strikeWindow} that carries the rush's speed as knockback. After every one, {@code recoverySeconds} with no Blur speed,
@@ -60,13 +62,13 @@ public final class ClosingLine {
         }
         LivingEntity target = seen.get();
         Vec3 from = player.position();
-        Vec3 flat = new Vec3(target.getX() - from.x, 0, target.getZ() - from.z);
-        double distance = flat.horizontalDistance() - reachGap(player, target);
+        Vec3 line = target.position().subtract(from); // feet to feet: up, down or level
+        double distance = line.length() - reachGap(player, target);
         if (distance < 0.5) {
             player.displayClientMessage(Component.translatable("message.kegare.severed.in_reach"), true);
             return;
         }
-        Vec3 direction = flat.normalize();
+        Vec3 direction = line.normalize();
         distance = Math.min(distance, firstInTheWay(player, target, direction, distance));
         state.closingReadyAt = now + SeveredConfig.ticks(SeveredConfig.CLOSING_COOLDOWN.get());
         SeveredFx.launch(player, direction);
@@ -80,7 +82,10 @@ public final class ClosingLine {
         state.rushSpeed = SeveredConfig.CLOSING_SPEED.get();
         state.rushTicksLeft = (int) Math.ceil(distance / state.rushSpeed) + SPARE_TICKS;
         state.rushTarget = target.getId();
-        if (player.connection != null) PacketDistributor.sendToPlayer(player, new RushPayload((float) direction.x, (float) direction.z, (float) state.rushSpeed, (float) distance));
+        if (player.connection != null) {
+            PacketDistributor.sendToPlayer(player, new RushPayload((float) direction.x, (float) direction.y, (float) direction.z, (float) state.rushSpeed,
+                    (float) distance));
+        }
         Blur.sync(player, state);
     }
 
@@ -89,18 +94,24 @@ public final class ClosingLine {
         return mover.getBbWidth() / 2 + other.getBbWidth() / 2 + SeveredConfig.CLOSING_GAP.get();
     }
 
-    /** How far along the line before they'd be in reach of something living in the way (not the target), or {@code distance}. */
+    /**
+     * How far along the line before they'd be in reach of something living in the way (not the target), or {@code distance}: where
+     * their box would first touch its box, less the stop gap.
+     */
     static double firstInTheWay(ServerPlayer player, LivingEntity target, Vec3 direction, double distance) {
         AABB swept = player.getBoundingBox().expandTowards(direction.scale(distance + 1)).inflate(0.2);
-        Vec3 start = player.position();
+        Vec3 start = player.position(), end = start.add(direction.scale(distance + 1));
+        double w = player.getBbWidth() / 2, h = player.getBbHeight();
         double best = distance;
         for (LivingEntity e : player.serverLevel().getEntitiesOfClass(LivingEntity.class, swept,
                 e -> e != player && e != target && e.isAlive() && !e.isSpectator() && !(e instanceof ArmorStand))) {
-            Vec3 rel = e.position().subtract(start);
-            double along = rel.x * direction.x + rel.z * direction.z;
-            double off = Math.sqrt(Math.max(0, rel.x * rel.x + rel.z * rel.z - along * along));
-            if (along <= 0 || off > (player.getBbWidth() + e.getBbWidth()) / 2) continue;
-            best = Math.min(best, along - reachGap(player, e));
+            if (e.position().subtract(start).dot(direction) <= 0) continue; // behind them
+            // Their feet anywhere in its box grown by theirs puts the two boxes together.
+            AABB b = e.getBoundingBox();
+            AABB grown = new AABB(b.minX - w, b.minY - h, b.minZ - w, b.maxX + w, b.maxY, b.maxZ + w);
+            Optional<Vec3> touch = grown.contains(start) ? Optional.of(start) : grown.clip(start, end);
+            if (touch.isEmpty()) continue;
+            best = Math.min(best, touch.get().subtract(start).dot(direction) - SeveredConfig.CLOSING_GAP.get());
         }
         return Math.max(0, best);
     }
@@ -109,9 +120,8 @@ public final class ClosingLine {
     static void tick(ServerPlayer player, SeveredState state) {
         if (!rushing(state)) return;
         Vec3 rel = player.position().subtract(state.rushFrom);
-        Vec3 dir = state.rushDirection;
-        double along = rel.x * dir.x + rel.z * dir.z;
-        double off = Math.sqrt(Math.max(0, rel.x * rel.x + rel.z * rel.z - along * along));
+        double along = rel.dot(state.rushDirection);
+        double off = Math.sqrt(Math.max(0, rel.lengthSqr() - along * along));
         if (off > OFF_LINE || along < -1.0) { // moved off it by something else
             cancel(player, state);
             return;

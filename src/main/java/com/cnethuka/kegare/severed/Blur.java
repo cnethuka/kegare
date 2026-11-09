@@ -93,8 +93,10 @@ public final class Blur {
         long now = player.level().getGameTime();
         // A wall: they were going fast, most of the speed is gone, and there's something solid right ahead the way they were going.
         // (The client stops itself at the wall and only reports the shorter move, so the server can't wait for a collision of its own.)
+        // Not in a Closing Line's recovery: the rush's own end takes its speed off, often right at the side of the ledge they leapt to.
         double before = Math.max(state.speed(0), Math.max(state.speed(1), state.speed(2)));
-        if (now - state.crashedAt > CRASH_COOLDOWN && before - speed >= SeveredConfig.CRASH_MIN_LOSS.get() && wallAhead(player, state)) {
+        if (now >= state.recoveryUntil && now - state.crashedAt > CRASH_COOLDOWN && before - speed >= SeveredConfig.CRASH_MIN_LOSS.get()
+                && wallAhead(player, state)) {
             state.crashedAt = now;
             if (WallCrash.crash(player, before - speed)) {
                 ClosingLine.cancel(player, state);
@@ -129,21 +131,33 @@ public final class Blur {
         }
     }
 
-    /** Something solid just ahead of them the way they were last going, too high to step up onto. */
+    /**
+     * Something solid just ahead of them the way they were last going, too high to step up onto. In a Closing Line, the way its line
+     * heads, and anything solid there is a wall: the rush steps over a lip a step high itself ({@code client/RushDrive}), and a rising
+     * one held at a wall slides on up its face (the game moves them up before across), so how near its top they got says nothing.
+     * The ground under a line that dips, or a ceiling over one that rises, only holds them; only horizontal speed lost counts.
+     */
     static boolean wallAhead(ServerPlayer player, SeveredState state) {
-        Vec3 a = state.position(0), b = state.position(1);
-        if (a == null || b == null) return false;
-        Vec3 step = new Vec3(a.x - b.x, 0, a.z - b.z);
+        boolean rush = state.rushDirection != null;
+        Vec3 step;
+        if (rush) {
+            step = new Vec3(state.rushDirection.x, 0, state.rushDirection.z);
+        } else {
+            Vec3 a = state.position(0), b = state.position(1);
+            if (a == null || b == null) return false;
+            step = new Vec3(a.x - b.x, 0, a.z - b.z);
+        }
         if (step.lengthSqr() < 1.0e-6) return false;
         net.minecraft.world.phys.AABB box = player.getBoundingBox().move(0, 0.05, 0).move(step.normalize().scale(0.25));
-        return !player.level().noCollision(player, box) && !player.level().noCollision(player, box.move(0, 0.55, 0));
+        return !player.level().noCollision(player, box) && (rush || !player.level().noCollision(player, box.move(0, 0.55, 0)));
     }
 
     /** Tells the owner's client, if anything it shows or drives by changed. */
     static void sync(ServerPlayer player, SeveredState state) {
         BlurPayload payload = new BlurPayload(state.blur, SeveredConfig.BLUR_SPEED.get().floatValue(), SeveredConfig.BLUR_TURN.get().floatValue(),
                 SeveredConfig.BLUR_ACCEL.get().floatValue(), SeveredConfig.BLUR_SKID.get().floatValue(), state.windedUntil,
-                SeveredConfig.ticks(SeveredConfig.WINDED_SECONDS.get()), state.recoveryUntil);
+                SeveredConfig.ticks(SeveredConfig.WINDED_SECONDS.get()), state.recoveryUntil, state.closingReadyAt,
+                SeveredConfig.ticks(SeveredConfig.CLOSING_COOLDOWN.get()));
         if (payload.equals(state.sent)) return;
         state.sent = payload;
         if (player.connection != null) PacketDistributor.sendToPlayer(player, payload);

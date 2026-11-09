@@ -9,12 +9,12 @@ import net.neoforged.neoforge.network.handling.IPayloadContext;
 
 /**
  * Server to client, only to its owner (DESIGN §3.27): whether Blur is on, and how it moves (the client drives it); until when they're
- * winded and how long that is (for the HUD); until when a Closing Line's recovery holds Blur's speed back. Sent whenever any of it
- * changes.
+ * winded and how long that is (for the HUD); until when a Closing Line's recovery holds Blur's speed back; until when Closing Line
+ * cools down and how long that is (the HUD's cue). Sent whenever any of it changes.
  */
-public record BlurPayload(boolean on, float speed, float turnDegrees, float acceleration, float skid, long windedUntil, int windedTicks, long recoveryUntil)
-        implements CustomPacketPayload {
-    public static final BlurPayload OFF = new BlurPayload(false, 0, 0, 0, 0, 0, 0, 0);
+public record BlurPayload(boolean on, float speed, float turnDegrees, float acceleration, float skid, long windedUntil, int windedTicks, long recoveryUntil,
+        long closingReadyAt, int closingCooldown) implements CustomPacketPayload {
+    public static final BlurPayload OFF = new BlurPayload(false, 0, 0, 0, 0, 0, 0, 0, 0, 0);
     public static final Type<BlurPayload> TYPE = new Type<>(Kegare.id("blur"));
     public static final StreamCodec<FriendlyByteBuf, BlurPayload> STREAM_CODEC = StreamCodec.of(
             (buf, p) -> {
@@ -26,9 +26,11 @@ public record BlurPayload(boolean on, float speed, float turnDegrees, float acce
                 buf.writeVarLong(p.windedUntil());
                 buf.writeVarInt(p.windedTicks());
                 buf.writeVarLong(p.recoveryUntil());
+                buf.writeVarLong(p.closingReadyAt());
+                buf.writeVarInt(p.closingCooldown());
             },
             buf -> new BlurPayload(buf.readBoolean(), buf.readFloat(), buf.readFloat(), buf.readFloat(), buf.readFloat(), buf.readVarLong(), buf.readVarInt(),
-                    buf.readVarLong()));
+                    buf.readVarLong(), buf.readVarLong(), buf.readVarInt()));
 
     /** Set by the client entry point; null on a dedicated server. */
     private static Consumer<BlurPayload> clientHandler;

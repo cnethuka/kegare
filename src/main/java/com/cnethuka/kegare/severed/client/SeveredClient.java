@@ -25,6 +25,7 @@ import net.neoforged.neoforge.common.NeoForge;
 public final class SeveredClient {
     private static final int BLUR_COLOR = 0xFFE4DDD2;
     private static final int WINDED_COLOR = 0xFFC9A27E;
+    private static final int CLOSING_COLOR = 0xFFD9C9AE;
     private static final int BAR_WIDTH = 34;
 
     private SeveredClient() {}
@@ -79,22 +80,28 @@ public final class SeveredClient {
         com.cnethuka.kegare.client.visual.PlayerAnimations.handsWhileLevel(SeveredIds.FIRST_PERSON_WHILE_LEVEL);
     }
 
-    /** Under the crosshair with the melee cues: "Blur" while it's on, "Winded" while it can't come back on. */
+    /**
+     * Under the crosshair with the melee cues: "Blur" while it's on, "Winded" while it can't come back on, and "Closing Line" while
+     * it cools down (a countdown bar, as Dash's).
+     */
     private static int hud(GuiGraphics g, Minecraft mc, int cx, int y) {
         BlurPayload blur = BlurDrive.state;
         if (blur.on()) {
             GuiDraw.centered(g, mc.font, Component.translatable("hud.kegare.severed.blur"), cx, y, 0.75f, BLUR_COLOR);
             y += 9;
         }
-        long left = mc.level == null ? 0 : blur.windedUntil() - mc.level.getGameTime();
-        if (left > 0 && blur.windedTicks() > 0) {
-            GuiDraw.centered(g, mc.font, Component.translatable("hud.kegare.severed.winded"), cx, y, 0.75f, WINDED_COLOR);
-            int top = y + 7;
-            int fill = Mth.ceil(BAR_WIDTH * Math.min(1f, left / (float) blur.windedTicks()));
-            g.fill(cx - BAR_WIDTH / 2 - 1, top, cx + BAR_WIDTH / 2 + 1, top + 3, 0xAA000000);
-            g.fill(cx - BAR_WIDTH / 2, top + 1, cx - BAR_WIDTH / 2 + fill, top + 2, WINDED_COLOR);
-            y = top + 5;
-        }
-        return y;
+        long now = mc.level == null ? 0 : mc.level.getGameTime();
+        y = countdown(g, mc, cx, y, "hud.kegare.severed.winded", blur.windedUntil() - now, blur.windedTicks(), WINDED_COLOR);
+        return countdown(g, mc, cx, y, "hud.kegare.severed.closing_line", blur.closingReadyAt() - now, blur.closingCooldown(), CLOSING_COLOR);
+    }
+
+    private static int countdown(GuiGraphics g, Minecraft mc, int cx, int y, String key, long left, int total, int color) {
+        if (left <= 0 || total <= 0) return y;
+        GuiDraw.centered(g, mc.font, Component.translatable(key), cx, y, 0.75f, color);
+        int top = y + 7;
+        int fill = Mth.ceil(BAR_WIDTH * Math.min(1f, left / (float) total));
+        g.fill(cx - BAR_WIDTH / 2 - 1, top, cx + BAR_WIDTH / 2 + 1, top + 3, 0xAA000000);
+        g.fill(cx - BAR_WIDTH / 2, top + 1, cx - BAR_WIDTH / 2 + fill, top + 2, color);
+        return top + 5;
     }
 }

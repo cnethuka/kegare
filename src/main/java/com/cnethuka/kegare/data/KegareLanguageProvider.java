@@ -63,7 +63,7 @@ public final class KegareLanguageProvider extends LanguageProvider {
         // Keybinds
         add("key.categories.kegare", "Kegare");
         add("key.kegare.special", "Special (with a number key)");
-        add("key.kegare.technique_mode", "Technique Mode");
+        add("key.kegare.technique_mode", "Technique Mode / Blur");
         add("key.kegare.parry", "Parry");
         add("key.kegare.dash", "Dash");
         add("message.kegare.melee.no_malice", "Not enough Malice to %s.");
@@ -400,6 +400,7 @@ public final class KegareLanguageProvider extends LanguageProvider {
         // Severed (DESIGN §3.27)
         add("hud.kegare.severed.blur", "Blur");
         add("hud.kegare.severed.winded", "Winded");
+        add("hud.kegare.severed.closing_line", "Closing Line");
         add("message.kegare.severed.winded", "Too winded to Blur.");
         add("message.kegare.severed.no_target", "No one in sight.");
         add("message.kegare.severed.in_reach", "Already within reach.");
