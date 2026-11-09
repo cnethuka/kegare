@@ -13,6 +13,9 @@ public final class BackgroundTaskConfig {
     public static ModConfigSpec.DoubleValue RMT_PAUSE_BELOW;
     public static ModConfigSpec.DoubleValue RMT_RESUME_ABOVE;
     public static ModConfigSpec.DoubleValue RMT_BURNOUT_FACTOR;
+    // Background Reinforcement
+    public static ModConfigSpec.DoubleValue REINFORCEMENT_STRENGTH;
+    public static ModConfigSpec.DoubleValue REINFORCEMENT_DRAIN;
 
     private BackgroundTaskConfig() {}
 
@@ -30,6 +33,12 @@ public final class BackgroundTaskConfig {
         RMT_PAUSE_BELOW = b.comment("It pauses on its own below this share of your Malice capacity...").defineInRange("pauseBelow", 0.2, 0.0, 1.0);
         RMT_RESUME_ABOVE = b.comment("...and resumes on its own above this share.").defineInRange("resumeAbove", 0.3, 0.0, 1.0);
         RMT_BURNOUT_FACTOR = b.comment("While it runs, every Burnout applied to you lasts this share of its length.").defineInRange("burnoutFactor", 0.75, 0.0, 1.0);
+        b.pop();
+
+        b.comment("Background Reinforcement: Reinforcement kept up without thinking, weaker. Unlocked at Grade 3.").push("background_reinforcement");
+        REINFORCEMENT_STRENGTH = b.comment("Its share of the Reinforcement ability's damage reductions and knockback resistance. With the ability on",
+                "too, they don't stack: the stronger applies.").defineInRange("backgroundStrength", 0.4, 0.0, 1.0);
+        REINFORCEMENT_DRAIN = b.comment("Malice drained per second while it runs.").defineInRange("drainPerSecond", 4.0, 0.0, 100_000.0);
         b.pop();
 
         b.pop();

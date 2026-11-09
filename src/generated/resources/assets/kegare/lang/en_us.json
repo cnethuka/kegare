@@ -237,6 +237,9 @@
   "advancements.kegare.time_manipulation.slow_motion.title": "Slow Motion",
   "advancements.kegare.time_manipulation.the_world_stood_still.description": "Cast Standstill",
   "advancements.kegare.time_manipulation.the_world_stood_still.title": "The World Stood Still",
+  "background_task.kegare.background_reinforcement": "Background Reinforcement",
+  "background_task.kegare.background_reinforcement.desc": "Reinforcement kept up without thinking: %1$s of the ability's damage reductions and knockback resistance, for less Malice. With Reinforcement itself on, the stronger applies. A calm, faint aura shows it to everyone.",
+  "background_task.kegare.background_reinforcement.unlock": "Reach Grade 3.",
   "background_task.kegare.background_rmt": "Background RMT",
   "background_task.kegare.background_rmt.desc": "Reverse Malice Technique left running: it heals you slowly and steadily at %1$s of your channelled rate, even at full health, so damage is healed as it lands. It drains Malice and slows your natural Malice regeneration while it runs, and shortens any Burnout. It pauses below %2$s Malice and resumes above %3$s.",
   "background_task.kegare.background_rmt.unlock": "Heal 500 health in total with your own Reverse Malice Technique.",
@@ -682,6 +685,8 @@
   "kegare.configuration.average": "Average",
   "kegare.configuration.awareness": "Awareness",
   "kegare.configuration.backgroundOutput": "Background Output",
+  "kegare.configuration.backgroundStrength": "Background Strength",
+  "kegare.configuration.background_reinforcement": "Background Reinforcement",
   "kegare.configuration.background_rmt": "Background Rmt",
   "kegare.configuration.background_tasks": "Background Tasks",
   "kegare.configuration.backlash": "Backlash",
@@ -1310,6 +1315,7 @@
   "toast.kegare.unlocked.ultimate": "Ultimate unlocked",
   "trait.kegare.six_eyes": "Six Eyes",
   "trait.kegare.six_eyes.desc": "Eyes that see through everything. Only one bearer at a time. (No effects yet.)",
+  "unlock.kegare.background_reinforcement": "Background Reinforcement",
   "unlock.kegare.background_rmt": "Background RMT",
   "unlock.kegare.rmt_heal_others": "Healing others"
 }

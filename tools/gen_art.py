@@ -925,6 +925,19 @@ def icon_background_rmt():
     return shaped_icon(f)
 
 
+def icon_background_reinforcement():
+    """Background Reinforcement (DESIGN §3.31): a small figure, lit with Malice, inside the loop of something left running."""
+    def f(x, y):
+        if 7 <= x <= 8 and 3 <= y <= 4:  # the head
+            return MALICE
+        if 5 <= x <= 10 and 6 <= y <= 8 and not ((x in (5, 10)) and y == 6):  # shoulders and torso
+            return MALICE
+        if (6 <= x <= 7 or 8 <= x <= 9) and 9 <= y <= 12 and x not in (7, 8) or (x in (6, 9) and 9 <= y <= 12):  # legs
+            return MALICE
+        return _loop(x, y, MALICE, r0=6.3, r1=7.3)
+    return shaped_icon(f)
+
+
 def aura_shimmer() -> "Image.Image":
     """A Six Eyes bearer's glimpse of Background RMT (DESIGN §3.31): a soft four-pointed glint, white to be tinted green (smooth)."""
     n = 32
@@ -2505,6 +2518,7 @@ def build() -> dict[str, Image.Image]:
     out["view_technique"] = icon(ICON_VIEW_TECHNIQUE, MALICE)
     out["view_background"] = icon_view_background()
     out["background/background_rmt"] = icon_background_rmt()
+    out["background/background_reinforcement"] = icon_background_reinforcement()
     out["view_progress"] = icon(ICON_VIEW_PROGRESS, TEAL)
     out["view_traits"] = icon(ICON_VIEW_TRAITS, ICE)
     out["view_pity"] = icon(ICON_VIEW_PITY, GOLD)

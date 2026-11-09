@@ -64,7 +64,8 @@ public final class Reinforcement {
         return Math.max(0, Math.min(1, s));
     }
 
-    static void update(ServerPlayer player) {
+    /** Keeps the knockback resistance in step with how reinforced they are now (a source changed: call this). */
+    public static void update(ServerPlayer player) {
         set(player, strength(player));
     }
 
@@ -78,8 +79,12 @@ public final class Reinforcement {
         AttributeInstance kb = player.getAttribute(Attributes.KNOCKBACK_RESISTANCE);
         if (kb == null) return;
         double amount = ReinforcementConfig.KNOCKBACK_RESISTANCE.get() * Math.max(0, Math.min(1, s));
-        if (amount <= 0) kb.removeModifier(ReinforcementIds.KNOCKBACK_MODIFIER);
-        else kb.addOrUpdateTransientModifier(new AttributeModifier(ReinforcementIds.KNOCKBACK_MODIFIER, amount, AttributeModifier.Operation.ADD_VALUE));
+        AttributeModifier current = kb.getModifier(ReinforcementIds.KNOCKBACK_MODIFIER);
+        if (amount <= 0) {
+            if (current != null) kb.removeModifier(ReinforcementIds.KNOCKBACK_MODIFIER);
+        } else if (current == null || Math.abs(current.amount() - amount) > 1.0e-9) { // only when it changes: no resend every tick
+            kb.addOrUpdateTransientModifier(new AttributeModifier(ReinforcementIds.KNOCKBACK_MODIFIER, amount, AttributeModifier.Operation.ADD_VALUE));
+        }
     }
 
     /** The strongest source other than the ability (Background Reinforcement), 0 if none. */

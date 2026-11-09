@@ -93,7 +93,8 @@ class UnlocksTest {
     void theRealEntriesAreHealingOthersAndTheBackgroundTasks() {
         // Healing others (DESIGN §3.17) and the Background Tasks (§3.31); Maximum Output, Cradle, Threshold and the rest plug in when
         // they're built.
-        assertEquals(java.util.Set.of(com.cnethuka.kegare.rmt.RmtIds.ON_ANOTHER_UNLOCK, com.cnethuka.kegare.backgroundtask.BackgroundRmt.ID),
+        assertEquals(java.util.Set.of(com.cnethuka.kegare.rmt.RmtIds.ON_ANOTHER_UNLOCK, com.cnethuka.kegare.backgroundtask.BackgroundRmt.ID,
+                        com.cnethuka.kegare.backgroundtask.BackgroundReinforcement.ID),
                 java.util.Set.copyOf(Unlocks.registered()));
     }
 

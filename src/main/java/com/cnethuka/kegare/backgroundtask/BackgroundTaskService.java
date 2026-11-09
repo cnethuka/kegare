@@ -110,7 +110,7 @@ public final class BackgroundTaskService {
             BackgroundTaskData.Slot s = data.slots.get(i);
             if (s.on()) data.slots.set(i, new BackgroundTaskData.Slot(s.task(), false));
         }
-        Set<ResourceLocation> ran = new HashSet<>();
+        Set<ResourceLocation> ran = new java.util.LinkedHashSet<>();
         Set<ResourceLocation> paused = new HashSet<>();
         for (int i = 0; i < count; i++) {
             BackgroundTaskData.Slot s = data.slots.get(i);
@@ -122,29 +122,29 @@ public final class BackgroundTaskService {
                 double cost = task.drainPerSecond(player) / 20.0;
                 if (cost > 0 && !MaliceService.trySpend(player, cost)) isPaused = true;
             }
-            if (isPaused) {
-                paused.add(task.id());
-            } else {
-                ran.add(task.id());
-                task.tick(player);
-            }
+            if (isPaused) paused.add(task.id());
+            else ran.add(task.id());
         }
-        for (ResourceLocation id : data.ran) {
-            if (!ran.contains(id)) BackgroundTasks.find(id).ifPresent(t -> t.stopped(player));
-        }
+        // What runs this tick is known before any task acts, so isRunning is right inside tick and stopped.
+        Set<ResourceLocation> before = new HashSet<>(data.ran);
         data.ran.clear();
         data.ran.addAll(ran);
         data.paused.clear();
         data.paused.addAll(paused);
+        for (ResourceLocation id : before) {
+            if (!ran.contains(id)) BackgroundTasks.find(id).ifPresent(t -> t.stopped(player));
+        }
+        for (ResourceLocation id : ran) BackgroundTasks.find(id).ifPresent(t -> t.tick(player));
         BackgroundTaskSync.sync(player);
     }
 
     /** Admin and tests: every slot emptied (saved too). */
     public static void reset(ServerPlayer player) {
         BackgroundTaskData data = data(player);
-        for (ResourceLocation id : data.ran) BackgroundTasks.find(id).ifPresent(t -> t.stopped(player));
+        Set<ResourceLocation> before = new HashSet<>(data.ran);
         data.ran.clear();
         data.paused.clear();
+        for (ResourceLocation id : before) BackgroundTasks.find(id).ifPresent(t -> t.stopped(player));
         for (int i = 0; i < data.slots.size(); i++) data.slots.set(i, BackgroundTaskData.Slot.EMPTY);
     }
 }

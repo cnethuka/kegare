@@ -372,6 +372,12 @@ public final class KegareLanguageProvider extends LanguageProvider {
                 + MALICE + " regeneration while it runs, and shortens any Burnout. It pauses below %2$s " + MALICE + " and resumes above %3$s.");
         add("background_task.kegare.background_rmt.unlock", "Heal 500 health in total with your own Reverse Malice Technique.");
         add("unlock.kegare.background_rmt", "Background RMT");
+        add("background_task.kegare.background_reinforcement", "Background Reinforcement");
+        add("background_task.kegare.background_reinforcement.desc", "Reinforcement kept up without thinking: %1$s of the ability's damage "
+                + "reductions and knockback resistance, for less " + MALICE + ". With Reinforcement itself on, the stronger applies. A calm, "
+                + "faint aura shows it to everyone.");
+        add("background_task.kegare.background_reinforcement.unlock", "Reach Grade 3.");
+        add("unlock.kegare.background_reinforcement", "Background Reinforcement");
 
         // Reinforcement (Malice, every Malice user's)
         add("ability.kegare.reinforcement", "Reinforcement");

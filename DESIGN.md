@@ -2945,6 +2945,20 @@ ability on the bar, but it takes no bar slot and leaves the hands free.
   stopping it; Burnout shortened only while it runs; the shimmer only for the Six Eyes), `BackgroundRmtStandstillTest` (paused while
   frozen, resumed with time), `RmtHealCountTest` (healing others counts for the caster, only what's healed).
 
+**Background Reinforcement** (`background_reinforcement`, `BackgroundReinforcement`; numbers in
+`[background_tasks.background_reinforcement]`)
+- **Unlock:** Grade 3 (an Unlocks entry, kept once earned; never Severed).
+- **Effect:** Reinforcement (§3.16) at `backgroundStrength` (0.4) of the ability's: 10% less physical damage, 8% less from techniques,
+  +0.16 knockback resistance, for `drainPerSecond` 4 (the ability's is 10). It's a source of `Reinforcement.addSource`: with the
+  Reinforcement ability on too they don't stack, the stronger applies.
+- **Look:** the same aura as the ability, much calmer and fainter (`AuraPayload.CALM`): the simpler sheet with its even, light
+  outline (drawn at 42% instead of 85%, so the ink is light too), 5% smaller, about 6 frames a second, a wisp every 16 ticks. It
+  still shows to everyone, with the same disguise rules; in your own first person, the edge flow at half strength.
+- **Icon:** a small lit figure inside the loop.
+- **Tests:** `BackgroundReinforcementTest` (Grade 3, kept through a reroll; its drain, 0.4 of both reductions and the knockback
+  resistance; with the ability on, the ability's and no more; back to the background's when the ability goes off; nothing when off;
+  the calm aura, then the full one).
+
 - **Tests:** `BackgroundTasksTest` (with test-only tasks): 2 slots, 3 with the eyes, none Severed; losing the eyes switches off the
   third and keeps it, gaining them gives it back; slot changes refused in a fight, switching allowed; locked refused; the drain, the
   effect every tick, pausing by its own rule and when it can't pay, resuming; moving and swapping; kept through a reroll and the save
