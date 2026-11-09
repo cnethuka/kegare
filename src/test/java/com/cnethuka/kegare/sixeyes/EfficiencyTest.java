@@ -158,7 +158,7 @@ class EfficiencyTest {
                 double factor = Efficiency.costFactor(p);
                 StrainTest.wear(p, new ItemStack(KegareItems.BLINDFOLD.get()));
                 assertEquals(factor, Efficiency.costFactor(p), EPS, "a blindfold changes nothing");
-                StrainTest.wear(p, new ItemStack(KegareItems.TINTED_GLASSES.get()));
+                StrainTest.wear(p, new ItemStack(KegareItems.SUNGLASSES.get()));
                 assertEquals(factor, Efficiency.costFactor(p), EPS, "nor glasses");
                 StrainTest.wear(p, ItemStack.EMPTY);
                 Strain.set(p, Strain.MAX);

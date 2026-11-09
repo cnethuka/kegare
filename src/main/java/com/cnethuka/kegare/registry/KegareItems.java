@@ -18,7 +18,12 @@ public final class KegareItems {
 
     /** Eyewear for Curios' "eyes" slot (DESIGN §3.32): anyone can wear them; they mean nothing on someone without the eyes. */
     public static final DeferredItem<Item> BLINDFOLD = ITEMS.registerSimpleItem("blindfold", new Item.Properties().stacksTo(1));
-    public static final DeferredItem<Item> TINTED_GLASSES = ITEMS.registerSimpleItem("tinted_glasses", new Item.Properties().stacksTo(1));
+    public static final DeferredItem<Item> SUNGLASSES = ITEMS.registerSimpleItem("sunglasses", new Item.Properties().stacksTo(1));
+
+    static {
+        // They used to be called Tinted Glasses: any already made or worn are read as these.
+        ITEMS.addAlias(Kegare.id("tinted_glasses"), SUNGLASSES.getId());
+    }
 
     private KegareItems() {}
 
@@ -26,7 +31,7 @@ public final class KegareItems {
         if (event.getTabKey() == CreativeModeTabs.TOOLS_AND_UTILITIES) {
             event.accept(PURIFICATION_TALISMAN);
             event.accept(BLINDFOLD);
-            event.accept(TINTED_GLASSES);
+            event.accept(SUNGLASSES);
         }
     }
 }

@@ -18,17 +18,21 @@ import top.theillusivec4.curios.api.client.CuriosRendererRegistry;
  */
 public final class EyewearClient {
     private static final EyewearRenderer BLINDFOLD = new EyewearRenderer("blindfold", RenderType::entityCutoutNoCull);
+    private static final EyewearRenderer SUNGLASSES = new EyewearRenderer("sunglasses", RenderType::entityTranslucent);
 
     private EyewearClient() {}
 
     public static void init(IEventBus modBus) {
         modBus.addListener((FMLClientSetupEvent e) -> e.enqueueWork(EyewearClient::setup));
-        modBus.addListener((RegisterClientReloadListenersEvent e) -> e.registerReloadListener((ResourceManagerReloadListener) manager -> BLINDFOLD.forget()));
+        modBus.addListener((RegisterClientReloadListenersEvent e) -> e.registerReloadListener((ResourceManagerReloadListener) manager -> {
+            BLINDFOLD.forget();
+            SUNGLASSES.forget();
+        }));
     }
 
     private static void setup() {
         CuriosRendererRegistry.register(KegareItems.BLINDFOLD.get(), () -> BLINDFOLD);
-        CuriosRendererRegistry.register(KegareItems.TINTED_GLASSES.get(), () -> new TintedGlassesStrip("tinted_glasses"));
+        CuriosRendererRegistry.register(KegareItems.SUNGLASSES.get(), () -> SUNGLASSES);
         Minecraft mc = Minecraft.getInstance();
         for (KeyMapping key : mc.options.keyMappings) {
             if ("key.curios.open.desc".equals(key.getName()) && key.getKey().getValue() == GLFW.GLFW_KEY_G) {

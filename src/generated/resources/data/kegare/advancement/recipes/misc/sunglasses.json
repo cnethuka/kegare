@@ -3,7 +3,7 @@
   "criteria": {
     "has_the_recipe": {
       "conditions": {
-        "recipe": "kegare:tinted_glasses"
+        "recipe": "kegare:sunglasses"
       },
       "trigger": "minecraft:recipe_unlocked"
     },
@@ -26,7 +26,7 @@
   ],
   "rewards": {
     "recipes": [
-      "kegare:tinted_glasses"
+      "kegare:sunglasses"
     ]
   }
 }

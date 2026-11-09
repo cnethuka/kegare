@@ -110,7 +110,7 @@ config="${mod_id}.mixins.json"
     ordering="AFTER"
     side="BOTH"
 [[dependencies.${mod_id}]]
-    modId="curios" # Curios API, for the eyes slot (blindfold, tinted glasses)
+    modId="curios" # Curios API, for the eyes slot (blindfold, sunglasses)
     type="required"
     reason="Eyewear sits in Curios' slot."
     versionRange="${curios_version_range}"

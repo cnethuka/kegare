@@ -3108,9 +3108,14 @@ focus is the Read the server decides for itself, so that's the one it counts.
 
 **Eyewear** (Curios, a required dependency; client `EyewearRenderer`)
 - Two items for Curios' **Eyes** slot (`data/kegare/curios`, the item tag `curios:eyes`, a player's only Curios slot unless another mod adds
-  some): a **blindfold** (string, black wool, string) and **tinted glasses** (tinted glass, iron nugget, tinted glass). Our own pixel art
-  (`tools/gen_art.py`), drawn round the head at eye level at the skin's own resolution, for everyone to see. Anyone can wear them and they
-  mean nothing on a non-bearer, so wearing one proves nothing.
+  some): a **Blindfold** (string, black wool, string) and **Sunglasses** (tinted glass, iron nugget, tinted glass; a
+  registry alias from `kegare:tinted_glasses` keeps any already made or worn). Anyone can wear them and they mean nothing on a non-bearer, so wearing one
+  proves nothing.
+- **Real 3D models,** ours and Python-built (`tools/blockbench/build_blindfold.py`, `build_sunglasses.py`; `art/blockbench/`, `models/fx/`, `textures/entity/`), for everyone to see:
+  - The Blindfold: a band of soft near-black cloth at eye level, about 3 to 3.5 pixels tall, pinched over the nose into two shallow lobes, the lower edge dipping at the bridge, pulling
+    narrow toward the temples, with diagonal folds in its shape and grey painted along their ridges. Matte and opaque. A flat overlap behind, no knot or tails.
+  - The Sunglasses: two round lenses 2.9 pixels across (40 sides) on the eyes, a touch low on the nose, deep indigo, darker toward the top and a little lighter at the bottom, with a small
+    highlight, see-through enough to show the eyes behind them. A hairline silver rim round each, a thin silver bridge with a small angular step, thin silver arms straight back along the head.
 - **Eyewear never reduces what the eyes see:** range, map, outlines, voids, Reads and efficiency stay full when covered. It changes only how
   fast Strain moves, and whether the uncovered edge is there.
 - **Curios' own key:** Curios opens its screen on G by default, which is Technique Mode. While it sits on G it's moved to J
@@ -3118,7 +3123,7 @@ focus is the Read the server decides for itself, so that's the one it counts.
 
 **Strain and the uncovered edge** (`Strain`, `Edge`, `SixEyesData`; attachment `kegare:six_eyes`, saved, kept on death, wiped when the eyes go)
 - **Strain** (0 to 100) is the eyes' fatigue, private to the bearer (a small meter under the crosshair, `StrainClient`). It builds in a fight
-  at `buildPerSecond` (1.25: 80 s to the top) uncovered, x `glassesFactor` (0.5) with glasses, x `blindfoldFactor` (0.2) with a blindfold. It falls
+  at `buildPerSecond` (1.25: 80 s to the top) uncovered, x `sunglassesFactor` (0.5) with sunglasses, x `blindfoldFactor` (0.2) with a blindfold. It falls
   out of a fight at `fallPerSecond` (1), or `fallCoveredPerSecond` (3) covered. Background RMT holds it back (x `backgroundRmtFactor`, 0.2, through
   the §3.31 hook: 400 s to the top, so a bearer running it can stay uncovered a whole fight). Channelling RMT lowers it, `rmtReliefPerSecond` (8):
   RMT refreshing the brain, as in canon.
@@ -3137,7 +3142,7 @@ focus is the Read the server decides for itself, so that's the one it counts.
     "%s's mind gave out"), with a dark flash on their own screen (our addition, so a stun you can't move through is plain); the risk starts over. Covering the eyes stops it growing and stops the
     rolls; channelling RMT lowers it (`rmtRiskReliefPerSecond`, 0.05); below the top it's gone.
 - `/kegare debug sixeyes strain <player> <value>` sets it.
-- **Tests:** `StrainTest` (players have the slot, anyone can wear either, it proves nothing; Strain's three build rates and two fall rates; the same
+- **Tests:** `EyewearItemsTest` (the alias finds the Sunglasses, a stack saved under the old name loads as them and still covers the eyes, both in the Eyes tag); `StrainTest` (players have the slot, anyone can wear either, it proves nothing; Strain's three build rates and two fall rates; the same
   seen and the same Reads covered; Background RMT holding it back; channelling lowering it; the edge only uncovered and only against a Special
   Grade, lost at the top until it cools, the later hook; the risk growing uncovered at the top, not covered, lowered by channelling; a collapse
   stunning, holding movement and hurting through armour, and letting go; Strain wiped with the eyes).

@@ -6,7 +6,7 @@ import net.neoforged.neoforge.common.ModConfigSpec;
 public final class SixEyesConfig {
     // Strain
     public static ModConfigSpec.DoubleValue STRAIN_BUILD;
-    public static ModConfigSpec.DoubleValue GLASSES_BUILD;
+    public static ModConfigSpec.DoubleValue SUNGLASSES_BUILD;
     public static ModConfigSpec.DoubleValue BLINDFOLD_BUILD;
     public static ModConfigSpec.DoubleValue BACKGROUND_RMT_BUILD;
     public static ModConfigSpec.DoubleValue STRAIN_FALL;
@@ -36,12 +36,12 @@ public final class SixEyesConfig {
 
         b.comment("Strain: the eyes' fatigue. It builds in a fight and falls out of one.").push("strain");
         STRAIN_BUILD = b.comment("Strain a second in a fight with the eyes uncovered (100 / this = seconds to the top).").defineInRange("buildPerSecond", 1.25, 0.0, 100.0);
-        GLASSES_BUILD = b.comment("That, times this, with tinted glasses on.").defineInRange("glassesFactor", 0.5, 0.0, 1.0);
+        SUNGLASSES_BUILD = b.comment("That, times this, with sunglasses on.").defineInRange("sunglassesFactor", 0.5, 0.0, 1.0);
         BLINDFOLD_BUILD = b.comment("That, times this, with a blindfold on.").defineInRange("blindfoldFactor", 0.2, 0.0, 1.0);
         BACKGROUND_RMT_BUILD = b.comment("And times this while Background RMT runs: it holds Strain back, so a bearer running it can stay uncovered",
                 "a whole fight.").defineInRange("backgroundRmtFactor", 0.2, 0.0, 1.0);
         STRAIN_FALL = b.comment("Strain a second out of a fight, uncovered.").defineInRange("fallPerSecond", 1.0, 0.0, 100.0);
-        STRAIN_FALL_COVERED = b.comment("Out of a fight, covered (glasses or a blindfold).").defineInRange("fallCoveredPerSecond", 3.0, 0.0, 100.0);
+        STRAIN_FALL_COVERED = b.comment("Out of a fight, covered (sunglasses or a blindfold).").defineInRange("fallCoveredPerSecond", 3.0, 0.0, 100.0);
         RMT_STRAIN_RELIEF = b.comment("Strain a second taken off while channelling Reverse Malice Technique (it refreshes the brain).").defineInRange("rmtReliefPerSecond", 8.0, 0.0, 100.0);
         EDGE_BACK_BELOW = b.comment("At the top, the uncovered edge is lost until Strain cools below this.").defineInRange("edgeBackBelow", 60.0, 0.0, 100.0);
         RISK_GROWTH = b.comment("Collapse risk: uncovered at the top, the chance of collapsing each second grows this much a second (0.01: 10% a",

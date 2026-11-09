@@ -355,7 +355,7 @@ public final class KegareLanguageProvider extends LanguageProvider {
 
         // Eyewear (DESIGN §3.32): anyone's.
         add("item.kegare.blindfold", "Blindfold");
-        add("item.kegare.tinted_glasses", "Tinted Glasses");
+        add("item.kegare.sunglasses", "Sunglasses");
         add("curios.identifier.eyes", "Eyes");
         add("death.attack.kegare.eyes_collapse", "%1$s's mind gave out");
         add("death.attack.kegare.eyes_collapse.player", "%1$s's mind gave out while fighting %2$s");

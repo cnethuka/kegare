@@ -6,12 +6,12 @@ import net.minecraft.world.item.ItemStack;
 import top.theillusivec4.curios.api.CuriosApi;
 
 /**
- * What covers the eyes (DESIGN §3.32): a blindfold or tinted glasses in Curios' "eyes" slot. Anyone can wear them and they mean nothing on
+ * What covers the eyes (DESIGN §3.32): a blindfold or sunglasses in Curios' "eyes" slot. Anyone can wear them and they mean nothing on
  * someone without the eyes, so wearing one proves nothing. On a bearer they change only how fast Strain builds and falls, and whether the
  * uncovered edge is there: never what the eyes see, nor how little their energy wastes.
  */
 public enum Eyewear {
-    NONE, GLASSES, BLINDFOLD;
+    NONE, SUNGLASSES, BLINDFOLD;
 
     public static final String SLOT = "eyes";
 
@@ -32,7 +32,7 @@ public enum Eyewear {
 
     public static Eyewear of(ItemStack stack) {
         if (stack.is(KegareItems.BLINDFOLD.get())) return BLINDFOLD;
-        if (stack.is(KegareItems.TINTED_GLASSES.get())) return GLASSES;
+        if (stack.is(KegareItems.SUNGLASSES.get())) return SUNGLASSES;
         return NONE;
     }
 }

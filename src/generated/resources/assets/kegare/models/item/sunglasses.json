@@ -1,6 +1,6 @@
 {
   "parent": "minecraft:item/generated",
   "textures": {
-    "layer0": "kegare:item/tinted_glasses"
+    "layer0": "kegare:item/sunglasses"
   }
 }

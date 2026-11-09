@@ -35,7 +35,7 @@ public final class KegareRecipeProvider extends RecipeProvider {
                 .define('W', Items.BLACK_WOOL)
                 .unlockedBy("has_black_wool", has(Items.BLACK_WOOL))
                 .save(output);
-        ShapedRecipeBuilder.shaped(RecipeCategory.MISC, KegareItems.TINTED_GLASSES.get())
+        ShapedRecipeBuilder.shaped(RecipeCategory.MISC, KegareItems.SUNGLASSES.get())
                 .pattern("GIG")
                 .define('G', Items.TINTED_GLASS)
                 .define('I', Items.IRON_NUGGET)

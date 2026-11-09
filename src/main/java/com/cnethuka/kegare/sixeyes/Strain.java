@@ -75,7 +75,7 @@ public final class Strain {
         Eyewear wear = Eyewear.of(player);
         if (CombatHelper.isInCombat(player)) {
             double perSecond = SixEyesConfig.STRAIN_BUILD.get();
-            if (wear == Eyewear.GLASSES) perSecond *= SixEyesConfig.GLASSES_BUILD.get();
+            if (wear == Eyewear.SUNGLASSES) perSecond *= SixEyesConfig.SUNGLASSES_BUILD.get();
             if (wear == Eyewear.BLINDFOLD) perSecond *= SixEyesConfig.BLINDFOLD_BUILD.get();
             if (heldBack(player)) perSecond *= SixEyesConfig.BACKGROUND_RMT_BUILD.get();
             d.strain = Math.min(MAX, d.strain + perSecond / 20.0);

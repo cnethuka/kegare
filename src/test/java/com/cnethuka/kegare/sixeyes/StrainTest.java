@@ -65,8 +65,8 @@ class StrainTest {
                 assertEquals(Eyewear.NONE, Eyewear.of(plain));
                 wear(plain, new ItemStack(KegareItems.BLINDFOLD.get()));
                 assertEquals(Eyewear.BLINDFOLD, Eyewear.of(plain), "anyone can wear it");
-                wear(plain, new ItemStack(KegareItems.TINTED_GLASSES.get()));
-                assertEquals(Eyewear.GLASSES, Eyewear.of(plain));
+                wear(plain, new ItemStack(KegareItems.SUNGLASSES.get()));
+                assertEquals(Eyewear.SUNGLASSES, Eyewear.of(plain));
                 assertFalse(SixEyes.isBearer(plain), "and it proves nothing");
                 assertTrue(new ItemStack(KegareItems.BLINDFOLD.get()).is(net.minecraft.tags.TagKey.create(net.minecraft.core.registries.Registries.ITEM,
                         net.minecraft.resources.ResourceLocation.fromNamespaceAndPath("curios", Eyewear.SLOT))), "Curios' slot takes it");
@@ -84,11 +84,11 @@ class StrainTest {
                 SightTest.eyes(server, p, true);
                 double uncovered = SixEyesConfig.STRAIN_BUILD.get();
                 assertEquals(uncovered, second(p, true), 1e-3, "fastest uncovered");
-                wear(p, new ItemStack(KegareItems.TINTED_GLASSES.get()));
-                assertEquals(uncovered * SixEyesConfig.GLASSES_BUILD.get(), second(p, true), 1e-3, "slower with glasses");
+                wear(p, new ItemStack(KegareItems.SUNGLASSES.get()));
+                assertEquals(uncovered * SixEyesConfig.SUNGLASSES_BUILD.get(), second(p, true), 1e-3, "slower with glasses");
                 wear(p, new ItemStack(KegareItems.BLINDFOLD.get()));
                 assertEquals(uncovered * SixEyesConfig.BLINDFOLD_BUILD.get(), second(p, true), 1e-3, "slowest with a blindfold");
-                assertTrue(SixEyesConfig.BLINDFOLD_BUILD.get() < SixEyesConfig.GLASSES_BUILD.get());
+                assertTrue(SixEyesConfig.BLINDFOLD_BUILD.get() < SixEyesConfig.SUNGLASSES_BUILD.get());
 
                 Strain.set(p, 50);
                 clearCombat(server);
@@ -113,7 +113,7 @@ class StrainTest {
                 SightTest.eyes(server, p, true);
                 var players = Sight.players(p);
                 var reads = Reads.build(p).glances();
-                for (var item : new ItemStack[] {new ItemStack(KegareItems.BLINDFOLD.get()), new ItemStack(KegareItems.TINTED_GLASSES.get())}) {
+                for (var item : new ItemStack[] {new ItemStack(KegareItems.BLINDFOLD.get()), new ItemStack(KegareItems.SUNGLASSES.get())}) {
                     wear(p, item);
                     assertEquals(players.dots().size(), Sight.players(p).dots().size(), "the same seen, covered");
                     assertEquals(reads, Reads.build(p).glances(), "the same Reads, covered");
@@ -173,8 +173,8 @@ class StrainTest {
                 assertTrue(Edge.topTier(p, special), "a Special Grade is");
 
                 assertTrue(Strain.edgeAvailable(p), "uncovered: the edge is there");
-                wear(p, new ItemStack(KegareItems.TINTED_GLASSES.get()));
-                assertFalse(Strain.edgeAvailable(p), "glasses: no edge");
+                wear(p, new ItemStack(KegareItems.SUNGLASSES.get()));
+                assertFalse(Strain.edgeAvailable(p), "sunglasses: no edge");
                 wear(p, new ItemStack(KegareItems.BLINDFOLD.get()));
                 assertFalse(Strain.edgeAvailable(p), "blindfold: no edge");
                 wear(p, ItemStack.EMPTY);

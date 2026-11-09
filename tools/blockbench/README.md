@@ -51,6 +51,13 @@ Frost Field's crystals: `field_shapes.py` (four small clusters) and `build_frost
 
     python3 -I tools/blockbench/build_frost_field.py --preview  # also run/field_preview/*.png
 
+The eyewear: `build_blindfold.py` makes the Blindfold's band as one height field (edges, lobes, pinch, folds) and paints its texture from the same folds; `build_sunglasses.py` makes the
+Sunglasses' lenses, rims, bridge and arms, one texture with alpha for the lenses (`art/blockbench/blindfold.bbmodel`, `sunglasses.bbmodel`; `models/fx/`, `textures/entity/`). The Python is the
+source; Blockbench is the viewer and exporter. Both are in the head's space, so `EyewearRenderer` draws them under the head's transform.
+
+    python3 -I tools/blockbench/build_blindfold.py
+    python3 -I tools/blockbench/build_sunglasses.py
+
 Ice Path has no mesh: its ice is pixel art on the blocks (`path_ice`, below). Its slide pose is `tools/anims/ice_path.py`.
 
 Rime Shell's plates: `shell_shapes.py` (23 crested slabs, each in its body part's space about the part's pivot) and

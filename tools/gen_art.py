@@ -1051,17 +1051,6 @@ def six_eyes_sprites():
 
 # Eyewear (DESIGN §3.32), hard pixels: on the face, a strip of the head's four sides, 8 pixels each and 3 tall: the front, its left, the
 # back, its right.
-EYEWEAR_FACE = {
-    "tinted_glasses": [
-        "FFFFFFFF" "AAAAAAAA" "........" "AAAAAAAA",
-        "LLLFFLLL" "........" "........" "........",
-        "LLL..LLL" "........" "........" "........",
-    ],
-}
-EYEWEAR_PALETTE = {"D": (38, 34, 44, 255), "d": (28, 25, 33, 255), "K": (20, 18, 24, 255), "N": (58, 52, 66, 255),
-                   "F": (24, 22, 26, 255), "L": (46, 40, 58, 255), "A": (24, 22, 26, 255)}
-
-
 def eye_slot() -> "Image.Image":
     """The Eyes slot's empty icon: an eye's outline, dim, as Curios' own empty slots are."""
     img = new(16, 16)
@@ -1074,19 +1063,12 @@ def eye_slot() -> "Image.Image":
     return img
 
 
-def eyewear_face(name: str) -> "Image.Image":
-    rows = EYEWEAR_FACE[name]
-    img = new(32, 3)
-    for y, row in enumerate(rows):
-        for x, ch in enumerate(row[:32]):
-            if ch != "." and ch in EYEWEAR_PALETTE:
-                img.putpixel((x, y), EYEWEAR_PALETTE[ch])
-    return img
-
-
-# The Blindfold's inventory icon (DESIGN §3.32), hard pixels, the same shape as its 3D model: the cloth band with its two lobes, the pinch over the
-# nose and grey along its folds.
-EYEWEAR_ICON_COLORS = {"K": INK, "1": (24, 25, 30, 255), "2": (40, 42, 48, 255), "3": (84, 86, 94, 255), "4": (132, 134, 142, 255)}
+# Eyewear's inventory icons (DESIGN §3.32), hard pixels, the same shapes as the 3D models: the cloth band with its two lobes, the pinch over the
+# nose and grey along its folds; the round indigo lenses in a silver frame, with the stepped bridge.
+EYEWEAR_ICON_COLORS = {
+    "K": INK, "1": (24, 25, 30, 255), "2": (40, 42, 48, 255), "3": (84, 86, 94, 255), "4": (132, 134, 142, 255),
+    "S": (196, 200, 210, 255), "s": (128, 132, 142, 255), "a": (20, 22, 84, 255), "b": (32, 38, 108, 255), "c": (54, 66, 146, 255), "H": (196, 206, 242, 255),
+}
 ITEM_BLINDFOLD = [
     "................",
     "................",
@@ -1105,18 +1087,18 @@ ITEM_BLINDFOLD = [
     "................",
     "................",
 ]
-ITEM_TINTED_GLASSES = [
+ITEM_SUNGLASSES = [
     "................",
     "................",
     "................",
     "................",
-    "K..............K",
-    "K..............K",
-    "KKKKKKKK.KKKKKKK",
-    ".K3445K.K.K3445K"[:16],
-    ".K2334KKKKK2334K"[:16],
-    ".K1223K...K1223K"[:16],
-    "..KKKK.....KKKK.",
+    "................",
+    "..SSSS....SSSS..",
+    ".SaHaaSSSSaHaaS.",
+    "SSaaaaS..SaaaaSS",
+    "sSbbbbS..SbbbbSs",
+    ".SccccS..SccccS.",
+    "..SSSS....SSSS..",
     "................",
     "................",
     "................",
@@ -3085,8 +3067,7 @@ def main() -> None:
     save(aura_wisp(), "entity/aura_wisp.png")
     save(aura_shimmer(), "entity/aura_shimmer.png")
     save(from_grid(ITEM_BLINDFOLD, EYEWEAR_ICON_COLORS), "item/blindfold.png")
-    save(icon(ITEM_TINTED_GLASSES, SILVER), "item/tinted_glasses.png")
-    save(eyewear_face("tinted_glasses"), "entity/tinted_glasses.png")
+    save(from_grid(ITEM_SUNGLASSES, EYEWEAR_ICON_COLORS), "item/sunglasses.png")
     save(eye_slot(), "slot/eyes.png")
     save(sight_marker(), "entity/sight_marker.png")
     save(void_distortion(), "entity/void_distortion.png")
