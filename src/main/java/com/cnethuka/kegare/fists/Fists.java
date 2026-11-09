@@ -20,6 +20,7 @@ public final class Fists {
         onTurnedOn(player -> com.cnethuka.kegare.timing.SubTick.mark(player, com.cnethuka.kegare.timing.TimedInput.FISTS_ON)); // §3.29
         onTurnedOn(BlackSpark::onFistsOn);
         Zone.init();
+        FistsAdvancements.init();
     }
 
     public static void onTurnedOn(Consumer<ServerPlayer> listener) {

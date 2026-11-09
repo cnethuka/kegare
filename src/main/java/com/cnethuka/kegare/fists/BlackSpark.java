@@ -61,7 +61,7 @@ public final class BlackSpark {
     /** The listeners, for tests to take theirs off again. */
     static final List<Listener> LISTENERS_FOR_TESTS = LISTENERS;
     /** Told before the listeners: the zone, so the chain they're told is the new one. */
-    private static final List<java.util.function.Consumer<ServerPlayer>> FIRST = new CopyOnWriteArrayList<>();
+    private static final List<java.util.function.BiConsumer<ServerPlayer, LivingEntity>> FIRST = new CopyOnWriteArrayList<>();
     /** Victims a Black Spark is knocking back, once the attack is over (its own knockback done). */
     private static final Map<LivingEntity, ServerPlayer> KNOCK = new WeakHashMap<>();
     /** For tests: the next try's offset, instead of a secret roll. */
@@ -73,7 +73,7 @@ public final class BlackSpark {
         LISTENERS.add(listener);
     }
 
-    static void listenFirst(java.util.function.Consumer<ServerPlayer> listener) {
+    static void listenFirst(java.util.function.BiConsumer<ServerPlayer, LivingEntity> listener) {
         FIRST.add(listener);
     }
 
@@ -152,7 +152,7 @@ public final class BlackSpark {
                     hit, multiplier, amount * multiplier, target.getName().getString()));
         }
         InsightHooks.firstBlackSpark(attacker);
-        FIRST.forEach(listener -> listener.accept(attacker));
+        FIRST.forEach(listener -> listener.accept(attacker, target));
         int chain = Zone.chain(attacker);
         LISTENERS.forEach(listener -> listener.onSpark(attacker, target, chain));
     }

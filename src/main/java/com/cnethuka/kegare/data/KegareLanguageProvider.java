@@ -489,6 +489,11 @@ public final class KegareLanguageProvider extends LanguageProvider {
         advancement("chosen_by_fate", "Chosen by Fate", "Roll a Legendary " + INNATE_TECHNIQUE + ".");
         advancement("bitter_luck", "Bitter Luck", "Hit hard pity. That Legendary was guaranteed, not lucky.");
         advancement("severed", SEVERED, "Be born with zero " + MALICE + ".");
+        advancement("locked_in", "Locked in", "Land 3 Reinforced Strikes in a row on players, with no plain hit on a player between them, in one fight");
+        advancement("120_percent", "120%", "Land a Black Spark on a player while in the zone of the one before");
+        advancement("nothing_to_celebrate", "Nothing to Celebrate", "Chain 4 Black Sparks on players without leaving the zone");
+        advancement("blessed_by_the_sparks", "Blessed by the Sparks", "Chain 7 Black Sparks on players without leaving the zone");
+        advancement("lights_out", "Lights Out", "Send a player into a wall with a Black Spark, hard enough to leave a crater");
         advancement("how_cruel", "How cruel, don't you have a human heart?", "As " + SEVERED + ", kill 3 different " + MALICE + " users within 60 seconds");
         advancement("just_getting_started", "Our fight is just getting started!", "As " + SEVERED + ", drop to 3 hearts or less in a fight with a "
                 + MALICE + " user, then kill that same player before the fight ends");

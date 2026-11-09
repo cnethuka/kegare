@@ -547,6 +547,11 @@ Each tab has its own root.
 | *Recognized* | challenge | hidden, **silent** | reached Grade 1 |
 | *Outside the Ladder* | challenge | hidden, **silent** | reached Special Grade |
 | *Full Kit* | goal | hidden, **silent** | Refinement reached the level that unlocks every ability and special of the current technique (the ultimate doesn't count) |
+| *Locked in* | challenge | hidden | 3 Reinforced Strikes in a row on players, no plain melee hit on a player between them, in one fight; anyone, Severed too (§3.28) |
+| *120%* | challenge | hidden | a chain of 2 Black Sparks on players (§3.28) |
+| *Nothing to Celebrate* (under 120%) | challenge | hidden | a chain of 4 |
+| *Blessed by the Sparks* (under Nothing to Celebrate) | challenge | hidden | a chain of 7 |
+| *Lights Out* (under 120%) | challenge | hidden | a Black Spark sent a player into a block hard enough for a wall-slam crater (§3.24), with battle damage on or off; anyone |
 
 **Six Eyes tab** (root `clear_sight`). Everything here is **silent**, and every advancement except the root is
 **hidden** (secret-identity rule and its visible-root exception, §1):
@@ -2248,7 +2253,9 @@ player or their technique always may; a mob's only with the `mobGriefing` gameru
   a ceiling at `minSpeed` (0.9 blocks/tick; a sprinting hit knocks someone about 0.7) or more, stopping dead against blocks that
   way, they leave a crater where they hit: a hit of strength `strengthPerSpeed` (1.45) × speed at their edge. Speed is read from
   where they are each tick, so players and mobs alike. Landing from a full Glacial Spire's launch is one. Craters only: a slam does
-  no damage of its own.
+  no damage of its own. Slams are watched even where nothing may break (the gamerule off, or a mob's hit without mob griefing): one hard
+  enough for a crater is told to `BattleDamage.addSlamListener`'s listeners ("Lights Out", §3.28), and the crater is made only where
+  it may.
 
 **One rule for what breaks** (`BattleDamage.breaks`): a hit's power is `strengthScale` (3) × its strength at the point of contact
 (the top tier, reserved for a hit that asks for it: `topPower`, 1500), falling off in a straight line to nothing at its radius,
@@ -2720,9 +2727,20 @@ potential, where the next one comes easier, and consecutive Black Flashes can re
   rim of your Malice color (the face a disguise shows, as for the burn), each there for a tick and gone (`FistsPayload.ZONE`, drawn by
   `FistBurn.drawFlicker`, at every effects setting). Not in your own first person (the cue is yours).
 - `/kegare debug spark zone <player> <seconds>` puts them in it (0 ends it); it starts no chain.
+- **Advancements** (`FistsAdvancements`; Base tab, §3.11): all hidden, announced in chat, Challenge, players only, awarded from code.
+  None needs a kill or a win (§3.21).
+  - *Locked in*: 3 Reinforced Strikes in a row on players, with no plain melee hit on a player between them, in one fight (the streak
+    ends when the striker's fight does). Anyone can earn it, Severed included. Strikes on mobs don't count, and don't break it.
+  - *120%*, *Nothing to Celebrate* and *Blessed by the Sparks*: a chain of 2, 4 and 7 Black Sparks on players. The chain is the zone's
+    (above): a spark on a mob keeps the zone up but isn't counted, and the count ends with the zone.
+  - *Lights Out*: a Black Spark sends a player into a block hard enough to make a wall-slam crater (§3.24), within the slam window of
+    the spark. With `kegareBattleDamage` off the same slam still counts (slams are watched either way; only the crater waits for the
+    rule, `BattleDamage.addSlamListener`). Anyone can earn it.
 - **Tests:** `ZoneTest` (in for its time; x1.2 on melee and a technique but not on the hit that started it; RMT x1.2 with its fatigue
   ignored; refreshed, restoring fatigue; the chain 1, 2, then ended with the zone and starting over at 1; the command), `ZoneFatigueTest`
-  (hits in the zone add no fatigue).
+  (hits in the zone add no fatigue), `FistsAdvancementsTest` (hidden, announced, Challenge; Locked in broken by a plain hit, never from
+  mobs, never earned by a Severed player; the chains 2, 4 and 7 on players with a mob in the middle not counting, a chain of 8 on a mob earning
+  nothing, and a chain ending with the zone), `LightsOutTest` (a spark into a wall with battle damage off, no crater, and on; never a mob).
 
 ### 3.29 Sub-tick timing (package `timing`)
 

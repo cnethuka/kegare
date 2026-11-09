@@ -20,6 +20,8 @@ public final class Zone {
         long until;
         int ticks;
         int chain;
+        /** Of the chain, the Black Sparks on players (the advancements count only those). */
+        int playerChain;
         /** The tick they came into it: the hit that put them there isn't one of the zone's. */
         long enteredAt = -1;
     }
@@ -60,11 +62,19 @@ public final class Zone {
         return state == null ? 0 : (int) Math.max(0, state.until - player.level().getGameTime());
     }
 
+    /** Black Sparks on players in the current chain: what the advancements count. */
+    public static int playerChain(ServerPlayer player) {
+        State state = STATES.get(player.getUUID());
+        return state == null || !in(player) ? 0 : state.playerChain;
+    }
+
     /** A Black Spark landed: into the zone, or the zone started over and the chain one longer, with fatigue taken away. */
-    static void onSpark(ServerPlayer player) {
+    static void onSpark(ServerPlayer player, net.minecraft.world.entity.LivingEntity target) {
         boolean already = in(player);
         State state = state(player);
         state.chain = already ? state.chain + 1 : 1;
+        int onPlayers = already ? state.playerChain : 0;
+        state.playerChain = target instanceof ServerPlayer ? onPlayers + 1 : onPlayers;
         if (!already) state.enteredAt = player.level().getGameTime();
         if (already) RmtFatigue.restore(player, FistsConfig.RESTORE_PER_SPARK.get());
         start(player, (int) Math.round(FistsConfig.ZONE_SECONDS.get() * 20));

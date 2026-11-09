@@ -73,6 +73,16 @@ public final class KegareAdvancementGenerator implements AdvancementProvider.Adv
         child(saver, awakening, KegareAdvancements.OUTSIDE_THE_LADDER, "outside_the_ladder", Items.NETHERITE_INGOT, AdvancementType.CHALLENGE, true);
         child(saver, awakening, KegareAdvancements.FULL_KIT, "full_kit", Items.BUNDLE, AdvancementType.GOAL, true);
 
+        // Reinforced Fists and Black Spark (§3.28): hidden, announced, Challenge, players only.
+        child(saver, awakening, com.cnethuka.kegare.fists.FistsAdvancements.LOCKED_IN, "locked_in", Items.TARGET, AdvancementType.CHALLENGE, true);
+        AdvancementHolder sparks = child(saver, awakening, com.cnethuka.kegare.fists.FistsAdvancements.ONE_TWENTY_PERCENT, "120_percent",
+                Items.FIRE_CHARGE, AdvancementType.CHALLENGE, true);
+        AdvancementHolder nothingToCelebrate = child(saver, sparks, com.cnethuka.kegare.fists.FistsAdvancements.NOTHING_TO_CELEBRATE,
+                "nothing_to_celebrate", Items.COAL_BLOCK, AdvancementType.CHALLENGE, true);
+        child(saver, nothingToCelebrate, com.cnethuka.kegare.fists.FistsAdvancements.BLESSED_BY_THE_SPARKS, "blessed_by_the_sparks",
+                Items.ECHO_SHARD, AdvancementType.CHALLENGE, true);
+        child(saver, sparks, com.cnethuka.kegare.fists.FistsAdvancements.LIGHTS_OUT, "lights_out", Items.CRACKED_STONE_BRICKS, AdvancementType.CHALLENGE, true);
+
         // ---- Six Eyes tab: secret identity, so silent; children hidden, root visible (documented exception) ----
         AdvancementHolder clearSight = root(saver, KegareAdvancements.CLEAR_SIGHT, "clear_sight", "granted", Items.SPYGLASS,
                 SIX_EYES_BACKGROUND, AdvancementType.CHALLENGE, false); // visible root: SECRET_VISIBLE_ROOTS

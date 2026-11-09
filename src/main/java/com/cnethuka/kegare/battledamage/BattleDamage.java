@@ -89,9 +89,22 @@ public final class BattleDamage {
         WallSlams.init();
     }
 
+    /** Told of every slam hard enough to leave a crater, whether or not anything breaks ("Lights Out", DESIGN §3.28). */
+    @FunctionalInterface
+    public interface SlamListener {
+        void onSlam(net.minecraft.world.entity.LivingEntity victim, @Nullable Entity attacker, double speed);
+    }
+
+    private static final java.util.List<SlamListener> SLAM_LISTENERS = new java.util.concurrent.CopyOnWriteArrayList<>();
+
+    public static void addSlamListener(SlamListener listener) {
+        SLAM_LISTENERS.add(listener);
+    }
+
     private static void onImpact(Impact impact) {
-        if (!impact.breaksBlocks() || !allowed(impact.level(), impact.attacker())) return;
-        WallSlams.watch(impact);
+        if (!impact.breaksBlocks()) return;
+        WallSlams.watch(impact); // even where nothing may break: a slam still counts for its listeners
+        if (!allowed(impact.level(), impact.attacker())) return;
         if (impact.tier().ordinal() < BattleDamageConfig.MIN_TIER.get().ordinal()) return;
         hit(impact.level(), impact.contact(), impact.strength(), impact.tier(), impact.attacker());
     }
@@ -117,10 +130,19 @@ public final class BattleDamage {
 
     /** A slam into a wall, floor or ceiling at {@code speed} (blocks/tick), meeting it at {@code at}: a crater, no damage. */
     static void slam(ServerLevel level, Vec3 at, double speed, @Nullable Entity attacker) {
-        if (!on(level)) return; // turned off while they flew
+        slam(level, at, speed, attacker, null);
+    }
+
+    /**
+     * The same, with who was slammed: hard enough for a crater, its listeners hear of it even where nothing may break (the gamerule
+     * off, or a mob's hit with mob griefing off), and the crater is made only where it may.
+     */
+    static void slam(ServerLevel level, Vec3 at, double speed, @Nullable Entity attacker, @Nullable net.minecraft.world.entity.LivingEntity victim) {
         double strength = BattleDamageConfig.SLAM_STRENGTH_PER_SPEED.get() * speed;
         ImpactTier tier = ImpactStrength.tier(strength);
         if (tier.ordinal() < BattleDamageConfig.MIN_TIER.get().ordinal()) return;
+        if (victim != null) SLAM_LISTENERS.forEach(listener -> listener.onSlam(victim, attacker, speed));
+        if (!allowed(level, attacker)) return; // turned off while they flew, or never on
         hit(level, at, strength, tier, attacker);
     }
 

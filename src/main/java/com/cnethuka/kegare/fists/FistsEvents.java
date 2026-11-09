@@ -41,6 +41,11 @@ public final class FistsEvents {
         BlackSpark.onIncoming(event);
     }
 
+    @SubscribeEvent
+    static void onDamaged(net.neoforged.neoforge.event.entity.living.LivingDamageEvent.Post event) {
+        FistsAdvancements.onDamaged(event);
+    }
+
     /** Ahead of the Impact System's own end of the tick, so it counts the push. */
     @SubscribeEvent(priority = net.neoforged.bus.api.EventPriority.HIGH)
     static void onServerTickEnd(ServerTickEvent.Post event) {
@@ -93,6 +98,7 @@ public final class FistsEvents {
         FistsTell.forget(event.getEntity().getUUID());
         BlackSpark.forget(event.getEntity().getUUID());
         Zone.forget(event.getEntity().getUUID());
+        FistsAdvancements.forget(event.getEntity().getUUID());
     }
 
     @SubscribeEvent
@@ -101,6 +107,7 @@ public final class FistsEvents {
         SecondImpact.clear();
         BlackSpark.clear();
         Zone.clear();
+        FistsAdvancements.clear();
         com.cnethuka.kegare.timing.TimingLog.clear();
     }
 }
