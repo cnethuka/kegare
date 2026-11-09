@@ -48,6 +48,7 @@ public final class MeleeEvents {
         if (!(victim.level() instanceof ServerLevel level) || event.getNewDamage() <= 0) return;
         DamageSource source = event.getSource();
         MeleeHits.Kind kind = MeleeHits.of(source, level);
+        float beforeDefences = MeleeHits.beforeDefences(event);
         if (victim instanceof ServerPlayer player && player.hasData(MeleeLayer.ATTACHMENT) && Parry.holding(player, MeleeLayer.state(player))) {
             MeleeNumbers numbers = MeleeNumbers.of(player);
             if (kind == MeleeHits.Kind.MELEE && source.getEntity() != player) {
@@ -60,7 +61,7 @@ public final class MeleeEvents {
         }
         if (kind == MeleeHits.Kind.MELEE && source.getEntity() instanceof ServerPlayer attacker && attacker.hasData(MeleeLayer.ATTACHMENT)
                 && Attribution.isRealTarget(attacker, victim)) {
-            event.setNewDamage(ReinforcedStrike.onHit(attacker, victim, event.getNewDamage()));
+            event.setNewDamage(ReinforcedStrike.onHit(attacker, victim, event.getNewDamage(), beforeDefences));
         }
     }
 

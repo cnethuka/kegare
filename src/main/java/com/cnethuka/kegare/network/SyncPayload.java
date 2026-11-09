@@ -104,7 +104,7 @@ public record SyncPayload(
                 environment, costs,
                 FreezeService.stacks(player), RimeConfig.FREEZE_MAX_STACKS.get(), FreezeService.frozenUntil(player),
                 com.cnethuka.kegare.innatetechnique.Burnout.isBurntOut(player) ? now + com.cnethuka.kegare.innatetechnique.Burnout.remaining(player) : 0L,
-                LoadoutService.slots(player), new ArrayList<>(SharedAbilityService.get(player).unlocked()),
+                LoadoutService.slots(player), new ArrayList<>(SharedAbilityService.unlockedIds(player)),
                 CombatHelper.isInCombat(player),
                 ProgressionSnapshot.of(player));
     }

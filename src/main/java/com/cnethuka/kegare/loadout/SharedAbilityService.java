@@ -19,7 +19,15 @@ public final class SharedAbilityService {
     }
 
     public static boolean isUnlocked(Player player, ResourceLocation id) {
+        if (SharedAbilities.forEveryone(id)) return MaliceService.get(player).isBorn() && !MaliceService.isSevered(player);
         return get(player).isUnlocked(id);
+    }
+
+    /** Everything they have: what they unlocked, and what every Malice user has. */
+    public static java.util.List<ResourceLocation> unlockedIds(Player player) {
+        java.util.List<ResourceLocation> out = new java.util.ArrayList<>();
+        for (Ability a : SharedAbilities.all()) if (isUnlocked(player, a.id())) out.add(a.id());
+        return out;
     }
 
     /**
@@ -27,7 +35,8 @@ public final class SharedAbilityService {
      * it was newly unlocked.
      */
     public static boolean unlock(ServerPlayer player, Ability ability) {
-        if (!SharedAbilities.isShared(ability.id()) || MaliceService.isSevered(player) || !MaliceService.get(player).isBorn()) return false;
+        if (!SharedAbilities.isShared(ability.id()) || SharedAbilities.forEveryone(ability.id()) || MaliceService.isSevered(player)
+                || !MaliceService.get(player).isBorn()) return false;
         boolean added = get(player).unlocked.add(ability.id());
         if (added) {
             PlayerSync.markDirty(player);

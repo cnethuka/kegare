@@ -74,6 +74,12 @@ final class FistFlames {
      */
     static void drawOwnHand(PoseStack.Pose pose, VertexConsumer out, int rgb, float time, float handEnd, float centre, float radius,
                             Vector3f toCamera, Vector3f up, boolean flipped) {
+        drawOwnHand(pose, out, rgb, time, handEnd, centre, radius, toCamera, up, flipped, false);
+    }
+
+    /** {@code low}: Reinforced Fists' low burn, smaller and steadier (the caller slows {@code time}). */
+    static void drawOwnHand(PoseStack.Pose pose, VertexConsumer out, int rgb, float time, float handEnd, float centre, float radius,
+                            Vector3f toCamera, Vector3f up, boolean flipped, boolean low) {
         Vector3f look = pose.normal().transformTranspose(toCamera, new Vector3f()).normalize();
         // The two ways across the arm's length: toward the camera, and side to side as the camera sees it.
         float towardX = look.x, towardZ = look.z;
@@ -94,6 +100,10 @@ final class FistFlames {
         int pale = mix(rgb, 0xFFFFFF, HEART_PALENESS);
 
         sleeve(pose, out, centre, tips, base, half, -radius, towardX, towardZ, ROW_MASS, frame(time, 0), flipped, rgb);
+        if (low) { // Reinforced Fists' low burn: no licks in front, and steadier
+            sleeve(pose, out, centre, tips, base, half, radius + 0.1f * PIXEL, towardX, towardZ, ROW_HEART, frame(time, 5), flipped, pale);
+            return;
+        }
         sleeve(pose, out, centre, tips, base, half, radius, towardX, towardZ, ROW_LICKS, frame(time, 3), !flipped, rgb);
         sleeve(pose, out, centre, tips, base, half, radius + 0.1f * PIXEL, towardX, towardZ, ROW_HEART, frame(time, 5), flipped, pale);
     }

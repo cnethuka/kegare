@@ -241,18 +241,23 @@ final class DebugCommands {
         return Commands.literal(action)
                 .then(player()
                         .then(name("ability")
-                                .suggests((c, b) -> suggest(b, SharedAbilities.all(), a -> shortName(a.id()), Ability::displayName))
+                                .suggests((c, b) -> suggest(b, unlockable(), a -> shortName(a.id()), Ability::displayName))
                                 .executes(c -> {
                                     Ability ability = sharedAbility(c);
                                     return forEachPlayer(c, (source, player) -> shared(source, player, ability, unlock));
                                 })));
     }
 
+    /** The shared abilities there's anything to unlock or lock: not the ones every Malice user has (Reinforced Fists). */
+    private static java.util.List<Ability> unlockable() {
+        return SharedAbilities.all().stream().filter(a -> !SharedAbilities.forEveryone(a.id())).toList();
+    }
+
     private static Ability sharedAbility(CommandContext<CommandSourceStack> c) throws CommandSyntaxException {
         String typed = typedName(c, "ability");
         String wanted = typed.toLowerCase(Locale.ROOT);
-        return SharedAbilities.all().stream().filter(a -> shortName(a.id()).equals(wanted)).findFirst()
-                .orElseThrow(() -> UNKNOWN_SHARED.create(typed, SharedAbilities.all().stream().map(a -> shortName(a.id())).collect(Collectors.joining(", "))));
+        return unlockable().stream().filter(a -> shortName(a.id()).equals(wanted)).findFirst()
+                .orElseThrow(() -> UNKNOWN_SHARED.create(typed, unlockable().stream().map(a -> shortName(a.id())).collect(Collectors.joining(", "))));
     }
 
     private static int stun(CommandSourceStack source, ServerPlayer player, double seconds) {

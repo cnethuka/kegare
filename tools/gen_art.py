@@ -809,6 +809,26 @@ ICON_RMT = [
 ]
 
 
+# Reinforced Fists: a clenched fist, four knuckles over a thumb, with Malice burning off the top (shared: Malice violet).
+ICON_FISTS = [
+    "................",
+    "......K....K....",
+    ".....K5K..K6K...",
+    "..K..K65KK565K..",
+    ".K5KK5445K454K..",
+    ".K45K4KK44KK45K.",
+    "..KKKKKKKKKKKKK.",
+    "..K33K33K33K33K.",
+    "..K44K44K44K44K.",
+    ".KK33K33K33K33K.",
+    ".K3KKKKKKKKKK3K.",
+    ".K33333333333K..",
+    "..K2222222222K..",
+    "...K22222222K...",
+    "...K11111111K...",
+    "...KKKKKKKKKK...",
+]
+
 def emblem_rime() -> Image.Image:
     """A six-armed snowflake of brush strokes with crystal branches over a deep-blue vignette."""
     img = vignette(48, ICE, seed=301)
@@ -2631,7 +2651,7 @@ def main() -> None:
              "test_shockwave": icon(ICON_SHOCKWAVE, MALICE),
              "frost_shard": icon(ICON_FROST_SHARD, ICE), "glacial_lance": icon(ICON_GLACIAL_LANCE, ICE),
              "frost_field": icon(ICON_FROST_FIELD, ICE), "rime_shell": icon(ICON_RIME_SHELL, ICE),
-             "reverse_malice_technique": icon(ICON_RMT, HEAL),
+             "reverse_malice_technique": icon(ICON_RMT, HEAL), "reinforced_fists": icon(ICON_FISTS, MALICE),
              "positions": icon_positions(), "switchback": icon_switchback(), "awareness": icon_awareness(),
              "mimic": icon_mimic(), "anchor": icon_anchor(), "send_off": icon_send_off(), "exchange": icon_exchange(),
              "momentum_exchange": icon_momentum_exchange(), "total_swap": icon_total_swap(),

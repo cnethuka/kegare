@@ -14,7 +14,25 @@ import net.minecraft.world.phys.Vec3;
  * harder and pays by itself. It doesn't stack: earning it again only restarts the clock.
  */
 public final class ReinforcedStrike {
+    /** Told when a Strike goes off. */
+    @FunctionalInterface
+    public interface LandedListener {
+        /** @param damage what the Strike deals, before the target's defences */
+        void landed(ServerPlayer attacker, LivingEntity target, float damage);
+    }
+
+    private static final java.util.List<LandedListener> LANDED = new java.util.concurrent.CopyOnWriteArrayList<>();
+
     private ReinforcedStrike() {}
+
+    public static void addLandedListener(LandedListener listener) {
+        LANDED.add(listener);
+    }
+
+    /** Readies a Strike on them, as a perfect parry or a clean dodge does (debug commands and tests). */
+    public static void earn(ServerPlayer player) {
+        earn(player, MeleeLayer.state(player));
+    }
 
     static void earn(ServerPlayer player, MeleeState state) {
         MeleeNumbers numbers = MeleeNumbers.of(player);
@@ -76,9 +94,10 @@ public final class ReinforcedStrike {
 
     /**
      * A melee hit is about to land. Returns the damage it should do: more if the Strike goes off. Without the Malice it stays
-     * normal and the Strike waits, in case they can pay before it runs out.
+     * normal and the Strike waits, in case they can pay before it runs out. {@code beforeDefences}: the hit's damage before the
+     * target's armour, enchantments and effects took their share.
      */
-    static float onHit(ServerPlayer attacker, LivingEntity target, float damage) {
+    static float onHit(ServerPlayer attacker, LivingEntity target, float damage, float beforeDefences) {
         MeleeState state = MeleeLayer.state(attacker);
         if (!isReady(attacker, state)) return damage;
         MeleeNumbers numbers = MeleeNumbers.of(attacker);
@@ -95,6 +114,8 @@ public final class ReinforcedStrike {
         Vec3 at = target.position().add(0, target.getBbHeight() * 0.6, 0);
         MeleeTell.playStrikeImpact(attacker, at);
         MeleeImpact.STRIKE_HIT.fire(attacker.serverLevel(), at, target, attacker);
+        float strike = beforeDefences * (float) (1.0 + numbers.strikeBonus());
+        LANDED.forEach(listener -> listener.landed(attacker, target, strike));
         return damage * (float) (1.0 + numbers.strikeBonus());
     }
 }

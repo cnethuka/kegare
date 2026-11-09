@@ -120,7 +120,7 @@ public final class KegareCommand {
         }
 
         List<Component> shared = new ArrayList<>();
-        for (ResourceLocation id : SharedAbilityService.get(player).unlocked()) SharedAbilities.get(id).ifPresent(a -> shared.add(a.displayName()));
+        for (ResourceLocation id : SharedAbilityService.unlockedIds(player)) SharedAbilities.get(id).ifPresent(a -> shared.add(a.displayName()));
         lines.add(Component.translatable("commands.kegare.info.shared", join(shared)));
         if (SharedAbilityService.isUnlocked(player, com.cnethuka.kegare.rmt.RmtIds.ABILITY)) {
             int injuries = (int) Math.round(com.cnethuka.kegare.rmt.RmtFatigue.of(player) * 100);

@@ -29,6 +29,8 @@ final class FistFire {
     private static final float HALF_WIDTH_SLIM = 1.5f * PIXEL;
     /** How much of the Malice color's way to white the hot heart goes. Much more and blue fire starts to look like ice. */
     private static final float HEART_PALENESS = 0.38f;
+    /** How fast Reinforced Fists' low burn turns over, against the ready fist's: steadier. */
+    static final float LOW_PACE = 0.5f;
 
     /**
      * One tube.
@@ -85,6 +87,24 @@ final class FistFire {
         tube(pose, out, OUTER, rgb, time, handEnd, centre, slim, raised, look);
         tube(pose, out, INNER, rgb, time, handEnd, centre, slim, raised, look);
         tube(pose, out, HEART, FistFlames.mix(rgb, 0xFFFFFF, HEART_PALENESS), time, handEnd, centre, slim, raised, look);
+    }
+
+    /**
+     * Reinforced Fists' low burn: the same fire, smaller and steadier. Only the inner tube and its heart (nothing breaks past the arm's
+     * outline), turning over at {@code LOW_PACE} of the ready fist's rate.
+     */
+    static void drawLow(PoseStack.Pose pose, VertexConsumer out, int rgb, float time, float handEnd, float centre, boolean slim, Vector3f toCamera, Vector3f up) {
+        Vector3f look = pose.normal().transformTranspose(toCamera, new Vector3f()).normalize();
+        Vector3f upward = pose.normal().transformTranspose(up, new Vector3f()).normalize();
+        boolean raised = FistFlames.pointsUp(look, upward);
+        float slow = time * LOW_PACE;
+        tube(pose, out, INNER, rgb, slow, handEnd, centre, slim, raised, look);
+        tube(pose, out, HEART, FistFlames.mix(rgb, 0xFFFFFF, HEART_PALENESS), slow, handEnd, centre, slim, raised, look);
+    }
+
+    /** The low burn round the grip in first person: only the clump behind what's held. */
+    static void drawGripLow(VertexConsumer out, int rgb, float time, Vector3f base, Vector3f right, Vector3f up) {
+        billboard(out, base, GRIP_BEHIND, GRIP_BACK_Y, FistFlames.frame(time * LOW_PACE, 0), rgb, right, up);
     }
 
     private static void tube(PoseStack.Pose pose, VertexConsumer out, Layer layer, int rgb, float time, float handEnd, float centre, boolean slim, boolean raised, Vector3f look) {

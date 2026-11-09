@@ -29,13 +29,21 @@ final class FistTellLayer extends PlayerItemInHandLayer<AbstractClientPlayer, Pl
     public void render(PoseStack pose, MultiBufferSource buffers, int light, AbstractClientPlayer player, float limbSwing, float limbSwingAmount,
                        float partialTick, float ageInTicks, float netHeadYaw, float headPitch) {
         MeleeTell.Look look = FistTell.lookOn(player);
-        if (look == null) return;
+        Integer burn = FistBurn.colorOn(player);
+        if (look == null && burn == null) return;
         boolean left = player.getMainArm() == HumanoidArm.LEFT;
+        float time = player.tickCount + partialTick;
+        if (burn != null) { // Reinforced Fists: a low burn on the other fist, and on this one when no Strike is ready
+            drawBurn(pose, buffers, player, burn, time, !left ? getParentModel().leftArm : getParentModel().rightArm, !left, partialTick);
+            if (look == null) {
+                drawBurn(pose, buffers, player, burn, time, left ? getParentModel().leftArm : getParentModel().rightArm, left, partialTick);
+                return;
+            }
+        }
         ModelPart arm = left ? getParentModel().leftArm : getParentModel().rightArm;
         pose.pushPose();
         arm.translateAndRotate(pose);
         Vector3f fist = pose.last().pose().transformPosition(FistShellMesh.armCentre(slim, left), FistShellMesh.fistY(), 0f, new Vector3f());
-        float time = player.tickCount + partialTick;
         if (FistTell.inWorld(player, fist, partialTick)) {
             boolean self = FistTell.firstPersonSelf(player);
             FistTell.drawArm(pose, buffers, look, time, slim, left, light, fist.negate(new Vector3f()).normalize(), new Vector3f(0f, 1f, 0f), self);
@@ -43,6 +51,20 @@ final class FistTellLayer extends PlayerItemInHandLayer<AbstractClientPlayer, Pl
             if (!self) FistTell.drawWisps(player, buffers, partialTick);
         } else {
             FistTell.drawArm(pose, buffers, look, time, slim, left, light, new Vector3f(0f, 0f, 1f), new Vector3f(0f, -1f, 0f), false);
+        }
+        pose.popPose();
+    }
+
+    private void drawBurn(PoseStack pose, MultiBufferSource buffers, AbstractClientPlayer player, int color, float time, ModelPart arm, boolean leftArm,
+                          float partialTick) {
+        pose.pushPose();
+        arm.translateAndRotate(pose);
+        Vector3f fist = pose.last().pose().transformPosition(FistShellMesh.armCentre(slim, leftArm), FistShellMesh.fistY(), 0f, new Vector3f());
+        if (FistTell.inWorld(player, fist, partialTick)) {
+            FistBurn.drawArm(pose, buffers, color, time, slim, leftArm, fist.negate(new Vector3f()).normalize(), new Vector3f(0f, 1f, 0f),
+                    FistTell.firstPersonSelf(player));
+        } else {
+            FistBurn.drawArm(pose, buffers, color, time, slim, leftArm, new Vector3f(0f, 0f, 1f), new Vector3f(0f, -1f, 0f), false);
         }
         pose.popPose();
     }

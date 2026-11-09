@@ -340,6 +340,12 @@ public final class KegareLanguageProvider extends LanguageProvider {
                 + "own output, for %3$s times the " + MALICE + ". Few can: it takes enough Output Insight, and then the right moment, when "
                 + "someone near you is badly hurt.");
         add("message.kegare.rmt.unlocked", "Your body remembers how to heal.");
+
+        // Reinforced Fists (shared ability, every Malice user's)
+        add("ability.kegare.reinforced_fists", "Reinforced Fists");
+        add("ability.kegare.reinforced_fists.desc", "Toggle: wrap your fists in " + MALICE + ". Your melee hits deal %1$s more with an empty hand "
+                + "and %2$s more with anything in it, and a Reinforced Strike landed with it on hits again a moment later, for %3$s of its "
+                + "damage. Lighting it costs " + MALICE + ", it drains more while it burns, and it stays lit outside Technique Mode.");
         add("gui.kegare.rmt.output", "Output %sx");
         add("gui.kegare.rmt.knows_others", "You can heal others (R).");
         add("gui.kegare.rmt.not_others", "You don't know how to heal others yet.");
@@ -460,6 +466,9 @@ public final class KegareLanguageProvider extends LanguageProvider {
         add("hud.kegare.point_maker.return", "Point Maker: return %ss");
         add("entity.kegare.decelerate", "Clock Hand");
         add("death.attack.kegare.time_manipulation", "%1$s was cut down by %2$s's clock hand");
+        add("death.attack.kegare.second_impact", "%1$s was hit twice by %2$s's fist");
+        add("death.attack.kegare.second_impact.item", "%1$s was hit twice by %2$s's fist");
+        add("death.attack.kegare.second_impact.player", "%1$s was hit twice while fighting %2$s");
         add("death.attack.kegare.time_manipulation.item", "%1$s was cut down by %2$s's clock hand");
         add("death.attack.kegare.time_manipulation.player", "%1$s was cut down by a clock hand while fighting %2$s");
         add("subtitles.kegare.time_manipulation.click", "Watch clicks");

@@ -151,6 +151,7 @@ public final class KegareServerConfig {
         com.cnethuka.kegare.impact.ImpactConfig.define(b);
         com.cnethuka.kegare.battledamage.BattleDamageConfig.define(b);
         com.cnethuka.kegare.rmt.RmtConfig.define(b);
+        com.cnethuka.kegare.fists.FistsConfig.define(b);
         com.cnethuka.kegare.progression.ProgressionConfig.define(b);
 
         b.comment("TEST CONTENT: numbers for the placeholder test abilities. Delete with the test innate techniques.").push("test_abilities");

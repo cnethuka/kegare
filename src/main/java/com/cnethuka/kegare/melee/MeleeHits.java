@@ -22,6 +22,14 @@ public final class MeleeHits {
 
     private MeleeHits() {}
 
+    /** A hit's damage before the target's armour, armour enchantments and effects took their share (in {@code LivingDamageEvent.Pre}). */
+    public static float beforeDefences(net.neoforged.neoforge.event.entity.living.LivingDamageEvent.Pre event) {
+        var c = event.getContainer();
+        return event.getNewDamage() + c.getReduction(net.neoforged.neoforge.common.damagesource.DamageContainer.Reduction.ARMOR)
+                + c.getReduction(net.neoforged.neoforge.common.damagesource.DamageContainer.Reduction.ENCHANTMENTS)
+                + c.getReduction(net.neoforged.neoforge.common.damagesource.DamageContainer.Reduction.MOB_EFFECTS);
+    }
+
     public static Kind of(DamageSource source, ServerLevel level) {
         if (isMeleeType(source) && source.getEntity() instanceof LivingEntity attacker && source.getDirectEntity() == attacker) {
             // The same hit type inside a running cast is that cast's doing.

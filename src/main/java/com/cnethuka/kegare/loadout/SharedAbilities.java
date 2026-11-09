@@ -16,12 +16,25 @@ import net.minecraft.resources.ResourceLocation;
  */
 public final class SharedAbilities {
     private static final Map<ResourceLocation, Ability> ALL = new LinkedHashMap<>();
+    /** The ones every Malice user has, with nothing to unlock (Reinforced Fists). */
+    private static final java.util.Set<ResourceLocation> EVERYONE = new java.util.HashSet<>();
 
     private SharedAbilities() {}
 
     public static <T extends Ability> T register(T ability) {
         if (ALL.putIfAbsent(ability.id(), ability) != null) throw new IllegalStateException("Duplicate shared ability " + ability.id());
         return ability;
+    }
+
+    /** One every Malice user has from the start (Severed players never: they have no Malice). */
+    public static <T extends Ability> T registerForEveryone(T ability) {
+        register(ability);
+        EVERYONE.add(ability.id());
+        return ability;
+    }
+
+    public static boolean forEveryone(ResourceLocation id) {
+        return EVERYONE.contains(id);
     }
 
     public static List<Ability> all() {

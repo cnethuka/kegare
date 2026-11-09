@@ -334,7 +334,7 @@ All timestamps use **level game time**. They persist across restarts and are ide
   cools down and how long that is) and `RushPayload` (S→C, to its owner: a Closing Line to drive, its line in three dimensions, or
   stop); G sends `MeleeIntentPayload.Action.BLUR`, and R while Blurring is the usual
   `SPECIAL_PRESS`, taken by Closing Line's cast interceptor.
-- Network version `21` (since RMT's rework, §3.17: `RmtOutputPayload`, then heal-others' `RmtLinkPayload` and `RmtMomentPayload`; `20`
+- Network version `22` (since Reinforced Fists and Black Spark, §3.28-3.29: `FistsPayload`, the timing stamps; `21` was RMT's rework, §3.17: `RmtOutputPayload`, then heal-others' `RmtLinkPayload` and `RmtMomentPayload`; `20`
   was Closing Line's line in three dimensions in `RushPayload` and its cooldown in `BlurPayload`, §3.27; `19`
   was Severed's payloads, `18` Burnout's end time in the sync, §3.25, and Time Manipulation's payloads, §3.26). Bump it when payload formats change; mismatched clients are refused.
 
@@ -453,7 +453,7 @@ Malice is always shown as whole numbers (floored, like the HUD); the stored valu
 - **Server TOML** (`config/kegare-server.toml`, where NeoForge 21.1 keeps server configs; synced to clients and
   hot-reloaded when edited) holds **every balance number**.
   - Sections: `malice` (with `tiers`), `traits`, `roll` (with `weights`, and `includeTestInnateTechniques`),
-    `combat`, `rime` (§3.14), `swap` (§3.19), `melee` (§3.22), `impact` (§3.23), `battle_damage` (§3.24), `reverse_malice_technique` (§3.17), `progression` (§3.21), `test_abilities`.
+    `combat`, `rime` (§3.14), `swap` (§3.19), `melee` (§3.22), `impact` (§3.23), `battle_damage` (§3.24), `reverse_malice_technique` (§3.17), `reinforced_fists` (§3.28), `progression` (§3.21), `test_abilities`.
   - The `traits` section includes:
     - `sixEyesBirthChance`
     - `sixEyesTransferMode` (RANDOM | KILLER)
@@ -1176,7 +1176,8 @@ separate bar is filled from any of them.
   - **Innate Technique**: the current innate technique's abilities. A reroll replaces them.
   - **Shared**: abilities a player unlocks once and keeps through every reroll (`SharedAbilities` registry,
     unlocks in attachment `kegare:shared_abilities`, saved, kept on death). Reverse Malice Technique is the first
-    (§3.17). Later categories (martial arts, cursed tools...) slot in as more enum values.
+    (§3.17). Some are every Malice user's, with nothing to unlock (`SharedAbilities.registerForEveryone`: Reinforced Fists,
+    §3.28); Severed players never have those either. Later categories (martial arts, cursed tools...) slot in as more enum values.
 - **The loadout** (attachment `kegare:loadout`, saved, kept on death; `LoadoutService`):
   - **nine** regular slots (`LoadoutService.SLOTS`, number keys 1–9). By default the abilities the player has unlocked
     (§3.21; at Refinement 0, the first two) fill the first ones in order and the rest stay empty, ready for later
@@ -2596,6 +2597,37 @@ the floor, winded, refused until food is above it; the wall crash scaling with t
 Rime freeze or no longer being Severed ending it; where the server puts them, they stay), `SeveredBodyTest` (Strength only on a Severed hand; the Toughness split, falls least, the void, /kill and starving
 untouched; Stamina on normal drain and on healing; Senses: a player standing still, a mob, an invisible one, moving, out of range,
 never an armor stand, a spectator or themself, and never for a Malice user).
+
+### 3.28 Reinforced Fists and Black Spark (package `fists`)
+
+Malice wrapped round the fists. Numbers in `[reinforced_fists]` of `kegare-server.toml`.
+
+**Reinforced Fists** (shared ability, TOGGLE, ID `kegare:reinforced_fists`, §3.16). Every Malice user has it, with nothing to
+unlock (`SharedAbilities.registerForEveryone`; `SharedAbilityService.isUnlocked` is true for anyone born with Malice), and slots it
+in place of an ability like any shared one. Severed players never have it: they have zero Malice.
+- **The toggle:** its number key in Technique Mode turns it on and off. Turning it on costs `onCost` (30) up front; while on it drains
+  `drainPerSecond` (12) and turns off when Malice runs out. Its cooldown, `rearmCooldown` (1.5 s), starts when it goes off, so it
+  can't be flicked on for every swing. It keeps running after leaving Technique Mode (G), so the hotbar is free, and through Burnout
+  (it's shared, like RMT). Death, logout and a change of dimension end it, like every toggle. The panel shows it on or off, like
+  Accelerate.
+- **Harder hits:** melee hits (§3.22's `MeleeHits.Kind.MELEE`) deal `fistBonus` (2.0, so three times) more with an empty hand and
+  `weaponBonus` (0.2) more with anything held, so fists are worth using. It's added to the hit itself, before the target's armour, and
+  a perfect parry has already cancelled the hit by then.
+- **The second impact:** a Reinforced Strike (§3.22) landed with Fists on hits again `secondImpactDelay` (0.3 s) later, at the same
+  spot on the body, for `secondImpactDamage` (0.5) of the Strike's damage before the target's defences, which meet it again as a hit of
+  its own. Its own damage type, `kegare:second_impact` ("was hit twice by X's fist"): in `minecraft:no_knockback`, so it never
+  moves anyone (bosses, §4), and in `minecraft:bypasses_cooldown`, so it lands through the hurt cooldown the Strike started, and it
+  leaves that cooldown where it was rather than starting it over. It goes through the Impact System (§3.23) like any hit and plays
+  the Strike's burst again where it lands. Plain Fists hits don't get one. `ReinforcedStrike.addLandedListener` is the hook.
+- **Look:** a low, steady burn on both fists in the wearer's Malice color, at every effects setting (`melee/client/FistBurn`): the
+  ready fist's pixel fire (§3.22) with only its inner tube and hot heart, so nothing breaks past the arm's outline, turning over at
+  half the rate. Your own hand in first person gets the same fire as the ready fist without the licks in front, or with something in
+  hand only the clump behind it. A ready Strike still flares the full fire on the striking fist, over the burn, so opponents can tell
+  them apart. Everyone else sees the color of the face a disguise shows (`FistsTell`, `FistsPayload`, as for the ready fist). An
+  ignite (vanilla's fire charge, pitched up) as it turns on.
+- **Icon and text:** `tools/gen_art.py` (`ICON_FISTS`, a clenched fist with Malice burning off the knuckles, in Malice violet).
+- **Tests:** `FistsTest` (everyone's, never Severed's; the toggle's cost, drain, Burnout, re-arm and running out; the bonuses; the
+  second impact only for a Strike with Fists on, its delay and share, through the cooldown without lengthening it, never moving anyone).
 
 ---
 
