@@ -8,11 +8,12 @@ import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.player.Player;
 
 /**
- * The brain's limit (DESIGN §3.17): a saved meter per player, 0 to {@link #MAX} (attachment {@code kegare:brain}, kept on death). Every
- * second of Burnout taken away, by repair or by Background RMT's shortening, adds to it: {@code brainPerSecond} x sqrt(L /
- * dominionBurnoutAssumed) for a Burnout of length L (longer ones cost more a second), x (1 + brainEscalation x meter / 100) (the same
- * tissue destroyed again: each repair adds more than the last). Full, it refuses: no more repair, the Burnout runs its full length.
- * Every RMT user, Six Eyes included. It falls {@code brainHealPerSecond} a second out of a fight; sleeping through a night clears it.
+ * The brain's limit (DESIGN §3.17): a saved meter per player, 0 to {@link #MAX} (attachment {@code kegare:brain}, kept on death). A full
+ * repair gives the whole technique back, ultimate included, so every one costs the same whatever the Burnout's length: what a full
+ * repair of {@code dominionBurnoutAssumed} costs. Taking away a share of a Burnout, by repair or by Background RMT's shortening, costs that
+ * share: {@code brainPerSecond} x dominionBurnoutAssumed / L a second for a Burnout of length L, x (1 + brainEscalation x meter / 100)
+ * (the same tissue destroyed again: each repair adds more than the last). Full, it refuses: no more repair, the Burnout runs its full
+ * length. Every RMT user, Six Eyes included. It falls {@code brainHealPerSecond} a second out of a fight; sleeping through a night clears it.
  */
 public final class BrainDamage {
     public static final double MAX = 100.0;
@@ -55,9 +56,12 @@ public final class BrainDamage {
         if (Math.round(data.meter) != before) com.cnethuka.kegare.network.PlayerSync.markDirty(player);
     }
 
-    /** The meter's growth a second at {@code meter}, for a Burnout {@code lengthSeconds} long. */
+    /**
+     * The meter's growth a second at an empty meter, for a Burnout {@code lengthSeconds} long: a second is 1/L of it, and the whole of any
+     * Burnout costs what the whole of a {@code dominionBurnoutAssumed} one does.
+     */
     static double rate(double lengthSeconds) {
-        return RmtConfig.BRAIN_PER_SECOND.get() * Math.sqrt(Math.max(1.0e-3, lengthSeconds) / RmtConfig.DOMINION_BURNOUT_ASSUMED.get());
+        return RmtConfig.BRAIN_PER_SECOND.get() * RmtConfig.DOMINION_BURNOUT_ASSUMED.get() / Math.max(1.0e-3, lengthSeconds);
     }
 
     /**
@@ -103,7 +107,7 @@ public final class BrainDamage {
         }
     }
 
-    /** How many full repairs of a Burnout {@code lengthSeconds} long fit from an empty meter (the anchor DESIGN reports). */
+    /** How many full repairs of a Burnout {@code lengthSeconds} long fit from an empty meter (the anchor DESIGN reports: the same for any length). */
     public static int repairsThatFit(double lengthSeconds) {
         double meter = 0;
         for (int n = 0; n < 10_000; n++) {

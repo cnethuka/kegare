@@ -2,6 +2,8 @@ package com.cnethuka.kegare.rmt;
 
 import com.cnethuka.kegare.Kegare;
 import com.cnethuka.kegare.innatetechnique.Burnout;
+import com.cnethuka.kegare.innatetechnique.InnateTechnique;
+import com.cnethuka.kegare.innatetechnique.InnateTechniqueService;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
@@ -28,6 +30,10 @@ import net.neoforged.neoforge.network.handling.IPayloadContext;
  * the body doesn't heal until it's gone. It costs: {@code repairDamage} a second that armour doesn't stop, and the brain meter
  * ({@link BrainDamage}); full, "Your brain can't take another repair." and the Burnout runs its full length (then RMT heals the body
  * again). No extra key. Others see a nosebleed while it goes on (the tell, {@link Payload}). Every RMT user, Six Eyes included.
+ * <p>
+ * The ultimate is part of the technique: a repair that finishes the Burnout off clears the ultimate's cooldown at once (canon: a burnt-out
+ * technique is all that stands between one Domain and the next). One that stops early, for whatever reason, clears nothing, even if the Burnout then runs out.
+ * Giving the ultimate back costs a full repair, whatever the timing: finishing it off also pays for the share its own countdown took.
  */
 public final class Repair {
     public static final ResourceKey<DamageType> DAMAGE = ResourceKey.create(Registries.DAMAGE_TYPE, Kegare.id("brain_repair"));
@@ -52,6 +58,8 @@ public final class Repair {
      */
     static boolean tick(ServerPlayer player) {
         if (!Burnout.isBurntOut(player)) {
+            // Repairing right up to the end, unbroken, while its own countdown took the last tick: the repair finished it all the same.
+            if (isRepairing(player) && payToFinish(player, 0)) finished(player);
             stop(player);
             return false;
         }
@@ -62,13 +70,19 @@ public final class Repair {
             return false;
         }
         state.pendingTicks += RmtConfig.REPAIR_RATE.get() * RmtOutput.of(player); // seconds a second = ticks a tick
-        int whole = Math.min((int) state.pendingTicks, Burnout.remaining(player));
+        int remaining = Burnout.remaining(player);
+        int whole = Math.min((int) state.pendingTicks, remaining);
         state.pendingTicks -= (int) state.pendingTicks;
-        if (whole > 0) {
+        boolean done = false;
+        if (whole > 0 && whole < remaining) {
             double allowed = BrainDamage.take(player, whole / 20.0, Burnout.length(player) / 20.0);
             int ticks = (int) Math.floor(allowed * 20.0 + 1.0e-6);
-            Burnout.shorten(player, ticks);
+            Burnout.repair(player, ticks);
             if (ticks < whole) refuse(player, state); // it filled up on this one
+        } else if (whole > 0) {
+            done = payToFinish(player, whole);
+            if (done) Burnout.repair(player, whole);
+            else refuse(player, state); // it filled up before the end: the rest runs out by itself
         }
         if (++state.damageClock >= 20) {
             state.damageClock = 0;
@@ -81,8 +95,29 @@ public final class Repair {
                 player.invulnerableTime = invulnerable;
             }
         }
-        start(player);
+        if (done) {
+            finished(player);
+            stop(player);
+        } else {
+            start(player);
+        }
         return true;
+    }
+
+    /**
+     * Finishing it off: the repair's last {@code lastTicks}, and whatever share its own countdown took unpaid, so the ultimate always costs a
+     * full repair. False if the brain can't take it all: then it's full, and nothing more is repaired.
+     */
+    private static boolean payToFinish(ServerPlayer player, int lastTicks) {
+        double owed = (lastTicks + Burnout.unpaid(player)) / 20.0;
+        double allowed = BrainDamage.take(player, owed, Burnout.lastLength(player) / 20.0);
+        return allowed >= owed - 1.0e-9;
+    }
+
+    /** The repair finished the Burnout off: the technique is whole again, its ultimate too. Nothing else's cooldown is touched. */
+    private static void finished(ServerPlayer player) {
+        InnateTechniqueService.current(player).flatMap(InnateTechnique::ultimate)
+                .ifPresent(ultimate -> InnateTechniqueService.clearCooldown(player, ultimate.cooldownKey()));
     }
 
     static DamageSource source(ServerPlayer player) {

@@ -110,10 +110,12 @@ public final class RmtConfig {
                 .defineInRange("repairRate", 4.0, 0.0, 1000.0);
         REPAIR_DAMAGE = b.comment("Damage taken per second while repairing (armour doesn't stop it).").defineInRange("repairDamage", 1.0, 0.0, 1000.0);
         DOMINION_BURNOUT_ASSUMED = b.comment("Dominions don't exist yet: the Burnout one is assumed to leave, in seconds. The brain's costs are",
-                "anchored to it: about four repairs of one fit (a fifth Domain, not a sixth).").defineInRange("dominionBurnoutAssumed", 60.0, 1.0, 3600.0);
+                "anchored to it: a full repair of any Burnout costs what a full repair of one this long does, as every full repair gives the",
+                "ultimate back. About four fit (a fifth Domain, not a sixth), whatever the technique.").defineInRange("dominionBurnoutAssumed", 60.0, 1.0, 3600.0);
         BRAIN_PER_SECOND = b.comment("Brain meter added per second of Burnout taken away, at an empty meter, for a Burnout of",
-                "dominionBurnoutAssumed. A Burnout of length L costs sqrt(L / dominionBurnoutAssumed) times as much a second (longer ones",
-                "cost more), and the meter adds more the fuller it already is (brainEscalation): each repair adds more than the last.")
+                "dominionBurnoutAssumed. A Burnout of length L costs dominionBurnoutAssumed / L times as much a second, so taking away a share",
+                "of any Burnout costs that share of a full repair. The meter adds more the fuller it already is (brainEscalation): each repair",
+                "adds more than the last.")
                 .defineInRange("brainPerSecond", 0.262, 0.0, 100.0);
         BRAIN_ESCALATION = b.comment("How much a fuller meter adds: x (1 + brainEscalation x meter / 100).").defineInRange("brainEscalation", 1.0, 0.0, 100.0);
         BRAIN_HEAL_PER_SECOND = b.comment("The meter falls this much a second out of a fight. Sleeping through a night clears it.")

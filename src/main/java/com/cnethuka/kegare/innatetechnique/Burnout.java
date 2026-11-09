@@ -30,20 +30,27 @@ public final class Burnout {
     public static final class Data {
         public static final Codec<Data> CODEC = RecordCodecBuilder.create(i -> i.group(
                 Codec.INT.optionalFieldOf("remaining", 0).forGetter(d -> d.remaining),
-                Codec.INT.optionalFieldOf("length", 0).forGetter(d -> d.length)
+                Codec.INT.optionalFieldOf("length", 0).forGetter(d -> d.length),
+                Codec.INT.optionalFieldOf("paid", 0).forGetter(d -> d.paid)
         ).apply(i, Data::new));
 
         int remaining;
-        /** How long it was when it was applied (repair's brain cost reads it: longer Burnouts cost more). */
+        /**
+         * How long it was when it was applied, before anything shortened it (Background RMT): repair's brain cost reads it, as taking away a
+         * share of a Burnout costs that share of a full repair.
+         */
         int length;
+        /** Ticks of it taken away and paid for on the brain meter (Background RMT's shortening, repair): the rest of what's gone, its countdown took. */
+        int paid;
 
         public Data() {
-            this(0, 0);
+            this(0, 0, 0);
         }
 
-        private Data(int remaining, int length) {
+        private Data(int remaining, int length, int paid) {
             this.remaining = Math.max(0, remaining);
             this.length = Math.max(this.remaining, length);
+            this.paid = Math.max(0, Math.min(this.length - this.remaining, paid));
         }
     }
 
@@ -64,12 +71,14 @@ public final class Burnout {
      * two stands.
      */
     public static void apply(ServerPlayer player, int ticks) {
+        int full = ticks;
         for (Modifier modifier : MODIFIERS) ticks = modifier.modify(player, ticks);
         if (ticks <= 0) return;
         Data data = player.getData(KegareAttachments.BURNOUT);
         if (ticks <= data.remaining) return;
         data.remaining = ticks;
-        data.length = ticks;
+        data.length = Math.max(ticks, full);
+        data.paid = data.length - ticks; // what the modifiers took off, they paid for
         PlayerSync.markDirty(player);
     }
 
@@ -82,9 +91,30 @@ public final class Burnout {
         return player.hasData(KegareAttachments.BURNOUT) ? player.getData(KegareAttachments.BURNOUT).remaining : 0;
     }
 
-    /** How long the running Burnout was when it was applied, in ticks; 0 if none. */
+    /** How long the running Burnout was when it was applied, before anything shortened it, in ticks; 0 if none. */
     public static int length(ServerPlayer player) {
         return isBurntOut(player) ? Math.max(remaining(player), player.getData(KegareAttachments.BURNOUT).length) : 0;
+    }
+
+    /** Takes {@code ticks} off a running Burnout that were paid for on the brain meter (a repair). */
+    public static void repair(ServerPlayer player, int ticks) {
+        if (ticks <= 0 || !isBurntOut(player)) return;
+        Data data = player.getData(KegareAttachments.BURNOUT);
+        int taken = Math.min(ticks, data.remaining);
+        data.paid += taken;
+        shorten(player, taken);
+    }
+
+    /** The running Burnout's length, or the last one's if it's just ended (a repair finishing it off pays for it); 0 if there's never been one. */
+    public static int lastLength(ServerPlayer player) {
+        return player.hasData(KegareAttachments.BURNOUT) ? player.getData(KegareAttachments.BURNOUT).length : 0;
+    }
+
+    /** Ticks of the running (or just ended) Burnout that its own countdown took, not paid for: what finishing it off still owes. */
+    public static int unpaid(ServerPlayer player) {
+        if (!player.hasData(KegareAttachments.BURNOUT)) return 0;
+        Data data = player.getData(KegareAttachments.BURNOUT);
+        return Math.max(0, data.length - data.remaining - data.paid);
     }
 
     /** Takes {@code ticks} off a running Burnout. */

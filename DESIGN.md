@@ -1400,10 +1400,24 @@ negative is positive energy, which is why it heals, and why its colors are white
     counts as an injury for fatigue; "%s's brain gave out"). Others see a nosebleed while it goes on (the tell, `NosebleedLayer`: hard red lines on the player's own model, so it turns with the head and every setting shows it, never as dark as
     the night round it. It starts at both nostrils and runs one row every quarter second, a line half a skin pixel wide past the mouth, ending at the chin; then small hard red drops fall from there with real gravity. Thin and stopping
     at the chin on purpose: a wide patch at the mouth reads as a blob, and a bar on down the chest as a tongue. Readable at 7 blocks on a light or a dark skin, by day and at night. It stays 2 s after the repair stops, then goes from the nose down. `Repair.Payload` to everyone tracking them, not in your own first person).
-  - **The brain meter** (`BrainDamage`, attachment `kegare:brain`, 0 to 100, saved, kept on death): every second of Burnout taken away
-    adds `brainPerSecond` (0.262) x sqrt(L / `dominionBurnoutAssumed`) x (1 + `brainEscalation` (1) x meter / 100), for a Burnout L
-    long (the length it had when applied, saved with it): longer Burnouts cost more a second, and each repair adds more than the last
-    (the same tissue destroyed again). Background RMT's passive shortening (§3.31) adds the same way, so nothing gets around the limit.
+  - **Repairing gives the ultimate back.** The ultimate is part of the technique, so a repair that finishes the Burnout off (whatever
+    caused it) clears the cooldown of the player's innate technique's ultimate at once; no other ability's cooldown is touched. Canon:
+    Burnout is all that stands between one Domain and the next; once it's repaired another can open at once, and only the brain's
+    limit stops that. "Finishes it off" means the channel ran unbroken to the end, including when the Burnout's own countdown takes the very last
+    tick. A Burnout that runs out by itself leaves the cooldown as it is, and so does a repair that stops early (let go, a stun, out of
+    Malice, the brain filling), even if the Burnout then runs out by itself. Background RMT only shortens Burnout and never touches the
+    cooldown. Getting the ultimate back always costs one full repair: finishing a Burnout off also pays for whatever share its own
+    countdown took, unpaid, before or during the repair (otherwise RMT's own 15 s cooldown would mean each
+    repair paid only for the ~40% of Standstill's Burnout still left, and Standstill could go 14 times before the brain stopped it).
+  - **The brain meter** (`BrainDamage`, attachment `kegare:brain`, 0 to 100, saved, kept on death). Every full repair gives the
+    ultimate back, so every one costs the same whatever the Burnout's real length: what a full repair of `dominionBurnoutAssumed`
+    costs. Taking away a share of a Burnout costs that share: every second of a Burnout L long taken away adds `brainPerSecond` (0.262)
+    x `dominionBurnoutAssumed` / L x (1 + `brainEscalation` (1) x meter / 100). L is the length it had when applied, before anything
+    shortened it, saved with it, so a 20 s Standstill Burnout costs what a 60 s one does and a second of a short one costs more. Each
+    repair adds more than the last (the same tissue destroyed again). Background RMT's passive shortening (§3.31) is a share like any
+    other, paid when it's applied: shortening a Burnout by a quarter and then repairing the rest costs one full repair, so nothing gets
+    around the limit. A repair that stops early pays only for its share; a Burnout that runs out by itself costs nothing (and gives
+    nothing back). `Burnout` saves what's been paid for with it.
   - **Full:** "Your brain can't take another repair." on the action bar, repair stops and the Burnout runs its full length (RMT heals the
     body again: there's nothing left it can do for the technique). A repair that fills it stops where
     it filled. Background RMT shortens nothing while it's full. `BrainDamage.refusesDominion` is the hook for Dominions (later) to
@@ -1411,14 +1425,18 @@ negative is positive energy, which is why it heals, and why its colors are white
   - **Healing:** `brainHealPerSecond` (0.15) a second out of a fight (full to empty in about 11 minutes); a night slept through clears
     it for everyone who slept it (`SleepFinishedTimeEvent`).
   - **The anchor:** Dominions don't exist yet, so a Domain's Burnout is assumed to be `dominionBurnoutAssumed` (60 s). From an empty
-    meter, four full repairs of that fit (the meter at 17, 37, 60 and 87), and the fifth stops 24.6 s in: a fifth Domain, not a sixth.
-    The count doesn't depend on how strong the player is (a strong one repairs faster, for the same cost a second). Standstill's 20 s
-    Burnout: 22 full repairs.
+    meter, four full repairs fit (the meter at 17, 37, 60 and 87), and the fifth stops 41% of the way in (24.6 s of a 60 s Burnout,
+    8.2 s of Standstill's 20 s): a fifth Domain, not a sixth. The count is the same for every technique and every Burnout length, and it
+    doesn't depend on how strong the player is (a strong one repairs faster, for the same cost).
   - **Private:** the meter shows only on the Sorcerer screen's Progress view (a bar, "Brain: 37% worn by repairs", in the private
     progression sync) and in `/kegare info`. `/kegare debug brain <player> <value>` sets it.
   - **Tests:** `RepairTest` (repairRate x output, halved by fatigue; no body healing, repairDamage through armour; healing again and
-    the tell gone once repaired; each repair costing more than the last, longer ones more a second; four Domain repairs, more of 20 s;
-    Background RMT's shortening on the meter, none when full; full refusing, the body healed, the Dominion hook, a Six Eyes bearer no
+    the tell gone once repaired; each repair costing more than the last; a full repair of a 20 s and of a 60 s Burnout costing the
+    same, four in a row and the fifth stopping partway, for any length; finishing off a part-run-out Burnout costing a full repair, an
+    early stop only its share and a natural end nothing; Background RMT's shortening costing its share, and the rest of
+    the repair the rest, none when full; the ultimate's cooldown cleared by a finished repair, even when the countdown takes the last
+    tick, and not by a natural end, letting go, a stun, running out of Malice, the brain filling or Background RMT, with other
+    abilities' cooldowns untouched; full refusing, the body healed, the Dominion hook, a Six Eyes bearer no
     different; nearly full repairing until full; healing out of a fight, none in one; a night's sleep clearing it).
 - **Tests:** `RmtTest`: Severed can't unlock; locked can't be slotted; swap a Rime ability for it; cast at full health, still running
   there, a hit healed as it lands, never above max or absorption; R fizzles; start cost, a twentieth a tick, healPerSecond after a
@@ -2409,8 +2427,10 @@ Dominions later.
 - **API:** `Burnout.apply(player, ticks)` (never shortens one already running: the longer stands), `isBurntOut`, `remaining`,
   `shorten(player, ticks)` and `clear`. A `Burnout.Modifier` (`addModifier`) changes every Burnout's length as it's applied: the
   hook Background RMT uses to shorten it (§3.31).
-- **Repair:** channelling Reverse Malice Technique while burnt out repairs it faster, at a cost to the brain (§3.17).
-- **Saved** (attachment `kegare:burnout`, ticks left and the length it had when applied), so it survives logging out; it only counts down while they're online, so
+- **Repair:** channelling Reverse Malice Technique while burnt out repairs it faster, at a cost to the brain, and a repair that
+  finishes it off clears the ultimate's cooldown too: the ultimate is part of the technique (§3.17).
+- **Saved** (attachment `kegare:burnout`, ticks left, the length it had when applied before Background RMT shortened it, and how much
+  of it has been paid for on the brain meter), so it survives logging out; it only counts down while they're online, so
   logging out never waits it out. **Cleared on death** (it isn't copied to the respawned player).
 - **HUD:** "Burnt out 12.3s" under the crosshair, in and out of Technique Mode (`BurnoutHud`), and the combat panel greys over its
   innate technique slots and the ultimate (shared abilities stay lit). The end time travels in the sync (`SyncPayload.burntOutUntil`).
@@ -2486,7 +2506,9 @@ breaks the record. Runtime only.
   as the same one hit as on the resume: capped, dealt as the biggest single source, through `hurt()` so the Impact System and
   battle damage see it. If it kills them, they die: leaving is no way out of it. One who dies during the stop has nothing left to
   land.
-- **Afterwards:** `burnoutSeconds` (20) of Burnout on the caster (§3.25), on top of the 180 s cooldown. Every frozen player still
+- **Afterwards:** `burnoutSeconds` (20) of Burnout on the caster (§3.25), on top of the 180 s cooldown. Repairing that Burnout with
+  RMT clears the cooldown (§3.17), so with RMT Standstill can be cast again as soon as it's repaired, until the brain's limit stops it:
+  five casts from an empty meter, as the fifth repair stops partway. Every frozen player still
   alive after the resume gets the `survived_standstill` Insight hook (§3.21).
 
 **The boundary (§4):** movement, status and freezing work on mobs. Bosses take Decelerate's damage but are never Rewound, slowed by
@@ -2990,7 +3012,8 @@ ability on the bar, but it takes no bar slot and leaves the hands free.
   stops it: stuns and Burnout don't. A player frozen in a Standstill (§3.26, `TimeStops.frozen`) has it paused while time is stopped
   for them, and it resumes with it.
 - **Burnout:** while it runs, every Burnout applied to you lasts ×`burnoutFactor` (0.75), through `Burnout.Modifier` (§3.25):
-  Standstill's now, Dominions' later.
+  Standstill's now, Dominions' later. The quarter it takes off is paid on the brain meter as that share of a full repair (§3.17). It
+  never touches the ultimate's cooldown: only a finished repair gives that back.
 - **Who can tell:** nobody, except a Six Eyes bearer, who sees a faint green shimmer on anyone running it: small soft glints
   (`entity/aura_shimmer.png`, smooth, 0.11 to 0.19 blocks, one every 2 ticks) coming and going over the body and drifting up, in
   RMT's green; Reduced half as many, Vanilla a few specks of green dust. Sent per viewer (`AuraPayload.SHIMMER`, only to Six Eyes viewers, `AuraTell.addShimmer`).
