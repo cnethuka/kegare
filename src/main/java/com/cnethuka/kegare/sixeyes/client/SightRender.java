@@ -70,6 +70,15 @@ public final class SightRender {
             if (pin.name() != null) continue; // players were drawn above
             marker(markers, pose, pin.pos().add(0, 0.6, 0).subtract(cam), right, up, pin.color(), 0.9f, true, SightClient.pulsing(pin.entityId()));
         }
+        // The uncovered edge: the spark before a top-tier opponent's cast, a white-gold flash at their head that fades as it goes.
+        for (var spark : StrainClient.sparks().entrySet()) {
+            Entity e = level.getEntity(spark.getKey());
+            if (e == null) continue;
+            float left = Mth.clamp((spark.getValue() - now) / (float) StrainClient.SPARK_MS, 0f, 1f);
+            Vec3 at = e.getPosition(partial).add(0, e.getBbHeight() + 0.2, 0).subtract(cam);
+            float size = (float) Math.max(0.35, at.length() * 0.03) * (1.4f - 0.4f * left);
+            quad(markers, pose.last().pose(), at, right, up, size, size, 0f, 1f, 0xFFF0B0, left);
+        }
         buffers.endBatch(SightRenderTypes.THROUGH_WALLS.apply(MARKER));
 
         // Voids within reach: a distortion, never an outline. Behind walls the whole smear (drawn just in front of the body, so only what

@@ -81,6 +81,17 @@ final class DebugCommands {
                 .then(Commands.literal("shared")
                         .then(sharedAction("unlock", true))
                         .then(sharedAction("lock", false)))
+                // Six Eyes (DESIGN §3.32): a bearer's Strain, 0 to 100.
+                .then(Commands.literal("sixeyes")
+                        .then(Commands.literal("strain").then(player()
+                                .then(Commands.argument("value", com.mojang.brigadier.arguments.DoubleArgumentType.doubleArg(0.0, 100.0)).executes(c -> {
+                                    double value = com.mojang.brigadier.arguments.DoubleArgumentType.getDouble(c, "value");
+                                    return forEachPlayer(c, (source, player) -> {
+                                        com.cnethuka.kegare.sixeyes.Strain.set(player, value);
+                                        say(source, "commands.kegare.debug.sixeyes.strain", player.getDisplayName(), Math.round(value));
+                                        return 1;
+                                    });
+                                })))))
                 // The brain meter (DESIGN §3.17): what repairing burnt-out techniques has cost, 0 to 100.
                 .then(Commands.literal("brain").then(player()
                         .then(Commands.argument("value", com.mojang.brigadier.arguments.DoubleArgumentType.doubleArg(0.0, 100.0)).executes(c -> {

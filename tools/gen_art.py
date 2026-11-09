@@ -1043,6 +1043,84 @@ def six_eyes_sprites():
     return out
 
 
+# Eyewear (DESIGN §3.32), hard pixels: on the face, a strip of the head's four sides, 8 pixels each and 3 tall: the front, its left, the
+# back, its right.
+EYEWEAR_FACE = {
+    "blindfold": [
+        "DDDDDDDD" "dddddddd" "ddDKKDdd" "dddddddd",
+        "dDDDDDDd" "dddddddd" "dDKNNKDd" "dddddddd",
+        "DDDDDDDD" "dddddddd" "ddDKKDdd" "dddddddd",
+    ],
+    "tinted_glasses": [
+        "FFFFFFFF" "AAAAAAAA" "........" "AAAAAAAA",
+        "LLLFFLLL" "........" "........" "........",
+        "LLL..LLL" "........" "........" "........",
+    ],
+}
+EYEWEAR_PALETTE = {"D": (38, 34, 44, 255), "d": (28, 25, 33, 255), "K": (20, 18, 24, 255), "N": (58, 52, 66, 255),
+                   "F": (24, 22, 26, 255), "L": (46, 40, 58, 255), "A": (24, 22, 26, 255)}
+
+
+def eye_slot() -> "Image.Image":
+    """The Eyes slot's empty icon: an eye's outline, dim, as Curios' own empty slots are."""
+    img = new(16, 16)
+    for j in range(16):
+        for i in range(16):
+            x, y = i - 7.5, j - 7.5
+            d = abs(x) / 6.6 + abs(y) / 3.6
+            if 0.82 <= d <= 1.08 or math.hypot(x, y) <= 1.6:
+                img.putpixel((i, j), (70, 70, 70, 255))
+    return img
+
+
+def eyewear_face(name: str) -> "Image.Image":
+    rows = EYEWEAR_FACE[name]
+    img = new(32, 3)
+    for y, row in enumerate(rows):
+        for x, ch in enumerate(row[:32]):
+            if ch != "." and ch in EYEWEAR_PALETTE:
+                img.putpixel((x, y), EYEWEAR_PALETTE[ch])
+    return img
+
+
+ITEM_BLINDFOLD = [
+    "................",
+    "................",
+    "................",
+    "................",
+    "..KKKKKKKKKKKK..",
+    ".K333444444333K.",
+    ".K233333333332K.",
+    ".K122222222221K.",
+    "..KKKKKKKKKKKK..",
+    "............K2K.",
+    "............K2K.",
+    "...........K2K..",
+    "...........KK...",
+    "................",
+    "................",
+    "................",
+]
+ITEM_TINTED_GLASSES = [
+    "................",
+    "................",
+    "................",
+    "................",
+    "K..............K",
+    "K..............K",
+    "KKKKKKKK.KKKKKKK",
+    ".K3445K.K.K3445K"[:16],
+    ".K2334KKKKK2334K"[:16],
+    ".K1223K...K1223K"[:16],
+    "..KKKK.....KKKK.",
+    "................",
+    "................",
+    "................",
+    "................",
+    "................",
+]
+
+
 def aura_shimmer() -> "Image.Image":
     """A Six Eyes bearer's glimpse of Background RMT (DESIGN §3.31): a soft four-pointed glint, white to be tinted green (smooth)."""
     n = 32
@@ -3002,6 +3080,11 @@ def main() -> None:
     save(aura_sheet(True), "entity/aura_simple.png")
     save(aura_wisp(), "entity/aura_wisp.png")
     save(aura_shimmer(), "entity/aura_shimmer.png")
+    save(icon(ITEM_BLINDFOLD, SILVER), "item/blindfold.png")
+    save(icon(ITEM_TINTED_GLASSES, SILVER), "item/tinted_glasses.png")
+    save(eyewear_face("blindfold"), "entity/blindfold.png")
+    save(eyewear_face("tinted_glasses"), "entity/tinted_glasses.png")
+    save(eye_slot(), "slot/eyes.png")
     save(sight_marker(), "entity/sight_marker.png")
     save(void_distortion(), "entity/void_distortion.png")
     save(aura_edge(), "entity/aura_edge.png")

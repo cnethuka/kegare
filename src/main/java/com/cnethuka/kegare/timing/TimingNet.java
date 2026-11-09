@@ -35,7 +35,10 @@ public final class TimingNet {
         public static void handle(Stamp payload, IPayloadContext context) {
             double arrival = SubTick.nowMs();
             TimedInput input = TimedInput.byId(payload.input());
-            if (input != null && context.player() != null) SubTick.arrived(context.player().getUUID(), input, payload.clientMs(), arrival);
+            if (input != null && context.player() != null) {
+                SubTick.arrived(context.player().getUUID(), input, payload.clientMs(), arrival);
+                SubTick.notifyArrival(context.player(), input);
+            }
         }
     }
 

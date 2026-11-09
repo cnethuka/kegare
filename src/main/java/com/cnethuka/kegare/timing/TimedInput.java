@@ -7,7 +7,9 @@ public enum TimedInput {
     /** A melee attack on an entity (the attack button). */
     ATTACK,
     /** The guard going up (the Parry key). */
-    PARRY;
+    PARRY,
+    /** A cast key going down in Technique Mode: the moment the intent is on its way (Six Eyes' uncovered edge reads it, DESIGN §3.32). */
+    CAST;
 
     public static TimedInput byId(int id) {
         TimedInput[] all = values();

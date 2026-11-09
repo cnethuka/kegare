@@ -351,7 +351,15 @@ public final class KegareLanguageProvider extends LanguageProvider {
                 + "fight, and a night's sleep clears it. Full, no more repairs.");
         add("ability.kegare.reverse_malice_technique.unlock", "Take in the green orb.");
 
+        // Eyewear (DESIGN §3.32): anyone's.
+        add("item.kegare.blindfold", "Blindfold");
+        add("item.kegare.tinted_glasses", "Tinted Glasses");
+        add("curios.identifier.eyes", "Eyes");
+        add("death.attack.kegare.eyes_collapse", "%1$s's mind gave out");
+        add("death.attack.kegare.eyes_collapse.player", "%1$s's mind gave out while fighting %2$s");
+
         // Six Eyes (DESIGN §3.32): only its bearer ever sees these.
+        add("hud.kegare.six_eyes.strain_top", "Your head is splitting");
         add("gui.kegare.six_eyes.map", "What the eyes see");
         add("gui.kegare.six_eyes.map.hint", "Scroll to zoom, drag to look round, right-click to come back. Click a dot to pin it.");
         add("gui.kegare.six_eyes.void", "Void");
@@ -934,6 +942,8 @@ public final class KegareLanguageProvider extends LanguageProvider {
         add("commands.kegare.debug.shared.severed", "%s is " + SEVERED + " and can't unlock %s.");
         add("commands.kegare.debug.task.unknown", "Unknown Background Task: %s. Choose from %s.");
         add("commands.kegare.debug.brain", "%s's brain meter is now %s.");
+        add("commands.kegare.debug.sixeyes.strain", "%s's Strain is now %s.");
+        add("commands.kegare.help.debug.sixeyes.strain", "Set a player's Strain (0 to 100).");
         add("commands.kegare.help.debug.brain", "Set a player's brain meter (0 to 100): what repairing burnt-out techniques has cost.");
         add("commands.kegare.debug.task.unlocked", "Unlocked %s for %s.");
         add("commands.kegare.debug.task.locked", "Locked %s again for %s.");

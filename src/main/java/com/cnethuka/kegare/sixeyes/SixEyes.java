@@ -34,9 +34,22 @@ public final class SixEyes {
         return out;
     }
 
+    /** Someone gains the eyes: a new bearer starts out clumsy, with no Strain. */
+    public static void gained(ServerPlayer player) {
+        Strain.data(player).wipe();
+    }
+
+    /** Someone loses them: everything goes with them. */
+    public static void lost(ServerPlayer player) {
+        Strain.data(player).wipe();
+        Strain.forget(player);
+    }
+
     public static void init() {
         Sight.init();
         MobIntent.init();
         Reads.init();
+        Strain.init();
+        Edge.init();
     }
 }

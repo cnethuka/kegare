@@ -14,6 +14,8 @@ public final class KegareItemModelProvider extends ItemModelProvider {
     @Override
     protected void registerModels() {
         basicItem(KegareItems.PURIFICATION_TALISMAN.get());
+        basicItem(KegareItems.BLINDFOLD.get());
+        basicItem(KegareItems.TINTED_GLASSES.get());
         // Rime's projectiles in flight
         basicItem(com.cnethuka.kegare.innate_technique.rime.RimeRegistry.FROST_SHARD_ITEM.get());
         basicItem(com.cnethuka.kegare.innate_technique.rime.RimeRegistry.GLACIAL_LANCE_ITEM.get());

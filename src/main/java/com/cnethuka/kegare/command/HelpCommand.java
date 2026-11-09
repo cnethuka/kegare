@@ -103,6 +103,7 @@ final class HelpCommand {
             entry("debug shared unlock <player> <ability>", "commands.kegare.help.debug.shared.unlock"),
             entry("debug shared lock <player> <ability>", "commands.kegare.help.debug.shared.lock"),
             entry("debug brain <player> <value>", "commands.kegare.help.debug.brain"),
+            entry("debug sixeyes strain <player> <value>", "commands.kegare.help.debug.sixeyes.strain"),
             entry("debug task unlock <player> <task>", "commands.kegare.help.debug.task.unlock"),
             entry("debug task lock <player> <task>", "commands.kegare.help.debug.task.lock"),
             entry("debug orb spawn [player]", "commands.kegare.help.debug.orb.spawn"),

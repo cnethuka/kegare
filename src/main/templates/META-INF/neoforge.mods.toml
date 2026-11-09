@@ -110,6 +110,14 @@ config="${mod_id}.mixins.json"
     ordering="AFTER"
     side="BOTH"
 [[dependencies.${mod_id}]]
+    modId="curios" # Curios API, for the eyes slot (blindfold, tinted glasses)
+    type="required"
+    reason="Eyewear sits in Curios' slot."
+    versionRange="${curios_version_range}"
+    ordering="AFTER"
+    side="BOTH"
+
+[[dependencies.${mod_id}]]
     modId="ldlib2" # LDLib2, required by Photon
     type="required"
     reason="Required by Photon."

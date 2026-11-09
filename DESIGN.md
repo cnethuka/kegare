@@ -86,6 +86,7 @@ game never names a bearer, heir or killer of a secret holder.
 | `kegare:unlocks` | yes | yes | IDs held in the unlock framework (§3.21) |
 | `kegare:background_tasks` | yes | yes | three Background Task slots, each a task ID or nothing, on or off (§3.31) |
 | `kegare:brain` | yes | yes | the brain meter, 0 to 100: what repairing burnt-out techniques has cost (§3.17) |
+| `kegare:six_eyes` | yes | yes | a Six Eyes bearer's Attunement, Strain and collapse risk; wiped when the eyes go (§3.32) |
 | `kegare:cast_state` | no | no | runtime: active charge/channel, active toggles |
 | `kegare:sync_state` | no | no | runtime: "needs sync" flag |
 | `kegare:landing_state` | no | no | runtime: when each ability last landed on each target, who the player last traded hits with |
@@ -426,6 +427,7 @@ Every command reads `/kegare <system> <action> [player] [value]`.
 | `/kegare debug spark zone <player> <seconds>` | Put them in the zone for that long (0 ends it); it starts no chain (§3.28) |
 | `/kegare debug rmt fatigue <player> <amount>` | Set how much injuries take off a player's Reverse Malice Technique output (0 to 1, §3.17) |
 | `/kegare debug brain <player> <value>` | Set the brain meter, 0 to 100 (§3.17) |
+| `/kegare debug sixeyes strain <player> <value>` | Set a player's Strain, 0 to 100 (§3.32) |
 | `/kegare debug rmt healed <player> <amount>` | Set how much a player has healed with their own RMT; Background RMT unlocks at 500 (§3.31) |
 | `/kegare debug rmt others unlock\|lock <player>` | Teach or take away healing others (RMT's special) without its moment: the Unlocks entry `kegare:rmt_heal_others` |
 | `/kegare debug rmt moment <player> <target>` | Force the moment now: the target glows for the player for `momentSeconds`, and healing them teaches it (if the player is eligible; it says if not) |
@@ -2872,7 +2874,7 @@ A shared system so timing can be judged finer than a 50 ms tick. Numbers in `[ti
   can't claim to be earlier than it could have been, nor later than it arrived. With no stamp, a stamp further than `plausibleMs`
   (1000) from its arrival either way, or no clock estimate yet, the arrival time stands (or, with no stamp at all, when the server
   handled the input): never worse than the tick.
-- **API for later systems** (Six Eyes will use it): `SubTick.time(player, input)` (the latest, on the server's monotonic clock in ms)
+- **API for later systems** (Six Eyes' uncovered edge uses the arrival listener, §3.32): `SubTick.time(player, input)` (the latest, on the server's monotonic clock in ms)
   and `SubTick.gap(player, inputA, inputB)`; `SubTick.mark(player, input)` where the server handles a new one.
 - **Parry** (§3.22) is judged both ways on every hit that meets a guard (`Parry.inPerfectWindow`): by ticks (the hit handled less than
   the window's ticks after the press was), and by sub-tick timing (the defender's press against the attacker's swing, both mapped to
@@ -3090,6 +3092,41 @@ for the eye" (§3.30).
 - Sent every 4 ticks for players within 96 blocks. Mobs' tags come from what the eyes already see.
 - **Tests:** `ReadsTest` (compact Reads with technique and Malice; a void's says nothing; the focus at the crosshair, toggles and cooldowns
   in its detail; none when nobody's there; no field for anything secret, and a Special Grade reading the same as a Grade 4).
+**Eyewear** (Curios, a required dependency; client `EyewearRenderer`)
+- Two items for Curios' **Eyes** slot (`data/kegare/curios`, the item tag `curios:eyes`, a player's only Curios slot unless another mod adds
+  some): a **blindfold** (string, black wool, string) and **tinted glasses** (tinted glass, iron nugget, tinted glass). Our own pixel art
+  (`tools/gen_art.py`), drawn round the head at eye level at the skin's own resolution, for everyone to see. Anyone can wear them and they
+  mean nothing on a non-bearer, so wearing one proves nothing.
+- **Eyewear never reduces what the eyes see:** range, map, outlines, voids, Reads and efficiency stay full when covered. It changes only how
+  fast Strain moves, and whether the uncovered edge is there.
+- **Curios' own key:** Curios opens its screen on G by default, which is Technique Mode. While it sits on G it's moved to J
+  (`EyewearClient`, saved to the player's options); any other key they've chosen is left alone. The inventory's Curios button still works.
+
+**Strain and the uncovered edge** (`Strain`, `Edge`, `SixEyesData`; attachment `kegare:six_eyes`, saved, kept on death, wiped when the eyes go)
+- **Strain** (0 to 100) is the eyes' fatigue, private to the bearer (a small meter under the crosshair, `StrainClient`). It builds in a fight
+  at `buildPerSecond` (1.25: 80 s to the top) uncovered, x `glassesFactor` (0.5) with glasses, x `blindfoldFactor` (0.2) with a blindfold. It falls
+  out of a fight at `fallPerSecond` (1), or `fallCoveredPerSecond` (3) covered. Background RMT holds it back (x `backgroundRmtFactor`, 0.2, through
+  the §3.31 hook: 400 s to the top, so a bearer running it can stay uncovered a whole fight). Channelling RMT lowers it, `rmtReliefPerSecond` (8):
+  RMT refreshing the brain, as in canon.
+- **The uncovered edge:** only uncovered, against a top-tier opponent, the bearer sees the spark before a cast. The client stamps every cast key
+  (`TimedInput.CAST`, §3.29) the moment it goes down; the stamp is handled on the network thread as it reaches the server, ahead of the intent
+  itself and so of the cast's own tell, and the cue goes out there and then (`Edge.Spark`: a white-gold flash at their head, through walls, with
+  a chime; the network thread reads a snapshot each tick leaves, so it touches no live game state). It's a key press read, so it also shows
+  for a cast that goes on to fizzle. Within `edgeRange` (64). Covered, they see the cast when it starts, like everyone (the outline's pulse, above).
+  For now "top-tier" is a Special Grade player; `Edge.addTopTier` is where later systems add more, a Dominion clash among them.
+- **Max Strain:** severe brain fatigue, mental exhaustion and a risk of central nervous system overload.
+  - A throbbing headache: a red pulse from the edges of the screen (14% of the shorter side, nothing in the middle) and a heartbeat sound
+    (`WARDEN_HEARTBEAT`, every 0.8 s). The map, Reads and voids stay sharp.
+  - The uncovered edge goes until Strain cools below `edgeBackBelow` (60).
+  - Staying uncovered there: the chance of collapsing each second grows `riskGrowthPerSecond` (0.01: 10% a second after 10 s). A collapse is a
+    stun of `collapseStun` (2 s; no casting, and movement and jumping held) plus `collapseDamage` (6) that armour doesn't stop (`kegare:eyes_collapse`,
+    "%s's mind gave out"), with a dark flash on their own screen; the risk starts over. Covering the eyes stops it growing and stops the
+    rolls; channelling RMT lowers it (`rmtRiskReliefPerSecond`, 0.05); below the top it's gone.
+- `/kegare debug sixeyes strain <player> <value>` sets it.
+- **Tests:** `StrainTest` (players have the slot, anyone can wear either, it proves nothing; Strain's three build rates and two fall rates; the same
+  seen and the same Reads covered; Background RMT holding it back; channelling lowering it; the edge only uncovered and only against a Special
+  Grade, lost at the top until it cools, the later hook; the risk growing uncovered at the top, not covered, lowered by channelling; a collapse
+  stunning, holding movement and hurting through armour, and letting go; Strain wiped with the eyes).
 - **Tests (perception):** `SightTest` (only the bearer is sent anything; a player 25 km off and a void as far, never another dimension, not themself,
   capacity carried; losing the eyes sends one "forget" and then nothing; loaded mobs with their flow; a cast pulsing once for the bearer
   only, a void never; a creeper, a skeleton and a ghast pulsing once as each begins, and not moved).

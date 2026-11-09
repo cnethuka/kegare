@@ -16,9 +16,17 @@ public final class KegareItems {
     public static final DeferredItem<PurificationTalismanItem> PURIFICATION_TALISMAN = ITEMS.registerItem(
             "purification_talisman", PurificationTalismanItem::new, new Item.Properties().stacksTo(16).rarity(Rarity.UNCOMMON));
 
+    /** Eyewear for Curios' "eyes" slot (DESIGN §3.32): anyone can wear them; they mean nothing on someone without the eyes. */
+    public static final DeferredItem<Item> BLINDFOLD = ITEMS.registerSimpleItem("blindfold", new Item.Properties().stacksTo(1));
+    public static final DeferredItem<Item> TINTED_GLASSES = ITEMS.registerSimpleItem("tinted_glasses", new Item.Properties().stacksTo(1));
+
     private KegareItems() {}
 
     public static void addToCreativeTabs(BuildCreativeModeTabContentsEvent event) {
-        if (event.getTabKey() == CreativeModeTabs.TOOLS_AND_UTILITIES) event.accept(PURIFICATION_TALISMAN);
+        if (event.getTabKey() == CreativeModeTabs.TOOLS_AND_UTILITIES) {
+            event.accept(PURIFICATION_TALISMAN);
+            event.accept(BLINDFOLD);
+            event.accept(TINTED_GLASSES);
+        }
     }
 }

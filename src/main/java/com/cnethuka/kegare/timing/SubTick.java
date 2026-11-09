@@ -77,6 +77,17 @@ public final class SubTick {
         CLOCKS.computeIfAbsent(player, id -> new PlayerClock()).arrived(input, clientMs, arrivalMs);
     }
 
+    /** Told as a stamp arrives, on the network thread: read only what's safe there. */
+    private static final java.util.List<java.util.function.BiConsumer<Player, TimedInput>> ARRIVAL_LISTENERS = new java.util.concurrent.CopyOnWriteArrayList<>();
+
+    public static void addArrivalListener(java.util.function.BiConsumer<Player, TimedInput> listener) {
+        ARRIVAL_LISTENERS.add(listener);
+    }
+
+    static void notifyArrival(Player player, TimedInput input) {
+        for (var listener : ARRIVAL_LISTENERS) listener.accept(player, input);
+    }
+
     /** The clock estimate for this player: offset (their clock to the server's) and ping, ms. For the debug log. */
     public static String describe(Player player) {
         PlayerClock clock = CLOCKS.get(player.getUUID());

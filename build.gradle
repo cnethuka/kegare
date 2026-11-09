@@ -35,6 +35,11 @@ repositories {
         content { includeGroupByRegex "com\\.zigythebird(\\..*)?" } // PAL and its MoLang library (mochafloats)
     }
     maven {
+        name = "Illusive Soulworks" // Curios API (the eyewear slot)
+        url = "https://maven.theillusivec4.top/"
+        content { includeGroup "top.theillusivec4.curios" }
+    }
+    maven {
         name = "FirstDark" // LDLib2, Photon (low-drag-mc.github.io/LowDragMC-Doc)
         url = "https://maven.firstdark.dev/snapshots"
     }
@@ -152,6 +157,7 @@ dependencies {
     implementation "org.javassist:javassist:${pal_javassist_version}"
     // Photon VFX (assets/kegare/fx) and its library LDLib2. The "all" jars are the mods themselves; Photon's metadata
     // lists no dependencies, so LDLib2 is declared here (its own transitive libraries stay enabled, per its docs).
+    implementation "top.theillusivec4.curios:curios-neoforge:${curios_version}"
     implementation "com.lowdragmc.ldlib2:ldlib2-neoforge-${minecraft_version}:${ldlib2_version}:all"
     implementation "com.lowdragmc.photon:photon-neoforge-${minecraft_version}:${photon_version}:all"
 
@@ -200,6 +206,7 @@ var generateModMetadata = tasks.register("generateModMetadata", ProcessResources
             pal_version_range      : pal_version_range,
             photon_version_range   : photon_version_range,
             ldlib2_version_range   : ldlib2_version_range,
+            curios_version_range   : curios_version_range,
     ]
     inputs.properties replaceProperties
     expand replaceProperties

@@ -56,8 +56,11 @@ public final class ClientStamps {
             List<Ability> slotted = ClientLoadout.abilities();
             for (int i = 0; i < hotbar.length && i < slotted.size(); i++) {
                 Ability ability = slotted.get(i);
-                if (ability != null && FistsIds.ABILITY.equals(ability.id()) && matches(hotbar[i], key)) send(TimedInput.FISTS_ON, now);
+                if (ability == null || !matches(hotbar[i], key)) continue;
+                if (FistsIds.ABILITY.equals(ability.id())) send(TimedInput.FISTS_ON, now);
+                send(TimedInput.CAST, now); // every cast key: the moment the intent is on its way
             }
+            if (matches(KegareKeys.ULTIMATE, key)) send(TimedInput.CAST, now);
         }
     }
 

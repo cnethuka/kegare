@@ -20,5 +20,8 @@ public final class KegareItemTagsProvider extends ItemTagsProvider {
     @Override
     protected void addTags(HolderLookup.Provider provider) {
         tag(KegareTags.TALISMANS).add(KegareItems.PURIFICATION_TALISMAN.get());
+        // Curios' "eyes" slot takes what this tag holds (the slot itself: data/kegare/curios).
+        tag(net.minecraft.tags.TagKey.create(net.minecraft.core.registries.Registries.ITEM, net.minecraft.resources.ResourceLocation.fromNamespaceAndPath("curios", "eyes")))
+                .add(KegareItems.BLINDFOLD.get(), KegareItems.TINTED_GLASSES.get());
     }
 }

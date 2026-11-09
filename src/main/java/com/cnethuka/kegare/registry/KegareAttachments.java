@@ -66,6 +66,11 @@ public final class KegareAttachments {
             "background_tasks", () -> AttachmentType.builder(() -> new com.cnethuka.kegare.backgroundtask.BackgroundTaskData())
                     .serialize(com.cnethuka.kegare.backgroundtask.BackgroundTaskData.CODEC).copyOnDeath().build());
 
+    /** A Six Eyes bearer's Attunement, Strain and collapse risk (DESIGN §3.32): saved, kept on death, wiped when the eyes go. */
+    public static final Supplier<AttachmentType<com.cnethuka.kegare.sixeyes.SixEyesData>> SIX_EYES = ATTACHMENT_TYPES.register(
+            "six_eyes", () -> AttachmentType.builder(() -> new com.cnethuka.kegare.sixeyes.SixEyesData())
+                    .serialize(com.cnethuka.kegare.sixeyes.SixEyesData.CODEC).copyOnDeath().build());
+
     /** The brain meter (DESIGN §3.17): what repairing a burnt-out technique has cost. Saved, kept on death. */
     public static final Supplier<AttachmentType<com.cnethuka.kegare.rmt.BrainDamage.Data>> BRAIN = ATTACHMENT_TYPES.register(
             "brain", () -> AttachmentType.builder(() -> new com.cnethuka.kegare.rmt.BrainDamage.Data())

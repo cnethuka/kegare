@@ -15,6 +15,7 @@ Every player **and** the server need these in their `mods` folder, for Minecraft
 | Player Animation Library (by ZigyTheBird, *not* KosmX's playerAnimator) | 1.1.6 or newer | [Modrinth](https://modrinth.com/mod/player-animation-library) | player animations |
 | Photon (by KilaBash) | 2.2.10 or newer | [Modrinth](https://modrinth.com/mod/photon-editor) | ability visual effects |
 | LDLib2 (by KilaBash) | 2.2.45 or newer | [Modrinth](https://modrinth.com/mod/ldlib) | required by Photon |
+| Curios API (by TheIllusiveC4) | 9.5.1 or newer | [Modrinth](https://modrinth.com/mod/curios) | the slot eyewear sits in |
 
 KilaGraph, which Photon needs, is bundled inside Photon. Don't install it separately. Pick the NeoForge 1.21.1
 file of each one. Minecraft refuses to start and names the missing mod if one is absent.

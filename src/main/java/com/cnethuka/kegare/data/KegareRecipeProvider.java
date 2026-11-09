@@ -28,5 +28,18 @@ public final class KegareRecipeProvider extends RecipeProvider {
                 .define('P', Items.PAPER)
                 .unlockedBy("has_amethyst_shard", has(Items.AMETHYST_SHARD))
                 .save(output);
+        // Eyewear (DESIGN §3.32): cheap, and anyone can make it.
+        ShapedRecipeBuilder.shaped(RecipeCategory.MISC, KegareItems.BLINDFOLD.get())
+                .pattern("SWS")
+                .define('S', Items.STRING)
+                .define('W', Items.BLACK_WOOL)
+                .unlockedBy("has_black_wool", has(Items.BLACK_WOOL))
+                .save(output);
+        ShapedRecipeBuilder.shaped(RecipeCategory.MISC, KegareItems.TINTED_GLASSES.get())
+                .pattern("GIG")
+                .define('G', Items.TINTED_GLASS)
+                .define('I', Items.IRON_NUGGET)
+                .unlockedBy("has_tinted_glass", has(Items.TINTED_GLASS))
+                .save(output);
     }
 }

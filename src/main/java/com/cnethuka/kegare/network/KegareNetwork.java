@@ -79,6 +79,12 @@ public final class KegareNetwork {
                 com.cnethuka.kegare.sixeyes.SightPayloads.Pulse::handle);
         registrar.playToClient(com.cnethuka.kegare.sixeyes.ReadsPayload.TYPE, com.cnethuka.kegare.sixeyes.ReadsPayload.STREAM_CODEC,
                 com.cnethuka.kegare.sixeyes.ReadsPayload::handle);
+        registrar.playToClient(com.cnethuka.kegare.sixeyes.Strain.Hud.TYPE, com.cnethuka.kegare.sixeyes.Strain.Hud.STREAM_CODEC,
+                com.cnethuka.kegare.sixeyes.Strain.Hud::handle);
+        registrar.playToClient(com.cnethuka.kegare.sixeyes.Strain.Collapsed.TYPE, com.cnethuka.kegare.sixeyes.Strain.Collapsed.STREAM_CODEC,
+                com.cnethuka.kegare.sixeyes.Strain.Collapsed::handle);
+        registrar.playToClient(com.cnethuka.kegare.sixeyes.Edge.Spark.TYPE, com.cnethuka.kegare.sixeyes.Edge.Spark.STREAM_CODEC,
+                com.cnethuka.kegare.sixeyes.Edge.Spark::handle);
         registrar.playToClient(com.cnethuka.kegare.rmt.Repair.Payload.TYPE, com.cnethuka.kegare.rmt.Repair.Payload.STREAM_CODEC,
                 com.cnethuka.kegare.rmt.Repair.Payload::handle);
         registrar.playToClient(com.cnethuka.kegare.reinforcement.AuraPayload.TYPE, com.cnethuka.kegare.reinforcement.AuraPayload.STREAM_CODEC,
