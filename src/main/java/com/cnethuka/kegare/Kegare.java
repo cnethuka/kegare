@@ -36,6 +36,7 @@ public final class Kegare {
         KegareRegistries.register(modBus);
         KegareAttachments.ATTACHMENT_TYPES.register(modBus);
         KegareItems.ITEMS.register(modBus);
+        com.cnethuka.kegare.registry.KegareCreativeTab.TABS.register(modBus);
         com.cnethuka.kegare.sound.KegareSounds.SOUND_EVENTS.register(modBus);
         KegareTraits.TRAITS.register(modBus);
         Rime.register(modBus);
@@ -55,7 +56,6 @@ public final class Kegare {
         TestInnateTechniques.INNATE_TECHNIQUES.register(modBus); // TEST CONTENT
 
         com.cnethuka.kegare.progression.Progression.init();
-        modBus.addListener(KegareItems::addToCreativeTabs);
         modBus.addListener(KegareNetwork::register);
         modBus.addListener(KegareDataGen::gather);
 

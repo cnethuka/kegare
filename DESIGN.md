@@ -497,6 +497,8 @@ Malice is always shown as whole numbers (floored, like the HUD); the stored valu
   treatment adds its own table and bumps `CURRENT_VERSION`.
 
 ### 3.10 Data generation and art
+- **Kegare's creative tab** (`KegareCreativeTab`, titled "Kegare", its icon the Purification Talisman): after the vanilla tabs, so it's on the creative screen's next page, reached with NeoForge's page arrows, like any mod's. It's filled from
+  `KegareItems.ITEMS`, so an item added later appears there by itself: today the Purification Talisman, the Blindfold and the Sunglasses. They're in no vanilla tab; creative search still finds them.
 - `./gradlew runData` generates lang, the item model, tags (`kegare:talismans`), the talisman recipe
   (gold + amethyst + paper; overridable by datapack) and the advancements.
 - `python3 tools/gen_art.py [--preview sheet.png]` regenerates all GUI and item art (needs Pillow). The art is

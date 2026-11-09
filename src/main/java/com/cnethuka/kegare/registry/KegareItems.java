@@ -2,10 +2,8 @@ package com.cnethuka.kegare.registry;
 
 import com.cnethuka.kegare.Kegare;
 import com.cnethuka.kegare.item.PurificationTalismanItem;
-import net.minecraft.world.item.CreativeModeTabs;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.Rarity;
-import net.neoforged.neoforge.event.BuildCreativeModeTabContentsEvent;
 import net.neoforged.neoforge.registries.DeferredItem;
 import net.neoforged.neoforge.registries.DeferredRegister;
 
@@ -26,12 +24,4 @@ public final class KegareItems {
     }
 
     private KegareItems() {}
-
-    public static void addToCreativeTabs(BuildCreativeModeTabContentsEvent event) {
-        if (event.getTabKey() == CreativeModeTabs.TOOLS_AND_UTILITIES) {
-            event.accept(PURIFICATION_TALISMAN);
-            event.accept(BLINDFOLD);
-            event.accept(SUNGLASSES);
-        }
-    }
 }

@@ -715,6 +715,7 @@
   "item.kegare.purification_talisman.desc": "Rerolls your Innate Technique. Malice and traits are untouched.",
   "item.kegare.sunglasses": "Sunglasses",
   "item.kegare.swap_anchor": "Swap Anchor",
+  "itemGroup.kegare": "Kegare",
   "kegare.configuration.accelerate": "Accelerate",
   "kegare.configuration.accelerateDelay": "Accelerate Delay",
   "kegare.configuration.acceleration": "Acceleration",

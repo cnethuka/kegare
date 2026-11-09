@@ -354,6 +354,7 @@ public final class KegareLanguageProvider extends LanguageProvider {
         add("ability.kegare.reverse_malice_technique.unlock", "Take in the green orb.");
 
         // Eyewear (DESIGN §3.32): anyone's.
+        add("itemGroup.kegare", "Kegare");
         add("item.kegare.blindfold", "Blindfold");
         add("item.kegare.sunglasses", "Sunglasses");
         add("curios.identifier.eyes", "Eyes");
