@@ -44,6 +44,7 @@ final class TimeEvents {
                 TimeAdvancements.tick(p);
             }
         });
+        NeoForge.EVENT_BUS.addListener(AccelerateAbility::onUseTick); // both sides: an item's use keeps step with the server's
         NeoForge.EVENT_BUS.addListener(TimeStops::onEntityTick);
         NeoForge.EVENT_BUS.addListener(TimeStops::onJoin);
         NeoForge.EVENT_BUS.addListener(TimeStops::onImpact);

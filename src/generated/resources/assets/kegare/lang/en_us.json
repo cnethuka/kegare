@@ -1,6 +1,6 @@
 {
   "ability.kegare.accelerate": "Accelerate",
-  "ability.kegare.accelerate.desc": "Toggle: Speed II, 30% faster attacks, and your technique's other cooldowns run half again as fast. Costs Malice every second it's on.",
+  "ability.kegare.accelerate.desc": "Toggle: your own clock runs twice as fast. You walk, sprint and swim, attack, mine, eat, drink, draw a bow, load a crossbow and raise a shield twice as fast, and your technique's other cooldowns run twice as fast. You keep full control; jumping and falling don't change. Costs Malice every second it's on.",
   "ability.kegare.anchor": "Anchor",
   "ability.kegare.anchor.desc": "First cast: throw an anchor that sticks where it lands (it lasts 20 seconds). Second cast: swap yourself with it.",
   "ability.kegare.awareness": "Awareness",
@@ -599,7 +599,6 @@
   "kegare.configuration.arriveDistance": "Arrive Distance",
   "kegare.configuration.assessment": "Assessment",
   "kegare.configuration.assessmentCharge": "Assessment Charge",
-  "kegare.configuration.attackSpeed": "Attack Speed",
   "kegare.configuration.attackerShake": "Attacker Shake",
   "kegare.configuration.attackerSlownessAmplifier": "Attacker Slowness Amplifier",
   "kegare.configuration.attackerSlownessSeconds": "Attacker Slowness Seconds",
@@ -851,6 +850,7 @@
   "kegare.configuration.radiusPerStrength": "Radius Per Strength",
   "kegare.configuration.range": "Range",
   "kegare.configuration.rare": "Rare",
+  "kegare.configuration.rate": "Rate",
   "kegare.configuration.recallCost": "Recall Cost",
   "kegare.configuration.recovery": "Recovery",
   "kegare.configuration.recoverySeconds": "Recovery Seconds",

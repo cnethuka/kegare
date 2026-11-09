@@ -26,9 +26,7 @@ public final class TimeConfig {
     public static ModConfigSpec.DoubleValue ACCELERATE_COST;
     public static ModConfigSpec.DoubleValue ACCELERATE_UPKEEP;
     public static ModConfigSpec.DoubleValue ACCELERATE_COOLDOWN;
-    public static ModConfigSpec.IntValue ACCELERATE_SPEED_AMPLIFIER;
-    public static ModConfigSpec.DoubleValue ACCELERATE_ATTACK_SPEED;
-    public static ModConfigSpec.DoubleValue ACCELERATE_COOLDOWN_RATE;
+    public static ModConfigSpec.DoubleValue ACCELERATE_RATE;
 
     // fast_forward (special of accelerate, INSTANT)
     public static ModConfigSpec.DoubleValue FAST_FORWARD_COST;
@@ -95,14 +93,13 @@ public final class TimeConfig {
         HISTORY_MOB_RANGE = b.defineInRange("historyMobRange", 32.0, 0.0, 256.0);
         b.pop();
 
-        b.comment("Toggle: Speed, faster attacks, and your other abilities' cooldowns run faster, for Malice per second.").push("accelerate");
+        b.comment("Toggle: your own clock runs faster, for Malice per second.").push("accelerate");
         ACCELERATE_COST = b.defineInRange("cost", 60.0, 0.0, 100_000.0);
         ACCELERATE_UPKEEP = b.defineInRange("upkeepPerSecond", 40.0, 0.0, 100_000.0);
         ACCELERATE_COOLDOWN = b.comment("Starts when it's switched off.").defineInRange("cooldown", 8.0, 0.0, 3600.0);
-        ACCELERATE_SPEED_AMPLIFIER = b.comment("Speed's amplifier (0 = Speed I).").defineInRange("speedAmplifier", 1, 0, 9);
-        ACCELERATE_ATTACK_SPEED = b.comment("Attack speed added, as a share of what you have (0.3 = 30% faster).").defineInRange("attackSpeed", 0.3, 0.0, 10.0);
-        ACCELERATE_COOLDOWN_RATE = b.comment("How fast your other cooldowns run while it's on (1.5 = half again as fast).")
-                .defineInRange("cooldownRate", 1.5, 1.0, 10.0);
+        ACCELERATE_RATE = b.comment("How many times as fast your own clock runs while it's on, for everything about you at once: walking, sprinting and",
+                "swimming, attack speed, mining speed, using an item (eating, drinking, a bow, a crossbow, a shield) and your technique's other",
+                "cooldowns. Jumping and gravity don't change.").defineInRange("rate", 2.0, 1.0, 10.0);
         b.pop();
 
         b.comment("Special of Accelerate: take time off every OTHER cooldown of your innate technique at once (never the ultimate's,",

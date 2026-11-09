@@ -49,7 +49,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 
 /**
  * Time Manipulation (DESIGN §3.26): Point Maker's mark, return and heal; Rewind on players and mobs, with no history and refused;
- * Accelerate's cooldown rate and Fast Forward (never the ultimate, Burnout or a shared ability); Decelerate's hit; Stasis Field's slow
+ * Accelerate's one rate (movement, swimming, attacks, mining, an item's use, the other cooldowns) and Fast Forward (never the ultimate, Burnout or a shared ability); Decelerate's hit; Stasis Field's slow
  * and its projectiles; Standstill's freeze, held damage as one hit, its cap, immunity, early endings and a frozen player leaving; and
  * bosses, which take the damage but are never moved, slowed or stopped.
  */
@@ -304,19 +304,37 @@ class TimeManipulationTest {
                 p.moveTo(0.5, Y, 0.5, 0f, 0f);
                 InnateTechniqueService.select(p, 1);
                 assertEquals(TimeManipulation.ACCELERATE, com.cnethuka.kegare.loadout.LoadoutService.abilityAt(p, 1), "setup: slot 2");
+                var speeds = java.util.List.of(Attributes.MOVEMENT_SPEED, net.neoforged.neoforge.common.NeoForgeMod.SWIM_SPEED, Attributes.ATTACK_SPEED,
+                        Attributes.BLOCK_BREAK_SPEED);
+                java.util.Map<Object, Double> normal = new java.util.HashMap<>();
+                for (var a : speeds) normal.put(a, p.getAttributeValue(a));
                 CastManager.handleIntent(p, CastIntent.CAST_PRESS);
                 assertTrue(TimeManipulation.ACCELERATE.isActive(p), "on");
-                assertTrue(p.hasEffect(MobEffects.MOVEMENT_SPEED), "Speed");
-                assertNotNull(p.getAttribute(Attributes.ATTACK_SPEED).getModifier(AccelerateAbility.ATTACK_SPEED), "faster attacks");
+                double rate = TimeConfig.ACCELERATE_RATE.get();
+                assertEquals(2.0, rate, 1.0e-9, "the default");
+                assertFalse(p.hasEffect(MobEffects.MOVEMENT_SPEED), "no potion");
+                for (var a : speeds) assertEquals(normal.get(a) * rate, p.getAttributeValue(a), 1.0e-9, a.getRegisteredName() + ": the same factor");
+                assertEquals(rate, AccelerateAbility.rate(p), 1.0e-9, "read back from the movement modifier (what the client reads)");
 
-                // Decelerate's cooldown runs half again as fast: 40 ticks take 60 off it.
+                // Using an item: a 32-tick eat takes 16.
+                net.minecraft.world.item.ItemStack bread = new net.minecraft.world.item.ItemStack(net.minecraft.world.item.Items.BREAD);
+                int left = 32, ticks = 0;
+                while (left > 0) {
+                    var use = new net.neoforged.neoforge.event.entity.living.LivingEntityUseItemEvent.Tick(p, bread, left);
+                    net.neoforged.neoforge.common.NeoForge.EVENT_BUS.post(use);
+                    left = use.getDuration() - 1; // the game counts one off itself
+                    ticks++;
+                }
+                assertEquals(16, ticks, "eating twice as fast");
+
+                // Decelerate's cooldown runs at the same rate: 40 ticks take 80 off it.
                 InnateTechniqueService.startCooldown(p, TimeManipulation.DECELERATE);
                 int start = InnateTechniqueService.cooldownRemaining(p, TimeManipulation.DECELERATE);
                 for (int i = 0; i < 40; i++) {
                     CooldownRates.tick(p);
                     TestServer.advanceGameTime(server, 1);
                 }
-                assertEquals(start - 60, InnateTechniqueService.cooldownRemaining(p, TimeManipulation.DECELERATE), 1, "1.5x");
+                assertEquals(start - 80, InnateTechniqueService.cooldownRemaining(p, TimeManipulation.DECELERATE), 1, "2x");
 
                 // Fast Forward: 6 s off every other cooldown of the technique; never the ultimate's or a shared ability's.
                 InnateTechniqueService.startCooldown(p, TimeManipulation.POINT_MAKER);
@@ -338,6 +356,8 @@ class TimeManipulationTest {
                 assertEquals(TimeConfig.ticks(TimeConfig.FAST_FORWARD_COOLDOWN), InnateTechniqueService.cooldownRemaining(p, TimeManipulation.ACCELERATE),
                         "and on their shared cooldown");
                 assertEquals(1.0, CooldownRates.multiplier(p, TimeManipulation.DECELERATE.cooldownKey()), EPS, "the rate went with it");
+                for (var a : speeds) assertEquals(normal.get(a), p.getAttributeValue(a), 1.0e-9, a.getRegisteredName() + ": back to normal");
+                assertEquals(1.0, AccelerateAbility.rate(p), 1.0e-9, "its own clock back to normal");
 
                 // Never Burnout: it isn't a cooldown.
                 Burnout.apply(p, 300);

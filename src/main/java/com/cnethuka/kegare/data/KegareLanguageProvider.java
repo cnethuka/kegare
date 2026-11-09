@@ -421,8 +421,9 @@ public final class KegareLanguageProvider extends LanguageProvider {
         add("ability.kegare.rewind.desc", "Snap the player or mob you're looking at (up to 24 blocks) back to where it was 3 seconds ago. "
                 + "Only its place goes back: health, effects and facing stay as they are.");
         add("ability.kegare.accelerate", "Accelerate");
-        add("ability.kegare.accelerate.desc", "Toggle: Speed II, 30% faster attacks, and your technique's other cooldowns run half again "
-                + "as fast. Costs Malice every second it's on.");
+        add("ability.kegare.accelerate.desc", "Toggle: your own clock runs twice as fast. You walk, sprint and swim, attack, mine, eat, drink, "
+                + "draw a bow, load a crossbow and raise a shield twice as fast, and your technique's other cooldowns run twice as fast. You "
+                + "keep full control; jumping and falling don't change. Costs Malice every second it's on.");
         add("ability.kegare.fast_forward", "Fast Forward");
         add("ability.kegare.fast_forward.desc", "Take 6 seconds off every other cooldown of your technique at once, never your ultimate's. "
                 + "Switches Accelerate off and starts their shared cooldown.");
