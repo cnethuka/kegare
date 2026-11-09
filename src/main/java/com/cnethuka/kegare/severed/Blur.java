@@ -23,6 +23,10 @@ import net.neoforged.neoforge.network.PacketDistributor;
 public final class Blur {
     /** A sprint, in blocks a tick: faster than this is Blur's doing, and what its drain counts. */
     static final double SPRINT = 0.3;
+    /** A vanilla sprint as measured (5.5 blocks a second), in blocks a tick. */
+    private static final double VANILLA_SPRINT = 0.28;
+    /** How much faster than a sprint under Accelerate Blur always is: clearly faster, never the same. */
+    static final double ABOVE_ACCELERATE = 1.25;
     /** Ticks of movement the server sums to check it (a late packet bunches two ticks into one). */
     static final int CHECK_TICKS = 5;
     /** Room over Blur's speed: the game's own steering adds a little, and a slope or a jump a little more. */
@@ -32,6 +36,15 @@ public final class Blur {
     private static boolean puttingBack;
 
     private Blur() {}
+
+    /**
+     * Blur's top speed, blocks a tick: {@code [blur] speed}, but never below {@link #ABOVE_ACCELERATE} times a sprint under Accelerate's
+     * rate, so Blur stays clearly the faster of the two whatever that rate is set to (at the defaults the two agree: 0.7).
+     */
+    public static double topSpeed() {
+        return Math.max(SeveredConfig.BLUR_SPEED.get(),
+                VANILLA_SPRINT * com.cnethuka.kegare.innate_technique.time_manipulation.TimeConfig.ACCELERATE_RATE.get() * ABOVE_ACCELERATE);
+    }
 
     /** G, from a Severed player. */
     static void toggle(ServerPlayer player) {
@@ -110,7 +123,7 @@ public final class Blur {
         ClosingLine.tick(player, state);
         // Never further than Blur (or the rush) allows, summed over a few ticks so a late packet can't trip it.
         Vec3 back = state.position(CHECK_TICKS - 1);
-        double allowed = CHECK_TICKS * (Math.max(SeveredConfig.BLUR_SPEED.get(), ClosingLine.allowedSpeed(state, now)) * SLACK + SLACK_FLAT);
+        double allowed = CHECK_TICKS * (Math.max(topSpeed(), ClosingLine.allowedSpeed(state, now)) * SLACK + SLACK_FLAT);
         if (back != null && was != null && Math.sqrt(sq(at.x - back.x) + sq(at.z - back.z)) > allowed && at.distanceToSqr(was) <= 64) {
             Vec3 to = state.position(0);
             puttingBack = true;
@@ -170,7 +183,7 @@ public final class Blur {
 
     /** Tells the owner's client, if anything it shows or drives by changed. */
     static void sync(ServerPlayer player, SeveredState state) {
-        BlurPayload payload = new BlurPayload(state.blur, SeveredConfig.BLUR_SPEED.get().floatValue(), SeveredConfig.BLUR_TURN.get().floatValue(),
+        BlurPayload payload = new BlurPayload(state.blur, (float) topSpeed(), SeveredConfig.BLUR_TURN.get().floatValue(),
                 SeveredConfig.BLUR_ACCEL.get().floatValue(), SeveredConfig.BLUR_SKID.get().floatValue(), state.windedUntil,
                 SeveredConfig.ticks(SeveredConfig.WINDED_SECONDS.get()), state.recoveryUntil, state.closingReadyAt,
                 SeveredConfig.ticks(SeveredConfig.CLOSING_COOLDOWN.get()));

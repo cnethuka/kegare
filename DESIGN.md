@@ -469,7 +469,8 @@ Malice is always shown as whole numbers (floored, like the HUD); the stored valu
   by hand, so it stays and the server log lists it. **Version 2** is the Malice rescale (the tiers, and every cost and upkeep x4). It doesn't
   touch players' saved data, so anyone already born keeps the capacity they rolled. **Version 3** is the stronger Severed melee numbers.
   **Version 4** is the Impact System's Malice input (§3.23): its re-tuned weights and tiers, and battle damage's `strengthScale`,
-  `radiusPerStrength` and slams' `strengthPerSpeed` with them (§3.24). A later change to a shipped default that needs the same
+  `radiusPerStrength` and slams' `strengthPerSpeed` with them (§3.24). **Version 5** is Blur's top speed, 0.56 to 0.7 (§3.27),
+  kept clearly faster than Accelerate's new clock (§3.26). A later change to a shipped default that needs the same
   treatment adds its own table and bumps `CURRENT_VERSION`.
 
 ### 3.10 Data generation and art
@@ -2413,7 +2414,12 @@ what they play by.
 
 **Blur** (G for Severed players; `Blur`, `client/BlurDrive`, `client/BlurFeel`, `client/BlurFx`). For everyone else G stays
 Technique Mode, unchanged (`client/SeveredKeys`). Controls lists the key as "Technique Mode / Blur".
-- **Movement:** extremely fast (`[blur] speed` 0.56 blocks a tick, about twice a sprint). Momentum: the velocity turns toward where
+- **Movement:** extremely fast (`[blur] speed` 0.7 blocks a tick, about 2.5 times a sprint, 14 blocks a second). It never drops
+  below 1.25 times a sprint under Accelerate's `rate` (`Blur.topSpeed`), so it stays clearly faster than Accelerate (whose sprint
+  is 2 times a sprint at its default rate of 2): if that rate goes up, Blur goes up with it. Side by side: Blur 16.5 blocks a second, Accelerate's
+  sprint 11.1 to 11.5. Blur runs above its 14 because vanilla's own walking push (about 0.12 a tick) still adds on top of the
+  velocity Blur sets, as it always has. At that speed a wall still crashes it, an 8° turn still swings wide, and nothing tripped
+  "moved too quickly". Momentum: the velocity turns toward where
   you steer at most `turnDegrees` (8) a tick, so a sharp turn overshoots; steering gains `acceleration` (0.07) a tick up to top speed;
   letting go skids to a stop, losing `skid` (0.05) a tick. Anything that slows movement (Slowness, a Decelerate hit, a Stasis Field)
   slows it by the same share (a Stasis Field takes it to about a quarter, a Decelerate hit to about two thirds). A hit's

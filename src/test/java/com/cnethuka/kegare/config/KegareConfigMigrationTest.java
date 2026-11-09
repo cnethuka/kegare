@@ -71,6 +71,13 @@ class KegareConfigMigrationTest {
     }
 
     @Test
+    void theBlurStepMovesItsTopSpeedUp() {
+        assertEquals(Map.of("severed.blur.speed", 0.56), KegareConfigMigration.BLUR_SPEED_OLD_DEFAULTS);
+        assertEquals(0.7, newDefault("severed.blur.speed"), 1.0e-9, "about 2.5 times a sprint");
+        assertEquals(KegareConfigMigration.Action.MOVE_TO_NEW_DEFAULT, KegareConfigMigration.decide(0.56, 0.56, 0.7), "an old file's 0.56 moves");
+    }
+
+    @Test
     void eachStepRunsOnceInOrderUpToTheCurrentVersion() {
         var steps = KegareConfigMigration.STEPS;
         for (int i = 1; i < steps.size(); i++) assertTrue(steps.get(i - 1).version() < steps.get(i).version());

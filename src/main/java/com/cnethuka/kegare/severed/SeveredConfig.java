@@ -70,7 +70,8 @@ public final class SeveredConfig {
         b.pop();
 
         b.comment("Blur (G for Severed players): extremely fast, with momentum. Speeds in blocks per tick (a sprint is about 0.28).").push("blur");
-        BLUR_SPEED = b.comment("Top speed.").defineInRange("speed", 0.56, 0.1, 4.0);
+        BLUR_SPEED = b.comment("Top speed: 0.7 is about 2.5 times a sprint, 14 blocks a second. Never below 1.25 times a sprint under Accelerate's",
+                "rate ([time_manipulation.accelerate] rate), so if that goes up, Blur goes up with it.").defineInRange("speed", 0.7, 0.1, 4.0);
         BLUR_TURN = b.comment("How fast their velocity turns toward where they steer, degrees a tick: sharp turns overshoot.")
                 .defineInRange("turnDegrees", 8.0, 0.5, 180.0);
         BLUR_ACCEL = b.comment("Speed gained a tick while steering.").defineInRange("acceleration", 0.07, 0.005, 4.0);

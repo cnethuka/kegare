@@ -19,7 +19,7 @@ import net.neoforged.neoforge.common.ModConfigSpec;
  */
 public final class KegareConfigMigration {
     /** The version these numbers are for. A file with no {@code configVersion} reads as 1, from before there was one. */
-    public static final int CURRENT_VERSION = 4;
+    public static final int CURRENT_VERSION = 5;
 
     /** Version 2, the Malice rescale: every value it changed, and its default before that. The new value is always the spec's default. */
     static final Map<String, Number> RESCALE_OLD_DEFAULTS = Map.ofEntries(
@@ -111,13 +111,19 @@ public final class KegareConfigMigration {
             entry("battle_damage.slams.strengthPerSpeed", 1.0)
     );
 
+    /** Version 5, Blur kept clearly faster than Accelerate's new clock (DESIGN §3.27): its top speed. */
+    static final Map<String, Number> BLUR_SPEED_OLD_DEFAULTS = Map.ofEntries(
+            entry("severed.blur.speed", 0.56)
+    );
+
     /** One migration: a file below {@code version} goes through it. */
     record Step(int version, Map<String, Number> oldDefaults, String what) {}
 
     static final List<Step> STEPS = List.of(
             new Step(2, RESCALE_OLD_DEFAULTS, "the rescaled Malice numbers (new tiers, costs and regen)"),
             new Step(3, SEVERED_MELEE_OLD_DEFAULTS, "the stronger Severed melee numbers"),
-            new Step(4, MALICE_INPUT_OLD_DEFAULTS, "the Impact System's Malice input (its weights, tiers and battle damage scale)"));
+            new Step(4, MALICE_INPUT_OLD_DEFAULTS, "the Impact System's Malice input (its weights, tiers and battle damage scale)"),
+            new Step(5, BLUR_SPEED_OLD_DEFAULTS, "Blur's top speed, kept clearly faster than Accelerate"));
 
     enum Action { NONE, MOVE_TO_NEW_DEFAULT, KEEP_HAND_EDITED }
 

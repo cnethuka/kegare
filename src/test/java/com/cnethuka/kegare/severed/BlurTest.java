@@ -45,6 +45,20 @@ class BlurTest {
     }
 
     @Test
+    void blurStaysClearlyFasterThanAccelerate() {
+        var rate = com.cnethuka.kegare.innate_technique.time_manipulation.TimeConfig.ACCELERATE_RATE;
+        double was = rate.get();
+        try {
+            assertEquals(0.7, Blur.topSpeed(), 1.0e-9, "the default: about 2.5 times a sprint, 14 blocks a second");
+            assertTrue(Blur.topSpeed() >= 0.28 * rate.get() * Blur.ABOVE_ACCELERATE - 1.0e-9, "a quarter faster than a sprint under Accelerate");
+            rate.set(3.0);
+            assertEquals(0.28 * 3.0 * Blur.ABOVE_ACCELERATE, Blur.topSpeed(), 1.0e-9, "Accelerate's rate goes up: Blur goes up with it");
+        } finally {
+            rate.set(was);
+        }
+    }
+
+    @Test
     void wherePutByTheServerItStays(MinecraftServer server) throws Exception {
         TestServer.onServerThread(server, () -> {
             TestServer.ensureOverworld(server);
@@ -139,10 +153,14 @@ class BlurTest {
                 ServerPlayer s = SeveredBodyTest.severed(server, level, "blur_crash");
                 s.moveTo(0.5, Y, 0.5);
                 Severed.toggleBlur(s);
-                double speed = SeveredConfig.BLUR_SPEED.get();
-                run(server, s, speed, 4);
-                // A wall just ahead: the client stopped them against it, short of where the speed would have carried them.
-                net.minecraft.core.BlockPos wall = net.minecraft.core.BlockPos.containing(s.getX() + 0.6, Y, s.getZ());
+                double speed = Blur.topSpeed();
+                run(server, s, speed, 2);
+                // Up to where the next block's face is just ahead of them (well under a tick's run), at any top speed.
+                while (Math.ceil(s.getX() + 0.3) - (s.getX() + 0.3) > speed * 0.4 || Math.ceil(s.getX() + 0.3) - (s.getX() + 0.3) < 1.0e-3) {
+                    run(server, s, speed, 1);
+                }
+                // A wall there: the client stopped them against it, short of where the speed would have carried them.
+                net.minecraft.core.BlockPos wall = net.minecraft.core.BlockPos.containing(Math.ceil(s.getX() + 0.3) + 0.5, Y, s.getZ());
                 level.setBlock(wall, net.minecraft.world.level.block.Blocks.STONE.defaultBlockState(), 3);
                 level.setBlock(wall.above(), net.minecraft.world.level.block.Blocks.STONE.defaultBlockState(), 3);
                 s.setPos(wall.getX() - 0.3, s.getY(), s.getZ());
