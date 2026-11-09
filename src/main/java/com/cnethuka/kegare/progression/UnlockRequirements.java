@@ -2,8 +2,10 @@ package com.cnethuka.kegare.progression;
 
 import java.util.EnumMap;
 import java.util.Map;
+import java.util.function.Predicate;
 import java.util.function.ToIntFunction;
 import javax.annotation.Nullable;
+import net.minecraft.world.entity.player.Player;
 
 /**
  * What a shared or system unlock asks for: any of a minimum Grade, a minimum Refinement and Insight per category.
@@ -12,8 +14,11 @@ import javax.annotation.Nullable;
  * @param loweredBy the Insight category that lowers the Refinement needed, if one matches this unlock
  * @param tiedToTechnique it belongs to the technique it was earned on: a reroll takes it, and lowering Refinement can.
  *                        Otherwise it stays once earned
+ * @param condition anything else it needs, read when it's checked (so a config number counts as it stands now)
+ * @param grantedOnly meeting it only makes a player eligible: it's given by whatever system teaches it ({@link Unlocks#grant})
  */
-public record UnlockRequirements(Grade grade, int refinement, Map<InsightCategory, Integer> insight, @Nullable InsightCategory loweredBy, boolean tiedToTechnique) {
+public record UnlockRequirements(Grade grade, int refinement, Map<InsightCategory, Integer> insight, @Nullable InsightCategory loweredBy, boolean tiedToTechnique,
+                                 @Nullable Predicate<Player> condition, boolean grantedOnly) {
     public static Builder builder() {
         return new Builder();
     }
@@ -31,6 +36,11 @@ public record UnlockRequirements(Grade grade, int refinement, Map<InsightCategor
         return Math.max(1, refinement - Math.max(0, lowered));
     }
 
+    /** As {@link #met(Grade, int, ToIntFunction, double, double)}, and the condition too. */
+    public boolean met(Player player, Grade playerGrade, int playerRefinement, ToIntFunction<InsightCategory> insightOf, double rate, double cap) {
+        return met(playerGrade, playerRefinement, insightOf, rate, cap) && (condition == null || condition.test(player));
+    }
+
     public boolean met(Grade playerGrade, int playerRefinement, ToIntFunction<InsightCategory> insightOf, double rate, double cap) {
         if (!playerGrade.atLeast(grade) || playerRefinement < effectiveRefinement(insightOf, rate, cap)) return false;
         for (Map.Entry<InsightCategory, Integer> needed : insight.entrySet()) {
@@ -46,8 +56,23 @@ public record UnlockRequirements(Grade grade, int refinement, Map<InsightCategor
         @Nullable
         private InsightCategory loweredBy;
         private boolean tiedToTechnique;
+        @Nullable
+        private Predicate<Player> condition;
+        private boolean grantedOnly;
 
         private Builder() {}
+
+        /** Anything else it needs, read when it's checked. */
+        public Builder condition(Predicate<Player> condition) {
+            this.condition = condition;
+            return this;
+        }
+
+        /** Meeting it makes a player eligible; it's given by {@link Unlocks#grant}, never on its own. */
+        public Builder grantedOnly() {
+            this.grantedOnly = true;
+            return this;
+        }
 
         public Builder grade(Grade minimum) {
             this.grade = minimum;
@@ -77,7 +102,7 @@ public record UnlockRequirements(Grade grade, int refinement, Map<InsightCategor
         }
 
         public UnlockRequirements build() {
-            return new UnlockRequirements(grade, refinement, Map.copyOf(insight), loweredBy, tiedToTechnique);
+            return new UnlockRequirements(grade, refinement, Map.copyOf(insight), loweredBy, tiedToTechnique, condition, grantedOnly);
         }
     }
 }

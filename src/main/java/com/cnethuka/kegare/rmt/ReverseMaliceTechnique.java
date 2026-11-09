@@ -36,6 +36,8 @@ public final class ReverseMaliceTechnique extends BaseAbility {
     @Override public int cooldownTicks(ServerPlayer p) { return RmtConfig.ticks(RmtConfig.COOLDOWN); }
     @Override public int maxChannelTicks(ServerPlayer p) { return RmtConfig.ticks(RmtConfig.MAX_DURATION); }
     @Override public AbilityVisuals visuals() { return VISUALS; }
+    /** R + its key: healing another player, for those who know how. */
+    @Override public java.util.Optional<com.cnethuka.kegare.innatetechnique.Ability> special() { return java.util.Optional.of(Rmt.ON_ANOTHER); }
 
     @Override
     public void execute(AbilityContext ctx) {

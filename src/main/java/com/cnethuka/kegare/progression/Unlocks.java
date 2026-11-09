@@ -62,7 +62,7 @@ public final class Unlocks {
     }
 
     private static boolean met(ServerPlayer player, UnlockRequirements requirements) {
-        return requirements.met(GradeService.grade(player), RefinementService.level(player),
+        return requirements.met(player, GradeService.grade(player), RefinementService.level(player),
                 category -> Insight.get(player, category), ProgressionConfig.INSIGHT_REFINEMENT_RATE.get(), ProgressionConfig.INSIGHT_REFINEMENT_CAP.get());
     }
 
@@ -73,7 +73,7 @@ public final class Unlocks {
             boolean had = data.unlocked.contains(entry.getKey());
             if (had) {
                 if (entry.getValue().tiedToTechnique() && !met(player, entry.getValue())) data.unlocked.remove(entry.getKey());
-            } else if (met(player, entry.getValue())) {
+            } else if (!entry.getValue().grantedOnly() && met(player, entry.getValue())) {
                 data.unlocked.add(entry.getKey());
                 for (Listener listener : LISTENERS) listener.onUnlocked(player, entry.getKey());
             }
@@ -87,6 +87,27 @@ public final class Unlocks {
             if (entry.getValue().tiedToTechnique()) data.unlocked.remove(entry.getKey());
         }
         evaluate(player);
+    }
+
+    /** Whether they meet an entry's requirements now (for a {@code grantedOnly} entry: whether they can be taught it). */
+    public static boolean eligible(ServerPlayer player, ResourceLocation id) {
+        UnlockRequirements requirements = ENTRIES.get(id);
+        return requirements != null && met(player, requirements);
+    }
+
+    /**
+     * Gives them an entry, for the system that teaches a {@code grantedOnly} one (or an admin), whether or not they meet it. Returns whether
+     * it's new; listeners hear of it.
+     */
+    public static boolean grant(ServerPlayer player, ResourceLocation id) {
+        if (!ENTRIES.containsKey(id) || !data(player).unlocked.add(id)) return false;
+        for (Listener listener : LISTENERS) listener.onUnlocked(player, id);
+        return true;
+    }
+
+    /** Admin: takes one away. Returns whether they had it. */
+    public static boolean revoke(ServerPlayer player, ResourceLocation id) {
+        return data(player).unlocked.remove(id);
     }
 
     /** Admin: all of it. */

@@ -1129,6 +1129,7 @@ Package `com.cnethuka.kegare.innate_technique.rime`. **Rarity: RARE.** All numbe
   | Fast Forward (Accelerate) | its own sweep round the clock (`fast_forward_cast`), where Accelerate winds a crown; ticks running together into a whirr (`time_manipulation.whirl`); a clock face round the caster, three hands whirling forward faster and faster |
   | Stasis Field (Decelerate) | its own palm pushed at the ground (`stasis_field_cast`), where Decelerate flicks a blade; a slowed, ringing tick (`time_manipulation.stasis`); a glassy bronze dome snapping open over a clock face laid on the ground, and projectiles crawling through it |
   | Closing Line (Blur, Severed, §3.27) | a planted push-off (`closing_line_launch`), a crack and a burst of dust and grit off the ground where they left, and a heavy launch everyone nearby hears (`severed.closing_line_launch`, loud); on arrival a skid (`closing_line_arrive`, `severed.closing_line_arrive`) and dust where they stop |
+  | Reverse Malice Technique, on another (RMT, §3.17) | a white-and-green link from the healer's hand to the one healed, seen by everyone for as long as it lasts (`RmtLinkClient`, our own mesh, every effects setting), and a soft chime as it starts (an amethyst chime, high) |
 
   Standstill isn't a special, but it has a tell of its own all the same: the raised watch (`standstill_cast`), the sharp click
   (`time_manipulation.stop`) and a one-frame inverted flash (at Full) for everyone inside, then the gray.
@@ -1253,7 +1254,26 @@ negative is positive energy, which is why it heals, and why its colors are white
   no innate technique's surroundings modifier.
 - **Ends** like every channel: release, out of Malice, `maxDuration` (0 = none), a stun or a freeze (interrupted). The **15 s
   cooldown** starts when it ends.
-- **No special:** R on it fizzles at no cost.
+- **Its special, on another** (R + its key; `RmtOnAnother`, `[reverse_malice_technique.others]`): healing another player. Few can,
+  in canon. It has no name of its own ("Reverse Malice Technique, on another" in the lang file).
+  - **Eligible** with RMT unlocked and Output Insight at `healOthersInsight` (15) or more: the Unlocks framework's
+    `kegare:rmt_heal_others` (§3.21), the first real entry, not tied to the technique, so it survives rerolls. The path that reaches it
+    with what exists: unlocking RMT (`unlocked_rmt`, 5) + healing yourself out of 3 hearts with it (`rmt_survived_low`, 5) + a first
+    fight against a Legendary technique's holder (`first_legendary_fight`, 5). `healed_by_other` (3) can stand in for one once
+    someone else knows it.
+  - **Learned in a moment, not given:** eligible isn't knowing. When a player within `momentRange` (8) drops to `momentHealth` (6, 3
+    hearts) or less while you're eligible, roll `momentChance` (10%), at most once per `momentCooldown` (60 s). On a success that
+    player glows soft green to you alone (`RmtNet.Moment`, nobody else is told) for `momentSeconds` (6). Hold R + RMT's key on them in
+    that time to heal them, and you know it from then on, for good: `Unlocks.grant` from this side ("You know how to heal others now.").
+  - **Using it:** hold R + RMT's key while looking at a player within `range` (3 blocks, from your eyes to the nearest of them) in line
+    of sight. It channels like RMT and heals them at `othersOutput` (0.75) of your output now (your Grade, Peak and injuries, not
+    theirs), for `othersCost` (1.5) times RMT's start cost and upkeep. Any player, Severed included; never a mob. It ends when they
+    leave range or sight, on your stun or freeze, or out of Malice; it keeps running at their full health; it shares RMT's cooldown.
+    The healed one is paid `healed_by_other` once.
+  - **Not known:** "You don't know how to do that yet.", and nothing is paid. Known, with nobody in reach: "No one to heal within 3
+    blocks."
+  - **The tell** (§3.15): a white-and-green link from your hand to them, seen by everyone, and a soft chime as it starts.
+  - The Sorcerer screen's details for RMT say whether you can heal others.
 - **Visuals:** Photon only; **it has no player animation**, so the caster's body doesn't move. `rmt/rmt_channel_aura` (green and
   white motes rising round the body, white sparkles circling, a white-hearted glow at the chest) and `rmt/rmt_heal_pulse` (each heal:
   a green ring on the ground with a white one inside it, rising white glints, a soft green flash with a white heart), authored in
@@ -1277,7 +1297,9 @@ negative is positive energy, which is why it heals, and why its colors are white
   unlock; locking takes it off the bar. `RmtOutputTest`: Grade 4 at Peak 0 is 1x, Special Grade at Peak 10 is 1.6x, a reroll
   doesn't lower it, the hook changes it. `RmtInsightTest`: the orb's chance with Output Insight and its cap; unlocked_rmt,
   rmt_survived_low (not if they die first) and healed_by_other each paying once. `RmtFatigueTest`: rising with damage taken, the cap, healing not removing it, the restore and
-  ignore hooks, reset at the fight's end, death and logout.
+  ignore hooks, reset at the fight's end, death and logout. `RmtOnAnotherTest`: refused (free) unless known; the moment only for the eligible
+  and only on a drop to 3 hearts; eligible isn't knowing; healing in the moment teaches it; the heal at the healer's output, healed_by_other
+  paid; out of range or sight ends it; RMT's shared cooldown; a Severed target, and still running at their full health.
 
 ### 3.18 The green orb (unlocking RMT)
 `rmt.GreenOrbService` (server) and `rmt.client.GreenOrbClient`. Numbers in `[reverse_malice_technique.orb]`.
@@ -1964,8 +1986,12 @@ For shared and system unlocks, separate from a technique's own abilities.
   later lowers the Grade.
 - **A Severed player can't reach a Refinement-gated entry.** They have no Refinement and Insight can't make up for all of it. Anything they should
   be able to earn is registered by Grade and Insight alone.
-- **Nothing real is registered yet.** Dominions and later unlocks plug in when built. Tests use a
-  test-only entry.
+- **Entries can ask for more, and be taught rather than given.** `.condition(predicate)` is anything else an entry needs, read when it's checked (so a
+  config number counts as it stands). `.grantedOnly()` makes meeting it only eligibility: `evaluate` never gives it; the system that teaches it calls
+  `Unlocks.grant(player, id)` (and `Unlocks.eligible` asks whether it could). `Unlocks.revoke` is for admins.
+- **Real entries:** `kegare:rmt_heal_others` (Reverse Malice Technique on another, §3.17): RMT unlocked and Output Insight at
+  `healOthersInsight`, granted only by its moment. Each Background Task registers one too (§3.31). Dominions and later unlocks plug in when built.
+  Tests use a test-only entry for the rest.
 - **Severed players and the planned unlocks.** Planned defences against sure-hits can use Refinement requirements: Severed players don't need them, since
   sure-hits can't target them. Dominions and some other planned unlocks are also not for Severed players.
 

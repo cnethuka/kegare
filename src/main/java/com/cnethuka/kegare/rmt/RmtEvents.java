@@ -20,6 +20,8 @@ public final class RmtEvents {
     static void onDamage(LivingDamageEvent.Post event) {
         if (event.getNewDamage() <= 0 || !(event.getEntity() instanceof ServerPlayer victim)) return;
         if (!victim.isFakePlayer()) RmtFatigue.onDamageTaken(victim, event.getNewDamage());
+        double low = RmtConfig.MOMENT_HEALTH.get();
+        if (victim.isAlive() && victim.getHealth() <= low && victim.getHealth() + event.getNewDamage() > low) RmtOnAnother.onDroppedLow(victim);
         if (victim instanceof FakePlayer) return;
         if (event.getSource().getEntity() instanceof Player attacker && attacker != victim) GreenOrbService.onHitByPlayer(victim);
     }

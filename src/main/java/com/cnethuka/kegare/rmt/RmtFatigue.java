@@ -77,7 +77,7 @@ public final class RmtFatigue {
     static void sync(ServerPlayer player) {
         if (player.connection == null || player.isFakePlayer()) return;
         RmtState state = GreenOrbService.state(player);
-        RmtOutputPayload payload = new RmtOutputPayload((float) RmtOutput.of(player), (float) of(player));
+        RmtOutputPayload payload = new RmtOutputPayload((float) RmtOutput.of(player), (float) of(player), RmtOnAnother.knows(player));
         if (payload.equals(state.sentOutput)) return;
         state.sentOutput = payload;
         PacketDistributor.sendToPlayer(player, payload);

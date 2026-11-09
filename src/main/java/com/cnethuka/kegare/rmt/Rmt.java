@@ -10,11 +10,14 @@ import com.cnethuka.kegare.loadout.SharedAbilities;
  */
 public final class Rmt {
     public static final ReverseMaliceTechnique REVERSE_MALICE_TECHNIQUE = SharedAbilities.register(new ReverseMaliceTechnique());
+    /** Its special: healing another player. */
+    public static final RmtOnAnother ON_ANOTHER = new RmtOnAnother();
 
     private Rmt() {}
 
     public static void init(IEventBus modBus) {
         GreenOrbService.register(modBus);
+        RmtOnAnother.register();
         com.cnethuka.kegare.progression.FightTracker.addListener(report -> RmtFatigue.onFightEnded(report.player()));
         com.cnethuka.kegare.loadout.SharedAbilityService.addUnlockListener((player, ability) -> {
             if (ability == REVERSE_MALICE_TECHNIQUE) com.cnethuka.kegare.progression.InsightHooks.unlockedRmt(player);

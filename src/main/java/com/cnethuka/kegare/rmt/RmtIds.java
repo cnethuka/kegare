@@ -7,6 +7,10 @@ import net.minecraft.resources.ResourceLocation;
 /** Reverse Malice Technique's IDs: its Photon effects (fx/rmt/). It has no player animation. */
 public final class RmtIds {
     public static final ResourceLocation ABILITY = Kegare.id("reverse_malice_technique");
+    /** Its special: healing another player (no name of its own). */
+    public static final ResourceLocation ON_ANOTHER = Kegare.id("reverse_malice_technique_on_another");
+    /** The Unlocks framework's entry for knowing how. */
+    public static final ResourceLocation ON_ANOTHER_UNLOCK = Kegare.id("rmt_heal_others");
 
     public static final ResourceLocation FX_CHANNEL_AURA = fx("rmt_channel_aura");
     /** The aura in your own first person: only motes low round the feet (RmtClient). */

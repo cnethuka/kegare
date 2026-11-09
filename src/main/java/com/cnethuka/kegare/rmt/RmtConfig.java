@@ -32,6 +32,15 @@ public final class RmtConfig {
     public static ModConfigSpec.DoubleValue ORB_UNLOCK_HEAL;
     public static ModConfigSpec.DoubleValue ORB_INSIGHT_BONUS;
     public static ModConfigSpec.DoubleValue ORB_CHANCE_CAP;
+    public static ModConfigSpec.IntValue OTHERS_INSIGHT;
+    public static ModConfigSpec.DoubleValue OTHERS_OUTPUT;
+    public static ModConfigSpec.DoubleValue OTHERS_COST;
+    public static ModConfigSpec.DoubleValue OTHERS_RANGE;
+    public static ModConfigSpec.DoubleValue MOMENT_RANGE;
+    public static ModConfigSpec.DoubleValue MOMENT_HEALTH;
+    public static ModConfigSpec.DoubleValue MOMENT_CHANCE;
+    public static ModConfigSpec.DoubleValue MOMENT_COOLDOWN;
+    public static ModConfigSpec.DoubleValue MOMENT_SECONDS;
     public static ModConfigSpec.DoubleValue LOW_HEALTH;
     public static ModConfigSpec.DoubleValue SURVIVE_SECONDS;
 
@@ -56,6 +65,22 @@ public final class RmtConfig {
                 "unlocking things: in canon, reverse healing rides on the user's output.").push("output");
         OUTPUT_GRADE_BONUS = b.comment("Added at Special Grade; 0 at Grade 4, evenly up the ladder between.").defineInRange("gradeBonus", 0.3, 0.0, 10.0);
         OUTPUT_PEAK_BONUS = b.comment("Added at the top Peak Refinement level; 0 at 0, evenly between.").defineInRange("peakBonus", 0.3, 0.0, 10.0);
+        b.pop();
+
+        b.comment("Its special (R + its key): healing another player. Few can. Eligible with it unlocked and Output Insight at",
+                "healOthersInsight or more; then learned in a chance moment, and known for good.").push("others");
+        OTHERS_INSIGHT = b.comment("Output Insight needed to be eligible. Unlocking RMT (5) + healing yourself out of 3 hearts (5) + a first",
+                "fight against a Legendary technique (5) reach it.").defineInRange("healOthersInsight", 15, 0, 10_000);
+        OTHERS_OUTPUT = b.comment("How strongly it heals another, as a share of the healer's own output now.").defineInRange("othersOutput", 0.75, 0.0, 10.0);
+        OTHERS_COST = b.comment("Its start cost and upkeep, as times RMT's own.").defineInRange("othersCost", 1.5, 0.0, 100.0);
+        OTHERS_RANGE = b.comment("How far (blocks, from your eyes to them) the one you heal can be, in line of sight.").defineInRange("range", 3.0, 0.5, 16.0);
+        MOMENT_RANGE = b.comment("The moment: a player this close (blocks) drops to momentHealth or less while you're eligible...")
+                .defineInRange("momentRange", 8.0, 0.0, 64.0);
+        MOMENT_HEALTH = b.defineInRange("momentHealth", 6.0, 0.0, 1024.0);
+        MOMENT_CHANCE = b.comment("...and this chance (0-1) comes up: they glow soft green, to you only.").defineInRange("momentChance", 0.1, 0.0, 1.0);
+        MOMENT_COOLDOWN = b.comment("At most one roll per this many seconds, per eligible player.").defineInRange("momentCooldown", 60.0, 0.0, 86_400.0);
+        MOMENT_SECONDS = b.comment("Hold R and its key on them within this long to heal them, and you know it from then on.")
+                .defineInRange("momentSeconds", 6.0, 0.5, 600.0);
         b.pop();
 
         b.comment("Output Insight it pays (amounts are in [progression.insight]).").push("insight");

@@ -35,6 +35,10 @@ public final class KegareNetwork {
                 com.cnethuka.kegare.melee.MeleeHudPayload::handle);
         registrar.playToClient(com.cnethuka.kegare.severed.RushPayload.TYPE, com.cnethuka.kegare.severed.RushPayload.STREAM_CODEC,
                 com.cnethuka.kegare.severed.RushPayload::handle);
+        registrar.playToClient(com.cnethuka.kegare.rmt.RmtNet.Link.TYPE, com.cnethuka.kegare.rmt.RmtNet.Link.STREAM_CODEC,
+                com.cnethuka.kegare.rmt.RmtNet.Link::handle);
+        registrar.playToClient(com.cnethuka.kegare.rmt.RmtNet.Moment.TYPE, com.cnethuka.kegare.rmt.RmtNet.Moment.STREAM_CODEC,
+                com.cnethuka.kegare.rmt.RmtNet.Moment::handle);
         registrar.playToClient(com.cnethuka.kegare.rmt.RmtOutputPayload.TYPE, com.cnethuka.kegare.rmt.RmtOutputPayload.STREAM_CODEC,
                 com.cnethuka.kegare.rmt.RmtOutputPayload::handle);
         registrar.playToClient(com.cnethuka.kegare.severed.BlurPayload.TYPE, com.cnethuka.kegare.severed.BlurPayload.STREAM_CODEC,

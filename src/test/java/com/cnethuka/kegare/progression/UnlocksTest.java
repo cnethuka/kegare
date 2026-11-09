@@ -90,8 +90,9 @@ class UnlocksTest {
     }
 
     @Test
-    void nothingRealIsRegistered() {
-        assertTrue(Unlocks.registered().isEmpty(), "Maximum Output, Cradle, Threshold and the rest plug in when they're built");
+    void theOnlyRealEntryIsHealingOthers() {
+        // The first real one (DESIGN §3.17); Maximum Output, Cradle, Threshold and the rest plug in when they're built.
+        assertEquals(java.util.Set.of(com.cnethuka.kegare.rmt.RmtIds.ON_ANOTHER_UNLOCK), java.util.Set.copyOf(Unlocks.registered()));
     }
 
     @Test

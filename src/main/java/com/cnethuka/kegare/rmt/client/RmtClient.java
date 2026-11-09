@@ -25,7 +25,10 @@ public final class RmtClient {
                 output = com.cnethuka.kegare.rmt.RmtOutputPayload.NONE);
         // Under its stats on the Sorcerer screen: how strongly it heals right now.
         com.cnethuka.kegare.client.gui.SorcererScreen.addDetailLines(ability -> ability.id().equals(RmtIds.ABILITY)
-                ? java.util.List.of(outputLine(output.output(), output.fatigue())) : java.util.List.of());
+                ? java.util.List.of(outputLine(output.output(), output.fatigue()), net.minecraft.network.chat.Component.translatable(
+                        output.knowsOthers() ? "gui.kegare.rmt.knows_others" : "gui.kegare.rmt.not_others"))
+                : java.util.List.of());
+        RmtLinkClient.init();
         NeoForge.EVENT_BUS.addListener(GreenOrbClient::onClientTick);
         NeoForge.EVENT_BUS.addListener(GreenOrbClient::onLogout);
         VanillaFallback.register(RmtIds.FX_CHANNEL_AURA, new VanillaFallback.Spec(ParticleTypes.HAPPY_VILLAGER, 1, 6, 0.5, 0.0));

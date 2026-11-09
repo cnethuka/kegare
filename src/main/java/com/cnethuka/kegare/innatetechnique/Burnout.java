@@ -104,6 +104,7 @@ public final class Burnout {
 
     /** What Burnout blocks: anything of their innate technique, not a shared ability. */
     public static boolean blocks(ServerPlayer player, Ability ability) {
-        return isBurntOut(player) && SharedAbilities.find(ability.id()).isEmpty();
+        return isBurntOut(player) && SharedAbilities.find(ability.id()).isEmpty()
+                && ability.base().map(base -> SharedAbilities.find(base.id()).isEmpty()).orElse(true); // a shared ability's special neither
     }
 }
