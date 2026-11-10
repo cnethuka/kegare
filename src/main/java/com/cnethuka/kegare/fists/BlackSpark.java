@@ -29,16 +29,16 @@ import net.minecraft.world.phys.Vec3;
 import net.neoforged.neoforge.event.entity.living.LivingIncomingDamageEvent;
 
 /**
- * Black Spark (DESIGN §3.28): Malice landing within a hair of the hit. Reinforced Fists turned on just before a melee hit lands on a living
- * target is a try (only the first hit after each turn-on, within {@code tryMs}). The gap is the sub-tick time from Fists going on to the
- * attack (§3.29). Never at will: each try the server secretly rolls where the spark sits, an offset in [0, jitterMs], never sent anywhere,
- * and the hit is a Black Spark if the gap falls in [offset, offset + window]; the window comes from {@link SparkWindow}'s factors.
- * Skill is keeping the gap short and steady; luck decides the rest.
+ * Black Spark (DESIGN §3.28): Malice landing within a hair of the hit. The first melee hit on a living target within {@code tryMs} of
+ * Reinforced Fists turning on is a try; the gap is the sub-tick time from Fists on to the attack (§3.29). Never at will: each try the
+ * server secretly rolls an offset in [0, jitterMs], never sent anywhere, and the hit sparks if the gap falls in
+ * [offset, offset + window], the window coming from {@link SparkWindow}'s factors. Skill keeps the gap short and steady; luck
+ * decides the rest.
  * <p>
- * Its power is canon's exponent with no ceiling: the hit's damage put on a scale that starts at 2 ({@code s = 2 + damage / scaleDamage}),
- * raised to the 2.5 and turned back into damage (times {@code s^1.5}). Added to the hit before the target's defences, which are what stop
- * it: armour, a guard, a perfect parry (it never gets here), Toughness, Rime Shell. It counts as fully charged in the Impact System, adds
- * {@code knockback} (never to a boss), and a black crack bursts from the point of contact ({@link BlackSparkFx}).
+ * Its power is canon's exponent with no ceiling: the damage goes on a scale starting at 2 ({@code s = 2 + damage / scaleDamage}), is
+ * raised to the 2.5 and turned back into damage (times {@code s^1.5}). It is added before the target's defences, which are what stop
+ * it: armour, a guard, a perfect parry (which never reaches here), Toughness, Rime Shell. It counts as fully charged in the Impact
+ * System, adds {@code knockback} (never to a boss), and a black crack bursts from the point of contact ({@link BlackSparkFx}).
  */
 public final class BlackSpark {
     @FunctionalInterface
@@ -60,9 +60,9 @@ public final class BlackSpark {
     private static final List<Listener> LISTENERS = new CopyOnWriteArrayList<>();
     /** The listeners, for tests to take theirs off again. */
     static final List<Listener> LISTENERS_FOR_TESTS = LISTENERS;
-    /** Told before the listeners: the zone, so the chain they're told is the new one. */
+    /** Told before the listeners (the zone), so the chain the listeners get is already updated. */
     private static final List<java.util.function.BiConsumer<ServerPlayer, LivingEntity>> FIRST = new CopyOnWriteArrayList<>();
-    /** Victims a Black Spark is knocking back, once the attack is over (its own knockback done). */
+    /** Victims due a Black Spark's knockback, applied once the attack's own knockback is done. */
     private static final Map<LivingEntity, ServerPlayer> KNOCK = new WeakHashMap<>();
     /** For tests: the next try's offset, instead of a secret roll. */
     static double testOffset = Double.NaN;
@@ -105,7 +105,7 @@ public final class BlackSpark {
         return gap >= offset && gap <= offset + window;
     }
 
-    /** After the Fists bonus (and before any zone), on a melee hit about to land. */
+    /** On a melee hit about to land, after the Fists bonus and before any zone. */
     static void onIncoming(LivingIncomingDamageEvent event) {
         LivingEntity target = event.getEntity();
         if (!(target.level() instanceof ServerLevel level) || !(event.getSource().getEntity() instanceof ServerPlayer attacker)) return;
@@ -158,8 +158,8 @@ public final class BlackSpark {
     }
 
     /**
-     * The end of the tick the hit landed in, once the attack and every knockback of its own are done (a sprint's comes after the damage),
-     * and before the Impact System adds the tick up: the Black Spark's knockback on top, so nothing halves it.
+     * Adds the Black Spark's knockback at the end of the hit's tick: after the attack's own knockbacks (a sprint's comes after the
+     * damage) and before the Impact System totals the tick, so nothing halves it.
      */
     public static void knockBack() {
         if (KNOCK.isEmpty()) return;

@@ -45,7 +45,7 @@ public final class RimeTracker {
         return hits == null ? 0 : hits.getOrDefault(victim, 0);
     }
 
-    /** Returns how many shards of this cast have now hit this victim. */
+    /** Returns how many shards of this cast have hit this victim so far. */
     int recordSplinterHit(int cast, UUID victim) {
         return splinterHits.computeIfAbsent(cast, c -> new HashMap<>()).merge(victim, 1, Integer::sum);
     }

@@ -53,7 +53,7 @@ class ImpactTest {
         assertEquals(ImpactTier.IMPACT_FRAME, tier(10.4, 0.54, 0, 1, 32 + 180), "so does a Full Curio Burst a block away (its cast and its puppet)");
         assertEquals(ImpactTier.IMPACT_FRAME, tier(0, 0, 0, 1, 240), "and a Total Swap, even between two at the same health");
         assertNotEquals(ImpactTier.TOP, tier(1000, 50, 50, 1, 100_000), "the top tier is never reached by strength: it's Black Spark's to ask for");
-        // The earlier examples hold.
+        // Ordinary hits and a Frost Shard stay in the low tiers.
         assertEquals(ImpactTier.LIGHT, tier(6, 0.4, 0, 0, 0), "an iron sword's normal hit");
         assertEquals(ImpactTier.MEDIUM, tier(6, stack(0.4, 0.5), 0, 0, 0), "a sprinting sword hit");
         assertEquals(ImpactTier.MEDIUM, tier(9, 0.4, 0, 0, 0), "a critical one");

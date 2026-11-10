@@ -12,8 +12,8 @@ import net.minecraft.client.renderer.texture.OverlayTexture;
 import net.minecraft.resources.ResourceLocation;
 
 /**
- * Where a ready fist's fire goes on a player's arm, in the arm's own space (the model's arm cube, hanging down, hand at its end). The arm
- * geometry the fire is drawn round; it used to carry a Severed player's strained forearm too, which went with their Strike (DESIGN §3.27).
+ * Where a ready fist's fire goes on a player's arm, in the arm's own space (the model's arm cube, hanging down, hand at its end): the
+ * arm geometry the fire is drawn round.
  */
 final class FistShellMesh {
     /** A player arm's cube ends here in its own space: 10 pixels below the pivot. */

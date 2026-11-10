@@ -89,8 +89,8 @@ public final class MeleeTell {
     }
 
     /**
-     * The Strike lands: the impact and a burst of Malice in the same color as the glow, at the target. Tried in gold
-     * against the Innate color: gold under an Innate burst reads as two effects, and this reads as what was on the fist going off.
+     * The Strike lands: the impact and a burst of Malice in the same color as the glow, at the target. Not gold: gold under an
+     * Innate burst reads as two effects, while one color reads as what was on the fist going off.
      */
     public static void playStrikeImpact(ServerPlayer attacker, Vec3 at) {
         var level = attacker.serverLevel();

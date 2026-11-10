@@ -56,7 +56,6 @@ import net.neoforged.fml.loading.FMLPaths;
 public final class KegareDatabase {
     /** What a server gives the storage. */
     public interface Host {
-        /** Runs something on the server thread. */
         void onServerThread(Runnable task);
 
         /** Tells ops (and the log) something's happened. */

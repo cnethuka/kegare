@@ -25,10 +25,10 @@ import net.minecraft.resources.ResourceLocation;
 
 /**
  * Puppet Manipulation on the combat panel (Technique Mode): "Puppets: X/15" above the meter's left end (gold at the cap),
- * and the current Directive order as a small glyph on Directive's slot (top left; the key is bottom right and the R
- * badge top right). Strings' stage: while a string waits, its slot shows what the keys would do right now, and a line
- * under the crosshair gives those costs (in and out of Technique Mode); with Strings selected and no string out, "Fire: 20"
- * above the meter's right end. The Sorcerer screen lists the stage and every cost.
+ * and the Directive order as a small glyph at the top left of Directive's slot (the key sits bottom right, the R badge top
+ * right). While a string waits, its slot shows what the keys would do now and a line under the crosshair gives the costs;
+ * with Strings selected and no string out, "Fire: 20" sits above the meter's right end. The Sorcerer screen lists the
+ * stage and every cost.
  */
 final class PuppetHudClient {
     private static final int LAVENDER = 0xFF000000 | PuppetManipulation.MALICE_COLOR;
@@ -51,7 +51,7 @@ final class PuppetHudClient {
         if (!hud.holds()) return;
         boolean full = hud.puppets() >= hud.maxPuppets();
         g.drawString(font, Component.translatable("hud.kegare.puppets", hud.puppets(), hud.maxPuppets()), x0 + 8, y0 - 3, full ? 0xFFFFD24A : LAVENDER, true);
-        // Not on the Sorcerer screen's tray: Reset sits there in a small window, and that screen lists the cost anyway.
+        // Not on the Sorcerer screen's tray: Reset's small window sits there, and the screen lists the cost anyway.
         if (hud.strings().stage() == 0 && stringsSelected() && Minecraft.getInstance().screen == null) {
             Component fire = Component.translatable("hud.kegare.strings.fire", GuiDraw.amount(hud.strings().fireCost()));
             g.drawString(font, fire, x0 + CombatPanelLayer.W - 8 - font.width(fire), y0 - 3, LAVENDER, true);
@@ -86,7 +86,7 @@ final class PuppetHudClient {
     private static int stringsStatus(GuiGraphics g, Minecraft mc, int cx, int y) {
         PuppetHud.StringsHud s = PossessionClient.hud().strings();
         int slot = ClientLoadout.slotOf(PuppetManipulation.STRINGS);
-        if (s.stage() != 1 || slot < 0 || !TechniqueMode.isActive()) return y; // out of the mode, none of these keys do this
+        if (s.stage() != 1 || slot < 0 || !TechniqueMode.isActive()) return y; // these keys only do this in Technique Mode
         Component number = ClientLoadout.numberKey(slot);
         Component special = stringsSelected() ? KegareKeys.SPECIAL.getTranslatedKeyMessage()
                 : Component.translatable("hud.kegare.key_combo", KegareKeys.SPECIAL.getTranslatedKeyMessage(), number);
@@ -113,7 +113,7 @@ final class PuppetHudClient {
         PuppetHud.Payload hud = PossessionClient.hud();
         if (!hud.holds()) return;
         if (ability == PuppetManipulation.STRINGS && hud.strings().stage() == 1) {
-            // A string out: the slot shows what its number key would do now, with R's in the corner.
+            // A string out: the slot shows what its number key would do now, with R's variation in the corner.
             RenderSystem.enableBlend();
             g.blit(icon(hud.strings().cast()), x + 2, y + 2, 0f, 0f, 16, 16, 16, 16);
             g.renderOutline(x + 1, y + 1, size - 2, size - 2, LAVENDER);

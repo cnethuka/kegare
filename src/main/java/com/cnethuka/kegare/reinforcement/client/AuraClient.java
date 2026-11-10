@@ -39,8 +39,8 @@ import org.joml.Matrix4f;
 import org.joml.Vector3f;
 
 /**
- * Reinforcement's aura (DESIGN §3.16): Malice wrapped round the whole body, the way a sorcerer's energy is drawn flowing. Our own
- * art ({@code tools/gen_art.py}): a sheet of frames that hugs the player's silhouette a little way out and rises into flame-like
+ * Reinforcement's aura (DESIGN §3.16): Malice wrapped round the whole body, the way a sorcerer's energy is drawn flowing. The art
+ * ({@code textures/entity/aura.png}) is a sheet of frames that hugs the player's silhouette a little way out and rises into flame-like
  * tongues over the head and shoulders, always flowing upward, with a hard, near-black ink outline (irregular, with flicks and small
  * breaks) and inside it a see-through glow in the Malice color, strongest at the outline and thin near the body.
  * <ul>
@@ -63,7 +63,7 @@ public final class AuraClient {
     /** Background RMT's shimmer, as a Six Eyes bearer sees it: RMT's green. */
     static final int SHIMMER_RGB = 0x4ED873;
     static final ResourceLocation LAYER = Kegare.id("aura_edges");
-    /** gen_art.py's sheet: frames, size in blocks, and the feet's height above its bottom edge, for a body 1.8 tall. */
+    /** The sheet: frames, size in blocks, and the feet's height above its bottom edge, for a body 1.8 tall. */
     static final int FRAMES = 16;
     static final float SHEET_W = 1.6f, SHEET_H = 3.2f, FEET = 0.30f, BODY = 1.8f;
     /** How far behind the player (from the camera) the card stands. */
@@ -72,7 +72,7 @@ public final class AuraClient {
     static final float SPEED_CALM = 0.32f, SPEED = 0.55f, SPEED_FIGHT = 0.9f;
     /** In a fight the aura stands this much bigger (and the calm one this much smaller). */
     static final float FULLER = 0.1f, CALMER = -0.05f;
-    /** How see-through the whole aura is: the full one, out of and in a fight, and the calm one. */
+    /** Opacity of the full aura out of a fight and in one, and of the calm one. */
     static final float ALPHA = 0.85f, ALPHA_FIGHT = 1f, ALPHA_CALM = 0.42f;
     /** The tongues' tips (left to right, blocks from the middle and above the feet, for a body 1.8 tall), where wisps peel off. */
     static final float[][] TIPS = {{-0.46f, 2.05f}, {-0.24f, 2.3f}, {0f, 2.55f}, {0.22f, 2.32f}, {0.45f, 2.05f}};

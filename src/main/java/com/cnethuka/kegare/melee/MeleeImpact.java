@@ -68,7 +68,7 @@ public enum MeleeImpact {
         switch (this) {
             case DASH_BURST -> VisualService.playAt(level, at, Visual.effect(MeleeIds.FX_DASH_BURST, Visual.Anchor.FEET));
             // Ride the defender's guard, not a point in the world: the point is too near both fighters' cameras to be drawn.
-            // Gold for everyone, tried against the Innate color: it's the same cue whoever parried, and blue or lavender went thin against the sky.
+            // Gold for everyone, not the Innate color: it's the same cue whoever parried, and blue or lavender go thin against the sky.
             case PARRY_PERFECT -> VisualService.playOnce(who, Visual.effect(MeleeIds.FX_PARRY_SPARK, Visual.Anchor.EYES));
             case GUARD_HIT -> VisualService.playOnce(who, Visual.effect(MeleeIds.FX_GUARD_HIT, Visual.Anchor.EYES));
             default -> { }

@@ -6,10 +6,9 @@ import net.minecraft.util.Mth;
 
 /**
  * Which chunks of Glacial Lance show at a charge, and how each one snaps in. The chunks are the objects in
- * {@code models/fx/glacial_lance.obj}, made by {@code tools/blockbench/lance_shapes.py}, in the order they arrive: the stub in the
- * fist, the two halves of the javelin, then the head, the split tail and, at full charge only, the spurs. The javelin is complete
- * the moment a throw is allowed, so what an opponent sees in the hand is what can come at them: a stub can't be thrown, a javelin
- * can, and spurs mean full damage.
+ * {@code models/fx/glacial_lance.obj}, in the order they arrive: the stub in the fist, the two halves of the javelin, then the head,
+ * the split tail and, at full charge only, the spurs. The javelin is complete the moment a throw is allowed, so what an opponent sees
+ * in the hand is what can come at them: a stub can't be thrown, a javelin can, and spurs mean full damage.
  */
 public final class LanceShape {
     public static final List<String> PIECES = List.of("grip", "fore", "aft", "head", "tail", "spurs");

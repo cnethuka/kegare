@@ -4,7 +4,7 @@ import com.cnethuka.kegare.innatetechnique.CastIntent;
 
 /**
  * What Technique Mode's number keys and R mean, tick by tick (DESIGN §3.5). Plain logic with no game classes, so every order of
- * presses can be tested. It only turns keys into the same requests as ever: the server decides what any of them does.
+ * presses can be tested. It only turns keys into requests: the server decides what any of them does.
  * <ul>
  *   <li>A number key going down selects its slot and casts its base ability. With R held, its special.</li>
  *   <li>Only the key that started a cast sends its release, so letting go of some other key can't fire someone else's charge.</li>

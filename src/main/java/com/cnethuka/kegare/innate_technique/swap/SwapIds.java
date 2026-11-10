@@ -6,7 +6,7 @@ import net.minecraft.resources.ResourceLocation;
 
 /** Swap's IDs: player animations (assets/kegare/player_animations/swap.json) and Photon effects (assets/kegare/fx/swap/). */
 public final class SwapIds {
-    // Player Animation Library animations (tools/anims/swap.py)
+    // Player Animation Library animations
     public static final ResourceLocation ANIM_POSITIONS_CLAP = Kegare.id("positions_clap");
     public static final ResourceLocation ANIM_TOTAL_SWAP_CLAP = Kegare.id("total_swap_clap");
     public static final ResourceLocation ANIM_SWITCHBACK_CAST = Kegare.id("switchback_cast");
@@ -41,7 +41,7 @@ public final class SwapIds {
     /** Switchback: the countdown ring on both, from the cast until the swap back (drawn by SwapFx). */
     public static final Visual SWITCHBACK_TIMER = Visual.effect(FX_SWITCHBACK_TIMER, Visual.Anchor.FEET);
     public static final String SWITCHBACK_TIMER_KEY = "kegare:swap/switchback_timer/";
-    /** On a disguised player, sent to that player only (so they know it's on): the corner brackets on their screen (SwapHud). */
+    /** On a disguised player, sent to that player only so they know it's on: the corner brackets on their screen (SwapHud). */
     public static final Visual AWARENESS_SHIMMER = Visual.effect(FX_AWARENESS_SHIMMER, Visual.Anchor.BODY);
     /** A disguise landing on someone, played at them and naming them: the card-flip ripple down the body (drawn by SwapFx). */
     public static final Visual AWARENESS_FLIP = Visual.effect(FX_AWARENESS_FLIP, Visual.Anchor.BODY);

@@ -4,8 +4,8 @@ import java.util.Locale;
 import net.neoforged.neoforge.common.ModConfigSpec;
 
 /**
- * Numbers from {@code kegare-server.toml} as player-facing text states them, so a description says what the server is set to (the
- * server's config reaches every client when it joins). Before it has (a menu), the default.
+ * Numbers from {@code kegare-server.toml} formatted for player-facing text, so a description says what the server is set to (its
+ * config reaches each client on join). Before that, such as in a menu, the default.
  */
 public final class ConfigText {
     private ConfigText() {}

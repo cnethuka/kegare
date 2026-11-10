@@ -47,7 +47,7 @@ public final class KegareAdvancementGenerator implements AdvancementProvider.Adv
         };
 
         // ---- Base tab ----
-        // Criterion names are part of saved progress: never rename them (awakening keeps its original "awakened").
+        // Criterion names are part of saved progress: never rename them (awakening's is "awakened", not "granted").
         AdvancementHolder awakening = root(saver, KegareAdvancements.AWAKENING, "awakening", "awakened", Items.ENDER_EYE,
                 BASE_BACKGROUND, AdvancementType.TASK, false);
         AdvancementHolder reawakening = child(saver, awakening, KegareAdvancements.REAWAKENING, "reawakening",

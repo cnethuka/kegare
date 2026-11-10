@@ -62,7 +62,7 @@ class BlackSparkTest {
         assertEquals(Math.pow(3, 1.5), BlackSpark.multiplier(4, scale, exponent), 1.0e-9, "s = 3: about 5.2x");
         assertEquals(8.0, BlackSpark.multiplier(8, scale, exponent), 1.0e-9, "s = 4 (a full netherite sword): 8x");
         assertEquals(Math.pow(252, 1.5), BlackSpark.multiplier(1000, scale, exponent), 1.0e-6, "no cap");
-        // The damage is s^2.5 on the same scale: (2 + d/4)^2.5 = d x s^1.5 only where d = s... so check it directly.
+        // Damage is d x s^1.5 with s = 2 + d/4 (it equals s^2.5 only where d = s), so check that directly.
         for (double d : new double[] {1, 3, 7.2, 9.6, 14.4}) {
             assertEquals(d * Math.pow(2 + d / 4, 1.5), d * BlackSpark.multiplier(d, scale, exponent), 1.0e-9);
         }

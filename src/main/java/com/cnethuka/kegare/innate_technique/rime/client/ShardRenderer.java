@@ -23,12 +23,12 @@ import org.joml.Matrix4f;
 import org.joml.Vector3f;
 
 /**
- * Frost Shard's and Splinter's thrown ice: a small solid crystal of the lance's ice (LanceMesh.SHARD, tools/blockbench/
- * build_frost_shard.py) pointing the way it flies and turning about its length, with a short thin pale line behind it. Your own isn't
- * drawn until it's clear of your first-person camera (it leaves from between your eyes), as vanilla does with thrown items.
+ * Frost Shard's and Splinter's thrown ice: a small solid crystal of the lance's ice (LanceMesh.SHARD, {@code models/fx/frost_shard.obj})
+ * pointing the way it flies and turning about its length, with a short thin pale line behind it. Your own isn't drawn until it's clear
+ * of your first-person camera (it leaves from between your eyes), as vanilla does with thrown items.
  * <p>
  * The line is drawn here, not by Photon: Photon's trail is a ribbon turned to face the camera, and seen straight down its length (by
- * whoever threw it, or whoever it's coming at) it turned into a sheet across the whole view. This one is a strip turned the same way
+ * whoever threw it, or whoever it's coming at) it becomes a sheet across the whole view. This one is a strip turned the same way
  * that narrows to nothing as it's seen end-on, as a thin line would. With vfxQuality VANILLA it's left to the snowflakes.
  */
 public class ShardRenderer<T extends RimeProjectile> extends EntityRenderer<T> {
@@ -92,7 +92,7 @@ public class ShardRenderer<T extends RimeProjectile> extends EntityRenderer<T> {
 
     /**
      * The same, also stopping short of the thrower's head ({@code fromThrower} blocks from the shard's middle to their eyes): the
-     * tick count alone let it reach back through the head of whoever threw it.
+     * tick count alone would let it reach back through the thrower's head.
      */
     static float lineLength(float full, float travelled, double fromThrower, float back) {
         return Mth.clamp(Math.min(travelled - 0.3f, (float) fromThrower - back - CLEAR_OF_THROWER), 0f, full);

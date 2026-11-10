@@ -45,17 +45,16 @@ import org.joml.Quaternionf;
 import org.joml.Vector3f;
 
 /**
- * Battle damage on this client (DESIGN §3.24). For every broken block (or in COSMETIC mode every block that would have broken):
- * <b>debris</b>, small solid chunks cut from the block's own texture, flung out from where the hit landed, tumbling, bouncing once and
- * gone in about a second. Then, once the world has caught up, <b>cracks</b> on what survived: the surfaces round the hit (the floor
- * under it, a wall beside it) and the rim of the hole, pixel art on the blocks' own grid ({@code textures/marks/battle_crack}, the
- * same {@link BlockMarks} as Rime's frost), reaching further the harder the hit, fading after half a minute. Full: everything;
- * Reduced: fewer chunks and cracks; Vanilla: vanilla's block particles and no cracks.
+ * Battle damage on this client (DESIGN §3.24). Each broken block (in COSMETIC mode, each that would have broken) throws
+ * <b>debris</b>: small solid chunks cut from its own texture that tumble, bounce once and are gone in about a second. Once the world
+ * has caught up, <b>cracks</b> mark what survived: the surfaces round the hit and the rim of the hole, as pixel art on the block grid
+ * ({@code textures/marks/battle_crack} through {@link BlockMarks}, as Rime's frost), reaching further the harder the hit and fading
+ * after half a minute. Reduced: fewer chunks and cracks. Vanilla: vanilla's block particles, no cracks.
  */
 public final class BattleDamageClient {
     private static final ResourceLocation CRACK = Kegare.id("battle_crack");
     private static final RenderType TYPE = RenderType.entityCutoutNoCull(InventoryMenu.BLOCK_ATLAS);
-    /** Cracks wait this long, so the blocks the hit broke are gone from this client first. */
+    /** Ticks cracks wait, so the broken blocks are gone from this client first. */
     private static final int CRACK_DELAY = 3;
     private static final int MAX_CHUNKS = 400;
     private static final RandomSource RANDOM = RandomSource.create();
@@ -135,7 +134,7 @@ public final class BattleDamageClient {
         Minecraft mc = Minecraft.getInstance();
         TextureAtlasSprite sprite = mc.getBlockRenderer().getBlockModelShaper().getParticleIcon(state);
         int rgb = 0xFFFFFF;
-        if (!state.is(Blocks.GRASS_BLOCK)) { // as vanilla's own block particles: the grass block's particle is plain dirt
+        if (!state.is(Blocks.GRASS_BLOCK)) { // as vanilla: the grass block's particle is plain dirt, so no tint
             int c = mc.getBlockColors().getColor(state, level, pos, 0);
             if (c != -1) rgb = c & 0xFFFFFF;
         }
@@ -253,8 +252,8 @@ public final class BattleDamageClient {
     private record Face(Vec3 at, Direction face, double distance, float reach) {}
 
     /**
-     * The surfaces round the hit (straight down, up and out each way from it) and the rim of the hole, nearest first; each cracked as
-     * far as the hit's power left there, against what the block can take.
+     * Cracks the surfaces round the hit (along each axis) and the rim of the hole, nearest first, each as far as the power left there
+     * against the block's resistance.
      */
     static void cracks(ClientLevel level, BattleDamagePayload hit) {
         BlockMarks.Pattern pattern = BlockMarks.pattern(CRACK);

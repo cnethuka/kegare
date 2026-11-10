@@ -137,7 +137,7 @@ final class DebugCommands {
                             return 1;
                         })))
                         .then(impactTiers()))
-                // The screen shader hook: a whole-screen effect for a set time (grayscale, for Standstill to come).
+                // The screen shader hook: a whole-screen effect for a set time (e.g. Standstill's grayscale).
                 .then(Commands.literal("screen")
                         .then(player()
                                 .then(Commands.argument("effect", net.minecraft.commands.arguments.ResourceLocationArgument.id())

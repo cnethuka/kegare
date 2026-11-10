@@ -5,7 +5,7 @@ import com.cnethuka.kegare.innatetechnique.visual.Visual;
 import net.minecraft.resources.ResourceLocation;
 
 /**
- * Rime's IDs: player animations (assets/kegare/player_animations/, a file a move, from tools/anims) and Photon effects
+ * Rime's IDs: player animations (assets/kegare/player_animations/, one file per move) and Photon effects
  * (assets/kegare/fx/rime/).
  */
 public final class RimeIds {

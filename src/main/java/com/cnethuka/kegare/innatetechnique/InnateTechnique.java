@@ -17,8 +17,8 @@ import net.minecraft.world.item.Items;
 import net.minecraft.world.level.ItemLike;
 
 /**
- * An innate technique (registry {@code kegare:innate_technique}): a rarity, an ordered list of abilities
- * (picked with the number keys or scroll wheel in Technique Mode; each may have a special on R) and an optional ultimate (the ultimate key; future dominions plug in here).
+ * An innate technique (registry {@code kegare:innate_technique}): a rarity, an ordered list of abilities (picked with the number keys
+ * or scroll wheel in Technique Mode; each may have a special on R) and an optional ultimate (V; Dominions will plug in here).
  * Register new ones with a {@code DeferredRegister} on {@link KegareRegistries#INNATE_TECHNIQUE_KEY}.
  */
 public class InnateTechnique {

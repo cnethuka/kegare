@@ -41,12 +41,12 @@ public final class Disguises {
     public record Disguise(UUID wearer, UUID as, long endTick, Kind kind, UUID caster) {}
 
     /**
-     * One synced entry: entity ID -> disguised-as UUID and end tick (plus the wearer's UUID, for the tab list), and the eyewear the face is
-     * wearing right now: on the disguise everyone else sees that, never the wearer's own (DESIGN §3.19, §3.32).
+     * One synced entry: entity ID -> disguised-as UUID and end tick (plus the wearer's UUID, for the tab list), and the face's
+     * current eyewear, which everyone else sees on the disguise instead of the wearer's own (DESIGN §3.19, §3.32).
      */
     public record Entry(int entityId, UUID wearer, UUID as, long endTick, Eyewear faceEyewear) {}
 
-    /** The face's eyewear as last sent, by wearer: the face putting some on or taking it off is sent at once. */
+    /** The face's eyewear as last sent, by wearer, so the face putting some on or taking it off is sent at once. */
     private static final Map<UUID, Eyewear> SENT_EYEWEAR = new HashMap<>();
 
     /** Server: by wearer. */
@@ -122,7 +122,7 @@ public final class Disguises {
         if (changed) sync(player.server);
     }
 
-    /** Every server tick: expired disguises end, and a face's eyewear changing is sent. */
+    /** Every server tick: ends expired disguises and sends any change in a face's eyewear. */
     static void tick(MinecraftServer server) {
         if (SERVER.isEmpty()) return;
         long now = server.overworld().getGameTime();
@@ -141,7 +141,7 @@ public final class Disguises {
         if (changed) sync(server);
     }
 
-    /** What the face is wearing on its eyes right now; nothing if it's gone (better nothing than the wearer's own). */
+    /** The face's current eyewear; none if the face is gone (better none than the wearer's own). */
     static Eyewear faceEyewear(MinecraftServer server, Disguise d) {
         ServerPlayer face = Switchback.find(server, d.as());
         return face == null ? Eyewear.NONE : Eyewear.of(face);
@@ -157,7 +157,7 @@ public final class Disguises {
         SENT_EYEWEAR.clear();
     }
 
-    /** Told about every map sent (tests). */
+    /** Sees every map sent (tests). */
     static java.util.function.Consumer<StatePayload> sentHook;
 
     private static void sync(MinecraftServer server) {
@@ -227,8 +227,9 @@ public final class Disguises {
     }
 
     /**
-     * The eyewear a disguised player shows to this client, or null to draw their own: theirs to themself and when there's no disguise, the face's to
-     * everyone else (none if the face wears none, or is gone), ending with the disguise. The same rule as everything else a disguise shows.
+     * The eyewear a disguised player shows this client, or null to draw their own (in their own view, or with no live
+     * disguise). Everyone else sees the face's eyewear (none if the face wears none or is gone): the same rule as everything
+     * else a disguise shows.
      */
     @Nullable
     public static Eyewear eyewearShown(@Nullable Entry entry, long gameTime, boolean ownView) {

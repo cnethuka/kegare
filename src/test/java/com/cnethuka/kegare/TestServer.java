@@ -119,10 +119,10 @@ public final class TestServer {
 
     /**
      * The tests' area, chunks -2 to 2 each way round the origin, held loaded (forced) with its entities ticking before a test runs.
-     * A chunk only loaded on the spot (by a block lookup in the test itself) wasn't: its entities stay out of every area search
-     * ({@code getEntitiesOfClass}) until the chunk system gets round to it, which inside one task on the server thread happened or
-     * not depending on its worker threads. A sweep then found nobody beside its target, and the Standstill sweep test failed now and
-     * then. Waits here, pumping the chunk system, until every chunk's entities tick.
+     * A chunk loaded only on the spot (by a block lookup in the test) keeps its entities out of every area search
+     * ({@code getEntitiesOfClass}) until the chunk system gets round to it, which inside one server-thread task depends on its worker
+     * threads: a sweep then finds nobody beside its target, and sweep tests fail at random. Waits here, pumping the chunk system,
+     * until every chunk's entities tick.
      */
     private static void testAreaReady(net.minecraft.server.level.ServerLevel level) {
         boolean ready = true;
@@ -141,8 +141,8 @@ public final class TestServer {
                 }
             }
         }
-        // What generating them put there (a flat world's cows and sheep on the ground), never there while their entities were out of
-        // sight: no test expects them, and with no player between tests nothing spawns again.
+        // Clear what generation put there (a flat world's cows and sheep), which only show up once the entities tick: no test expects
+        // them, and with no player between tests nothing spawns again.
         net.minecraft.world.phys.AABB area = new net.minecraft.world.phys.AABB(-AREA * 16, level.getMinBuildHeight(), -AREA * 16,
                 (AREA + 1) * 16, level.getMaxBuildHeight(), (AREA + 1) * 16);
         for (net.minecraft.world.entity.Entity e : level.getEntitiesOfClass(net.minecraft.world.entity.Entity.class, area,

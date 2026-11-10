@@ -4,7 +4,7 @@ import com.cnethuka.kegare.Kegare;
 import java.util.List;
 import net.minecraft.resources.ResourceLocation;
 
-/** Animations ({@code player_animations/melee.json}, written by {@code tools/anims/melee.py}), effects and loop keys. */
+/** Animations ({@code player_animations/melee.json}), effects and loop keys. */
 public final class MeleeIds {
     public static final ResourceLocation ANIM_DASH_FORWARD = Kegare.id("dash_forward");
     public static final ResourceLocation ANIM_DASH_BACK = Kegare.id("dash_back");

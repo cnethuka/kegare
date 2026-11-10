@@ -26,11 +26,10 @@ import net.neoforged.neoforge.client.event.RenderLevelStageEvent;
 import org.joml.Matrix4f;
 
 /**
- * What a mob that a hit killed goes out with (DESIGN §3.23), in place of vanilla's death smoke (the soft white "poof" it puffs a second
- * after dying): solid slivers flung out of the body and a thin ring at its feet, in the colour of the hit that killed it (white for a
- * body or a weapon, the Malice colour for a technique), full-bright and gone in under half a second. Only for a death a hit led to
- * ({@link #hit} remembers the Impact System's victims for a few seconds); anything else that dies (a fall, fire, drowning) keeps
- * vanilla's smoke, and so does every death at vfxQuality VANILLA. Reduced draws half the slivers. Called from
+ * Replaces vanilla's death smoke (the white "poof" a second after dying) for a mob a hit killed (DESIGN §3.23): solid slivers flung
+ * from the body and a thin ring at its feet in the hit's colour (white for a body or weapon, the Malice colour for a technique),
+ * full-bright and gone in under half a second. {@link #hit} remembers the Impact System's victims for a few seconds; any other death
+ * (a fall, fire, drowning), and every death at vfxQuality VANILLA, keeps vanilla's smoke. Reduced draws half the slivers. Called from
  * {@code DeathPoofMixin}.
  */
 public final class DeathBurst {

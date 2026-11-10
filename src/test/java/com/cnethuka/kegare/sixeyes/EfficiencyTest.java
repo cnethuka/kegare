@@ -55,8 +55,8 @@ class EfficiencyTest {
             assertTrue(now < previous, "each Grade lowers costs: step " + g);
             previous = now;
         }
-        // No flat point: every quadrupling of Attunement adds more to x than the one before. (A logarithm adds the same each time, and
-        // the cost flattens out.)
+        // No flat point: each quadrupling of Attunement adds more to x than the last (a logarithm would add the same each time and
+        // flatten the cost).
         double lastGain = 0;
         for (double a = 100; a <= 1.0e12; a *= 4) {
             double gain = Efficiency.x(6, a * 4) - Efficiency.x(6, a);

@@ -19,9 +19,9 @@ import net.minecraft.world.phys.Vec3;
 import net.neoforged.neoforge.common.NeoForge;
 
 /**
- * Shared targeting: the player (or, for the abilities that take them, the mob) under the crosshair within
- * {@code [swap.targeting] range}, with line of sight (blocks in the way stop it). Stunned or frozen targets are valid.
- * And the {@link SwapTargetEvent} gate every swap goes through.
+ * Shared targeting: the player (or, for abilities that take them, the mob) under the crosshair within
+ * {@code [swap.targeting] range}, in line of sight (blocks in the way stop it). Stunned or frozen targets are valid.
+ * Also the {@link SwapTargetEvent} gate every swap goes through.
  */
 public final class SwapTargeting {
     private SwapTargeting() {}

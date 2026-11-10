@@ -25,7 +25,7 @@ import net.neoforged.neoforge.common.NeoForge;
 import net.neoforged.neoforge.network.PacketDistributor;
 import org.lwjgl.glfw.GLFW;
 
-/** The layer's keys and HUD. Input only asks: the server times and decides everything. */
+/** The melee layer's keys and HUD. Input only asks: the server times and decides everything. */
 public final class MeleeClient {
     private static final int BAR_WIDTH = 34;
     private static final int STRIKE_COLOR = 0xFFFFD24A;

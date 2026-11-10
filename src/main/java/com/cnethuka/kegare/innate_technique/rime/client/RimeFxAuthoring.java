@@ -107,7 +107,7 @@ public final class RimeFxAuthoring {
 
     /**
      * Frost Shard in flight: a few specks of frost shed as it goes. Its short line is drawn with the shard (ShardRenderer): a Photon
-     * trail seen straight down its length turned into a sheet across the view.
+     * trail seen straight down its length becomes a sheet across the view.
      */
     private static FX frostShardTrail() {
         ParticleEmitter specks = emitter("specks", true, 20);
@@ -344,7 +344,7 @@ public final class RimeFxAuthoring {
     /**
      * Frost Field's cone, riding the caster: only what's soft. The frost on the ground, the crystals and the mist lying on it are
      * FieldClient's (block marks, solid meshes, {@link #frostFieldMist}). A breath of cold pouring from the hands and sinking as it
-     * goes, fine streaks giving it its direction, flakes for texture. No big bright fog: it hid the ground the frost runs over.
+     * goes, fine streaks giving it its direction, flakes for texture. No big bright fog: it would hide the ground the frost runs over.
      */
     private static FX frostFieldCone() {
         return frostFieldCone(false);
@@ -450,7 +450,7 @@ public final class RimeFxAuthoring {
 
     /**
      * Rime Shell: the plates themselves are solid meshes on the body (ShellClient); round them only a few flakes circling close and
-     * the odd glint rising off the ice. No bubble: the old glassy sphere read as a forcefield, not ice.
+     * the odd glint rising off the ice. No bubble: a glassy sphere reads as a forcefield, not ice.
      */
     private static FX rimeShellAura() {
         return rimeShellAura(false);
@@ -551,8 +551,8 @@ public final class RimeFxAuthoring {
     }
 
     /**
-     * Breaking free of a freeze: a flash and a small ring; the frost that bursts off is solid chips of ice (FreezeClient), not the
-     * glassy cubes this had.
+     * Breaking free of a freeze: a flash and a small ring; the frost that bursts off is solid chips of ice (FreezeClient), not
+     * glassy cubes.
      */
     private static FX freezeShatter() {
         ParticleEmitter flash = single("flash", 6, 0.9f);
@@ -907,7 +907,7 @@ public final class RimeFxAuthoring {
     /**
      * Shatter Shell: what's soft round the burst. The plates that fly off are solid (ShellClient) and the ring that races out to the
      * knockback's reach is drawn to the configured reach (ShatterClient): here only hard glints flung out flat and a breath of cold
-     * mist pushed out low. The old Photon shockwave was a fixed size and its cube fragments read as glass.
+     * mist pushed out low. No Photon shockwave: it's a fixed size, and cube fragments read as glass.
      */
     private static FX shatterShellBurst() {
         return shatterShellBurst(false);
@@ -959,8 +959,8 @@ public final class RimeFxAuthoring {
     /**
      * A thin pale line drawn along the path its emitter has taken over the last {@code lengthTicks} (Photon's own trail emitter, which
      * follows where it's carried in the world), tapering to nothing at its far end and hidden from {@code hiddenFrom} (0 to 1 along it)
-     * to where it's being drawn from. Drawn with the glow material: Kila's energy-trail material, which the older ribbons use, drew
-     * nothing at all on the test machine.
+     * to where it's being drawn from. Drawn with the glow material: Kila's energy-trail material draws nothing at all on the test
+     * machine.
      */
     private static TrailEmitter thinTrail(String name, float width, int lengthTicks, float hiddenFrom) {
         TrailEmitter e = new TrailEmitter();

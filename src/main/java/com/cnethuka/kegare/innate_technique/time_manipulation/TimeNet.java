@@ -116,10 +116,9 @@ public final class TimeNet {
     }
 
     /**
-     * Standstill's state, to every player in the level: whether time is stopped, round where, until when, and which entities still move
-     * in it (the caster and players holding Time Manipulation, inside it), and how many ticks a projectile they throw flies before it
-     * hangs (the client counts those itself). Everything else inside the radius is frozen. Sent again whenever that changes, and once
-     * more when it ends.
+     * Standstill's state, to every player in the level: whether time is stopped, round where, until when, which entities inside still
+     * move (the caster and Time Manipulation holders), and how many ticks a projectile they throw flies before it hangs (the client
+     * counts those itself). Everything else inside the radius is frozen. Resent on every change and once more when it ends.
      */
     public record Stop(boolean active, int caster, Vec3 centre, float radius, long until, List<Integer> free, int flightTicks)
             implements CustomPacketPayload {

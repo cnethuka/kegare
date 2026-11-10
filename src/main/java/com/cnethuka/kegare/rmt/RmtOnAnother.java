@@ -36,7 +36,7 @@ import net.neoforged.neoforge.network.PacketDistributor;
  * to them, seen by everyone, and a soft chime as it starts.
  */
 public final class RmtOnAnother extends SpecialAbility {
-    /** How long a link a client has stopped hearing about stays drawn: a little over the second between resends. */
+    /** Ticks between resends of the link; a client drops a link it hasn't heard about for a little longer than this. */
     static final int LINK_RESEND_TICKS = 20;
 
     RmtOnAnother() {

@@ -9,15 +9,15 @@ import net.minecraft.world.phys.Vec3;
 import net.neoforged.neoforge.client.event.ViewportEvent;
 
 /**
- * Screen shake (DESIGN §3.23): the camera's angles only, as it's drawn. Never your aim, your facing or where you are, so a shake
- * can't throw a swing or a cast off. Each shake starts after the hit's freeze ends: a jolt the way the hit was going, then a fast
- * tremble that dies away. Shakes at once don't stack past the strongest by much.
+ * Screen shake (DESIGN §3.23): only the drawn camera angles, never your aim, facing or position, so a shake can't throw a swing or a
+ * cast off. Each starts after the hit's freeze ends: a jolt the way the hit was going, then a fast tremble that dies away.
+ * Overlapping shakes don't stack far past the strongest (a cap scaled from it).
  */
 final class ScreenShake {
     private record Shake(long start, long end, float degrees, float jolt, Vec3 direction, float a, float b, float c) {}
 
     private static final List<Shake> SHAKES = new ArrayList<>();
-    /** How fast it trembles (Hz), on each axis: three, so it never repeats into a wobble. */
+    /** Tremble frequency (Hz) per axis: three different ones, so it never settles into a regular wobble. */
     private static final float YAW_HZ = 17f, PITCH_HZ = 21f, ROLL_HZ = 13f;
 
     private ScreenShake() {}

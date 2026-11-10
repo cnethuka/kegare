@@ -20,7 +20,6 @@ public final class HudClearance {
 
     private HudClearance() {}
 
-    /** The combat panel takes the hotbar's place: no vanilla hotbar or XP bar while it is up. */
     @SubscribeEvent(priority = EventPriority.HIGH)
     static void hide(RenderGuiLayerEvent.Pre event) {
         if (!CombatPanelLayer.shown()) return;

@@ -47,7 +47,7 @@ import org.joml.Vector3f;
  * which is still there when the message arrives.
  */
 public final class LanceAftermath {
-    /** The frost a lance leaves where it comes down: pixel art on the blocks (BlockMarks), from tools/blockbench/build_block_marks.py. */
+    /** The frost a lance leaves where it comes down: pixel art on the blocks (BlockMarks, {@code marks/lance_frost}). */
     public static final ResourceLocation FROST_MARK = Kegare.id("lance_frost");
     /** How long a lance stays stuck before it shatters. */
     static final int STUCK_TICKS = 20;

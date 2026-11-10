@@ -12,7 +12,7 @@ public final class RmtState {
     static final long NEVER = -1_000_000_000L;
     @Nullable
     OrbPath path;
-    /** Stays this far ahead while they follow it, so it can't fade under them. */
+    /** Game time the orb fades; pushed back every tick of a follow, so it can't fade under them. */
     long orbExpires;
     int followTicks;
     /** The whole route, fixed when it's rolled. */
@@ -24,7 +24,10 @@ public final class RmtState {
     double fatigue;
     long fatigueIgnoredUntil = Long.MIN_VALUE;
     @javax.annotation.Nullable RmtOutputPayload sentOutput;
-    /** rmt_survived_low: they were at lowHealth or less during their own channel; then, healed above it, until when they must live. */
+    /**
+     * rmt_survived_low: they fell to lowHealth or less during their own channel. {@code survivedLowAt}: once healed above it, when
+     * they must still be alive.
+     */
     boolean lowDuringChannel;
     /** Healing another: who (by UUID), and when the link was last sent. */
     @Nullable java.util.UUID healing;

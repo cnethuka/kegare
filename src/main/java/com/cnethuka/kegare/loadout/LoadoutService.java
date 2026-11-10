@@ -105,8 +105,8 @@ public final class LoadoutService {
     }
 
     /**
-     * Login repair: a layout built for another innate technique is rebuilt. One of the wrong size (bars from before
-     * there were nine slots had one per ability) keeps its entries and is padded or trimmed to {@link #SLOTS}.
+     * Login repair: a layout built for another innate technique is rebuilt. One of the wrong size (an old save's bar with
+     * one slot per ability) keeps its entries and is padded or trimmed to {@link #SLOTS}.
      * Entries that no longer resolve (locked or removed abilities) and duplicates are emptied. A locked ability is
      * offered a slot again when it unlocks.
      */

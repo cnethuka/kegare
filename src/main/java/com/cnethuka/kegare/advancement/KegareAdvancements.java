@@ -48,25 +48,25 @@ public final class KegareAdvancements {
     public static final ResourceLocation UNSEALED = Kegare.id("unsealed");
 
     /**
-     * Design rule: an advancement that would reveal a secret identity (who holds a unique trait or the Shrine)
-     * is hidden and never announced to chat; only its earner sees the toast. The generator applies this to every
-     * ID here automatically, and datagen fails if one ever isn't hidden and silent. Add future secret IDs here.
+     * Advancements that would reveal a secret identity (who holds a unique trait or the Shrine): hidden and never
+     * announced, so only the earner sees the toast. The generator applies this to every ID here and datagen fails
+     * if one isn't hidden and silent. Add future secret IDs here.
      */
     public static final Set<ResourceLocation> SECRET_IDENTITY = Set.of(
             CLEAR_SIGHT, THE_CYCLE_CONTINUES, EYES_CLOSED, BLINDED, SOMETHINGS_MISSING,
             VESSEL_OF_THE_KING, UNWORTHY_HEIR, UNSEALED);
 
     /**
-     * Documented exception to the secret-identity rule: these secret TAB ROOTS may be visible (still silent).
-     * A tab only appears to players who earned something in it, so a visible root reveals nothing to anyone else,
-     * and a hidden root would render as a dangling connector line for everyone who hasn't earned it.
+     * Exception to the secret-identity rule: these secret tab roots may be visible (still silent). A tab only
+     * appears to players who earned something in it, so a visible root reveals nothing, while a hidden root would
+     * draw a dangling connector line.
      */
     public static final Set<ResourceLocation> SECRET_VISIBLE_ROOTS = Set.of(CLEAR_SIGHT);
 
     /**
-     * Not secret, but never announced to chat: they reveal PvP information. overflowing reveals Malice capacity;
-     * chosen_by_fate reveals a Legendary innate technique; a_green_light and its_been_a_while reveal that a player
-     * can heal (Reverse Malice Technique), and always_on that it can keep healing in the background; the progression ones reveal a player's Grade, or how far along their technique is.
+     * Not secret, but never announced because they reveal PvP information: overflowing gives away Malice capacity,
+     * chosen_by_fate a Legendary innate technique, a_green_light and its_been_a_while that a player can heal (RMT),
+     * always_on that they heal in the background, and the progression ones a player's Grade or technique progress.
      */
     public static final Set<ResourceLocation> SILENT = Set.of(OVERFLOWING, CHOSEN_BY_FATE, A_GREEN_LIGHT, ITS_BEEN_A_WHILE, ALWAYS_ON,
             MOVING_UP, PROVEN, RECOGNIZED, OUTSIDE_THE_LADDER, FULL_KIT);

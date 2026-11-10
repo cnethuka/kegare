@@ -6,7 +6,7 @@ import net.neoforged.neoforge.event.entity.player.PlayerEvent;
 import net.neoforged.neoforge.event.server.ServerStoppedEvent;
 import net.neoforged.neoforge.event.tick.PlayerTickEvent;
 
-/** Ticks every player's Background Tasks on the server and keeps their client told. */
+/** Ticks every player's Background Tasks on the server and keeps each client in sync. */
 public final class BackgroundTaskEvents {
     private BackgroundTaskEvents() {}
 

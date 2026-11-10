@@ -52,7 +52,7 @@ public final class TimeManipulation {
                     .maliceColor(MALICE_COLOR)
                     .signatureAnimation(TimeIds.ANIM_STANDSTILL_CAST)
                     .tabIcon(Items.CLOCK)) {
-                /** Rerolled (or reborn, or set by an admin) away from it: a mark still out is gone, with no cooldown. */
+                /** On losing it (reroll, rebirth or an admin): a mark still out is dropped, with no cooldown. */
                 @Override
                 public void onRemoved(ServerPlayer player) {
                     if (!holds(player)) PointMarks.clear(player);

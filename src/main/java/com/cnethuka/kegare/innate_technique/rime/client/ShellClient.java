@@ -52,7 +52,7 @@ import org.joml.Vector3f;
  */
 public final class ShellClient {
     static final String LOOP = VisualService.key(Rime.RIME_SHELL, VisualPhase.TOGGLE_LOOP);
-    /** The parts the plates sit on, and how many each has (shell_shapes.py). */
+    /** The parts the plates sit on, and how many each has (as in {@code models/fx/rime_shell.obj}). */
     static final String[] PARTS = {"torso", "right_arm", "left_arm", "right_leg", "left_leg"};
     static final int[] COUNTS = {9, 4, 4, 3, 3};
     /**

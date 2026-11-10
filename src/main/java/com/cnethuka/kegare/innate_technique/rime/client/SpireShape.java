@@ -4,9 +4,9 @@ import java.util.List;
 import net.minecraft.util.Mth;
 
 /**
- * Glacial Spire's spike as the game draws it (tools/blockbench/spire_shapes.py makes the pieces): which pieces a charge shows, how
- * big, and how each comes up out of the ground. All in ticks after the eruption. Matches the launch: the spike is as tall as the
- * charge makes the throw, and it comes up about as fast as it throws (a full charge launches at 1.2 blocks a tick).
+ * Glacial Spire's spike as the game draws it (the pieces are the objects in {@code models/fx/glacial_spire.obj}): which pieces a
+ * charge shows, how big, and how each comes up out of the ground. All in ticks after the eruption. Matches the launch: the spike is
+ * as tall as the charge makes the throw, and it comes up about as fast as it throws (a full charge launches at 1.2 blocks a tick).
  */
 final class SpireShape {
     /** The pieces, in the order they're drawn. */

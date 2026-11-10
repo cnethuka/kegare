@@ -86,12 +86,12 @@ final class PointMarks {
         return mark;
     }
 
-    /** The mark is used (the return) or gone: forgotten, and the caster told. */
+    /** Drops the mark (used by the return, or expired) and tells the caster. */
     static void clear(ServerPlayer player) {
         if (MARKS.remove(player.getUUID()) != null) send(player, null);
     }
 
-    /** Forgotten without a word (logout). */
+    /** Drops the mark without telling the client (logout). */
     static void forget(UUID player) {
         MARKS.remove(player);
     }

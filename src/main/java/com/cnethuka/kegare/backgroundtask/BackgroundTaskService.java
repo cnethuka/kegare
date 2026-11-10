@@ -17,7 +17,7 @@ import net.minecraft.world.entity.player.Player;
 /**
  * Background Tasks' slots and running (DESIGN §3.31). Every Malice user has {@link #SLOTS}; a Six Eyes bearer has
  * {@link #SIX_EYES_SLOTS}, from the start, because of how much processing the eyes can take. Losing the eyes switches off the task in
- * the third slot (it stays there, saved, for if they get the eyes again); gaining them gives the third slot at once. Severed players
+ * the third slot (it stays saved there in case they regain the eyes); gaining them gives the third slot at once. Severed players
  * have none. Which task sits in a slot changes only out of a fight, like the loadout; switching a slotted task on or off works any time.
  * <p>
  * A slotted task that's on, unlocked and in a slot they have <em>runs</em> unless it's paused: its own rule

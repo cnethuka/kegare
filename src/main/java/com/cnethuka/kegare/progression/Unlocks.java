@@ -12,9 +12,9 @@ import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.player.Player;
 
 /**
- * The framework for shared and system unlocks, separate from {@link TechniqueUnlocks}: a registry later systems add to
- * with {@link #register}. Nothing real is registered yet: Maximum Output, Cradle, Threshold, Petalfall, Incomplete Dominion
- * and Dominion plug in when they're built, each with a {@code unlock.<namespace>.<path>} lang line for its toast.
+ * The framework for shared and system unlocks, separate from {@link TechniqueUnlocks}: a registry systems add to with
+ * {@link #register} (Background Tasks and RMT on another do). Maximum Output, Cradle, Threshold, Petalfall, Incomplete
+ * Dominion and Dominion plug in when they're built. Each entry needs a {@code unlock.<namespace>.<path>} lang line for its toast.
  * <p>
  * Every player is re-evaluated whenever their Grade, Refinement or Insight changes, and on login. An unlock tied to its
  * technique is lost on a reroll and when Refinement falls below it; any other stays once earned.

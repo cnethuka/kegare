@@ -16,8 +16,8 @@ import net.minecraft.resources.ResourceLocation;
 
 /**
  * DEV TOOL (exported with {@code /kegare debug fx export}): Swap's Photon effects, built from Photon's own objects (see
- * {@link FxKit}). All that's left in Photon is the glints on a swap's two ends; everything else Swap shows is drawn by
- * {@link SwapFx} (and Anchor's token by {@link AnchorRenderer}). Teal, never Rime's ice blue.
+ * {@link FxKit}). Photon only draws the glints on a swap's two ends; everything else Swap shows is drawn by {@link SwapFx}
+ * (and Anchor's token by {@link AnchorRenderer}). Teal, never Rime's ice blue.
  */
 public final class SwapFxAuthoring {
     private static final int PALE = 0xFFCCFBF1;
@@ -33,8 +33,8 @@ public final class SwapFxAuthoring {
     }
 
     /**
-     * Where someone left: a few tiny teal-white glints popping out of the body and gone in a few ticks. The afterimage and the
-     * flicker ring are drawn by SwapFx; this is only the sparkle on them.
+     * Where someone left: a few tiny teal-white glints popping out of the body, gone in a few ticks. SwapFx draws the
+     * afterimage and flicker ring; this is only the sparkle on top.
      */
     private static FX depart() {
         return fx(glints("glints", 9, 0.5f, 2.6f));

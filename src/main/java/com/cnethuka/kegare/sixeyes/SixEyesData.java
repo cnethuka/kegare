@@ -17,7 +17,7 @@ public final class SixEyesData {
 
     double attunement;
     double strain;
-    /** The chance a second of collapsing, while uncovered at the top. */
+    /** Chance per second of collapsing, while uncovered at the top. */
     double risk;
     /** At the top, the uncovered edge goes until Strain cools below {@code edgeBackBelow}. */
     boolean edgeLost;

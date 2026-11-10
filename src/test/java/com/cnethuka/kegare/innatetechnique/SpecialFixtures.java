@@ -11,9 +11,9 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerPlayer;
 
 /**
- * Framework features no real ability uses yet (DESIGN §3.3): a special that needs a toggle switched on, and a charged special that needs
- * a trait. Shared abilities, so no technique has to be registered for them: put in for one test and taken out after, so nothing else
- * sees them. Nothing here exists outside the tests.
+ * Framework features no real ability uses (DESIGN §3.3): a special that needs a toggle on, and a charged special that needs a
+ * trait. Registered as shared abilities so no technique is needed, installed for one test and removed after so nothing else
+ * sees them. Test-only.
  */
 final class SpecialFixtures {
     static final double TOGGLE_COST = 20, STEP_COST = 10, STEP_SPECIAL_COST = 32, LIFT_COST = 20, LIFT_SPECIAL_COST = 48;

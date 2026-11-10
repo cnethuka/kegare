@@ -32,7 +32,10 @@ import net.minecraft.server.level.ServerPlayer;
 public record ProgressionSnapshot(int grade, float gradeXp, float gradeXpNeeded, Optional<Assessment> assessment,
                                   int refinement, float refinementXp, float refinementXpNeeded, int peakRefinement, int maxRefinement,
                                   int dominion, int ward, int output, Map<ResourceLocation, Integer> locked, int brain, Optional<Eyes> eyes) {
-    /** @param costFactor what a Malice cost is multiplied by; @param rmtFactor what RMT's output is */
+    /**
+     * @param costFactor multiplier on every Malice cost
+     * @param rmtFactor multiplier on RMT's output
+     */
     public record Eyes(int attunement, float costFactor, float rmtFactor) {}
 
     public record Assessment(float average, float averageNeeded, float technique, float techniqueNeeded, int fights, int fightsNeeded,

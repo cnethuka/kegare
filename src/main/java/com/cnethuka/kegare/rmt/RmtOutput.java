@@ -26,7 +26,7 @@ public final class RmtOutput {
 
     private RmtOutput() {}
 
-    /** For later systems (Six Eyes; Black Spark's zone). Applied in the order added. */
+    /** For other systems (Six Eyes, Black Spark's zone). Applied in the order added. */
     public static void addModifier(Modifier modifier) {
         MODIFIERS.add(modifier);
     }

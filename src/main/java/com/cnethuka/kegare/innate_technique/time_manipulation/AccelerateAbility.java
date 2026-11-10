@@ -29,12 +29,11 @@ import net.neoforged.neoforge.common.NeoForgeMod;
 import net.neoforged.neoforge.event.entity.living.LivingEntityUseItemEvent;
 
 /**
- * Accelerate (TOGGLE, DESIGN §3.26): your own clock runs {@code rate} times as fast, and everything about you takes the same factor:
- * walking, sprinting and swimming (attribute modifiers, not a potion), attack speed, mining speed, using an item (eating, drinking,
- * drawing a bow, loading a crossbow, raising a shield: {@link #onUseTick}), and every OTHER cooldown of your innate technique (its own
- * doesn't run while it's on anyway). Full control with no momentum, unlike Blur; jumping and gravity are unchanged. Malice upkeep per
- * second. A winding click switches it on; a quick tick while it runs, and faint afterimages (the client draws them from its loop).
- * Special: Fast Forward.
+ * Accelerate (TOGGLE, DESIGN §3.26): your own clock runs {@code rate} times as fast. Walking, sprinting and swimming (attribute
+ * modifiers, not a potion), attack speed, mining speed, item use ({@link #onUseTick}) and every OTHER cooldown of your technique all
+ * take that factor; its own cooldown doesn't run while it's on anyway. Full control with no momentum, unlike Blur; jumping and gravity
+ * are unchanged. Malice upkeep per second. A winding click on; while it runs, a quick tick and faint afterimages (drawn by the client
+ * from its loop). Special: Fast Forward.
  */
 public final class AccelerateAbility extends TimeAbility {
     private static final AbilityVisuals VISUALS = AbilityVisuals.builder()
@@ -46,7 +45,7 @@ public final class AccelerateAbility extends TimeAbility {
     static final String RATE = "accelerate";
     /** When each player switched it on (for Overclock). */
     private static final Map<UUID, Long> ON_SINCE = new HashMap<>();
-    /** What a non-whole rate has saved up toward its next extra tick of an item's use, per entity (each side has its own). */
+    /** Fractional extra item-use ticks carried over from a non-whole rate, per entity (client and server each keep their own). */
     private static final Map<LivingEntity, Double> USE_CARRY = new WeakHashMap<>();
 
     AccelerateAbility() {
@@ -91,7 +90,7 @@ public final class AccelerateAbility extends TimeAbility {
     public void tick(AbilityContext ctx) {
         ServerPlayer p = ctx.player();
         long now = p.level().getGameTime();
-        if (now % 5 == 0) { // the clock running fast, heard where each listener sees them (too fast for the eye, §3.30)
+        if (now % 5 == 0) { // fast ticking, heard where each listener sees them (too fast for the eye, §3.30)
             com.cnethuka.kegare.sight.DelayedSight.playSound(p, KegareSounds.TIME_TICK, net.minecraft.sounds.SoundSource.PLAYERS, 0.35f, 1.6f);
         }
         Long since = ON_SINCE.get(p.getUUID());
@@ -115,8 +114,8 @@ public final class AccelerateAbility extends TimeAbility {
     }
 
     /**
-     * How fast this entity's own clock runs: Accelerate's rate while it's on, else 1. Read from its movement modifier, which the game
-     * sends to every client, so the client's own side of an item's use keeps step with the server's without anything new sent.
+     * This entity's clock rate: Accelerate's rate while it's on, else 1. Read from the movement modifier, which the game already syncs
+     * to every client, so client-side item use keeps step with the server without a new packet.
      */
     public static double rate(LivingEntity entity) {
         AttributeInstance movement = entity.getAttribute(Attributes.MOVEMENT_SPEED);
@@ -125,8 +124,8 @@ public final class AccelerateAbility extends TimeAbility {
     }
 
     /**
-     * Using an item (eating, drinking, a bow, a crossbow, a shield) counts down {@code rate} times as fast, on both sides. Never past 1
-     * left: the game finishes the use itself as it counts the last tick off.
+     * Item use (eating, drinking, a bow, a crossbow, a shield) counts down {@code rate} times as fast, on both sides. Never below 1
+     * left: the game finishes the use itself when it counts off the last tick.
      */
     static void onUseTick(LivingEntityUseItemEvent.Tick event) {
         LivingEntity entity = event.getEntity();

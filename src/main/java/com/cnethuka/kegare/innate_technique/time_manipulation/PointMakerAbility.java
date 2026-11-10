@@ -77,7 +77,7 @@ public final class PointMakerAbility extends TimeAbility {
         TimeManipulation.sound(p, KegareSounds.TIME_CLICK, 0.8f, 1.15f);
     }
 
-    /** The return: back to the mark, as it says. Package-visible for the tests. */
+    /** The return to the mark. Package-visible for the tests. */
     static void returnTo(ServerPlayer p, PointMarks.Mark mark) {
         boolean low = p.getHealth() < TimeAdvancements.SECOND_CHANCE_HEALTH;
         List<Vec3> path = new ArrayList<>(mark.path);

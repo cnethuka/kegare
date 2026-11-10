@@ -9,10 +9,10 @@ import com.cnethuka.kegare.innatetechnique.visual.VisualPhase;
 import net.minecraft.server.level.ServerPlayer;
 
 /**
- * Special of Awareness (INSTANT): a ONE-WAY disguise. You look like the target for {@code duration} seconds; the
- * target stays as themselves. Same rendering and ending rules as Awareness ({@link Disguises}). Its tell (DESIGN
- * §3.15) is open: its own cupped clap by the face, seen and heard, and a teal flicker of the caster's body that everyone
- * nearby sees. The trick is the disguise afterwards, not a hidden cast.
+ * Special of Awareness (INSTANT): a one-way disguise. You look like the target for {@code duration} seconds; the target
+ * stays themselves. Same rendering and ending rules as Awareness ({@link Disguises}). Its tell (DESIGN §3.15) is open: a
+ * cupped clap by the face, seen and heard, and a teal flicker of the caster's body for everyone nearby. The trick is the
+ * disguise afterwards, not a hidden cast.
  */
 public final class MimicAbility extends SwapAbility.Special {
     private static final AbilityVisuals VISUALS = AbilityVisuals.builder()

@@ -49,7 +49,7 @@ public final class OrbPath {
      * @param legs how many steps it takes
      * @param step how far each one goes
      * @param yawRange how far it may wander left and right of where the player was looking
-     * @param pitchRange and up and down
+     * @param pitchRange how far it may wander up and down
      * @param maxTurn the sharpest turn between two legs; the gentlest is a third of this, so it never runs straight
      */
     public record Shape(int legs, float step, float yawRange, float pitchRange, float maxTurn) {}

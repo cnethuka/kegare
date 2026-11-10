@@ -69,7 +69,7 @@ public final class PuppetEvents {
         }
     }
 
-    /** Arriving in a dimension: the strings there (the entity IDs of the last one's mean nothing here). */
+    /** Arriving in a dimension: resend the strings there (entity IDs from the last dimension mean nothing here). */
     @SubscribeEvent
     static void onChangedDimension(PlayerEvent.PlayerChangedDimensionEvent event) {
         if (event.getEntity() instanceof ServerPlayer player) StringsSync.sendTo(player);

@@ -27,7 +27,7 @@ import net.minecraft.server.level.ServerPlayer;
  * Toggles and channels are runtime-only: they end on death and logout and never persist.
  * <p>
  * <b>Specials.</b> An ability may define a {@link #special()}: a second ability (see {@link SpecialAbility}) cast
- * with R while this one is selected. It runs the same lifecycle and shared checks under its own cast type, plus its
+ * by holding R and this one's number key. It runs the same lifecycle and shared checks under its own cast type, plus its
  * {@link #requirements()}, and shares this ability's cooldown through {@link #cooldownKey()}.
  * Costs and cooldowns take the caster so future traits can scale them.
  */

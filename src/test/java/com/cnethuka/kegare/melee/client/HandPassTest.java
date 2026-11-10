@@ -10,8 +10,8 @@ import org.joml.Vector3f;
 import org.junit.jupiter.api.Test;
 
 /**
- * Where your own fist is reported from vanilla's first-person hand pass. A Severed player's steam goes there, so it has to be by the hand on
- * the screen whichever way they face, and not only facing north, where the camera's rotation happens to be none at all.
+ * Where your own fist is reported from vanilla's first-person hand pass. A Severed player's steam goes there, so it must be by
+ * the on-screen hand whichever way they face, not only facing north, where the camera's rotation happens to be identity.
  */
 class HandPassTest {
     /** Vanilla's camera, turned the way it turns itself. */
@@ -21,7 +21,7 @@ class HandPassTest {
         }
     }
 
-    /** The pose vanilla's hand pass starts from: {@code GameRenderer.renderItemInHand} undoes the level's view rotation, which is the camera's own. */
+    /** The pose vanilla's hand pass starts from: {@code GameRenderer.renderItemInHand} undoes the level's view rotation (the camera's own). */
     private static PoseStack handPass(Camera camera) {
         Matrix4f view = new Matrix4f().rotation(camera.rotation().conjugate(new Quaternionf()));
         PoseStack pose = new PoseStack();

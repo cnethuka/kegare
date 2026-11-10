@@ -42,7 +42,7 @@ public final class BackgroundRmt extends BackgroundTask {
     public static final ResourceLocation ID = Kegare.id("background_rmt");
     public static final ResourceLocation ALWAYS_ON = KegareAdvancements.ALWAYS_ON;
 
-    /** Told every tick Background RMT runs on a player. For the Six Eyes step and Oxidation's continuous Dividation, later. */
+    /** Told every tick Background RMT runs on a player (for the Six Eyes step and Oxidation's continuous Dividation). */
     @FunctionalInterface
     public interface Hook {
         void whileRunning(ServerPlayer player);
@@ -100,7 +100,7 @@ public final class BackgroundRmt extends BackgroundTask {
                 ConfigText.percent(BackgroundTaskConfig.RMT_RESUME_ABOVE)};
     }
 
-    /** Paused for low Malice, by player: below 20% it pauses, and then waits for 30%. */
+    /** Players paused for low Malice: it pauses below 20% and waits for 30% to resume. */
     private static final java.util.Set<java.util.UUID> LOW = java.util.concurrent.ConcurrentHashMap.newKeySet();
 
     /** Low Malice (with the 20%/30% gap), or frozen in a Standstill: paused while time is stopped for them, resumed with it. */

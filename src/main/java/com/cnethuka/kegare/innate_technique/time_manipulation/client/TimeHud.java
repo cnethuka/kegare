@@ -8,9 +8,9 @@ import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.network.chat.Component;
 
 /**
- * Point Maker on the HUD (DESIGN §3.26): while a mark is out its next cast is the return, so "Point Maker: return 12.3s" (what's
- * left of the mark) sits under the crosshair in bronze, in and out of Technique Mode; with none out its next cast is the mark, and
- * nothing shows. Burnout has its own line (§3.25).
+ * Point Maker on the HUD (DESIGN §3.26): while a mark is out, the next cast is the return, so "Point Maker: return 12.3s" (time left
+ * on the mark) shows under the crosshair in bronze, in and out of Technique Mode. With no mark out nothing shows. Burnout has its own
+ * line (§3.25).
  */
 final class TimeHud {
     private static final int BRONZE = 0xFFD9BC8A;

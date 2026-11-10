@@ -68,7 +68,7 @@ public final class Zone {
         return state == null || !in(player) ? 0 : state.playerChain;
     }
 
-    /** A Black Spark landed: into the zone, or the zone started over and the chain one longer, with fatigue taken away. */
+    /** A Black Spark landed: enter the zone, or if already in it, restart it, lengthen the chain and take some fatigue away. */
     static void onSpark(ServerPlayer player, net.minecraft.world.entity.LivingEntity target) {
         boolean already = in(player);
         State state = state(player);
@@ -80,7 +80,7 @@ public final class Zone {
         start(player, (int) Math.round(FistsConfig.ZONE_SECONDS.get() * 20));
     }
 
-    /** In the zone for {@code ticks} from now ({@code /kegare debug spark zone} too); 0 ends it. */
+    /** Puts them in the zone for {@code ticks} (also {@code /kegare debug spark zone}); 0 ends it. */
     public static void start(ServerPlayer player, int ticks) {
         State state = state(player);
         if (ticks <= 0) {

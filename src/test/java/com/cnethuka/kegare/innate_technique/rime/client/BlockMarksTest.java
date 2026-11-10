@@ -22,8 +22,8 @@ import net.minecraft.world.phys.Vec3;
 import org.junit.jupiter.api.Test;
 
 /**
- * Rime's marks on blocks (tools/blockbench/build_block_marks.py writes the patterns, BlockMarks lays them): pixel art at the blocks'
- * own 16 texels a block, hard pixels, drawn exactly on the block's texel grid, and every texel melting away on its own.
+ * Rime's marks on blocks (patterns in {@code textures/marks/}, laid by BlockMarks): pixel art at 16 texels a block, hard pixels,
+ * drawn exactly on the block's texel grid, and every texel melting away on its own.
  */
 class BlockMarksTest {
     private static Path marks() {

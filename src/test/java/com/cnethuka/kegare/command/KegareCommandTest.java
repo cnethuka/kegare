@@ -234,7 +234,7 @@ class KegareCommandTest {
             assertEquals(real, names(suggestions(server, OP, "kegare innate set tester_one ")).stream().sorted().toList());
             String list = op(server, "kegare innate list").ok().text();
             for (String name : real) assertTrue(list.contains(name), list);
-            // The test techniques are gone: a name that used to work is unknown now.
+            // A name outside the pool is unknown.
             assertTrue(op(server, "kegare innate set tester_one test_kinetic").error().startsWith("Unknown Innate Technique: test_kinetic."));
             assertTrue(op(server, "kegare debug reroll tester_one test_apex").error().startsWith("Unknown Innate Technique: test_apex."));
         });

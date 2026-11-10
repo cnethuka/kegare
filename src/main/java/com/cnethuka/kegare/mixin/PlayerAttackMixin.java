@@ -10,9 +10,9 @@ import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 
 /**
- * A player's swing at something frozen in a Standstill (DESIGN §3.26): the hit is held for the resume, so {@code hurt} says no, and
- * vanilla took that for a miss, dropping the sweep (whose hits on anything else frozen were lost), the crit, the sounds and the
- * weapon's wear. A held hit counts as landed here; the knockback it would give waits (TimeStops cancels it on the frozen).
+ * A player's swing at something frozen in a Standstill (DESIGN §3.26). The hit is held for the resume, so {@code hurt} returns false
+ * and vanilla would treat it as a miss, dropping the sweep (and its hits on anything else frozen), the crit, the sounds and the
+ * weapon's wear. Here a held hit counts as landed; its knockback waits (TimeStops cancels it on the frozen).
  */
 @Mixin(Player.class)
 public abstract class PlayerAttackMixin {

@@ -31,8 +31,8 @@ import org.junit.jupiter.api.extension.ExtendWith;
 
 /**
  * Closing Line (DESIGN §3.27): R while Blurring rushes in a straight line at where the target stood, up to one on a pillar when the
- * line is clear; arriving earns a Strike for its window, carrying the rush's speed; the HUD is told its cooldown; a wall mid-rush,
- * level or rising, is a crash; anything living in the path stops it; a swap ends it; a perfect parry of its Strike staggers harder;
+ * line is clear; arriving earns a momentum hit for its window, carrying the rush's speed; the HUD is told its cooldown; a wall mid-rush,
+ * level or rising, is a crash; anything living in the path stops it; a swap ends it; a perfect parry of that hit staggers harder;
  * a boss is struck but never moved.
  */
 @ExtendWith(EphemeralTestServerProvider.class)

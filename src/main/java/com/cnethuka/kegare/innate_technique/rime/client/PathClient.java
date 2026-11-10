@@ -33,7 +33,7 @@ public final class PathClient {
     static final double SPACING = 0.45;
     /** Ice only on ground at most this far under the feet, as the server's trail. */
     static final double MAX_HEIGHT = 1.5;
-    /** A patch forms over this, then (holding for the rest of the trail's time) melts from the edge in over this, centred on its end. */
+    /** Ticks a patch takes to form, and to melt from the edge in (centred on the trail's end); it holds in between. */
     static final int SPREAD = 3, MELT = 24;
     /** How much of each patch shows, and how far off the feet it sits: a little different every time, so the band's edges wander. */
     static final float REACH_MIN = 0.82f;
@@ -60,7 +60,7 @@ public final class PathClient {
         return new BlockMarks.Timing(reach, 0, SPREAD, Math.max(1, trailTicks - SPREAD - MELT / 2), MELT);
     }
 
-    /** Patch {@code n} of the trail: which of the two, and turned which of the four ways. */
+    /** Which of the four turns patch {@code n} of the trail gets ({@code n}'s lowest bit picks which of the two patches). */
     static int turn(int n) {
         return TURNS[(n >> 1) & 3];
     }

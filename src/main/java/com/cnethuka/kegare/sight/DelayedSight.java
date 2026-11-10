@@ -45,11 +45,11 @@ import net.minecraft.world.phys.Vec3;
 
 /**
  * Too fast for the eye (DESIGN §3.30). While a Severed player is Blurring, or a Time Manipulation player has Accelerate on, everyone else
- * sees them where they were a moment ago: {@code blurDelay} or {@code accelerateDelay} behind, so the faster they go, the further behind the
- * image is. It's done on the server: each player's position and rotation are recorded every tick, and while they're delayed, viewers who
- * shouldn't see the real position get no movement packets for them at all, only the delayed position, every tick (an absolute teleport and
- * the head's turn). Their head and body, animations and afterimages all follow that position on the viewer's client. The delay eases in and
- * out over {@code easeTicks}, so the image never snaps; once it's caught up, every viewer is put back on vanilla's own updates together.
+ * sees them {@code blurDelay} or {@code accelerateDelay} behind, so the faster they go, the further behind the image is. Server-side: every
+ * player's position and rotation are recorded each tick; while they're delayed, viewers who shouldn't see the real position get none of
+ * their movement packets, only the delayed position every tick (an absolute teleport and the head's turn). Head, body, animations and
+ * afterimages all follow it on the viewer's client. The delay eases in and out over {@code easeTicks} so the image never snaps; once it
+ * has caught up, every viewer goes back on vanilla's own updates together.
  * <p>
  * Who sees the real position: the player themself, a Six Eyes bearer, a Severed player's Senses (sensing isn't seeing:
  * {@link com.cnethuka.kegare.severed.Senses}) and bosses. Mobs see the delayed one: they turn to it, path to it and swing at it. Hits are

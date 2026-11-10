@@ -30,7 +30,7 @@ import org.junit.jupiter.api.Test;
  * the burst does.
  */
 class ShatterShellArtTest {
-    /** The thick rime of the frost ring itself (build_block_marks.py RIME). */
+    /** The colour of the thick rime in {@code marks/shatter_ring.png}: the frost ring itself. */
     private static final int RIME = 230 << 24 | 230 << 16 | 244 << 8 | 255;
 
     private static Path project(String path) {

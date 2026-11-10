@@ -187,7 +187,7 @@ class StrainTest {
                 Strain.set(p, SixEyesConfig.EDGE_BACK_BELOW.get() - 5);
                 assertTrue(Strain.edgeAvailable(p), "back below it");
 
-                // The later hook: anyone a rule says counts.
+                // The extension hook: anyone a rule says counts.
                 Edge.addTopTier((bearer, caster) -> caster == plain);
                 assertTrue(Edge.topTier(p, plain), "the Shrine and the Director plug in here");
             } finally {

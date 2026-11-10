@@ -21,11 +21,11 @@ import net.minecraft.util.Mth;
 import org.joml.Vector3f;
 
 /**
- * Plays Player Animation Library animations on the puppet model. PAL itself only animates players, so this reads the
- * same file ({@code player_animations/puppet_manipulation.json}, Bedrock/PAL format) and samples rotation keyframes
- * itself: per bone, degrees. Both keyframe styles PAL reads are understood: Blockbench's Bedrock export
- * ({@code {"post": [x, y, z], "lerp_mode": "linear" | "catmullrom" | "step"}}, what {@code tools/anims} writes) and
- * GeckoLib's ({@code {"vector": [x, y, z], "easing": "easeOutQuad"}}). A malformed animation is skipped, not the file.
+ * Plays Player Animation Library animations on the puppet model. PAL only animates players, so this reads the same file
+ * ({@code player_animations/puppet_manipulation.json}, Bedrock/PAL format) and samples rotation keyframes itself (per
+ * bone, in degrees). Both keyframe styles PAL reads are understood: Blockbench's Bedrock export
+ * ({@code {"post": [x, y, z], "lerp_mode": "linear" | "catmullrom" | "step"}}) and GeckoLib's
+ * ({@code {"vector": [x, y, z], "easing": "easeOutQuad"}}). A malformed animation is skipped, not the whole file.
  */
 public final class PuppetPoses implements ResourceManagerReloadListener {
     private static final ResourceLocation FILE = Kegare.id("player_animations/puppet_manipulation.json");

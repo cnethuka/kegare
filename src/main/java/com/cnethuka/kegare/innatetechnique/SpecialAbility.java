@@ -7,7 +7,7 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerPlayer;
 
 /**
- * Base for an ability's special (cast with R while that ability is selected). It is a full {@link Ability} with its
+ * Base for an ability's special (cast by holding R and that ability's number key). It is a full {@link Ability} with its
  * own cast type, cost, effect and visuals, but it shares its base ability's cooldown: casting either one starts the
  * cooldown for both (see {@link Ability#cooldownKey()}). The cooldown length defaults to the base ability's.
  * <p>

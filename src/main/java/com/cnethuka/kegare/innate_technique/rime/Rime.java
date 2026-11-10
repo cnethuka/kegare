@@ -14,10 +14,9 @@ import net.neoforged.neoforge.registries.DeferredHolder;
 import net.neoforged.neoforge.registries.DeferredRegister;
 
 /**
- * Rime (RARE): the first real innate technique. Frost Shard, Glacial Lance, Frost Field, Rime Shell, with the specials
- * Splinter, Glacial Spire, Ice Path and Shatter Shell on R; no ultimate yet
- * (the slot shows as locked until its Dominion arrives). Freeze stacks on targets; cheaper in the cold, dearer in the
- * heat. All numbers: [rime] in kegare-server.toml.
+ * Rime (RARE): Frost Shard, Glacial Lance, Frost Field, Rime Shell, with the specials Splinter, Glacial Spire, Ice Path
+ * and Shatter Shell on R. No ultimate: the slot shows as locked until its Dominion exists. Freeze stacks on targets;
+ * cheaper in the cold, dearer in the heat. All numbers: [rime] in kegare-server.toml.
  */
 public final class Rime {
     public static final DeferredRegister<InnateTechnique> INNATE_TECHNIQUES = DeferredRegister.create(KegareRegistries.INNATE_TECHNIQUE_KEY, Kegare.MODID);

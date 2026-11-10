@@ -20,17 +20,17 @@ import net.minecraft.world.phys.HitResult;
 import net.neoforged.neoforge.common.NeoForge;
 
 /**
- * Decelerate's projectile: a silver clock hand thrown like a blade, spinning end over end (the client draws it,
- * {@code DecelerateRenderer}). A real projectile: blocks stop it, and so does a Stasis Field or a Standstill like any other. On a living
- * target: damage (type {@code kegare:time_manipulation}, the caster credited); then, unless it's a boss (DESIGN §4), Slowness, Mining
- * Fatigue and (if {@link TimeTargetEvent} allows it) the target's ability cooldowns running at {@code cooldownRate} for its time, with a
- * small clock face over it, its hands dragging.
+ * Decelerate's projectile: a silver clock hand thrown like a blade, spinning end over end (drawn by {@code DecelerateRenderer}).
+ * A real projectile: blocks stop it, and a Stasis Field or Standstill acts on it as on any other. On a living target: damage (type
+ * {@code kegare:time_manipulation}, credited to the caster); then, unless it's a boss (DESIGN §4), Slowness, Mining Fatigue and (if
+ * {@link TimeTargetEvent} allows) the target's ability cooldowns running at {@code cooldownRate} for the duration, with a small clock
+ * face over it, its hands dragging.
  */
 public class DecelerateEntity extends ThrowableProjectile {
     private int lifetime = 30;
     private float damage;
-    /** Client only: how far it has turned end over end (degrees), now and a tick ago. It turns with its speed, so it slows in a
-     * Stasis Field and hangs in a Standstill. */
+    /** Client only: end-over-end turn in degrees, now and last tick. Scales with speed, so it slows in a Stasis Field and hangs in a
+     * Standstill. */
     public float spin, spinO;
     /** Degrees a tick at its thrown speed. */
     private static final float SPIN_PER_TICK = 38f;

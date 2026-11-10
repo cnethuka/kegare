@@ -23,8 +23,8 @@ import net.minecraft.world.phys.Vec3;
 /**
  * Glacial Spire on the ground: a marker entity (no blocks, never saved). It shows a frost warning circle, erupts after
  * the warning time (damage, freeze stacks, launch), stands as a spike for a moment, then shatters and is gone.
- * Its visuals are loops on this entity, so players who arrive late still see the right stage. Its charge rides the entity's own
- * synced data (vanilla's, not a Kegare packet), so every client draws the spike as tall as the launch it gives.
+ * Its visuals are loops on this entity, so players who arrive late still see the right stage. Its charge rides vanilla's
+ * synced entity data (not a Kegare packet), so every client draws the spike as tall as the launch it gives.
  */
 public class GlacialSpireEntity extends Entity implements com.cnethuka.kegare.impact.ChargedHit {
     private static final EntityDataAccessor<Float> DATA_CHARGE = SynchedEntityData.defineId(GlacialSpireEntity.class, EntityDataSerializers.FLOAT);
@@ -110,8 +110,8 @@ public class GlacialSpireEntity extends Entity implements com.cnethuka.kegare.im
             com.cnethuka.kegare.impact.Impacts.launch(target, launch); // a throw, not a push: the Impact System reads it from here
             if (owner != null && target instanceof ServerPlayer victim) RimeLaunch.mark(victim, owner);
         }
-        // The ground it erupts from breaks whether or not anyone was standing on it (DESIGN §3.24): its damage (with vanilla's own push),
-        // its launch and charge, and the Malice of the cast behind it.
+        // The ground breaks whether or not anyone stood on it (DESIGN §3.24), from its damage (with vanilla's push), launch, charge
+        // and the cast's Malice.
         com.cnethuka.kegare.impact.Impacts.blast(level, position(), owner, Rime.GLACIAL_SPIRE, damage, 0.4, launch, charge, 0, true);
     }
 

@@ -44,10 +44,7 @@ public final class LanceMesh {
         }
     }
 
-    /**
-     * One mesh of Rime's ice and its two textures, drawn the same way: the lance, and Glacial Spire's spike
-     * (tools/blockbench/build_glacial_spire.py, the same painter at a coarser density).
-     */
+    /** One mesh of Rime's ice and its two textures (body and glow), all drawn the same way as the lance. */
     public static final class Model {
         final ResourceLocation obj;
         final ResourceLocation texture;
@@ -148,15 +145,15 @@ public final class LanceMesh {
         return LANCE.piece(name);
     }
 
-    /** Frost Shard's and Splinter's thrown crystals and the chips they break into (tools/blockbench/build_frost_shard.py). */
+    /** Frost Shard's and Splinter's thrown crystals and the chips they break into. */
     public static final Model SHARD = new Model(Kegare.id("models/fx/frost_shard.obj"), Kegare.id("textures/entity/frost_shard.png"),
             Kegare.id("textures/entity/frost_shard_glow.png"));
 
-    /** Frost Field's crystals jutting out of the frosted ground (tools/blockbench/build_frost_field.py). */
+    /** Frost Field's crystals jutting out of the frosted ground. */
     public static final Model FIELD = new Model(Kegare.id("models/fx/frost_field.obj"), Kegare.id("textures/entity/frost_field.png"),
             Kegare.id("textures/entity/frost_field_glow.png"));
 
-    /** Rime Shell's plates, one object a plate, each in its body part's space (tools/blockbench/build_rime_shell.py). */
+    /** Rime Shell's plates, one object a plate, each in its body part's space. */
     public static final Model SHELL = new Model(Kegare.id("models/fx/rime_shell.obj"), Kegare.id("textures/entity/rime_shell.png"),
             Kegare.id("textures/entity/rime_shell_glow.png"));
 

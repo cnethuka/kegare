@@ -29,9 +29,9 @@ public final class PuppetClient {
         PuppetEntity.setOutlineHook(PuppetClient::outlined);
         PossessionClient.init(modBus);
         StringsClient.init(modBus);
-        // Every one of its effects is drawn by PuppetFx (thread, and lavender specks at Vanilla), not by Photon.
+        // All its effects are drawn by PuppetFx (thread, and lavender specks at Vanilla), not Photon.
         PuppetFx.init(modBus);
-        // Your own first-person hands (PuppetIds): the way back and Zip are always vanilla's, the rest only while you look about level.
+        // First-person hands (PuppetIds): the way back and Zip always stay vanilla; the rest only while looking roughly level.
         PlayerAnimations.keepVanillaHands(PuppetIds.FIRST_PERSON_VANILLA);
         PlayerAnimations.handsWhileLevel(PuppetIds.FIRST_PERSON_WHILE_LEVEL);
     }
@@ -51,8 +51,8 @@ public final class PuppetClient {
     }
 
     /**
-     * A full puppet's outline, in its glow color, while this client can see it: unlike vanilla glowing it never shows
-     * through walls, so it gives nobody's hiding puppet away. A new one's outline comes as its weave ends (PuppetFx).
+     * A full puppet's outline, in its glow colour, only while this client can see it: unlike vanilla glowing it never
+     * shows through walls, so a hidden puppet isn't given away. A new puppet's outline appears as its weave ends (PuppetFx).
      */
     private static boolean outlined(PuppetEntity puppet) {
         if (puppet.tier() != PuppetTier.FULL || puppet.isInvisible() || puppet.isStandIn() || PuppetFx.forming(puppet)) return false;

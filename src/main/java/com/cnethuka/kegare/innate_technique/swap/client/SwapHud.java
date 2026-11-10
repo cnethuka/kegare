@@ -13,10 +13,10 @@ import net.neoforged.neoforge.client.event.RegisterGuiLayersEvent;
 import net.neoforged.neoforge.client.gui.VanillaGuiLayers;
 
 /**
- * What only a disguised player sees, so they know it's on (DESIGN §3.19): thin teal brackets in the four corners of their screen,
- * breathing slowly, for exactly as long as the disguise lasts (the {@code awareness_shimmer} loop, sent to the wearer alone). Crisp
- * GUI pixels at the edges, nothing near the middle of the view. They come in from the corners as it lands and are gone the moment
- * it ends.
+ * What only a disguised player sees, so they know it's on (DESIGN §3.19): thin teal brackets in the four screen corners,
+ * breathing slowly, for exactly as long as the disguise lasts (the {@code awareness_shimmer} loop, sent to the wearer alone).
+ * Crisp GUI pixels at the edges, nothing near the middle of the view. They slide in from the corners as it lands and vanish
+ * the moment it ends.
  */
 final class SwapHud {
     private static final ResourceLocation LAYER = Kegare.id("swap_disguised");

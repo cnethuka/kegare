@@ -23,7 +23,7 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 
-/** The unlock framework, on entries that only exist here. Nothing real is registered yet. */
+/** The unlock framework, mostly on entries registered only for these tests. */
 @ExtendWith(EphemeralTestServerProvider.class)
 class UnlocksTest {
     private static final double RATE = 0.1;

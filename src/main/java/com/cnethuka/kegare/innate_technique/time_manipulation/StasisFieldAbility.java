@@ -10,7 +10,7 @@ import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.Vec3;
 
 /**
- * Stasis Field (special of Decelerate, INSTANT): a field ({@code radius}, {@code seconds}) where the block you're looking at is
+ * Stasis Field (special of Decelerate, INSTANT): a field ({@code radius}, {@code seconds}) on top of the block you're looking at
  * ({@link StasisFields}). Fizzles for free with no block in range.
  */
 public final class StasisFieldAbility extends TimeAbility.Special {

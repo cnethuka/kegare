@@ -43,7 +43,7 @@ public final class Strain {
     public static final ResourceKey<DamageType> COLLAPSE = ResourceKey.create(Registries.DAMAGE_TYPE, Kegare.id("eyes_collapse"));
     private static final ResourceLocation HOLD_MOVE = Kegare.id("six_eyes_collapse");
 
-    /** Background RMT told us it ran on this tick (the §3.31 hook). */
+    /** The tick Background RMT last ran for each player (the §3.31 hook). */
     private static final Map<UUID, Long> HELD_BACK = new HashMap<>();
     private static final Map<UUID, Snapshot> SENT = new HashMap<>();
     /** Set by tests: the next roll for a collapse. */

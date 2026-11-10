@@ -7,12 +7,11 @@ import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 
 /**
- * Carries out a Closing Line the server has allowed (DESIGN §3.27), like a dash: the velocity set before each tick's move along a
- * straight line in three dimensions (a leap up to a ledge, or down off one), measured against how far it's really got, the game's
- * own collision stopping it (a wall is a crash, which the server judges). Anything slowing movement slows it the same share. A lip
- * no higher than a step is stepped over, as a run would; the ground under a line that dips, or a ceiling over one that rises, only
- * holds them, and they're drawn back onto the line once past it. It ends where the server said, keeping a little speed for the skid,
- * and gravity takes over from there.
+ * Carries out a Closing Line the server allowed (DESIGN §3.27), like a dash. Before each tick's move it sets the velocity along a
+ * straight 3D line (up to a ledge or down off one), measured against the distance really covered; the game's own collision stops it,
+ * and a wall is a crash the server judges. Anything that slows movement slows it by the same share. A lip no higher than a step is
+ * stepped over; ground under a dipping line or a ceiling over a rising one only holds them, and they're pulled back onto the line
+ * once past. It ends where the server said, keeping a little speed for the skid, then gravity takes over.
  */
 final class RushDrive {
     private static final double END_KEEP = 0.12;
@@ -91,8 +90,8 @@ final class RushDrive {
     }
 
     /**
-     * Done: a little of its speed kept for the skid, none of it upward, and gravity has them from here (its first tick at once, so on
-     * level ground they're on it again and skid with its friction, not the air's).
+     * Keeps a little of the speed for the skid, none of it upward, and applies one tick of gravity at once, so on level ground they
+     * land straight away and skid with the ground's friction, not the air's.
      */
     private static void end(LocalPlayer player) {
         if (direction != null) {
@@ -105,9 +104,9 @@ final class RushDrive {
     }
 
     /**
-     * {@code velocity}, lifted by as little as clears a lip in its way no higher than their step height (a slab, a stair, the edge of
-     * a ledge the line just grazes). The game only steps a player up on the ground, and most of a rush is in the air. A wall, too
-     * high to step over, is left for the game's collision to stop them at.
+     * {@code velocity}, lifted just enough to clear a lip no higher than their step height (a slab, a stair, a ledge edge the line
+     * grazes). Needed because the game only steps a player up on the ground, and most of a rush is in the air. A wall too high to
+     * step over is left for the game's collision.
      */
     static Vec3 stepOver(LocalPlayer player, Vec3 velocity) {
         AABB box = player.getBoundingBox().deflate(1.0e-3); // resting on the ground isn't in it

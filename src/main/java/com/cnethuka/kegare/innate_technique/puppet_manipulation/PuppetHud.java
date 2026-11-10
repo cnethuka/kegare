@@ -60,11 +60,6 @@ public final class PuppetHud {
     }
 
     /**
-     * @param holds      the player holds Puppet Manipulation (else nothing on the panel)
-     * @param order      {@link PuppetOrder} ordinal
-     * @param shellHealth the body's (real) health while possessing
-     */
-    /**
      * The owner's string: its stage (0 ready to fire, 1 attached, 2 at work after its second stage), what each key would do
      * right now and how long it has left (only while attached), and every cost, for the HUD and Sorcerer screen.
      */
@@ -98,6 +93,13 @@ public final class PuppetHud {
         }
     }
 
+    /**
+     * What the owner's HUD shows.
+     *
+     * @param holds       the player holds Puppet Manipulation (else nothing on the panel)
+     * @param order       {@link PuppetOrder} ordinal
+     * @param shellHealth the body's (real) health while possessing
+     */
     public record Payload(boolean holds, int puppets, int maxPuppets, int order, boolean possessing, float shellHealth, float shellMaxHealth, StringsHud strings)
             implements CustomPacketPayload {
         public static final Type<Payload> TYPE = new Type<>(Kegare.id("puppet_hud"));

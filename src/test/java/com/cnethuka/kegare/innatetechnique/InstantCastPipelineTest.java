@@ -20,13 +20,13 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 
 /**
- * What Instant Cast's keys send, in the order they send it, on the real cast pipeline: each type, base and special. Rime has one of each:
- * Frost Shard (instant, its special Splinter instant too), Glacial Lance (charged, Glacial Spire charged), Frost Field (channelled) and
- * Rime Shell (toggle).
+ * Instant Cast's key intents, in the order they're sent, on the real cast pipeline: each cast type, base and special. Rime has
+ * one of each: Frost Shard (instant, its special Splinter too), Glacial Lance (charged, Glacial Spire too), Frost Field
+ * (channelled) and Rime Shell (toggle).
  */
 @ExtendWith(EphemeralTestServerProvider.class)
 class InstantCastPipelineTest {
-    /** Frost Shard, Splinter and the Lance leave entities in the world every test shares: they go, so nothing else counts them. */
+    /** Frost Shard, Splinter and the Lance leave entities in the shared test world; discard them so no other test counts them. */
     @org.junit.jupiter.api.AfterEach
     void cleanUp(MinecraftServer server) throws Exception {
         TestServer.onServerThread(server, () -> {

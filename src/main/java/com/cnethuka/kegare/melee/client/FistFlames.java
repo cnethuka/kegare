@@ -148,7 +148,8 @@ final class FistFlames {
     }
 
     /**
-     * Where a curl has got to, from the fist: it comes off the surface of the fire partway up it and goes a little higher, round in a small spiral, slowing as it goes.
+     * Where a curl has got to, from the fist: it leaves the fire's surface partway up and rises a little in a small spiral, slowing as
+     * it goes.
      *
      * @param age  from 0 to 1 over its life
      * @param seed from 0 to 1, a different one for each

@@ -82,7 +82,7 @@ public final class TraitService {
      */
     public static List<Trait> rollBirthTraits(ServerPlayer player) {
         boolean severed = MaliceService.isSevered(player);
-        // With Postgres storage on, a first join's unique traits were rolled before they came in, and the database has said yes (DESIGN §3.33).
+        // With Postgres storage, a first join's unique traits were rolled and approved by the database before they arrived (DESIGN §3.33).
         KegareDatabase database = KegareDatabase.current();
         boolean preRolled = database != null && database.preRolledBirth(player.getUUID());
         UniqueTraitSavedData saved = UniqueTraitSavedData.get(player.server);
@@ -140,7 +140,8 @@ public final class TraitService {
         }
         for (ResourceLocation id : saved.heldBy(uuid)) {
             if (data.has(id)) continue;
-            // On a network the record is the truth: they inherited it while hopping between servers. Unborn, it's their first join's, and birth will grant it.
+            // On a network the record is the truth: they inherited it while on another server. If unborn, it's their first
+            // join's pre-roll and birth will grant it.
             Trait trait = KegareRegistries.TRAIT.get(id);
             if (saved.isNetworked() && trait != null) {
                 if (MaliceService.get(player).isBorn() && add(player, trait, Trait.AddReason.INHERITED) != AddResult.ADDED) saved.release(id, uuid);

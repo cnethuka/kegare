@@ -40,8 +40,8 @@ final class DbCommands {
     }
 
     /**
-     * What comes back from a job that's still running when the command returns. A player sees it, and it always goes in the server's log: that's the console's own
-     * output, and all RCON has, as RCON only hears what a command says before it returns.
+     * The result of a job still running when the command returned. A player sees it, and it always goes to the server log: that
+     * is the console's output, and all RCON gets, since RCON only hears what a command says before it returns.
      */
     private static void report(CommandSourceStack source, String key, Object... args) {
         Component message = Component.translatable(key, args);

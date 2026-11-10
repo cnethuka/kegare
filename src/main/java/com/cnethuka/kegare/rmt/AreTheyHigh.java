@@ -51,7 +51,7 @@ public final class AreTheyHigh {
     private AreTheyHigh() {}
 
     static void init() {
-        // Lowest, and never for a cancelled message: only what was really said, and nothing here touches it.
+        // Lowest priority, and cancelled messages are skipped: only what was really said is read, and never changed.
         NeoForge.EVENT_BUS.addListener(EventPriority.LOWEST, (ServerChatEvent e) -> {
             ServerPlayer player = e.getPlayer();
             String text = e.getRawText();

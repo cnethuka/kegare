@@ -123,7 +123,7 @@ public final class SightRender {
         float size = (float) (drawn * MARKER_SIZE) * (pinned ? 1.25f : 1f);
         if (pulse && (SightClient.now() / 75) % 2 == 0) rgb = 0xFFFFFF;
         Matrix4f m = pose.last().pose();
-        quad(out, m, at, right, up, size, size, 2 * FRAME, 3 * FRAME, MARKER_DARK, alpha); // (in this order: the three sit in one plane, and sorting keeps it)
+        quad(out, m, at, right, up, size, size, 2 * FRAME, 3 * FRAME, MARKER_DARK, alpha); // in this order: the three share one plane, and sorting keeps it
         quad(out, m, at, right, up, size, size, FRAME, 2 * FRAME, severed ? MARKER_PALE : MARKER_DARK, alpha);
         quad(out, m, at, right, up, size, size, 0f, FRAME, rgb, alpha);
     }

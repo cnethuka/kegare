@@ -14,9 +14,9 @@ import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.entity.LivingEntity;
 
 /**
- * Exchange (INSTANT): you give the target (a player or a mob) your worst negative effect and take their strongest positive one, each with
- * its duration and amplifier. Either half may be missing; with nothing to swap at all it fizzles for free. Effects
- * with infinite duration never move. Special: Momentum Exchange.
+ * Exchange (INSTANT): give the target (player or mob) your worst negative effect and take their strongest positive one,
+ * each keeping its duration and amplifier. Either half may be missing; with nothing to swap at all it fizzles for free.
+ * Infinite effects never move. Special: Momentum Exchange.
  */
 public final class ExchangeAbility extends SwapAbility {
     private static final AbilityVisuals VISUALS = AbilityVisuals.builder().cast(SwapIds.ANIM_EXCHANGE_CAST, null).build();

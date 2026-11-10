@@ -78,7 +78,7 @@ public final class SightHud {
             Vec3 at = s.position(now);
             int x = Math.round(cx + (float) ((at.x - me.x) / MINIMAP_SCALE)), y = Math.round(cy + (float) ((at.z - me.z) / MINIMAP_SCALE));
             x = Mth.clamp(x, cx - r + 3, cx + r - 3);
-            y = Mth.clamp(y, cy - r + 3, cy + r - 3); // further: held at the edge, the way they are
+            y = Mth.clamp(y, cy - r + 3, cy + r - 3); // players off the map are held at its edge, on their side
             if (s.severed) GuiDraw.sprite(g, SixEyesMapScreen.VOID, x - 3, y - 3, 7, 7);
             else GuiDraw.tinted(g, SixEyesMapScreen.DOT, x - 2, y - 2, 5, 5, SightClient.bright(s.color), 1f);
         }

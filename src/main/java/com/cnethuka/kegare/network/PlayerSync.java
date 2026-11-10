@@ -27,7 +27,7 @@ public final class PlayerSync {
             state.lastEnvironment = environment;
             state.dirty = true;
         }
-        // Combat runs out on its own (no event): the Loadout page shows whether edits are allowed.
+        // Combat expires with no event, so poll it: the Loadout page shows whether edits are allowed.
         boolean inCombat = com.cnethuka.kegare.combat.CombatHelper.isInCombat(player);
         if (inCombat != state.lastInCombat) {
             state.lastInCombat = inCombat;

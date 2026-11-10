@@ -64,9 +64,9 @@ import net.neoforged.neoforge.event.tick.ServerTickEvent;
  * <li>{@code BULLET}: a shulker {@link #SHOT_LEAD} ticks from a bullet.</li>
  * </ul>
  * The reads go by what the AI is made of, not by species, so a modded mob built on those goals or that memory reads the same. A hostile mob
- * with AI there's nothing to read in (a modded mob's own, and vanilla's slimes, phantoms and vexes) falls back on what any mob
- * shows: {@code LOCK} as it locks onto a target, {@code LOOSE} while it uses an item, and {@code SWING} when its target comes into reach,
- * again {@link #GUESS_REST} ticks after a hit. That's a guess at when, not a reading: a ranged attack with no item shows only the lock.
+ * whose AI has nothing to read (a modded mob's own AI; vanilla's slimes, phantoms and vexes) falls back on what any mob shows:
+ * {@code LOCK} as it locks onto a target, {@code LOOSE} while it uses an item, and {@code SWING} when its target comes into reach, again
+ * {@link #GUESS_REST} ticks after a hit. That guesses the timing rather than reading it: a ranged attack with no item shows only the lock.
  */
 public final class MobIntent {
     public static final double RANGE = 64.0;
@@ -102,7 +102,7 @@ public final class MobIntent {
         }
     }
 
-    /** One mob: what it's about to do now, against last tick; whatever began pulses. */
+    /** Compares what one mob is about to do with last tick; whatever just began pulses. */
     static void check(ServerLevel level, LivingEntity mob) {
         Last last = LAST.get(mob);
         LivingEntity target = mob instanceof Mob m ? m.getTarget() : null;
@@ -119,7 +119,7 @@ public final class MobIntent {
         }
     }
 
-    /** Which kinds of intent show on this mob right now, as bits (1 << kind). */
+    /** Which kinds of intent show on this mob, as bits (1 << kind). */
     private static int flags(ServerLevel level, LivingEntity mob, @Nullable LivingEntity target, double gap, double closing) {
         int f = 0;
         if (mob instanceof Enemy && !(mob instanceof Drowned) && mob.isUsingItem()) f |= bit(SightPayloads.Pulse.LOOSE); // (a drowned holds its trident up all fight)
@@ -172,15 +172,14 @@ public final class MobIntent {
     }
 
     /**
-     * The melee goal's timer. A goal that gives up when its path is done is about to stop and start again, and starting zeroes the timer, so
-     * that mob swings at once however long it had left. (Read from the path: asking the goal itself can change things, a spider's lets go in
-     * the light.)
+     * The melee goal's timer. A goal that gives up when its path is done is about to restart, which zeroes the timer, so that mob swings at
+     * once whatever it had left. This reads the path, not the goal: asking the goal can change it (a spider's lets go in the light).
      */
     private static int ticksUntilSwing(Mob mob, MeleeAttackGoalAccessor melee) {
         return !melee.kegare$followsUnseen() && mob.getNavigation().isDone() ? 0 : melee.kegare$ticksUntilNextAttack();
     }
 
-    /** What's left with AI there's nothing to read in: it's locked on, and its target is coming into reach. */
+    /** The fallback for AI with nothing to read: it's locked on, and its target is coming into reach. */
     private static int guess(Mob mob, LivingEntity target, double gap, double closing) {
         int f = bit(SightPayloads.Pulse.LOCK);
         boolean justHit = mob.getLastHurtMob() == target && mob.tickCount - mob.getLastHurtMobTimestamp() < GUESS_REST;

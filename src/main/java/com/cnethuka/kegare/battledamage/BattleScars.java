@@ -30,14 +30,13 @@ import net.neoforged.neoforge.common.NeoForge;
 import net.neoforged.neoforge.event.tick.LevelTickEvent;
 
 /**
- * RESTORING mode's promise (DESIGN §3.24): every block battle damage broke comes back, piece by piece, once the fight has moved on.
- * Saved with the dimension ({@code data/kegare_battle_scars.dat}), so a restart doesn't lose a single block. A scar is one hit's
- * blocks; it waits until no battle damage has happened within {@code quietRadius} of it for {@code delay}, then rebuilds one block
- * every {@code interval} ticks: solid blocks first, lowest first, so what hangs on them has something to hang on. A block comes back
- * only where its space is empty again (never over something a player put there since: a container that can't come back drops what
- * was in it, so nothing is lost), with its block entity's contents. A block with someone standing in it or right beside it waits for
- * them to move, and the rest of the scar comes back round them. Scars made in RESTORING mode rebuild even if the mode is changed
- * afterwards: they were promised.
+ * RESTORING mode (DESIGN §3.24): every block battle damage broke comes back, piece by piece, once the fight has moved on. Saved with
+ * the dimension ({@code data/kegare_battle_scars.dat}), so a restart loses nothing. A scar is one hit's blocks; once no battle damage
+ * has happened within {@code quietRadius} of it for {@code delay}, it rebuilds one block every {@code interval} ticks: solid blocks
+ * first, lowest first, so what hangs on them has something to hang on. A block comes back, with its block entity's contents, only
+ * where its space is empty again: never over something placed since (a container that can't come back drops what it held, so
+ * nothing is lost). A block with someone in it or right beside it waits for them to move while the rest of the scar comes back round
+ * them. Scars made in RESTORING mode still rebuild if the mode changes later: they were promised.
  */
 public final class BattleScars extends SavedData {
     private static final String NAME = "kegare_battle_scars";

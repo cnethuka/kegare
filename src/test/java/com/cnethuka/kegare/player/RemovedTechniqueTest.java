@@ -30,13 +30,13 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 
 /**
- * Old saves after the test techniques went (DESIGN §3.3): a real player file, written by the build that still had them, holding
+ * A save holding a removed technique (DESIGN §3.3): a real player file, written by a build that still had the test techniques, holding
  * {@code test_apex} with its loadout, cooldowns, Refinement and Assessment history. It loads, and on login the player gets a free reroll
  * through the normal pipeline; nothing else of theirs changes.
  */
 @ExtendWith(EphemeralTestServerProvider.class)
 public class RemovedTechniqueTest {
-    /** Written by the old build: Gamma holding [Test] Apex (Legendary), Refinement 3, one Assessment, [Test] Aura cooling down. */
+    /** Gamma holding [Test] Apex (Legendary), Refinement 3, one Assessment, [Test] Aura cooling down. */
     public static final Path OLD_SAVE = Path.of(System.getProperty("kegare.projectDir", ".")).resolve("src/test/resources/oldsave/test_apex_player.dat");
     /** What a reroll changes, as any reroll does: the technique, its loadout, Refinement's level (Peak stays) and what was tied to the technique. */
     public static final Set<String> A_REROLL_CHANGES = Set.of("kegare:innate_technique", "kegare:loadout", "kegare:refinement", "kegare:unlocks");

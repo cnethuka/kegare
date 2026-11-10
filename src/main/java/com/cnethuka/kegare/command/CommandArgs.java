@@ -200,8 +200,8 @@ final class CommandArgs {
     }
 
     /**
-     * A tier's name, in the colors the Sorcerer screen and the reveal give it. GuiDraw's colors are compile-time constants,
-     * so they're copied in here and a dedicated server never loads that client class.
+     * A tier's name, in the colors the Sorcerer screen and the reveal give it. GuiDraw's colors are compile-time constants, so
+     * the compiler inlines them and a dedicated server never loads that client class.
      */
     static Component tierName(MaliceTier tier) {
         int color = switch (tier) {

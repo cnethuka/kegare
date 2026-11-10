@@ -19,7 +19,7 @@ import java.util.Map;
 import net.minecraft.resources.ResourceLocation;
 import org.junit.jupiter.api.Test;
 
-/** The shipped player_animations/melee.json (written by tools/anims/melee.py), read by Player Animation Library's own loader. */
+/** The shipped player_animations/melee.json, read by Player Animation Library's own loader. */
 class MeleeAnimationsTest {
     private static final List<ResourceLocation> PLAYED = List.of(MeleeIds.ANIM_DASH_FORWARD, MeleeIds.ANIM_DASH_BACK, MeleeIds.ANIM_DASH_LEFT,
             MeleeIds.ANIM_DASH_RIGHT, MeleeIds.ANIM_PARRY_GUARD, MeleeIds.ANIM_PARRY_PERFECT, MeleeIds.ANIM_PARRY_RECOVERY, MeleeIds.ANIM_STAGGER,
@@ -58,7 +58,7 @@ class MeleeAnimationsTest {
         }
     }
 
-    /** They're what keeps vanilla's hands in first person: one left off this list would put a held sword back in the camera. */
+    /** The list keeps vanilla's hands in first person: an animation left off it would put a held sword back in the camera. */
     @Test
     void theListOfAnimationsHasThemAll() throws IllegalAccessException {
         for (java.lang.reflect.Field field : com.cnethuka.kegare.melee.MeleeIds.class.getFields()) {

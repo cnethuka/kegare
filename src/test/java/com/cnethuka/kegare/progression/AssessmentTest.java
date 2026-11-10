@@ -182,7 +182,7 @@ class AssessmentTest {
             double grade1 = AssessmentService.requirement(Grade.GRADE_1).technique();
             double special = AssessmentService.requirement(Grade.SPECIAL_GRADE).technique();
             assertTrue(grade2 < grade1 && grade1 < special, grade2 + " < " + grade1 + " < " + special);
-            // With every other part at full marks and a stronger opponent, a 90 average still takes Technique use 80: under that, this gate would never be what stops anyone.
+            // At full marks elsewhere against a stronger opponent, a 90 average already needs Technique use 80: a lower gate would never stop anyone.
             assertTrue(special > 80, "it has to ask for more than a 90 average already does");
             assertTrue(grade2 > 12.4, "more than one move repeated can ever score");
         });
@@ -196,7 +196,7 @@ class AssessmentTest {
             RefinementService.setLevel(p, 10);
             GradeService.set(p, Grade.SEMI_GRADE_2);
             GradeService.addXp(p, 1000);
-            // A 60 average beats Grade 2's 50, on Technique use a one-move fight really gets.
+            // A 60 average beats Grade 2's 50, with the Technique use (5) a one-move fight really gets.
             for (int i = 0; i < 5; i++) AssessmentService.addFight(p, 60, 5, opponent(i % 2 == 0 ? "one" : "two"));
             assertEquals(Grade.SEMI_GRADE_2, Progression.getGrade(p), "everything is met but the Technique use");
             for (int i = 0; i < 5; i++) AssessmentService.addFight(p, 60, 45, opponent(i % 2 == 0 ? "one" : "two"));
@@ -219,7 +219,7 @@ class AssessmentTest {
             AssessmentRules.Entry entry = AssessmentService.recent(a, 1).get(0);
             assertEquals(assessed.technique(), entry.technique(), EPS);
 
-            // A saved fight keeps it, and one saved before it existed reads as none.
+            // A saved fight keeps it; one saved without the field reads as 0.
             var saved = AssessmentData.CODEC.encodeStart(net.minecraft.nbt.NbtOps.INSTANCE, AssessmentService.get(a)).getOrThrow();
             AssessmentData loaded = AssessmentData.CODEC.parse(net.minecraft.nbt.NbtOps.INSTANCE, saved).getOrThrow();
             assertEquals(assessed.technique(), loaded.history().get(0).technique(), EPS);
@@ -347,7 +347,7 @@ class AssessmentTest {
         });
     }
 
-    /** Fresh players are scored as they always were: at their peak, the kit is what they have, level by level. */
+    /** At their Peak (never rerolled), the scoring kit is exactly what they have unlocked, level by level. */
     @Test
     void someoneAtTheirPeakScoresExactlyAsBefore(MinecraftServer server) throws Exception {
         TestServer.onServerThread(server, () -> {
@@ -401,7 +401,7 @@ class AssessmentTest {
         });
     }
 
-    /** With the requirement off everything is unlocked, as it always was: nothing to rebuild, so nothing changes. */
+    /** With the requirement off everything is unlocked, so the kit is the whole technique: nothing to rebuild. */
     @Test
     void withGatingOffTheWholeTechniqueIsTheKit(MinecraftServer server) throws Exception {
         TestServer.onServerThread(server, () -> {

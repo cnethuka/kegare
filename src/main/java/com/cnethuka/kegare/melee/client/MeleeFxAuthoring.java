@@ -161,10 +161,10 @@ public final class MeleeFxAuthoring {
     }
 
     /**
-     * A perfect parry, riding the defender's look: a crescent thrown off the guard, with a crack of sparks. The crescent is a
-     * Blockbench model ({@code art/blockbench/parry_arc.bbmodel}). Tried against Photon's stock SLASH sprite and it looked better: it
-     * holds its shape in the world (a crescent from the front, a thin curve from the side), and takes the gold cleanly. The sprite
-     * turned to face every camera, kept its own blue edge, and whited out the defender's view.
+     * A perfect parry, riding the defender's look: a crescent thrown off the guard, with a crack of sparks. The crescent is a model
+     * ({@code art/blockbench/parry_arc.bbmodel}), not Photon's stock SLASH sprite: it holds its shape in the world (a crescent from the
+     * front, a thin curve from the side) and takes the gold cleanly, where the sprite turns to face every camera, keeps its own blue
+     * edge and whites out the defender's view.
      */
     private static FX parrySpark() {
         ParticleEmitter arc = single("arc", 5, 0.95f);

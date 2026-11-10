@@ -13,9 +13,9 @@ import net.minecraft.world.entity.HumanoidArm;
 import org.joml.Vector3f;
 
 /**
- * The tell on a player's fists (a ready Strike on the attacking one, Reinforced Fists on both), drawn from the arm as the model has it, so it follows every animation. It draws nothing of an
- * item layer: it only extends that class because Player Animation Library's first-person pass, which shows your own arms during an
- * animation, draws no other layers on you but items and armor, and a ready fist has to show there too.
+ * The tell on a player's fists (a ready Strike on the attacking one, Reinforced Fists on both), drawn from the arm as the model has it,
+ * so it follows every animation. It draws no items: it extends the item layer only because Player Animation Library's first-person pass
+ * (your own arms during an animation) draws no layers on you but items and armor, and a ready fist has to show there too.
  */
 final class FistTellLayer extends PlayerItemInHandLayer<AbstractClientPlayer, PlayerModel<AbstractClientPlayer>> {
     private final boolean slim;

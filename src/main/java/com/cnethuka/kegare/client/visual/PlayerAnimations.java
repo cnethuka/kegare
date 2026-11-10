@@ -27,7 +27,7 @@ import net.minecraft.resources.ResourceLocation;
  * {@code assets/<namespace>/player_animations/*.json} (Blockbench/GeckoLib format); an animation's ID is the
  * namespace plus the animation's name inside the file. A missing animation logs a warning once and is skipped.
  * <p>
- * <b>Fades live here, not in the files</b>, because a Blockbench export can't carry them: every animation blends in from
+ * <b>Fades live here, not in the files</b>, because the file format can't carry them: every animation blends in from
  * whatever the player was doing and back out to it, through PAL's fade modifiers. Client config {@code visuals.animationFades}
  * turns them off. A channel an animation doesn't key keeps the vanilla pose either way.
  */
@@ -88,9 +88,8 @@ public final class PlayerAnimations {
     }
 
     /**
-     * Holding anything in either hand, every animation on this layer leaves your own first-person hands to vanilla, for the same
-     * reason as {@link #keepVanillaHands}: the first-person model would draw the sword, axe or shield at its real size right by
-     * the camera, edge on and dark. Only an empty-handed cast shows its gesture in your own first person.
+     * Holding anything in either hand, every animation on this layer leaves your own first-person hands to vanilla, for the reason
+     * in {@link #keepVanillaHands}. Only an empty-handed cast shows its gesture in your own first person.
      */
     private static boolean holdsSomething(AbstractClientPlayer player) {
         return !player.getMainHandItem().isEmpty() || !player.getOffhandItem().isEmpty();

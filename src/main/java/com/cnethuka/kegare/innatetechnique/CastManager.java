@@ -196,7 +196,6 @@ public final class CastManager {
         PlayerSync.markDirty(player);
     }
 
-    /** Pays for a cast, and tells the shared hit path what it cost. */
     /** Changes what an active toggle's upkeep drains each second (Sustained Flow, DESIGN §3.31). Never a start cost, never a channel. */
     @FunctionalInterface
     public interface ToggleUpkeepModifier {
@@ -230,7 +229,7 @@ public final class CastManager {
         return true;
     }
 
-    /** What was paid for counts at its full price: spending less to do the same never makes a cast weaker. */
+    /** Tells the shared hit path what a cast cost. What was paid for counts at its full price: spending less to do the same never makes a cast weaker. */
     private static void paid(ServerPlayer player, Ability ability, double amount) {
         Landings.spent(player, ability, amount);
         com.cnethuka.kegare.impact.CastMalice.paid(player, ability, amount); // the Impact System's Malice input (DESIGN §3.23)

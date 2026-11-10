@@ -66,7 +66,7 @@ public final class FistTell {
     private static final float WISP_SIZE_SELF = 0.11f;
     private static final float WISP_SIZE_GRIP = 0.09f;
     private static final float WISP_SCALE_SELF = 0.42f;
-    /** And in close: there's no arm in the way of them here, and they'd look like separate fires out to the side. */
+    /** Pulled in close: with no arm in the way, wider curls would look like separate fires out to the side. */
     private static final float WISP_IN_SELF = 0.25f;
     /** In first person with something in hand: from where a bare fist would be to where vanilla puts the grip, in view space. */
     private static final float GRIP_ACROSS = 0.12f;
@@ -238,8 +238,8 @@ public final class FistTell {
 
     /**
      * Where a point in vanilla's first-person hand pass is, from the camera along the world's axes, which is what {@link #reportFist} wants.
-     * The hand pass starts its pose with the camera's own rotation, so what comes out is already turned the world's way. Turning it again
-     * put your own curls off to one side or behind you whenever you weren't facing north.
+     * The hand pass starts its pose with the camera's own rotation, so what comes out is already turned the world's way. Don't turn it
+     * again: that puts your own curls off to one side or behind you unless you face north.
      */
     static Vector3f handPassPoint(PoseStack.Pose pose, float x, float y, float z) {
         return pose.pose().transformPosition(x, y, z, new Vector3f());

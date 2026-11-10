@@ -65,8 +65,8 @@ public record SparkWindow(double malice, double opponent, double body, double we
     }
 
     /**
-     * Temperature and humidity where you stand: the further the biome's temperature from mild, the more rain it gets, and rain or a storm
-     * there now, the narrower. Canon names these, not which way they push: the direction is an assumption, and every nudge is small.
+     * Temperature and humidity where you stand: the further the biome's temperature is from mild, the wetter the biome, and any rain or
+     * storm there, the narrower. Canon names these, not which way they push: the direction is an assumption, and every nudge is small.
      */
     static double weather(Level level, BlockPos at) {
         Biome biome = level.getBiome(at).value();
@@ -74,7 +74,7 @@ public record SparkWindow(double malice, double opponent, double body, double we
         return weather(biome.getBaseTemperature(), biome.getModifiedClimateSettings().downfall(), rain, rain && level.isThundering());
     }
 
-    /** The same, from the numbers: the biome's temperature and rainfall, and rain or a storm there now. */
+    /** The same, from the raw numbers: the biome's temperature and rainfall, and whether it's raining or storming there. */
     static double weather(double temperature, double downfall, boolean raining, boolean thundering) {
         double away = Math.min(1.0, Math.abs(temperature - FistsConfig.MILD_TEMPERATURE.get()));
         double out = (1.0 - FistsConfig.TEMPERATURE_WEIGHT.get() * away) * (1.0 - FistsConfig.HUMIDITY_WEIGHT.get() * Mth.clamp(downfall, 0, 1));

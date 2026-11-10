@@ -61,7 +61,7 @@ public final class SwapTracker {
         IDENTITY_CRISIS.put(caster.getUUID(), caster.serverLevel().getGameTime());
     }
 
-    /** Every server tick: whoever made it 30 seconds since earns Identity Crisis. */
+    /** Every server tick: whoever is still alive 30 s after the cast earns Identity Crisis. */
     static void tick(MinecraftServer server) {
         if (IDENTITY_CRISIS.isEmpty()) return;
         long now = server.overworld().getGameTime();

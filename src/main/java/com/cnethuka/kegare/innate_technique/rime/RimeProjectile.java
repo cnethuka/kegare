@@ -90,9 +90,9 @@ public abstract class RimeProjectile extends ThrowableItemProjectile {
     }
 
     /**
-     * What clients see where it ends: on whatever it hit, or ({@code hit} null) where it melted away. Names this projectile, so a client
-     * can read its heading and kind (Frost Shard's and Splinter's solid chips), and sits where its path met a living target, not at the
-     * target's feet (where the hit reports it).
+     * The effect where it ends: on whatever it hit, or ({@code hit} null) where it melted. It names this projectile, so a client can read
+     * its heading and kind (Frost Shard's and Splinter's solid chips), and sits where the path met a living target rather than at the
+     * target's feet, where the hit reports it.
      */
     protected void impactVisual(Vec3 at, @Nullable HitResult hit) {
         Vec3 where = hit instanceof EntityHitResult e ? struck(e.getEntity()) : at;

@@ -5,8 +5,8 @@ import java.util.List;
 import net.minecraft.resources.ResourceLocation;
 
 /**
- * Time Manipulation's IDs: player animations ({@code assets/kegare/player_animations/time_manipulation.json}, from
- * {@code tools/anims/time_manipulation.py}) and the effects the client draws itself ({@code TimeFx}; no Photon files).
+ * Time Manipulation's IDs: player animations ({@code assets/kegare/player_animations/time_manipulation.json}) and the effects the
+ * client draws itself ({@code TimeFx}; no Photon files).
  */
 public final class TimeIds {
     public static final ResourceLocation ANIM_POINT_MAKER_MARK = Kegare.id("point_maker_mark");
@@ -18,7 +18,7 @@ public final class TimeIds {
     public static final ResourceLocation ANIM_STASIS_FIELD_CAST = Kegare.id("stasis_field_cast");
     public static final ResourceLocation ANIM_STANDSTILL_CAST = Kegare.id("standstill_cast");
 
-    /** Every one of them. */
+    /** All of the animations above. */
     public static final List<ResourceLocation> ANIMATIONS = List.of(ANIM_POINT_MAKER_MARK, ANIM_POINT_MAKER_RETURN, ANIM_REWIND_CAST,
             ANIM_ACCELERATE_TOGGLE, ANIM_FAST_FORWARD_CAST, ANIM_DECELERATE_CAST, ANIM_STASIS_FIELD_CAST, ANIM_STANDSTILL_CAST);
     /**

@@ -42,7 +42,7 @@ import net.neoforged.neoforge.client.event.EntityRenderersEvent;
 
 /**
  * Freeze on a player, for everyone who can see them: frost creeping over the body as the stacks build, pixel art on the skin's own
- * texels ({@code textures/entity/freeze_frost*.png}, tools/blockbench/build_freeze_frost.py), so the body looks frozen itself.
+ * texels ({@code textures/entity/freeze_frost*.png}), so the body looks frozen itself.
  * <ul>
  * <li>How much: the server shows the stacks as a loop keyed by how many (FreezeService, {@link RimeIds#freezeStackKey}), so this
  * covers the stacks out of the most: up from the soles and the hands, the legs and arms, then the body, the head last. It creeps
@@ -66,7 +66,7 @@ public final class FreezeClient {
     static final float GROW = 0.025f, MELT = 0.01f, FREEZE = 0.1f;
     /** Texels this close behind the creeping edge are rime. */
     static final float RIM = 0.05f;
-    /** Rime on the creeping edge, and the glaze of ice in the art (block marks' RIME and ICE). */
+    /** Rime on the creeping edge, and the glaze of ice in the art (the block marks' rime and ice colours). */
     static final int RIME = argb(230, 230, 244, 255), GLAZE = argb(150, 112, 172, 234);
     /** Frozen solid, the glaze thickens to solid pale ice: plainly more than the most frost. */
     static final int SOLID = argb(215, 170, 214, 250);

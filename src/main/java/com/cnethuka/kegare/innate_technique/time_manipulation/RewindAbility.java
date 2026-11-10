@@ -18,10 +18,11 @@ import net.minecraft.world.phys.Vec3;
 import net.neoforged.neoforge.common.NeoForge;
 
 /**
- * Rewind (special of Point Maker, INSTANT): the player or mob you're looking at is snapped back to where it was {@code seconds} ago,
- * position only (its health, effects and facing stay as they are now), nudged out of blocks, its fall reset. Fizzles for free with no
- * unbroken record of where it was (it changed dimension, or a mob wasn't near a Time Manipulation holder that long), when it's within
- * {@link #ALREADY_THERE} of where it was then (nothing would visibly happen), and on a boss (DESIGN §4). Fires {@link TimeTargetEvent} first: cancelled, it fizzles keeping its Malice spent.
+ * Rewind (special of Point Maker, INSTANT): snaps the player or mob you're looking at back to where it was {@code seconds} ago.
+ * Position only (health, effects and facing stay as they are now), nudged out of blocks, fall reset. Fizzles for free with no unbroken
+ * record of where it was (it changed dimension, or a mob wasn't near a Time Manipulation holder that long), within
+ * {@link #ALREADY_THERE} of where it was then (nothing would visibly happen), and on a boss (DESIGN §4). Fires {@link TimeTargetEvent}
+ * first; if cancelled it fizzles and the Malice stays spent.
  */
 public final class RewindAbility extends TimeAbility.Special {
     private static final AbilityVisuals VISUALS = AbilityVisuals.builder().cast(TimeIds.ANIM_REWIND_CAST, null).build();
@@ -93,10 +94,10 @@ public final class RewindAbility extends TimeAbility.Special {
         target.setDeltaMovement(Vec3.ZERO);
         target.hurtMarked = true;
         target.resetFallDistance();
-        TimeStops.moved(target); // held in a Standstill: held here now
+        TimeStops.moved(target); // if held in a Standstill, it's held here now
         TimeManipulation.sound(target, KegareSounds.TIME_REVERSE_TICK, 1f, 0.85f);
         TimeManipulation.fx(target, TimeManipulation.fx(TimeNet.Fx.Kind.REWIND, target.getId(), path, 0f, 0));
-        Landings.land(caster, target, this); // no damage: this is where it lands
+        Landings.land(caster, target, this); // no damage, so the landing is counted here
         Impacts.hit(caster, target, ImpactKind.TECHNIQUE, 0, 0, 0, false);
         if (target instanceof ServerPlayer && ran >= TimeAdvancements.NOT_SO_FAST_BLOCKS) TimeAdvancements.award(caster, TimeAdvancements.NOT_SO_FAST);
     }

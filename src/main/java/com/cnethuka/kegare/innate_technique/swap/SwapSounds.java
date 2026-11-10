@@ -9,11 +9,11 @@ import net.minecraft.world.entity.Entity;
 import net.minecraft.world.phys.Vec3;
 
 /**
- * Swap's claps (DESIGN §3.19, made in {@code tools/sounds/swap.py}). Every swap claps, heard at both ends of it, so whoever lands
- * where it happened hears it close: each move has its own clap or pitch, so the moves tell apart by ear too.
+ * Swap's claps (DESIGN §3.19). Every swap claps at both of its ends, so whoever is at either end hears it close; each move
+ * has its own clap or pitch, so the moves can be told apart by ear.
  */
 public final class SwapSounds {
-    /** A sound and the pitch it's played at. */
+    /** A sound and the volume and pitch it's played at. */
     public record Clap(Holder<SoundEvent> sound, float volume, float pitch) {
         public void at(ServerLevel level, Vec3 pos) {
             level.playSound(null, pos.x, pos.y, pos.z, sound, SoundSource.PLAYERS, volume, pitch);
@@ -24,7 +24,7 @@ public final class SwapSounds {
         }
     }
 
-    /** Positions, and the recall to an anchor. */
+    /** Positions. */
     public static final Clap POSITIONS = new Clap(KegareSounds.SWAP_CLAP, 1f, 1f);
     /** Switchback's cast: two claps, a beat apart. */
     public static final Clap SWITCHBACK = new Clap(KegareSounds.SWAP_DOUBLE_CLAP, 1f, 1f);

@@ -54,7 +54,7 @@ public final class DisguiseClient {
         return entry.as();
     }
 
-    /** The tab-list entry of who this player looks like, or null. The Six Eyes know people by their energy, so a bearer's list keeps the real name. */
+    /** The tab-list entry of who this player looks like, or null. A Six Eyes bearer's list keeps the real name: they know people by their energy. */
     @Nullable
     public static PlayerInfo shownInfo(UUID player) {
         UUID as = SightClient.isBearer() ? null : shownAs(player);
@@ -88,7 +88,7 @@ public final class DisguiseClient {
 
     private static void onNameTag(RenderNameTagEvent event) {
         if (!(event.getEntity() instanceof Player player)) return;
-        // The face stays, but the Six Eyes know people by their energy: a bearer reads the real name over it (DESIGN §3.32).
+        // The face stays, but a Six Eyes bearer knows people by their energy and reads the real name over it (DESIGN §3.32).
         UUID as = SightClient.isBearer() ? null : shownAs(player.getUUID());
         if (as != null) event.setContent(nameOf(as));
     }
@@ -113,7 +113,7 @@ public final class DisguiseClient {
         int hand = Inventory.isHotbarSlot(inv.selected) ? inv.selected : 0;
         LENT.put(player.getId(), new ItemStack[] {inv.armor.get(0), inv.armor.get(1), inv.armor.get(2), inv.armor.get(3),
                 inv.items.get(hand), inv.offhand.get(0)});
-        // The face's visible gear (nothing, if this client can't see them: better bare than the wearer's own).
+        // The face's visible gear, or nothing if this client can't see the face (better bare than the wearer's own).
         for (int i = 0; i < 4; i++) inv.armor.set(i, face != null ? face.getInventory().armor.get(i) : ItemStack.EMPTY);
         inv.items.set(hand, face != null ? face.getMainHandItem() : ItemStack.EMPTY);
         inv.offhand.set(0, face != null ? face.getOffhandItem() : ItemStack.EMPTY);

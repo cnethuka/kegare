@@ -5,8 +5,8 @@ import net.neoforged.neoforge.common.NeoForge;
 import net.neoforged.neoforge.common.util.TriState;
 
 /**
- * While a body is being drawn again somewhere it isn't (an afterimage, a Severed player's sensed outline), its name tag isn't: a copy
- * of a body has no name, and a name drawn into a copy came out as a grey box over it. Wrap the drawing in {@link #draw}.
+ * Hides name tags while a body is drawn again where it isn't (an afterimage, a Severed player's sensed outline): a copy
+ * has no name, and a name drawn into one shows as a grey box. Wrap the drawing in {@link #draw}.
  */
 public final class BodyCopies {
     private static int drawing;

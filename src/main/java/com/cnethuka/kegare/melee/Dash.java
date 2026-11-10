@@ -14,9 +14,8 @@ import net.neoforged.neoforge.network.PacketDistributor;
 /**
  * Kinetic Manipulation: a short burst the way you're moving. The server decides if it happens, which way and how far (never past
  * a wall, measured here), then tells the owner's client once, and that drives it ({@code client/DashDrive}). The game's own movement
- * collision stops it, so it can't go through anything. Pushing velocity from here each tick was tried first and isn't good
- * enough for this: two pushes landing in one client tick lose one, and a dash came out anywhere from 3 to 5 blocks.
- * There's no invulnerability: you have to actually get out of the way.
+ * collision stops it, so it can't go through anything. The server doesn't push velocity each tick: two pushes landing in one
+ * client tick lose one, so a dash would come out anywhere from 3 to 5 blocks. No invulnerability: you have to actually get out of the way.
  */
 public final class Dash {
     /** Less room than this ahead isn't a dash, it's a bump: refused, and nothing is paid. */

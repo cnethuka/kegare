@@ -5,7 +5,7 @@ import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.phys.Vec3;
 
 /**
- * The hit sound (DESIGN §3.23, tools/sounds/impact.py), at the point of contact, with vanilla's own hurt sound (never instead of it).
+ * The hit sound (DESIGN §3.23, {@code sounds/impact/boom.ogg}), at the point of contact, with vanilla's own hurt sound (never instead of it).
  * A plain hit sounds like vanilla only. Big hits of any kind (Heavy and up) get a deep boom under it, louder and lower as the tier
  * grows. Curio Burst's thump is its own (§3.20).
  */

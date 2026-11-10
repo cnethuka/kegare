@@ -27,16 +27,15 @@ import net.neoforged.neoforge.network.PacketDistributor;
 import net.neoforged.neoforge.network.handling.IPayloadContext;
 
 /**
- * The uncovered edge (DESIGN §3.32): only uncovered, against a top-tier opponent, the bearer sees the spark before a cast. The cast key's
- * sub-tick stamp (§3.29) is handled on the network thread the moment it reaches the server, ahead of the intent itself and of the cast's
- * own tell, and the cue goes out there and then. Covered, or with the edge lost to max Strain, they see the cast when it starts, like
- * everyone. For 1.0.0 "top-tier" is a Special Grade player; {@link #addTopTier} is where the Shrine's bearer, the Director and a Dominion
- * clash come in later.
+ * The uncovered edge (DESIGN §3.32): uncovered and against a top-tier opponent, the bearer sees the spark before a cast. The cast key's
+ * sub-tick stamp (§3.29) is handled on the network thread as it reaches the server, ahead of the intent and of the cast's own tell, and
+ * the cue goes out at once. Covered, or with the edge lost to max Strain, they see the cast when it starts, like everyone. For 1.0.0
+ * "top-tier" means a Special Grade player; the Shrine's bearer, the Director and a Dominion clash are to plug in via {@link #addTopTier}.
  * <p>
- * The network thread can't read a player's state safely, so each server tick leaves a snapshot here: who can read whom.
+ * The network thread can't read a player's state safely, so each server tick leaves a snapshot here of who can read whom.
  */
 public final class Edge {
-    /** Who a bearer can read this way, with where each stands. */
+    /** A bearer and the top-tier players they can read this way. */
     private record Reader(ServerPlayer bearer, Set<UUID> topTier) {}
 
     private static final Map<UUID, Reader> READERS = new ConcurrentHashMap<>();
@@ -54,7 +53,7 @@ public final class Edge {
         });
     }
 
-    /** Who counts as top-tier for a bearer: (bearer, caster). The Shrine's bearer, the Director and a Dominion clash plug in here later. */
+    /** Adds a rule for who counts as top-tier to a bearer: (bearer, caster). */
     public static void addTopTier(BiPredicate<ServerPlayer, ServerPlayer> rule) {
         TOP_TIER.add(rule);
     }
@@ -64,7 +63,7 @@ public final class Edge {
         return false;
     }
 
-    /** Every tick on the server thread: who each bearer could read right now. */
+    /** Every tick on the server thread: who each bearer can read. */
     static void snapshot(MinecraftServer server) {
         Map<UUID, Reader> fresh = new HashMap<>();
         for (ServerPlayer bearer : SixEyes.bearers(server)) {
@@ -81,7 +80,7 @@ public final class Edge {
         READERS.putAll(fresh);
     }
 
-    /** A cast key's stamp just arrived (on the network thread): the cue, there and then. */
+    /** A cast key's stamp just arrived (on the network thread): send the cue at once. */
     static void spark(net.minecraft.world.entity.player.Player caster) {
         for (Reader reader : READERS.values()) {
             if (!reader.topTier().contains(caster.getUUID())) continue;

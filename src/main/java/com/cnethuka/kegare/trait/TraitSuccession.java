@@ -32,7 +32,7 @@ import net.neoforged.neoforge.common.util.FakePlayer;
 public final class TraitSuccession {
     private TraitSuccession() {}
 
-    /** What a pending trait's due time is counted in: game time, or with Postgres storage on wall-clock time in ticks, since game time differs per server. */
+    /** The clock a pending trait's due time uses: game time, or with Postgres storage wall-clock time in ticks, since game time differs per server. */
     public static long now(MinecraftServer server) {
         return UniqueTraitSavedData.get(server).isNetworked() ? System.currentTimeMillis() / 50 : server.overworld().getGameTime();
     }
@@ -100,7 +100,7 @@ public final class TraitSuccession {
     /** Every second: hand each due trait to an eligible online heir, if there is one. */
     public static void tick(MinecraftServer server) {
         UniqueTraitSavedData saved = UniqueTraitSavedData.get(server);
-        if (saved.pendingView().isEmpty() || saved.isNetworked()) return; // (a network's succession runs in NetworkTraits)
+        if (saved.pendingView().isEmpty() || saved.isNetworked()) return; // a network's succession runs in NetworkTraits
         long now = now(server);
         for (Map.Entry<ResourceLocation, UniqueTraitSavedData.Pending> entry : List.copyOf(saved.pendingView().entrySet())) {
             UniqueTraitSavedData.Pending pending = entry.getValue();
@@ -120,7 +120,7 @@ public final class TraitSuccession {
     /** On login: an eligible player receives any trait that is due and still waiting for an heir. */
     public static void onLogin(ServerPlayer player) {
         UniqueTraitSavedData saved = UniqueTraitSavedData.get(player.server);
-        if (saved.isNetworked()) return; // (the next network pass sees them online)
+        if (saved.isNetworked()) return; // the next network pass sees them online
         long now = now(player.server);
         for (Map.Entry<ResourceLocation, UniqueTraitSavedData.Pending> entry : List.copyOf(saved.pendingView().entrySet())) {
             Trait trait = KegareRegistries.TRAIT.get(entry.getKey());
@@ -146,7 +146,7 @@ public final class TraitSuccession {
         return true;
     }
 
-    /** The word that it's passed on: everyone hears, and it names no one (DESIGN §1). */
+    /** Announces to everyone that it has passed on, naming no one (DESIGN §1). */
     private static void broadcast(MinecraftServer server, Trait trait) {
         String broadcast = trait.successionBroadcastKey();
         if (broadcast != null) {
@@ -157,7 +157,7 @@ public final class TraitSuccession {
 
     // ------------------------------------------------------------------ across a network (DESIGN §3.33)
 
-    /** Something happened on the network: this server applies it if the player's here, and passes on the word. */
+    /** A network event: this server applies a grant if the player is here, or relays the broadcast. */
     public static void networkEvent(MinecraftServer server, String kind, ResourceLocation id, @Nullable UUID player) {
         Trait trait = KegareRegistries.TRAIT.get(id);
         if (trait == null) return;
@@ -176,7 +176,7 @@ public final class TraitSuccession {
         if (trait != null && here != null && TraitService.has(here, trait)) TraitService.remove(here, trait, Trait.RemoveReason.CONFLICT);
     }
 
-    /** The record's fresh: a revocation made elsewhere, for someone who's here. */
+    /** The record was refreshed: apply revocations made elsewhere to anyone who is here. */
     public static void networkRefreshed(MinecraftServer server) {
         UniqueTraitSavedData saved = UniqueTraitSavedData.get(server);
         for (UUID player : saved.revokedPlayers()) {

@@ -19,7 +19,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 
 /**
  * RMT's output (DESIGN §3.17): 1 + a Grade bonus + a Peak Refinement bonus, so Grade 4 at Peak 0 heals at 1x and Special Grade at Peak
- * 10 at 1.6x; Peak, so a reroll (which resets Refinement) doesn't lower it; and later systems can change it through the hook.
+ * 10 at 1.6x; Peak, so a reroll (which resets Refinement) doesn't lower it; and other systems can change it through the hook.
  */
 @ExtendWith(EphemeralTestServerProvider.class)
 class RmtOutputTest {

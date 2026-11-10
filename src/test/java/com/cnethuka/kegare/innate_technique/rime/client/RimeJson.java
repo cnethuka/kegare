@@ -7,8 +7,8 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 
 /**
- * The old hand-keyed rime.json: each of Rime's animations moved out of it into its own file from tools/anims (one source for each,
- * or which one plays depends on load order), and once the last one went, so did the file.
+ * {@code player_animations/rime.json}, a hand-keyed file that must stay gone: each Rime animation lives in its own file, one source
+ * for each, or which one plays depends on load order.
  */
 final class RimeJson {
     static final Path PATH = Path.of(System.getProperty("kegare.projectDir", "."),
@@ -16,7 +16,7 @@ final class RimeJson {
 
     private RimeJson() {}
 
-    /** Whether rime.json (if it's still there) carries this animation. */
+    /** Whether rime.json exists and carries this animation. */
     static boolean has(String animation) throws IOException {
         if (!Files.exists(PATH)) return false;
         try (Reader reader = Files.newBufferedReader(PATH)) {

@@ -10,10 +10,10 @@ import net.neoforged.neoforge.registries.DeferredHolder;
 import net.neoforged.neoforge.registries.DeferredRegister;
 
 /**
- * Kegare's own sounds (DESIGN §3.10). Each is made in Python from nothing ({@code tools/sounds/}, no recordings), ships as a mono OGG
- * Vorbis at {@code assets/kegare/sounds/<file>.ogg} so it's heard from where it's played, and has a subtitle. {@code sounds.json}
- * is generated from {@link #ALL} ({@code KegareSoundProvider}); {@code SoundsTest} checks the file, the subtitle and the entry agree.
- * A new sound: its recipe in {@code tools/sounds/}, one line here, its subtitle in {@code KegareLanguageProvider}, then runData.
+ * Kegare's own sounds (DESIGN §3.10). Each ships as a mono OGG Vorbis at {@code assets/kegare/sounds/<file>.ogg} (mono, so
+ * it's heard from where it's played) and has a subtitle. {@code sounds.json} is generated from {@link #ALL}
+ * ({@code KegareSoundProvider}); {@code SoundsTest} checks the file, subtitle and entry agree. A new sound: its .ogg, one line
+ * here, its subtitle in {@code KegareLanguageProvider}, then runData.
  */
 public final class KegareSounds {
     public static final DeferredRegister<SoundEvent> SOUND_EVENTS = DeferredRegister.create(Registries.SOUND_EVENT, Kegare.MODID);

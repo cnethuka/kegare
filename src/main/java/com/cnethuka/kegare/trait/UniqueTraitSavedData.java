@@ -31,8 +31,8 @@ import net.minecraft.world.level.saveddata.SavedData;
  */
 public final class UniqueTraitSavedData extends SavedData {
     /**
-     * With Postgres storage on (DESIGN §3.33) this record is network-wide: it answers from memory and never waits, and tells a backend what changes,
-     * which is what's really in charge. Nothing of it goes in the world then.
+     * With Postgres storage (DESIGN §3.33) this record is network-wide: it answers from memory without waiting and reports
+     * every change to the backend, which is the real authority. Nothing is saved in the world then.
      */
     public interface Backend {
         void claimed(ResourceLocation trait, UUID player, boolean force);
@@ -52,7 +52,7 @@ public final class UniqueTraitSavedData extends SavedData {
      * A trait between bearers.
      *
      * @param killer  the player who caused the loss, if any (KILLER transfer mode)
-     * @param dueTick when it may pass on: overworld game time, or with Postgres storage on wall-clock time in ticks (game time differs per server)
+     * @param dueTick when it may pass on: overworld game time, or with Postgres storage wall-clock time in ticks (game time differs per server)
      */
     public record Pending(UUID previousBearer, Optional<UUID> killer, long dueTick) {}
 
@@ -66,7 +66,7 @@ public final class UniqueTraitSavedData extends SavedData {
     private final Map<UUID, Long> lastSeen = new HashMap<>();
     @Nullable
     private final Backend backend;
-    /** Everyone online across the network, with Postgres storage on. */
+    /** Everyone online across the network (Postgres storage only). */
     private final Set<UUID> networkOnline = new HashSet<>();
 
     public UniqueTraitSavedData() {
@@ -82,12 +82,12 @@ public final class UniqueTraitSavedData extends SavedData {
         return database != null ? database.traitRecord() : inWorld(server);
     }
 
-    /** The world's own copy, whatever the storage is doing: what a migration reads and an export writes. */
+    /** The world's own copy regardless of storage mode: what a migration reads and an export writes. */
     public static UniqueTraitSavedData inWorld(MinecraftServer server) {
         return server.overworld().getDataStorage().computeIfAbsent(FACTORY, NAME);
     }
 
-    /** Is this the network's record, not one world's? */
+    /** Whether this is the network's record rather than one world's. */
     public boolean isNetworked() {
         return backend != null;
     }
@@ -97,7 +97,7 @@ public final class UniqueTraitSavedData extends SavedData {
         return networkOnline.contains(player);
     }
 
-    /** What the network's record holds now. */
+    /** Replaces the contents with the network record's current state (lastSeen is merged, not cleared). */
     public void replaceAll(Map<ResourceLocation, UUID> bearers, Map<ResourceLocation, Pending> pending, Map<UUID, Set<ResourceLocation>> revoked, Map<UUID, Long> lastSeen, Set<UUID> online) {
         this.bearers.clear();
         this.bearers.putAll(bearers);
@@ -110,12 +110,12 @@ public final class UniqueTraitSavedData extends SavedData {
         this.networkOnline.addAll(online);
     }
 
-    /** Whoever's waiting on a revocation, on the network's record. */
+    /** Players with a revocation waiting. */
     public Set<UUID> revokedPlayers() {
         return Set.copyOf(revoked.keySet());
     }
 
-    /** What an import or export needs to read. */
+    /** Read views for import and export. */
     public Map<UUID, Set<ResourceLocation>> revokedView() {
         return Collections.unmodifiableMap(revoked);
     }

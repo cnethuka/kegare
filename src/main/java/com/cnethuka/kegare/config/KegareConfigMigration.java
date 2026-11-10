@@ -11,17 +11,17 @@ import net.neoforged.fml.event.config.ModConfigEvent;
 import net.neoforged.neoforge.common.ModConfigSpec;
 
 /**
- * One-time fixes for a {@code kegare-server.toml} written by an older version. NeoForge keeps every value in an existing file, so a changed
- * default never reaches it: after the Malice rescale, an old file went on saying Vast's base is 250, with every cost a quarter of what it should be.
+ * One-time fixes for a {@code kegare-server.toml} written by an older version. NeoForge keeps every value in an existing file, so a
+ * changed default never reaches it (after the Malice rescale an old file kept Vast's base at 250 and every cost at a quarter).
  * <p>
- * The file's {@code configVersion} says what it has been through. A value still at its old default moves to the new one. A value that's neither
- * was changed by hand, so it stays and the log says so.
+ * The file's {@code configVersion} says which steps it has been through. A value still at its old default moves to the new one; a
+ * value at neither was edited by hand, so it stays and the log says so.
  */
 public final class KegareConfigMigration {
-    /** The version these numbers are for. A file with no {@code configVersion} reads as 1, from before there was one. */
+    /** The version these numbers are for. A file with no {@code configVersion} reads as 1. */
     public static final int CURRENT_VERSION = 6;
 
-    /** Version 2, the Malice rescale: every value it changed, and its default before that. The new value is always the spec's default. */
+    /** Version 2, the Malice rescale: each value it changed, with its old default. The new value is always the spec's default. */
     static final Map<String, Number> RESCALE_OLD_DEFAULTS = Map.ofEntries(
             // Birth tiers.
             entry("malice.tiers.low.weight", 25),
@@ -73,7 +73,7 @@ public final class KegareConfigMigration {
             entry("reverse_malice_technique.upkeepPerSecond", 24.0)
     );
 
-    /** Version 3, Severed melee made stronger than standard: every value it changed, and its default before that. */
+    /** Version 3, Severed melee made stronger than standard: each value it changed, with its old default. */
     static final Map<String, Number> SEVERED_MELEE_OLD_DEFAULTS = Map.ofEntries(
             entry("melee.severed.dashCooldown", 4.0),
             entry("melee.severed.dashDistance", 3.5),
@@ -81,12 +81,12 @@ public final class KegareConfigMigration {
             entry("melee.severed.guardMeleeReduction", 0.3),
             entry("melee.severed.guardMaxSeconds", 2.5),
             entry("melee.severed.recovery", 1.25)
-            // (strikeDamageBonus and strikeKnockback were here too: the Severed Reinforced Strike is gone, and NeoForge drops its keys)
+            // (no strikeDamageBonus or strikeKnockback: those options are removed and NeoForge drops their keys)
     );
 
     /**
-     * Version 4, the Impact System's Malice input (DESIGN §3.23): the weights and tiers re-tuned round it, and battle damage's scale and
-     * slams with them (strengths grew), so what breaks stays as it was.
+     * Version 4, the Impact System's Malice input (DESIGN §3.23): weights and tiers retuned round it, and battle damage's scale and
+     * slams with them (strengths grew) so the same hits break the same blocks.
      */
     static final Map<String, Number> MALICE_INPUT_OLD_DEFAULTS = Map.ofEntries(
             entry("impact.strength.damageWeight", 1.5),
@@ -108,7 +108,7 @@ public final class KegareConfigMigration {
     /** One migration: a file below {@code version} goes through it. */
     record Step(int version, Map<String, Number> oldDefaults, String what) {}
 
-    /** Version 6, efficiency's curve (DESIGN §3.32): a square root's weights, not a logarithm's. Left as they were, RMT would heal at x3.6 where x1.9 is meant. */
+    /** Version 6, efficiency's curve (DESIGN §3.32): square-root weights, not logarithmic. The old values would make RMT heal at x3.6, not x1.9. */
     static final Map<String, Number> EFFICIENCY_CURVE_OLD_DEFAULTS = Map.ofEntries(
             entry("six_eyes.efficiency.attunement", 0.8),
             entry("six_eyes.efficiency.rmtOutputWeight", 0.15));

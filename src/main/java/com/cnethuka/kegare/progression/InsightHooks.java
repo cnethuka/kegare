@@ -6,8 +6,8 @@ import com.cnethuka.kegare.innatetechnique.InnateTechniqueService;
 import net.minecraft.server.level.ServerPlayer;
 
 /**
- * Where Insight comes from. The first two are wired up. The rest are hooks with nothing calling them yet: Standstill,
- * Maximum Output, Dominions and the Book of Knowledge call theirs when they're built.
+ * Where Insight comes from. The Maximum Output, Dominion and Book of Knowledge hooks have no callers yet: those
+ * systems call them once they're built.
  */
 public final class InsightHooks {
     private InsightHooks() {}
@@ -48,7 +48,7 @@ public final class InsightHooks {
         return pay(player, InsightSource.FIRST_BLACK_SPARK, "");
     }
 
-    /** For the future Standstill. */
+    /** Held in a Standstill and still alive when it ends. Once ever. */
     public static boolean survivedStandstill(ServerPlayer player) {
         return pay(player, InsightSource.SURVIVED_STANDSTILL, "");
     }

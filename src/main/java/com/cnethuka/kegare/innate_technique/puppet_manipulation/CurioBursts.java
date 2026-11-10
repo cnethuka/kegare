@@ -27,11 +27,10 @@ import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 
 /**
- * Curio Burst: a puppet detonates. Damage ({@code kegare:curio_burst}: tagged an explosion, and no_knockback so the only
- * push is the blast's own; credited to the owner) and
- * radius grow with its {@link PuppetTier}: full damage at the centre, half at the edge, and a push away from it
- * (bosses are hurt but never pushed). Never hurts the owner or their puppets; breaks no blocks. Chain Burst queues
- * several, one after another.
+ * Curio Burst: a puppet detonates. Damage and radius grow with its {@link PuppetTier}: full damage at the centre, half at
+ * the edge, and a push away from it (bosses are hurt but never pushed). The {@code kegare:curio_burst} damage type is
+ * credited to the owner and tagged as an explosion and no_knockback, so the only push is the blast's own. Never hurts the
+ * owner or their puppets; breaks no blocks. Chain Burst queues several, one after another.
  */
 public final class CurioBursts {
     public static final ResourceKey<DamageType> CURIO_BURST = ResourceKey.create(Registries.DAMAGE_TYPE, Kegare.id("curio_burst"));
@@ -69,7 +68,7 @@ public final class CurioBursts {
         puppet.discard(); // it IS the bomb
 
         VisualService.playAt(level, center, Visual.effect(effect(tier), Visual.Anchor.BODY));
-        // An overwound toy bursting (tools/sounds/puppet_manipulation.py), heard as far as the old bang was; bigger is deeper.
+        // An overwound toy bursting, loud enough to carry like a bang; bigger is deeper.
         level.playSound(null, center.x, center.y, center.z, KegareSounds.PUPPET_CURIO_BURST.value(), SoundSource.PLAYERS,
                 0.6f + 0.25f * tier.ordinal(), 1.1f - 0.1f * tier.ordinal());
         level.playSound(null, center.x, center.y, center.z, SoundEvents.WOOL_BREAK, SoundSource.PLAYERS, 1.0f, 0.8f);

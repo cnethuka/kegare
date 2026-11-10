@@ -38,8 +38,8 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 
 /**
- * Rolling with the real pool alone, now the test techniques are gone (DESIGN §3.3, §3.4): one technique per rarity, so holding one
- * leaves its rarity with nothing to roll.
+ * Rolling with the real pool alone (DESIGN §3.3, §3.4): one technique per rarity, so holding one leaves its rarity with nothing
+ * to roll.
  */
 @ExtendWith(EphemeralTestServerProvider.class)
 class RealPoolRollTest {

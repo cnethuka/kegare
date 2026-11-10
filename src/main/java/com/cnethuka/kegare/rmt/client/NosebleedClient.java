@@ -34,7 +34,7 @@ public final class NosebleedClient {
     private static final float DROP_SCALE = 0.4f;
     /** How far the head's pivot sits below the eyes, and how far out the chin is from it. */
     private static final double NECK_BELOW_EYES = 0.12, CHIN_OUT = 0.27;
-    /** A hard little square of solid red with real gravity: dust is spiky and hangs where it's made, a dark splat over the mouth. */
+    /** A hard little square of solid red that falls. Dust would be spiky and hang where it's made, a dark splat over the mouth. */
     private static final BlockParticleOption DROP = new BlockParticleOption(ParticleTypes.BLOCK, Blocks.REDSTONE_BLOCK.defaultBlockState());
 
     /** Who's bleeding: game time it started, and when it stopped (-1 still going). */

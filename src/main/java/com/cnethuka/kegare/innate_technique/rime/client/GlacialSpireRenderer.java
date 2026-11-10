@@ -18,11 +18,11 @@ import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 
 /**
- * Glacial Spire's spike, drawn by the client from the moment the server says it erupted (its spike loop) until the marker is gone (but
- * never round your own first-person camera, {@link #cameraInside}): a
- * solid mesh of the same ice as the lance (LanceMesh.SPIRE), its pieces shooting up out of the ground a beat apart, as tall and as
- * heavy as the charge. Nothing during the warning (that's the crack on the ground, SpireClient). The ground hides what is still under
- * it. Seen from inside (someone launched off its point), its faces are culled: it never fills that player's screen.
+ * Glacial Spire's spike, drawn from the moment the server says it erupted (its spike loop) until the marker is gone, but never round
+ * your own first-person camera ({@link #cameraInside}). A solid mesh of the same ice as the lance (LanceMesh.SPIRE), its pieces
+ * shooting up out of the ground a beat apart, as tall and as heavy as the charge. Nothing during the warning (that's the crack on the
+ * ground, SpireClient). The ground hides what is still under it. Seen from inside (someone launched off its point), its faces are
+ * culled, so it never fills that player's screen.
  */
 public class GlacialSpireRenderer extends EntityRenderer<GlacialSpireEntity> {
     public GlacialSpireRenderer(EntityRendererProvider.Context context) {

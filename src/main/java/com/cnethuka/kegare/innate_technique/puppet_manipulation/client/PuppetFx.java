@@ -44,34 +44,32 @@ import org.joml.Matrix4f;
 import org.joml.Vector3f;
 
 /**
- * Puppet Manipulation's effects (DESIGN §3.20), drawn here and not by Photon: everything is thread. Fine lavender threads with
- * white highlights stitch a puppet together, unravel it, tug it, mark a target, burst out of it, pull two places together and
- * rise round a Stand-In; the possession thread and Strings' fibers too. Every piece is a crisp strip, full-bright, turned to
- * face the camera (or a flat ring, a small diamond, a small square), and gone within about a second, except the possession
- * thread, which lasts as long as the possession.
+ * Puppet Manipulation's effects (DESIGN §3.20), drawn here rather than by Photon, all as thread: lavender threads with white
+ * highlights stitch a puppet together, unravel it, tug it, mark a target, burst out of it, pull two places together and rise
+ * round a Stand-In, plus the possession thread and Strings' fibers. Each piece is a full-bright camera-facing strip (or a flat
+ * ring, small diamond or square) gone within about a second; only the possession thread lasts as long as the possession.
  * <p>
- * Reduced: the same, with fewer threads. Vanilla: small lavender specks in the same places ({@link #SPECK}), never the
- * explosion's puffs.
+ * Reduced: fewer threads. Vanilla: small lavender specks in the same places ({@link #SPECK}), never the explosion's puffs.
  */
 public final class PuppetFx {
     static final ResourceLocation WHITE = ResourceLocation.withDefaultNamespace("textures/misc/white.png");
-    /** Puppet Manipulation's lavender (#C4B5FD), its white highlight, a lighter and a deeper step (the braid's ramp, Strings). */
+    /** Lavender (#C4B5FD), its white highlight, and a lighter and deeper step (the braid's ramp for Strings). */
     static final int LAVENDER = 0xC4B5FD, PALE = 0xF5F3FF, LIGHT = 0xDDD6FE, DEEP = 0xA78BFA;
-    /** Vanilla's stand-in: a small lavender speck (small dust also dies fast: its life scales with its size). */
+    /** The Vanilla-quality stand-in: a small lavender speck (small dust also dies fast, as its life scales with its size). */
     static final DustParticleOptions SPECK = new DustParticleOptions(new Vector3f(0.77f, 0.71f, 0.99f), 0.5f);
     static final DustParticleOptions PALE_SPECK = new DustParticleOptions(new Vector3f(0.96f, 0.95f, 1f), 0.45f);
 
     private static final float THREAD = 0.026f, HAIR = 0.012f;
     /** Strings' frayed fibers: a quarter of the cord's thickness (the model's cord is 0.0875 across). */
     private static final float FIBER = 0.022f;
-    /** Nothing of an effect is drawn this close to your own first-person camera (it would sit in front of your eyes). */
+    /** Nothing is drawn this close to the first-person camera, where it would sit in front of the eyes. */
     private static final double CLEAR_OF_CAMERA = 1.4;
 
     // ---------------------------------------------------------------- what's running
 
-    /** A new puppet being stitched, from the ground up: a few quick threads for a Tap, a dense weave for a Full. */
+    /** A new puppet stitched from the ground up: a few quick threads for a Tap, a dense weave for a Full. */
     private record Form(int entityId, long born, int tier, int seed) {}
-    /** Threads stitched round a body with no puppet to read (Possess and the return: the body changing hands); half its height. */
+    /** Threads stitched round a body with no puppet to read (Possess and the return, as the body changes hands); half is half its height. */
     private record Stitch(Vec3 middle, long born, int seed, float half) {}
     /** A puppet unravelling: its threads come loose, drift apart and vanish. */
     private record Unravel(Vec3 middle, long born, float width, float height, int seed) {}
@@ -79,9 +77,9 @@ public final class PuppetFx {
     private record Tug(int entityId, long born) {}
     /** Focus: a ring tightening round the target and a bead over its head, 2 s. */
     private record Mark(int entityId, long born) {}
-    /** Curio Burst: a flash, then threads and scraps flung out no further than the blast reaches, and a ring on the ground at it. */
+    /** Curio Burst: a flash, threads and scraps flung out no further than the blast reaches, and a ring on the ground at its edge. */
     private record Burst(Vec3 centre, double ground, long born, int tier, float radius, int seed) {}
-    /** Understudy, at one of the two places: threads round it yanked toward the other place, and the line between them. */
+    /** Understudy, at one of its two places: threads yanked toward the other place, and the line between them. */
     private static final class Pull {
         final Vec3 at;
         final long born;
@@ -197,7 +195,7 @@ public final class PuppetFx {
 
     private static boolean stitch(ClientLevel level, Vec3 middle) {
         if (nearCamera(middle, CLEAR_OF_CAMERA)) return true;
-        // How tall the body is (a puppet's or a player's): it's played at its middle, so twice the way down to the ground.
+        // Body height (puppet or player): the effect plays at its middle, so twice the distance down to the ground.
         HitResult hit = level.clip(new ClipContext(middle, middle.subtract(0, 1.2, 0), ClipContext.Block.COLLIDER, ClipContext.Fluid.NONE,
                 CollisionContext.empty()));
         float half = hit.getType() == HitResult.Type.MISS ? 0.45f : (float) Mth.clamp(middle.y - hit.getLocation().y, 0.3, 1.0);
@@ -224,7 +222,7 @@ public final class PuppetFx {
 
     private static boolean burst(ClientLevel level, Vec3 centre, PuppetTier tier) {
         float radius = PuppetConfig.CURIO_RADIUS[tier.ordinal()].get().floatValue();
-        // The ground under it: what it stood on, if that's close, else where a puppet's feet would be.
+        // The ground: the block below if it's close, else where a puppet's feet would be.
         HitResult hit = level.clip(new ClipContext(centre, centre.subtract(0, 1.5, 0), ClipContext.Block.COLLIDER, ClipContext.Fluid.NONE,
                 CollisionContext.empty()));
         double ground = hit.getType() == HitResult.Type.MISS ? centre.y - 0.45 : hit.getLocation().y;
@@ -255,7 +253,7 @@ public final class PuppetFx {
                 break;
             }
         }
-        PULLS.add(pull); // at Vanilla it's kept a tick for the pairing, and its specks go out in the client tick
+        PULLS.add(pull); // at Vanilla it's kept one tick for the pairing; its specks are spawned in the client tick
         return true;
     }
 
@@ -346,7 +344,7 @@ public final class PuppetFx {
 
     // -- Puppet Creation
 
-    /** While a Full puppet is still being woven its outline waits: the weave ends in it. */
+    /** Whether a puppet is still being woven; a Full puppet's outline waits until the weave ends. */
     static boolean forming(PuppetEntity puppet) {
         ClientLevel level = Minecraft.getInstance().level;
         if (level == null) return false;
@@ -419,7 +417,7 @@ public final class PuppetFx {
             double drift = random.nextDouble() * Mth.TWO_PI;
             Vec3 away = new Vec3(Math.cos(drift), 0.5 + random.nextDouble() * 0.5, Math.sin(drift)).scale(0.45 * ease);
             double y0 = u.height() * (0.05 + 0.82 * share);
-            // Coming loose: a little wider, unwinding nearly straight, drifting off on its own way.
+            // Coming loose: a little wider, unwinding nearly straight, each drifting its own way.
             List<Vec3> pts = helix(feet.add(away), r0 + 0.22 * ease, a0, sweep * (1.0 - 0.85 * ease), y0, y0 + u.height() * 0.18, 1.0, 10);
             d.polyline(pts, THREAD * (1f - 0.5f * t), t < 0.12f ? PALE : LAVENDER, alpha);
         }
@@ -488,7 +486,7 @@ public final class PuppetFx {
         float from = (float) Math.max(1.1, w * 2.4), to = (float) (w * 0.72 + 0.14);
         float radius = Mth.lerp(ease, from, to);
         Vec3 waist = feet.add(0, h * 0.45, 0);
-        d.loop(waist, radius, 0.045f, LAVENDER, alpha); // a loop of thread facing you: whole even seen nearly edge on
+        d.loop(waist, radius, 0.045f, LAVENDER, alpha); // camera-facing, so the loop stays whole even seen nearly edge on
         d.loop(waist, radius, 0.014f, PALE, alpha);
         float turn = t * 0.035f;
         for (int k = 0; k < 4; k++) { // four short ticks across it, like a sight closing in
@@ -497,7 +495,7 @@ public final class PuppetFx {
             d.flat(waist.add(dir.scale(radius + 0.02)), waist.add(dir.scale(radius + 0.16 + 0.12 * (1f - ease))), 0.03f, PALE, alpha);
         }
         Minecraft mc = Minecraft.getInstance();
-        if (e == mc.getCameraEntity() && mc.options.getCameraType().isFirstPerson()) return; // the bead over your own head
+        if (e == mc.getCameraEntity() && mc.options.getCameraType().isFirstPerson()) return; // no bead over your own head
         Vec3 bead = feet.add(0, h + 0.22 + 0.03 * Mth.sin(t * 0.25f), 0); // under a name tag, not on it
         d.diamond(bead, 0.115f, 0.082f, LAVENDER, alpha);
         d.diamond(bead, 0.075f, 0.05f, PALE, alpha);
@@ -506,7 +504,7 @@ public final class PuppetFx {
     // -- Curio Burst
 
     private static final float[] FLASH = {0.22f, 0.3f, 0.4f};
-    /** A burst's pieces aren't drawn this close to the camera: one flying past your eyes is a streak across the view. */
+    /** A burst's pieces aren't drawn this close to the camera: one flying past the eyes streaks across the whole view. */
     private static final double BURST_CLEAR = 2.5;
     private static final int[] BURST_THREADS = {10, 14, 18}, BURST_SCRAPS = {6, 8, 12};
 
@@ -522,7 +520,7 @@ public final class PuppetFx {
             d.disc(c, FLASH[b.tier()] * 0.55f, PALE, a);
             d.circle(c, FLASH[b.tier()] * 1.3f, 0.05f, LAVENDER, a);
         }
-        // The ring on the ground, out to exactly the blast's reach (its outer edge never past it).
+        // The ground ring ends exactly at the blast's reach (its outer edge never past it).
         float grow = 1f - (1f - Mth.clamp(t / 5f, 0f, 1f)) * (1f - Mth.clamp(t / 5f, 0f, 1f));
         float ringWidth = 0.07f * (1f - 0.4f * t / BURST_TICKS);
         float ringAlpha = 1f - Mth.clamp((t - 4f) / 5f, 0f, 1f);
@@ -540,14 +538,13 @@ public final class PuppetFx {
             Vec3 side = dir.cross(new Vec3(0, 1, 0)).normalize().scale(0.06 * fly * (random.nextBoolean() ? 1 : -1));
             Vec3 mid = drop(c.add(dir.scale(out + length * 0.5)), t, b.ground()).add(side.scale(0.5));
             Vec3 head = drop(c.add(dir.scale(out + length)), t, b.ground()).add(side);
-            // A piece flying past your own camera would cross the whole view.
             if (tail.distanceTo(d.cam) < BURST_CLEAR || head.distanceTo(d.cam) < BURST_CLEAR) continue;
             d.strip(tail, mid, THREAD * 0.9f, i % 3 == 0 ? PALE : LAVENDER, threadAlpha);
             d.strip(mid, head, THREAD * 0.9f, i % 3 == 0 ? PALE : LAVENDER, threadAlpha);
         }
         float scrapAlpha = 1f - Mth.clamp((t - 8f) / 4f, 0f, 1f);
         int[] colours = {PALE, LAVENDER, DEEP, LIGHT};
-        for (int i = 0; i < scraps; i++) { // small solid scraps of it, tumbling
+        for (int i = 0; i < scraps; i++) { // small solid scraps, tumbling
             Vec3 dir = flung(random, 0.0, 1.0);
             float size = (0.06f + 0.035f * random.nextFloat()) * (1 + 0.12f * b.tier());
             Vec3 at = drop(c.add(dir.scale((reach * 0.9 - size) * fly)), t, b.ground());
@@ -677,7 +674,7 @@ public final class PuppetFx {
                 double to = Math.min(length, head), from = Math.max(0, head - GLINT_LENGTH);
                 if (to - from < 0.02) continue;
                 Vec3 a = far.add(dir.scale(from)), b = far.add(dir.scale(to));
-                if (b.distanceTo(d.cam) < GLINT_CLEAR) continue; // close by, a glint is a big white block on your hand's string
+                if (b.distanceTo(d.cam) < GLINT_CLEAR) continue; // up close a glint is a big white block on your own string
                 d.strip(a, b, 0.1f, LIGHT, 0.6f);
                 d.strip(far.add(dir.scale(Math.max(from, to - 0.16))), b, 0.112f, PALE, 1f);
             }
@@ -688,12 +685,12 @@ public final class PuppetFx {
 
     // -- Possess
 
-    /** How far short of your own eyes your own possession thread stops, in your first person. */
+    /** How far short of the camera your own possession thread stops in first person, in blocks. */
     private static final double OWN_THREAD_CLEAR = 3.0;
-    /** How long the possession thread takes to shoot from the body to the puppet. */
+    /** Ticks the possession thread takes to shoot from the body to the puppet. */
     private static final float LINK_SHOOT_TICKS = 5f;
 
-    /** The thread from each empty body to whoever is possessing its puppet, for as long as they do. */
+    /** The thread from each empty body to whoever is possessing a puppet, for as long as the possession lasts. */
     private static void drawPossession(Draw d, ClientLevel level, float partial) {
         for (Map.Entry<UUID, PossessionClient.Link> e : PossessionClient.links().entrySet()) {
             PossessionLinks.Entry link = e.getValue().entry();
@@ -704,7 +701,7 @@ public final class PuppetFx {
             Vec3 to = player.getPosition(partial).add(0, player.getBbHeight() * 0.6, 0);
             float shoot = Mth.clamp((d.now - e.getValue().since()) / LINK_SHOOT_TICKS, 0f, 1f);
             List<Vec3> pts = possessionCurve(from, to, shoot);
-            // Not into your own eyes: from inside the puppet, your own thread runs straight at you, so it stops well short.
+            // From inside the puppet your own thread runs straight at the camera, so it stops well short.
             Minecraft mc = Minecraft.getInstance();
             double clear = player == mc.getCameraEntity() && mc.options.getCameraType().isFirstPerson() ? OWN_THREAD_CLEAR : 1.2;
             pts.removeIf(p -> p.distanceTo(d.cam) < clear);
@@ -714,7 +711,7 @@ public final class PuppetFx {
         }
     }
 
-    /** The possession thread: a little sag in the middle, like a slack thread (the same as before), out to {@code upTo} of it. */
+    /** The possession thread's points, sagging a little in the middle like a slack thread, out to {@code upTo} of its length. */
     static List<Vec3> possessionCurve(Vec3 from, Vec3 to, float upTo) {
         double sag = Math.min(1.2, from.distanceTo(to) * 0.04);
         int n = Math.max(2, Math.min(48, (int) Math.ceil(from.distanceTo(to) / 0.6)));

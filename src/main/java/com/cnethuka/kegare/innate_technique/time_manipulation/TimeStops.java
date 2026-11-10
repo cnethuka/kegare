@@ -39,16 +39,17 @@ import net.neoforged.neoforge.network.PacketDistributor;
 
 /**
  * Standstill's stops (DESIGN §3.26): at most one per level, runtime only (never saved). Not vanilla's /tick freeze: everything inside
- * the radius is frozen by cancelling its tick ({@link EntityTickEvent.Pre}), except the caster, players holding Time Manipulation
- * (immune: they move, attack and cast as normal, and damage between them and the caster lands at once), bosses (DESIGN §4: they take
- * the damage, but time never stops for them), and projectiles the caster and the immune throw,
- * for their first {@code projectileFlightTicks}, after which they hang where they are, their speed kept. A frozen player's own physics
- * runs from their connection, so they're also stunned, their attacks, interactions, item use and block breaking are refused, and they're
- * put back if they move. Damage to anything frozen is held, and when time resumes each one takes it as ONE hit through its normal
- * {@code hurt} (armour, shields and everything else apply once, to the sum), at most {@code damageCap}, so the Impact System and battle
- * damage see it as one blow. Ends early if the caster dies, logs out or leaves the level. A frozen player who logs out or leaves the
- * level takes what was held for them there and then, as that same one hit (it can kill them); one who dies during it has nothing
- * left to land. Afterwards the caster burns out.
+ * the radius is frozen by cancelling its tick ({@link EntityTickEvent.Pre}). Exempt: the caster; players holding Time Manipulation
+ * (immune: they move, attack and cast as normal, and damage between them and the caster lands at once); bosses (DESIGN §4: they take
+ * the damage, but time never stops for them); and projectiles the caster and the immune throw, for their first
+ * {@code projectileFlightTicks}, after which they hang in place with their speed kept.
+ * A frozen player's physics runs from their connection, so they're also stunned, their attacks, interactions, item use and block
+ * breaking are refused, and they're put back if they move. Damage to anything frozen is held; on resume each takes it as ONE hit
+ * through its normal {@code hurt} (armour, shields and the rest apply once, to the sum), at most {@code damageCap}, so the Impact
+ * System and battle damage see one blow.
+ * Ends early if the caster dies, logs out or leaves the level. A frozen player who logs out or leaves the level takes what was held
+ * for them at once, as that same one hit (it can kill them); one who dies during it has nothing left to land. Afterwards the caster
+ * burns out.
  */
 public final class TimeStops {
     /** A frozen player: where they're held, and the stun they had before. */
@@ -113,7 +114,7 @@ public final class TimeStops {
         }
     }
 
-    /** Projectiles that hung in a stop now over, whose they are, and until when a hit on a player still counts (Pre-Planned). */
+    /** A projectile that hung in a finished stop: its owner, and until when a hit on a player still counts (Pre-Planned). */
     record Volley(UUID owner, long until) {}
 
     private static final Map<ResourceKey<Level>, Stop> STOPS = new HashMap<>();
@@ -123,7 +124,7 @@ public final class TimeStops {
     @Nullable private static LivingEntity landing;
     /** The last one whose hit was just held, for {@link #heldJustNow} (a player's swing reads it as soon as {@code hurt} returns). */
     @Nullable private static Entity heldNow;
-    /** Grayscale is asked for this much longer than the stop, so it never fades out early: the end snaps it off. */
+    /** Grayscale is requested this much longer than the stop so it never fades early; the end snaps it off. */
     private static final int GRAY_SLACK = 40;
 
     private TimeStops() {}
@@ -157,11 +158,11 @@ public final class TimeStops {
         return stop;
     }
 
-    /** Time resumes: everyone let go, every held hit dealt, the caster burnt out. {@code early}: the caster died, left, or went. */
+    /** Time resumes: everyone let go, every held hit dealt, the caster burnt out. {@code early}: the caster died, logged out or left. */
     static void end(Stop stop, boolean early) {
         if (STOPS.get(stop.level.dimension()) != stop) return;
-        // Everything frozen in it, while the stop still says so: its hurt cooldown was stopped with it (a hit just before the cast
-        // left one), and with no time passed for it, it would throw away the first swings after the resume.
+        // Collect the frozen before the stop is removed: their hurt cooldown froze with them (a hit just before the cast left one)
+        // and would otherwise swallow the first swings after the resume.
         List<LivingEntity> wasFrozen = stop.level.getEntitiesOfClass(LivingEntity.class, new AABB(stop.centre, stop.centre).inflate(stop.radius),
                 stop::frozen);
         STOPS.remove(stop.level.dimension());
@@ -192,14 +193,14 @@ public final class TimeStops {
         try {
             victim.invulnerableTime = 0;
             victim.hurt(q.source, (float) Math.min(q.total, TimeConfig.STANDSTILL_DAMAGE_CAP.get()));
-            victim.invulnerableTime = 0; // what hung in the air lands right after, whole
+            victim.invulnerableTime = 0; // projectiles that hung in the air land right after, in full
         } finally {
             landing = null;
         }
     }
 
     private static void release(ServerPlayer p, Held held, Stop stop, long now) {
-        // The stun was ours if nothing has stretched it past the stop; then the one they had before is all that's left.
+        // The stun is ours if nothing extended it past the stop: clear it and restore any stun they had before.
         long stunEnd = now + CombatHelper.stunTicksRemaining(p);
         if (stunEnd <= stop.until) {
             CombatHelper.clearStun(p);
@@ -215,7 +216,7 @@ public final class TimeStops {
         if (p.connection != null) ScreenEffects.play(p, ScreenEffects.GRAYSCALE, (int) (stop.until - now) + GRAY_SLACK);
     }
 
-    /** Who's held and who's free, again: anyone who walked in, changed technique or left. Tells the level when that changed. */
+    /** Re-sorts held and free (anyone who walked in, changed technique or left). Tells the level when the free list changed. */
     private static void refresh(Stop stop, boolean first) {
         long now = stop.level.getGameTime();
         List<Integer> free = new ArrayList<>();
@@ -315,8 +316,8 @@ public final class TimeStops {
     }
 
     /**
-     * Damage to anything frozen is held for the resume, at its full incoming amount (first of all, so nothing else changes it twice: it
-     * all goes through once, on the sum). Hurt with nothing behind it (fire, falling, drowning) doesn't happen in stopped time; the void
+     * Damage to anything frozen is held for the resume at its full incoming amount (runs first, so nothing modifies it twice: it all
+     * goes through once, on the sum). Damage with no source entity (fire, falling, drowning) doesn't happen in stopped time; the void
      * and /kill still do.
      */
     static void onIncomingDamage(LivingIncomingDamageEvent event) {
@@ -358,7 +359,7 @@ public final class TimeStops {
         return held;
     }
 
-    /** Nothing frozen is pushed: a swing's knockback (or a sweep's) waits for nothing; the held hit brings its own when it lands. */
+    /** Nothing frozen is knocked back by a swing or sweep; the held hit brings its own knockback when it lands. */
     static void onKnockBack(LivingKnockBackEvent event) {
         LivingEntity e = event.getEntity();
         if (!e.level().isClientSide && e != landing && frozen(e)) event.setCanceled(true);
@@ -383,8 +384,8 @@ public final class TimeStops {
     }
 
     /**
-     * Logging out, or gone to another level: a caster's stop ends (what was held lands); a frozen player is let go and takes what was
-     * held for them right now, before they're gone, as the one hit (it can kill them). Never a way out of it.
+     * Logging out or changing level: a caster's stop ends (what was held lands); a frozen player is let go and takes what was held for
+     * them at once, before they're gone, as the one hit (it can kill them). Never a way out of it.
      */
     static void onLeaving(ServerPlayer player) {
         for (Stop stop : List.copyOf(STOPS.values())) {
@@ -397,8 +398,8 @@ public final class TimeStops {
     }
 
     /**
-     * About to travel to another level (before it happens, so the hit lands where they were held). The caster's own stop ends once
-     * they've actually gone ({@link #onLeaving}), in case the trip is called off.
+     * About to travel to another level (runs before the trip, so the hit lands where they were held). The caster's own stop ends only
+     * once they've actually gone ({@link #onLeaving}), in case the trip is cancelled.
      */
     static void onTravel(ServerPlayer player) {
         for (Stop stop : List.copyOf(STOPS.values())) if (stop.caster != player) letGo(player, stop, true);

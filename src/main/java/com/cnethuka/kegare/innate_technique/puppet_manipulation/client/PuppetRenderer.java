@@ -37,8 +37,8 @@ public class PuppetRenderer extends EntityRenderer<PuppetEntity> {
 
     @Override
     public void render(PuppetEntity puppet, float yaw, float partialTick, PoseStack pose, MultiBufferSource buffers, int light) {
-        if (puppet.isPossessed()) return; // it's inside its possessor, who is drawn as it
-        float hop = PuppetFx.hop(puppet, partialTick); // a Directive's tug lifts it a moment on its strings
+        if (puppet.isPossessed()) return; // its possessor is drawn as it instead
+        float hop = PuppetFx.hop(puppet, partialTick); // a Directive's tug lifts it briefly on its strings
         if (hop != 0f) {
             pose.pushPose();
             pose.translate(0f, hop, 0f);
@@ -52,7 +52,7 @@ public class PuppetRenderer extends EntityRenderer<PuppetEntity> {
         return PuppetSkins.skin(puppet).texture();
     }
 
-    /** One arm model's renderer (vanilla picks wide or slim per player the same way). */
+    /** The renderer for one arm model; wide or slim is picked per puppet, as vanilla does per player. */
     static final class Body extends LivingEntityRenderer<PuppetEntity, PuppetModel> {
         Body(EntityRendererProvider.Context context, boolean slim) {
             super(context, new PuppetModel(context.bakeLayer(slim ? ModelLayers.PLAYER_SLIM : ModelLayers.PLAYER), slim), 0.5f);

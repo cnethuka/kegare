@@ -15,18 +15,18 @@ import net.neoforged.neoforge.registries.DeferredRegister;
 import net.neoforged.neoforge.registries.NeoForgeRegistries;
 
 /**
- * All per-entity state is stored in NeoForge data attachments.
+ * All per-entity state lives in NeoForge data attachments. The main ones:
  * <pre>
- *   Malice          saved, kept on death   capacity/tier/severed fixed at birth + current reserve
- *   traits      saved, kept on death   set of trait IDs
- *   innate technique   saved, kept on death   innate technique, selected slot, cooldowns
- *   roll        saved, kept on death   pity counter
- *   combat      saved, reset on death  combat tag + stun timestamps
- *   loadout     saved, kept on death   what each regular ability slot holds
- *   shared_abilities saved, kept on death unlocked shared abilities, last green-orb roll
- *   cast_state  runtime only           active charge/channel/toggles
- *   sync_state  runtime only           client sync dirty flag
- *   visual_state runtime only          cosmetic loops playing on an entity (re-sent to late trackers)
+ *   malice            saved, kept on death   capacity/tier/severed fixed at birth + current reserve
+ *   traits            saved, kept on death   set of trait IDs
+ *   innate_technique  saved, kept on death   innate technique, selected slot, cooldowns
+ *   roll              saved, kept on death   pity counter
+ *   combat            saved, reset on death  combat tag + stun timestamps
+ *   loadout           saved, kept on death   what each regular ability slot holds
+ *   shared_abilities  saved, kept on death   unlocked shared abilities, last green-orb roll
+ *   cast_state        runtime only           active charge/channel/toggles
+ *   sync_state        runtime only           client sync dirty flag
+ *   visual_state      runtime only           cosmetic loops playing on an entity (re-sent to late trackers)
  * </pre>
  */
 public final class KegareAttachments {

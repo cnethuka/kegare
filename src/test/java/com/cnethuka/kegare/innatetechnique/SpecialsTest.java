@@ -26,12 +26,13 @@ import org.junit.jupiter.api.extension.ExtendWith;
 
 /**
  * The specials framework on the real cast pipeline: R resolves the selected ability's special, fizzles cost nothing,
- * requirements gate the cast (and are re-checked at a charge's release), and a special shares its base's cooldown. Rime's real
- * specials for the plain cases; for a special that needs a toggle on or a trait, which no real ability has yet, {@link SpecialFixtures}.
+ * requirements gate the cast (and are re-checked at a charge's release), and a special shares its base's cooldown. Rime's
+ * real specials cover the plain cases; {@link SpecialFixtures} covers specials needing a toggle on or a trait, which no real
+ * ability has.
  */
 @ExtendWith(EphemeralTestServerProvider.class)
 class SpecialsTest {
-    /** Frost Shard, Splinter and the Lance leave entities in the world every test shares: they go, so nothing else counts them. */
+    /** Frost Shard, Splinter and the Lance leave entities in the shared test world; discard them so no other test counts them. */
     @org.junit.jupiter.api.AfterEach
     void cleanUp(MinecraftServer server) throws Exception {
         TestServer.onServerThread(server, () -> {
@@ -130,7 +131,7 @@ class SpecialsTest {
                 assertNull(CastManager.state(p).casting(), "no trait: it fizzles");
                 assertEquals(before, malice(p), EPS);
 
-                // Tests share one server, and any fake player's birth can roll the (unique) trait: free it first.
+                // Tests share one server and any fake player's birth can roll the unique trait, so free it first.
                 com.cnethuka.kegare.trait.TraitSuccession.release(server, KegareTraits.SIX_EYES.get());
                 assertEquals(TraitService.AddResult.ADDED, TraitService.add(p, KegareTraits.SIX_EYES.get(), Trait.AddReason.ADMIN));
                 CastManager.handleIntent(p, CastIntent.SPECIAL_PRESS);
@@ -154,7 +155,7 @@ class SpecialsTest {
                 CastManager.handleIntent(p, CastIntent.SPECIAL_PRESS);
                 TestServer.advanceGameTime(server, SpecialFixtures.LIFT_SPECIAL_CHARGE);
                 CastManager.handleIntent(p, CastIntent.SPECIAL_RELEASE);
-                // (A Six Eyes bearer's energy goes less to waste, DESIGN §3.32.)
+                // castCostOf: a Six Eyes bearer wastes less energy (DESIGN §3.32).
                 assertEquals(before - MaliceService.castCostOf(p, SpecialFixtures.LIFT_SPECIAL_COST), malice(p), EPS, "paid on release");
                 assertTrue(InnateTechniqueService.cooldownRemaining(p, SpecialFixtures.LIFT) > 0, "the base shares the special's cooldown");
             } finally {

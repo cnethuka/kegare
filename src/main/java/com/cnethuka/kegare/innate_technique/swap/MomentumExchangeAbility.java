@@ -10,9 +10,9 @@ import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.phys.Vec3;
 
 /**
- * Special of Exchange (INSTANT): swap velocity vectors AND fall distance with the target, a player or a mob (the one swap that keeps fall
- * distance, on purpose). Velocities are read from what each client last reported, and sent back to both clients.
- * Nobody moves position.
+ * Special of Exchange (INSTANT): swap velocity AND fall distance with the target, player or mob (deliberately the one swap
+ * that carries fall distance). Velocities are read from what each client last reported and sent back to both. Nobody
+ * changes position.
  */
 public final class MomentumExchangeAbility extends SwapAbility.Special {
     private static final AbilityVisuals VISUALS = AbilityVisuals.builder().cast(SwapIds.ANIM_MOMENTUM_CAST, null).build();
@@ -49,7 +49,7 @@ public final class MomentumExchangeAbility extends SwapAbility.Special {
         SwapSounds.MOMENTUM.at(target);
     }
 
-    /** Sets a player's or mob's velocity and sends it out (to the player's own client, and everyone tracking it). */
+    /** Sets velocity and sends it to the player's own client and everyone tracking the entity. */
     private static void setMotion(LivingEntity entity, Vec3 motion) {
         entity.setDeltaMovement(motion);
         if (entity instanceof ServerPlayer player) player.setKnownMovement(motion);

@@ -21,9 +21,9 @@ import net.minecraft.client.resources.PlayerSkin;
 import net.neoforged.neoforge.client.event.EntityRenderersEvent;
 
 /**
- * Mimic's flicker (DESIGN §3.19): the caster's body drawn again as a flat teal figure, its boxes a pixel bigger all round than
- * the skin's outer layer, so it shows over everything they wear. As a layer of the player's renderer, set up as their body is,
- * it's posed exactly as they are drawn, animation and all. How strongly, and when, comes from {@link SwapFx#flickerAlpha}.
+ * Mimic's flicker (DESIGN §3.19): the caster's body drawn again as a flat teal figure, its boxes slightly bigger all round
+ * than the skin's outer layer so it shows over everything they wear. Being a layer of the player's renderer, it's posed
+ * exactly as they're drawn, animation and all. Strength and timing come from {@link SwapFx#flickerAlpha}.
  */
 final class MimicFlickerLayer extends RenderLayer<AbstractClientPlayer, PlayerModel<AbstractClientPlayer>> {
     static final ModelLayerLocation WIDE = new ModelLayerLocation(Kegare.id("mimic_flicker"), "main");
@@ -36,7 +36,7 @@ final class MimicFlickerLayer extends RenderLayer<AbstractClientPlayer, PlayerMo
     private MimicFlickerLayer(RenderLayerParent<AbstractClientPlayer, PlayerModel<AbstractClientPlayer>> parent, PlayerModel<AbstractClientPlayer> model) {
         super(parent);
         this.model = model;
-        // Its parts sit at their own origin: they're drawn under the body's parts' transforms.
+        // Parts sit at their own origin because they're drawn under the body parts' transforms.
         for (ModelPart part : new ModelPart[] {model.head, model.body, model.rightArm, model.leftArm, model.rightLeg, model.leftLeg}) {
             part.setPos(0f, 0f, 0f);
             part.setRotation(0f, 0f, 0f);
@@ -64,8 +64,8 @@ final class MimicFlickerLayer extends RenderLayer<AbstractClientPlayer, PlayerMo
         if (alpha <= 0f || player.isInvisible()) return;
         Minecraft mc = Minecraft.getInstance();
         if (player == mc.player && mc.options.getCameraType().isFirstPerson()) return;
-        // Each teal part is drawn where the body's part is, under its transform as the player's animation left it (as the fist
-        // flames are), not posed again: only the body's own model is posed by the animation.
+        // Each teal part is drawn under the matching body part's transform as the animation left it (like the fist flames),
+        // not posed again: the animation only poses the body's own model.
         PlayerModel<AbstractClientPlayer> body = getParentModel();
         ModelPart[] from = {body.head, body.body, body.rightArm, body.leftArm, body.rightLeg, body.leftLeg};
         ModelPart[] to = {model.head, model.body, model.rightArm, model.leftArm, model.rightLeg, model.leftLeg};

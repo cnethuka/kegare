@@ -85,7 +85,7 @@ public class GlacialLanceEntity extends RimeProjectile implements com.cnethuka.k
         return 0.7f + 0.45f * charge();
     }
 
-    /** Thrown from between your eyes: in your own first person its trail starts where the lance comes into view (its renderer). */
+    /** In your own first person the trail starts where the lance comes into view (see its renderer), not between your eyes. */
     @Override
     protected double trailClearOfOwnEyes() {
         return 3.5;
@@ -98,8 +98,8 @@ public class GlacialLanceEntity extends RimeProjectile implements com.cnethuka.k
     @Override
     protected void impactVisual(Vec3 at, @Nullable HitResult hit) {
         ResourceLocation effect = hit instanceof BlockHitResult ? RimeIds.FX_GLACIAL_LANCE_STICK : RimeIds.FX_GLACIAL_LANCE_IMPACT;
-        // Something living reports where it stands, its feet, and the lance is still where this tick's move began, up to a whole move
-        // short of it: it bursts where its path goes into the target instead.
+        // An entity hit reports the target's feet, and the lance is still where this tick's move began (up to a whole move short),
+        // so it bursts where its path enters the target instead.
         Vec3 where = hit instanceof EntityHitResult e ? struck(e.getEntity()) : at;
         VisualService.playAt((ServerLevel) level(), where, Visual.effect(effect, Visual.Anchor.BODY), getId());
     }

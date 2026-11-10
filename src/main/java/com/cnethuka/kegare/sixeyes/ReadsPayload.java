@@ -58,7 +58,7 @@ public record ReadsPayload(List<Glance> glances, List<MobGlance> mobs, Optional<
     /**
      * The body as it is right now, every modifier counted. An attribute it doesn't have is {@link #NONE}; so is {@code food} for a mob.
      *
-     * @param movementBase the movement speed it has with no modifier, to say what the modifiers make of it
+     * @param movementBase movement speed with no modifiers, to show what the modifiers do to it
      */
     public record Vitals(float health, float maxHealth, float absorption, float armor, float toughness, float knockbackResistance, float attackDamage,
                          float attackSpeed, float movement, float movementBase, int food) {

@@ -2,7 +2,7 @@ package com.cnethuka.kegare.reinforcement;
 
 import net.minecraft.server.level.ServerPlayer;
 
-/** Tests elsewhere read what the aura shows on a player for everyone. */
+/** Lets tests in other packages read the aura flags everyone sees on a player. */
 public final class AuraTellAccess {
     private AuraTellAccess() {}
 

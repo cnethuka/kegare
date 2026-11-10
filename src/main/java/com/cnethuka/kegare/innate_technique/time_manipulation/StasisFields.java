@@ -24,10 +24,10 @@ import net.minecraft.world.phys.Vec3;
 import net.neoforged.neoforge.network.PacketDistributor;
 
 /**
- * Stasis Fields (DESIGN §3.26): a dome of slowed time, centred on the ground where it was cast. Every tick, after the entities move,
- * everything living inside gets heavy Slowness (bosses excepted, DESIGN §4) and every projectile inside is set to crawl:
- * {@code projectileSpeed} of the speed it came in with, the same way (so gravity can't bend it while it's in). Once it leaves every
- * field, or the field ends, it's given its own speed back, the same way. The caster's own projectiles crawl too. Runtime only.
+ * Stasis Fields (DESIGN §3.26): a dome of slowed time, centred on the ground where it was cast. Every tick, after entities move,
+ * everything living inside gets heavy Slowness (bosses excepted, DESIGN §4) and every projectile inside crawls at
+ * {@code projectileSpeed} of its entry velocity, same direction (so gravity can't bend it while inside). Once it leaves every field,
+ * or the field ends, it gets its entry velocity back. The caster's own projectiles crawl too. Runtime only.
  */
 public final class StasisFields {
     static final class Field {
@@ -58,7 +58,7 @@ public final class StasisFields {
     /** Each slowed projectile and the velocity it came in with. */
     private static final Map<Projectile, Vec3> SLOWED = new WeakHashMap<>();
     private static int nextId = 1;
-    /** Slowness is put on for this long, again each tick it's inside. */
+    /** Slowness duration, renewed every tick inside. */
     private static final int SLOW_TICKS = 10;
 
     private StasisFields() {}

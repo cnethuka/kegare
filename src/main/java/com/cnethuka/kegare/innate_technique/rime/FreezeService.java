@@ -20,9 +20,9 @@ import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.level.Level;
 
 /**
- * Freeze stacks on any living target. Stacks melt one at a time after a while. At the max the target is frozen
- * solid: a stun through the existing stun system (so it interrupts charges and channels), movement locked, then
- * the stacks reset and it can't gain stacks for a short while after breaking free.
+ * Freeze stacks on any living target. Stacks melt one at a time after a while. At the max the target is frozen solid: a
+ * stun (so it interrupts charges and channels) with movement locked; the stacks reset, and it can't gain stacks for a
+ * short while after breaking free.
  */
 public final class FreezeService {
     private static final ResourceLocation LOCK = Kegare.id("frozen");
@@ -75,7 +75,7 @@ public final class FreezeService {
         FreezeData data = get(target);
         long now = target.level().getGameTime();
         int ticks = Math.max(1, RimeConfig.ticks(RimeConfig.FREEZE_DURATION));
-        // Charging or channeling right now? (checked before the stun interrupts it)
+        // Checked before the stun interrupts any charge or channel.
         boolean wasCasting = target instanceof ServerPlayer p && CastManager.state(p).casting() != null;
 
         data.stacks = 0;
@@ -83,7 +83,7 @@ public final class FreezeService {
         data.frozen = true;
         data.frozenUntil = now + ticks;
         data.frozenBy = attacker != null ? attacker.getUUID() : null;
-        CombatHelper.stun(target, ticks); // existing stun system: interrupts charges and channels
+        CombatHelper.stun(target, ticks); // interrupts charges and channels
         lock(target, true);
         // Vanilla's frost overlay and shiver, kept below "fully frozen" so vanilla never adds freeze damage.
         target.setTicksFrozen(Math.max(target.getTicksFrozen(), target.getTicksRequiredToFreeze() - 1));

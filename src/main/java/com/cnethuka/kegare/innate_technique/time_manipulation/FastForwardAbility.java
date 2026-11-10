@@ -10,9 +10,9 @@ import java.util.List;
 import net.minecraft.server.level.ServerPlayer;
 
 /**
- * Fast Forward (special of Accelerate, INSTANT): {@code seconds} off every OTHER cooldown of your innate technique at once: never the
- * ultimate's, never Burnout (which isn't a cooldown) and never a shared ability's. It switches Accelerate off if it's on and puts it on
- * their shared cooldown. Clock hands whirl forward round you.
+ * Fast Forward (special of Accelerate, INSTANT): {@code seconds} off every OTHER cooldown of your technique at once, but never the
+ * ultimate's, Burnout (not a cooldown) or a shared ability's. Switches Accelerate off if it's on and puts it on their shared cooldown.
+ * Clock hands whirl forward round you.
  */
 public final class FastForwardAbility extends TimeAbility.Special {
     private static final AbilityVisuals VISUALS = AbilityVisuals.builder().cast(TimeIds.ANIM_FAST_FORWARD_CAST, null).build();

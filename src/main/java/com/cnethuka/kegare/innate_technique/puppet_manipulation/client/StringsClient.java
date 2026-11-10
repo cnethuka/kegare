@@ -38,10 +38,10 @@ import org.joml.Quaternionf;
 import org.joml.Vector3f;
 
 /**
- * Draws every string in the dimension, for everyone: the string is the tell. The models are Blockbench's
- * ({@code assets/kegare/models/string/}; sources in {@code art/blockbench/}, see DESIGN §3.20). A string is the segment
- * laid end to end along a shallow curve, at its true length: a longer string has more segments, never stretched ones, so
- * the braid can't smear, and only the last, shortened under its knot, changes length. Knots sit where it grips.
+ * Draws every string in the dimension for everyone: the string is the tell. Models are in
+ * {@code assets/kegare/models/string/} (sources in {@code art/blockbench/}, DESIGN §3.20). A string is the segment laid end
+ * to end along a shallow curve at true length: a longer string gets more segments, never stretched ones, so the braid can't
+ * smear; only the last one, shortened under its knot, changes length. Knots sit where it grips.
  */
 public final class StringsClient {
     private static final ModelResourceLocation SEGMENT = ModelResourceLocation.standalone(Kegare.id("string/segment"));
@@ -52,26 +52,26 @@ public final class StringsClient {
     private static final float OVERLAP = 1.03f;
     private static final int MAX_SEGMENTS = 400;
     private static final float KNOT_SCALE = 0.75f;
-    /** A knot this close to the camera (blocks) isn't drawn: your own hand or chest, in first person. */
+    /** A knot this close to the camera (blocks) isn't drawn: it's on your own hand or chest in first person. */
     private static final double KNOT_HIDDEN_WITHIN = 1.6;
     /** The cord is drawn thinner within this many blocks of the camera, down to this fraction of its size. */
     private static final double THIN_WITHIN = 5.0;
     private static final double THIN_MOST = 0.22;
     /** How long (ticks) a new string takes to shoot out to what it grips. */
     private static final float REVEAL_TICKS = 3f;
-    /** A slack string's sag: this share of its length, up to the most it ever hangs. */
+    /** A slack string sags by this share of its length, capped at SAG_MOST blocks. */
     private static final double SAG_SHARE = 0.07;
     private static final double SAG_MOST = 1.3;
-    /** How fast (per second) a string goes from slack to taut and back. */
+    /** Easing rate (per second) between slack and taut. */
     private static final float SLACK_RATE = 14f;
     private static final int SHIMMER_EVERY_TICKS = 2;
 
     /** A string this client knows about. */
     private static final class Shown {
         StringsSync.Entry entry;
-        /** When its newest part appeared, in game time: it shoots out from there. */
+        /** Game time its newest part appeared; that part shoots out from then. */
         long born;
-        /** 1 slack, 0 taut, eased so a string snaps straight rather than popping. */
+        /** 1 slack, 0 taut; eased so a string snaps straight rather than popping. */
         float slack = 1f;
         long lastFrameNanos = System.nanoTime();
 
@@ -170,7 +170,7 @@ public final class StringsClient {
         return chest.add(dx * r, 0, dz * r);
     }
 
-    /** The string hand: the right one. In your own first person it comes from the lower right of the view, like a fishing line. */
+    /** The string hand is the right one; in your own first person the string comes from the lower right of the view, like a fishing line. */
     private static Vec3 hand(Player player, float partial) {
         Minecraft mc = Minecraft.getInstance();
         Camera camera = mc.gameRenderer.getMainCamera();
@@ -217,7 +217,7 @@ public final class StringsClient {
         buffers.endBatch(type);
     }
 
-    /** Slack hangs; the nearer its limit the less it hangs, and at the limit (or pulling) it runs straight. */
+    /** A slack string hangs less the nearer it is to its limit, and runs straight at the limit or while pulling. */
     private static double sag(Span span, Shown shown) {
         double length = span.from().distanceTo(span.to());
         float limit = shown.entry.limit();
@@ -232,7 +232,7 @@ public final class StringsClient {
     private static void draw(PoseStack pose, VertexConsumer out, List<BakedQuad> segment, List<BakedQuad> knot, Vec3 from, Vec3 to, double sag, float reveal) {
         double chord = from.distanceTo(to);
         if (chord < 1.0e-3) return;
-        // A shallow curve's length, closely enough: the segments are spaced by it, so they stay their true size.
+        // Approximate arc length of a shallow curve; segments are spaced by it so they keep their true size.
         double ratio = sag / chord;
         double arc = chord * (1.0 + 8.0 / 3.0 * ratio * ratio);
         double step = SEGMENT_LENGTH / arc;
@@ -261,8 +261,8 @@ public final class StringsClient {
     }
 
     /**
-     * How thick the cord is drawn at this distance from the camera: thinner up close, or the end at your own hand or chest (the
-     * string starting right under your eyes) would fill the view. From a few blocks away it's its true size.
+     * The cord's drawn thickness at this distance from the camera: thinner up close, or the end at your own hand or chest
+     * would fill the view. From a few blocks away it's its true size.
      */
     private static float thickness(double distance) {
         return (float) Mth.clamp(distance / THIN_WITHIN, THIN_MOST, 1.0);
@@ -312,8 +312,8 @@ public final class StringsClient {
     // ---------------------------------------------------------------- the tension shimmer
 
     /**
-     * The strings pulled tight right now, as {far end, near end (the hand)}: while pulling, or dragging something back at the
-     * end of a tether or leash; a waiting string is at rest. PuppetFx runs glints of light along them toward the hand.
+     * The strings pulled tight right now, as {far end, near end (the hand)}: while pulling, or dragging something at the end
+     * of a tether or leash; a waiting string is at rest. PuppetFx runs glints along them toward the hand.
      */
     static List<Vec3[]> tense(ClientLevel level, float partial) {
         if (SHOWN.isEmpty()) return List.of();

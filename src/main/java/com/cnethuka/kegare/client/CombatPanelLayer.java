@@ -29,7 +29,7 @@ import net.minecraft.util.Mth;
  * The combat panel: Technique Mode's HUD. It does not exist until the player presses the Technique Mode key (G); then
  * it slides up and takes the hotbar's place (the hotbar moves to a column on the left edge, {@link CombatHotbarLayer};
  * hearts and food sit on top of the panel). The art is our own
- * ({@code tools/gen_art.py}, textures under {@code gui/combat/}).
+ * (textures under {@code textures/gui/combat/}).
  * <ul>
  *   <li>The crest: freeze pips.</li>
  *   <li>The meter housing: 16 cells of Malice in the innate technique's Malice color (a paler ghost where Malice was
@@ -204,8 +204,8 @@ public final class CombatPanelLayer implements LayeredDraw.Layer {
         CostEnvironment env = data.environment();
         int textColor = env.icon() == CostEnvironment.Icon.COLD ? 0xFF8FE3FF : env.icon() == CostEnvironment.Icon.HOT ? 0xFFFFA45C : 0xFFFFFFFF;
         String amount = Integer.toString(Mth.floor(data.current()));
-        // Five digits (Vast: up to 11000) fit the plate at full size, clear of the glyph. Only a custom config goes wider, and only
-        // that shrinks: at 75% a font's pixels no longer land on screen pixels, and the holes in the zeros close up.
+        // Five digits (Vast: up to 11000) fit the plate at full size, clear of the glyph. Only wider numbers (a custom config) shrink,
+        // because at 75% the font's pixels miss screen pixels and the holes in the zeros close up.
         float scale = font.width(amount) > 30 ? 0.75f : 1f;
         GuiDraw.centered(g, font, Component.literal(amount), x0 + W / 2, y0 + CELL_Y + (scale < 1f ? 2 : 0), scale, textColor);
         if (env.icon() != CostEnvironment.Icon.NONE) {

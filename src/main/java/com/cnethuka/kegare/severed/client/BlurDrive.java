@@ -89,8 +89,8 @@ public final class BlurDrive {
 
     /**
      * The push vanilla's own move adds from the movement keys ({@code LivingEntity.travel}: the keys at 0.98, at the ground's
-     * friction-adjusted speed, or the air's), on top of any velocity set before it. Without taking it off, Blur ran at its top speed
-     * plus a walk (16.5 blocks a second for 0.7 a tick). Read from this tick's keys as they stand before the move.
+     * friction-adjusted speed, or the air's), on top of any velocity set before it. Left in, Blur runs at its top speed plus a walk
+     * (16.5 blocks a second at 0.7 a tick). Read from this tick's keys as they stand before the move.
      */
     static Vec3 walkingPush(LocalPlayer player) {
         float amount;

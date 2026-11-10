@@ -11,12 +11,12 @@ import net.minecraft.server.level.ServerPlayer;
 
 /**
  * Burnout (DESIGN §3.25): a shared state that locks a player's innate technique for a while after something big (Time Manipulation's
- * Standstill now; Dominions later). While it lasts, every ability, special and the ultimate of their innate technique fizzles with
+ * Standstill; Dominions later). While it lasts, every ability, special and the ultimate of their innate technique fizzles with
  * "Burnt out (Xs).", nothing paid; shared abilities (Reverse Malice Technique) still work, and a running toggle can still be switched
  * off. It counts down only while they're online, so logging out never waits it out. Saved; cleared on death (it isn't copied to the
  * respawned player). Shown on the HUD.
  * <p>
- * A {@link Modifier} changes the length of every Burnout as it's applied (Background RMT will shorten it); {@link #shorten} takes time
+ * A {@link Modifier} changes the length of every Burnout as it's applied (Background RMT shortens it); {@link #shorten} takes time
  * off one that's running.
  */
 public final class Burnout {
@@ -40,7 +40,7 @@ public final class Burnout {
          * share of a Burnout costs that share of a full repair.
          */
         int length;
-        /** Ticks of it taken away and paid for on the brain meter (Background RMT's shortening, repair): the rest of what's gone, its countdown took. */
+        /** Ticks taken off and paid for on the brain meter (Background RMT's shortening, repair). The rest of what's gone ran down on the countdown. */
         int paid;
 
         public Data() {

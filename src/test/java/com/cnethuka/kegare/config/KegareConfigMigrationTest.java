@@ -19,7 +19,7 @@ class KegareConfigMigrationTest {
         return ((Number) assertInstanceOf(Number.class, value.getDefault(), path)).doubleValue();
     }
 
-    /** A real kegare-server.toml written by the build that still had the test techniques. */
+    /** A real kegare-server.toml from a build that had the test techniques, with their keys. */
     private static final java.nio.file.Path OLD_TOML = java.nio.file.Path.of(System.getProperty("kegare.projectDir", "."))
             .resolve("src/test/resources/oldsave/kegare-server-old.toml");
 

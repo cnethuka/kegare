@@ -129,9 +129,9 @@ class PossessionTest {
     }
 
     /**
-     * The possession slide: a hidden puppet trails just behind its possessor on the client, and vanilla lets any mob on the
-     * client shove the players it overlaps, so it pushed them along for as long as it kept up. A possessed puppet pushes nothing.
-     * The server's copy has noPhysics set, which isn't synced, so it's cleared here to stand for the client's.
+     * The possession slide: a hidden puppet trails just behind its possessor on the client, and vanilla lets any client-side mob
+     * shove the players it overlaps, which would push them along. So a possessed puppet pushes nothing. The server's copy has
+     * noPhysics set, which isn't synced, so it's cleared here to stand for the client's.
      */
     @Test
     void aPossessedPuppetPushesNothing(MinecraftServer server) throws Exception {

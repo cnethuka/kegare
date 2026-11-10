@@ -51,12 +51,12 @@ import org.lwjgl.glfw.GLFW;
  *   <li>Left edge: ability category tabs (Innate, Malice, Melee).</li>
  *   <li>Header: the innate technique's emblem, name and rarity, and the selected category's abilities (padlocks for
  *       locked ones; a gold number marks the slot each is on), then the technique's ultimate, labelled V.</li>
- *   <li>The large box: whatever ability is hovered (or clicked: a tile or a bar slot, which keeps it there to scroll):
- *       category, cast type, current cost and cooldown,
- *       description, its special and its slot; greyed out with a lock and the level it needs while Refinement hasn't
- *       unlocked it. The right-edge buttons switch the box to Progress (Grade, Assessment, Refinement, Insight, all
- *       private), Background (your Background Task slots and every task; not for the Severed), Traits, Pity or Settings (client options, saved at once: which control picks abilities in Technique
- *       Mode, effects, animations).</li>
+ *   <li>The large box: the hovered ability (or the clicked tile or bar slot, which stays so it can be scrolled):
+ *       category, cast type, current cost and cooldown, description, its special and its slot; greyed out with a lock
+ *       and the level it needs while Refinement hasn't unlocked it. The right-edge buttons switch the box to Progress
+ *       (Grade, Assessment, Refinement, Insight, all private), Background (your Background Task slots and every task;
+ *       not for the Severed), Traits, Pity or Settings (client options, saved at once: which control picks abilities
+ *       in Technique Mode, effects, animations).</li>
  *   <li>Right column: your player model, Malice capacity and tier, reserve, regen.</li>
  *   <li>Bottom: the combat panel itself, live, as the loadout bar. Drag an ability onto a slot (or click it, then a
  *       slot); drag slots to swap, off the bar or right-click to empty; the ultimate slot is fixed.</li>
@@ -417,9 +417,8 @@ public final class SorcererScreen extends Screen {
         Component amount = Component.translatable("gui.kegare.sorcerer.side.amount", Mth.floor(current), capacity);
         Component regen = info.regenPaused() ? Component.translatable("gui.kegare.sorcerer.side.regen_paused")
                 : Component.translatable("gui.kegare.sorcerer.side.regen", GuiDraw.amount(Math.round(info.regenPerSecond() * 10f) / 10f));
-        // Text may run a little past the bar, up to 2px short of the well's edge. In a small window even that's too narrow for large
-        // numbers. Shrinking them would close up the zeros (the scale wouldn't land on whole pixels), so they take a second line
-        // instead, and the player model gives up the height.
+        // Text may run past the bar to 2px short of the well's edge. Numbers too wide even for that take a second line rather than
+        // shrink (a fractional scale closes up the zeros), and the player model gives up the height.
         int textW = rcw - 8;
         boolean stackAmount = font.width(amount) > textW;
         boolean wrapRegen = font.width(regen) > textW;
@@ -455,7 +454,6 @@ public final class SorcererScreen extends Screen {
 
     // ---------------------------------------------------------------- the big box
 
-    /** Draws the details of {@code shown} (or the overview); returns the y below the last line. */
     /** Lines an innate technique adds to one of its abilities' details, under its stats (e.g. which stage it's at). */
     @FunctionalInterface
     public interface DetailLines {
@@ -468,6 +466,7 @@ public final class SorcererScreen extends Screen {
         DETAIL_LINES.add(lines);
     }
 
+    /** Draws the details of {@code shown} (or the overview); returns the y below the last line. */
     private int renderDetails(GuiGraphics g, @Nullable InnateTechnique technique, @Nullable SyncPayload data, @Nullable ResourceLocation shown,
                               int x, int y, int w) {
         if (technique == null) {

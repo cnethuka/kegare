@@ -9,11 +9,12 @@ import net.minecraft.world.entity.player.Player;
 
 /**
  * The brain's limit (DESIGN §3.17): a saved meter per player, 0 to {@link #MAX} (attachment {@code kegare:brain}, kept on death). A full
- * repair gives the whole technique back, ultimate included, so every one costs the same whatever the Burnout's length: what a full
- * repair of {@code dominionBurnoutAssumed} costs. Taking away a share of a Burnout, by repair or by Background RMT's shortening, costs that
- * share: {@code brainPerSecond} x dominionBurnoutAssumed / L a second for a Burnout of length L, x (1 + brainEscalation x meter / 100)
- * (the same tissue destroyed again: each repair adds more than the last). Full, it refuses: no more repair, the Burnout runs its full
- * length. Every RMT user, Six Eyes included. It falls {@code brainHealPerSecond} a second out of a fight; sleeping through a night clears it.
+ * repair gives the whole technique back, ultimate included, so every full repair costs the same whatever the Burnout's length: what a
+ * full repair of {@code dominionBurnoutAssumed} costs. Removing a share of a Burnout, by repair or by Background RMT's shortening, costs
+ * that share: {@code brainPerSecond} x dominionBurnoutAssumed / L per second for a Burnout of length L, times
+ * (1 + brainEscalation x meter / 100), since the same tissue is destroyed again and each repair costs more than the last. Full, it
+ * refuses: no more repair, and the Burnout runs its full length. Applies to every RMT user, Six Eyes included. It falls
+ * {@code brainHealPerSecond} per second out of a fight; sleeping through a night clears it.
  */
 public final class BrainDamage {
     public static final double MAX = 100.0;

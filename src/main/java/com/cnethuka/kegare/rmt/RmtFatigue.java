@@ -30,14 +30,14 @@ public final class RmtFatigue {
         sync(player);
     }
 
-    /** For later systems (Black Spark's zone): takes {@code amount} of fatigue away (0 to 1, as {@link #of} reads). */
+    /** For Black Spark's zone: takes {@code amount} of fatigue away (0 to 1, as {@link #of} reads). */
     public static void restore(ServerPlayer player, double amount) {
         RmtState state = GreenOrbService.state(player);
         state.fatigue = Math.max(0.0, state.fatigue - Math.max(0.0, amount));
         sync(player);
     }
 
-    /** For later systems (Black Spark's zone): damage taken in the next {@code ticks} ticks adds none. */
+    /** For Black Spark's zone: damage taken in the next {@code ticks} ticks adds none. */
     public static void ignore(ServerPlayer player, int ticks) {
         RmtState state = GreenOrbService.state(player);
         state.fatigueIgnoredUntil = Math.max(state.fatigueIgnoredUntil, player.level().getGameTime() + Math.max(0, ticks));

@@ -28,8 +28,8 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 
 /**
- * RMT and Output Insight (DESIGN §3.17, §3.21): the green orb's chance rises with it, up to its cap; and the three new sources each pay
- * once ever: unlocking RMT, healing yourself out of 3 hearts with it and living 10 s, and being healed by another player's.
+ * RMT and Output Insight (DESIGN §3.17, §3.21): the green orb's chance rises with it, up to its cap; and three sources each pay once
+ * ever: unlocking RMT, healing yourself out of 3 hearts with it and living 10 s, and being healed by another player's.
  */
 @ExtendWith(EphemeralTestServerProvider.class)
 class RmtInsightTest {
@@ -144,7 +144,7 @@ class RmtInsightTest {
                 RmtFatigue.tick(q);
                 assertFalse(Insight.hasFirst(q, "rmt_survived_low"), "died first: it doesn't count");
 
-                // healed_by_other: once (Part 4 calls it when another player's RMT heals them).
+                // healed_by_other: once (called when another player's RMT heals them).
                 int before = output(q);
                 assertTrue(InsightHooks.healedByOther(q));
                 assertFalse(InsightHooks.healedByOther(q), "only once");

@@ -104,7 +104,7 @@ public final class SpireClient {
 
     /** The warning crack's bright band reaches out to the hit's default reach and never past it (texels from its middle). */
     static final double CRACK_REACH_TEXELS = RADIUS * BlockMarks.TEXELS;
-    /** How fast the warning crack races out to its ring: the whole circle is there early in the warning, to dodge. */
+    /** Ticks (at most) the warning crack takes to race out to its ring: the whole circle shows early in the warning, so it can be dodged. */
     static final int CRACK_SPREAD = 5;
 
     /**

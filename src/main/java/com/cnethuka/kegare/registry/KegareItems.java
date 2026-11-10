@@ -19,7 +19,7 @@ public final class KegareItems {
     public static final DeferredItem<Item> SUNGLASSES = ITEMS.registerSimpleItem("sunglasses", new Item.Properties().stacksTo(1));
 
     static {
-        // They used to be called Tinted Glasses: any already made or worn are read as these.
+        // Existing "tinted_glasses" items, made or worn, load as these.
         ITEMS.addAlias(Kegare.id("tinted_glasses"), SUNGLASSES.getId());
     }
 

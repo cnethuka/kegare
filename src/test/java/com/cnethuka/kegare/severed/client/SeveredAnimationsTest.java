@@ -17,7 +17,10 @@ import java.util.Map;
 import net.minecraft.resources.ResourceLocation;
 import org.junit.jupiter.api.Test;
 
-/** Severed's shipped animations (tools/anims/severed.py): PAL loads every one the code plays, each with exactly one first-person rule. */
+/**
+ * Severed's shipped animations ({@code player_animations/severed.json}): PAL loads every one the code plays, each with exactly one
+ * first-person rule.
+ */
 class SeveredAnimationsTest {
     @Test
     void palLoadsEveryAnimationAndEachHasOneFirstPersonRule() throws IOException {

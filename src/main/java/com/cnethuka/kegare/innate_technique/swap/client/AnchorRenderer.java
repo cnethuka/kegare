@@ -25,26 +25,26 @@ import org.joml.Matrix4f;
 import org.joml.Quaternionf;
 
 /**
- * Anchor's token (DESIGN §3.19): a small solid teal coin (tools/blockbench/build_swap_anchor.py), drawn the way Rime's ice is
- * (smooth mesh, filtered texture, a lit glow pass) but Swap's own. In flight it flips end over end with a thin crisp teal line
- * behind it; stuck, it stands on its edge just off the face it hit, turning slowly, and pings: a thin ring spreads from it in the
- * face's plane once every 1.5 s. Everything here is ordinary geometry, no Photon, so what's filmed is what players see.
+ * Anchor's token (DESIGN §3.19): a small solid teal coin ({@code models/fx/swap_anchor.obj}), drawn the way Rime's ice is
+ * (smooth mesh, filtered texture, a lit glow pass) but Swap's own. In flight it flips end over end with a thin teal line
+ * behind it; stuck, it stands on its edge just off the face it hit, turning slowly, and pings: a thin ring spreads from it in
+ * the face's plane every 1.5 s. All ordinary geometry, no Photon, so what's filmed is what players see.
  * <p>
- * Vanilla: the token itself (it's the thing, not an effect), and teal specks for the line and the ping ({@link #tick}).
+ * Vanilla: the token itself (it's the object, not an effect), and teal specks for the line and the ping ({@link #tick}).
  */
 public class AnchorRenderer extends EntityRenderer<AnchorEntity> {
     public static final LanceMesh.Model TOKEN = new LanceMesh.Model(Kegare.id("models/fx/swap_anchor.obj"),
             Kegare.id("textures/entity/swap_anchor.png"), Kegare.id("textures/entity/swap_anchor_glow.png"));
     private static final List<String> PIECES = List.of("token");
     private static final float[] FULL = {1f};
-    /** The coin's radius (build_swap_anchor.py's RADIUS). */
+    /** The coin's radius, matching the model. */
     static final float RADIUS = 0.13f;
-    /** How far the server put it off the face it hit (AnchorEntity.onHit). */
+    /** How far the server puts it off the face it hit (AnchorEntity.onHit). */
     private static final float OFF_FACE = 0.08f;
-    /** Degrees a tick: flipping in flight, turning on its edge while it waits. */
+    /** Degrees per tick: flipping in flight, turning on its edge while it waits. */
     private static final float FLIP = 42f, TURN = 5f;
     private static final int PING_EVERY = 30, PING_TICKS = 9;
-    /** Your own isn't drawn this close to your first-person camera: it leaves your hand just below and beside it. */
+    /** Your own token isn't drawn this close to your first-person camera: it leaves your hand just below and beside it. */
     private static final double OWN_HIDDEN_WITHIN = 1.2;
     private static final float LINE_LENGTH = 1.4f, LINE_WIDTH = 0.035f;
     /** How far short of the thrower's eyes the line stops. */
@@ -67,7 +67,7 @@ public class AnchorRenderer extends EntityRenderer<AnchorEntity> {
         if (anchor.isStuck()) {
             Direction face = face(anchor.level(), anchor.position());
             Vec3 n = Vec3.atLowerCornerOf(face.getNormal());
-            // On its edge, just off the face: its middle a radius and a little out from it.
+            // On its edge, just off the face: its middle one radius plus a little out from it.
             Vec3 middle = n.scale(RADIUS + 0.02f - OFF_FACE);
             pose.pushPose();
             pose.translate(middle.x, middle.y, middle.z);
@@ -87,7 +87,7 @@ public class AnchorRenderer extends EntityRenderer<AnchorEntity> {
         super.render(anchor, yaw, partialTick, pose, buffers, light);
     }
 
-    /** The face it's stuck to, found from where it sits (the server doesn't send it): the first solid block it's just off. */
+    /** The face it's stuck to, worked out from where it sits since the server doesn't send it: the first solid block it's just off. */
     static Direction face(Level level, Vec3 at) {
         for (Direction d : FACES) {
             Vec3 probe = at.subtract(Vec3.atLowerCornerOf(d.getNormal()).scale(OFF_FACE + 0.04));
@@ -104,7 +104,7 @@ public class AnchorRenderer extends EntityRenderer<AnchorEntity> {
         pose.pushPose();
         Vec3 onFace = n.scale(0.02f - OFF_FACE);
         pose.translate(onFace.x, onFace.y, onFace.z);
-        // The ring is drawn flat in XZ, facing up: turned so it faces out of the face.
+        // The ring is drawn flat in XZ facing up; turn it to face out of the block face.
         pose.mulPose(new Quaternionf().rotationTo(0f, 1f, 0f, (float) n.x, (float) n.y, (float) n.z));
         float ease = 1f - (1f - t) * (1f - t);
         VertexConsumer out = buffers.getBuffer(RenderType.entityTranslucentEmissive(SwapFx.WHITE));
@@ -131,8 +131,8 @@ public class AnchorRenderer extends EntityRenderer<AnchorEntity> {
         Matrix4f m = pose.last().pose();
         Vec3 eye = cam.subtract(anchor.getPosition(partialTick)); // the camera in the entity's frame
         Vec3 h = new Vec3(0, anchor.getBbHeight() * 0.5, 0);
-        // In the entity's frame (its feet at the origin): from just behind the coin back along the way it came, in four pieces that
-        // fade toward the far end.
+        // In the entity's frame (feet at the origin): from just behind the coin back along its path, in four pieces fading
+        // toward the far end.
         for (int i = 0; i < 4; i++) {
             float t0 = i / 4f, t1 = (i + 1) / 4f;
             Vec3 a = h.subtract(dir.scale(RADIUS + t0 * length)), b = h.subtract(dir.scale(RADIUS + t1 * length));
@@ -147,7 +147,7 @@ public class AnchorRenderer extends EntityRenderer<AnchorEntity> {
         return anchor.getPosition(partialTick).distanceToSqr(camera) < OWN_HIDDEN_WITHIN * OWN_HIDDEN_WITHIN;
     }
 
-    /** Vanilla's stand-ins, a tick at a time: a teal speck behind each token in flight, and a ring of them as a waiting one pings. */
+    /** Vanilla-quality stand-ins, each tick: a teal speck behind each token in flight, and a ring of them as a waiting one pings. */
     static void tick(ClientLevel level) {
         if (SwapFx.drawn()) return;
         Minecraft mc = Minecraft.getInstance();

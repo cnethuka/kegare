@@ -43,12 +43,12 @@ import org.joml.Vector3f;
  * watching can tell a stub from a javelin from a full lance, and anyone tracking the caster sees it: it's drawn from the charge loop
  * the server already sends them. Let go too soon, or get stopped, and what was in the hand crumbles; a throw takes it with it.
  * <p>
- * On a body it's held the way the wind-up holds it ({@code tools/anims/glacial_lance.py}, LANCE_GRIP). In your own first person
- * there's no body: a small one stands off to the lower right instead, pointing away up the right side, clear of the crosshair.
+ * On a body it's held the way the wind-up in {@code player_animations/glacial_lance.json} holds it. In your own first person there's
+ * no body: a small one stands off to the lower right instead, pointing away up the right side, clear of the crosshair.
  */
 public final class LanceHold {
     static final String CHARGE = VisualService.key(Rime.GLACIAL_LANCE, VisualPhase.CHARGE_LOOP);
-    /** The lance in the right hand: Blockbench pixels from the arm's pivot, degrees X then Y then Z (glacial_lance.py's LANCE_GRIP). */
+    /** The lance in the right hand: Blockbench pixels from the arm's pivot, degrees X then Y then Z (matches the wind-up's grip). */
     static final Vector3f GRIP_POSITION = new Vector3f(1.0f, -10.0f, 0.0f);
     static final Vector3f GRIP_ROTATION = new Vector3f(-64.3f, 16.3f, -88.2f);
     static final float GRIP_SCALE = 0.85f;
@@ -63,7 +63,7 @@ public final class LanceHold {
     /** Degrees a tick the body turns to face the aim while it charges. */
     static final float SQUARE_UP_SPEED = 20f;
 
-    /** A charge that stopped and hasn't been thrown (yet): still drawn as it was, until it crumbles or is thrown. */
+    /** A charge that stopped and hasn't been thrown yet: still drawn as it was, until it crumbles or is thrown. */
     private record Ended(long gameTime, float ticks, int growTicks) {}
 
     private static final Map<Integer, Ended> ENDED = new HashMap<>();

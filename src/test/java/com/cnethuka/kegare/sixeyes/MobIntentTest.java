@@ -144,9 +144,9 @@ class MobIntentTest {
                 Mob mob = spawn(level, type, 3.5, 0.5);
                 mob.getBrain().setMemory(MemoryModuleType.ATTACK_TARGET, target);
                 if (mob instanceof Warden warden) {
-                    warden.increaseAngerAt(target, AngerLevel.ANGRY.getMinimumAnger() + 40, false); // (it gives up if not angry)
-                    warden.getBrain().setMemoryWithExpiry(MemoryModuleType.SONIC_BOOM_COOLDOWN, Unit.INSTANCE, 100_000); // (only its melee here: a boom goes through anything)
-                    warden.getBrain().setMemoryWithExpiry(MemoryModuleType.DIG_COOLDOWN, Unit.INSTANCE, 100_000); // (what spawning it properly sets: else it digs itself away)
+                    warden.increaseAngerAt(target, AngerLevel.ANGRY.getMinimumAnger() + 40, false); // it gives up unless angry
+                    warden.getBrain().setMemoryWithExpiry(MemoryModuleType.SONIC_BOOM_COOLDOWN, Unit.INSTANCE, 100_000); // melee only: a sonic boom goes through anything
+                    warden.getBrain().setMemoryWithExpiry(MemoryModuleType.DIG_COOLDOWN, Unit.INSTANCE, 100_000); // a proper spawn sets this, or it digs itself away
                 }
                 assertEquals(target, mob.getTarget(), "setup: its brain has its target");
                 swings(s, level, mob, 300);

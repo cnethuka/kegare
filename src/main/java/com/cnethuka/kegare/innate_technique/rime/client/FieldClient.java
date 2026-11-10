@@ -55,13 +55,13 @@ public final class FieldClient {
     static final float RACE_TICKS_PER_BLOCK = 0.8f;
     /** How often the frost is laid again while it's held (overlapping texels just live longer). */
     static final int REFRESH_TICKS = 3;
-    /** A patch forms over this, holds this long past its last refresh, then melts from the edge in over this. */
+    /** Ticks: a patch forms over SPREAD, holds HOLD past its last refresh, then melts from the edge in over MELT. */
     static final int SPREAD = 5, HOLD = 7, MELT = 30;
     /** How much of a patch shows: nearly all, short of its outermost specks, so the frost doesn't run far past the cone's edge. */
     static final float REACH = 0.85f;
     /** A crystal shoots up over this, holds a moment, then sinks back over this (ticks). */
     static final int RISE = 2, SINK = 4;
-    /** Nothing of this within this of your own first-person camera. */
+    /** No crystal within this many blocks of your own first-person camera. */
     static final double CLEAR_OF_OWN_EYES = 2.2;
     private static final RandomSource RANDOM = RandomSource.create();
 

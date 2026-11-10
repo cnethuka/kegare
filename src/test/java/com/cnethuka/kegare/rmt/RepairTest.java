@@ -43,7 +43,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 @ExtendWith(EphemeralTestServerProvider.class)
 class RepairTest {
     private static final double EPS = 1.0e-3;
-    /** A Domain-length Burnout, as assumed. */
+    /** A Domain-length Burnout ({@code dominionBurnoutAssumed}), in ticks. */
     static int domain() {
         return (int) Math.round(RmtConfig.DOMINION_BURNOUT_ASSUMED.get() * 20);
     }
@@ -70,7 +70,7 @@ class RepairTest {
 
     private static void channel(ServerPlayer p, int ticks) {
         if (CastManager.currentCast(p).isEmpty()) {
-            InnateTechniqueService.clearCooldown(p, Rmt.REVERSE_MALICE_TECHNIQUE.cooldownKey()); // (a channel stopped earlier left RMT's cooldown; only that)
+            InnateTechniqueService.clearCooldown(p, Rmt.REVERSE_MALICE_TECHNIQUE.cooldownKey()); // a channel stopped earlier left RMT's cooldown; clear only that
             CastManager.handleIntent(p, CastIntent.CAST_PRESS);
         }
         for (int i = 0; i < ticks; i++) {

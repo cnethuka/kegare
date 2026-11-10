@@ -73,7 +73,7 @@ public final class SwapClient {
                 (ResourceManagerReloadListener) manager -> AnchorRenderer.TOKEN.forget()));
         modBus.addListener(MimicFlickerLayer::registerDefinitions);
         modBus.addListener(MimicFlickerLayer::addLayers);
-        // Lookalikes used when an effect can't load, or with vfxQuality = VANILLA (teal dust; never the enderman's purple).
+        // Stand-ins when an effect can't load or vfxQuality = VANILLA: teal dust, never the enderman's purple.
         VanillaFallback.register(SwapIds.FX_SWAP_DEPART, new VanillaFallback.Spec(TEAL_FLICK, 1, 12, 0.3, 0.02));
         VanillaFallback.register(SwapIds.FX_SWAP_ARRIVE, new VanillaFallback.Spec(TEAL_FLICK, 1, 8, 0.3, 0.02));
         NeoForge.EVENT_BUS.addListener(SwapClient::onClientTick);
@@ -82,14 +82,15 @@ public final class SwapClient {
         NeoForge.EVENT_BUS.addListener(SwapClient::onLogout);
         NeoForge.EVENT_BUS.addListener(SwapClient::onRenderPlayer);
         NeoForge.EVENT_BUS.addListener(SwapClient::onRenderLevel);
-        // Switchback's countdown ring is drawn here (SwapFx), not by Photon: it has to drain in step with the swap back.
+        // Switchback's countdown ring is drawn by SwapFx, not Photon, so it drains in step with the swap back.
         ClientVisuals.drawnByMove(SwapIds.FX_SWITCHBACK_TIMER);
-        // So is the disguised player's own reminder (SwapHud's brackets), and the card flip as a disguise lands (SwapFx).
+        // Also drawn here: the disguised player's own reminder (SwapHud's brackets), Mimic's flicker and, below, the card flip
+        // as a disguise lands (SwapFx).
         ClientVisuals.drawnByMove(SwapIds.FX_AWARENESS_SHIMMER);
         ClientVisuals.drawnByMove(SwapIds.FX_MIMIC_FLICKER);
         // Momentum Exchange's streaks follow each player along the way they're sent (SwapFx).
         ClientVisuals.drawnByMove(SwapIds.FX_MOMENTUM_BURST);
-        // And Total Swap's wide rings.
+        // Total Swap's wide rings (SwapFx).
         ClientVisuals.drawnByMove(SwapIds.FX_TOTAL_SWAP_BURST);
         SwapHud.init(modBus);
         ClientVisuals.onPlayAt(SwapIds.FX_AWARENESS_FLIP, (level, pos, entityId, visual) -> {
@@ -114,14 +115,14 @@ public final class SwapClient {
                 if (visual.effect().filter(SwapIds.FX_TOTAL_SWAP_BURST::equals).isPresent()) SwapFx.totalSwap(entity);
             }
         });
-        // Mimic claps by your own face: in your own first person that would only sweep your arms across the view, so it's vanilla's.
+        // Mimic claps by the face: in first person that would only sweep your arms across the view, so the hands stay vanilla.
         PlayerAnimations.keepVanillaHands(List.of(SwapIds.ANIM_MIMIC_CAST));
-        // Every other Swap animation is a clap in front of the chest: in your own first person, only while you look about level.
+        // Every other Swap animation is a clap in front of the chest: shown in first person only while looking roughly level.
         PlayerAnimations.handsWhileLevel(List.of(SwapIds.ANIM_POSITIONS_CLAP, SwapIds.ANIM_TOTAL_SWAP_CLAP, SwapIds.ANIM_SWITCHBACK_CAST,
                 SwapIds.ANIM_SWITCHBACK_SNAP,
                 SwapIds.ANIM_AWARENESS_CAST, SwapIds.ANIM_ANCHOR_THROW, SwapIds.ANIM_ANCHOR_RECALL,
                 SwapIds.ANIM_SEND_OFF_CAST, SwapIds.ANIM_EXCHANGE_CAST, SwapIds.ANIM_MOMENTUM_CAST));
-        // Both ends of every swap: drawn here from the entity the server names, and Photon's glints on top (or the dust) a tick late.
+        // Both ends of every swap: drawn here from the entity the server names, with Photon's glints (or the dust) on top a tick later.
         ClientVisuals.onPlayAt(SwapIds.FX_SWAP_DEPART, (level, pos, entityId, visual) -> {
             SwapFx.depart(level, pos, entityId);
             SwapFx.later(pos, visual);
@@ -135,8 +136,8 @@ public final class SwapClient {
     }
 
     /**
-     * Before the world ticks, so it never takes a step of the slide (which it reads as a stride, legs flung wide), and every frame,
-     * since a move read on a frame between ticks would otherwise show for that frame.
+     * Snaps swapped entities into place before the world ticks, so none takes a step of the slide (it reads as a stride, legs
+     * flung wide), and again every frame, since a move read between ticks would otherwise show for that frame.
      */
     private static void onTickPre(ClientTickEvent.Pre event) {
         ClientLevel level = Minecraft.getInstance().level;
@@ -158,7 +159,7 @@ public final class SwapClient {
     }
 
     private static void registerRenderers(EntityRenderersEvent.RegisterRenderers event) {
-        // The anchor's token: a small mesh (tools/blockbench/build_swap_anchor.py), its line and its ping.
+        // The anchor's token: a small mesh (models/fx/swap_anchor.obj), its line and its ping.
         event.registerEntityRenderer(SwapRegistry.ANCHOR.get(), AnchorRenderer::new);
     }
 

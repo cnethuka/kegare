@@ -41,7 +41,7 @@ public final class PlayerEvents {
 
     /** Login handling, callable directly by in-game tests (which use fake players the event skips). */
     static void handleLogin(ServerPlayer player) {
-        // Their real data isn't on them: they're sent away and nothing rolls. What's in the database stays theirs (DESIGN §3.33).
+        // Not admitted means their real data isn't on them: they're sent away and nothing rolls; the database copy stays theirs (DESIGN §3.33).
         var database = com.cnethuka.kegare.database.KegareDatabase.current();
         if (database != null && !database.admit(player)) return;
         TraitSuccession.markSeen(player);

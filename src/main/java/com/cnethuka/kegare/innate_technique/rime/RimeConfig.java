@@ -155,7 +155,7 @@ public final class RimeConfig {
         SHELL_ATTACKER_SLOWNESS_AMPLIFIER = b.defineInRange("attackerSlownessAmplifier", 1, 0, 10);
         b.pop();
 
-        // ---- Specials (R while the base ability is selected). Each shares its base ability's cooldown; "cooldown"
+        // ---- Specials (hold R and the base ability's number key). Each shares its base ability's cooldown; "cooldown"
         // here is how long that shared cooldown runs after the special is used.
         b.comment("Special of Frost Shard (INSTANT): three smaller shards in a fan.").push("splinter");
         SPLINTER_COST = b.defineInRange("cost", 56.0, 0.0, 100_000.0);

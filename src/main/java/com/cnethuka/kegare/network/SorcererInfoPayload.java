@@ -37,7 +37,7 @@ public record SorcererInfoPayload(
         int rollsSinceLegendary, int totalRolls, int hardPity, int rollsUntilSoftPity, int rollsUntilHardPity,
         int legendaryWeight, int baseLegendaryWeight
 ) implements CustomPacketPayload {
-    /** @param castType ordinal of {@code CastType}; cooldown in ticks */
+    /** @param castType ordinal of {@code CastType} */
     public record AbilityInfo(ResourceLocation id, int castType, float cost, float upkeepPerSecond, int cooldownTicks, boolean ultimate,
                               Optional<SpecialInfo> special) {}
 

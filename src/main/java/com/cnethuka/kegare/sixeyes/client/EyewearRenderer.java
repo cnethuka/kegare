@@ -22,8 +22,8 @@ import top.theillusivec4.curios.api.SlotContext;
 import top.theillusivec4.curios.api.client.ICurioRenderer;
 
 /**
- * Eyewear on the face, for everyone to see (DESIGN §3.32): a real 3D model (Python-built, {@code tools/blockbench/build_blindfold.py}), drawn
- * under the head's transform so it follows every pose, animations included. Worn by anyone, it means nothing on someone without the eyes.
+ * Eyewear on the face, for everyone to see (DESIGN §3.32): a real 3D model ({@code models/fx/<name>.obj}), drawn under the head's
+ * transform so it follows every pose, animations included. Worn by anyone, it means nothing on someone without the eyes.
  */
 public final class EyewearRenderer implements ICurioRenderer {
     private final LanceMesh.Model model;

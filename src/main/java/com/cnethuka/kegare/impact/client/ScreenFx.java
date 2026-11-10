@@ -20,16 +20,16 @@ import org.lwjgl.opengl.GL11;
 import org.lwjgl.opengl.GL30;
 
 /**
- * What the Impact System does to the whole picture (DESIGN §3.23), once the world and your hand are drawn and before the HUD (called
+ * What the Impact System does to the whole picture (DESIGN §3.23), after the world and your hand are drawn and before the HUD (called
  * from {@code GameRendererMixin}):
  * <ul>
- * <li><b>Hit-stop</b>: the frame a hit lands on is kept and shown again for a few frames, so the picture freezes. Only the picture:
- * the game ticks on underneath, keys are read, the HUD stays live, and when it ends you see where everything really is now.</li>
- * <li><b>Screen effects</b>: post-processing chains ({@code assets/<namespace>/shaders/post/<path>.json}, Minecraft's own
- * {@link PostChain}) played over the whole screen for a time, fading in and out by their {@code Amount} uniform. The impact frame is
- * one; the server's screen effect hook plays others (grayscale for the players a Standstill freezes; its inverted frame is played by its own client code).</li>
+ * <li><b>Hit-stop</b>: the frame a hit lands on is shown again for a few frames, freezing the picture. Only the picture: the game
+ * ticks on underneath, keys are read, the HUD stays live, and when it ends everything shows where it really is.</li>
+ * <li><b>Screen effects</b>: post-processing chains ({@code assets/<namespace>/shaders/post/<path>.json}, vanilla's
+ * {@link PostChain}) over the whole screen for a time, faded by their {@code Amount} uniform. The impact frame is one; the server's
+ * screen effect hook plays others (grayscale for players a Standstill freezes; its inverted frame comes from its own client code).</li>
  * </ul>
- * A chain that won't load (a driver that can't run it) is logged once and skipped; the rest still plays.
+ * A chain that won't load (a driver that can't run it) is logged once and skipped; the rest still play.
  */
 public final class ScreenFx {
     private static @Nullable TextureTarget held;
@@ -73,7 +73,7 @@ public final class ScreenFx {
         return capturing || holding;
     }
 
-    /** Plays a screen effect for {@code millis}, fading in and out over {@code fadeMillis}. Again while it plays: from now. */
+    /** Plays a screen effect for {@code millis}, fading in and out over {@code fadeMillis}. Replayed while showing: {@code millis} from now. */
     public static void play(ResourceLocation effect, long millis, long fadeMillis) {
         if (millis <= 0) {
             PLAYING.remove(effect);

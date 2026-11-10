@@ -93,13 +93,13 @@ public final class InnateTechniqueService {
         if (sync) PlayerSync.markDirty(player);
     }
 
-    /** Admin/debug: wipe cooldowns. */
     /** Ends one cooldown now (an ability's, or its special's: they share the key). */
     public static void clearCooldown(ServerPlayer player, ResourceLocation cooldownKey) {
         get(player).removeCooldown(cooldownKey);
         PlayerSync.markDirty(player);
     }
 
+    /** Admin/debug: ends every cooldown. */
     public static void clearCooldowns(ServerPlayer player) {
         get(player).pruneCooldowns(Long.MAX_VALUE);
         PlayerSync.markDirty(player);

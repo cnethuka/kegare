@@ -17,10 +17,10 @@ import net.neoforged.neoforge.event.tick.LevelTickEvent;
 
 /**
  * Wall slams (DESIGN §3.24): for a few seconds after a hit that could break the world, its victim is watched (even where nothing may
- * break: the slam still counts for "Lights Out", §3.28). If they're going at
- * {@code minSpeed} or more and stop dead against a wall, a floor or a ceiling (their speed that way gone, and blocks right there that
- * way), they leave a crater where they hit, scaled by how fast they were going. Craters only: a slam does no damage of its own.
- * Speed is read from where they are each tick (a player's client moves them), so it works the same on players and mobs.
+ * break: the slam still counts for "Lights Out", §3.28). If they're going at {@code minSpeed} or more and stop dead against a wall,
+ * floor or ceiling (their speed that way gone, with blocks right there that way), they leave a crater where they hit, scaled by
+ * their speed. Craters only: a slam does no damage of its own. Speed is read from their position each tick (a player's client moves
+ * them), so it works the same on players and mobs.
  */
 final class WallSlams {
     private static final class Watch {

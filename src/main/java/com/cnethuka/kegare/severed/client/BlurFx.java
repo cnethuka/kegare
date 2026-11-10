@@ -29,11 +29,11 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.Vec3;
 
 /**
- * Blur as everyone else sees it (DESIGN §3.27): a smear of delayed afterimages trailing behind the one blurring, desaturated and
- * physical (lit by the world like the body, never glowing), with dust and grit kicked off the ground. Where they really are reads
- * clearly: the body itself is drawn as always, a sharp, solid silhouette at the front, and no afterimage is drawn within reach of it,
- * so a hit on what you see is a hit on their real box. Reduced draws fewer afterimages; Vanilla none, only the dust. No afterimage is
- * drawn round the camera looking at it (yours in first person, or anyone they blur past or through).
+ * Blur as everyone else sees it (DESIGN §3.27): a smear of delayed afterimages behind the one blurring, desaturated and lit by the
+ * world like the body (never glowing), with dust and grit kicked off the ground. The real body is drawn as always, a sharp, solid
+ * silhouette at the front, with no afterimage within reach of it, so a hit on what you see is a hit on their real box. Reduced draws
+ * fewer afterimages; Vanilla only the dust. No afterimage is drawn round the camera looking at it (yours in first person, or anyone
+ * they blur past or through).
  */
 final class BlurFx {
     static final ResourceLocation WHITE = ResourceLocation.withDefaultNamespace("textures/misc/white.png");

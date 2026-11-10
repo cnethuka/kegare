@@ -44,13 +44,13 @@ public final class ShatterClient {
     /** Near its ring, the mark is moved in or out whole for another reach, so the ring keeps its width; inside, it's stretched. */
     static final int KEEP = 12;
     static final ResourceLocation TEXTURE = Kegare.id("textures/fx/shatter_ring.png");
-    /** Where the bright front is across the texture (build_shatter_ring.py). */
+    /** Where the bright front is across the texture ({@code textures/fx/shatter_ring.png}, as u). */
     static final float FRONT = 0.82f;
     /** Ticks the shock takes to reach the edge; ticks it then takes to fade. */
     static final int EXPAND = 5, FADE = 10;
     /** The ring's width on the ground and its wall's height, in blocks. */
     static final float WIDTH = 1.1f, WALL = 0.55f;
-    /** The frost left on the ground holds this long once the ring's out, then melts from the edge in over this. */
+    /** Ticks the frost left on the ground holds once the ring's out, then takes to melt from the edge in. */
     static final int HOLD = 30, MELT = 24;
     private static final int SEGMENTS = 96;
 

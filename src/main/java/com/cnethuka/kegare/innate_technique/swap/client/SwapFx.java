@@ -34,15 +34,15 @@ import org.joml.Matrix4f;
 import org.joml.Vector3f;
 
 /**
- * What Swap draws itself, rather than with Photon (DESIGN §3.19): smooth, flat teal shapes with hard edges, quick and gone, so a
- * swap reads as a clean trick. With {@code vfxQuality = VANILLA} none of it is drawn and the vanilla stand-ins play instead.
+ * What Swap draws itself rather than with Photon (DESIGN §3.19): smooth, flat teal shapes with hard edges, quick and gone, so
+ * a swap reads as a clean trick. With {@code vfxQuality = VANILLA} none of it is drawn and the vanilla stand-ins play instead.
  * <ul>
- *   <li>The <b>afterimage</b>: a teal figure of a player left where they stood, in the pose they were in (the clap): the body's
- *   boxes in flat teal, shaded by the way each face points, with the arms this client sees on them (a disguise's included) and
- *   nothing of the skin. It flickers and is gone in a third of a second. Never drawn round your own first-person camera.
+ *   <li>The <b>afterimage</b>: a teal figure of a player left where they stood, in the pose they were in (the clap): the
+ *   body's boxes in flat teal shaded by face direction, with the arm model this client sees (a disguise's included) and none
+ *   of the skin. It flickers and is gone in a third of a second. Never drawn round your own first-person camera.
  *   <li>The <b>flicker ring</b>: a thin teal ring snapping out round the feet at both ends of a swap.
- *   <li>The <b>snap</b>: a moved player or mob jumps to where it was sent, instead of sliding there over three ticks as vanilla
- *   draws a teleport, so the swap is instant for everyone watching.
+ *   <li>The <b>snap</b>: a moved player or mob jumps straight to where it was sent instead of sliding over three ticks as
+ *   vanilla draws a teleport, so the swap is instant for everyone watching.
  * </ul>
  */
 public final class SwapFx {
@@ -54,13 +54,13 @@ public final class SwapFx {
     static final int GHOST_RGB = 0x3FF0DA;
     /** The afterimage's opacity tick by tick: on, nearly off, on, then fading. */
     private static final float[] GHOST_ALPHA = {0.85f, 0.18f, 0.75f, 0.5f, 0.3f, 0.14f, 0.05f};
-    /** An afterimage this close to your first-person camera isn't drawn (you've just landed in it). */
+    /** An afterimage this close to your first-person camera isn't drawn (you've just landed in it). Blocks. */
     private static final double CLEAR_OF_CAMERA = 1.3;
     private static final int RING_TICKS = 5;
     private static final int RING_SEGMENTS = 40;
     /** Ticks a moved entity is watched for its teleport, to snap it there. */
     private static final int SNAP_WINDOW = 10;
-    /** Keep a player's last drawn pose this long. */
+    /** Ticks a player's last drawn pose is kept. */
     private static final int POSE_KEPT = 40;
 
     /** A player as last drawn: the model's parts, which are shown, the skin and the body's facing. */
@@ -113,15 +113,15 @@ public final class SwapFx {
     private static final int TRANSFER_FADE = 3;
     /** A link is drawn whole and then drawn in toward its far end over this many ticks. */
     private static final int LINK_TICKS = 5;
-    /** How far from your own first-person camera a link stops: it ends in the middle of whoever was taken. */
+    /** How far short of your own first-person camera a link stops, since it ends in the middle of whoever was taken. */
     private static final double LINK_CLEAR = 1.5;
-    /** Mimic's flicker, a tick at a time: the body flashes teal twice, then a faint third (each flash long enough to be seen). */
+    /** Mimic's flicker per tick: the body flashes teal twice, then a faint third (each flash long enough to be seen). */
     private static final float[] FLICKER_ALPHA = {0.85f, 0.85f, 0f, 0f, 0.75f, 0.75f, 0f, 0.35f, 0.2f};
-    /** The card-flip ripple: slats down the body, each this many ticks after the one above, each turning over in FLIP_TICKS. */
+    /** The card-flip ripple: slats down the body, each FLIP_STAGGER ticks after the one above, each turning over in FLIP_TICKS. */
     private static final int FLIP_SLATS = 9;
     private static final float FLIP_STAGGER = 0.7f;
     private static final float FLIP_TICKS = 3f;
-    /** Vanilla's stand-in for Swap's drawn effects: small teal dust, gone almost at once. */
+    /** The Vanilla-quality stand-in for Swap's drawn effects: small teal dust, gone almost at once. */
     static final DustParticleOptions SPECK = new DustParticleOptions(new Vector3f(0.18f, 0.9f, 0.82f), 0.5f);
     private static long clock;
     @Nullable private static PlayerModel<AbstractClientPlayer> wide, slim;
@@ -156,11 +156,11 @@ public final class SwapFx {
     }
 
     /**
-     * Photon's glints (or the vanilla dust) at a swap's end, a tick late: by then the move has reached this client, so if you've
-     * just landed in them they're skipped as anything on your own first-person camera is, instead of filling your view.
+     * Photon's glints (or the vanilla dust) at a swap's end, a tick late: by then the move has reached this client, so if you
+     * just landed in them they're skipped like anything on your own first-person camera, instead of filling the view.
      */
     static void later(Vec3 pos, Visual visual) {
-        // Not this tick (it may run in the same frame the move was read, before the camera has followed it) but the next.
+        // Not this tick (it may run in the frame the move was read, before the camera has followed) but the next.
         LATER.add(new Later(pos, visual, clock + 2));
     }
 
@@ -171,7 +171,7 @@ public final class SwapFx {
         POSES.put(player.getId(), capture(model, player, Mth.rotLerp(partialTick, player.yBodyRotO, player.yBodyRot)));
     }
 
-    /** The pose to leave behind: as last drawn if that was just now, else worked out now (your own body, in first person). */
+    /** The pose to leave behind: as last drawn if that was just now, else worked out now (e.g. your own body in first person). */
     @Nullable
     private static Pose poseOf(AbstractClientPlayer player) {
         Pose seen = POSES.get(player.getId());
@@ -243,8 +243,8 @@ public final class SwapFx {
             Map.Entry<Integer, Snap> e = it.next();
             if (!(level.getEntity(e.getKey()) instanceof LivingEntity entity)) continue;
             if (entity == Minecraft.getInstance().player) {
-                // Yourself: vanilla moves you and your view at once but leaves your head and body turning round from the old
-                // facing, so in third person you'd see your own face for a frame. They face the new way as soon as you've moved.
+                // Yourself: vanilla moves you and your view at once but leaves head and body turning from the old facing, so
+                // third person would show your own face for a frame. Face them the new way as soon as you've moved.
                 if (entity.position().distanceToSqr(e.getValue().from()) < 1.0) continue;
                 entity.yHeadRot = entity.yHeadRotO = entity.yBodyRot = entity.yBodyRotO = entity.getYRot();
                 it.remove();
@@ -282,9 +282,9 @@ public final class SwapFx {
     // ---------------------------------------------------------------- the link
 
     /**
-     * A swap's line from {@code from} to {@code to} (middles): a thin straight teal line with a pale core, there at once, then
-     * drawn in toward {@code to} over 5 ticks, as if whoever was taken went along it. Turned to face each camera; never within
-     * 1.5 blocks of your own first-person one. Vanilla: a row of teal specks.
+     * A swap's line from {@code from} to {@code to} (middles): a thin straight teal line with a pale core, shown whole at once,
+     * then drawn in toward {@code to} over 5 ticks as if whoever was taken went along it. Camera-facing; never within 1.5
+     * blocks of your own first-person camera. Vanilla: a row of teal specks.
      */
     static void link(ClientLevel level, Vec3 from, Vec3 to) {
         if (drawn()) {
@@ -307,7 +307,7 @@ public final class SwapFx {
             float t = Mth.clamp((clock - l.born() + partial) / LINK_TICKS, 0f, 1f);
             Vec3 a = l.from().lerp(l.to(), t * t), b = l.to();
             if (firstPerson) {
-                // Cut back from either end that's at your own camera.
+                // Trim whichever end is at your own camera.
                 Vec3 dir = b.subtract(a);
                 double len = dir.length();
                 if (len < 1.0e-3) continue;
@@ -327,16 +327,16 @@ public final class SwapFx {
     // ---------------------------------------------------------------- Exchange's link
 
     /**
-     * Exchange: an effect crossing from {@code from} to {@code to} (middles) over {@code ticks}. A thin straight teal line between
-     * the two, there at once, and a short pale bead running along it to whoever gets the effect; once it's there the line fades
-     * in 3 ticks. With an effect going each way the two beads cross in the middle. Never within 1.5 blocks of your own
-     * first-person camera. Vanilla: teal specks where the bead is, a tick at a time.
+     * Exchange: an effect crossing from {@code from} to {@code to} (middles) over {@code ticks}. A thin straight teal line shown
+     * at once, and a short pale bead running along it to whoever gets the effect; once the bead arrives the line fades in 3
+     * ticks. With an effect going each way the two beads cross in the middle. Never within 1.5 blocks of your own first-person
+     * camera. Vanilla: teal specks where the bead is, each tick.
      */
     static void transfer(Vec3 from, Vec3 to, int ticks) {
         TRANSFERS.add(new Transfer(from, to, clock, Math.max(1, ticks)));
     }
 
-    /** Where a transfer's bead is, {@code age} ticks in: eased in and out. */
+    /** Where a transfer's bead is {@code age} ticks in, eased in and out. */
     private static Vec3 bead(Transfer x, float age) {
         float t = Mth.clamp(age / x.ticks(), 0f, 1f);
         return x.from().lerp(x.to(), t * t * (3f - 2f * t));
@@ -392,11 +392,11 @@ public final class SwapFx {
     // ---------------------------------------------------------------- Total Swap's rings
 
     /**
-     * Total Swap on an entity (both of them), on top of the swap's own ends and the card flip: two wide thin teal rings sweep out
-     * across the ground from its feet, the second 2 ticks after the first. Vanilla: a wide ring of teal specks.
+     * Total Swap on each of the two, on top of the swap's own ends and the card flip: two wide thin teal rings sweep out across
+     * the ground from the feet, the second 2 ticks after the first. Vanilla: a wide ring of teal specks.
      */
     static void totalSwap(Entity entity) {
-        // Where it was sent (a moved entity may still be on its way there on this client).
+        // Where it was sent (on this client a moved entity may still be on its way).
         Vec3 feet = entity instanceof LivingEntity living && !living.isControlledByLocalInstance()
                 ? new Vec3(living.lerpTargetX(), living.lerpTargetY(), living.lerpTargetZ()) : entity.position();
         if (!drawn()) {
@@ -413,10 +413,10 @@ public final class SwapFx {
     // ---------------------------------------------------------------- Momentum Exchange's streaks
 
     /**
-     * Momentum Exchange on an entity (both of them): a thin teal ring snaps round its waist, and for 8 ticks thin teal speed lines
-     * trail behind it along the way it's actually going (the last 3 ticks of its path, so they show the momentum it was given,
-     * whichever way that is; one stopped dead gets only the ring). Not round your own first-person camera. Vanilla: a ring of
-     * specks at the waist and specks left behind it as it goes.
+     * Momentum Exchange on each of the two: a thin teal ring snaps round the waist, and for 8 ticks thin teal speed lines trail
+     * along the way it's actually going (the last 3 ticks of its path, so they show the momentum it was given whichever way
+     * that is; one stopped dead gets only the ring). Not round your own first-person camera. Vanilla: a ring of specks at the
+     * waist and specks left behind as it goes.
      */
     static void momentum(Entity entity) {
         Minecraft mc = Minecraft.getInstance();
@@ -468,7 +468,7 @@ public final class SwapFx {
             float age = clock - s.born() + partial;
             Vec3 head = entity.getPosition(partial);
             float h = entity.getBbHeight();
-            // The ring: snapped out round the waist in a few ticks, thin, gone.
+            // The ring snaps out round the waist over a few ticks, then is gone.
             float r = age / SNAP_RING_TICKS;
             if (r <= 1f) {
                 float ease = 1f - (1f - r) * (1f - r);
@@ -516,10 +516,9 @@ public final class SwapFx {
     // ---------------------------------------------------------------- Mimic's flicker
 
     /**
-     * Mimic's tell, seen by everyone nearby: the caster's whole body flashes as a flat teal figure a little bigger than them, in
-     * the pose it's in ({@link MimicFlickerLayer}), on and off twice and a faint third time, under half a second as the face is
-     * redrawn. Never round your own first-person camera.
-     * Vanilla: a ring of teal specks round the head.
+     * Mimic's tell, seen by everyone nearby: the caster's whole body flashes as a flat teal figure slightly bigger than them, in
+     * their current pose ({@link MimicFlickerLayer}), twice and then faintly a third time, under half a second as the face is
+     * redrawn. Never round your own first-person camera. Vanilla: a ring of teal specks round the head.
      */
     static void mimicFlicker(Entity entity) {
         if (drawn()) {
@@ -546,9 +545,9 @@ public final class SwapFx {
     // ---------------------------------------------------------------- Awareness's card flip
 
     /**
-     * A disguise landed on someone (Awareness, Total Swap): a ripple of thin teal slats round the body, flipping over one after
-     * another from the head down, each showing its pale back as it turns, like a card turned over; a third of a second, then
-     * gone. Everyone sees it on both; never round your own first-person camera. Vanilla: a short run of teal dust down the body.
+     * A disguise landed on someone (Awareness, Total Swap): thin teal slats round the body flip over one after another from the
+     * head down, each showing its pale back as it turns, like a card turned over; gone in a third of a second. Everyone sees it
+     * on both; never round your own first-person camera. Vanilla: a short run of teal dust down the body.
      */
     static void flip(ClientLevel level, Vec3 pos, int entityId) {
         Entity entity = entityId >= 0 ? level.getEntity(entityId) : null;
@@ -558,7 +557,7 @@ public final class SwapFx {
             return;
         }
         if (entity == Minecraft.getInstance().player && Minecraft.getInstance().options.getCameraType().isFirstPerson()) return;
-        // Either side of the body (in its middle they'd be hidden inside it), at the height of each slat.
+        // Either side of the body (in the middle they'd be hidden inside it), at each slat's height.
         double out = entity.getBbWidth() / 2 + 0.12, yaw = Math.toRadians(entity.getYRot());
         double sideX = Math.cos(yaw) * out, sideZ = Math.sin(yaw) * out;
         for (int i = 0; i < FLIP_SLATS; i++) {
@@ -612,9 +611,9 @@ public final class SwapFx {
     // ---------------------------------------------------------------- Switchback's countdown
 
     /**
-     * Switchback's countdown ring went up on an entity (both of them, as it's cast): a thin teal ring at the feet with a bright arc
-     * that drains round it over the delay, a mark for each second still to go and a pulse as each second starts. It's gone the
-     * moment the loop stops (the swap back, or it's called off).
+     * Switchback's countdown ring went up on an entity (on both, as it's cast): a thin teal ring at the feet with a bright arc
+     * draining round it over the delay, a mark per second still to go and a pulse as each second starts. Gone the moment the
+     * loop stops (the swap back, or it's called off).
      */
     static void countdownStarted(Entity entity, String key) {
         countdownStopped(entity, key);
@@ -717,7 +716,7 @@ public final class SwapFx {
         }
     }
 
-    /** One afterimage: the player model's body boxes in its pose (not the outer layers), flat teal, see-through, lit fully. */
+    /** One afterimage: the player model's body boxes in its pose (not the outer layers), flat teal, translucent, full-bright. */
     private static void ghost(PoseStack pose, MultiBufferSource.BufferSource buffers, Pose p, Vec3 at, float alpha) {
         PlayerModel<AbstractClientPlayer> model = model(p.slim());
         if (model == null) return;

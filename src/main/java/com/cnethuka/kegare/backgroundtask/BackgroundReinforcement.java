@@ -45,7 +45,7 @@ public final class BackgroundReinforcement extends BackgroundTask {
 
     @Override
     public void tick(ServerPlayer player) {
-        Reinforcement.update(player); // changes only when it changes
+        Reinforcement.update(player); // rewrites the modifier only when the strength changes
     }
 
     @Override

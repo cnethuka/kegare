@@ -22,8 +22,8 @@ import org.joml.Vector3f;
 import org.junit.jupiter.api.Test;
 
 /**
- * Glacial Lance's art as it ships (tools/blockbench/build_glacial_lance.py and tools/anims/glacial_lance.py write it): the mesh the
- * game reads, the textures' crisp edges, how the lance grows in the hand, and the frost it leaves.
+ * Glacial Lance's art as it ships ({@code models/fx/glacial_lance.obj}, its textures, {@code player_animations/glacial_lance.json}):
+ * the mesh the game reads, the textures' crisp edges, how the lance grows in the hand, and the frost it leaves.
  */
 class GlacialLanceArtTest {
     private static final float MINIMUM = 0.2f;
@@ -242,7 +242,7 @@ class GlacialLanceArtTest {
         assertTrue(charge.boneAnimations().size() >= 3 && release.boneAnimations().size() >= 3, "the whole body throws");
     }
 
-    /** They moved out of rime.json: one source for each, or which one plays depends on load order. */
+    /** Not in rime.json: one source for each, or which one plays depends on load order. */
     @Test
     void rimeJsonNoLongerCarriesThem() throws IOException {
         assertFalse(RimeJson.has(RimeIds.ANIM_GLACIAL_LANCE_CHARGE.getPath()));

@@ -11,9 +11,9 @@ import net.minecraft.world.phys.Vec3;
 import net.neoforged.neoforge.network.PacketDistributor;
 
 /**
- * Black Spark's look and tell (DESIGN §3.28, §3.15): black sparks and crackling black arcs bursting from the point of contact, fringed in
- * the attacker's Malice color, for one sharp moment, and a sharp crack. Everyone within {@link #RANGE} sees it; the attacker sees their own
- * color, everyone else the color of the face a disguise shows. The client draws it ({@code fists/client/BlackSparkClient}).
+ * Black Spark's look and tell (DESIGN §3.28, §3.15): a brief burst of black sparks and crackling black arcs from the point of contact,
+ * fringed in the attacker's Malice color, with a sharp crack. Everyone within {@link #RANGE} sees it; the attacker sees their own
+ * color, everyone else the color of the face a disguise shows. Drawn by {@code fists/client/BlackSparkClient}.
  */
 public final class BlackSparkFx {
     static final double RANGE = 48;

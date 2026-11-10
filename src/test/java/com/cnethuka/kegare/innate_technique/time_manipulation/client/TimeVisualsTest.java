@@ -19,9 +19,9 @@ import net.minecraft.util.Mth;
 import org.junit.jupiter.api.Test;
 
 /**
- * Time Manipulation's shipped animations (player_animations/time_manipulation.json, from tools/anims): Player Animation Library loads
- * every one the code plays, and each has exactly one first-person rule. And Point Maker's mark: its twelve hour marks go dark one by
- * one, and its hands are painted where they stood.
+ * Time Manipulation's shipped animations (player_animations/time_manipulation.json): Player Animation Library loads every one the
+ * code plays, and each has exactly one first-person rule. And Point Maker's mark: its twelve hour marks go dark one by one, and its
+ * hands are painted where they stood.
  */
 class TimeVisualsTest {
     private static JsonObject file() throws IOException {

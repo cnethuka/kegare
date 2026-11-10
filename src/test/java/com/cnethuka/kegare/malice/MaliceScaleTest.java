@@ -50,7 +50,7 @@ class MaliceScaleTest {
         assertEquals(5.0, KegareServerConfig.REGEN_PAUSE_SECONDS.getDefault(), "the combat pause stays");
     }
 
-    /** Low was 60 with a 10-cost Frost Shard and a 24/s RMT: everything is x4, so a Low player's budget buys about the same. */
+    /** A Low player's budget stays tight: about six Frost Shards, or two and a half seconds of RMT. */
     @Test
     void lowKeepsItsTightBudget() {
         int low = (Integer) tierDefault(MaliceTier.LOW, "base");

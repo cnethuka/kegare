@@ -47,8 +47,8 @@ public final class RmtEvents {
     }
 
     /**
-     * Unlocked before unlocking it paid Output Insight (DESIGN §3.21): paid now, once. {@code unlocked_rmt} pays only once ever, so
-     * this does nothing for anyone already paid.
+     * Pays the RMT unlock's Output Insight (DESIGN §3.21) to anyone who unlocked it before it paid any. {@code unlocked_rmt} pays only
+     * once ever, so anyone already paid gets nothing.
      */
     @SubscribeEvent
     static void onLogin(net.neoforged.neoforge.event.entity.player.PlayerEvent.PlayerLoggedInEvent event) {

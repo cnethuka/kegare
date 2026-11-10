@@ -11,8 +11,8 @@ import net.minecraft.world.phys.Vec3;
 import net.neoforged.neoforge.network.handling.IPayloadContext;
 
 /**
- * Server to client, only to a Severed player, every tick: the real positions of what they sense that everyone's eyes see behind where it is
- * (too fast for the eye, DESIGN §3.30). Sensing isn't seeing, so the outline goes where they really are. Empty: none any more.
+ * Server to client, only to a Severed player, every tick: the real positions of sensed entities that the eye sees behind where they are
+ * (too fast for the eye, DESIGN §3.30). Sensing isn't seeing, so the outline goes where they really are. Empty: none left.
  */
 public record SensedPositionsPayload(List<Entry> entries) implements CustomPacketPayload {
     public record Entry(int id, Vec3 pos) {}

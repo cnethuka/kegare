@@ -18,7 +18,7 @@ public final class KegareNetwork {
 
     public static void register(RegisterPayloadHandlersEvent event) {
         PayloadRegistrar registrar = event.registrar(VERSION);
-        // Sub-tick timing (DESIGN §3.29): handled on the network thread as they arrive, so a tick's wait never gets into a time.
+        // Sub-tick timing (DESIGN §3.29): handled on the network thread on arrival, so waiting for a tick never skews a timestamp.
         PayloadRegistrar timing = event.registrar(VERSION).executesOn(net.neoforged.neoforge.network.registration.HandlerThread.NETWORK);
         timing.playToServer(com.cnethuka.kegare.timing.TimingNet.Stamp.TYPE, com.cnethuka.kegare.timing.TimingNet.Stamp.STREAM_CODEC,
                 com.cnethuka.kegare.timing.TimingNet.Stamp::handle);

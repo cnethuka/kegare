@@ -16,7 +16,7 @@ import net.minecraft.world.entity.player.Player;
  * (arrival - ping - toleranceMs) and arrival, so a modified client can't claim to be earlier than it could have been. With no stamp, or one
  * further than {@code plausibleMs} from its arrival, or no clock estimate yet, the arrival time stands: never worse than the tick.
  * <p>
- * Server time here is {@link #nowMs}: the server's monotonic clock in ms. For later systems: {@link #time} and {@link #gap}.
+ * Server time here is {@link #nowMs}: the server's monotonic clock in ms. Other systems read {@link #time} and {@link #gap} (the parry, Black Spark).
  */
 public final class SubTick {
     private static final Map<UUID, PlayerClock> CLOCKS = new ConcurrentHashMap<>();
@@ -88,12 +88,14 @@ public final class SubTick {
         for (var listener : ARRIVAL_LISTENERS) listener.accept(player, input);
     }
 
-    /** The clock estimate for this player: offset (their clock to the server's) and ping, ms. For the debug log. */
+    /**
+     * This player's clock estimate for the debug log: the ping only, since the offset is between two monotonic clocks and means nothing
+     * on its own.
+     */
     public static String describe(Player player) {
         PlayerClock clock = CLOCKS.get(player.getUUID());
         if (clock == null || !clock.synced()) return "no clock yet";
         return String.format(java.util.Locale.ROOT, "ping %.1f ms", clock.ping());
-        // (the offset is between two monotonic clocks, so its value means nothing on its own)
     }
 
     /** What the network thread does with a ping's answer, by hand (tests, and a check of the clamp without a client). */

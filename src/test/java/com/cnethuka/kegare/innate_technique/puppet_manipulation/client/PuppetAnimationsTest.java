@@ -22,8 +22,8 @@ import org.joml.Vector3f;
 import org.junit.jupiter.api.Test;
 
 /**
- * The shipped player_animations/puppet_manipulation.json (written by tools/anims): Player Animation Library's own loader
- * reads every animation the code plays, and {@link PuppetPoses} samples the spin the same way on the puppet.
+ * The shipped player_animations/puppet_manipulation.json: Player Animation Library's own loader reads every animation the code
+ * plays, and {@link PuppetPoses} samples the spin the same way on the puppet.
  */
 class PuppetAnimationsTest {
     private static final List<ResourceLocation> PLAYED = List.of(PuppetIds.ANIM_CREATE_CHARGE, PuppetIds.ANIM_CREATE_RELEASE,
@@ -69,7 +69,7 @@ class PuppetAnimationsTest {
         }
     }
 
-    /** What was a file-level fade is now plain rest keys, at the same times: the pose leaves rest and comes back as it did. */
+    /** No file-level fades: a cast's own rest keys take the pose out of rest and back into it. */
     @Test
     void aCastLeavesRestAndReturnsToIt() throws IOException {
         JsonObject directive = file().getAsJsonObject("animations").getAsJsonObject(PuppetIds.ANIM_DIRECTIVE_CAST.getPath());

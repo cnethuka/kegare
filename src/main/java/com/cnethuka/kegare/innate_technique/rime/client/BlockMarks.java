@@ -32,7 +32,7 @@ import org.jetbrains.annotations.Nullable;
  * a mark is exactly one texel of the block under it and the block itself looks frozen. All on the client; no block ever changes, and
  * every texel melts away on its own.
  * <p>
- * A {@link Pattern} (tools/blockbench/build_block_marks.py) is the art plus the order its texels come and go in. Stamping one lays it
+ * A {@link Pattern} ({@code textures/marks/}) is the art plus the order its texels come and go in. Stamping one lays it
  * on the faces of the blocks round a point, its centre snapped to their texel grid, and gives every texel the tick it forms and the
  * tick it melts: the inner ones form first and melt last. Each marked face keeps its own 16 x 16 texels, so marks that overlap
  * share texels (the stronger colour, the longer life) instead of flickering through each other. Drawn as one quad per run of like

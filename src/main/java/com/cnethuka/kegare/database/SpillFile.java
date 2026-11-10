@@ -24,7 +24,6 @@ final class SpillFile {
 
     private SpillFile() {}
 
-    /** What the file holds. */
     record Contents(Map<UUID, SaveQueue.Batch> batches, List<NetworkTraits.Op> traitOps) {}
 
     static void write(Path configDir, Map<UUID, SaveQueue.Batch> batches, List<NetworkTraits.Op> traitOps) throws IOException {

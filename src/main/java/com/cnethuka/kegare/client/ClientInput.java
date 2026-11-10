@@ -88,7 +88,7 @@ public final class ClientInput {
         }
     };
 
-    /** A charge or channel, that the server won't turn down for being locked or on cooldown. Those it should be asked about, and it'll say why. */
+    /** A charge or channel the server won't refuse for being locked or on cooldown. Those are still sent so the server can say why. */
     private static boolean wouldHold(@Nullable Ability slotted, boolean special) {
         Ability ability = slotted == null || !special ? slotted : slotted.special().orElse(null);
         SyncPayload data = ClientData.get();
@@ -174,10 +174,10 @@ public final class ClientInput {
     }
 
     /**
-     * A respawn from dying ends Technique Mode; a dimension change makes a new player too, and the mode carries on. A new death
+     * A respawn after death ends Technique Mode; a dimension change also makes a new player but keeps the mode. A new death
      * location tells them apart, and the new player only has it once the packet is handled, so the next tick compares them.
-     * {@link TechniqueMode#tick} can't catch this one: with instant respawn no tick may see the dead player. Dying twice on one
-     * block under instant respawn does look like a dimension change, and only keeps the mode on.
+     * {@link TechniqueMode#tick} can't catch this: with instant respawn no tick may see the dead player. Dying twice on the same
+     * block with instant respawn looks like a dimension change, so the mode just stays on.
      */
     @SubscribeEvent
     static void onPlayerReplaced(ClientPlayerNetworkEvent.Clone event) {

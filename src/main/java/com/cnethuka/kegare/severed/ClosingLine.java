@@ -46,7 +46,7 @@ public final class ClosingLine {
         return rushing(state) || now < state.rushAllowedUntil ? state.rushSpeed : 0;
     }
 
-    /** R from a Severed player who's Blurring: everything else about R is theirs no more. */
+    /** R from a Severed player who's Blurring casts Closing Line and does nothing else. */
     public static boolean intercept(ServerPlayer player, CastIntent intent) {
         if (!Severed.is(player) || !Severed.blurring(player)) return false;
         if (intent == CastIntent.SPECIAL_PRESS) request(player);
@@ -173,7 +173,7 @@ public final class ClosingLine {
     /**
      * The first melee hit after arriving, on something living that's a real target: the rush's speed carried into it, as
      * {@code momentumDamage} per block/tick of extra damage (added to the hit, before the target's defences), as {@code carriedKnockback}
-     * per block/tick of knockback (with the hit, as the Strike's was; never a boss), and as the rush's charge for the Impact System
+     * per block/tick of knockback (applied with the hit; never to a boss), and as the rush's charge for the Impact System
      * (its speed against Closing Line's full speed). After the Strength bonus, so the momentum isn't scaled by it.
      */
     static void onIncoming(LivingIncomingDamageEvent event) {

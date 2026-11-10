@@ -17,13 +17,13 @@ import net.minecraft.world.phys.Vec3;
 import net.neoforged.neoforge.common.util.FakePlayer;
 
 /**
- * The moving part of Swap. Every position swap goes through here: both move at once (a player or a mob), both fall
- * distances are reset (only Momentum Exchange keeps fall distance, on purpose, and it never moves anyone), and both
- * ends get their effects and the clap. Something bigger than the space it lands in is nudged up out of the blocks.
- * Callers fire {@link SwapTargetEvent} first.
+ * The moving part of Swap. Every position swap goes through here: both sides (player or mob) move at once, both fall
+ * distances reset (only Momentum Exchange deliberately carries fall distance, and it moves nobody), and both ends get
+ * their effects and the clap. Something bigger than the space it lands in is nudged up out of the blocks. Callers fire
+ * {@link SwapTargetEvent} first.
  * <p>
- * Everyone watching gets the new position straight away (not at the end of the tick, as the tracker would send it), so both
- * moves land in the same frame for them; with {@code SwapClient}'s snap, nobody is seen sliding there.
+ * Watchers get the new position at once rather than at the end of the tick from the tracker, so both moves land in the
+ * same frame; with {@code SwapClient}'s snap, nobody is seen sliding there.
  */
 public final class Swapper {
     private Swapper() {}
@@ -46,8 +46,8 @@ public final class Swapper {
     }
 
     /**
-     * A Swap move landed on {@code target} (DESIGN §3.23): it goes through the Impact System like any hit, as a technique, but never
-     * breaks the world (it's a clean magic trick). What it did is all it's worth: a plain swap is a light one.
+     * A Swap move landed on {@code target} (DESIGN §3.23): it goes through the Impact System as a technique hit but never
+     * breaks the world (it's a clean trick). It weighs only what it did, so a plain swap is a light hit.
      *
      * @param healthShare the shares of health it moved (Total Swap), else 0
      * @param motion      the speed it handed the target (Momentum Exchange), else 0
@@ -79,8 +79,8 @@ public final class Swapper {
         entity.setYHeadRot(yaw);
         entity.resetFallDistance();
         if (!(entity instanceof FakePlayer)) {
-            // Watchers now, not when the tracker gets round to it (the moved player was told by teleportTo). The tracker is told
-            // too: its next small step is sent relative to where it thinks watchers have the entity, and that is now here.
+            // Tell watchers now rather than waiting for the tracker (teleportTo already told the moved player). The tracker's
+            // base is updated too, since its next relative step is sent from where it thinks watchers have the entity.
             ServerLevel level = (ServerLevel) entity.level();
             level.getChunkSource().broadcast(entity, new ClientboundTeleportEntityPacket(entity));
             if (((ChunkMapAccessor) level.getChunkSource().chunkMap).kegare$entityMap().get(entity.getId())
@@ -102,8 +102,8 @@ public final class Swapper {
     }
 
     /**
-     * Where someone leaves: a teal flicker and their afterimage. The payload names the entity, so each client draws the afterimage
-     * from it (as that client sees it: a disguise included) before the move reaches them.
+     * Where someone leaves: a teal flicker and their afterimage. The payload names the entity, so each client draws the
+     * afterimage as it sees the entity (disguise included) before the move reaches it.
      */
     public static void depart(Entity entity) {
         effect(entity, SwapIds.DEPART);

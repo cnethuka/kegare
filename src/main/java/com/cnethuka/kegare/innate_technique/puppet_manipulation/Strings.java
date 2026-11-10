@@ -296,7 +296,7 @@ public final class Strings {
                 boolean arrived = a.first.distanceTo(a.caster) <= PuppetConfig.STRINGS_ARRIVE.get() + ARRIVE_SLACK;
                 if (timeUp || arrived) {
                     land(a.first, ARRIVE_KEEP);
-                    // A player or a mob: your own puppet coming when called is nothing to write home about.
+                    // Only a player or a mob counts: reeling in your own puppet doesn't.
                     if (arrived && !(a.first instanceof PuppetEntity puppet && puppet.isOwnedBy(a.caster))) {
                         PuppetAdvancements.award(a.caster, PuppetAdvancements.GET_OVER_HERE);
                     }

@@ -38,8 +38,8 @@ public final class Senses {
     }
 
     /**
-     * Every tick: the real positions of what they sense that eyes see behind where it is (DESIGN §3.30). Sensing isn't seeing, so the
-     * outline goes where they really are; the body itself they see where everyone does.
+     * Every tick: the real positions of sensed entities that the eye sees behind where they are (DESIGN §3.30). Sensing isn't seeing, so
+     * the outline goes where they really are; the body itself they see where everyone does.
      */
     private static void positions(ServerPlayer player) {
         List<Integer> ids = SENT.get(player.getUUID());

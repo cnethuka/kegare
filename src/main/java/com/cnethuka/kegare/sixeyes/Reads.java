@@ -50,7 +50,7 @@ import net.neoforged.neoforge.network.PacketDistributor;
  * Insight, traits, the brain meter or anything §1 keeps secret.
  */
 public final class Reads {
-    /** Players this close are read (render distance's reach, round). */
+    /** Players this close are read (roughly render distance). */
     public static final double RANGE = 96.0;
     /** The focus: within this many degrees of the crosshair, nearest to it. */
     public static final double FOCUS_DEGREES = 20.0;

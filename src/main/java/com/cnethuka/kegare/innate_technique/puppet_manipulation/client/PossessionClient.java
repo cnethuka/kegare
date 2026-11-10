@@ -39,12 +39,11 @@ import net.neoforged.neoforge.common.NeoForge;
 import net.neoforged.neoforge.common.util.TriState;
 
 /**
- * Possession on every client: the possessing player is drawn as their puppet (no name tag, the puppet's glow), a crisp
- * thread runs from their shell to them for as long as they're in it (drawn by PuppetFx), and their own HUD shows "Possessing" and their body's health.
+ * Possession on every client: the possessing player is drawn as their puppet (no name tag, the puppet's glow), a thread
+ * runs from their shell to them while they're in it (PuppetFx), and their HUD shows "Possessing" and their body's health.
  */
 public final class PossessionClient {
-    /** Blocks between two beads of the thread, and the most beads drawn on one. */
-    /** Vanilla's thread: specks along it this often, this far apart (Full and Reduced draw it, PuppetFx). */
+    /** Vanilla effects quality: specks along the thread every this many ticks, this many blocks apart (Full and Reduced use PuppetFx). */
     private static final int SPECKS_EVERY_TICKS = 3;
     private static final double SPECK_SPACING = 0.8;
     private static final ResourceLocation HEART = ResourceLocation.withDefaultNamespace("hud/heart/full");
@@ -52,10 +51,10 @@ public final class PossessionClient {
 
     private static final Map<UUID, Link> POSSESSING = new HashMap<>();
 
-    /** One possession as this client knows it, and the game time it first heard of it (the thread shoots out from then). */
+    /** One possession and the game time this client first heard of it (the thread shoots out from then). */
     record Link(PossessionLinks.Entry entry, long since) {}
 
-    /** Whether this client has had the list since it logged in (the first one, on logging in, is everyone already at it). */
+    /** Whether a list has arrived since login (the first one lists everyone already possessing). */
     private static boolean heard;
     private static PuppetHud.Payload hud = PuppetHud.Payload.NONE;
 
@@ -69,7 +68,7 @@ public final class PossessionClient {
             POSSESSING.clear();
             for (PossessionLinks.Entry e : payload.entries()) {
                 Link old = was.get(e.player());
-                // Someone already possessing when you log in has their thread there already; a new one shoots out.
+                // Someone already possessing at login gets a finished thread; a new possession's thread shoots out.
                 long since = old != null && old.entry().shellId() == e.shellId() ? old.since() : heard ? now : now - 100;
                 POSSESSING.put(e.player(), new Link(e, since));
             }
@@ -107,7 +106,7 @@ public final class PossessionClient {
 
     // ---------------------------------------------------------------- the thread
 
-    /** Vanilla quality: lavender specks along the thread (Full and Reduced draw it as a crisp thread, PuppetFx). */
+    /** Vanilla quality: lavender specks along the thread (Full and Reduced draw a solid thread, PuppetFx). */
     private static void onClientTick(ClientTickEvent.Post event) {
         ClientLevel level = Minecraft.getInstance().level;
         if (level == null || POSSESSING.isEmpty() || PuppetFx.drawn() || level.getGameTime() % SPECKS_EVERY_TICKS != 0) return;
@@ -131,7 +130,7 @@ public final class PossessionClient {
     // ---------------------------------------------------------------- looking like the puppet
 
     private static void onNameTag(RenderNameTagEvent event) {
-        // (Not for the Six Eyes: they know who's in there, DESIGN §3.32.)
+        // Six Eyes still see the name tag: they know who's in there (DESIGN §3.32).
         if (event.getEntity() instanceof Player player && POSSESSING.containsKey(player.getUUID()) && !com.cnethuka.kegare.sixeyes.client.SightClient.isBearer()) event.setCanRender(TriState.FALSE);
     }
 
@@ -158,7 +157,7 @@ public final class PossessionClient {
                            float partialTick, float ageInTicks, float netHeadYaw, float headPitch) {
             PossessionLinks.Entry e = entry(player.getUUID());
             if (e == null || player.isInvisible()) return;
-            if (PlayerAnimations.firstPersonPass()) return; // your own arms in first person: its own head would be round the camera
+            if (PlayerAnimations.firstPersonPass()) return; // first-person arms: the glow's head would wrap the camera
             float t = player.tickCount + partialTick;
             getParentModel().copyPropertiesTo(model);
             model.prepareMobModel(player, limbSwing, limbSwingAmount, partialTick);

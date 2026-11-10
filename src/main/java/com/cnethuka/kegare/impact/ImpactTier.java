@@ -13,7 +13,7 @@ public enum ImpactTier {
     HEAVY,
     /** The biggest hits: a black-and-white impact frame for the two involved. */
     IMPACT_FRAME,
-    /** Reserved for Black Spark (not built yet). No strength reaches it: only a hit that asks for it by name. */
+    /** Reserved: no strength reaches it, only a hit that asks for it by name. Black Spark doesn't; it goes through the rule like any hit. */
     TOP;
 
     public String serializedName() {

@@ -20,7 +20,7 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 
-/** Firsts pay once, and everything the spec wires up today pays where config says. */
+/** Firsts pay once, and every wired-up source pays into the category config gives it. */
 @ExtendWith(EphemeralTestServerProvider.class)
 class InsightTest {
     @AfterEach

@@ -9,7 +9,7 @@ public final class SeveredIds {
     public static final ResourceLocation FX_BLUR = Kegare.id("severed/blur");
     public static final String BLUR_LOOP = "severed/blur";
 
-    // Player animations (assets/kegare/player_animations/severed.json, from tools/anims/severed.py)
+    // Player animations (assets/kegare/player_animations/severed.json)
     public static final ResourceLocation ANIM_BLUR_ON = Kegare.id("blur_on");
     public static final ResourceLocation ANIM_CLOSING_LINE_LAUNCH = Kegare.id("closing_line_launch");
     public static final ResourceLocation ANIM_CLOSING_LINE_ARRIVE = Kegare.id("closing_line_arrive");

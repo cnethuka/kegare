@@ -67,7 +67,7 @@ public final class TimeAdvancements {
         }
     }
 
-    /** Died or left: whatever was in progress is off. */
+    /** Death or logout cancels a Second Chance in progress. */
     static void forget(UUID player) {
         SECOND_CHANCE_SINCE.remove(player);
     }

@@ -7,7 +7,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import com.cnethuka.kegare.innatetechnique.InnateTechniqueRarity;
 import org.junit.jupiter.api.Test;
 
-/** Fix 4: the "innate technique removed by an update" replacement roll is free. */
+/** The replacement roll for an innate technique removed by an update is free. */
 class ReplacementRollTest {
     private static final PityRoller.Settings DEFAULTS = new PityRoller.Settings(new int[]{50, 30, 15, 5}, 30, 5, 50);
     private static final boolean[] ALL = {true, true, true, true};

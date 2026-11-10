@@ -62,7 +62,7 @@ public final class ReadsText {
     /**
      * Where the focus's panel goes: beside the body, on the side away from the crosshair, and never over the box round it ({@code clear}
      * either way); inside the screen. If neither side has room, above or below the crosshair. Null if it fits nowhere at this size (the
-     * client draws it smaller). Returns {x, y}.
+     * client draws it smaller). Returns {x, y, 1 if it went right else 0}.
      */
     @javax.annotation.Nullable
     public static int[] placePanel(float tagX, float tagY, int w, int h, int screenW, int screenH, int clear, int gap) {

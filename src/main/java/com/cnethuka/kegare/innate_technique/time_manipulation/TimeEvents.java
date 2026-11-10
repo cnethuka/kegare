@@ -44,11 +44,11 @@ final class TimeEvents {
                 TimeAdvancements.tick(p);
             }
         });
-        NeoForge.EVENT_BUS.addListener(AccelerateAbility::onUseTick); // both sides: an item's use keeps step with the server's
+        NeoForge.EVENT_BUS.addListener(AccelerateAbility::onUseTick); // both sides, so client item use keeps step with the server
         NeoForge.EVENT_BUS.addListener(TimeStops::onEntityTick);
         NeoForge.EVENT_BUS.addListener(TimeStops::onJoin);
         NeoForge.EVENT_BUS.addListener(TimeStops::onImpact);
-        // First: what reaches the frozen is held at its full amount, and nothing else sees it until it lands.
+        // HIGHEST: damage to the frozen is held at its full amount, and no other listener sees it until it lands.
         NeoForge.EVENT_BUS.addListener(EventPriority.HIGHEST, TimeStops::onIncomingDamage);
         NeoForge.EVENT_BUS.addListener(EventPriority.HIGHEST, TimeStops::onKnockBack);
         NeoForge.EVENT_BUS.addListener(TimeStops::onEnderTeleport);
@@ -89,8 +89,8 @@ final class TimeEvents {
             TimeStops.onLeaving(p); // a caster who's gone ends it
             TimeStops.sendTo(p);
         });
-        // A frozen player sent to another level takes what was held for them first, where they were held (last, and only if the trip
-        // is still on).
+        // LOWEST, and only if the trip wasn't cancelled: a frozen player sent to another level first takes what was held for them,
+        // where they were held.
         NeoForge.EVENT_BUS.addListener(EventPriority.LOWEST, (EntityTravelToDimensionEvent e) -> {
             if (!e.isCanceled() && e.getEntity() instanceof ServerPlayer p) TimeStops.onTravel(p);
         });

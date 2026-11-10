@@ -59,7 +59,7 @@ public class AnchorEntity extends ThrowableItemProjectile {
         } else {
             super.tick();
         }
-        // Drawn, line and ping, by AnchorRenderer; only the server times it out.
+        // AnchorRenderer draws it, its line and its ping; only the server times it out.
         if (!level().isClientSide && isAlive() && tickCount >= lifetime) Anchors.expire(this);
     }
 
@@ -83,7 +83,7 @@ public class AnchorEntity extends ThrowableItemProjectile {
 
     /**
      * Where a player taken to this anchor stands: on the ground it landed on, out from the wall it stuck to, or hanging
-     * under the ceiling; nudged up out of blocks if it must be.
+     * under the ceiling.
      */
     public Vec3 arrivalFor(Entity entity) {
         Vec3 at = position();

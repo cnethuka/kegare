@@ -72,7 +72,7 @@ class BlurTest {
                 run(server, s, SeveredConfig.BLUR_SPEED.get(), 10);
                 SeveredState state = Severed.state(s);
                 // Moved 7 blocks to the side by the server (Rewind, a swap, a command): more than Blur could run in the last few ticks,
-                // under the 8 blocks that count as a teleport by themselves. The speed check used to put them back.
+                // under the 8 blocks that count as a teleport by themselves. The speed check mustn't put them back.
                 Vec3 to = s.position().add(0, 0, 7);
                 Swapper.moveTo(s, to);
                 Severed.movedByServer(s); // what the teleport tells it (a test player's connection ignores teleports)

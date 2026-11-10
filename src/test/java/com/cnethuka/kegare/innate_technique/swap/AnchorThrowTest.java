@@ -49,7 +49,7 @@ class AnchorThrowTest {
                     assertTrue(was.distanceTo(is) <= AnchorThrow.SAME_SPOT, pitch + "°: lands where it would have: " + was + " vs " + is);
                 }
 
-                // The hand in a block: thrown from the eyes, as before.
+                // The hand inside a block: it falls back to a throw from the eyes.
                 stand(caster, 0f);
                 BlockPos inHand = BlockPos.containing(AnchorThrow.hand(caster));
                 level.setBlockAndUpdate(inHand, Blocks.STONE.defaultBlockState());

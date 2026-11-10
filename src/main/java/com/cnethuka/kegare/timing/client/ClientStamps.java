@@ -18,10 +18,10 @@ import net.neoforged.neoforge.network.PacketDistributor;
 import org.lwjgl.glfw.GLFW;
 
 /**
- * The client's half of sub-tick timing (DESIGN §3.29): the inputs that need it are stamped with this client's monotonic clock (ms) the
- * moment the key or button goes down, and the stamp is sent there and then, ahead of the packet that does the thing at the next client
- * tick. Sent at the press, its trip to the server is only the network's, which is all the server allows a stamp to claim. How fine it is
- * depends on the frame rate: the game reads keys once a frame.
+ * The client's half of sub-tick timing (DESIGN §3.29): inputs that need it are stamped with this client's monotonic clock (ms) the
+ * moment the key or button goes down, and the stamp is sent at once, ahead of the packet that acts on it at the next client tick. Sent
+ * at the press, its trip to the server is network latency only, which is all the server lets a stamp claim. Precision depends on the
+ * frame rate: the game reads keys once a frame.
  */
 public final class ClientStamps {
     private ClientStamps() {}
@@ -58,7 +58,7 @@ public final class ClientStamps {
                 Ability ability = slotted.get(i);
                 if (ability == null || !matches(hotbar[i], key)) continue;
                 if (FistsIds.ABILITY.equals(ability.id())) send(TimedInput.FISTS_ON, now);
-                send(TimedInput.CAST, now); // every cast key: the moment the intent is on its way
+                send(TimedInput.CAST, now); // every cast key, stamped as its intent goes out
             }
             if (matches(KegareKeys.ULTIMATE, key)) send(TimedInput.CAST, now);
         }

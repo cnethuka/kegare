@@ -288,7 +288,7 @@ class BattleDamageTest {
                     assertTrue(chest != null && chest.getItem(0).is(Items.DIAMOND) && chest.getItem(0).getCount() == 5, "with what it held");
                     assertTrue(items(level).isEmpty(), "and nothing dropped on the way");
                 } finally {
-                    BattleScars.get(level).forget(); // the original copy: the reloaded one did its work
+                    BattleScars.get(level).forget(); // clears the original copy; the reloaded one already put the blocks back
                     BattleDamageConfig.RESTORE_DELAY.set(delay);
                     BattleDamageConfig.RESTORE_INTERVAL.set(interval);
                 }
