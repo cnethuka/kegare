@@ -16,11 +16,9 @@
   §3.21 Progression, §3.22 Melee, §3.23 Impact System, §3.24 Battle damage, §3.25 Burnout, §3.26 Time Manipulation, §3.27 Severed, §3.28 Reinforced Fists and Black Spark, §3.29 Sub-tick timing, §3.30 Too fast for the eye, §3.31 Background Tasks, §3.32 Six Eyes, §3.33 Postgres storage), §4 Extension
   points, §5 Future. Read the section before touching a system; update it in the same commit when behaviour or visuals change.
 - `README.md`: required mods, content list, dev commands and keys.
-- `tools/anims/*.py` → `assets/kegare/player_animations/*.json` (`python3 tools/anims/build.py [--preview names]`).
-- `tools/sounds/*.py` → `assets/kegare/sounds/**/*.ogg` (`python3 tools/sounds/build.py [--preview]`), registered in
-  `sound/KegareSounds` (DESIGN §3.10).
-- `tools/blockbench/`: Python model builders (`build_*.py`), block marks, Blockbench setup and the per-asset notes in its README.
-- `art/blockbench/`: `.bbmodel` projects. `tools/gen_art.py`: GUI and item art.
+- Assets (DESIGN §3.10): `art/blockbench/*.bbmodel` (model sources, exported to `models/fx/` and `textures/entity/`),
+  `assets/kegare/player_animations/*.json`, textures under `assets/kegare/textures/`, and `assets/kegare/sounds/**/*.ogg`,
+  registered in `sound/KegareSounds`. `tools/db/public_reader.sql`: the read-only Postgres role (DESIGN §3.33).
 - Player-facing text: `data/KegareLanguageProvider.java` → `src/generated/.../en_us.json` (never hand-edit generated files).
 - Network version: `network/KegareNetwork.VERSION`, documented in DESIGN §3.5.
 
@@ -43,11 +41,9 @@
 - Ask before adding dependencies or installing anything.
 
 ## Visual rules
-- Models and animations come from Python scripts or are hand-edited in Blockbench, chosen per asset, and each asset has exactly
-  one source. A Python-built file is never hand-edited: the next build overwrites it. A hand-edited one never has its build
-  script re-run, which would overwrite the edits. Hand-edited today: Strings' `art/blockbench/string_segment.bbmodel`,
-  `string_knot.bbmodel` and `string_animations.bbmodel` (DESIGN §3.20, `tools/blockbench/README.md`). Everything else is
-  Python. A new asset says which it is.
+- Assets are edited directly, and each has exactly one source (DESIGN §3.10): models in Blockbench (the `.bbmodel` is the
+  source; export over the shipped OBJ, block model and textures), player animations in Blockbench (the JSON itself), textures
+  in an image editor, sounds as `.ogg` files. A new asset follows the same rule.
 - Marks painted on blocks are pixel art at 16 pixels per block with hard pixels (per-pixel glow is fine). A technique's own
   objects (lances, shards, spikes, plates) are smooth: meshes, high-res opaque textures and Photon glow. Fist flames stay
   pixel style.

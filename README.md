@@ -87,7 +87,10 @@ the `kegare_public` schema holds read-only views of those stats and of announced
 | `/kegare debug impact log <true\|false>` | Every hit's tier and the numbers behind it go to its attacker and victim, to tune the server's `[impact]` thresholds |
 | `/kegare debug screen <player> <effect> <seconds>` | Play a whole-screen effect (`kegare:grayscale`) on a player's screen; 0 stops it |
 | `/kegare debug battle restore` | Start rebuilding everything battle damage broke in RESTORING mode now (DESIGN §3.24) |
-| `python3 tools/gen_art.py [--preview sheet.png]` | Regenerate all GUI and item art (needs Pillow); see DESIGN.md §3.10 |
+
+Assets are edited directly, and each has one source: models in Blockbench (`art/blockbench/*.bbmodel`, exported over the
+shipped OBJ and textures), player animations in Blockbench (`assets/kegare/player_animations/*.json`), textures in an image editor
+and sounds as `.ogg` files. See DESIGN.md §3.10.
 
 Requires JDK 21 (e.g. Temurin). Point `JAVA_HOME` at it if it isn't your default Java.
 

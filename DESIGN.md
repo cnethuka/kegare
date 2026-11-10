@@ -351,7 +351,7 @@ All timestamps use **level game time**. They persist across restarts and are ide
   was Severed's payloads, `18` Burnout's end time in the sync, §3.25, and Time Manipulation's payloads, §3.26). Bump it when payload formats change; mismatched clients are refused.
 
 ### 3.6 HUD
-**Rule: the combat HUD does not exist until the player asks for it** (art in `gen_art.py` → `textures/gui/combat/`).
+**Rule: the combat HUD does not exist until the player asks for it** (art in `textures/gui/combat/`).
 - **Without Technique Mode** the screen is vanilla. Only what can't wait shows, small and under the crosshair
   (`kegare:status`): freeze pips while there are stacks ("Frozen!" while frozen; Severed players too), and a thin
   charge/channel line for a cast still held after the mode ended.
@@ -503,8 +503,17 @@ Malice is always shown as whole numbers (floored, like the HUD); the stored valu
   `KegareItems.ITEMS`, so an item added later appears there by itself: today the Purification Talisman, the Blindfold and the Sunglasses. They're in no vanilla tab; creative search still finds them.
 - `./gradlew runData` generates lang, the item model, tags (`kegare:talismans`), the talisman recipe
   (gold + amethyst + paper; overridable by datapack) and the advancements.
-- `python3 tools/gen_art.py [--preview sheet.png]` regenerates all GUI and item art (needs Pillow). The art is
-  procedural but drawn to look hand-pixelled. `--preview` also writes a contact sheet of every asset at 4×.
+- **Assets are edited directly**, and each has exactly one source:
+  - **Models:** the Blockbench projects in `art/blockbench/` are the source. Edit one in Blockbench and export over the shipped
+    files it makes (an OBJ in `models/fx/` and its textures in `textures/entity/`, or a block model for Strings, §3.20).
+  - **Player animations:** `player_animations/*.json`, in Blockbench's own Bedrock animation format, which Player Animation Library
+    reads natively. Open one in Blockbench on a player rig, edit it and save it back over the same file. Strings' five come from
+    `art/blockbench/string_animations.bbmodel`, which has its own plain rig (§3.20). The game blends every animation in and out in
+    code, which Blockbench doesn't show.
+  - **Textures** (GUI, items, entities, block marks): the PNGs under `assets/kegare/textures/`, edited in an image editor. Hard
+    pixels on low-res textures, never antialiased or soft-edged.
+  - **Sounds:** the `.ogg` files under `assets/kegare/sounds/`.
+- **GUI and item art** is drawn to look hand-pixelled.
   - **Direction ("defiled ink"):** blackened cursed-iron frames lit from the top-left with a violet rim, smoky
     plum-black ink surfaces, Malice violet, ofuda paper and a red seal as accents. Techniques used: a 1px near-black
     ink outline on everything, ordered (Bayer) dithering between hand-picked color ramps, mottled metal, rim light,
@@ -513,8 +522,8 @@ Malice is always shown as whole numbers (floored, like the HUD); the stored valu
   - **Nine-slice sprites** (`textures/gui/sprites/`, each with a `.mcmeta`): `panel`,
     `tab`/`tab_selected`, `button`/`button_highlighted`/`button_disabled`
     (drawn by `InkButton`, a vanilla button with Kegare's sprites), and `divider` (a brush stroke, 3-slice).
-    In 1.21.1 the edges and centre **tile**, they do not stretch, so the generator makes them seamless along the
-    tile period and keeps every ornament inside the corners.
+    In 1.21.1 the edges and centre **tile**, they do not stretch, so they're seamless along the tile period, with every
+    ornament inside the corners.
   - **Plain sprites:** `sparkle`, `severed_emblem`, and the roll reveal's in `sprites/reveal/`: `talisman`, `flame_0`-`7`
     (a looping flame), `eye_0`-`5` (an eye opening), `glow`, `ring`, `ray`, `star`, `star_small`, `ash`.
     The flames, glow, ring, ray and stars are greyscale, tinted in code by rarity.
@@ -524,15 +533,11 @@ Malice is always shown as whole numbers (floored, like the HUD); the stored valu
       white shine; 5px caps, a 22px middle that tiles. `GuiDraw.maliceBar` draws it for both the HUD and the
       Sorcerer screen, tinting the fill with the innate technique's Malice color (§3.3) and drawing the shine
       untinted on top, so any color keeps its gloss and stays readable.
-- **Sounds** (Kegare's own, no recordings): `python3 tools/sounds/build.py` synthesizes them from seeded noise and tones
-  (plain Python, written as mono Vorbis `.ogg` through the system's libsndfile, so they're positional) into
-  `assets/kegare/sounds/<technique>/`; `--preview` also writes the candidates to `run/sounds_preview/`. Each one is
-  registered in `sound/KegareSounds` (event `kegare:<technique>.<name>`, its file and its subtitle key); runData writes
-  `sounds.json` from that list (`KegareSoundProvider`) and the subtitle goes in the language provider. `SoundsTest`
-  checks every registered sound has a mono file, a subtitle and an entry, and no file is left unused. A new sound: a
-  function in the technique's `tools/sounds/<technique>.py`, an entry in `KegareSounds.ALL`, its subtitle, then
-  `build.py` and runData. The writer gives every file a fixed stream serial (libsndfile picks a random one), so a
-  rebuild of an unchanged sound is the same bytes and only changed sounds show in git.
+- **Sounds** (Kegare's own, no recordings): mono Vorbis `.ogg` files (mono, so they're positional) in
+  `assets/kegare/sounds/<technique>/`. Each one is registered in `sound/KegareSounds` (event `kegare:<technique>.<name>`, its file
+  and its subtitle key); runData writes `sounds.json` from that list (`KegareSoundProvider`) and the subtitle goes in the language
+  provider. `SoundsTest` checks every registered sound has a mono file, a subtitle and an entry, and no file is left unused. A new
+  sound: its `.ogg`, an entry in `KegareSounds.ALL`, its subtitle, then runData.
 - **Art for content (optional, with fallbacks).** New content should ship with:
   - an **emblem** per innate technique: `<namespace>:textures/gui/emblem/<path>.png`, 48×48. It is shown
     on the reveal's name card, the Sorcerer screen and the talisman prompt. Without one, the tab icon item is drawn instead.
@@ -854,20 +859,17 @@ Package `com.cnethuka.kegare.innate_technique.rime`. **Rarity: RARE.** All numbe
   it is synced (re-checked every 10 ticks) for the HUD's snowflake or flame icon next to the Malice bar, with the
   multiplier. Hovering an ability on the Sorcerer screen shows its current cost, upkeep and every active factor.
 - **Visuals:** PAL animation `frozen` (loop) in
-  `freeze.json` (`tools/anims/freeze.py`); every Rime animation now has its own file from `tools/anims`, and the hand-keyed
-  `rime.json` is gone. Rime Shell's `rime_shell_toggle` in `rime_shell.json` (`tools/anims/rime_shell.py`);
-  Shatter Shell's `shatter_shell_cast` in `shatter_shell.json` (`tools/anims/shatter_shell.py`);
-  Frost Field's `frost_field_channel` (loop) in `frost_field.json`
-  (`tools/anims/frost_field.py`); Ice Path's `ice_path_slide` (loop) in `ice_path.json` (`tools/anims/ice_path.py`); Frost Shard's `frost_shard_cast` in `frost_shard.json` (from
-  `tools/anims/frost_shard.py`) and Splinter's `splinter_cast` in `splinter.json` (`tools/anims/splinter.py`); Glacial Lance's `glacial_lance_charge` (loop) and `glacial_lance_release` in
-  `glacial_lance.json` (from `tools/anims/glacial_lance.py`). Photon effects in `assets/kegare/fx/rime/`: `frost_shard_trail`,
+  `freeze.json`; every Rime animation has its own file. Rime Shell's `rime_shell_toggle` in `rime_shell.json`;
+  Shatter Shell's `shatter_shell_cast` in `shatter_shell.json`; Frost Field's `frost_field_channel` (loop) in `frost_field.json`;
+  Ice Path's `ice_path_slide` (loop) in `ice_path.json`; Frost Shard's `frost_shard_cast` in `frost_shard.json` and Splinter's
+  `splinter_cast` in `splinter.json`; Glacial Lance's `glacial_lance_charge` (loop) and `glacial_lance_release` in
+  `glacial_lance.json`. Photon effects in `assets/kegare/fx/rime/`: `frost_shard_trail`,
   `frost_shard_impact`, `frost_field_cone`, `rime_shell_aura` (flakes and glints round the plates; your own `rime_shell_aura_self`), `freeze_frost` (your own
   `freeze_frost_self`), `freeze_shatter`,
   and Glacial Lance's below. Each has a vanilla-particle lookalike for the fallback.
   - **Glacial Lance** (the style every Rime move's look follows): a solid mesh of cursed ice, not
-    an item sprite. `tools/blockbench/build_glacial_lance.py` makes it (`lance_shapes.py`: every chunk a cluster of convex
-    crystals, so every face is a flat plane and every edge a ridge) and writes `art/blockbench/glacial_lance.bbmodel`,
-    `models/fx/glacial_lance.obj` (one object per chunk: `grip`, `fore`, `aft`, `head`, `tail`, `spurs`, and four
+    an item sprite. Every chunk is a cluster of convex crystals, so every face is a flat plane and every edge a ridge. Source
+    `art/blockbench/glacial_lance.bbmodel`, exported to `models/fx/glacial_lance.obj` (one object per chunk: `grip`, `fore`, `aft`, `head`, `tail`, `spurs`, and four
     `shard_*`) and its textures in `textures/entity/`: `glacial_lance.png` (1024², every texel opaque: navy in the middle
     of each face to pale frost at its ridges, faint cracks running on across faces), `glacial_lance_glow.png` (cut out,
     drawn full-bright: the ridges and cracks, so it reads at night). Both are filtered smooth (`.mcmeta` blur); nothing of
@@ -902,8 +904,8 @@ Package `com.cnethuka.kegare.innate_technique.rime`. **Rarity: RARE.** All numbe
     the shards for packed-ice fragments, with no frost marks.
   - **Marks on blocks** (`BlockMarks`, all Rime moves): anything painted on the world (frost, cracks, ice) is pixel art at
     16 texels a block with hard pixels, so the block itself looks frozen; what belongs to the technique (the Lance, shards,
-    spikes, crystals, shell plates) stays smooth. `tools/blockbench/build_block_marks.py` draws each pattern (a few palette
-    colours, alpha included, nearest-filtered) and its order (`<name>_order.png`: what forms first and melts last) in
+    spikes, crystals, shell plates) stays smooth. Each pattern (a few palette colours, alpha included, nearest-filtered) and its
+    order (`<name>_order.png`: what forms first and melts last) in
     `textures/marks/`. Stamping one snaps its centre to the texel grid and lays it on whichever block faces are really there
     (a sturdy face with nothing sturdy against it), on walls as well as floors; every marked face keeps its own 16 x 16
     texels, so overlapping marks share texels (stronger colour, longer life) instead of flickering. Drawn translucent in the
@@ -920,7 +922,7 @@ Package `com.cnethuka.kegare.innate_technique.rime`. **Rarity: RARE.** All numbe
     spire circle) still vanish at once.
 - **Glacial Spire's look** (in the Lance's style):
   - **The spike** is a solid mesh of the Lance's ice (`models/fx/glacial_spire.obj`, `textures/entity/glacial_spire*.png`,
-    `tools/blockbench/build_glacial_spire.py` with the Lance's painter at a coarser density; source `art/blockbench/glacial_spire.bbmodel`):
+    painted like the Lance's at a coarser density; source `art/blockbench/glacial_spire.bbmodel`):
     a great crystal with two more in its foot (about 3.4 blocks to the point), a crown of three leaning out, a ring of short
     ones jutting out of the ground to about 1.3 blocks (the hit reaches 1.5), and a heavy group of two more great crystals and
     four short ones. `GlacialSpireRenderer` draws it from the server's spike loop on the marker: each group shoots up out of the
@@ -949,14 +951,13 @@ Package `com.cnethuka.kegare.innate_technique.rime`. **Rarity: RARE.** All numbe
   - **The body:** `glacial_spire_charge` raises the fist high over the head, gathering cold (`glacial_spire_charge` effect, put
     in the fist by `SpireClient`; never in your own first person), the free hand out at the spot;
     `glacial_spire_release` brings it down like a hammer, the upper body dropping into the blow. Both in
-    `tools/anims/glacial_spire.py`; your own first-person hands stay vanilla.
+    `glacial_spire.json`; your own first-person hands stay vanilla.
   - **Reduced** halves the debris and chunks; **Vanilla** draws the spike but no marks, snowflakes for the effects and
     packed-ice chips for the chunks.
 - **Frost Shard's look** (in the Lance's style):
   - **The shard** is a small solid crystal of the Lance's ice, not an item sprite: one sharp six-sided crystal about 0.58
     blocks long with a little one grown into its back (`models/fx/frost_shard.obj`, `textures/entity/frost_shard*.png`,
-    `tools/blockbench/build_frost_shard.py` and `shard_shapes.py`, the Lance's painter at a finer density; source
-    `art/blockbench/frost_shard.bbmodel`). The same model holds Splinter's slimmer `splinter` and the `chip_*` either breaks
+    painted like the Lance's at a finer density; source `art/blockbench/frost_shard.bbmodel`). The same model holds Splinter's slimmer `splinter` and the `chip_*` either breaks
     into. `ShardRenderer` points it the way it flies and turns it about its length; your own stays hidden until 3 blocks
     from your first-person camera.
   - **Its line** is drawn by `ShardRenderer` too: a thin pale strip, up to 1.7 blocks behind its back, fading and narrowing
@@ -969,7 +970,7 @@ Package `com.cnethuka.kegare.innate_technique.rime`. **Rarity: RARE.** All numbe
     its ice back off whatever it hit (`ShardImpact`, falling and bouncing like the Lance's shards; a Splinter's are fewer
     and smaller) with a small flash, glints and a breath of mist. Nothing in the eyes of the player it hit.
   - **The body:** `frost_shard_cast` flicks the hand up by the ear as the chest turns away, then snaps it straight out at
-    the aim with the chest behind it (`tools/anims/frost_shard.py`); your own first-person hands stay vanilla.
+    the aim with the chest behind it; your own first-person hands stay vanilla.
   - **Reduced** plays the effects reduced and drops half the chips; **Vanilla** keeps the solid shard, snowflakes for the
     rest and packed-ice chips.
 - **Splinter's look** (Frost Shard's, lighter):
@@ -977,7 +978,7 @@ Package `com.cnethuka.kegare.innate_technique.rime`. **Rarity: RARE.** All numbe
     0.58), drawn by `ShardRenderer` like Frost Shard's, three in a fan. Each line is thinner (0.032 to 0.05) and shorter (up
     to 1 block to 1.7). `splinter_trail` is fewer, finer specks.
   - **The hit:** the same `frost_shard_impact` as Frost Shard, played at 0.6 of its size, with three chips to Frost Shard's five.
-  - **The body:** `splinter_cast` (`tools/anims/splinter.py`) is a backhand fan, not the overhand flick: the hand drawn across
+  - **The body:** `splinter_cast` is a backhand fan, not the overhand flick: the hand drawn across
     the chest to the left shoulder as the chest turns away, then whipped out flat to the right through the aim. The code
     blends every animation in over 3 ticks, so the draw is keyed at 2 ticks, where most of it shows. `splinter_cast` (the
     effect) is only a flat fan of fine glints off the hand: no flash and no mist, which would swell low in your own first-person
@@ -992,15 +993,14 @@ Package `com.cnethuka.kegare.innate_technique.rime`. **Rarity: RARE.** All numbe
     patch a block face. When the channel starts it races out from the caster's feet over a few ticks; when it ends it
     melts from each patch's edge in over 1.5 s. No block changes.
   - **The crystals** are small solid clusters of the Lance's ice (`models/fx/frost_field.obj`, four `cluster_*`,
-    `textures/entity/frost_field*.png`; `tools/blockbench/build_frost_field.py` and `field_shapes.py`, the Lance's painter;
-    source `art/blockbench/frost_field.bbmodel`). They jut out of the frost at random in the cone, leaning away from the
+    `textures/entity/frost_field*.png`, painted like the Lance's; source `art/blockbench/frost_field.bbmodel`). They jut out of the frost at random in the cone, leaning away from the
     caster, up in two ticks with a small overshoot, standing a quarter to half a second, then sinking back. None within
     2.2 blocks of your own camera.
   - **The effect:** `frost_field_cone` is only streaks, flakes and a faint breath at the hands, as wide as the cone,
     with no fog, which would fill the middle of the caster's view and hide whoever stands in it. Your own is `frost_field_cone_self`,
     started lower and narrower so nothing crosses the middle of your view (loops honour first-person variants). A
     little `frost_field_mist` rises off the frost now and then.
-  - **The body:** `frost_field_channel` (`tools/anims/frost_field.py`) thrusts both hands out low at the aim, the left
+  - **The body:** `frost_field_channel` thrusts both hands out low at the aim, the left
     braced on the right forearm, leaning in, pressing a little harder now and then. Your own first-person hands stay vanilla.
   - **Reduced** lays the same frost with half the crystals and mist; **Vanilla** lays no frost (no marks on blocks) and
     keeps the solid crystals, snowflakes for the rest.
@@ -1018,7 +1018,7 @@ Package `com.cnethuka.kegare.innate_technique.rime`. **Rarity: RARE.** All numbe
     nothing round it and doesn't look like a light source. No block changes.
   - **The effect:** `ice_path_trail` is only what's thrown up at the feet (world space, left behind): fine ice specks
     kicked out low and the odd glint rising.
-  - **The body:** `ice_path_slide` (`tools/anims/ice_path.py`) pushes off, then glides like a skater: feet split, the left
+  - **The body:** `ice_path_slide` pushes off, then glides like a skater: feet split, the left
     ahead, the body sunk onto them and leant in, the arms out for balance (the left reaching ahead, the right swept back),
     swaying slowly from side to side. It keys the legs (a slide isn't walking); the head follows the look. Your own
     first-person hands stay vanilla.
@@ -1029,7 +1029,7 @@ Package `com.cnethuka.kegare.innate_technique.rime`. **Rarity: RARE.** All numbe
     (`models/fx/rime_shell.obj`, one object a plate: `torso_0..8` over the chest, back, belly, collar and sides,
     `right_arm_0..3` / `left_arm_0..3` on the shoulders and forearms, `right_leg_0..2` / `left_leg_0..2` on the thighs and
     shins; `textures/entity/rime_shell*.png`, the Lance's navy-to-frost faces, bright ridges and faint glowing cracks;
-    `tools/blockbench/build_rime_shell.py` and `shell_shapes.py`, source `art/blockbench/rime_shell.bbmodel`). Each is a
+    source `art/blockbench/rime_shell.bbmodel`). Each is a
     flat-faced slab with a crest down its middle, sunk a fraction into the skin and standing at most about 2 pixels off
     it. `ShellClient`, a layer on both player skins, draws each in its body part's own space, so the plates follow every
     pose and animation (a slim arm's are moved in a pixel). Over armour they stand on it, not sunk in it (`ArmourReach`:
@@ -1044,7 +1044,7 @@ Package `com.cnethuka.kegare.innate_technique.rime`. **Rarity: RARE.** All numbe
     away on the ground within under a second (`ShellClient.breakOff`; drawn on the clients only).
   - **The effect:** `rime_shell_aura` is only a few flakes circling close and the odd glint rising off the ice.
     Your own is `rime_shell_aura_self`, a few flakes low round the legs.
-  - **The body:** `rime_shell_toggle` (`tools/anims/rime_shell.py`) crosses the arms over the chest, hunched, then flings
+  - **The body:** `rime_shell_toggle` crosses the arms over the chest, hunched, then flings
     them down and out, chest up, fists clenched, as the plates form. The same plays as the shell comes down. Your own
     first-person hands stay vanilla.
   - **Reduced** and **Vanilla** draw the same plates (meshes stay, as the Lance's do); Vanilla swaps the flakes for
@@ -1066,7 +1066,7 @@ Package `com.cnethuka.kegare.innate_technique.rime`. **Rarity: RARE.** All numbe
     part. No block changes.
   - **The effect:** `shatter_shell_burst` is only hard glints flung out flat and a breath of cold mist pushed out low;
     your own is `shatter_shell_burst_self`, a few glints low round the legs.
-  - **The body:** `shatter_shell_cast` (`tools/anims/shatter_shell.py`): the burst lands the tick it's cast, so there's no
+  - **The body:** `shatter_shell_cast`: the burst lands the tick it's cast, so there's no
     wind-up; the body is thrown open on it, arms flung wide and up, chest out, leaning back, held a moment, then dropped back.
     Your own first-person hands stay vanilla.
   - **Reduced** plays the effect reduced, the rest the same; **Vanilla** keeps the plates and the shock ring, lays no frost
@@ -1076,7 +1076,7 @@ Package `com.cnethuka.kegare.innate_technique.rime`. **Rarity: RARE.** All numbe
     loop keyed by how many (`kegare:freeze_<n>`, `RimeIds.freezeStackKey`), swapped as a stack lands or melts and stopped at
     the freeze and on death; loops are resent to anyone who starts seeing the body later.
   - **The frost on the body** (`FreezeClient`, a player render layer): pixel art in the skin's own 64x64 layout
-    (`textures/entity/freeze_frost*.png`, `tools/blockbench/build_freeze_frost.py`; slim arms have their own), so it lies on
+    (`textures/entity/freeze_frost*.png`; slim arms have their own), so it lies on
     the body's own texels with hard pixels, like the marks on blocks: a glaze of blue ice, thicker in patches, frost in
     clumps through it, rime feathering up each face from below and gathering on the edges. It covers the stacks out of the
     most (`freeze.maxStacks`, synced): up from the soles and the hands, the legs and forearms, the hips, then the chest, the
@@ -1086,8 +1086,7 @@ Package `com.cnethuka.kegare.innate_technique.rime`. **Rarity: RARE.** All numbe
     without the body looking lit; not on an invisible player. Over armour (`ArmourReach`) the same frost is drawn on the
     outer layer's boxes a quarter pixel past it, posed by the same parts (a slim arm's stretched across a chestplate's
     wide arm), so the stacks can still be counted on someone in full armour.
-  - **Frozen solid:** the glaze thickens to solid pale ice over the whole body, head too, in the `frozen` pose
-    (`tools/anims/freeze.py`): seized flinching from the cold, hunched, arms drawn in across the chest, then held with only a
+  - **Frozen solid:** the glaze thickens to solid pale ice over the whole body, head too, in the `frozen` pose: seized flinching from the cold, hunched, arms drawn in across the chest, then held with only a
     faint tremble.
   - **Breaking free:** the frost is gone at once, burst off the body as small solid chips of the lance's ice
     (`LanceAftermath`'s), with the flash and small ring of `freeze_shatter`.
@@ -1122,8 +1121,7 @@ Package `com.cnethuka.kegare.innate_technique.rime`. **Rarity: RARE.** All numbe
   | `sky_high` | Sky High | Launch a player with Glacial Spire and hit them with Frost Shard before they land (Splinter shards count too; the launch is forgotten once they land) | goal |
   | `slip_n_slide` | Slip 'n Slide | Travel 100 blocks with Ice Path (total, saved in `kegare:rime_stats`) | task |
   | `shattered_pressure` | Shattered Pressure | Hit 3 players with one Shatter Shell | challenge |
-- **Art:** emblem `textures/gui/emblem/rime.png` and ability icons `textures/gui/ability/<ability>.png` (from
-  `gen_art.py`, ice palette), plus HUD sprites `env_cold`, `env_hot`, `lock`, `freeze_pip` and `freeze_pip_empty`.
+- **Art:** emblem `textures/gui/emblem/rime.png` and ability icons `textures/gui/ability/<ability>.png` (ice palette), plus HUD sprites `env_cold`, `env_hot`, `lock`, `freeze_pip` and `freeze_pip_empty`.
 - **Tests:** `RimeFreezeTest` (in-game JUnit) covers stacks, the freeze at max (stun, channel interrupted, visual
   loops), immunity, decay, and the shell's reduction (any hit) and Thin Ice count (player hits only, not mobs or
   generic damage). `RimeSpecialsTest` covers Splinter's three shards and shared cooldown, Glacial Spire's free
@@ -1207,8 +1205,8 @@ Package `com.cnethuka.kegare.innate_technique.rime`. **Rarity: RARE.** All numbe
 Package `loadout`. Abilities are sorted into category tabs, and a
 separate bar is filled from any of them.
 - **Categories** (`AbilityCategory`): a category is a broad group of abilities of one kind, never one ability on its own, and holds
-  more as the mod grows. One tab each on the Sorcerer screen's left edge, in this order, each with its own icon (`tools/gen_art.py`,
-  hard pixels) and its short name as the tooltip:
+  more as the mod grows. One tab each on the Sorcerer screen's left edge, in this order, each with its own icon (hard
+  pixels) and its short name as the tooltip:
   - **Innate**: the current innate technique's abilities (the ultimate in its own V tile). A reroll replaces them.
   - **Malice**: energy techniques any Malice user can learn and keeps through rerolls: Reinforcement and Reverse Malice Technique
     (its special still heals others). Later: other energy techniques.
@@ -1232,7 +1230,7 @@ separate bar is filled from any of them.
     tolerance. The void, /kill and starving are untouched. It adds no damage (that's Reinforced Fists). Background Reinforcement
     (§3.31) is another source of the same thing at a share of its strength; they never stack: the stronger applies. Numbers in
     `[reinforcement]`.
-  - **Look** (client `AuraClient`, art from `tools/gen_art.py`, Python; our own): Malice wrapped round the whole body, the way anime draws a sorcerer's energy flowing. A sheet of 16 frames
+  - **Look** (client `AuraClient`; our own art): Malice wrapped round the whole body, the way anime draws a sorcerer's energy flowing. A sheet of 16 frames
     (`entity/aura.png`, 192×384 each, 1.6 × 3.2 blocks) hugs the player's silhouette a little way out and rises into five flame-like
     tongues over the head and shoulders, always flowing upward (the noise scrolls up a period per loop; each tongue swells and sways in
     its own phase). Round it a hard, near-black ink outline, irregular like a brush stroke, varying in thickness, with flicks flung off
@@ -1374,7 +1372,7 @@ negative is positive energy, which is why it heals, and why its colors are white
   sit at the chest, just under your camera: looking down they'd be bright orbs in the middle of the view. At Vanilla
   your own show nothing.
 - **Icon** `textures/gui/ability/reverse_malice_technique.png`: a plus inside a ring that turns back on itself, in its
-  own green ramp (`gen_art.py`), independent of any innate technique or Malice color. Own name, description and
+  own green ramp, independent of any innate technique or Malice color. Own name, description and
   tooltip in the lang file.
 - **Advancements** (Base tab, hidden and silent, §3.11): `a_green_light` "A Green Light" (unlock it; goal) and
   `its_been_a_while` "It's been a while, huh?" (start a cast at **6 HP or less** having been hit by a player in the
@@ -1564,7 +1562,7 @@ The HUD and Sorcerer screen show Anchor's current stage cost (throw or recall).
 
 **Visuals.** Every swap is a clap. The feel is a clean magic trick: a sharp clap and the swap has already happened,
 smooth and modern in Swap's teal, nothing heavy, blurry or lingering, never the enderman's purple.
-- PAL animations, Python-built (`tools/anims/swap.py` → `player_animations/swap.json`), each move clapping its own way:
+- PAL animations (`player_animations/swap.json`), each move clapping its own way:
   - `positions_clap` (Positions): the hands go straight for each other and meet low in front of the chest, then spring
     open, palms out; then dropped. The cast is instant and animations blend in over 3 ticks, so the swap lands on the
     sound and the hands meet a moment after.
@@ -1622,8 +1620,8 @@ smooth and modern in Swap's teal, nothing heavy, blurry or lingering, never the 
   thin teal L-brackets one GUI pixel thick in the four corners of their own screen, coming in from the corners as
   the disguise lands, then breathing slowly; gone the moment it ends. Nothing near the middle of the view, nothing
   for anyone else, the same at every effects setting (they're HUD, not particles); hidden with the HUD (F1).
-- Anchor's **token** (`AnchorRenderer`; the mesh and textures from `tools/blockbench/build_swap_anchor.py`, Python is
-  the source): a small solid teal coin a quarter of a block across, deep teal faces with a bright inlaid ring and a
+- Anchor's **token** (`AnchorRenderer`; source `art/blockbench/swap_anchor.bbmodel`, exported to `models/fx/swap_anchor.obj` and its
+  textures): a small solid teal coin a quarter of a block across, deep teal faces with a bright inlaid ring and a
   pale diamond, pale rims; the ring, the diamond and the rims stay lit in the dark. Drawn like Rime's ice (smooth mesh,
   filtered texture, a lit glow pass; it reuses `LanceMesh.Model`) but nothing of Rime's look.
   - It leaves the right hand where `anchor_throw` lets go (0.52 right, 0.4 below the eyes and 0.5 forward, along the
@@ -1659,7 +1657,7 @@ smooth and modern in Swap's teal, nothing heavy, blurry or lingering, never the 
   Vanilla: a wide ring of teal specks.
 - Photon draws only `swap_depart`/`swap_arrive`'s glints (`SwapFxAuthoring` → `fx/swap/`); everything else above
   is drawn by `SwapFx`, `AnchorRenderer`, `MimicFlickerLayer` and `SwapHud`.
-- Sounds: Kegare's own (§3.10, `tools/sounds/swap.py`), each with a subtitle, at both ends of the swap:
+- Sounds: Kegare's own (§3.10), each with a subtitle, at both ends of the swap:
   - `swap.clap` ("Hands clap", a crisp clap): Positions. Anchor's
     recall claps a shade lower (pitch 0.94), at the caster and the token; Send Off the same at the target and the token.
   - `swap.shove` ("Hands shove", the clap and a short low rush of air, cut off): Send Off's cast, at the caster.
@@ -1811,7 +1809,7 @@ icon armor stand; ultimate locked (its Dominion comes later). All numbers in `[p
 | `string_knot.bbmodel` | `models/string/knot.json` | The same. Its origin (8,8,8) sits on the attach point, with +Z pointing away from the string, into what it grips |
 | `string_animations.bbmodel` | `player_animations/puppet_strings.json` | Animation > Save All Animations. Five animations: `strings_fire`, `strings_reel`, `strings_zip`, `strings_tie`, `strings_leash`, each starting and ending on rest keys (the game blends them in and out in code, §3.13). A channel you key replaces the vanilla pose for the whole animation, so leave the head's rotation out to keep the aim, and legs out to keep walking. A plain mannequin rig with PAL's bone names and pivots: no skin |
 
-Both models use `textures/item/string_braid.png` (embedded in each project; generated by `tools/gen_art.py`, which overwrites the PNG if run again). `tools/blockbench/build_string_models.py` and `build_string_animations.py` made these the first time, driving Blockbench through its API; running them overwrites hand edits.
+Both models use `textures/item/string_braid.png` (embedded in each project: a change to the PNG goes in both).
 
 **The string on screen** (`StringsClient`, `StringsSync` to everyone in the dimension: the string is the tell). It's emissive, and the segment is laid at its true length along a shallow curve: a longer string has more segments, never stretched ones, so the braid can't smear, and each overlaps the next slightly so a bend can't open a gap. It hangs when slack, less the closer it is to its limit, and runs straight while pulling. Knots sit at each end; Leash draws two strings from the caster, Tie one between the two targets. Within 5 blocks of the camera the cord thins, and a knot within 1.6 blocks isn't drawn, or the end at your own hand or chest would fill the view. In your own first person it leaves from the lower right of the view, like a fishing line.
 
@@ -1834,8 +1832,8 @@ depends on what you look at):
 are never disabled or pushed (Curio Burst's push and a puppet punch's knockback skip them). Possess and Understudy only ever involve your own
 puppets; Stand-In copies only the owner's look. Strings is physical, so all of it works on mobs; bosses can be attached to and take a Tie's collision, but are never moved.
 
-**Visuals.** PAL animations (`player_animations/puppet_manipulation.json`, in Blockbench's own Bedrock format, written by
-`tools/anims/`; see `tools/blockbench/README.md`). A puppeteer's body language:
+**Visuals.** PAL animations (`player_animations/puppet_manipulation.json`, in Blockbench's own Bedrock format, §3.10). A
+puppeteer's body language:
 
 | Animation | What it does |
 |---|---|
@@ -1895,7 +1893,7 @@ first-person camera.
   bursts (Chain Burst), illusioner mirror (Stand-In, Understudy), bobber throw and reel, leash knot and a knockback thud
   (Strings).
 
-**Art** (`tools/gen_art.py`, lavender and wood ramps): emblem `gui/emblem/puppet_manipulation.png` (a marionette: the
+**Art** (lavender and wood ramps): emblem `gui/emblem/puppet_manipulation.png` (a marionette: the
 wooden control cross, strings, a doll with its arms out), icons for the five abilities and five specials, the four Strings
 variations (`strings_reel`, `strings_tie`, `strings_zip`, `strings_leash`), the order glyphs, the glow texture and the cord's
 braid (`item/string_braid.png`).
@@ -2217,7 +2215,7 @@ A real hit from any entity in the window ends it; your own swings, shots, areas 
 Without the Malice the hit stays normal and the Strike waits until it expires. Earning it again restarts the clock; it never stacks. Bosses take the damage and aren't moved. **Reinforced** shows on the owner's HUD, and the attacking hand shows it to everyone (below).
 
 **The ready fist** (`MeleeTell`, `client/FistTell`). While a Strike is ready, Malice burns round the attacking hand, seen by everyone and in first person: chunky pixel-art fire wrapped round the hand and lower forearm, flickering frame by frame, little curls coming off it, and a burst in the same color when the Strike lands. A player's Malice color is their Innate Technique's (`InnateTechnique.maliceColor`), so a new one gets it by itself; `MeleeTell.bright` draws the same hue at full brightness because Innate colors can run dark and a dark fire isn't one.
-- *Fire:* `client/FistFire`, from the greyscale sheet `textures/entity/fist_fire.png` (`tools/gen_art.py`). It's built as two slightly inflated copies of the arm that follow it in every pose, wide and slim, with cutout pixel fire unwrapped round them, so it wraps the arm from every side. The inner tube sits tight on the arm (0.4 of a pixel out, clear of the skin's sleeve), with a paler heart on it. The outer one is 1.6 pixels out, and its tips, tallest on the arm's corners, break past the arm's outline and give it a silhouette at 7 blocks. A tube has more texels than the arm, not bigger ones, so one texel stays about one pixel of skin. Eight looping frames at ten a second, with each layer on a different frame. It's strongest round the fist, with gaps that let the hand show, thins up the forearm and breaks into small dark scraps near the elbow. Tongues rise from narrow bases and sway. On an arm held up they go the other way, past the knuckles (a second row of frames in the sheet). A side seen nearly edge on squashes into a thin line that reads as wire, so it isn't drawn; the end of the fist shows only when the arm points at you, and it's enough there, so there's no camera-facing flare. Curls start on the fire's surface partway up it, stay in a small spiral and last half a second, so they look like they came off it. It's drawn from the player's render layer, in the arm's own space.
+- *Fire:* `client/FistFire`, from the greyscale sheet `textures/entity/fist_fire.png`. It's built as two slightly inflated copies of the arm that follow it in every pose, wide and slim, with cutout pixel fire unwrapped round them, so it wraps the arm from every side. The inner tube sits tight on the arm (0.4 of a pixel out, clear of the skin's sleeve), with a paler heart on it. The outer one is 1.6 pixels out, and its tips, tallest on the arm's corners, break past the arm's outline and give it a silhouette at 7 blocks. A tube has more texels than the arm, not bigger ones, so one texel stays about one pixel of skin. Eight looping frames at ten a second, with each layer on a different frame. It's strongest round the fist, with gaps that let the hand show, thins up the forearm and breaks into small dark scraps near the elbow. Tongues rise from narrow bases and sway. On an arm held up they go the other way, past the knuckles (a second row of frames in the sheet). A side seen nearly edge on squashes into a thin line that reads as wire, so it isn't drawn; the end of the fist shows only when the arm points at you, and it's enough there, so there's no camera-facing flare. Curls start on the fire's surface partway up it, stay in a small spiral and last half a second, so they look like they came off it. It's drawn from the player's render layer, in the arm's own space.
 - *Reading it:* hard edges and depth writes, no additive light, which washes out against a bright sky, and no soft alpha: every texel is solid or a hole, because soft alpha reads as glass. About a third of the fire is near-black, along the shaded side of each tongue and in flecks, grey dark enough to stay near-black after tinting. That's what holds the shape against a sky of nearly its own color (Puppet and Rime). Tips stay lit, and the bottom row of the fire never runs dark, because a run of near-black there reads as a bar under the fist. The heart goes only about a third of the way to white, because any paler and Rime looks like ice. It ignores the world's light, so it burns the same at night.
 - *First person:* the hand is too close to the camera for the arm layers, which stretch into big slabs filling the corner. So your own empty hand has flat fire from `textures/entity/fist_flame.png` (`client/FistFlames`): quads on the arm's axis turned to face the camera, the mass behind and licks and a heart in front, at half the width and 0.6 of the height. With something held vanilla draws no arm, so `FistFire.drawGrip` burns one upright clump round the grip, facing the camera: a layer behind what's held and a layer in front, with gaps so the item shows through, all of it on screen in the lower right. Its own frames in `fist_fire.png`, with a rounded bottom. Vanilla's hand pass comes out relative to the camera along the world's axes, so anything that faces the camera there has to use the camera's own axes. Curls come off the clump, small and in close.
 - *Tint:* both sheets are tinted at runtime. Strike effects are authored white too; `PhotonEffects.tint` sets the start color of every emitter named `tint*` on that instance. The fire shows at all three effect settings; the curls come at full and half rate on full and Reduced, and Vanilla has dust instead (none in first person). An invisible player shows nothing.
@@ -2230,8 +2228,8 @@ Without the Malice the hit stays normal and the Strike waits until it expires. E
 
 **Impact moments** (`MeleeImpact`): `DASH_BURST`, `CLEAN_DODGE`, `PARRY_PERFECT`, `GUARD_HIT`, `STAGGER`, `STRIKE_HIT`, fired on the server tick the effect is applied. Sounds and effects hang off them, and `MeleeImpact.listen` is where the Impact System (§3.23) hooks in: each moment's listener gets both fighters where it has two (a parry's attacker, a Strike's striker).
 
-**Visuals.** Animations: `tools/anims/melee.py` → `player_animations/melee.json` (four dash directions, `parry_guard`, `parry_perfect`, `parry_recovery`, `stagger`, `reinforced_strike`). A reaction's key pose is on its first frames, because the server has already applied the hit when it starts. Raised arms fill the first-person view, so parry and stagger throw arms out and not up. On the player's own first-person screen every melee animation leaves the hands to vanilla (`PlayerAnimations.keepVanillaHands`): PAL's first-person model draws what's held at its real size right by the camera, usually edge on, so a sword or an axe would fill the view with its dark outline and hide the opponent. `GuardHand` draws the guard instead: vanilla's hand and item brought in and turned across the body, with a short shove on a perfect parry. Everyone else sees the full animations.
-Effects (`MeleeFxAuthoring`, `fx/melee/`): dash burst on the ground left behind, afterimages and a wake along the dash, parry spark and guard hit riding the defender's look (a point at the contact is too near both fighters' cameras to draw), with quieter versions on the player's own first-person screen, and Strike impact on the target (`strike_impact`, `strike_burst`, tinted). The parry's crescent is a Blockbench model, `art/blockbench/parry_arc.bbmodel` (`tools/blockbench/build_parry_arc.py`) exported to `models/fx/parry_arc.obj` and drawn by Photon's Model render mode. The model holds its shape from every side and takes the gold cleanly, where Photon's stock SLASH sprite turns to every camera, keeps a blue edge and whites out the first-person view.
+**Visuals.** Animations: `player_animations/melee.json` (four dash directions, `parry_guard`, `parry_perfect`, `parry_recovery`, `stagger`, `reinforced_strike`). A reaction's key pose is on its first frames, because the server has already applied the hit when it starts. Raised arms fill the first-person view, so parry and stagger throw arms out and not up. On the player's own first-person screen every melee animation leaves the hands to vanilla (`PlayerAnimations.keepVanillaHands`): PAL's first-person model draws what's held at its real size right by the camera, usually edge on, so a sword or an axe would fill the view with its dark outline and hide the opponent. `GuardHand` draws the guard instead: vanilla's hand and item brought in and turned across the body, with a short shove on a perfect parry. Everyone else sees the full animations.
+Effects (`MeleeFxAuthoring`, `fx/melee/`): dash burst on the ground left behind, afterimages and a wake along the dash, parry spark and guard hit riding the defender's look (a point at the contact is too near both fighters' cameras to draw), with quieter versions on the player's own first-person screen, and Strike impact on the target (`strike_impact`, `strike_burst`, tinted). The parry's crescent is a Blockbench model, `art/blockbench/parry_arc.bbmodel`, exported to `models/fx/parry_arc.obj` and drawn by Photon's Model render mode. The model holds its shape from every side and takes the gold cleanly, where Photon's stock SLASH sprite turns to every camera, keeps a blue edge and whites out the first-person view.
 
 **A dash from inside it** (`client/DashFeel`, its numbers in `DashKick`), where the trail everyone else sees can't be drawn. First person only: a field-of-view kick (16% at its peak two ticks in, gone by eleven; the hand's own view stays put) and needle streaks round the screen's edge, flowing from where you're headed: outward going forward, inward going backward, off to the side going sideways. Nothing is drawn inside the middle 60% of the screen. Reduced is half the kick and fewer, fainter streaks; Vanilla is neither, and vanilla's own FOV Effects slider scales the kick too. Its light shake is the Impact System's (`DASH_BURST`, §3.23).
 
@@ -2342,11 +2340,10 @@ under half a second, instead of vanilla's death smoke: the soft white puff, whic
 hit behind it (a fall, fire, `/kill`) keeps vanilla's smoke, and so does every death at Vanilla quality. Reduced draws half the
 slivers. A player has no death smoke, so this is only for mobs.
 
-**Hit sounds** (`ImpactSounds`, Kegare's own from `tools/sounds/impact.py`, §3.10), at the point of contact and always with
+**Hit sounds** (`ImpactSounds`, Kegare's own, §3.10), at the point of contact and always with
 vanilla's own hurt sound, never instead of it. A plain hit sounds like vanilla only: there's no punch, blade or heavy-blow sound of
 Kegare's own. Big hits of any kind (Heavy and up) get `impact.boom` under them (a deep boom: 0.6 at pitch 1.1 for Heavy, 1.0 at 0.9
-for the impact frame, 1.4 at 0.75 for Top). Curio Burst adds its own thump (§3.20). Each has three versions to pick from in
-`run/sounds_preview/impact/` (`--preview`); the first ships.
+for the impact frame, 1.4 at 0.75 for Top). Curio Burst adds its own thump (§3.20).
 
 **Full, Reduced and Vanilla:** Full draws everything. Reduced draws fewer spikes and no impact frame. Vanilla draws vanilla's crit
 sparks for the flash (dust in the Malice color for a technique) and no impact frame. Hit-stop and shake follow their own settings at
@@ -2415,7 +2412,7 @@ within 96 blocks; the blocks change through the game's own updates):
   your own first-person camera. In COSMETIC mode they fly from the blocks that would have broken.
 - **Cracks** on what survived: the surfaces round the hit (straight down, up and out each way from it) and the rim of the hole,
   nearest first. Pixel art on the blocks' own grid, 16 texels a block (`textures/marks/battle_crack`, near-black cracks with a pale
-  broken lip and grit where it struck, built by `tools/blockbench/build_block_marks.py`), drawn by the same `BlockMarks` as Rime's
+  broken lip and grit where it struck), drawn by the same `BlockMarks` as Rime's
   frost. They reach further the more power was left at that face against what the block can take, and fade after 30 s.
 - **Full** draws 5 chunks a block and up to 6 cracks round the hit and 5 on the rim; **Reduced** 2 chunks, 3 and 2 cracks;
   **Vanilla** vanilla's own block particles and no cracks.
@@ -2524,7 +2521,7 @@ breaks the record. Runtime only.
 Decelerate or a Stasis Field, or stopped by Standstill. **`TimeTargetEvent(caster, target, ability)`** (cancellable) fires before
 Rewind moves anyone and before Decelerate's cooldown slow.
 
-**GUI** (`tools/gen_art.py`, hard pixels): the emblem `textures/gui/emblem/time_manipulation.png` (a pocket watch in brush strokes:
+**GUI** (hard pixels): the emblem `textures/gui/emblem/time_manipulation.png` (a pocket watch in brush strokes:
 a bronze case with its crown and bow, twelve hour marks, two silver hands stopped, over a bronze vignette) and seven ability icons
 in bronze and silver-white: Point Maker (a hand pointing down into a clock laid flat), Rewind (◀◀), Accelerate (a clock face with
 speed lines), Fast Forward (▶▶), Decelerate (the thrown clock hand), Stasis Field (an hourglass under a dome) and Standstill (a
@@ -2561,7 +2558,7 @@ Standstill's gray stay at every setting: they're what you play by).
 - **Standstill:** the sharp click and one inverted frame (`kegare:invert`, at Full only, under the impact-frame setting) for
   everyone inside, then the gray for every frozen player and silence but for one slow tick a second; what the caster throws hangs
   where it stopped. On the resume a loud tick, colour snaps straight back (no fade), and everything lands at once.
-- **Animations** (`tools/anims/time_manipulation.py`, Python-built): `point_maker_mark` (a fingertip set on the spot, one exact
+- **Animations** (`player_animations/time_manipulation.json`): `point_maker_mark` (a fingertip set on the spot, one exact
   tap), `point_maker_return` (arrived, the left hand closing over the chest like a watch lid), `rewind_cast`, `accelerate_toggle`
   (a crown wound between finger and thumb), `fast_forward_cast`, `decelerate_cast` (a blade flicked off the back of the hand),
   `stasis_field_cast` and `standstill_cast` (the watch raised before the face, one press of the thumb, held). In your own first
@@ -2583,8 +2580,7 @@ Manipulation; the task ones need no target, the goals and the challenge count pl
 | *Same Clock* | goal | be inside another player's Standstill as an immune Time user |
 | *Pre-Planned* | challenge | have 5 or more of your projectiles that hung in a Standstill hit players within 5 s of time resuming |
 
-**Sounds** (`tools/sounds/time_manipulation.py`, a pocket watch made from nothing; three versions each of the click, the tick, the
-stop and the resume in `run/sounds_preview/time_manipulation/`, the first of each ships): `time_manipulation.click` (Point Maker's
+**Sounds** (a pocket watch, our own): `time_manipulation.click` (Point Maker's
 mark and return, Decelerate's strike), `.tick` (Accelerate running, Decelerate's hit, a projectile caught in a Stasis Field),
 `.wind` (Accelerate on), `.reverse_tick` (Rewind), `.whirl` (Fast Forward), `.throw` (Decelerate), `.stasis` (a Stasis Field
 opening), `.stop` (Standstill: the sharp click), `.stop_tick` (the one slow tick each second it stands, played by each client
@@ -2729,12 +2725,11 @@ Technique Mode, unchanged (`client/SeveredKeys`). Controls lists the key as "Tec
 **Look and sound** (all of it physical: dust, grit, wind streaks, afterimages; no glow, no Innate color, no Photon). The moments
 fire on the server (`SeveredFx`): dust and grit are vanilla block particles of the ground they're on, so they read the same at every
 effects setting, and Blur's smear and first-person feel have their own Reduced and Vanilla forms (above).
-- **Animations** (`tools/anims/severed.py`, Python-built): `blur_on` (a breath out into a low, forward stance), `closing_line_launch`
+- **Animations** (`player_animations/severed.json`): `blur_on` (a breath out into a low, forward stance), `closing_line_launch`
   (a planted push-off, body pitched low, arms flung back), `closing_line_arrive` (a skid, leaning back, arms out low for balance),
   `winded` (bent over, hands on knees, the back heaving) and `wall_crash` (thrown back off the wall, arms flung out wide, never up,
   then slumping). In your own first person, `winded` and `wall_crash` leave the hands to vanilla; the rest keep them low.
-- **Sounds** (`tools/sounds/severed.py`, made from nothing; three versions each of Blur's start, the launch and the wall crash in
-  `run/sounds_preview/severed/`, the first of each ships): `severed.blur_on` (a hard breath out, the air starting to tear past),
+- **Sounds** (our own): `severed.blur_on` (a hard breath out, the air starting to tear past),
   `severed.blur_wind` (air tearing past, every half second while they run faster than a sprint), `severed.closing_line_launch` (a heel
   planted, the ground cracking, gravel sprayed, the air torn open: played loud, heard well off), `severed.closing_line_arrive` (a
   skid), `severed.wall_crash` (a body slammed into stone, louder the harder the crash) and `severed.winded` (ragged breaths).
@@ -2790,7 +2785,7 @@ in place of an ability like any shared one. Severed players never have it: they 
   apart. A ready Strike with Fists on looks the same as Fists on: the "Reinforced" cue under the crosshair is the striker's own, and
   opponents can't tell a ready Strike from Fists by sight. Everyone else sees the color of the face a disguise shows (`FistsTell`,
   `FistsPayload`, as for the ready fist). An ignite (vanilla's fire charge, pitched up) as it turns on.
-- **Icon and text:** `tools/gen_art.py` (`ICON_FISTS`, a clenched fist with Malice burning off the knuckles, in Malice violet).
+- **Icon and text:** the icon is a clenched fist with Malice burning off the knuckles, in Malice violet.
 - **Tests:** `FistsTest` (everyone's, never Severed's; the toggle's cost, drain, Burnout, re-arm and running out; the bonuses; the
   second impact only for a Strike with Fists on, its delay and share, through the cooldown without lengthening it, never moving anyone).
 
@@ -2854,8 +2849,7 @@ a millionth of a second of a hit. It isn't random, but nobody can do it at will.
   and against the sky. Our own: nothing like the anime's red-and-black lightning. The attacker sees their own color, everyone else (within
   48 blocks) the color of the face a disguise shows. Never on your own body in your own first person (the Impact System gives you the hit).
   Reduced: 4 arcs and 6 sparks, gone in 4 ticks. Vanilla: black dust, dust in the color, and crit sparks. A sharp crack everyone near
-  hears (`black_spark.crack`, `tools/sounds/black_spark.py`: a hard snap, a spray of crackle and the body's thump; three versions in
-  `run/sounds_preview/black_spark/`, the first ships).
+  hears (`black_spark.crack`: a hard snap, a spray of crackle and the body's thump).
 - **Tests:** `BlackSparkTest` (the power formula and table, with no cap; the offset never sent; each window factor moving it the right
   way and the cap; a try only right after Fists go on and only once, a hit and a miss by the offset, the Strike on the scale, bosses
   damaged and never moved by it, the knockback, a forced one, and the first-ever Insight paid once).
@@ -2979,7 +2973,7 @@ Numbers in `[too_fast_for_the_eye]` of `kegare-server.toml`.
 Background Tasks are things a sorcerer keeps running without thinking, separate from the ability bar. A task is weaker than its
 ability on the bar, but it takes no bar slot and leaves the hands free.
 - **A task** (`BackgroundTask`, registered in `BackgroundTasks`, shown in that order): an ID, a display name and description
-  (`background_task.<namespace>.<path>`, `.desc`), an icon (GUI sprite `<namespace>:background/<path>`, `tools/gen_art.py`, hard
+  (`background_task.<namespace>.<path>`, `.desc`), an icon (GUI sprite `<namespace>:background/<path>`, hard
   pixels), its unlock (an Unlocks framework entry under the same ID, §3.21, registered with it; its requirement as
   `background_task.<ns>.<path>.unlock`, shown with a padlock while it's locked), its Malice drain a second (`drainPerSecond`) and its
   effect (`tick`, every tick it runs; `stopped`, when it stops; `paused`, its own pause rule). A later task plugs in by registering
@@ -3174,7 +3168,7 @@ focus is the Read the server decides for itself, so that's the one it counts.
   some): a **Blindfold** (string, black wool, string) and **Sunglasses** (tinted glass, iron nugget, tinted glass; a
   registry alias from `kegare:tinted_glasses` keeps any already made or worn). Anyone can wear them and they mean nothing on a non-bearer, so wearing one
   proves nothing.
-- **Real 3D models,** ours and Python-built (`tools/blockbench/build_blindfold.py`, `build_sunglasses.py`; `art/blockbench/`, `models/fx/`, `textures/entity/`), for everyone to see:
+- **Real 3D models,** ours (sources `art/blockbench/blindfold.bbmodel` and `sunglasses.bbmodel`, exported to `models/fx/` and `textures/entity/`), for everyone to see:
   - The Blindfold: a band of soft near-black cloth at eye level, about 3 to 3.5 pixels tall, pinched over the nose into two shallow lobes, the lower edge dipping at the bridge, pulling
     narrow toward the temples, with diagonal folds in its shape and grey painted along their ridges. Matte and opaque. A flat overlap behind, no knot or tails.
   - The Sunglasses: two round lenses 2.9 pixels across (40 sides) on the eyes, a touch low on the nose, deep indigo, darker toward the top and a little lighter at the bottom, with a small
