@@ -17,8 +17,6 @@ import java.io.Reader;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Map;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 import javax.imageio.ImageIO;
 import org.joml.Vector3f;
 import org.junit.jupiter.api.Test;
@@ -174,22 +172,18 @@ class GlacialLanceArtTest {
         assertEquals(1f, LanceShape.held(3, arrives + LanceShape.SNAP_TICKS + 1f, full, MINIMUM), 1e-5f, "settled");
     }
 
-    /** The game holds the lance by the same numbers the animation preview does (tools/anims/glacial_lance.py's LANCE_GRIP). */
+    /** The grip the shipped wind-up (player_animations/glacial_lance.json) was posed for: change both together. */
     @Test
-    void theGameHoldsItWhereThePreviewDoes() throws IOException {
-        String source = Files.readString(project("tools/anims/glacial_lance.py"));
-        Matcher m = Pattern.compile("LANCE_GRIP = \\{\"position\": \\(([^)]*)\\), \"rotation\": \\(([^)]*)\\), \"scale\": ([0-9.]+)\\}").matcher(source);
-        assertTrue(m.find(), "LANCE_GRIP in glacial_lance.py");
-        assertVector(LanceHold.GRIP_POSITION, m.group(1), "position");
-        assertVector(LanceHold.GRIP_ROTATION, m.group(2), "rotation");
-        assertEquals(Float.parseFloat(m.group(3)), LanceHold.GRIP_SCALE, 1e-4f, "scale");
+    void theGameHoldsItWhereTheWindUpWasPosed() {
+        assertVector(LanceHold.GRIP_POSITION, new Vector3f(1.0f, -10.0f, 0.0f), "position");
+        assertVector(LanceHold.GRIP_ROTATION, new Vector3f(-64.3f, 16.3f, -88.2f), "rotation");
+        assertEquals(0.85f, LanceHold.GRIP_SCALE, 1e-4f, "scale");
     }
 
-    private static void assertVector(Vector3f actual, String python, String what) {
-        String[] parts = python.split(",");
-        assertEquals(Float.parseFloat(parts[0].trim()), actual.x, 1e-4f, what + " x");
-        assertEquals(Float.parseFloat(parts[1].trim()), actual.y, 1e-4f, what + " y");
-        assertEquals(Float.parseFloat(parts[2].trim()), actual.z, 1e-4f, what + " z");
+    private static void assertVector(Vector3f actual, Vector3f expected, String what) {
+        assertEquals(expected.x, actual.x, 1e-4f, what + " x");
+        assertEquals(expected.y, actual.y, 1e-4f, what + " y");
+        assertEquals(expected.z, actual.z, 1e-4f, what + " z");
     }
 
     /** Your own small lance sits low and to the right, pointing away from you: the middle of the screen stays clear. */

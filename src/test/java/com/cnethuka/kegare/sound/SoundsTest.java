@@ -19,7 +19,7 @@ import org.junit.jupiter.api.Test;
 /**
  * Kegare's own sounds: every one registered in {@link KegareSounds} has its file (mono OGG Vorbis, so it's heard from where it's
  * played), its subtitle in en_us.json and its entry in the generated sounds.json, and no file under sounds/ is left unused.
- * Run {@code python3 tools/sounds/build.py} for a missing file and {@code ./gradlew runData} for a missing entry or subtitle.
+ * A missing file means the .ogg wasn't added; run {@code ./gradlew runData} for a missing entry or subtitle.
  */
 class SoundsTest {
     private static final Path PROJECT = Path.of(System.getProperty("kegare.projectDir", "."));
@@ -33,7 +33,7 @@ class SoundsTest {
         JsonObject lang = JsonParser.parseString(Files.readString(GENERATED.resolve("lang/en_us.json"))).getAsJsonObject();
         for (KegareSounds.Sound s : KegareSounds.ALL) {
             Path file = SOUNDS.resolve(s.file() + ".ogg");
-            assertTrue(Files.exists(file), s.name() + ": no " + PROJECT.relativize(file) + " (python3 tools/sounds/build.py)");
+            assertTrue(Files.exists(file), s.name() + ": no " + PROJECT.relativize(file));
             assertEquals(1, channels(Files.readAllBytes(file)), s.name() + " must be mono to be heard from where it's played");
             assertTrue(lang.has(s.subtitle()), s.name() + ": no subtitle " + s.subtitle() + " in en_us.json");
             assertTrue(defs.has(s.name()), s.name() + " is missing from sounds.json (runData)");
