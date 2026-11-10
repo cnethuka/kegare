@@ -1,14 +1,74 @@
 # Kegare
 
-Kegare is a Jujutsu Kaisen-inspired Minecraft mod, built mainly for PvP with friends. It runs on NeoForge 21.1.x
-(Minecraft 1.21.1, Java 21).
+**An unofficial, fan-made Jujutsu Kaisen mod for Minecraft 1.21.1 (NeoForge), made for PvP between friends.**
 
-Players are born with **Malice** (cursed energy) and an **Innate Technique**, or are born **Severed**, with neither.
-"Kegare" is the mod's name, and is reserved for the future hostile spirit mobs. See [DESIGN.md](DESIGN.md).
+Kegare brings the world of Gege Akutami's *Jujutsu Kaisen* into Minecraft. Every player is born with **Malice**, the mod's take on
+cursed energy, and an **Innate Technique** to fight with, or is born **Severed**: no Malice at all, and a superhuman body in its
+place. Fights between players are the heart of it.
 
-## Required mods (everyone installs these)
+It's also inspired by [Jujutsu Kaisen: Cursed Fate](https://www.curseforge.com/minecraft/mc-mods/cursed-fate), another Jujutsu
+Kaisen mod. Seeing how Cursed Fate lays out its menus, ability tabs and loadout bar shaped how Kegare organises its own. Only ideas
+were taken: every file in Kegare is its own, and most of the anime's terms get new names (Malice for cursed energy, Black Spark for
+Black Flash).
 
-Every player **and** the server need these in their `mods` folder, for Minecraft 1.21.1 / NeoForge 21.1:
+> **Unofficial.** Kegare is a fan project. It isn't affiliated with or endorsed by Gege Akutami, Shueisha, MAPPA or anyone else
+> behind *Jujutsu Kaisen*, or by the makers of Cursed Fate. NOT AN OFFICIAL MINECRAFT PRODUCT. NOT APPROVED BY OR ASSOCIATED WITH
+> MOJANG OR MICROSOFT.
+
+> **Made with generative AI.** Kegare's code and assets were made with generative AI, from a human designer's specifications.
+> See [How Kegare was made](#how-kegare-was-made).
+
+**Status:** early development (version 0.1.0). Expect changes, balance passes and the odd bug. Dominions, and the hostile spirits
+that will share the mod's name, are still to come.
+
+## Features
+
+**Born with it**
+- **Malice** is rolled once, on first join, into a tier (Low, Average, High or Vast, or Zero, which makes you Severed) and never
+  changes.
+- **Innate Techniques** are rolled by rarity and rerolled with a Purification Talisman. Every ability on the bar also has a
+  special on **R**:
+  - **Swap** (Common): trade places, faces, negative effects and momentum with whoever you're looking at.
+  - **Rime** (Rare): Frost Shard, Glacial Lance, Frost Field and Rime Shell; Freeze stacks; cheaper in the cold.
+  - **Puppet Manipulation** (Epic): half-size puppets of yourself to command, possess, detonate or use as a double, plus
+    Strings to pull and tie targets.
+  - **Time Manipulation** (Legendary): a mark to come back to, your own clock run fast and everyone else's slow, and at the
+    last, time stopped, which burns your technique out for a while.
+- **Severed** players trade all their Malice for a superhuman body: senses that outline every player and mob nearby, **Blur**
+  for speed, and **Closing Line**, a straight rush at a target.
+- **Traits**, a few of them unique: only one player in the world holds each, and the game never tells anyone else who.
+
+**Fighting**
+- **Melee for everyone:** Dash, Parry and Reinforced Strike, in and out of Technique Mode.
+- **Reinforced Fists** wrap Malice round your fists. Land the Malice within a hair of a punch and it becomes a **Black Spark**,
+  a far heavier hit.
+- **Hits that feel heavy:** a short freeze, a camera shake, a flash where the hit lands, and an impact frame for the biggest
+  ones. It's all feel: nothing in it changes what a hit does.
+- **Battle damage:** big hits break the world, so cover breaks and the ground changes mid-fight. By default what breaks stays
+  broken; a server can make it rebuild after the fight, or show cracks and debris only.
+- **Too fast for the eye:** someone Blurring, or sped up by Time Manipulation, is seen a moment behind where they really are.
+
+**Growing**
+- **Loadout:** nine ability slots and a fixed ultimate.
+- **Progression:** a private Grade ladder earned mostly in PvP, and promoted by how well you use your technique rather than by
+  winning; Refinement, which unlocks a technique's abilities as you land them; and Insight from first-time encounters. It
+  changes no damage, costs or capacity.
+- **Reverse Malice Technique:** a shared healing ability, found through a green orb only its finder can see.
+- **Background Tasks:** keep Reinforcement or Reverse Malice Technique running without a bar slot, weaker than on the bar.
+
+**Also**
+- **Eyewear:** a Blindfold and Sunglasses, worn in their own Curios slot.
+- **Your own settings:** ability effects at Full, Reduced or Vanilla, screen shake from 0 to 200%, and impact frames on or off
+  (Sorcerer screen, then Settings).
+- **Server-authoritative:** every gameplay number is in `config/kegare-server.toml`.
+- **Optional Postgres storage**, so several servers can share players, and leaderboards.
+
+Every system is described in full in [DESIGN.md](DESIGN.md).
+
+## Installing
+
+Kegare runs on Minecraft 1.21.1 with NeoForge 21.1.x. Every player **and** the server need Kegare and these mods in their
+`mods` folder:
 
 | Mod | Version | Download | Why |
 |---|---|---|---|
@@ -17,33 +77,33 @@ Every player **and** the server need these in their `mods` folder, for Minecraft
 | LDLib2 (by KilaBash) | 2.2.45 or newer | [Modrinth](https://modrinth.com/mod/ldlib) | required by Photon |
 | Curios API (by TheIllusiveC4) | 9.5.1 or newer | [Modrinth](https://modrinth.com/mod/curios) | the slot eyewear sits in |
 
-KilaGraph, which Photon needs, is bundled inside Photon. Don't install it separately. Pick the NeoForge 1.21.1
-file of each one. Minecraft refuses to start and names the missing mod if one is absent.
+KilaGraph, which Photon needs, is bundled inside Photon. Don't install it separately. Pick the NeoForge 1.21.1 file of each
+one. Minecraft refuses to start and names the missing mod if one is absent.
 
-## Content
+Until there's a published release, build Kegare's jar yourself: see [Building from source](#building-from-source).
 
-- **Malice:** rolled once at birth into a tier (Zero, Low, Average, High or Vast) and fixed from then on. See DESIGN.md §3.1.
-- **Innate techniques**, rolled by rarity and rerolled with a Purification Talisman. Each ability on the bar also has a
-  special on **R**:
-  - **Swap** (Common): trade places, faces, negative effects and momentum with whoever you're looking at. See DESIGN.md §3.19.
-  - **Rime** (Rare): Frost Shard, Glacial Lance, Frost Field and Rime Shell; Freeze stacks; cheaper in the cold. See
-    DESIGN.md §3.14.
-  - **Puppet Manipulation** (Epic): half-size puppets of yourself to command, possess, detonate or use as a double, plus
-    Strings to pull and tie targets. See DESIGN.md §3.20.
-- **Loadout:** nine ability slots and a fixed ultimate. See DESIGN.md §3.16.
-- **Progression:** a private Grade ladder earned mostly in PvP, and promoted by how well you use your technique rather than by
-  winning; Refinement, which unlocks a technique's abilities as you land them; and Insight from first-time encounters. It
-  changes no damage, costs or capacity. See DESIGN.md §3.21.
-- **Reverse Malice Technique:** a shared healing ability, found through a green orb only its finder can see. See
-  DESIGN.md §3.17–3.18.
+## Playing
 
-## How Kegare was made
+**Keys**
+- **G** toggles Technique Mode, which shows the combat panel. In it, a number key casts that slot (hold it to charge or
+  channel), **R** + a number key casts that slot's special, **R** alone casts the selected ability's special, and **V** is the
+  ultimate. The scroll wheel stays on the hotbar. Out of the mode, number keys are the hotbar and nothing casts.
+- Severed players have no Technique Mode: for them **G** is Blur, and **R** while Blurring is Closing Line.
+- **K** opens the Sorcerer screen. **M** opens the Six Eyes' map (only for a player with the Six Eyes trait). **J** opens Curios' screen, for eyewear.
+- Right-click is always vanilla.
 
-Kegare was designed by CNethuka: its lore, systems, rules and balance. It was built with AI assistance (Claude Code):
-the code and the assets (models, textures, animations and sounds) were produced with AI from the designer's
-specifications, then tested and refined in play. Nothing is copied from other mods or from the anime.
+See DESIGN.md §3.5.
 
-## Postgres storage (optional)
+**Commands** read `/kegare <system> <action> [player] [value]` and take short names (`/kegare innate set Steve rime`).
+`/kegare help` lists what you can run: `top`, `db`, `info`, `innate`, `trait`, `malice`, `rebirth`, `loadout`, `grade`,
+`assessment`, `refinement`, `insight`, `progression`, and `debug` for anything that exists only for testing. All but `help` and
+`top` need permission level 2. See DESIGN.md §3.8.
+
+## Running a server
+
+Every gameplay number lives in `config/kegare-server.toml`, created on the first start. See DESIGN.md §3.9.
+
+### Postgres storage (optional)
 
 Kegare's saved data can live in Postgres instead of the world's files, so several servers can share it and leaderboards work. It's off by default, and then nothing changes and no
 connection is opened. Only a dedicated server can use it, and the driver comes inside the mod's jar, so nobody installs anything. Vanilla's own player data (inventory, ender
@@ -77,7 +137,45 @@ the `kegare_public` schema holds read-only views of those stats and of announced
 
 **Backups** are yours to set up: with storage on, the database is the only copy of this data. `pg_dump` the `kegare` schema.
 
-## Dev commands
+## How Kegare was made
+
+**Generative AI disclosure:** Kegare would not exist without generative AI. Every part of the mod a player runs, its code and
+its assets, was made with it, under a human designer's direction.
+
+Kegare was designed by CNethuka: its lore, systems, rules and balance. It was built with AI assistance (Claude Code):
+the code and the assets (models, textures, animations and sounds) were produced with AI from the designer's
+specifications, then tested and refined in play. Nothing is copied from other mods or from the anime.
+
+`CLAUDE.md` holds the rules the AI coding agents work by. `AGENTS.md` and `AGENT.md` are exact copies of it, for tools that look
+for those names.
+
+## Contributing
+
+Help is welcome: bug reports, playtest notes, ideas and code. Before you start:
+- Read [DESIGN.md](DESIGN.md). It's the source of truth for every system, and a change to how something works updates it in the
+  same commit.
+- Keep it original. Nothing is copied from other mods, the anime or the manga: no code, art, models, animations, sounds or text.
+- Run `./gradlew test` before you open a pull request. If you changed text, advancements, tags or config options, run
+  `./gradlew runData` first and commit what it writes.
+- Report security problems privately, as [SECURITY.md](SECURITY.md) describes, not in a public issue.
+
+### Using AI responsibly
+
+Kegare was made with AI, and you're welcome to use AI tools when you help with it. Use them responsibly:
+- **You answer for what you submit.** Read and understand every line before you send it, and test it in game. "The AI wrote
+  it" doesn't explain a bug.
+- **Say what AI did.** Mention in your issue or pull request what AI helped with.
+- **No unchecked output.** Don't send pull requests you haven't reviewed, or bug reports you haven't reproduced yourself.
+- **Respect other people's work.** Don't use AI to copy or imitate another mod's, the anime's or the manga's code, art, models,
+  animations or sounds, and don't feed their files to an AI to make lookalikes.
+- **Keep private things private.** Don't paste passwords, keys, server logs with players' details, or anyone's personal data
+  into an AI tool.
+- **Agents follow the rules too.** A coding agent should work from `CLAUDE.md`. To change those rules, edit `CLAUDE.md`, then copy
+  it over `AGENTS.md` and `AGENT.md` (a test checks they match).
+
+## Building from source
+
+Requires JDK 21 (e.g. Temurin). Point `JAVA_HOME` at it if it isn't your default Java.
 
 | Command | What it does |
 |---|---|
@@ -94,19 +192,21 @@ the `kegare_public` schema holds read-only views of those stats and of announced
 | `/kegare debug screen <player> <effect> <seconds>` | Play a whole-screen effect (`kegare:grayscale`) on a player's screen; 0 stops it |
 | `/kegare debug battle restore` | Start rebuilding everything battle damage broke in RESTORING mode now (DESIGN §3.24) |
 
+The Postgres tests are skipped unless `KEGARE_TEST_DB_URL` points at a throwaway database (with its user and password in the
+URL's query). Every test starts from an empty database, so use one you don't need.
+
+Files under `src/generated/resources` are written by `./gradlew runData` from the classes in `data/`: edit those classes, never
+the generated files.
+
 Assets are edited directly, and each has one source: models in Blockbench (`art/blockbench/*.bbmodel`, exported over the
 shipped OBJ and textures), player animations in Blockbench (`assets/kegare/player_animations/*.json`), textures in an image editor
 and sounds as `.ogg` files. See DESIGN.md §3.10.
 
-Requires JDK 21 (e.g. Temurin). Point `JAVA_HOME` at it if it isn't your default Java.
+## Security
 
-Keys: **G** Technique Mode (shows the combat panel). In it, a number key casts that slot (hold to charge or channel), **R** +
-number key casts its special, **R** alone casts the selected ability's special, and **V** is the ultimate. The scroll wheel stays on
-the hotbar. Out of the mode, number keys are the hotbar and nothing casts. **K** Sorcerer screen. **M** the Six Eyes' map (only with the
-eyes). **J** Curios' screen, for eyewear (moved off G, which is Technique Mode). Right-click is always vanilla.
-See DESIGN.md §3.5.
+Please report vulnerabilities privately: see [SECURITY.md](SECURITY.md).
 
-Commands read `/kegare <system> <action> [player] [value]` and take short names (`/kegare innate set Steve rime`).
-`/kegare help` lists what you can run: `top`, `db`, `info`, `innate`, `trait`, `malice`, `rebirth`, `loadout`, `grade`, `assessment`,
-`refinement`, `insight`, `progression`, and `debug` for anything that exists only for testing. All but `help` and `top` need
-permission level 2. See DESIGN.md §3.8.
+## License
+
+Kegare is **All Rights Reserved**: see [LICENSE](LICENSE). Please ask before you copy, modify or redistribute any of its code
+or assets. *Jujutsu Kaisen* belongs to Gege Akutami and Shueisha, and Minecraft to Mojang.
