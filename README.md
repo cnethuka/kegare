@@ -37,6 +37,12 @@ file of each one. Minecraft refuses to start and names the missing mod if one is
 - **Reverse Malice Technique:** a shared healing ability, found through a green orb only its finder can see. See
   DESIGN.md §3.17–3.18.
 
+## How Kegare was made
+
+Kegare was designed by CNethuka: its lore, systems, rules and balance. It was built with AI assistance (Claude Code):
+the code and the assets (models, textures, animations and sounds) were produced with AI from the designer's
+specifications, then tested and refined in play. Nothing is copied from other mods or from the anime.
+
 ## Postgres storage (optional)
 
 Kegare's saved data can live in Postgres instead of the world's files, so several servers can share it and leaderboards work. It's off by default, and then nothing changes and no
