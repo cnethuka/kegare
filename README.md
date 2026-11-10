@@ -18,7 +18,7 @@ Black Flash).
 > **Made with generative AI.** Kegare's code and assets were made with generative AI, from a human designer's specifications.
 > See [How Kegare was made](#how-kegare-was-made).
 
-**Status:** early development (version 0.1.0). Expect changes, balance passes and the odd bug. Dominions, and the hostile spirits
+**Status:** early development (version 0.1.0-alpha). Expect changes, balance passes and the odd bug. Dominions, and the hostile spirits
 that will share the mod's name, are still to come.
 
 ## Features
@@ -179,7 +179,7 @@ Requires JDK 21 (e.g. Temurin). Point `JAVA_HOME` at it if it isn't your default
 
 | Command | What it does |
 |---|---|
-| `./gradlew build` | Compile, run unit tests, build `build/libs/kegare-<version>.jar` |
+| `./gradlew build` | Compile, run unit tests, build `build/libs/kegare-<minecraft version>-<version>.jar` (for example `kegare-1.21.1-0.1.0-alpha.jar`) |
 | `./gradlew test` | Unit tests (roll/pity math, trait rules, lang keys) plus in-game tests on a throwaway server (e.g. no reroll path changes Malice capacity) |
 | `./gradlew runData` | Regenerate lang, models, tags, recipes, advancements into `src/generated/resources` |
 | `./gradlew runClient` | Dev client |

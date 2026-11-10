@@ -27,7 +27,7 @@
 - Compile: `./gradlew compileJava -q`. Full suite: `./gradlew test` (JUnit runs inside FML on a throwaway server).
 - Data: `./gradlew runData` after any lang, advancement, tag or config-option change. Run it and `test` as separate Gradle
   invocations. Afterwards `git status` must show no changes from runData.
-- Jar: `./gradlew build -x test` → `build/libs/kegare-<version>.jar`.
+- Jar: `./gradlew build -x test` → `build/libs/kegare-<minecraft version>-<version>.jar`.
 
 ## Workflow
 - Commit each working step as you finish it, not all at the end. Each commit builds and passes tests on its own. End every
