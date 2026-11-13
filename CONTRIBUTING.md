@@ -5,11 +5,14 @@ section of the README), so please read this before opening a pull request.
 
 ## Your rights in what you contribute
 
-By submitting a contribution (code, art, sounds, text or anything else) to this repository, you agree that:
+By submitting a contribution to this repository, you agree that:
 
 - you have the right to submit it: it's your own work, or you have permission, and it doesn't copy anyone else's mod or assets;
-- you grant the Kegare owner a perpetual, worldwide, irrevocable, royalty-free right to use, change, distribute and
-  relicense it as part of Kegare or anything that comes from it.
+- **code** (anything outside the asset folders listed in the README) is licensed under the MIT License, like the rest of
+  Kegare's code;
+- **assets** (models, textures, sounds, player animations and effects): you grant the Kegare owner a perpetual, worldwide,
+  irrevocable, royalty-free right to use, change, distribute and relicense them as part of Kegare or anything that comes
+  from it, and they're All Rights Reserved like the rest of Kegare's assets;
 - you won't be paid for it, and it may be changed or removed at any time.
 
 If you can't agree to this, please don't open a pull request.
