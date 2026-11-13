@@ -208,5 +208,12 @@ Please report vulnerabilities privately: see [SECURITY.md](SECURITY.md).
 
 ## License
 
-Kegare is **All Rights Reserved**: see [LICENSE](LICENSE). Please ask before you copy, modify or redistribute any of its code
-or assets. *Jujutsu Kaisen* belongs to Gege Akutami and Shueisha, and Minecraft to Mojang.
+- **Code: MIT License** (see [LICENSE](LICENSE)). This covers the Java source, the build files, `tools/`, the shaders
+  (`assets/kegare/shaders/`), the data files under `src/main/resources/data/` and the documentation.
+- **Assets: All Rights Reserved.** Copyright (c) 2026 CNethuka. This covers everything under `art/`, and the `models`,
+  `textures`, `sounds`, `player_animations` and `fx` folders under `src/main/resources/assets/kegare/`. You may not copy,
+  modify or redistribute them outside Kegare itself without permission: a released fork or derivative has to replace them.
+
+Kegare is an unofficial fan work. *Jujutsu Kaisen* and its characters belong to Gege Akutami and Shueisha. Minecraft is a
+trademark of Mojang and Microsoft. Kegare is not affiliated with or endorsed by any of them, or by the makers of Jujutsu
+Kaisen: Cursed Fate. Neither license covers anything that isn't Kegare's own work.

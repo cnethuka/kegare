@@ -1,6 +1,7 @@
 # Contributing to Kegare
 
-Thanks for wanting to help. Kegare is All Rights Reserved (see LICENSE), so please read this before opening a pull request.
+Thanks for wanting to help. Kegare's code is under the MIT License and its assets are All Rights Reserved (see the License
+section of the README), so please read this before opening a pull request.
 
 ## Your rights in what you contribute
 
