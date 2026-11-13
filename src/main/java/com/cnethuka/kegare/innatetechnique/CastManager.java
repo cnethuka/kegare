@@ -1,5 +1,8 @@
 package com.cnethuka.kegare.innatetechnique;
 
+import com.cnethuka.kegare.api.ability.AbilityEndEvent;
+import com.cnethuka.kegare.api.ability.AbilityExecuteEvent;
+import com.cnethuka.kegare.api.ability.AbilityTickEvent;
 import com.cnethuka.kegare.malice.MaliceData;
 import com.cnethuka.kegare.malice.MaliceService;
 import com.cnethuka.kegare.combat.CombatHelper;
@@ -18,6 +21,7 @@ import com.cnethuka.kegare.innatetechnique.visual.VisualPhase;
 import com.cnethuka.kegare.innatetechnique.visual.VisualService;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
+import net.neoforged.neoforge.common.NeoForge;
 
 /**
  * Server-side cast pipeline. Clients send {@link CastIntent}s; everything else is validated here.
@@ -158,7 +162,7 @@ public final class CastManager {
                 if (!payCast(player, ability, ability.cost(player))) return;
                 started(player);
                 state.noCooldown = false;
-                CastScope.run(player, ability, () -> ability.execute(ctx));
+                execute(ctx);
                 if (state.noCooldown) { // fizzled after paying (see fizzleKeepingCost): no cooldown, no cast visuals
                     state.noCooldown = false;
                 } else {
@@ -177,7 +181,7 @@ public final class CastManager {
                 if (!payCast(player, ability, ability.cost(player))) return;
                 started(player);
                 state.casting = new CastState.Active(ability, slot, now);
-                CastScope.run(player, ability, () -> ability.execute(ctx));
+                execute(ctx);
                 wentOff(player, ability);
                 VisualService.ability(player, ability, VisualPhase.CAST);
                 VisualService.ability(player, ability, VisualPhase.CHANNEL_LOOP);
@@ -186,7 +190,7 @@ public final class CastManager {
                 if (!payCast(player, ability, ability.cost(player))) return;
                 started(player);
                 state.toggles.put(ability.id(), new CastState.Active(ability, slot, now));
-                CastScope.run(player, ability, () -> ability.execute(ctx));
+                execute(ctx);
                 wentOff(player, ability);
                 VisualService.ability(player, ability, VisualPhase.TOGGLE_ON);
                 VisualService.ability(player, ability, VisualPhase.TOGGLE_LOOP);
@@ -238,6 +242,29 @@ public final class CastManager {
     /** The cast actually went off: an ability with no target of its own has now done all it will. */
     private static void wentOff(ServerPlayer player, Ability ability) {
         if (ability.hasNoTarget()) Landings.usedWithoutTarget(player, ability);
+    }
+
+    /** Ability code and addon listeners share one scope, so effects from either are attributed to this cast. */
+    private static void execute(AbilityContext ctx) {
+        CastScope.run(ctx.player(), ctx.ability(), () -> {
+            NeoForge.EVENT_BUS.post(new AbilityExecuteEvent.Pre(ctx));
+            ctx.ability().execute(ctx);
+            if (!state(ctx.player()).noCooldown) NeoForge.EVENT_BUS.post(new AbilityExecuteEvent.Post(ctx));
+        });
+    }
+
+    private static void tickAbility(AbilityContext ctx) {
+        CastScope.run(ctx.player(), ctx.ability(), () -> {
+            ctx.ability().tick(ctx);
+            NeoForge.EVENT_BUS.post(new AbilityTickEvent.Post(ctx));
+        });
+    }
+
+    private static void end(AbilityContext ctx, EndReason reason) {
+        CastScope.run(ctx.player(), ctx.ability(), () -> {
+            ctx.ability().onEnd(ctx, reason);
+            NeoForge.EVENT_BUS.post(new AbilityEndEvent.Post(ctx, reason));
+        });
     }
 
     /**
@@ -333,7 +360,7 @@ public final class CastManager {
                 Ability ability = cast.ability;
                 if (ability.castType() == CastType.CHARGED) {
                     AbilityContext tickCtx = new AbilityContext(player, innateTechnique, ability, cast.slot, chargeFraction(player, cast), cast.activeTicks);
-                    CastScope.run(player, ability, () -> ability.tick(tickCtx));
+                    tickAbility(tickCtx);
                 } else if (ability.castType() == CastType.CHANNELED) {
                     if (unmetRequirement(player, ability).isPresent()) {
                         feedback(player, CastResult.REQUIREMENT_UNMET, ability);
@@ -342,7 +369,7 @@ public final class CastManager {
                         endChannel(player, innateTechnique, cast, EndReason.OUT_OF_MALICE);
                     } else {
                         AbilityContext tickCtx = new AbilityContext(player, innateTechnique, ability, cast.slot, 1f, cast.activeTicks);
-                        CastScope.run(player, ability, () -> ability.tick(tickCtx));
+                        tickAbility(tickCtx);
                         int max = ability.maxChannelTicks(player);
                         // (the tick may have finished the channel itself)
                         if (state.casting == cast && max > 0 && cast.activeTicks >= max) endChannel(player, innateTechnique, cast, EndReason.EXPIRED);
@@ -362,7 +389,7 @@ public final class CastManager {
                 endToggle(player, innateTechnique, toggle, EndReason.OUT_OF_MALICE);
             } else {
                 AbilityContext tickCtx = new AbilityContext(player, innateTechnique, ability, toggle.slot, 1f, toggle.activeTicks);
-                CastScope.run(player, ability, () -> ability.tick(tickCtx));
+                tickAbility(tickCtx);
             }
         }
     }
@@ -385,7 +412,7 @@ public final class CastManager {
         } else {
             state.casting = null;
             VisualService.stopAbility(player, cast.ability, VisualPhase.CHARGE_LOOP);
-            cast.ability.onEnd(new AbilityContext(player, innateTechnique.get(), cast.ability, cast.slot, chargeFraction(player, cast), cast.activeTicks), EndReason.INTERRUPTED);
+            end(new AbilityContext(player, innateTechnique.get(), cast.ability, cast.slot, chargeFraction(player, cast), cast.activeTicks), EndReason.INTERRUPTED);
             PlayerSync.markDirty(player);
         }
         player.displayClientMessage(Component.translatable("message.kegare.cast.interrupted", cast.ability.displayName()), true);
@@ -409,7 +436,7 @@ public final class CastManager {
             } else {
                 state.casting = null;
                 VisualService.stopAbility(player, cast.ability, VisualPhase.CHARGE_LOOP);
-                cast.ability.onEnd(new AbilityContext(player, innateTechnique.get(), cast.ability, cast.slot, chargeFraction(player, cast), cast.activeTicks), reason);
+                end(new AbilityContext(player, innateTechnique.get(), cast.ability, cast.slot, chargeFraction(player, cast), cast.activeTicks), reason);
             }
         }
         for (CastState.Active toggle : List.copyOf(state.toggles.values())) {
@@ -428,24 +455,24 @@ public final class CastManager {
         AbilityContext ctx = new AbilityContext(player, innateTechnique, ability, cast.slot, chargeFraction(player, cast), charged);
 
         if (charged < ability.minChargeTicks(player)) {
-            ability.onEnd(ctx, EndReason.CANCELLED);
+            end(ctx, EndReason.CANCELLED);
             feedback(player, CastResult.CHARGE_TOO_SHORT, ability);
             return;
         }
         if (CombatHelper.isStunned(player)) {
-            ability.onEnd(ctx, EndReason.INTERRUPTED);
+            end(ctx, EndReason.INTERRUPTED);
             feedback(player, CastResult.STUNNED, ability);
             return;
         }
         // A requirement (e.g. a toggle the special needs) may have lapsed while charging.
         if (unmetRequirement(player, ability).isPresent()) {
-            ability.onEnd(ctx, EndReason.CANCELLED);
+            end(ctx, EndReason.CANCELLED);
             feedback(player, CastResult.REQUIREMENT_UNMET, ability);
             return;
         }
         // Ability-specific release check (e.g. a target in range): fizzles for free.
         if (!ability.canRelease(ctx)) {
-            ability.onEnd(ctx, EndReason.CANCELLED);
+            end(ctx, EndReason.CANCELLED);
             feedback(player, CastResult.BLOCKED, ability);
             return;
         }
@@ -453,14 +480,14 @@ public final class CastManager {
         // held (Ability#releaseCost): re-check at release.
         double cost = ability.releaseCost(player, ctx.charge());
         if (!payCast(player, ability, cost)) {
-            ability.onEnd(ctx, EndReason.OUT_OF_MALICE);
+            end(ctx, EndReason.OUT_OF_MALICE);
             player.displayClientMessage(Component.translatable(CastResult.NOT_ENOUGH_MALICE.translationKey(),
                     Integer.toString((int) Math.ceil(cost - 1.0e-6)), Integer.toString((int) Math.floor(MaliceService.get(player).current()))), true);
             return;
         }
-        CastScope.run(player, ability, () -> ability.execute(ctx));
+        execute(ctx);
         wentOff(player, ability);
-        ability.onEnd(ctx, EndReason.RELEASED);
+        end(ctx, EndReason.RELEASED);
         InnateTechniqueService.startCooldown(player, ability);
         VisualService.ability(player, ability, VisualPhase.RELEASE);
     }
@@ -469,7 +496,7 @@ public final class CastManager {
         state(player).casting = null;
         VisualService.stopAbility(player, cast.ability, VisualPhase.CHANNEL_LOOP);
         AbilityContext endCtx = new AbilityContext(player, innateTechnique, cast.ability, cast.slot, 1f, cast.activeTicks);
-        CastScope.run(player, cast.ability, () -> cast.ability.onEnd(endCtx, reason));
+        end(endCtx, reason);
         InnateTechniqueService.startCooldown(player, cast.ability);
         if (reason == EndReason.OUT_OF_MALICE) {
             player.displayClientMessage(Component.translatable("message.kegare.cast.out_of_malice", cast.ability.displayName()), true);
@@ -484,7 +511,7 @@ public final class CastManager {
             VisualService.ability(player, toggle.ability, VisualPhase.TOGGLE_OFF);
         }
         AbilityContext endCtx = new AbilityContext(player, innateTechnique, toggle.ability, toggle.slot, 1f, toggle.activeTicks);
-        CastScope.run(player, toggle.ability, () -> toggle.ability.onEnd(endCtx, reason));
+        end(endCtx, reason);
         InnateTechniqueService.startCooldown(player, toggle.ability);
         if (reason == EndReason.RELEASED) {
             player.displayClientMessage(Component.translatable("message.kegare.toggle.off", toggle.ability.displayName()), true);

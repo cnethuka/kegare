@@ -1,6 +1,7 @@
 package com.cnethuka.kegare.innate_technique.time_manipulation;
 
 import com.cnethuka.kegare.Kegare;
+import com.cnethuka.kegare.api.ability.TechniqueAbilityContributions;
 import com.cnethuka.kegare.innatetechnique.InnateTechnique;
 import com.cnethuka.kegare.innatetechnique.InnateTechniqueRarity;
 import com.cnethuka.kegare.innatetechnique.InnateTechniqueService;
@@ -43,15 +44,16 @@ public final class TimeManipulation {
     public static final StandstillAbility STANDSTILL = new StandstillAbility();
 
     public static final DeferredHolder<InnateTechnique, InnateTechnique> TIME_MANIPULATION = INNATE_TECHNIQUES.register("time_manipulation",
-            () -> new InnateTechnique(InnateTechnique.builder(InnateTechniqueRarity.LEGENDARY)
-                    .ability(POINT_MAKER)
-                    .ability(ACCELERATE)
-                    .ability(DECELERATE)
-                    .defaultUnlockLevels()
-                    .ultimate(STANDSTILL)
-                    .maliceColor(MALICE_COLOR)
-                    .signatureAnimation(TimeIds.ANIM_STANDSTILL_CAST)
-                    .tabIcon(Items.CLOCK)) {
+            () -> new InnateTechnique(TechniqueAbilityContributions.applyTo(Kegare.id("time_manipulation"),
+                    InnateTechnique.builder(InnateTechniqueRarity.LEGENDARY)
+                            .ability(POINT_MAKER)
+                            .ability(ACCELERATE)
+                            .ability(DECELERATE)
+                            .defaultUnlockLevels()
+                            .ultimate(STANDSTILL)
+                            .maliceColor(MALICE_COLOR)
+                            .signatureAnimation(TimeIds.ANIM_STANDSTILL_CAST)
+                            .tabIcon(Items.CLOCK))) {
                 /** On losing it (reroll, rebirth or an admin): a mark still out is dropped, with no cooldown. */
                 @Override
                 public void onRemoved(ServerPlayer player) {

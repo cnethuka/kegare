@@ -36,8 +36,7 @@ public class InnateTechnique {
     private final ResourceLocation signatureAnimation;
     private final boolean defaultUnlockLevels;
     private final Map<ResourceLocation, Integer> unlockLevelOverrides;
-    @Nullable
-    private Map<ResourceLocation, Integer> unlockLevels;
+    private final Map<ResourceLocation, Integer> unlockLevels;
 
     protected InnateTechnique(Builder builder) {
         if (builder.abilities.isEmpty()) throw new IllegalArgumentException("An innate technique needs at least one ability");
@@ -50,6 +49,18 @@ public class InnateTechnique {
         this.signatureAnimation = builder.signatureAnimation;
         this.defaultUnlockLevels = builder.defaultUnlockLevels;
         this.unlockLevelOverrides = Map.copyOf(builder.unlockLevelOverrides);
+        Map<ResourceLocation, Integer> levels = new HashMap<>();
+        for (int i = 0; i < abilities.size(); i++) {
+            levels.put(abilities.get(i).id(), UnlockTable.ability(i));
+            int index = i;
+            abilities.get(i).special().ifPresent(s -> levels.put(s.id(), UnlockTable.special(index)));
+        }
+        if (ultimate != null) {
+            levels.put(ultimate.id(), UnlockTable.ULTIMATE);
+            ultimate.special().ifPresent(s -> levels.put(s.id(), UnlockTable.ULTIMATE));
+        }
+        levels.putAll(unlockLevelOverrides);
+        this.unlockLevels = Map.copyOf(levels);
     }
 
     public static Builder builder(InnateTechniqueRarity rarity) {
@@ -120,7 +131,7 @@ public class InnateTechnique {
         return out;
     }
 
-    /** Whether this technique says what its abilities unlock at. Datagen fails if one doesn't. */
+    /** Whether this technique declares default unlock levels or at least one explicit override; datagen requires one. */
     public final boolean hasUnlockLevels() {
         return defaultUnlockLevels || !unlockLevelOverrides.isEmpty();
     }
@@ -130,20 +141,6 @@ public class InnateTechnique {
      * it: {@link com.cnethuka.kegare.progression.TechniqueUnlocks#requiredLevel}).
      */
     public final int unlockLevel(Ability ability) {
-        if (unlockLevels == null) {
-            Map<ResourceLocation, Integer> levels = new HashMap<>();
-            for (int i = 0; i < abilities.size(); i++) {
-                levels.put(abilities.get(i).id(), UnlockTable.ability(i));
-                int index = i;
-                abilities.get(i).special().ifPresent(s -> levels.put(s.id(), UnlockTable.special(index)));
-            }
-            if (ultimate != null) {
-                levels.put(ultimate.id(), UnlockTable.ULTIMATE);
-                ultimate.special().ifPresent(s -> levels.put(s.id(), UnlockTable.ULTIMATE));
-            }
-            levels.putAll(unlockLevelOverrides);
-            unlockLevels = levels;
-        }
         return unlockLevels.getOrDefault(ability.id(), 0);
     }
 
@@ -202,9 +199,29 @@ public class InnateTechnique {
             return this;
         }
 
+        /** Inserts an ability directly after an ordinary ability already in this definition. */
+        public Builder abilityAfter(ResourceLocation existing, Ability ability) {
+            for (int i = 0; i < abilities.size(); i++) {
+                if (!abilities.get(i).id().equals(existing)) continue;
+                abilities.add(i + 1, ability);
+                return this;
+            }
+            throw new IllegalArgumentException("Unknown ability " + existing + " to insert after");
+        }
+
+        /** The ordinary abilities added so far, in loadout order. */
+        public List<Ability> abilities() {
+            return List.copyOf(abilities);
+        }
+
         public Builder ultimate(Ability ability) {
             this.ultimate = ability;
             return this;
+        }
+
+        /** The ultimate added so far, if any. */
+        public Optional<Ability> ultimate() {
+            return Optional.ofNullable(ultimate);
         }
 
         /** Icon of this innate technique's own advancement tab (see KegareAdvancements#innateTechniqueRoot). */
@@ -237,8 +254,28 @@ public class InnateTechnique {
             return this;
         }
 
+        /**
+         * Keeps the abilities already in this definition at their current default-table levels before other abilities
+         * are inserted. Explicit overrides win. Contribution application calls this before changing loadout order.
+         */
+        public Builder preserveDefaultUnlockLevels() {
+            if (!defaultUnlockLevels) return this;
+            for (int i = 0; i < abilities.size(); i++) {
+                Ability ability = abilities.get(i);
+                unlockLevelOverrides.putIfAbsent(ability.id(), UnlockTable.ability(i));
+                int index = i;
+                ability.special().ifPresent(special -> unlockLevelOverrides.putIfAbsent(special.id(), UnlockTable.special(index)));
+            }
+            if (ultimate != null) {
+                unlockLevelOverrides.putIfAbsent(ultimate.id(), UnlockTable.ULTIMATE);
+                ultimate.special().ifPresent(special -> unlockLevelOverrides.putIfAbsent(special.id(), UnlockTable.ULTIMATE));
+            }
+            return this;
+        }
+
         /** One ability, special or ultimate unlocks at this Refinement level instead of where the table puts it. */
         public Builder unlockLevel(Ability ability, int level) {
+            if (level < 0) throw new IllegalArgumentException("Unlock level cannot be negative: " + level);
             this.unlockLevelOverrides.put(ability.id(), level);
             return this;
         }

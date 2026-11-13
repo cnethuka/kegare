@@ -1,6 +1,7 @@
 package com.cnethuka.kegare.innate_technique.rime;
 
 import com.cnethuka.kegare.Kegare;
+import com.cnethuka.kegare.api.ability.TechniqueAbilityContributions;
 import com.cnethuka.kegare.innatetechnique.CostEnvironment;
 import com.cnethuka.kegare.innatetechnique.InnateTechnique;
 import com.cnethuka.kegare.innatetechnique.InnateTechniqueRarity;
@@ -36,16 +37,17 @@ public final class Rime {
     public static final ShatterShellAbility SHATTER_SHELL = new ShatterShellAbility();
 
     public static final DeferredHolder<InnateTechnique, InnateTechnique> RIME = INNATE_TECHNIQUES.register("rime",
-            () -> new RimeInnateTechnique(InnateTechnique.builder(InnateTechniqueRarity.RARE)
-                    .ability(FROST_SHARD)
-                    .ability(GLACIAL_LANCE)
-                    .ability(FROST_FIELD)
-                    .ability(RIME_SHELL)
-                    .defaultUnlockLevels()
-                    .lockedUltimate()
-                    .maliceColor(MALICE_COLOR)
-                    .signatureAnimation(RimeIds.ANIM_FROST_SHARD_CAST)
-                    .tabIcon(Items.BLUE_ICE)));
+            () -> new RimeInnateTechnique(TechniqueAbilityContributions.applyTo(Kegare.id("rime"),
+                    InnateTechnique.builder(InnateTechniqueRarity.RARE)
+                            .ability(FROST_SHARD)
+                            .ability(GLACIAL_LANCE)
+                            .ability(FROST_FIELD)
+                            .ability(RIME_SHELL)
+                            .defaultUnlockLevels()
+                            .lockedUltimate()
+                            .maliceColor(MALICE_COLOR)
+                            .signatureAnimation(RimeIds.ANIM_FROST_SHARD_CAST)
+                            .tabIcon(Items.BLUE_ICE))));
 
     private Rime() {}
 

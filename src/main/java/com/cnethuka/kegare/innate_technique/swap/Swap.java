@@ -1,6 +1,7 @@
 package com.cnethuka.kegare.innate_technique.swap;
 
 import com.cnethuka.kegare.Kegare;
+import com.cnethuka.kegare.api.ability.TechniqueAbilityContributions;
 import com.cnethuka.kegare.innatetechnique.InnateTechnique;
 import com.cnethuka.kegare.innatetechnique.InnateTechniqueRarity;
 import com.cnethuka.kegare.innatetechnique.InnateTechniqueService;
@@ -38,16 +39,17 @@ public final class Swap {
     public static final TotalSwapAbility TOTAL_SWAP = new TotalSwapAbility();
 
     public static final DeferredHolder<InnateTechnique, InnateTechnique> SWAP = INNATE_TECHNIQUES.register("swap",
-            () -> InnateTechnique.builder(InnateTechniqueRarity.COMMON)
-                    .ability(POSITIONS)
-                    .ability(AWARENESS)
-                    .ability(ANCHOR)
-                    .ability(EXCHANGE)
-                    .defaultUnlockLevels()
-                    .ultimate(TOTAL_SWAP)
-                    .maliceColor(MALICE_COLOR)
-                    .signatureAnimation(SwapIds.ANIM_POSITIONS_CLAP)
-                    .tabIcon(Items.ENDER_PEARL)
+            () -> TechniqueAbilityContributions.applyTo(Kegare.id("swap"),
+                    InnateTechnique.builder(InnateTechniqueRarity.COMMON)
+                            .ability(POSITIONS)
+                            .ability(AWARENESS)
+                            .ability(ANCHOR)
+                            .ability(EXCHANGE)
+                            .defaultUnlockLevels()
+                            .ultimate(TOTAL_SWAP)
+                            .maliceColor(MALICE_COLOR)
+                            .signatureAnimation(SwapIds.ANIM_POSITIONS_CLAP)
+                            .tabIcon(Items.ENDER_PEARL))
                     .build());
 
     private Swap() {}

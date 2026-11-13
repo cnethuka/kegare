@@ -1,6 +1,7 @@
 package com.cnethuka.kegare.innate_technique.puppet_manipulation;
 
 import com.cnethuka.kegare.Kegare;
+import com.cnethuka.kegare.api.ability.TechniqueAbilityContributions;
 import com.cnethuka.kegare.innatetechnique.CastManager;
 import com.cnethuka.kegare.innatetechnique.InnateTechnique;
 import com.cnethuka.kegare.innatetechnique.InnateTechniqueRarity;
@@ -36,17 +37,18 @@ public final class PuppetManipulation {
     public static final ZipLeashAbility ZIP_LEASH = new ZipLeashAbility();
 
     public static final DeferredHolder<InnateTechnique, InnateTechnique> PUPPET_MANIPULATION = INNATE_TECHNIQUES.register("puppet_manipulation",
-            () -> new InnateTechnique(InnateTechnique.builder(InnateTechniqueRarity.EPIC)
-                    .ability(PUPPET_CREATION)
-                    .ability(DIRECTIVE)
-                    .ability(CURIO_BURST)
-                    .ability(UNDERSTUDY)
-                    .ability(STRINGS)
-                    .defaultUnlockLevels()
-                    .lockedUltimate()
-                    .maliceColor(MALICE_COLOR)
-                    .signatureAnimation(PuppetIds.ANIM_CREATE_RELEASE)
-                    .tabIcon(Items.ARMOR_STAND)) {
+            () -> new InnateTechnique(TechniqueAbilityContributions.applyTo(Kegare.id("puppet_manipulation"),
+                    InnateTechnique.builder(InnateTechniqueRarity.EPIC)
+                            .ability(PUPPET_CREATION)
+                            .ability(DIRECTIVE)
+                            .ability(CURIO_BURST)
+                            .ability(UNDERSTUDY)
+                            .ability(STRINGS)
+                            .defaultUnlockLevels()
+                            .lockedUltimate()
+                            .maliceColor(MALICE_COLOR)
+                            .signatureAnimation(PuppetIds.ANIM_CREATE_RELEASE)
+                            .tabIcon(Items.ARMOR_STAND))) {
                 /** Rerolled (or reborn, or set by an admin) away from it: every puppet dissolves, loaded or not. */
                 @Override
                 public void onRemoved(ServerPlayer player) {

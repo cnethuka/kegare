@@ -118,5 +118,10 @@ public final class KegareAttachments {
             () -> AttachmentType.builder(() -> com.cnethuka.kegare.progression.CastOrigin.NONE)
                     .serialize(com.cnethuka.kegare.progression.CastOrigin.CODEC).build());
 
+    /** Runtime-only boss encounter/attack provenance on projectiles, summons and other spawned entities. */
+    public static final Supplier<AttachmentType<com.cnethuka.kegare.api.boss.BossAttackOrigin>> BOSS_ATTACK_ORIGIN =
+            ATTACHMENT_TYPES.register("boss_attack_origin",
+                    () -> AttachmentType.builder(() -> com.cnethuka.kegare.api.boss.BossAttackOrigin.NONE).build());
+
     private KegareAttachments() {}
 }

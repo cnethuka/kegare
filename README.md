@@ -137,6 +137,14 @@ the `kegare_public` schema holds read-only views of those stats and of announced
 
 **Backups** are yours to set up: with storage on, the database is the only copy of this data. `pg_dump` the `kegare` schema.
 
+## For mod developers
+
+The [addon API guide](docs/addon-api.md) shows how to register new innate techniques and abilities, contribute extra
+loadout attacks and lifecycle hooks to existing techniques, and build boss encounters with timed attacks, phases and
+extensible runtime metrics. Addons install on both client and server. Boss AI, targeting, visuals, balance and persistence
+remain addon-owned; Kegare adds no Mahoraga content, boss saved-data schema, rewards or network payloads. Technique
+contributions are extra ordinary attacks, not alternate R-specials. Design: [DESIGN.md §3.34](DESIGN.md#334-addon-api-abilities-attacks-and-boss-encounters).
+
 ## How Kegare was made
 
 **Generative AI disclosure:** Kegare would not exist without generative AI. Every part of the mod a player runs, its code and

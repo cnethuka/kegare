@@ -188,7 +188,7 @@ All timestamps use **level game time**. They persist across restarts and are ide
     admin, rebirth). Rime uses deep blue `#1E3A8A`.
   - an **epithet** (lang key `innate_technique.<namespace>.<id>.epithet`, read with `epithet()`): one short line that
     says what the technique feels like, shown under its name on the Sorcerer screen and typed out in the Epic and
-    Legendary reveals (§3.12). **Every innate technique sets one; datagen fails without it.** Rime: "Breath Turned to Glass". Swap: "Nothing Stays Where It Was". Puppet Manipulation: "Strings
+    Legendary reveals (§3.12). **Every Kegare innate technique sets one; Kegare datagen fails without it. Addons supply their own namespace's translations.** Rime: "Breath Turned to Glass". Swap: "Nothing Stays Where It Was". Puppet Manipulation: "Strings
     Without a Stage". Time Manipulation: "The Clock Forgets to Tick".
   - an optional **signature animation** (`Builder.signatureAnimation(id)`, a PAL animation, read with
     `signatureAnimation()`): what the player model does beside the emblem on the reveal's name card. Without one the model
@@ -223,8 +223,11 @@ All timestamps use **level game time**. They persist across restarts and are ide
 - Charges, channels and toggles are runtime-only and end on death, logout and innate technique change.
 - **Every cast runs inside a `CastScope`** (execute, tick and end), which is what traces a hit, an effect or a spawned
   entity back to its ability. It's how every technique gets Refinement and Assessment with no code of its own (§3.21).
-- **Unlock levels:** every technique calls `Builder.defaultUnlockLevels()` and/or `Builder.unlockLevel(ability, level)`;
-  datagen fails without one (§3.21).
+  The public `api.ability` execute/tick/end events run in that same scope (§3.34).
+- **Unlock levels:** every Kegare technique calls `Builder.defaultUnlockLevels()` and/or
+  `Builder.unlockLevel(ability, level)`; Kegare datagen fails without one (§3.21). Contributed abilities and their
+  specials receive explicit levels through the contribution API. Addon definitions use the same builder API and are
+  validated by their own datagen, not by Kegare's language file.
 - **Kegare ships no test techniques** (`test_kinetic`, `test_flux`, `test_prism` and `test_apex`, their abilities, the
   `[test_abilities]` config and `roll.includeTestInnateTechniques`): real techniques cover every cast type and rarity. An old
   `kegare-server.toml` still loads (NeoForge drops the keys). A player whose save still holds one gets a **free reroll on login**
@@ -389,7 +392,8 @@ All timestamps use **level game time**. They persist across restarts and are ide
 ### 3.7 Combat state (`CombatHelper`)
 - `markCombat`, `isInCombat` (`combatTagSeconds`, 10s), and `isRegenPaused`.
 - `stun(entity, ticks)` never shortens an existing stun and interrupts a charge or channel. `isStunned` is
-  respected by every cast. Use `stunTicksRemaining` and `clearStun` to inspect or reset it.
+  respected by every cast. A `c:bosses` entity takes damage but `stun` is a no-op on it, enforcing the shared no-disable
+  rule (§4). Use `stunTicksRemaining` and `clearStun` to inspect or reset it.
 - Players are tagged on dealing or taking real damage (`LivingDamageEvent.Post`). The API works on any
   `LivingEntity` for future systems.
 
@@ -1219,6 +1223,9 @@ separate bar is filled from any of them.
   unlock (`SharedAbilities.registerForEveryone`: Reinforcement, Reinforced Fists, §3.28); Severed players never have those either. A
   locked one shows in its category as a greyed tile with a padlock, and its card says what unlocks it (`Ability.unlockHint`: Reverse
   Malice Technique's "Take in the green orb.").
+- **Addon technique additions:** `TechniqueAbilityContributions` puts an addon's ordinary ability in an existing innate
+  technique before its immutable definition is built. These are extra loadout attacks, never alternate R-specials. They
+  use this same loadout, unlock-offer and unknown-ID removal path (§3.34).
 - **Reinforcement** (`kegare:reinforcement`, Malice, TOGGLE; package `reinforcement`). Lore: reinforcement
   strengthens the body by routing energy through it, improving durability and force tolerance; every sorcerer in canon does it, so every
   Malice user has it, with nothing to unlock (Severed never). The same rules as Reinforced Fists (§3.28): turning it on costs `onCost`
@@ -3304,6 +3311,43 @@ Pending times are wall-clock, since game time differs per server. The world's ow
 **Tests:** `WorldMigrationIT` (a dry run writing nothing, migrating twice, newer data and deletions surviving, a world whose bearer isn't the database's, a file that can't be read, then the export, read back by a real player; status against a cut connection), `StatsIT` (the leaderboard counts, the views' exact columns, nothing private coming through them with private rows right beside them, silent and announced advancements, the real role script: it reads the views and is refused every table), `SeveralServersIT` (two servers on one real database: refused while another holds them, the data moving once it lets go, waiting for the old server's last save, a stale lease taken over, a stale token's write ignored and its player sent away, a heartbeat noticing a lost lease, the primary key refusing a second bearer, a claim race and a birth-roll race each ending with one, succession once across the network to the only eligible heir, a broadcast with no name in it, wall-clock pending times, the game's own trait code going through the network's record and leaving the world's alone). `SavingIT` and `FreshRollIT` (need `KEGARE_TEST_DB_URL`; the outage ones cut a real connection with a proxy): data back on the next login; unchanged data costing no write, a rejoin included; a row going with its attachment; the server thread not waiting on a dead database, the newest winning, one warning each way, catching up; the spill file with no password, replayed before a login; the login handling never rolling someone with nothing loaded, a row that won't decode or data with no birth in it, and not saving them either; a world file imported, not rolled; a dead database refusing a login. `DatabaseConfigTest` (generated off with an empty password, the environment wins, no password in any text, nothing of it in any registered config, off opens no connection), `PlayerDataCodecTest` (every attachment with a serializer covered, real data through a round trip, big whole
 numbers exact, a row that won't decode changing nothing, only Kegare's keys out of a player file), `SchemaIT` (needs `KEGARE_TEST_DB_URL`: migrating twice, a newer database refused, all or nothing, JSONB keeping what the codec wrote).
 
+### 3.34 Addon API: abilities, attacks and boss encounters
+
+Packages `api.ability` and `api.boss` are the public contracts; `boss` is the internal encounter runtime. The complete mod-developer guide, with examples, is `docs/addon-api.md`. All gameplay calls and callbacks run on the logical server thread. Addons install on both sides: synced registry definitions supply display data, never executable content.
+
+**New techniques and shared abilities.** Addons reuse `Ability`, `BaseAbility`, `AbilityContext`, `SpecialAbility`, the synced `kegare:innate_technique` registry and `SharedAbilities`, rather than parallel wrappers. Their abilities go through the same server-authoritative validation, costs, cooldowns, Refinement, Assessment, loadout and HUD paths. Both Kegare's number/R/V inputs and right-click being vanilla remain unchanged; there are no alternate-special selectors. Addon gameplay numbers belong in the addon's own config. Every registered technique remains rollable. Kegare's language datagen validates only `kegare`-owned keys: an addon supplies its own namespace's translations and validates its own definitions.
+
+**Extra attacks on an existing technique** (`TechniqueAbilityContributions`).
+- Registration happens during mod construction, before registry entry suppliers build definitions. Each contribution names its target technique, an ordinary loadout `Ability`, its Refinement level and, if it has a special, that special's level. `register` appends; `registerAfter` inserts directly after an existing ordinary ability. Contributions with the same anchor retain registration order.
+- Rime, Swap, Puppet Manipulation and Time Manipulation apply contributions in their suppliers, before `build()`. An addon technique can expose the same seam with `applyTo`. Applying the first definition seals registration; later or repeated application is refused. Definitions and ability lists stay immutable after construction.
+- Duplicate IDs anywhere in the ordinary abilities/specials/ultimate, a special offered as an ordinary contribution, a special pointing at the wrong base, a negative or missing level and an unknown anchor all fail clearly before placement mutates the builder.
+- Insertion preserves existing abilities' explicit unlock levels and their original default-table levels (`Builder.preserveDefaultUnlockLevels`); an addon cannot silently raise a later built-in's unlock by appearing before it. The contributed attack and any special use their explicit levels.
+- An added attack participates automatically in the nine-slot loadout, new-ability offers, Refinement, Assessment, synced technique definitions, HUD and Sorcerer screen. It has its own cost/cooldown/requirements/cast type and an optional ordinary R-special. Removing its addon uses the existing unresolved-ID cleanup, leaving no castable reference.
+
+**Existing-ability lifecycle events** (game bus, under `api.ability`). `AbilityExecuteEvent.Pre` runs after shared validation and payment immediately before `execute`; `AbilityExecuteEvent.Post` follows a successful `execute` (but not an INSTANT `fizzleKeepingCost`); `AbilityTickEvent.Post` follows charge/channel/toggle `tick`; `AbilityEndEvent.Post` follows `onEnd` and carries its `EndReason`. They are notifications, not cancellable overrides of a cast's decided cost or validation. `CastManager` posts all of them inside the triggering ability's `CastScope`, so an addon follow-up projectile or summon gets the same attribution and progression as built-in effects. Rejected casts produce no execute events; early charge release still has its ordinary free end path.
+
+**Boss ownership boundary.** An addon registers its own entity, model/renderer, animations, spawn rules, AI/brain/goals, targeting, movement, visual/sound tells, damage, balance and loot. Its entity type belongs to `c:bosses` (`CombatHelper.isBoss`). Kegare owns optional encounter timing, attack state, phases and measurements, not the boss's decisions. No fake `ServerPlayer`, Malice reserve, innate technique or loadout is involved. Bosses keep the §4 damage/no-move/no-swap/no-disable invariant; the shared `CombatHelper.stun` now refuses them too, while arbitrary third-party movement/status code remains that addon's responsibility.
+
+**Boss attack runner** (`BossFight.attacks()`, `BossAttackController`, internal `BossAttackRunner`).
+- One attack at a time follows `windup → active → recovery`, then its own per-attack cooldown. `BossAttackTiming` has non-negative integer durations for those three phases and the cooldown; at least one attack phase is nonzero. Zero-length leading phases are skipped. The addon starts attacks and chooses the nullable target through `BossAttackContext`; the framework never selects or invalidates targets.
+- `onStart` is the windup-tell point. `onTick` runs once on each later game tick, after the phase due at that tick is selected. `attackTicks` and `stateTicks` are zero-based. `onEnd` runs once after a successful start for completion, explicit cancellation or encounter teardown. `BossAttackStartResult` distinguishes started, encounter ended, already running and on cooldown. A callback exception is logged and cancels the attack without leaving a half-started runner; a Started listener that already cancelled it cannot make `onStart` run after `onEnd`.
+- Cooldown starts at every ending and is queryable by attack ID. `activeAttack`/`activeAttackInstance` identify the running execution. The framework ticks controllers; direct repeats in one game tick do nothing.
+- `BossAttackContext.markOrigin(entity)` places runtime-only `kegare:boss_attack_origin` on a projectile, summon or other spawned entity: encounter UUID, boss UUID, attack UUID and attack ID. It never serializes. Damage later caused by that entity retains its attack even after the active phase ends. Direct boss damage during an execution also credits it; other boss damage remains outgoing encounter damage without an attack ID.
+
+**Encounters and phases** (`BossFights`, `BossFight`, `BossRuntime`, `BossFramework`). `BossFights.start` explicitly starts at most one active encounter per living server-side `c:bosses` entity and requires a namespaced initial phase. There is no automatic proximity/leash/reward policy. `join` adds a player explicitly; a credited player hitting the boss or a player being hit by it joins automatically. Participants stay in reports after logout/death. `setPhase` records namespaced phase changes (consecutive duplicates do nothing). `reset`/`end`/`resetAll` give the addon explicit teardown. Defeat, entity removal/despawn and server stopping also end once and cancel the active attack with `ENCOUNTER_ENDED`. New encounters are refused while their server is stopping, including reentrant listener teardown; all remaining encounters and pending damage captures are cleaned even when an addon listener fails.
+
+**Damage and attack metrics.** Kegare listens to individual `LivingDamageEvent.Pre/Post`, never aggregate Impact events. Pre captures original amount/health and Post supplies final post-mitigation damage. A `BossDamageSnapshot` stores raw, post-mitigation, effective (the final amount clamped to health before, so overkill doesn't inflate it) and hits. Post is joined to the newest pending Pre with the same victim and identical `DamageSource` (Pre's `DamageContainer` is not exposed by Post): properly nested hits are LIFO and different sources can complete out of order. An aborted capture cannot claim a later hit and leftovers clear at tick end/server stop.
+- Incoming totals cover every hit on an active encounter boss. Existing `Attribution` resolves the direct player or owner behind projectiles/summons; automatic participation and per-player totals use that resolution. For ability breakdown, a matching `CastOrigin` supplies its snapshotted ability ID even after reroll, with live cast attribution as fallback. Simultaneous player hits remain separate.
+- Outgoing totals cover damage from the encounter boss or its marked origins. A player target's damage-taken and activity are per participant. A valid encounter/attack-instance origin adds the hit to that attack's aggregate; stale/mismatched instance IDs cannot credit a different attack.
+- `BossAttackSnapshot` holds starts, completions, cancellations, damage and hit count. Defeat records a killing-blow participant/ability/damage-type/tick when the source or normal kill credit resolves one.
+- These are encounter metrics only. They do not enter PvP `FightTracker`, Grade, Refinement, Impact aggregates or §3.33 Postgres `stat_event`.
+
+**Detached reports and custom metrics.** `BossFightSnapshot` contains only UUIDs, namespaced IDs and numbers: boss type, ticks/duration, phase history/end reason, participants and first/last activity, incoming/outgoing totals, per-player ability damage, attack aggregates, optional killing blow and custom metrics. Its collections and nested participant maps are copied and unmodifiable; old snapshots never change. Live entities/world/damage sources belong only to live contexts.
+- `BossMetric<Long>` and `BossMetric<Double>` are namespaced addon-owned gauge/counter keys with `set`, `increment` and zero-default `get`. One encounter cannot reuse an ID with the other numeric type. Long addition is exact. A value appears in `customMetrics` without core learning what it means: adaptation to a source, a wheel-turn counter and unrelated addon mechanics use the same seam. No Mahoraga system is implemented in core.
+- Notifications are non-cancellable and snapshot-based: `BossEncounterEvent.Started/PhaseChanged/Ended`, `BossAttackEvent.Started/Ended`, `BossDamageEvent` and `BossMetricEvent`. An encounter Ended report is the persistence sink: the addon may queue or save it wherever it wants. Core writes no SavedData, SQL schema, reward, leaderboard entry or migration, and sends no custom HUD/network payload. Network version stays **27**.
+
+**Tests:** `TechniqueAbilityContributionsTest` (deterministic placement, duplicate/invalid/late registration, special/ultimate structural unlocks, preservation of existing default and explicit levels); `KegareLanguageProviderTest` (non-Kegare translation ownership) plus the existing real-server casting tests for source compatibility; `AbilityLifecycleEventsTest` (INSTANT, CHARGED, CHANNELED and TOGGLE event order, rejected/fizzled/early-release behavior and `CastScope` in every listener); `BossAttackTest` (phase boundaries, cooldown, zero leading phases/no empty attack, cancellation, Started cancellation/failure, direct/projectile/summon provenance); `BossFightDamageTest` (player ownership and delayed ability IDs, simultaneous attackers, source-identity pairing/stale capture cleanup, overkill, defeat/killing blow); `BossFightApiTest` (immutable phase/metric/participant snapshots, idempotent removal/defeat/reset, server-stop cleanup and reentrancy); `BossStunTest` (central boss no-stun; existing `RimeBossTest` covers boss damage).
+
 ---
 
 ## 4. Extension points (how later content plugs in)
@@ -3338,9 +3382,18 @@ numbers exact, a row that won't decode changing nothing, only Kegare's keys out 
     Manipulation.
 
 - **New innate technique:** create a `DeferredRegister<InnateTechnique>` on
-  `KegareRegistries.INNATE_TECHNIQUE_KEY`, build abilities with `BaseAbility`, add the lang names and an **epithet**
-  (datagen fails without one), set a signature animation, **set unlock levels for its abilities, specials and ultimate**
-  (datagen fails without them too), and put the numbers in config. Nothing in the base changes.
+  `KegareRegistries.INNATE_TECHNIQUE_KEY`, build abilities with `BaseAbility`, add the lang names and an **epithet**, set a
+  signature animation, **set unlock levels for its abilities, specials and ultimate**, and put the numbers in the addon's
+  own config. Kegare datagen checks these for Kegare-owned definitions; addons own their namespace's lang and validation.
+  Nothing in the base changes. See §3.34 and `docs/addon-api.md`.
+- **Extra attack on an existing technique:** register `TechniqueAbilityContributions` during mod construction, with an
+  optional ordinary-ability insertion anchor and explicit Refinement levels (§3.34). It becomes a normal loadout attack;
+  it is not a second R-special. Extra behavior behind an existing attack uses `AbilityExecuteEvent`,
+  `AbilityTickEvent` or `AbilityEndEvent` on the game bus, all inside the original `CastScope`.
+- **New boss fight:** the addon owns the entity/AI/targeting/tells/balance and tags it `c:bosses`; `BossFights` supplies
+  explicit encounters/phases, `BossAttack` supplies timed windup/active/recovery/cooldown attacks, and immutable events
+  and snapshots supply separate runtime metrics, including namespaced typed custom counters/gauges (§3.34). Persistence,
+  rewards and offline storage are addon-owned. Core adds no Mahoraga implementation and no boss packets.
 - **Refinement and Assessment:** every technique gets them through the shared path (`CastScope`, `Landings`, §3.21). Add code only where
   an ability lands without hurting (`Landings.land`), hits later (`Landings.during`), attacks through something else
   (`Attribution.addAttributor`) or has no target (`hasNoTarget`). A cost discount must be divided out in `Landings.baseCost`.

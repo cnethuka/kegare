@@ -1062,31 +1062,39 @@ public final class KegareLanguageProvider extends LanguageProvider {
         return out.toString();
     }
 
-    /** Every registered innate technique, ability and trait must have a display name. */
+    /** This provider owns Kegare's lang file only; addons provide translations for their own namespaces. */
+    static boolean requiresTranslations(net.minecraft.resources.ResourceLocation id) {
+        return Kegare.MODID.equals(id.getNamespace());
+    }
+
+    private void requireAbilityTranslations(Ability ability, List<String> missing) {
+        if (!requiresTranslations(ability.id())) return;
+        if (!written.contains(ability.descriptionId())) missing.add(ability.descriptionId());
+        if (!written.contains(ability.descriptionId() + ".desc")) missing.add(ability.descriptionId() + ".desc");
+    }
+
+    /** Every registered Kegare innate technique, ability (including specials) and trait must have translations. */
     private void validateRegistries() {
         List<String> missing = new ArrayList<>();
         for (InnateTechnique innateTechnique : KegareRegistries.INNATE_TECHNIQUE) {
+            if (!requiresTranslations(innateTechnique.id())) continue;
             if (!written.contains(innateTechnique.descriptionId())) missing.add(innateTechnique.descriptionId());
             if (!written.contains(innateTechnique.descriptionId() + ".desc")) missing.add(innateTechnique.descriptionId() + ".desc");
             if (!written.contains(innateTechnique.epithetId())) missing.add(innateTechnique.epithetId());
-            List<Ability> abilities = new ArrayList<>(innateTechnique.abilities());
-            innateTechnique.ultimate().ifPresent(abilities::add);
-            for (Ability ability : abilities) {
-                if (!written.contains(ability.descriptionId())) missing.add(ability.descriptionId());
-                if (!written.contains(ability.descriptionId() + ".desc")) missing.add(ability.descriptionId() + ".desc");
-            }
+            for (Ability ability : innateTechnique.everyAbility()) requireAbilityTranslations(ability, missing);
         }
         for (Ability ability : com.cnethuka.kegare.loadout.SharedAbilities.all()) {
-            if (!written.contains(ability.descriptionId())) missing.add(ability.descriptionId());
-            if (!written.contains(ability.descriptionId() + ".desc")) missing.add(ability.descriptionId() + ".desc");
+            requireAbilityTranslations(ability, missing);
+            ability.special().ifPresent(special -> requireAbilityTranslations(special, missing));
         }
         for (Trait trait : KegareRegistries.TRAIT) {
+            if (!requiresTranslations(trait.id())) continue;
             if (!written.contains(trait.descriptionId())) missing.add(trait.descriptionId());
             if (!written.contains(trait.descriptionId() + ".desc")) missing.add(trait.descriptionId() + ".desc");
         }
         if (!missing.isEmpty()) throw new IllegalStateException("Missing lang entries: " + missing.stream().distinct().toList());
         for (InnateTechnique innateTechnique : KegareRegistries.INNATE_TECHNIQUE) {
-            if (!innateTechnique.hasUnlockLevels()) {
+            if (requiresTranslations(innateTechnique.id()) && !innateTechnique.hasUnlockLevels()) {
                 throw new IllegalStateException(innateTechnique.id() + " doesn't set its Refinement unlock levels: call defaultUnlockLevels() or unlockLevel(...) in its definition");
             }
         }

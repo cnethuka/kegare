@@ -57,7 +57,7 @@ public final class CombatHelper {
      * While stunned, {@link CastManager} rejects every cast.
      */
     public static void stun(LivingEntity entity, int ticks) {
-        if (ticks <= 0) return;
+        if (ticks <= 0 || isBoss(entity)) return;
         CombatData data = entity.getData(KegareAttachments.COMBAT);
         data.stunnedUntil = Math.max(data.stunnedUntil, now(entity) + ticks);
         if (entity instanceof ServerPlayer player) CastManager.interrupt(player);

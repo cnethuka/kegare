@@ -54,6 +54,7 @@ public final class Kegare {
         com.cnethuka.kegare.battledamage.BattleDamage.init(); // big hits break the world (DESIGN §3.24)
 
         com.cnethuka.kegare.progression.Progression.init();
+        com.cnethuka.kegare.boss.BossFramework.init();
         modBus.addListener(KegareNetwork::register);
         modBus.addListener(KegareDataGen::gather);
 
