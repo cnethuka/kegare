@@ -347,18 +347,7 @@ All timestamps use **level game time**. They persist across restarts and are ide
   see behind where it is), and vanilla's own teleport and head packets for the delayed image.
 - **Sub-tick timing** (§3.29): `TimingNet.Stamp` (C→S, an input stamped with the client's clock, sent at the key press), `TimingNet.Ping`
   (S→C) and `TimingNet.Pong` (C→S, the client's clock), all handled on the network thread. Reinforced Fists' look is `FistsPayload` (§3.28).
-- Network version `30` (since healing others became by touch, §3.17: the `RmtNet.Link` payload is gone, and a Read's body says whether
-  Background RMT is running, §3.32); `29` was Black Spark's black and red redesign (§3.28: `BlackSparkPayload` no longer carries a
-  colour); `28` was the
-  addon API's join check, §3.34 (`TechniqueCheck.Ask` and `.Answer` in the configuration phase); `27` was a
-  disguise wearing the face's eyewear, §3.19 and §3.32 (`Disguises.StatePayload` carries it); `26` was Six Eyes'
-  Reads reading a body's whole state, §3.32 (`ReadsPayload` gained mob health and the focus's body); `25`
-  was Six Eyes, §3.32, and RMT's repair, §3.17: `Repair.Payload`, the brain meter in `ProgressionSnapshot`, and
-  Six Eyes' own (`SightPayloads`, `ReadsPayload`, `Strain.Hud`, `Strain.Collapsed`, `Edge.Spark`, `Attunement.PinPayload`); `24` was Reinforcement and Background Tasks, §3.16 and §3.31: `AuraPayload`, `BackgroundSyncPayload`,
-  `BackgroundActionPayload`; `23` was too fast for the eye, §3.30:
-  `SensedPositionsPayload`; `22` was Reinforced Fists and Black Spark, §3.28-3.29: `FistsPayload`, the timing stamps; `21` was RMT's rework, §3.17: `RmtOutputPayload`, then heal-others' `RmtLinkPayload` and `RmtMomentPayload`; `20`
-  was Closing Line's line in three dimensions in `RushPayload` and its cooldown in `BlurPayload`, §3.27; `19`
-  was Severed's payloads, `18` Burnout's end time in the sync, §3.25, and Time Manipulation's payloads, §3.26). Bump it when payload formats change; mismatched clients are refused.
+- Network version `30` (`KegareNetwork.VERSION`). Bump it whenever a payload's format changes; mismatched clients are refused.
 
 ### 3.6 HUD
 **Rule: the combat HUD does not exist until the player asks for it** (art in `textures/gui/combat/`).
