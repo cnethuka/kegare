@@ -314,8 +314,8 @@ public final class KegareLanguageProvider extends LanguageProvider {
                 + "so damage heals as it lands; it keeps running at full health. How fast depends on your output, and injuries piling up in a fight "
                 + "drag it down. It drains " + MALICE + " fast. Interrupted by stuns and freezing like any channel.");
         add("ability.kegare.reverse_malice_technique_on_another", "Reverse Malice Technique, on another");
-        add("ability.kegare.reverse_malice_technique_on_another.desc", "Heal the player you're looking at, within %1$s blocks, at %2$s of your "
-                + "own output, for %3$s times the " + MALICE + ". Few can: it takes enough Output Insight, and then the right moment, when "
+        add("ability.kegare.reverse_malice_technique_on_another.desc", "Lay your hand on another player and heal them, at %1$s of your "
+                + "own output, for %2$s times the " + MALICE + ". Few can: it takes enough Output Insight, and then the right moment, when "
                 + "someone near you is badly hurt.");
         add("message.kegare.rmt.unlocked", "Your body remembers how to heal.");
         add("message.kegare.rmt.brain_full", "Your brain can't take another repair.");
@@ -370,6 +370,7 @@ public final class KegareLanguageProvider extends LanguageProvider {
         add("gui.kegare.six_eyes.read.stunned", "Stunned %ss");
         add("gui.kegare.six_eyes.read.burnt_out", "Burnt out %ss");
         add("gui.kegare.six_eyes.read.possessing", "Possessing a puppet");
+        add("gui.kegare.six_eyes.read.running", "%s running");
         add("gui.kegare.six_eyes.read.hunger", "Hunger %s/20");
         add("gui.kegare.six_eyes.read.no_technique", "No technique");
         add("gui.kegare.six_eyes.read.mob_hostile", "%s · hostile flow");
@@ -440,7 +441,7 @@ public final class KegareLanguageProvider extends LanguageProvider {
         add("gui.kegare.rmt.knows_others", "You can heal others (R).");
         add("gui.kegare.rmt.not_others", "You don't know how to heal others yet.");
         add("message.kegare.rmt.dont_know", "You don't know how to do that yet.");
-        add("message.kegare.rmt.no_one_to_heal", "No one to heal within %s blocks.");
+        add("message.kegare.rmt.no_one_to_heal", "No one close enough to touch.");
         add("message.kegare.rmt.learned_others", "You know how to heal others now.");
         add("unlock.kegare.rmt_heal_others", "Healing others");
         add("gui.kegare.rmt.output_injured", "Output %sx, injuries %s");

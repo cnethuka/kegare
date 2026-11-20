@@ -30,19 +30,17 @@ import net.neoforged.neoforge.network.PacketDistributor;
  * RMT unlocked and Output Insight at {@code healOthersInsight} or more (the Unlocks framework's {@code kegare:rmt_heal_others}, which
  * survives rerolls); then learned in a chance moment ({@link #onDroppedLow}): a player near you drops to 3 hearts, and with a little
  * luck they glow soft green to you alone for a few seconds; heal them then, and you know it for good. It heals the player you're looking
- * at within {@code range}, in line of sight, at {@code othersOutput} of YOUR output (your Grade, Peak and injuries, not theirs), for
+ * at, touching them ({@code range}, 1 block from your eyes to them), in line of sight, at {@code othersOutput} of YOUR output (your Grade, Peak and injuries, not theirs), for
  * {@code othersCost} times RMT's price. Any player, Severed included; never a mob. Ends when they leave range or sight, on your stun or
- * freeze, or out of Malice; keeps running at their full health; shares RMT's cooldown. The tell: your right hand reaching out to them
- * and a white link from it to them, seen by everyone, and a soft chime as it starts.
+ * freeze, or out of Malice; keeps running at their full health; shares RMT's cooldown. The tell: your right hand reaching out onto them
+ * with white flames burning on it, seen by everyone, and a soft chime as it starts.
  */
 public final class RmtOnAnother extends SpecialAbility {
-    /** While it heals: the right arm reaching out toward the one being healed (the link itself is RmtLinkClient's). */
+    /** While it heals: the right arm reaching out onto the one being healed, white flames burning on that hand. */
     private static final com.cnethuka.kegare.api.visual.AbilityVisuals VISUALS = com.cnethuka.kegare.api.visual.AbilityVisuals.builder()
-            .channelLoop(RmtIds.ANIM_ON_ANOTHER, null)
+            .channelLoop(RmtIds.ANIM_ON_ANOTHER, RmtIds.FX_ON_ANOTHER)
+            .anchor(com.cnethuka.kegare.api.visual.VisualPhase.CHANNEL_LOOP, com.cnethuka.kegare.api.visual.Visual.Anchor.BODY)
             .build();
-
-    /** Ticks between resends of the link; a client drops a link it hasn't heard about for a little longer than this. */
-    static final int LINK_RESEND_TICKS = 20;
 
     RmtOnAnother() {
         super(RmtIds.ON_ANOTHER, CastType.CHANNELED, () -> Rmt.REVERSE_MALICE_TECHNIQUE);
@@ -68,8 +66,8 @@ public final class RmtOnAnother extends SpecialAbility {
     @Override public com.cnethuka.kegare.api.visual.AbilityVisuals visuals() { return VISUALS; }
     @Override
     public Object[] descriptionArgs() {
-        return new Object[] {com.cnethuka.kegare.config.ConfigText.number(RmtConfig.OTHERS_RANGE),
-                com.cnethuka.kegare.config.ConfigText.percent(RmtConfig.OTHERS_OUTPUT), com.cnethuka.kegare.config.ConfigText.number(RmtConfig.OTHERS_COST)};
+        return new Object[] {com.cnethuka.kegare.config.ConfigText.percent(RmtConfig.OTHERS_OUTPUT),
+                com.cnethuka.kegare.config.ConfigText.number(RmtConfig.OTHERS_COST)};
     }
 
     public static boolean knows(ServerPlayer player) {
@@ -133,8 +131,7 @@ public final class RmtOnAnother extends SpecialAbility {
         if (!knows(player) && (target.isEmpty() || !inMoment(player, target.get()))) {
             return Component.translatable("message.kegare.rmt.dont_know");
         }
-        return Component.translatable("message.kegare.rmt.no_one_to_heal", net.minecraft.network.chat.Component.literal(
-                com.cnethuka.kegare.config.ConfigText.number(RmtConfig.OTHERS_RANGE)));
+        return Component.translatable("message.kegare.rmt.no_one_to_heal");
     }
 
     @Override
@@ -153,7 +150,6 @@ public final class RmtOnAnother extends SpecialAbility {
         }
         state.healing = target.getUUID();
         p.level().playSound(null, p.getX(), p.getY(), p.getZ(), SoundEvents.AMETHYST_BLOCK_CHIME, SoundSource.PLAYERS, 0.8f, 1.8f);
-        sendLink(p, target, true);
     }
 
     @Override
@@ -167,22 +163,11 @@ public final class RmtOnAnother extends SpecialAbility {
         }
         float healed = ReverseMaliceTechnique.heal(p, target, RmtConfig.HEAL_PER_SECOND.get() * RmtOutput.of(p) * RmtConfig.OTHERS_OUTPUT.get() / 20.0);
         if (healed > 0f && target instanceof ServerPlayer healedPlayer) InsightHooks.healedByOther(healedPlayer);
-        if (p.level().getGameTime() - state.linkSentAt >= LINK_RESEND_TICKS) sendLink(p, target, true);
     }
 
     @Override
     public void onEnd(AbilityContext ctx, EndReason reason) {
-        ServerPlayer p = ctx.player();
-        RmtState state = GreenOrbService.state(p);
-        Player target = state.healing == null ? null : p.level().getPlayerByUUID(state.healing);
-        state.healing = null;
-        sendLink(p, target, false);
-    }
-
-    private static void sendLink(ServerPlayer caster, @Nullable Player target, boolean on) {
-        GreenOrbService.state(caster).linkSentAt = caster.level().getGameTime();
-        RmtNet.Link link = new RmtNet.Link(caster.getId(), target == null ? -1 : target.getId(), on);
-        PacketDistributor.sendToPlayersTrackingEntityAndSelf(caster, link);
+        GreenOrbService.state(ctx.player()).healing = null;
     }
 
     // ---------------------------------------------------------------- the moment

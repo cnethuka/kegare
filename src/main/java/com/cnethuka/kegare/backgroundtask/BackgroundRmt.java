@@ -14,8 +14,6 @@ import com.cnethuka.kegare.rmt.ReverseMaliceTechnique;
 import com.cnethuka.kegare.rmt.RmtConfig;
 import com.cnethuka.kegare.rmt.RmtIds;
 import com.cnethuka.kegare.rmt.RmtOutput;
-import com.cnethuka.kegare.trait.KegareTraits;
-import com.cnethuka.kegare.trait.TraitService;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
 import net.minecraft.resources.ResourceLocation;
@@ -28,8 +26,8 @@ import net.minecraft.server.level.ServerPlayer;
  * it needs RMT unlocked; Severed never. "Always On" (silent, hidden) is awarded when it unlocks.</li>
  * <li>Effect: heals {@code backgroundOutput} (1/6) of your channelled RMT's rate at your current output, so Grade, Peak Refinement,
  * injury fatigue and every output modifier (Black Spark's zone) apply: about 1 health every 3 s at an output of 1. Like the channel it
- * keeps running at full health and heals damage as it lands. Never absorption, and no pulse or chime: nobody can tell, except a Six
- * Eyes bearer, who sees a faint green shimmer on anyone running it.</li>
+ * keeps running at full health and heals damage as it lands. Never absorption, and no pulse or chime: everyone sees a faint white
+ * shimmer on anyone running it, and a Six Eyes bearer's Read says "Background RMT running".</li>
  * <li>Cost: {@code drainPerSecond}, and natural Malice regeneration ×{@code regenFactor} while it runs.</li>
  * <li>It pauses on its own below {@code pauseBelow} (20%) of capacity and resumes above {@code resumeAbove} (30%). Only low Malice stops
  * it: stuns and Burnout don't. Frozen in a Standstill, it's paused while time is stopped for you, and resumes with it.</li>
@@ -68,9 +66,8 @@ public final class BackgroundRmt extends BackgroundTask {
             double allowed = com.cnethuka.kegare.rmt.BrainDamage.take(player, (ticks - shorter) / 20.0, ticks / 20.0);
             return ticks - (int) Math.floor(allowed * 20.0 + 1.0e-6);
         });
-        // Only the Six Eyes see it: a faint green shimmer on anyone running it.
-        AuraTell.addShimmer((viewer, player) -> running(player) && TraitService.has(viewer, KegareTraits.SIX_EYES.get()),
-                player -> BackgroundTaskService.isActive(player, ID));
+        // Everyone sees it: a faint white shimmer on anyone running it (the Six Eyes read more: "Background RMT running").
+        AuraTell.addShimmer((viewer, player) -> running(player), player -> BackgroundTaskService.isActive(player, ID));
     }
 
     public static void addHook(Hook hook) {

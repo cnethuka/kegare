@@ -109,6 +109,14 @@ class KegareConfigMigrationTest {
     }
 
     @Test
+    void theTouchStepBringsHealingOthersClose() {
+        assertEquals(Map.of("reverse_malice_technique.others.range", 3.0), KegareConfigMigration.HEAL_BY_TOUCH_OLD_DEFAULTS);
+        assertEquals(1.0, newDefault("reverse_malice_technique.others.range"), 1.0e-9, "touching");
+        assertEquals(KegareConfigMigration.Action.MOVE_TO_NEW_DEFAULT, KegareConfigMigration.decide(3.0, 3.0, 1.0), "an old file's 3 moves");
+        assertEquals(KegareConfigMigration.Action.KEEP_HAND_EDITED, KegareConfigMigration.decide(2.0, 3.0, 1.0), "a hand-set 2 stays");
+    }
+
+    @Test
     void eachStepRunsOnceInOrderUpToTheCurrentVersion() {
         var steps = KegareConfigMigration.STEPS;
         for (int i = 1; i < steps.size(); i++) assertTrue(steps.get(i - 1).version() < steps.get(i).version());

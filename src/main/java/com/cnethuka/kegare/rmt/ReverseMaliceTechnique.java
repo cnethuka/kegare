@@ -83,8 +83,9 @@ public final class ReverseMaliceTechnique extends BaseAbility {
     }
 
     /**
-     * One tick's healing on {@code target}: never above max health, never absorption, nothing at all at full health. The pulse (and its
-     * chime) about once a second while it's actually healing. Returns how much it healed.
+     * One tick's healing on {@code target}: never above max health, never absorption, nothing at all at full health. The chime about once
+     * a second while it's actually healing, and on yourself the pulse with it (healing another shows on the healer's hand instead).
+     * Returns how much it healed.
      */
     static float heal(ServerPlayer caster, net.minecraft.world.entity.LivingEntity target, double amount) {
         float before = target.getHealth();
@@ -97,7 +98,7 @@ public final class ReverseMaliceTechnique extends BaseAbility {
         long now = caster.level().getGameTime();
         if (now - state.lastPulse >= PULSE_TICKS) {
             state.lastPulse = now;
-            VisualService.playOnce(target, RmtIds.HEAL_PULSE);
+            if (target == caster) VisualService.playOnce(target, RmtIds.HEAL_PULSE);
             target.level().playSound(null, target.getX(), target.getY(), target.getZ(), SoundEvents.AMETHYST_BLOCK_CHIME, SoundSource.PLAYERS, 0.9f, 1.3f);
         }
         return healed;

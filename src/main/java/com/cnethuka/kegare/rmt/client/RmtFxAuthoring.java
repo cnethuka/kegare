@@ -40,8 +40,10 @@ public final class RmtFxAuthoring {
 
     public static Map<ResourceLocation, Supplier<FX>> effects() {
         Map<ResourceLocation, Supplier<FX>> out = new LinkedHashMap<>();
-        out.put(RmtIds.FX_CHANNEL_AURA, () -> channelAura(false));
-        out.put(RmtIds.FX_CHANNEL_AURA_SELF, () -> channelAura(true));
+        out.put(RmtIds.FX_CHANNEL_AURA, () -> handLight(FIST, false));
+        out.put(RmtIds.FX_CHANNEL_AURA_SELF, () -> handLight(FIST, true));
+        out.put(RmtIds.FX_ON_ANOTHER, () -> handLight(HAND, false));
+        out.put(RmtIds.FX_ON_ANOTHER_SELF, () -> handLight(HAND, true));
         out.put(RmtIds.FX_HEAL_PULSE, () -> healPulse(false));
         out.put(RmtIds.FX_HEAL_PULSE_SELF, () -> healPulse(true));
         out.put(RmtIds.FX_BACKGROUND_SHIMMER, RmtFxAuthoring::backgroundShimmer);
@@ -53,18 +55,23 @@ public final class RmtFxAuthoring {
 
     /** Where the fist held to the chest is (the channel's pose, {@code player_animations/rmt.json}), from the body's middle: forward, up, right. */
     public static final Vec3 FIST = new Vec3(0.30, 0.45, -0.10);
+    /**
+     * Where the hand reaching out onto another is (healing another's pose, {@code rmt_on_another}), the same way: the arm a little below
+     * level and turned a little in, the light on the hand just short of its tip, where it touches them.
+     */
+    public static final Vec3 HAND = new Vec3(0.50, 0.34, 0.19);
     private static final ResourceLocation LICKS = Kegare.id("textures/fx/rmt_licks.png");
     /** Near-black: the scraps rising off the light, so its shape holds against a bright sky. */
     private static final float[] INK = {0.047f, 0.035f, 0.063f};
 
     /**
-     * While it channels, on the fist held to the chest: white flame licks (our pixel flames, {@code textures/fx/rmt_licks.png}, played as a
+     * RMT's light on a hand at {@code at} (the fist held to the chest while it channels, the hand laid on another while it heals them): white flame licks (our pixel flames, {@code textures/fx/rmt_licks.png}, played as a
      * sprite sheet with hard edges) burning off it as added light, bright enough to bloom, over a soft glow; and near-black scraps of the same
      * flames rising off the edge and drifting away. The body hides what's behind it. Turns with the body ({@code RmtClient}).
-     * {@code self}, for your own first person: a few small licks that don't bloom, so looking down at your chest never fills the view.
+     * {@code self}, for your own first person: a few small licks that don't bloom, so it never fills the view.
      */
-    private static FX channelAura(boolean self) {
-        Vector3f fist = new Vector3f((float) FIST.x, (float) FIST.y, (float) FIST.z);
+    private static FX handLight(Vec3 at, boolean self) {
+        Vector3f fist = new Vector3f((float) at.x, (float) at.y, (float) at.z);
         ParticleEmitter licks = emitter("licks", true, 20);
         ParticleConfig c = licks.config;
         c.setSimulationSpace(ParticleConfig.Space.Local);
@@ -126,7 +133,7 @@ public final class RmtFxAuthoring {
     }
 
     /**
-     * Background RMT, as a Six Eyes bearer sees it: the channel's white licks, small, few and faint, coming and going on a shell just outside the body and
+     * Background RMT, on anyone running it, for everyone to see: the channel's white licks, small, few and faint, coming and going on a shell just outside the body and
      * drifting up a little, with no glow behind them and no dark scraps. Quiet, since it's only ever a hint.
      */
     private static FX backgroundShimmer() {

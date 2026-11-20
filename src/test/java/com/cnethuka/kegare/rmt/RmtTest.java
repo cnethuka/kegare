@@ -49,13 +49,14 @@ class RmtTest {
         assertEquals(com.cnethuka.kegare.api.visual.Visual.Anchor.BODY, rmt.visuals().get(VisualPhase.CHANNEL_LOOP).anchor());
     }
 
-    /** Healing another reaches the right hand out to them while it runs; the link is drawn on the client, so it has no effect of its own. */
+    /** Healing another reaches the right hand out onto them while it runs, with RMT's light burning on that hand. */
     @Test
     void healingAnotherReachesOut() {
         com.cnethuka.kegare.api.ability.Ability special = new ReverseMaliceTechnique().special().orElseThrow();
         assertEquals(RmtIds.ON_ANOTHER, special.id());
         assertEquals(java.util.Optional.of(RmtIds.ANIM_ON_ANOTHER), special.visuals().get(VisualPhase.CHANNEL_LOOP).animation());
-        assertTrue(special.visuals().get(VisualPhase.CHANNEL_LOOP).effect().isEmpty());
+        assertEquals(java.util.Optional.of(RmtIds.FX_ON_ANOTHER), special.visuals().get(VisualPhase.CHANNEL_LOOP).effect());
+        assertEquals(com.cnethuka.kegare.api.visual.Visual.Anchor.BODY, special.visuals().get(VisualPhase.CHANNEL_LOOP).anchor());
         for (VisualPhase phase : VisualPhase.values()) {
             if (phase != VisualPhase.CHANNEL_LOOP) assertTrue(special.visuals().get(phase).animation().isEmpty(), phase.name());
         }

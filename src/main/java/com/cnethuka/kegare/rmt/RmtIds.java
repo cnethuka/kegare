@@ -14,15 +14,19 @@ public final class RmtIds {
 
     /** While it channels: the right fist held to the chest, over the heart (the light pours off that fist). */
     public static final ResourceLocation ANIM_CHANNEL = Kegare.id("rmt_channel");
-    /** While it heals another: the right arm reaching straight out toward them (the link leaves that hand). */
+    /** While it heals another: the right arm reaching straight out onto them. */
     public static final ResourceLocation ANIM_ON_ANOTHER = Kegare.id("rmt_on_another");
 
     /** While it channels: white light burning off the fist held to the chest, near-black scraps rising off its edge. */
     public static final ResourceLocation FX_CHANNEL_AURA = fx("rmt_channel_aura");
     /** The same in your own first person: a few small, dim licks, so looking down never fills the view (RmtClient). */
     public static final ResourceLocation FX_CHANNEL_AURA_SELF = fx("rmt_channel_aura_self");
+    /** While it heals another: the same white light, burning on the outstretched hand where it touches them. */
+    public static final ResourceLocation FX_ON_ANOTHER = fx("rmt_on_another");
+    /** The same in your own first person: a few small, dim licks (RmtClient). */
+    public static final ResourceLocation FX_ON_ANOTHER_SELF = fx("rmt_on_another_self");
     public static final ResourceLocation FX_HEAL_PULSE = fx("rmt_heal_pulse");
-    /** Background RMT, as a Six Eyes bearer sees it on anyone running it: small white licks coming and going over the body (AuraClient). */
+    /** Background RMT, on anyone running it: small white licks coming and going just outside the body, seen by everyone (AuraClient). */
     public static final ResourceLocation FX_BACKGROUND_SHIMMER = fx("background_rmt_shimmer");
     /** A heal in your own first person: only the rings on the ground (RmtClient). */
     public static final ResourceLocation FX_HEAL_PULSE_SELF = fx("rmt_heal_pulse_self");

@@ -29,9 +29,8 @@ public final class RmtState {
      * they must still be alive.
      */
     boolean lowDuringChannel;
-    /** Healing another: who (by UUID), and when the link was last sent. */
+    /** Healing another: who (by UUID). */
     @Nullable java.util.UUID healing;
-    long linkSentAt = NEVER;
     /** The moment: who glows for them, until when, and when they last rolled for one. */
     @Nullable java.util.UUID momentTarget;
     long momentUntil;

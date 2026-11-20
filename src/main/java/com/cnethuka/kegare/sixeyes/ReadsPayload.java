@@ -87,15 +87,29 @@ public record ReadsPayload(List<Glance> glances, List<MobGlance> mobs, Optional<
                 ByteBufCodecs.VAR_INT, Status::burnoutTicks, ByteBufCodecs.BOOL, Status::possessing, Status::new);
     }
 
-    /** Everything about one body. A mob does nothing to cast, cool down or switch on. */
-    public record Body(Optional<Cast> cast, List<Cooldown> cooldowns, List<ResourceLocation> toggles, Vitals vitals, List<Effect> effects, Status status) {
-        static final StreamCodec<FriendlyByteBuf, Body> CODEC = StreamCodec.composite(
-                Cast.CODEC.apply(ByteBufCodecs::optional), Body::cast,
-                Cooldown.CODEC.apply(ByteBufCodecs.list()), Body::cooldowns,
-                ResourceLocation.STREAM_CODEC.apply(ByteBufCodecs.list()), Body::toggles,
-                Vitals.CODEC, Body::vitals,
-                Effect.CODEC.apply(ByteBufCodecs.list()), Body::effects,
-                Status.CODEC, Body::status, Body::new);
+    /**
+     * Everything about one body. A mob does nothing to cast, cool down or switch on. {@code backgroundRmt}: Background RMT is running on
+     * them (everyone sees its shimmer; the eyes read what it is).
+     */
+    public record Body(Optional<Cast> cast, List<Cooldown> cooldowns, List<ResourceLocation> toggles, boolean backgroundRmt, Vitals vitals,
+                       List<Effect> effects, Status status) {
+        // Seven fields: one more than StreamCodec.composite takes, so written out field by field, in this order.
+        private static final StreamCodec<FriendlyByteBuf, Optional<Cast>> CAST = Cast.CODEC.apply(ByteBufCodecs::optional);
+        private static final StreamCodec<FriendlyByteBuf, List<Cooldown>> COOLDOWNS = Cooldown.CODEC.apply(ByteBufCodecs.list());
+        private static final StreamCodec<io.netty.buffer.ByteBuf, List<ResourceLocation>> TOGGLES = ResourceLocation.STREAM_CODEC.apply(ByteBufCodecs.list());
+        private static final StreamCodec<FriendlyByteBuf, List<Effect>> EFFECTS = Effect.CODEC.apply(ByteBufCodecs.list());
+        static final StreamCodec<FriendlyByteBuf, Body> CODEC = StreamCodec.of(
+                (buf, b) -> {
+                    CAST.encode(buf, b.cast());
+                    COOLDOWNS.encode(buf, b.cooldowns());
+                    TOGGLES.encode(buf, b.toggles());
+                    buf.writeBoolean(b.backgroundRmt());
+                    Vitals.CODEC.encode(buf, b.vitals());
+                    EFFECTS.encode(buf, b.effects());
+                    Status.CODEC.encode(buf, b.status());
+                },
+                buf -> new Body(CAST.decode(buf), COOLDOWNS.decode(buf), TOGGLES.decode(buf), buf.readBoolean(), Vitals.CODEC.decode(buf),
+                        EFFECTS.decode(buf), Status.CODEC.decode(buf)));
     }
 
     /** Full detail on the one body nearest the crosshair. Nothing for a void: there's nothing to read. */

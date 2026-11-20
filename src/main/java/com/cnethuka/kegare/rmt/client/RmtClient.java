@@ -29,7 +29,7 @@ public final class RmtClient {
                 ? java.util.List.of(outputLine(output.output(), output.fatigue()), net.minecraft.network.chat.Component.translatable(
                         output.knowsOthers() ? "gui.kegare.rmt.knows_others" : "gui.kegare.rmt.not_others"))
                 : java.util.List.of());
-        RmtLinkClient.init();
+        RmtMomentClient.init();
         NeoForge.EVENT_BUS.addListener(GreenOrbClient::onClientTick);
         NeoForge.EVENT_BUS.addListener(GreenOrbClient::onLogout);
         // While it channels: white light off the fist held to the chest, turning with the body so it stays on that fist (at Vanilla, white
@@ -42,6 +42,14 @@ public final class RmtClient {
         VanillaFallback.register(RmtIds.FX_UNLOCK_BURST, new VanillaFallback.Spec(ParticleTypes.HAPPY_VILLAGER, 1, 24, 0.5, 0.2));
         ClientVisuals.turnWithBody(RmtIds.FX_CHANNEL_AURA, RmtFxAuthoring.FIST);
         ClientVisuals.turnWithBody(RmtIds.FX_CHANNEL_AURA_SELF, RmtFxAuthoring.FIST);
+        // Healing another: the same light on the hand laid on them (white dust there at Vanilla).
+        VanillaFallback.register(RmtIds.FX_ON_ANOTHER, new VanillaFallback.Spec(
+                new net.minecraft.core.particles.DustParticleOptions(new org.joml.Vector3f(1f, 1f, 1f), 0.7f), 1, 4, 0.08, 0.01));
+        ClientVisuals.turnWithBody(RmtIds.FX_ON_ANOTHER, RmtFxAuthoring.HAND);
+        ClientVisuals.turnWithBody(RmtIds.FX_ON_ANOTHER_SELF, RmtFxAuthoring.HAND);
+        ClientVisuals.setFirstPersonVariant(RmtIds.FX_ON_ANOTHER, RmtIds.FX_ON_ANOTHER_SELF);
+        VanillaFallback.register(RmtIds.FX_ON_ANOTHER_SELF, new VanillaFallback.Spec(ParticleTypes.END_ROD, 0, 0, 0.08, 0.0));
+        VisualHooks.registerEffect(RmtIds.FX_ON_ANOTHER_SELF);
         // Your own first person: the arm raised to the chest would only cross the bottom of the view, so your hands stay vanilla's (and
         // whatever you hold stays where it was). What's at the chest is just under your camera, bright in the middle of the view as you
         // look down: you get a few small licks there that don't bloom, and of each heal only the rings on the ground. At Vanilla, nothing
@@ -53,7 +61,7 @@ public final class RmtClient {
         VanillaFallback.register(RmtIds.FX_HEAL_PULSE_SELF, new VanillaFallback.Spec(ParticleTypes.END_ROD, 0, 0, 0.6, 0.0));
         VisualHooks.registerEffect(RmtIds.FX_CHANNEL_AURA_SELF);
         VisualHooks.registerEffect(RmtIds.FX_HEAL_PULSE_SELF);
-        // Background RMT's shimmer, for the Six Eyes (AuraClient plays it; at Vanilla it draws its own white dust instead). This
+        // Background RMT's shimmer, seen by everyone (AuraClient plays it; at Vanilla it draws its own white dust instead). This
         // stand-in is only for an effect that fails to load.
         VisualHooks.registerEffect(RmtIds.FX_BACKGROUND_SHIMMER);
         VanillaFallback.register(RmtIds.FX_BACKGROUND_SHIMMER, new VanillaFallback.Spec(

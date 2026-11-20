@@ -80,7 +80,8 @@ public final class RmtConfig {
                 "fight against a Legendary technique (5) reach it.").defineInRange("healOthersInsight", 15, 0, 10_000);
         OTHERS_OUTPUT = b.comment("How strongly it heals another, as a share of the healer's own output now.").defineInRange("othersOutput", 0.75, 0.0, 10.0);
         OTHERS_COST = b.comment("Its start cost and upkeep, as times RMT's own.").defineInRange("othersCost", 1.5, 0.0, 100.0);
-        OTHERS_RANGE = b.comment("How far (blocks, from your eyes to them) the one you heal can be, in line of sight.").defineInRange("range", 3.0, 0.5, 16.0);
+        OTHERS_RANGE = b.comment("How far (blocks, from your eyes to the nearest point of them) the one you heal can be, in line of sight: 1 is",
+                "touching, your outstretched hand on them.").defineInRange("range", 1.0, 0.5, 16.0);
         MOMENT_RANGE = b.comment("The moment: a player this close (blocks) drops to momentHealth or less while you're eligible...")
                 .defineInRange("momentRange", 8.0, 0.0, 64.0);
         MOMENT_HEALTH = b.defineInRange("momentHealth", 6.0, 0.0, 1024.0);

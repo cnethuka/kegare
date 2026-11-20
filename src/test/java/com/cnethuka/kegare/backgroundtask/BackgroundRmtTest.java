@@ -207,7 +207,7 @@ class BackgroundRmtTest {
     }
 
     @Test
-    void onlyTheSixEyesSeeTheShimmer(MinecraftServer server) throws Exception {
+    void everyoneSeesTheShimmerAndTheSixEyesReadIt(MinecraftServer server) throws Exception {
         TestServer.onServerThread(server, () -> {
             ServerPlayer eyes = null;
             try {
@@ -216,11 +216,14 @@ class BackgroundRmtTest {
                 eyes = player(server, "bgrmt_eyes");
                 TraitSuccession.release(server, KegareTraits.SIX_EYES.get());
                 assertEquals(TraitService.AddResult.ADDED, TraitService.add(eyes, KegareTraits.SIX_EYES.get(), Trait.AddReason.ADMIN));
-                assertFalse(AuraTell.shimmerSeenBy(plain, p), "nobody else can tell");
-                assertTrue(AuraTell.shimmerSeenBy(eyes, p), "the Six Eyes see a faint green shimmer");
+                assertTrue(AuraTell.shimmerSeenBy(plain, p), "everyone sees the faint white shimmer");
+                assertTrue(AuraTell.shimmerSeenBy(eyes, p), "the Six Eyes too");
+                assertTrue(com.cnethuka.kegare.sixeyes.Reads.detail(p).body().orElseThrow().backgroundRmt(), "and their Read says what it is");
                 BackgroundTaskService.setOn(p, 0, false);
                 BackgroundTaskService.tick(p);
-                assertFalse(AuraTell.shimmerSeenBy(eyes, p), "nothing to see when it's off");
+                assertFalse(AuraTell.shimmerSeenBy(plain, p), "nothing to see when it's off");
+                assertFalse(AuraTell.shimmerSeenBy(eyes, p), "for anyone");
+                assertFalse(com.cnethuka.kegare.sixeyes.Reads.detail(p).body().orElseThrow().backgroundRmt(), "nor to read");
             } finally {
                 if (eyes != null) TraitService.remove(eyes, KegareTraits.SIX_EYES.get(), Trait.RemoveReason.ADMIN);
                 TestServer.removePlayers(server);

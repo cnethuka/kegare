@@ -81,7 +81,7 @@ class RmtOnAnotherTest {
             try {
                 ServerPlayer healer = healer(server, level, "rmt_other_healer");
                 ServerPlayer hurt = player(server, level, "rmt_other_hurt", 500);
-                hurt.moveTo(2.5, Y, 0.5, 90f, 0f);
+                hurt.moveTo(1.5, Y, 0.5, 90f, 0f); // touching: a block apart
 
                 // Not eligible, never taught: refused, nothing paid.
                 double malice = MaliceService.get(healer).current();
@@ -126,8 +126,8 @@ class RmtOnAnotherTest {
                 assertEquals(before + RmtConfig.HEAL_PER_SECOND.get() * RmtOutput.of(healer) * RmtConfig.OTHERS_OUTPUT.get() / 20.0,
                         hurt.getHealth(), 1e-4, "at the healer's output (1.3x now)");
 
-                // Out of range: it ends, and the cooldown is RMT's own.
-                hurt.moveTo(5.5, Y, 0.5);
+                // Out of reach (a step back is enough: it's by touch): it ends, and the cooldown is RMT's own.
+                hurt.moveTo(2.5, Y, 0.5);
                 CastManager.tick(healer);
                 assertNull(CastManager.state(healer).casting(), "out of range: over");
                 assertTrue(InnateTechniqueService.cooldownRemaining(healer, Rmt.REVERSE_MALICE_TECHNIQUE) > 0, "shares RMT's cooldown");
@@ -137,7 +137,7 @@ class RmtOnAnotherTest {
                 // Out of sight: it ends.
                 InnateTechniqueService.clearCooldowns(healer);
                 MaliceService.refill(healer);
-                hurt.moveTo(2.5, Y, 0.5, 90f, 0f);
+                hurt.moveTo(1.5, Y, 0.5, 90f, 0f); // touching: a block apart
                 CastManager.handleIntent(healer, CastIntent.SPECIAL_PRESS);
                 assertNotNull(CastManager.state(healer).casting(), "known now: no moment needed");
                 level.setBlock(wall, Blocks.STONE.defaultBlockState(), 3);
@@ -150,7 +150,7 @@ class RmtOnAnotherTest {
                 // A Severed player is healed like anyone; it keeps running at their full health.
                 ServerPlayer severed = player(server, level, "rmt_other_severed", 0);
                 hurt.moveTo(0.5, Y, 30.5);
-                severed.moveTo(2.5, Y, 0.5, 90f, 0f);
+                severed.moveTo(1.5, Y, 0.5, 90f, 0f);
                 severed.setHealth(10f);
                 InnateTechniqueService.clearCooldowns(healer);
                 MaliceService.refill(healer);

@@ -18,7 +18,7 @@ public record AuraPayload(int entityId, int color, int flags) implements CustomP
     public static final int CALM = 2;
     /** In a fight: fuller and faster. */
     public static final int FIGHT = 4;
-    /** Background RMT is running on them and this viewer bears the Six Eyes: a faint green shimmer (DESIGN §3.31). */
+    /** Background RMT is running on them: a faint white shimmer, seen by everyone (DESIGN §3.31). */
     public static final int SHIMMER = 8;
     public static final Type<AuraPayload> TYPE = new Type<>(Kegare.id("aura"));
     public static final StreamCodec<FriendlyByteBuf, AuraPayload> STREAM_CODEC = StreamCodec.of(

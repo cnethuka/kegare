@@ -62,7 +62,7 @@ public final class AuraClient {
     static final ResourceLocation SHEET_SIMPLE = Kegare.id("textures/entity/aura_simple.png");
     static final ResourceLocation WISP = Kegare.id("textures/entity/aura_wisp.png");
     static final ResourceLocation EDGE = Kegare.id("textures/entity/aura_edge.png");
-    /** Background RMT's shimmer, as a Six Eyes bearer sees it: RMT's white light, a Photon loop on the player (DESIGN §3.31). */
+    /** Background RMT's shimmer, seen by everyone: RMT's white light, a Photon loop on the player (DESIGN §3.31). */
     private static final String SHIMMER_LOOP = "background_rmt_shimmer";
     static final ResourceLocation LAYER = Kegare.id("aura_edges");
     /** The sheet: frames, size in blocks, and the feet's height above its bottom edge, for a body 1.8 tall. */
@@ -253,7 +253,7 @@ public final class AuraClient {
     }
 
     /**
-     * Background RMT as a Six Eyes bearer sees it (DESIGN §3.31): RMT's white licks coming and going over the body, a Photon loop on them
+     * Background RMT, as everyone sees it (DESIGN §3.31): RMT's white licks coming and going over the body, a Photon loop on them
      * (Reduced: half as many). Vanilla: a few specks of white dust instead. Not on your own body in your own first person.
      */
     private static void shimmer(ClientLevel level, Player player, Entry entry, boolean shown) {

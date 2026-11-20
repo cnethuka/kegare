@@ -347,7 +347,9 @@ All timestamps use **level game time**. They persist across restarts and are ide
   see behind where it is), and vanilla's own teleport and head packets for the delayed image.
 - **Sub-tick timing** (§3.29): `TimingNet.Stamp` (C→S, an input stamped with the client's clock, sent at the key press), `TimingNet.Ping`
   (S→C) and `TimingNet.Pong` (C→S, the client's clock), all handled on the network thread. Reinforced Fists' look is `FistsPayload` (§3.28).
-- Network version `29` (since Black Spark's black and red redesign, §3.28: `BlackSparkPayload` no longer carries a colour); `28` was the
+- Network version `30` (since healing others became by touch, §3.17: the `RmtNet.Link` payload is gone, and a Read's body says whether
+  Background RMT is running, §3.32); `29` was Black Spark's black and red redesign (§3.28: `BlackSparkPayload` no longer carries a
+  colour); `28` was the
   addon API's join check, §3.34 (`TechniqueCheck.Ask` and `.Answer` in the configuration phase); `27` was a
   disguise wearing the face's eyewear, §3.19 and §3.32 (`Disguises.StatePayload` carries it); `26` was Six Eyes'
   Reads reading a body's whole state, §3.32 (`ReadsPayload` gained mob health and the focus's body); `25`
@@ -503,7 +505,8 @@ Malice is always shown as whole numbers (floored, like the HUD); the stored valu
   touch players' saved data, so anyone already born keeps the capacity they rolled. **Version 3** is the stronger Severed melee numbers.
   **Version 4** is the Impact System's Malice input (§3.23): its re-tuned weights and tiers, and battle damage's `strengthScale`,
   `radiusPerStrength` and slams' `strengthPerSpeed` with them (§3.24). **Version 5** is Blur's top speed, 0.56 to 0.7 (§3.27),
-  kept clearly faster than Accelerate's new clock (§3.26). **Version 6** is Six Eyes efficiency's curve (§3.32): `attunement` 0.8 to 1.5 and `rmtOutputWeight` 0.15 to 0.052. A later change to a shipped default that needs the same
+  kept clearly faster than Accelerate's new clock (§3.26). **Version 6** is Six Eyes efficiency's curve (§3.32): `attunement` 0.8 to 1.5 and `rmtOutputWeight` 0.15 to 0.052. **Version 7** is
+  healing others by touch (§3.17): `reverse_malice_technique.others.range` 3 to 1. A later change to a shipped default that needs the same
   treatment adds its own table and bumps `CURRENT_VERSION`.
 
 ### 3.10 Data generation and art
@@ -1173,7 +1176,7 @@ Package `com.cnethuka.kegare.innate_technique.rime`. **Rarity: RARE.** All numbe
   | Stasis Field (Decelerate) | its own palm pushed at the ground (`stasis_field_cast`), where Decelerate flicks a blade; a slowed, ringing tick (`time_manipulation.stasis`); a glassy bronze dome snapping open over a clock face laid on the ground, and projectiles crawling through it |
   | Closing Line (Blur, Severed, §3.27) | a planted push-off (`closing_line_launch`), a crack and a burst of dust and grit off the ground where they left, and a heavy launch everyone nearby hears (`severed.closing_line_launch`, loud); on arrival a skid (`closing_line_arrive`, `severed.closing_line_arrive`) and dust where they stop |
   | Black Spark (Reinforced Fists, §3.28; not a special, but it gets a tell all the same) | black and red pixel art bursting from the point of contact for one sharp moment: jagged stair-stepped bolts, black with red edges, crackling outward round a black starburst, and black and red pixels thrown out and falling; the same for everyone, at every effects setting (Vanilla: black and red dust and crit sparks), and a sharp crack (`black_spark.crack`) everyone near hears |
-  | Reverse Malice Technique, on another (RMT, §3.17) | the healer's right hand reaching out to the one healed, and a white link from that hand to them, seen by everyone for as long as it lasts (`RmtLinkClient`, our own mesh, every effects setting), and a soft chime as it starts (an amethyst chime, high) |
+  | Reverse Malice Technique, on another (RMT, §3.17) | the healer's right hand reaching out onto the one healed (they must be touching), with RMT's white flames burning on it, seen by everyone for as long as it lasts (the pose at every effects setting; the flames Photon, white dust at Vanilla), and a soft chime as it starts (an amethyst chime, high) |
 
   Standstill isn't a special, but it has a tell of its own all the same: the raised watch (`standstill_cast`), the sharp click
   (`time_manipulation.stop`) and a one-frame inverted flash (at Full) for everyone inside, then the gray.
@@ -1355,26 +1358,26 @@ negative is positive energy, which is why it heals, and why it heals with white 
     hearts) or less while you're eligible, roll `momentChance` (10%), at most once per `momentCooldown` (60 s). On a success that
     player glows soft green to you alone (`RmtNet.Moment`, nobody else is told) for `momentSeconds` (6). Hold R + RMT's key on them in
     that time to heal them, and you know it from then on, for good: `Unlocks.grant` from this side ("You know how to heal others now.").
-  - **Using it:** hold R + RMT's key while looking at a player within `range` (3 blocks, from your eyes to the nearest of them) in line
-    of sight. It channels like RMT and heals them at `othersOutput` (0.75) of your output now (your Grade, Peak and injuries, not
+  - **Using it: by touch.** Hold R + RMT's key on a player you're touching: within `range` (1 block, from your eyes to the nearest of
+    them; standing a block apart, your outstretched hand is on them), looking at them, in line of sight. It channels like RMT and heals them at `othersOutput` (0.75) of your output now (your Grade, Peak and injuries, not
     theirs), for `othersCost` (1.5) times RMT's start cost and upkeep. Any player, Severed included; never a mob. It ends when they
-    leave range or sight, on your stun or freeze, or out of Malice; it keeps running at their full health; it shares RMT's cooldown.
+    step out of reach or out of sight, on your stun or freeze, or out of Malice; it keeps running at their full health; it shares RMT's cooldown.
     The healed one is paid `healed_by_other` once.
-  - **Not known:** "You don't know how to do that yet.", and nothing is paid. Known, with nobody in reach: "No one to heal within 3
-    blocks."
-  - **The tell** (§3.15): your right hand reaching out to them and a white link from it to them, seen by everyone, and a soft chime as
+  - **Not known:** "You don't know how to do that yet.", and nothing is paid. Known, with nobody in reach: "No one close enough to
+    touch."
+  - **The tell** (§3.15): your right hand reaching out onto them with white flames burning on it, seen by everyone, and a soft chime as
     it starts.
   - The Sorcerer screen's details for RMT say whether you can heal others.
   - **Look.** The pose (PAL `rmt_on_another`, in `player_animations/rmt.json`): while it heals, the healer's right arm reaches straight
-    out toward the one healed, a little below level and turned a little in, easing forward and back. Only the right arm is keyed. The
-    link (`client/RmtLinkClient`, our own mesh, so it draws at every effects setting: the link is the tell and the glow is what you play
-    by): a camera-facing ribbon, a narrow white core over a soft near-black rim (so it holds against a bright sky; at night the rim melts
-    into the dark), in a wider soft white glow fading to nothing at its edges, a slow brightening running along it toward the healed one,
-    from the tip of the outstretched hand to their chest. In your own first person your hands stay vanilla's (as for the channel) and
-    the link starts low and to the right in front of you, never at your eyes. The moment's glow: a soft green halo drawn behind them at
-    their middle, so their own body hides its centre and it shows round their silhouette, breathing, fading out over its last second;
-    only the eligible player is sent it. It stays green, like the orb: green is what teaches healing, white is healing. Never Malice
-    violet. The healed one gets RMT's heal pulse (their own quieter version in first person).
+    out onto the one healed, a little below level and turned a little in, easing forward and back. Only the right arm is keyed. On that
+    hand, where it touches them, burns RMT's own light (`rmt/rmt_on_another`: the channel's white licks, glow and near-black scraps, §3.17's
+    Visuals, at the hand instead of the fist; turning with the body). At Vanilla, white dust there; the pose shows at every setting, so
+    the tell does too. Nothing is drawn between them and nothing under the healed one: no link, no ring, no heal pulse on them (the chime
+    still plays about once a second while it heals). In your own first person your hands stay vanilla's (as for the channel) and the
+    light is a few small licks that don't bloom (`rmt_on_another_self`). The moment's glow (`client/RmtMomentClient`, our own mesh, so it
+    draws at every effects setting: it's what you play by): a soft green halo drawn behind them at their middle, so their own body hides
+    its centre and it shows round their silhouette, breathing, fading out over its last second; only the eligible player is sent it. It
+    stays green, like the orb: green is what teaches healing, white is healing. Never Malice violet.
 - **Visuals:** positive energy poured into the body from the hand, so you can read at a glance who is healing.
   - **The pose:** while it channels, the right fist is held to the chest (PAL `rmt_channel`, `player_animations/rmt.json`): the arm
     across the chest on a diagonal from a slightly lowered shoulder, the fist on the upper chest just under the chin, breathing a
@@ -1471,7 +1474,7 @@ negative is positive energy, which is why it heals, and why it heals with white 
   rmt_survived_low (not if they die first) and healed_by_other each paying once. `RmtFatigueTest`: rising with damage taken, the cap, healing not removing it, the restore and
   ignore hooks, reset at the fight's end, death and logout. `RmtOnAnotherTest`: refused (free) unless known; the moment only for the eligible
   and only on a drop to 3 hearts; eligible isn't knowing; healing in the moment teaches it; the heal at the healer's output, healed_by_other
-  paid; out of range or sight ends it; RMT's shared cooldown; a Severed target, and still running at their full health.
+  paid, a block apart; a step back out of reach, or out of sight, ends it; RMT's shared cooldown; a Severed target, and still running at their full health.
 
 ### 3.18 The green orb (unlocking RMT)
 `rmt.GreenOrbService` (server) and `rmt.client.GreenOrbClient`. Numbers in `[reverse_malice_technique.orb]`.
@@ -3043,7 +3046,7 @@ ability on the bar, but it takes no bar slot and leaves the hands free.
 - **Effect:** heals `backgroundOutput` (1/6) of channelled RMT's rate at your current output (`RmtOutput.of`: Grade, Peak Refinement,
   injury fatigue, Black Spark's zone and every other output modifier apply): `healPerSecond` 2 × output × 1/6, about 1 health every
   3 s for an output of 1, a little every tick. Like the channel it keeps running at full health and heals damage as it lands. Never
-  above max health, never absorption, and no pulse, chime or effect (the channel's heal pulse isn't played).
+  above max health, never absorption, and no pulse or chime (the channel's heal pulse isn't played); only its shimmer (below).
 - **Cost:** `drainPerSecond` (12; the channel's upkeep is 96), even at full health, and natural Malice regeneration ×`regenFactor` (0.5)
   while it runs (`MaliceService.addRegenModifier`).
 - **Auto-pause:** below `pauseBelow` (20%) of capacity it pauses, and resumes on its own above `resumeAbove` (30%). Only low Malice
@@ -3052,16 +3055,18 @@ ability on the bar, but it takes no bar slot and leaves the hands free.
 - **Burnout:** while it runs, every Burnout applied to you lasts ×`burnoutFactor` (0.75), through `Burnout.Modifier` (§3.25):
   Standstill's now, Dominions' later. The quarter it takes off is paid on the brain meter as that share of a full repair (§3.17). It
   never touches the ultimate's cooldown: only a finished repair gives that back.
-- **Who can tell:** nobody, except a Six Eyes bearer, who sees a faint white shimmer on anyone running it: RMT's white licks
+- **Who can tell:** everyone. Healing moves energy through the body, so anyone running it shows a faint white shimmer: RMT's white licks
   (`rmt/background_rmt_shimmer`, Photon, the channel's sprite sheet, §3.17), small (0.08 to 0.13 blocks) and few (seven every 10 ticks),
   coming and going just outside the body, feet to head, and drifting up, with no glow behind them and no dark scraps; Reduced half as many, Vanilla a few
-  specks of white dust. Never on your own body in your own first person, and never on someone you can't see. Sent per viewer
-  (`AuraPayload.SHIMMER`, only to Six Eyes viewers, `AuraTell.addShimmer`); the client plays it as a loop on that player (`AuraClient`).
+  specks of white dust. Never on your own body in your own first person, and never on someone you can't see. Sent to everyone
+  tracking them (`AuraPayload.SHIMMER`, `AuraTell.addShimmer`); the client plays it as a loop on that player (`AuraClient`). The Six Eyes
+  read more: a bearer's full Read of them says "Background RMT running" (§3.32), never how strongly (that rides on Grade).
 - **Hooks:** `BackgroundRmt.addHook` is told every tick it runs. Six Eyes uses it to hold Strain back (§3.32); later techniques can use it too.
 - **Icon:** RMT's white cross inside the loop of something left running.
 - **Tests:** `BackgroundRmtTest` (the count from the channel, RMT first, Severed never, Always On; the rate from RMT output with
   fatigue; full health, drain, no absorption, healed as it lands; regenFactor; the 20%/30% pause and resume; stuns and Burnout not
-  stopping it; Burnout shortened only while it runs; the shimmer only for the Six Eyes), `BackgroundRmtStandstillTest` (paused while
+  stopping it; Burnout shortened only while it runs; the shimmer for everyone while it runs, none when off, and the Six Eyes' Read
+  saying so), `BackgroundRmtStandstillTest` (paused while
   frozen, resumed with time), `RmtHealCountTest` (healing others counts for the caster, only what's healed).
 
 **Background Reinforcement** (`background_reinforcement`, `BackgroundReinforcement`; numbers in
@@ -3103,7 +3108,7 @@ only efficiency and RMT output grow, through Grade and Attunement. Numbers in `[
 
 **Server-authoritative and private.** The server sends the bearer only what the eyes see, in their own payloads (`SightPayloads`), and
 nothing to anyone else: a modified client without the eyes gets nothing to draw. Losing the eyes sends one last "forget everything".
-Covered in other sections: the third Background Task slot and the green Background RMT shimmer (§3.31), and seeing past "too fast
+Covered in other sections: the third Background Task slot and reading Background RMT on anyone (§3.31), and seeing past "too fast
 for the eye" (§3.30).
 
 **Perception: the map, outlines, voids and markers** (`Sight`, `MobIntent`; client `sixeyes.client`)
@@ -3163,8 +3168,9 @@ for the eye" (§3.30).
   or Fists tell shows stays the color of the face worn, for a bearer too: the packet carries no other (§3.22).
 - **Full detail:** the one body nearest the crosshair, player or mob (the server works it out from where the bearer looks: the nearest
   within 20 degrees and 96 blocks, walls don't matter) gets a panel beside it. First, for a player: what they're
-  charging or channelling and how far ("Charging Glacial Lance 60%", "Channelling Reverse Malice Technique 3.2s"), their active toggles
-  and their cooldowns, or "Idle". Then the body:
+  charging or channelling and how far ("Charging Glacial Lance 60%", "Channelling Reverse Malice Technique 3.2s"), their active toggles,
+  "Background RMT running" when it is (everyone sees its shimmer; the eyes read what it is, §3.31) and their cooldowns, or "Idle". Then
+  the body:
   - health and max health, and absorption when there is some;
   - armour, armour toughness and knockback resistance;
   - attack damage, attack speed and movement speed as they are right now, every modifier counted (gear, effects, Reinforcement,

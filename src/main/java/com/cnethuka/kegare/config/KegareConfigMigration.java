@@ -19,7 +19,7 @@ import net.neoforged.neoforge.common.ModConfigSpec;
  */
 public final class KegareConfigMigration {
     /** The version these numbers are for. A file with no {@code configVersion} reads as 1. */
-    public static final int CURRENT_VERSION = 6;
+    public static final int CURRENT_VERSION = 7;
 
     /** Version 2, the Malice rescale: each value it changed, with its old default. The new value is always the spec's default. */
     static final Map<String, Number> RESCALE_OLD_DEFAULTS = Map.ofEntries(
@@ -113,12 +113,17 @@ public final class KegareConfigMigration {
             entry("six_eyes.efficiency.attunement", 0.8),
             entry("six_eyes.efficiency.rmtOutputWeight", 0.15));
 
+    /** Version 7, healing others by touch (DESIGN §3.17): the healer's hand on them, not 3 blocks away. */
+    static final Map<String, Number> HEAL_BY_TOUCH_OLD_DEFAULTS = Map.ofEntries(
+            entry("reverse_malice_technique.others.range", 3.0));
+
     static final List<Step> STEPS = List.of(
             new Step(2, RESCALE_OLD_DEFAULTS, "the rescaled Malice numbers (new tiers, costs and regen)"),
             new Step(3, SEVERED_MELEE_OLD_DEFAULTS, "the stronger Severed melee numbers"),
             new Step(4, MALICE_INPUT_OLD_DEFAULTS, "the Impact System's Malice input (its weights, tiers and battle damage scale)"),
             new Step(5, BLUR_SPEED_OLD_DEFAULTS, "Blur's top speed, kept clearly faster than Accelerate"),
-            new Step(6, EFFICIENCY_CURVE_OLD_DEFAULTS, "Six Eyes efficiency's new curve (its Attunement and RMT output weights)"));
+            new Step(6, EFFICIENCY_CURVE_OLD_DEFAULTS, "Six Eyes efficiency's new curve (its Attunement and RMT output weights)"),
+            new Step(7, HEAL_BY_TOUCH_OLD_DEFAULTS, "healing others by touch (its range)"));
 
     enum Action { NONE, MOVE_TO_NEW_DEFAULT, KEEP_HAND_EDITED }
 
