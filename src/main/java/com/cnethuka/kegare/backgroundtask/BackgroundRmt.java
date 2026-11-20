@@ -35,14 +35,13 @@ import net.minecraft.server.level.ServerPlayer;
  * it: stuns and Burnout don't. Frozen in a Standstill, it's paused while time is stopped for you, and resumes with it.</li>
  * <li>While it runs, every Burnout applied to you lasts ×{@code burnoutFactor}.</li>
  * </ul>
- * Hooks for later ({@link #addHook}, not built): the Six Eyes step (holding Strain back, easing the overload) and Oxidation's continuous
- * Dividation, each told every tick it runs.
+ * Hooks for later systems ({@link #addHook}), each told every tick it runs.
  */
 public final class BackgroundRmt extends BackgroundTask {
     public static final ResourceLocation ID = Kegare.id("background_rmt");
     public static final ResourceLocation ALWAYS_ON = KegareAdvancements.ALWAYS_ON;
 
-    /** Told every tick Background RMT runs on a player (for the Six Eyes step and Oxidation's continuous Dividation). */
+    /** Told every tick Background RMT runs on a player (for later systems). */
     @FunctionalInterface
     public interface Hook {
         void whileRunning(ServerPlayer player);

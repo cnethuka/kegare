@@ -4,8 +4,7 @@ import com.cnethuka.kegare.advancement.KegareAdvancements;
 import net.minecraft.server.level.ServerPlayer;
 
 /**
- * The server-side face of progression, for other systems. The future Six Eyes Read and the Death Binding strength
- * check read a player's Grade through here. Never send what this returns to anyone but its owner: Grade is private.
+ * The server-side face of progression, for other systems: anything that needs a player's Grade reads it through here. Never send what this returns to anyone but its owner: Grade is private.
  */
 public final class Progression {
     private Progression() {}

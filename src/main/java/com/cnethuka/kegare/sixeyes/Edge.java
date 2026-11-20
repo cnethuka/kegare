@@ -30,7 +30,7 @@ import net.neoforged.neoforge.network.handling.IPayloadContext;
  * The uncovered edge (DESIGN §3.32): uncovered and against a top-tier opponent, the bearer sees the spark before a cast. The cast key's
  * sub-tick stamp (§3.29) is handled on the network thread as it reaches the server, ahead of the intent and of the cast's own tell, and
  * the cue goes out at once. Covered, or with the edge lost to max Strain, they see the cast when it starts, like everyone. For 1.0.0
- * "top-tier" means a Special Grade player; the Shrine's bearer, the Director and a Dominion clash are to plug in via {@link #addTopTier}.
+ * "top-tier" means a Special Grade player; later systems (a Dominion clash among them) plug in via {@link #addTopTier}.
  * <p>
  * The network thread can't read a player's state safely, so each server tick leaves a snapshot here of who can read whom.
  */

@@ -107,7 +107,7 @@ class ReadsTest {
                 ReadsPayload.Cast.class, ReadsPayload.Cooldown.class, SightPayloads.Players.Dot.class, SightPayloads.Mobs.Dot.class}) {
             for (RecordComponent rc : c.getRecordComponents()) {
                 String name = rc.getName().toLowerCase();
-                for (String secret : new String[] {"grade", "trait", "refinement", "peak", "insight", "assessment", "brain", "unlock", "six", "eyes", "shrine"}) {
+                for (String secret : new String[] {"grade", "trait", "refinement", "peak", "insight", "assessment", "brain", "unlock", "six", "eyes"}) {
                     assertFalse(name.contains(secret), c.getSimpleName() + "." + rc.getName() + " must not be there");
                 }
             }

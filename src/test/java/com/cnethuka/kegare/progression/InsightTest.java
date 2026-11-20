@@ -99,15 +99,10 @@ class InsightTest {
             assertTrue(InsightHooks.survivedStandstill(p));
             assertFalse(InsightHooks.survivedStandstill(p));
             assertEquals(5, Insight.get(p, InsightCategory.WARD));
-            assertTrue(InsightHooks.hitByMaximumOutput(p, rime));
-            assertFalse(InsightHooks.hitByMaximumOutput(p, rime));
-            assertEquals(5, Insight.get(p, InsightCategory.OUTPUT));
             assertTrue(InsightHooks.caughtInDominion(p, rime));
             assertTrue(InsightHooks.clashedWithDominion(p, rime));
-            assertTrue(InsightHooks.bookChapter(p, "one"));
-            assertTrue(InsightHooks.bookChapter(p, "two"));
-            assertFalse(InsightHooks.bookChapter(p, "one"));
-            assertEquals(5 + 5 + 2 + 2, Insight.get(p, InsightCategory.DOMINION));
+            assertFalse(InsightHooks.caughtInDominion(p, rime));
+            assertEquals(5 + 5, Insight.get(p, InsightCategory.DOMINION));
         });
     }
 

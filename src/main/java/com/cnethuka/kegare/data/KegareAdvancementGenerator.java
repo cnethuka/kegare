@@ -99,8 +99,6 @@ public final class KegareAdvancementGenerator implements AdvancementProvider.Adv
         child(saver, clearSight, KegareAdvancements.BLINDED, "blinded", Items.FERMENTED_SPIDER_EYE, AdvancementType.GOAL, true);
         child(saver, clearSight, KegareAdvancements.SOMETHINGS_MISSING, "somethings_missing", Items.BLACK_CONCRETE, AdvancementType.GOAL, true);
 
-        // Shrine (vessel_of_the_king, unworthy_heir, unsealed): reserved in SECRET_IDENTITY, added with the Shrine.
-
         // ---- One tab per innate technique: root unlocks on the first roll. ----
         // Silent in chat: announcing it would tell every opponent which innate technique a player rolled.
         java.util.Map<ResourceLocation, AdvancementHolder> techniqueRoots = new java.util.HashMap<>();

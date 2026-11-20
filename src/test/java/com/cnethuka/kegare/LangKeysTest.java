@@ -84,12 +84,12 @@ class LangKeysTest {
     }
 
     /**
-     * DESIGN §1: messages and cards must never name a unique trait or the Shrine. Every trait name in the lang file is
+     * DESIGN §1: messages and cards must never name a unique trait. Every trait name in the lang file is
      * checked against every message and ability card, and the code against passing a trait's name along; the birth line is
      * the one that does, and it skips unique traits. Op commands are the documented exception.
      */
     @Test
-    void messagesAndCardsNeverNameAUniqueTraitOrTheShrine() throws IOException {
+    void messagesAndCardsNeverNameAUniqueTrait() throws IOException {
         Map<String, String> lang = new TreeMap<>();
         Matcher entry = Pattern.compile("^\\s*\"([^\"]+)\"\\s*:\\s*\"((?:[^\"\\\\]|\\\\.)*)\"", Pattern.MULTILINE).matcher(Files.readString(LANG));
         while (entry.find()) lang.put(entry.group(1), entry.group(2));
@@ -98,7 +98,7 @@ class LangKeysTest {
         assertEquals("The eyes have opened.", lang.get("message.kegare.trait.inherited"));
         assertEquals("a rare trait", lang.get("requirement.kegare.trait"));
 
-        Set<String> secret = new TreeSet<>(Set.of("shrine"));
+        Set<String> secret = new TreeSet<>();
         lang.forEach((key, value) -> {
             if (key.startsWith("trait.kegare.") && !key.endsWith(".desc")) secret.add(value.toLowerCase(java.util.Locale.ROOT));
         });

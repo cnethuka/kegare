@@ -6,8 +6,7 @@ import com.cnethuka.kegare.innatetechnique.InnateTechniqueService;
 import net.minecraft.server.level.ServerPlayer;
 
 /**
- * Where Insight comes from. The Maximum Output, Dominion and Book of Knowledge hooks have no callers yet: those
- * systems call them once they're built.
+ * Where Insight comes from. The Dominion hooks have no callers yet: Dominions call them once they're built.
  */
 public final class InsightHooks {
     private InsightHooks() {}
@@ -53,11 +52,6 @@ public final class InsightHooks {
         return pay(player, InsightSource.SURVIVED_STANDSTILL, "");
     }
 
-    /** For the future Maximum Output. Once per technique, like any other hit. */
-    public static boolean hitByMaximumOutput(ServerPlayer player, InnateTechnique technique) {
-        return pay(player, InsightSource.HIT_BY_MAXIMUM_OUTPUT, technique.id().toString());
-    }
-
     /** For the future Dominions. Once per technique. */
     public static boolean caughtInDominion(ServerPlayer player, InnateTechnique technique) {
         return pay(player, InsightSource.CAUGHT_IN_DOMINION, technique.id().toString());
@@ -66,10 +60,5 @@ public final class InsightHooks {
     /** For the future Dominions. Once per technique. */
     public static boolean clashedWithDominion(ServerPlayer player, InnateTechnique technique) {
         return pay(player, InsightSource.CLASHED_WITH_DOMINION, technique.id().toString());
-    }
-
-    /** For the future Book of Knowledge. Once per chapter. */
-    public static boolean bookChapter(ServerPlayer player, String chapter) {
-        return pay(player, InsightSource.BOOK_CHAPTER, chapter);
     }
 }

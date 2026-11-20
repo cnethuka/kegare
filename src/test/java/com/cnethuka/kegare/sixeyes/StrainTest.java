@@ -189,7 +189,7 @@ class StrainTest {
 
                 // The extension hook: anyone a rule says counts.
                 Edge.addTopTier((bearer, caster) -> caster == plain);
-                assertTrue(Edge.topTier(p, plain), "the Shrine and the Director plug in here");
+                assertTrue(Edge.topTier(p, plain), "later systems plug in here");
             } finally {
                 SightTest.eyes(server, p, false);
                 TestServer.removePlayers(server);

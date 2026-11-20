@@ -2424,15 +2424,6 @@ configVersion = 6
 			# Range: 0 ~ 100000
 			amount = 5
 
-		[progression.insight.hit_by_maximum_output]
-			#Which kind of Insight this pays into.
-			#Allowed Values: DOMINION, WARD, OUTPUT
-			category = "OUTPUT"
-			#How much it pays.
-			# Default: 5
-			# Range: 0 ~ 100000
-			amount = 5
-
 		[progression.insight.caught_in_dominion]
 			#Which kind of Insight this pays into.
 			#Allowed Values: DOMINION, WARD, OUTPUT
@@ -2450,15 +2441,6 @@ configVersion = 6
 			# Default: 5
 			# Range: 0 ~ 100000
 			amount = 5
-
-		[progression.insight.book_chapter]
-			#Which kind of Insight this pays into.
-			#Allowed Values: DOMINION, WARD, OUTPUT
-			category = "DOMINION"
-			#How much it pays.
-			# Default: 2
-			# Range: 0 ~ 100000
-			amount = 2
 
 		[progression.insight.unlocked_rmt]
 			#Which kind of Insight this pays into.

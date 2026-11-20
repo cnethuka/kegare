@@ -42,19 +42,14 @@ public final class KegareAdvancements {
     public static final ResourceLocation THE_CYCLE_CONTINUES = Kegare.id("the_cycle_continues");
     public static final ResourceLocation EYES_CLOSED = Kegare.id("eyes_closed");
     public static final ResourceLocation BLINDED = Kegare.id("blinded");
-    // Shrine (FUTURE, reserved: not generated or awarded yet)
-    public static final ResourceLocation VESSEL_OF_THE_KING = Kegare.id("vessel_of_the_king");
-    public static final ResourceLocation UNWORTHY_HEIR = Kegare.id("unworthy_heir");
-    public static final ResourceLocation UNSEALED = Kegare.id("unsealed");
 
     /**
-     * Advancements that would reveal a secret identity (who holds a unique trait or the Shrine): hidden and never
+     * Advancements that would reveal a secret identity (who holds a unique trait): hidden and never
      * announced, so only the earner sees the toast. The generator applies this to every ID here and datagen fails
      * if one isn't hidden and silent. Add future secret IDs here.
      */
     public static final Set<ResourceLocation> SECRET_IDENTITY = Set.of(
-            CLEAR_SIGHT, THE_CYCLE_CONTINUES, EYES_CLOSED, BLINDED, SOMETHINGS_MISSING,
-            VESSEL_OF_THE_KING, UNWORTHY_HEIR, UNSEALED);
+            CLEAR_SIGHT, THE_CYCLE_CONTINUES, EYES_CLOSED, BLINDED, SOMETHINGS_MISSING);
 
     /**
      * Exception to the secret-identity rule: these secret tab roots may be visible (still silent). A tab only
