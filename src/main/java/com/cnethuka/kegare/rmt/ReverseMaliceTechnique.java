@@ -20,7 +20,7 @@ import net.minecraft.sounds.SoundSource;
  */
 public final class ReverseMaliceTechnique extends BaseAbility {
     private static final AbilityVisuals VISUALS = AbilityVisuals.builder()
-            .channelLoop(null, RmtIds.FX_CHANNEL_AURA)
+            .channelLoop(RmtIds.ANIM_CHANNEL, RmtIds.FX_CHANNEL_AURA)
             .anchor(VisualPhase.CHANNEL_LOOP, Visual.Anchor.BODY)
             .build();
     /** A heal pulse at most this often while it's healing. */

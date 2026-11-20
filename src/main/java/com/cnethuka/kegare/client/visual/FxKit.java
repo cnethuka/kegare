@@ -9,8 +9,10 @@ import com.lowdragmc.photon.client.gameobject.IFXObject;
 import com.lowdragmc.photon.client.gameobject.emitter.data.EmissionSetting;
 import com.lowdragmc.photon.client.gameobject.emitter.data.MaterialRequirements;
 import com.lowdragmc.photon.client.gameobject.emitter.data.MaterialSetting;
+import com.lowdragmc.photon.client.gameobject.emitter.data.UVAnimationSetting;
 import com.lowdragmc.photon.client.gameobject.emitter.data.material.BlendMode;
 import com.lowdragmc.photon.client.gameobject.emitter.data.material.IMaterial;
+import com.lowdragmc.photon.client.gameobject.emitter.data.material.TextureMaterial;
 import com.lowdragmc.photon.client.gameobject.emitter.data.material.kila.KilaMaterial;
 import com.lowdragmc.photon.client.gameobject.emitter.data.material.kila.KilaPresets;
 import com.lowdragmc.photon.client.gameobject.emitter.data.model.ObjModelSource;
@@ -38,6 +40,7 @@ import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.NbtIo;
 import net.minecraft.resources.ResourceLocation;
 import org.joml.Quaternionf;
+import org.joml.Vector2i;
 import org.joml.Vector3f;
 
 /**
@@ -187,6 +190,32 @@ public final class FxKit {
         m.worldLight = false;
         if (m.blend == BlendMode.Preset.ALPHA) m.blend = BlendMode.Preset.ADDITIVE;
         return m;
+    }
+
+    /**
+     * Pixel art from a sprite sheet on {@code emitter}: {@code texture} cut into {@code columns} x {@code rows} frames, each particle on a
+     * random row from a random frame, stepping through the row once over its life (picked on the CPU, so it needs nothing of the GPU), with
+     * hard edges (texels under half alpha dropped) and blended as {@code blend}. An intensity over 1 blooms (Photon's bloom picks up anything
+     * brighter than 1).
+     */
+    public static void spriteSheet(ParticleEmitter emitter, ResourceLocation texture, int columns, int rows, BlendMode.Preset blend,
+                                   float r, float g, float b, float intensity) {
+        TextureMaterial m = new TextureMaterial(texture);
+        m.setDiscardThreshold(0.5f);
+        // Multiplied in (not added, which would wash every texel out to one flat color): the art keeps its shading.
+        m.setHdr(new HDRColor(r, g, b, 1f, intensity));
+        m.setHdrMode(TextureMaterial.HDRMode.MULTIPLICATIVE);
+        MaterialSetting setting = new MaterialSetting(m);
+        setting.setBlend(blend.create());
+        emitter.config.renderer.getMaterials().clear();
+        emitter.config.renderer.getMaterials().add(setting);
+        UVAnimationSetting uv = emitter.config.uvAnimation;
+        uv.setEnable(true);
+        uv.setTiles(new Vector2i(columns, rows));
+        uv.setAnimation(UVAnimationSetting.Animation.SingleRow);
+        uv.setStartFrame(range(0, columns));
+        uv.setFrameOverTime(new Curve(0, 1, 0, 1, "t", "v", new ECBCurves(0f, 0f, 0.33f, 0.33f, 0.67f, 0.67f, 1f, 1f)));
+        uv.setCycle(columns);
     }
 
     public static NumberFunction range(float min, float max) {

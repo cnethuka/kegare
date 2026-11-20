@@ -2,8 +2,12 @@ package com.cnethuka.kegare.rmt.client;
 
 import static com.cnethuka.kegare.client.visual.FxKit.*;
 
+import com.cnethuka.kegare.Kegare;
 import com.cnethuka.kegare.rmt.RmtIds;
 import com.lowdragmc.photon.client.fx.FX;
+import com.lowdragmc.photon.client.gameobject.emitter.data.material.BlendMode;
+import com.lowdragmc.photon.client.gameobject.emitter.data.number.curve.Curve;
+import com.lowdragmc.photon.client.gameobject.emitter.data.number.curve.ECBCurves;
 import com.lowdragmc.photon.client.gameobject.emitter.data.number.NumberFunction;
 import com.lowdragmc.photon.client.gameobject.emitter.data.number.NumberFunction3;
 import com.lowdragmc.photon.client.gameobject.emitter.data.shape.Sphere;
@@ -15,16 +19,19 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.function.Supplier;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.world.phys.Vec3;
 import org.joml.Vector3f;
 
 /**
  * DEV TOOL (exported with {@code /kegare debug fx export}): Reverse Malice Technique's Photon effects, built from Photon's own
  * objects (see {@link com.cnethuka.kegare.client.visual.FxKit}). Malice is negative energy, and RMT multiplies it by itself:
- * negative times negative is positive energy. So its palette is white and soft green; never Malice violet. Effects anchored
- * at the body sit at mid-body, so the feet are local y -0.9.
+ * negative times negative is positive energy. So healing is white light (with near-black scraps so it holds on a bright sky); the green
+ * orb that teaches it is green with a white heart; never Malice violet. Effects anchored at the body sit at mid-body, so the feet are
+ * local y -0.9.
  */
 public final class RmtFxAuthoring {
     private static final int WHITE = 0xFFFFFFFF;
+    private static final int SILVER = 0xFFDCE3EC;
     private static final int PALE = 0xFFC4F8D0;
     private static final int GREEN = 0xFF4ED873;
     private static final int DEEP = 0xFF22A046;
@@ -43,118 +50,104 @@ public final class RmtFxAuthoring {
         return out;
     }
 
+    /** Where the fist held to the chest is (the channel's pose, {@code player_animations/rmt.json}), from the body's middle: forward, up, right. */
+    public static final Vec3 FIST = new Vec3(0.30, 0.45, -0.10);
+    private static final ResourceLocation LICKS = Kegare.id("textures/fx/rmt_licks.png");
+    /** Near-black: the scraps rising off the light, so its shape holds against a bright sky. */
+    private static final float[] INK = {0.047f, 0.035f, 0.063f};
+
     /**
-     * While healing: green and white motes rising round the body, white sparkles circling it, a white-hearted glow at the chest.
-     * {@code self}, for your own first person: only the motes, low round the feet and rising no higher than the knees. Everything
-     * at the chest is just under your own camera, and looking down it would sit bright in the middle of the view.
+     * While it channels, on the fist held to the chest: white flame licks (our pixel flames, {@code textures/fx/rmt_licks.png}, played as a
+     * sprite sheet with hard edges) burning off it as added light, bright enough to bloom, over a soft glow; and near-black scraps of the same
+     * flames rising off the edge and drifting away. The body hides what's behind it. Turns with the body ({@code RmtClient}).
+     * {@code self}, for your own first person: a few small licks that don't bloom, so looking down at your chest never fills the view.
      */
     private static FX channelAura(boolean self) {
-        ParticleEmitter motes = emitter("motes", true, 20);
-        ParticleConfig c = motes.config;
-        c.setSimulationSpace(ParticleConfig.Space.World);
-        c.setMaxParticles(90);
-        c.setStartLifetime(range(16, 24));
-        c.setStartSpeed(NumberFunction.constant(0));
-        c.setStartSize(uniform(range(0.04f, 0.08f)));
-        Sphere around = sphere(0.65f);
-        around.setRadiusThickness(0f);
-        c.shape.setShape(around);
-        c.shape.setScale(new NumberFunction3(1f, 0f, 1f));
-        c.emission.setEmissionRate(NumberFunction.constant(2.5f));
+        Vector3f fist = new Vector3f((float) FIST.x, (float) FIST.y, (float) FIST.z);
+        ParticleEmitter licks = emitter("licks", true, 20);
+        ParticleConfig c = licks.config;
+        c.setSimulationSpace(ParticleConfig.Space.Local);
+        c.setMaxParticles(48);
+        c.setStartLifetime(range(8, 12));
+        c.setStartSpeed(range(0f, 0.3f));
+        c.setStartSize(uniform(range(0.1f, 0.18f)));
+        c.shape.setShape(sphere(0.1f));
+        c.emission.setEmissionRate(NumberFunction.constant(2.8f));
         c.velocityOverLifetime.setEnable(true);
-        c.velocityOverLifetime.setLinear(new NumberFunction3(0, 1.25f, 0));
-        fadeInOut(c, PALE, GREEN);
-        shrink(c); // gone by the time they reach eye level: close to a first-person camera they'd be huge
-        material(motes, glow(0.45f, 1f, 0.6f, 1.2f));
-        motes.transform().localPosition(new Vector3f(0, -0.85f, 0));
+        c.velocityOverLifetime.setLinear(new NumberFunction3(0, 0.25f, 0));
+        flare(c);
+        fadeInOut(c, 0xD8FFFFFF, WHITE);
+        spriteSheet(licks, LICKS, 8, 2, BlendMode.Preset.ADDITIVE, 1f, 1f, 1f, 1.05f);
+        licks.transform().localPosition(fist);
         if (self) {
-            c.setStartLifetime(range(8, 12));
-            c.velocityOverLifetime.setLinear(new NumberFunction3(0, 0.6f, 0));
-            c.emission.setEmissionRate(NumberFunction.constant(1.2f));
-            return fx(motes);
+            c.setMaxParticles(8);
+            c.setStartLifetime(range(6, 9));
+            c.setStartSize(uniform(range(0.045f, 0.075f)));
+            c.emission.setEmissionRate(NumberFunction.constant(0.8f));
+            spriteSheet(licks, LICKS, 8, 2, BlendMode.Preset.ADDITIVE, 1f, 1f, 1f, 0.85f);
+            return fx(licks);
         }
 
-        ParticleEmitter whiteMotes = emitter("white_motes", true, 20);
-        ParticleConfig w = whiteMotes.config;
-        w.setSimulationSpace(ParticleConfig.Space.World);
-        w.setMaxParticles(50);
-        w.setStartLifetime(range(14, 24));
-        w.setStartSpeed(NumberFunction.constant(0));
-        w.setStartSize(uniform(range(0.035f, 0.07f)));
-        Sphere aroundWhite = sphere(0.55f);
-        aroundWhite.setRadiusThickness(0f);
-        w.shape.setShape(aroundWhite);
-        w.shape.setScale(new NumberFunction3(1f, 0f, 1f));
-        w.emission.setEmissionRate(NumberFunction.constant(1.4f));
-        w.velocityOverLifetime.setEnable(true);
-        w.velocityOverLifetime.setLinear(new NumberFunction3(0, 1.25f, 0));
-        fadeInOut(w, WHITE, PALE);
-        shrink(w);
-        material(whiteMotes, glow(1f, 1f, 1f, 1.4f));
-        whiteMotes.transform().localPosition(new Vector3f(0, -0.85f, 0));
+        ParticleEmitter glow = emitter("glow", true, 20);
+        ParticleConfig g = glow.config;
+        g.setMaxParticles(2);
+        g.setStartLifetime(NumberFunction.constant(20));
+        g.setStartSpeed(NumberFunction.constant(0));
+        g.setStartSize(uniform(NumberFunction.constant(0.42f)));
+        g.shape.setScale(new NumberFunction3(0, 0, 0));
+        g.emission.setEmissionRate(NumberFunction.constant(0));
+        g.emission.getBursts().add(burst(0, 1));
+        g.colorOverLifetime.setEnable(true);
+        g.colorOverLifetime.setColor(gradient(0x30FFFFFF, 0x50FFFFFF, 0x30FFFFFF));
+        material(glow, glow(1f, 1f, 1f, 1.0f));
+        glow.transform().localPosition(fist);
 
-        ParticleEmitter sparkles = emitter("sparkles", true, 20);
-        ParticleConfig k = sparkles.config;
-        k.setMaxParticles(30);
-        k.setStartLifetime(range(14, 22));
+        ParticleEmitter scraps = emitter("scraps", true, 20);
+        ParticleConfig k = scraps.config;
+        k.setSimulationSpace(ParticleConfig.Space.World);
+        k.setMaxParticles(36);
+        k.setStartLifetime(range(10, 15));
         k.setStartSpeed(NumberFunction.constant(0));
-        k.setStartSize(uniform(range(0.025f, 0.05f)));
-        Sphere shell = sphere(0.55f);
-        shell.setRadiusThickness(0f);
-        k.shape.setShape(shell);
-        k.shape.setScale(new NumberFunction3(1f, 0.6f, 1f));
-        k.emission.setEmissionRate(NumberFunction.constant(1.1f));
+        k.setStartSize(uniform(range(0.05f, 0.09f)));
+        Sphere edge = sphere(0.16f);
+        edge.setRadiusThickness(0f);
+        k.shape.setShape(edge);
+        k.emission.setEmissionRate(NumberFunction.constant(1.8f));
         k.velocityOverLifetime.setEnable(true);
-        k.velocityOverLifetime.setOrbital(new NumberFunction3(0, 2.2f, 0));
-        fadeInOut(k, WHITE, PALE);
-        material(sparkles, glow(1f, 1f, 1f, 1.6f));
+        k.velocityOverLifetime.setLinear(new NumberFunction3(0, 0.45f, 0));
+        shrink(k);
+        k.colorOverLifetime.setEnable(true);
+        k.colorOverLifetime.setColor(gradient(0xFF0C0910, 0xFF0C0910, 0x000C0910));
+        spriteSheet(scraps, LICKS, 8, 2, BlendMode.Preset.ALPHA, INK[0], INK[1], INK[2], 1f);
+        // Behind the fist, level with the face: the head hides the ones that rise over it, so they show round the silhouette.
+        scraps.transform().localPosition(new Vector3f(fist).add(-0.14f, 0.04f, 0f));
+        return fx(licks, glow, scraps);
+    }
 
-        ParticleEmitter heart = emitter("heart", true, 20);
-        ParticleConfig h = heart.config;
-        h.setMaxParticles(2);
-        h.setStartLifetime(NumberFunction.constant(20));
-        h.setStartSpeed(NumberFunction.constant(0));
-        h.setStartSize(uniform(NumberFunction.constant(0.55f)));
-        h.shape.setScale(new NumberFunction3(0, 0, 0));
-        h.emission.setEmissionRate(NumberFunction.constant(0));
-        h.emission.getBursts().add(burst(0, 1));
-        h.colorOverLifetime.setEnable(true);
-        h.colorOverLifetime.setColor(gradient(0x224ED873, 0x554ED873, 0x224ED873));
-        material(heart, glow(0.4f, 1f, 0.55f, 0.9f));
-        heart.transform().localPosition(new Vector3f(0, 0.15f, 0));
-
-        ParticleEmitter heartCore = emitter("heart_core", true, 20);
-        ParticleConfig hc = heartCore.config;
-        hc.setMaxParticles(2);
-        hc.setStartLifetime(NumberFunction.constant(20));
-        hc.setStartSpeed(NumberFunction.constant(0));
-        hc.setStartSize(uniform(NumberFunction.constant(0.2f)));
-        hc.shape.setScale(new NumberFunction3(0, 0, 0));
-        hc.emission.setEmissionRate(NumberFunction.constant(0));
-        hc.emission.getBursts().add(burst(0, 1));
-        hc.colorOverLifetime.setEnable(true);
-        hc.colorOverLifetime.setColor(gradient(0x22FFFFFF, 0x55FFFFFF, 0x22FFFFFF));
-        material(heartCore, glow(1f, 1f, 1f, 0.8f));
-        heartCore.transform().localPosition(new Vector3f(0, 0.15f, 0));
-        return fx(motes, whiteMotes, sparkles, heart, heartCore);
+    /** Swells from 70% to full in the first third of its life, then dies away to nothing. */
+    private static void flare(ParticleConfig c) {
+        c.sizeOverLifetime.setEnable(true);
+        c.sizeOverLifetime.setSize(uniform(new Curve(0, 1, 0, 1, "t", "v", new ECBCurves(
+                0f, 0.7f, 0.1f, 0.9f, 0.2f, 1f, 0.3f, 1f,
+                0.3f, 1f, 0.6f, 0.95f, 0.85f, 0.4f, 1f, 0f))));
     }
 
     /**
-     * Each heal: a green ring spreading on the ground with a white one inside it, a burst of white glints rising, a soft green flash
-     * with a white heart. {@code self}, for your own first person: only the two rings on the ground (the rest is at the chest).
+     * Each heal: a white ring spreading on the ground with a brighter one inside it, a burst of white glints rising, a soft white flash.
+     * {@code self}, for your own first person: only the two rings on the ground (the rest is at the chest).
      */
     private static FX healPulse(boolean self) {
         ParticleEmitter ring = single("ring", 12, 2.2f);
         ring.config.renderer.setRenderMode(ParticleRendererSetting.Mode.Horizontal);
         grow(ring.config, 0.25f);
-        fadeOut(ring.config, PALE, DEEP);
-        material(ring, recolor(KilaPresets.SHOCKWAVE.create(), 0.4f, 1f, 0.55f, 1.3f));
+        fadeOut(ring.config, SILVER, SILVER);
+        material(ring, recolor(KilaPresets.SHOCKWAVE.create(), 0.9f, 0.93f, 0.97f, 1.3f));
         ring.transform().localPosition(new Vector3f(0, -0.85f, 0));
 
         ParticleEmitter whiteRing = single("white_ring", 10, 1.4f);
         whiteRing.config.renderer.setRenderMode(ParticleRendererSetting.Mode.Horizontal);
         grow(whiteRing.config, 0.25f);
-        fadeOut(whiteRing.config, WHITE, PALE);
+        fadeOut(whiteRing.config, WHITE, SILVER);
         material(whiteRing, recolor(KilaPresets.SHOCKWAVE.create(), 1f, 1f, 1f, 1.5f));
         whiteRing.transform().localPosition(new Vector3f(0, -0.82f, 0));
         if (self) return fx(ring, whiteRing);
@@ -167,13 +160,13 @@ public final class RmtFxAuthoring {
         c.shape.setShape(sphere(0.5f));
         c.velocityOverLifetime.setEnable(true);
         c.velocityOverLifetime.setLinear(new NumberFunction3(0, 0.7f, 0));
-        fadeOut(c, WHITE, PALE);
-        material(glints, glow(0.92f, 1f, 0.94f, 1.5f));
+        fadeOut(c, WHITE, SILVER);
+        material(glints, glow(1f, 1f, 1f, 1.5f));
 
         ParticleEmitter flash = single("flash", 7, 0.7f);
-        fadeOut(flash.config, PALE, GREEN);
+        fadeOut(flash.config, 0xAAFFFFFF, SILVER);
         shrink(flash.config);
-        material(flash, glow(0.5f, 1f, 0.6f, 1.1f));
+        material(flash, glow(0.92f, 0.95f, 1f, 1.1f));
         flash.transform().localPosition(new Vector3f(0, 0.1f, 0));
 
         ParticleEmitter whiteFlash = single("white_flash", 5, 0.28f);

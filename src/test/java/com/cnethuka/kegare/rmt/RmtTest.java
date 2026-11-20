@@ -36,17 +36,17 @@ import org.junit.jupiter.api.extension.ExtendWith;
 class RmtTest {
     private static final double EPS = 1.0e-4;
 
-    /** The player doesn't move for it: every phase is effects only, and the channel still has its aura. */
+    /** While it channels the right fist is held to the chest with the light on it; nothing else moves the body. */
     @Test
-    void itHasNoPlayerAnimation() {
+    void itsChannelHoldsTheFistToTheChest() {
         ReverseMaliceTechnique rmt = new ReverseMaliceTechnique();
         for (VisualPhase phase : VisualPhase.values()) {
+            if (phase == VisualPhase.CHANNEL_LOOP) continue;
             assertTrue(rmt.visuals().get(phase).animation().isEmpty(), phase.name());
         }
+        assertEquals(java.util.Optional.of(RmtIds.ANIM_CHANNEL), rmt.visuals().get(VisualPhase.CHANNEL_LOOP).animation());
         assertEquals(java.util.Optional.of(RmtIds.FX_CHANNEL_AURA), rmt.visuals().get(VisualPhase.CHANNEL_LOOP).effect());
-        assertFalse(java.nio.file.Files.exists(java.nio.file.Path.of(System.getProperty("user.dir"), "src/main/resources/assets/kegare/player_animations/rmt.json"))
-                || java.nio.file.Files.exists(java.nio.file.Path.of(System.getProperty("user.dir"), "../src/main/resources/assets/kegare/player_animations/rmt.json")),
-                "and its file is gone");
+        assertEquals(com.cnethuka.kegare.api.visual.Visual.Anchor.BODY, rmt.visuals().get(VisualPhase.CHANNEL_LOOP).anchor());
     }
 
     @Test

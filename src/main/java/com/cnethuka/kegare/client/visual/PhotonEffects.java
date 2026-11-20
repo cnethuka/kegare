@@ -62,7 +62,9 @@ final class PhotonEffects {
             EntityEffectExecutor.AutoRotate rotate = switch (anchor) {
                 case EYES -> EntityEffectExecutor.AutoRotate.LOOK;
                 case MOTION -> EntityEffectExecutor.AutoRotate.FORWARD;
-                case BODY, FEET -> EntityEffectExecutor.AutoRotate.NONE;
+                // XROT turns it with the way the body faces (a living entity's body yaw), keeping +X forward.
+                case BODY -> ClientVisuals.turnsWithBody(id) ? EntityEffectExecutor.AutoRotate.XROT : EntityEffectExecutor.AutoRotate.NONE;
+                case FEET -> EntityEffectExecutor.AutoRotate.NONE;
             };
             EntityEffectExecutor executor = new EntityEffectExecutor(fx, entity.level(), entity, rotate);
             executor.setOffset(offset(entity, anchor));

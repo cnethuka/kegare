@@ -99,7 +99,7 @@ public final class ClientVisuals {
             PhotonEffects.tint(executor, visual.tint());
             if (executor == null) {
                 VanillaFallback.Spec spec = VanillaFallback.spec(effect).tinted(visual.tint());
-                VanillaFallback.spawn(entity.level(), anchorPos(entity, visual.anchor()), entity.getLookAngle(), spec, spec.burst());
+                VanillaFallback.spawn(entity.level(), fallbackPos(entity, visual.anchor(), effect), entity.getLookAngle(), spec, spec.burst());
             }
         });
     }
@@ -178,6 +178,22 @@ public final class ClientVisuals {
         Minecraft mc = Minecraft.getInstance();
         if (entity != mc.player || !mc.options.getCameraType().isFirstPerson()) return effect;
         return FIRST_PERSON_VARIANTS.getOrDefault(effect, effect);
+    }
+
+    /** Effects on a body anchor that turn with the body, and where each one's vanilla stand-in goes (forward, up, right of the body's middle). */
+    private static final Map<ResourceLocation, Vec3> TURN_WITH_BODY = new HashMap<>();
+
+    /**
+     * {@code effect}, riding an entity's {@code BODY} anchor, turns with the way the body faces rather than staying put, so what it places on a
+     * posed hand stays on that hand (authored facing +X, +Z to the body's right). {@code at} is where its vanilla stand-in goes, from the body's
+     * middle: blocks forward, up and to the right.
+     */
+    public static void turnWithBody(ResourceLocation effect, Vec3 at) {
+        TURN_WITH_BODY.put(effect, at);
+    }
+
+    static boolean turnsWithBody(ResourceLocation effect) {
+        return TURN_WITH_BODY.containsKey(effect);
     }
 
     /** An effect that has to be seen from closer than usual (a hit landing on someone at arm's length). */
@@ -378,8 +394,10 @@ public final class ClientVisuals {
                     PhotonEffects.scale(loop.executor, GROW_FROM + (1f - GROW_FROM) * t);
                 }
                 if (loop.usesFallback()) {
-                    VanillaFallback.Spec spec = VanillaFallback.spec(loop.visual.effect().get());
-                    VanillaFallback.spawn(level, anchorPos(entity, loop.visual.anchor()), entity.getLookAngle(), spec, spec.perTick());
+                    // Your own first person gets its quieter variant's stand-in here too (often nothing at all).
+                    ResourceLocation effect = firstPersonVariant(entity, loop.visual.effect().get());
+                    VanillaFallback.Spec spec = VanillaFallback.spec(effect);
+                    VanillaFallback.spawn(level, fallbackPos(entity, loop.visual.anchor(), effect), entity.getLookAngle(), spec, spec.perTick());
                 }
             }
         }
@@ -404,5 +422,15 @@ public final class ClientVisuals {
             case BODY, MOTION -> entity.position().add(0, entity.getBbHeight() / 2.0, 0);
             case FEET -> entity.position().add(0, 0.1, 0);
         };
+    }
+
+    /** Where an effect's vanilla stand-in goes: its anchor, or for one that {@link #turnWithBody turns with the body}, its own spot on it. */
+    private static Vec3 fallbackPos(Entity entity, Visual.Anchor anchor, ResourceLocation effect) {
+        Vec3 at = TURN_WITH_BODY.get(effect);
+        if (at == null || anchor != Visual.Anchor.BODY) return anchorPos(entity, anchor);
+        double yaw = Math.toRadians(entity instanceof net.minecraft.world.entity.LivingEntity living ? living.yBodyRot : entity.getYRot());
+        Vec3 forward = new Vec3(-Math.sin(yaw), 0, Math.cos(yaw));
+        Vec3 right = new Vec3(-Math.cos(yaw), 0, -Math.sin(yaw));
+        return anchorPos(entity, anchor).add(forward.scale(at.x)).add(0, at.y, 0).add(right.scale(at.z));
     }
 }

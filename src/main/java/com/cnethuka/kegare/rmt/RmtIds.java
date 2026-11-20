@@ -4,7 +4,7 @@ import com.cnethuka.kegare.Kegare;
 import com.cnethuka.kegare.api.visual.Visual;
 import net.minecraft.resources.ResourceLocation;
 
-/** Reverse Malice Technique's IDs: its Photon effects (fx/rmt/). It has no player animation. */
+/** Reverse Malice Technique's IDs: its player animation (player_animations/rmt.json) and its Photon effects (fx/rmt/). */
 public final class RmtIds {
     public static final ResourceLocation ABILITY = Kegare.id("reverse_malice_technique");
     /** Its special: healing another player (no name of its own). */
@@ -12,8 +12,12 @@ public final class RmtIds {
     /** The Unlocks framework's entry for knowing how. */
     public static final ResourceLocation ON_ANOTHER_UNLOCK = Kegare.id("rmt_heal_others");
 
+    /** While it channels: the right fist held to the chest, over the heart (the light pours off that fist). */
+    public static final ResourceLocation ANIM_CHANNEL = Kegare.id("rmt_channel");
+
+    /** While it channels: white light burning off the fist held to the chest, near-black scraps rising off its edge. */
     public static final ResourceLocation FX_CHANNEL_AURA = fx("rmt_channel_aura");
-    /** The aura in your own first person: only motes low round the feet (RmtClient). */
+    /** The same in your own first person: a few small, dim licks, so looking down never fills the view (RmtClient). */
     public static final ResourceLocation FX_CHANNEL_AURA_SELF = fx("rmt_channel_aura_self");
     public static final ResourceLocation FX_HEAL_PULSE = fx("rmt_heal_pulse");
     /** A heal in your own first person: only the rings on the ground (RmtClient). */

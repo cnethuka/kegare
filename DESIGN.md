@@ -760,6 +760,9 @@ closing it or disconnecting at any point changes nothing.
 
   Each effect has an anchor on its entity: `EYES` (turns with the look), `BODY`, `FEET`, or `MOTION`
   (projectiles). Photon turns the effect so its local +X axis points forward, so effects are authored facing +X.
+  A `BODY` effect registered with `ClientVisuals.turnWithBody` turns with the way the body faces (Photon's `XROT`, a living
+  entity's body yaw; +Z is the body's right), so what it puts on a posed hand stays on that hand (RMT's light on the fist,
+  §3.17); its vanilla stand-in goes to the same spot.
 - **Files:** animations go in `assets/<ns>/player_animations/*.json` (Blockbench/GeckoLib format). The animation's
   ID is the namespace plus the name inside the file. Effects go in `assets/<ns>/fx/<path>.fx`, with ID `<ns>:<path>`.
 - **Networking:** `CastManager` calls `VisualService` at each start and end point. The service sends one
@@ -788,14 +791,14 @@ closing it or disconnecting at any point changes nothing.
   of pale blue swirls in the middle of a fight. Everyone else still sees yours, since they show who's slowed, and so do you
   in third person.
 - **Near the camera:** a positional effect closer than 2 blocks to a first-person camera isn't drawn, or it would sit in front of your eyes. `ClientVisuals.setNearCameraDistance` lowers that for one effect (Reinforced Strike's impact, 1 block: only the target is that close).
-- **On your own screen:** `ClientVisuals.setFirstPersonVariant` swaps an effect riding a player for a quieter one, for that player in first person only (the dash's trail, the parry's spark and the guard's hit).
+- **On your own screen:** `ClientVisuals.setFirstPersonVariant` swaps an effect riding a player for a quieter one, for that player in first person only (the dash's trail, the parry's spark and the guard's hit, RMT's light). At Vanilla a loop's stand-in follows the variant too (often nothing).
 - **Your own hands** (`PlayerAnimations`). In your own first person an animation can show your arms (PAL's first-person
   model), or leave the hands to vanilla. Everyone else always sees the whole animation. Nothing may fill the middle of the
   view, so:
   - Holding anything in either hand (a sword, an axe, a shield, a block), every animation leaves the hands to vanilla.
     PAL's model draws what's held at its real size right by the camera, usually edge on, so a cast would swing a dark blade or
     a shield's back through the view. Only an empty-handed cast shows its gesture.
-  - `keepVanillaHands`: never shown. Melee's animations, every Rime cast, Swap's Mimic, Puppet Manipulation's way back
+  - `keepVanillaHands`: never shown. Melee's animations, RMT's channel, every Rime cast, Swap's Mimic, Puppet Manipulation's way back
     and Zip, Time Manipulation's Standstill and Stasis Field, and Severed's winded and wall crash.
   - `handsWhileLevel`: shown only while you look no more than 15° down. The arms hang from the body, which doesn't tip
     with the view, so hands at chest height sit at the bottom corners of a level view and come up into its middle as you
@@ -1318,7 +1321,7 @@ separate bar is filled from any of them.
 ### 3.17 Reverse Malice Technique (RMT)
 Package `rmt`. The first **shared** ability (§3.16), ID `kegare:reverse_malice_technique`. Numbers in
 `[reverse_malice_technique]` of `kegare-server.toml`. Malice is negative energy, and this multiplies it by itself: negative times
-negative is positive energy, which is why it heals, and why its colors are white and green.
+negative is positive energy, which is why it heals, and why it heals with white light (only the orb that teaches it is green).
 - **Locked by default.** Found through the green orb (§3.18); `/kegare debug shared unlock|lock` for admins. Severed
   players can never unlock it (`SharedAbilityService.unlock` refuses) or cast it (the cast pipeline refuses Severed
   players for everything).
@@ -1371,16 +1374,25 @@ negative is positive energy, which is why it heals, and why its colors are white
     a soft green halo drawn behind them at their middle, so their own body hides its centre and it shows round their silhouette,
     breathing, fading out over its last second; only the eligible player is sent it. White and green, never Malice violet. The healed one
     gets RMT's heal pulse (their own quieter version in first person).
-- **Visuals:** Photon only; **it has no player animation**, so the caster's body doesn't move. `rmt/rmt_channel_aura` (green and
-  white motes rising round the body, white sparkles circling, a white-hearted glow at the chest) and `rmt/rmt_heal_pulse` (each heal:
-  a green ring on the ground with a white one inside it, rising white glints, a soft green flash with a white heart), authored in
-  `RmtFxAuthoring` with the shared `FxKit` building blocks. Vanilla fallback: happy-villager sparkles. Palette: white and green,
-  never Malice violet. The motes shrink away as they rise, and nothing bright passes eye level: close to a first-person
-  camera it would cover the screen in the middle of a fight. In your own first person you get quieter versions
-  (`ClientVisuals.setFirstPersonVariant`): `rmt_channel_aura_self` is only the green motes, low round the feet and
-  gone by the knees, and `rmt_heal_pulse_self` only the two rings on the ground. The glow, sparkles, glints and flash
-  sit at the chest, just under your camera: looking down they'd be bright orbs in the middle of the view. At Vanilla
-  your own show nothing.
+- **Visuals:** positive energy poured into the body from the hand, so you can read at a glance who is healing.
+  - **The pose:** while it channels, the right fist is held to the chest (PAL `rmt_channel`, `player_animations/rmt.json`): the arm
+    across the chest on a diagonal from a slightly lowered shoulder, the fist on the upper chest just under the chin, breathing a
+    little. Only the right arm is keyed, so the head keeps the aim and the legs keep walking.
+  - **The light** (`rmt/rmt_channel_aura`, authored in `RmtFxAuthoring` with the shared `FxKit` building blocks): white flame licks
+    burning off that fist, Kegare's own pixel flames in white (`textures/fx/rmt_licks.png`, two rows of eight 16-pixel frames, played as
+    a Photon sprite sheet: each lick on a random row from a random frame, hard edges), added as light and bright enough to bloom, over a
+    soft white glow; and small near-black scraps of the same flames rising off its far side and drifting away, so the shape holds
+    against a bright sky. The body hides the scraps behind it, so they show round the silhouette. It turns with the body, not the look
+    (`ClientVisuals.turnWithBody`, §3.13), so it stays on the fist.
+  - **Each heal** (`rmt/rmt_heal_pulse`): a white ring spreading on the ground with a brighter one inside it, white glints rising, a
+    soft white flash.
+  - **Palette:** white, with near-black; no green (the orb that teaches it is the only green, §3.18) and never Malice violet.
+  - **Vanilla:** white dust at the fist while it channels, END_ROD sparkles for each heal.
+  - **Your own first person:** your hands stay vanilla's (`PlayerAnimations.keepVanillaHands`): the raised arm would only cross the
+    bottom of the view, and whatever you hold stays where it was. The fist's light sits just under your camera, so you get a quieter
+    version (`ClientVisuals.setFirstPersonVariant`): `rmt_channel_aura_self` is a few small licks that don't bloom, out of view while
+    you look level and small in the middle of it as you look down; `rmt_heal_pulse_self` is only the two rings on the ground. At
+    Vanilla your own show nothing.
 - **Icon** `textures/gui/ability/reverse_malice_technique.png`: a plus inside a ring that turns back on itself, in its
   own green ramp, independent of any innate technique or Malice color. Own name, description and
   tooltip in the lang file.
@@ -1494,7 +1506,9 @@ negative is positive energy, which is why it heals, and why its colors are white
   waits; a new route every orb; following to the last tick unlocks and heals, capped at max health; staring without following never does (25 routes);
   losing it runs it back, then a second try counts; fades on time, but never under someone following it; routes stay short of walls; the payload survives
   the wire; never for Severed players (forced or rolled) or after unlocking. `OrbPathTest`: 2000 routes each stay in range, take every step, wind, and are
-  random; no tick moves the orb more than a third of the look cone; the curve passes through every point. `RmtTest` also checks it has no player animation.
+  random; no tick moves the orb more than a third of the look cone; the curve passes through every point. `RmtTest` also checks RMT's
+  channel holds the fist to the chest with the light on it, and `RmtArtTest` the licks' sheet (hard edges, greys only, every frame lit,
+  mostly white and flickering) and the pose file (PAL loads it as a loop; only the right arm, from rest; no fades of its own).
 
 ---
 

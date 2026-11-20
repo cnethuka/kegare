@@ -1,6 +1,7 @@
 package com.cnethuka.kegare.rmt.client;
 
 import com.cnethuka.kegare.client.visual.ClientVisuals;
+import com.cnethuka.kegare.client.visual.PlayerAnimations;
 import com.cnethuka.kegare.client.visual.VanillaFallback;
 import com.cnethuka.kegare.innatetechnique.visual.VisualHooks;
 import com.cnethuka.kegare.rmt.OrbPayload;
@@ -9,8 +10,8 @@ import net.neoforged.neoforge.common.NeoForge;
 import net.minecraft.core.particles.ParticleTypes;
 
 /**
- * Reverse Malice Technique's client side: the green orb, quieter versions of its effects on your own body in first person, and
- * vanilla stand-ins for its Photon effects.
+ * Reverse Malice Technique's client side: the green orb, its channel's light kept on the fist held to the chest, quieter versions of its
+ * effects on your own body in first person, and vanilla stand-ins for its Photon effects.
  */
 public final class RmtClient {
     /** Their output and injury fatigue as the server last said (the Sorcerer screen's RMT details). */
@@ -31,17 +32,25 @@ public final class RmtClient {
         RmtLinkClient.init();
         NeoForge.EVENT_BUS.addListener(GreenOrbClient::onClientTick);
         NeoForge.EVENT_BUS.addListener(GreenOrbClient::onLogout);
-        VanillaFallback.register(RmtIds.FX_CHANNEL_AURA, new VanillaFallback.Spec(ParticleTypes.HAPPY_VILLAGER, 1, 6, 0.5, 0.0));
-        VanillaFallback.register(RmtIds.FX_HEAL_PULSE, new VanillaFallback.Spec(ParticleTypes.HAPPY_VILLAGER, 1, 12, 0.6, 0.05));
+        // While it channels: white light off the fist held to the chest, turning with the body so it stays on that fist (at Vanilla, white
+        // dust there). Each heal: white sparkles round the body.
+        VanillaFallback.register(RmtIds.FX_CHANNEL_AURA, new VanillaFallback.Spec(
+                new net.minecraft.core.particles.DustParticleOptions(new org.joml.Vector3f(1f, 1f, 1f), 0.7f), 1, 4, 0.08, 0.01));
+        VanillaFallback.register(RmtIds.FX_HEAL_PULSE, new VanillaFallback.Spec(ParticleTypes.END_ROD, 1, 10, 0.6, 0.03));
         VanillaFallback.register(RmtIds.FX_ORB, new VanillaFallback.Spec(ParticleTypes.HAPPY_VILLAGER, 1, 4, 0.2, 0.0));
         VanillaFallback.register(RmtIds.FX_TRAIL_DOT, new VanillaFallback.Spec(ParticleTypes.HAPPY_VILLAGER, 1, 1, 0.0, 0.0));
         VanillaFallback.register(RmtIds.FX_UNLOCK_BURST, new VanillaFallback.Spec(ParticleTypes.HAPPY_VILLAGER, 1, 24, 0.5, 0.2));
-        // Your own aura and heals in first person: what's at the chest would be just under your camera, bright in the middle of the
-        // view as you look down. Only what's on the ground is drawn; at Vanilla, nothing (the health bar says it).
+        ClientVisuals.turnWithBody(RmtIds.FX_CHANNEL_AURA, RmtFxAuthoring.FIST);
+        ClientVisuals.turnWithBody(RmtIds.FX_CHANNEL_AURA_SELF, RmtFxAuthoring.FIST);
+        // Your own first person: the arm raised to the chest would only cross the bottom of the view, so your hands stay vanilla's (and
+        // whatever you hold stays where it was). What's at the chest is just under your camera, bright in the middle of the view as you
+        // look down: you get a few small licks there that don't bloom, and of each heal only the rings on the ground. At Vanilla, nothing
+        // (the health bar says it).
+        PlayerAnimations.keepVanillaHands(java.util.List.of(RmtIds.ANIM_CHANNEL));
         ClientVisuals.setFirstPersonVariant(RmtIds.FX_CHANNEL_AURA, RmtIds.FX_CHANNEL_AURA_SELF);
         ClientVisuals.setFirstPersonVariant(RmtIds.FX_HEAL_PULSE, RmtIds.FX_HEAL_PULSE_SELF);
-        VanillaFallback.register(RmtIds.FX_CHANNEL_AURA_SELF, new VanillaFallback.Spec(ParticleTypes.HAPPY_VILLAGER, 0, 0, 0.5, 0.0));
-        VanillaFallback.register(RmtIds.FX_HEAL_PULSE_SELF, new VanillaFallback.Spec(ParticleTypes.HAPPY_VILLAGER, 0, 0, 0.6, 0.0));
+        VanillaFallback.register(RmtIds.FX_CHANNEL_AURA_SELF, new VanillaFallback.Spec(ParticleTypes.END_ROD, 0, 0, 0.08, 0.0));
+        VanillaFallback.register(RmtIds.FX_HEAL_PULSE_SELF, new VanillaFallback.Spec(ParticleTypes.END_ROD, 0, 0, 0.6, 0.0));
         VisualHooks.registerEffect(RmtIds.FX_CHANNEL_AURA_SELF);
         VisualHooks.registerEffect(RmtIds.FX_HEAL_PULSE_SELF);
     }
