@@ -2202,8 +2202,8 @@ For shared and system unlocks, separate from a technique's own abilities.
 
 Dash, Parry and Reinforced Strike, for every player, in and out of Technique Mode. They aren't techniques: no slots, no casting, no Refinement or Assessment
 gates, and counters to techniques have nothing to act on. Low Malice is what limits them, and RMT doesn't touch them.
-Dash is Kinetic Manipulation; Parry and Strike are Reinforcement, which "can distribute stress and absorb energy; it cannot delete the reaction": hence the guard's
-recovery. Numbers: `[melee]` in `kegare-server.toml` (`MeleeConfig`), resolved per player by `MeleeNumbers`. State: the runtime attachment `kegare:melee`
+Parry and Strike come from Reinforcement, which can spread a blow's stress and absorb its energy but can't undo the reaction: hence the
+guard's recovery. Numbers: `[melee]` in `kegare-server.toml` (`MeleeConfig`), resolved per player by `MeleeNumbers`. State: the runtime attachment `kegare:melee`
 (`MeleeState`, in level game time, gone on death and logout, like a cast in progress).
 
 **Who can use it** (`MeleeRules`): alive, born, not a spectator, not stunned or frozen, and not possessing a puppet (the body isn't yours to reinforce; a Strike
@@ -2312,7 +2312,7 @@ move. Everything that landed on one victim in one server tick is added up (`Impa
   | Impact frame | 2.84 | a full Glacial Spire (3.66), a Full Curio Burst (3.57 a block away), every Total Swap (3.00 at equal health, 4.32 between 9/20 and 20/20) |
   | Top | never reached | reserved: only a hit that asks for it. Black Spark (§3.28) doesn't: it goes through the rule like any hit |
 
-  The numbers in brackets come from `/kegare debug impact log`. The weights were chosen so the rule itself puts each
+  The numbers in brackets are each hit's strength by the rule (`/kegare debug impact log` shows it). The weights put each
   of those where it is, with no per-move minimum. The closest calls, about 5% from the line: a full Glacial Lance (2.67) and a Total
   Swap at equal health (3.00) either side of 2.84, and Shatter Shell's push (1.86) and an iron-sword Strike (2.10) either side of
   1.98. Configs from before the Malice input are moved to these numbers once (`KegareConfigMigration` version 4), unless edited.
@@ -2404,7 +2404,7 @@ player or their technique always may; a mob's only with the `mobGriefing` gameru
 - **Area blasts** (`Impacts.blast`) also break the blocks at their own centre, whether or not they hit anyone: Curio Burst and Chain
   Burst (where the puppet was), Glacial Spire (where it erupts) and Shatter Shell (round the caster). Their strength there is what
   they'd land on a 20-health body at their centre by the same rule as a hit: their full damage and push, their launch and charge,
-  and the Malice behind them (measured: a missed Full Curio Burst 3.87, a missed full Glacial Spire 3.66, a missed Shatter Shell
+  and the Malice behind them (by the rule: a missed Full Curio Burst 3.87, a missed full Glacial Spire 3.66, a missed Shatter Shell
   1.86 with no shell up). Same block rule, caps, modes and break events as a hit; a hit that also lands breaks round the body as
   well. A future area ability calls `Impacts.blast` with its own numbers. Swap has none. `/kegare debug impact log` shows each
   blast's strength to its caster.
@@ -2522,17 +2522,15 @@ breaks the record. Runtime only.
 - **Every hit on something frozen counts** toward its held hit. A player's swing at it is held, so `hurt()` says no, and vanilla's
   `Player.attack` would take that for a miss: no sweep (its hits on anything else frozen would be lost), no crit, the "no damage" sound, no
   wear on the weapon. `mixin/PlayerAttackMixin` counts a held hit as landed, so the swing does all of that and the sweep's hits on
-  the frozen beside it are held too. A full iron-sword swing across two frozen zombies lands 5.9 on the one hit and 0.94 on
-  the one swept. Full charge, a partial swing and a crit all add up on a zombie, skeleton, spider, iron golem, wolf,
-  enderman and creeper alike.
+  the frozen beside it are held too: a sword swing across two frozen mobs holds its full hit on one and the sweep's on the
+  other. Full charge, a partial swing and a crit all count, on any mob.
 - **When time resumes** everything that was frozen has its hurt cooldown cleared: otherwise a mob hit just before the cast would keep the one that
   hit gave it, stand still with it, and throw away the first swings after the resume.
 - **Nothing frozen acts.** Its tick doesn't run (no blow, no arrow, no swell, no leap), nothing pushes it (knockback on the frozen
   is cancelled; the held hit brings its own), it never teleports (an enderman hit by the caster's still-flying arrow), and it hurts
   nobody: damage whose attacker is frozen is dropped (the thorns on its armour, a slime's or magma cube's touch, a guardian's
-  spikes, all of which reach the caster without the mob ticking). Six provoked mobs (zombie, spider, skeleton, iron golem,
-  wolf, enderman) deal nothing during the stop; a zombie and a spider attacking when it was cast hit again 0.45 and 0.6 s after
-  the resume, their own attack cooldown carrying on where it stopped.
+  spikes, all of which reach the caster without the mob ticking). A provoked mob deals nothing during the stop; one attacking
+  when it was cast hits again shortly after the resume, its own attack cooldown carrying on where it stopped.
 - **Immune** players move, attack, cast and see in colour; damage between them and the caster lands at once.
 - **Ends early** if the caster dies, logs out or changes dimension (what was held lands then). A frozen player who logs out or is
   sent to another level is let go and takes what was held for them right then, before they're gone (on a trip, before it starts),
@@ -2639,7 +2637,7 @@ unlock levels.
 ### 3.27 Severed (package `severed`)
 Severed players (§3.1: born with no Malice) trade all of it for a superhuman body. Everything here comes from the body: no Malice,
 no glow, no Innate color. None of it grows with Grade or Refinement, because their body is complete from birth. Every number is in
-`[severed]` of `kegare-server.toml` (`SeveredConfig`), each a starting point to tune live.
+`[severed]` of `kegare-server.toml` (`SeveredConfig`).
 
 **The body** (`SeveredBody`, always on):
 - **Strength:** their melee hits (`MeleeHits`: fists and weapons, outside a cast) deal `meleeDamage` (1.25) times as much, on the
@@ -3500,7 +3498,7 @@ levels or with a negative one.
 - **Rime's Dominion** (its ultimate; the slot is locked until then).
 - **The addon API, next steps (§3.34):** one shared target event for every technique, the Impact System hook, read-only events (casts,
   technique changes, unlocks, Refinement and Grade), client hooks (visuals, HUD, the effect setting), and publishing (Modrinth's Maven, a
-  sources jar). Changing shared abilities. No boss API in this update.
+  sources jar). Changing shared abilities.
 - **Dominions:** expansion, guaranteed-hit rules, clashes, counters, burnout.
 - **What progression waits for (§3.21):** later unlocks, Dominions among them, register through `Unlocks`, their first-time sources call
   `InsightHooks`, and later systems that need a player's Grade read `Progression.getGrade`.
