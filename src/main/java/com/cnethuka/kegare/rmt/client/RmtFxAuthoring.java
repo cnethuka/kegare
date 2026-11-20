@@ -44,6 +44,7 @@ public final class RmtFxAuthoring {
         out.put(RmtIds.FX_CHANNEL_AURA_SELF, () -> channelAura(true));
         out.put(RmtIds.FX_HEAL_PULSE, () -> healPulse(false));
         out.put(RmtIds.FX_HEAL_PULSE_SELF, () -> healPulse(true));
+        out.put(RmtIds.FX_BACKGROUND_SHIMMER, RmtFxAuthoring::backgroundShimmer);
         out.put(RmtIds.FX_ORB, RmtFxAuthoring::orb);
         out.put(RmtIds.FX_TRAIL_DOT, RmtFxAuthoring::trailDot);
         out.put(RmtIds.FX_UNLOCK_BURST, RmtFxAuthoring::unlockBurst);
@@ -122,6 +123,32 @@ public final class RmtFxAuthoring {
         // Behind the fist, level with the face: the head hides the ones that rise over it, so they show round the silhouette.
         scraps.transform().localPosition(new Vector3f(fist).add(-0.14f, 0.04f, 0f));
         return fx(licks, glow, scraps);
+    }
+
+    /**
+     * Background RMT, as a Six Eyes bearer sees it: the channel's white licks, small, few and faint, coming and going on a shell just outside the body and
+     * drifting up a little, with no glow behind them and no dark scraps. Quiet, since it's only ever a hint.
+     */
+    private static FX backgroundShimmer() {
+        ParticleEmitter licks = emitter("licks", true, 20);
+        ParticleConfig c = licks.config;
+        c.setSimulationSpace(ParticleConfig.Space.World);
+        c.setMaxParticles(20);
+        c.setStartLifetime(range(12, 20));
+        c.setStartSpeed(NumberFunction.constant(0));
+        c.setStartSize(uniform(range(0.08f, 0.13f)));
+        // On a shell just outside the body (the body hides what's inside it), from the feet to the top of the head.
+        Sphere shell = sphere(0.5f);
+        shell.setRadiusThickness(0f);
+        c.shape.setShape(shell);
+        c.shape.setScale(new NumberFunction3(1.1f, 1.85f, 1.1f));
+        c.emission.setEmissionRate(NumberFunction.constant(0.7f));
+        c.velocityOverLifetime.setEnable(true);
+        c.velocityOverLifetime.setLinear(new NumberFunction3(0, 0.25f, 0));
+        flare(c);
+        fadeInOut(c, 0xC0FFFFFF, WHITE);
+        spriteSheet(licks, LICKS, 8, 2, BlendMode.Preset.ADDITIVE, 1f, 1f, 1f, 0.95f);
+        return fx(licks);
     }
 
     /** Swells from 70% to full in the first third of its life, then dies away to nothing. */

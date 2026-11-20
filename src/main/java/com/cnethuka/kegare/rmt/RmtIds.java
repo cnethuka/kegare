@@ -20,6 +20,8 @@ public final class RmtIds {
     /** The same in your own first person: a few small, dim licks, so looking down never fills the view (RmtClient). */
     public static final ResourceLocation FX_CHANNEL_AURA_SELF = fx("rmt_channel_aura_self");
     public static final ResourceLocation FX_HEAL_PULSE = fx("rmt_heal_pulse");
+    /** Background RMT, as a Six Eyes bearer sees it on anyone running it: small white licks coming and going over the body (AuraClient). */
+    public static final ResourceLocation FX_BACKGROUND_SHIMMER = fx("background_rmt_shimmer");
     /** A heal in your own first person: only the rings on the ground (RmtClient). */
     public static final ResourceLocation FX_HEAL_PULSE_SELF = fx("rmt_heal_pulse_self");
     /** The green orb (client-only, its finder alone sees it), the dots marking its route, and its burst on unlock. */

@@ -1391,7 +1391,7 @@ negative is positive energy, which is why it heals, and why it heals with white 
     you look level and small in the middle of it as you look down; `rmt_heal_pulse_self` is only the two rings on the ground. At
     Vanilla your own show nothing.
 - **Icon** `textures/gui/ability/reverse_malice_technique.png`: a plus inside a ring that turns back on itself, in its
-  own green ramp, independent of any innate technique or Malice color. Own name, description and
+  own white ramp, independent of any innate technique or Malice color. Own name, description and
   tooltip in the lang file.
 - **Advancements** (Base tab, hidden and silent, §3.11): `a_green_light` "A Green Light" (unlock it; goal) and
   `its_been_a_while` "It's been a while, huh?" (start a cast at **6 HP or less** having been hit by a player in the
@@ -3046,11 +3046,13 @@ ability on the bar, but it takes no bar slot and leaves the hands free.
 - **Burnout:** while it runs, every Burnout applied to you lasts ×`burnoutFactor` (0.75), through `Burnout.Modifier` (§3.25):
   Standstill's now, Dominions' later. The quarter it takes off is paid on the brain meter as that share of a full repair (§3.17). It
   never touches the ultimate's cooldown: only a finished repair gives that back.
-- **Who can tell:** nobody, except a Six Eyes bearer, who sees a faint green shimmer on anyone running it: small soft glints
-  (`entity/aura_shimmer.png`, smooth, 0.11 to 0.19 blocks, one every 2 ticks) coming and going over the body and drifting up, in
-  RMT's green; Reduced half as many, Vanilla a few specks of green dust. Sent per viewer (`AuraPayload.SHIMMER`, only to Six Eyes viewers, `AuraTell.addShimmer`).
+- **Who can tell:** nobody, except a Six Eyes bearer, who sees a faint white shimmer on anyone running it: RMT's white licks
+  (`rmt/background_rmt_shimmer`, Photon, the channel's sprite sheet, §3.17), small (0.08 to 0.13 blocks) and few (seven every 10 ticks),
+  coming and going just outside the body, feet to head, and drifting up, with no glow behind them and no dark scraps; Reduced half as many, Vanilla a few
+  specks of white dust. Never on your own body in your own first person, and never on someone you can't see. Sent per viewer
+  (`AuraPayload.SHIMMER`, only to Six Eyes viewers, `AuraTell.addShimmer`); the client plays it as a loop on that player (`AuraClient`).
 - **Hooks:** `BackgroundRmt.addHook` is told every tick it runs. Six Eyes uses it to hold Strain back (§3.32); later techniques can use it too.
-- **Icon:** RMT's green cross inside the loop of something left running.
+- **Icon:** RMT's white cross inside the loop of something left running.
 - **Tests:** `BackgroundRmtTest` (the count from the channel, RMT first, Severed never, Always On; the rate from RMT output with
   fatigue; full health, drain, no absorption, healed as it lands; regenFactor; the 20%/30% pause and resume; stuns and Burnout not
   stopping it; Burnout shortened only while it runs; the shimmer only for the Six Eyes), `BackgroundRmtStandstillTest` (paused while

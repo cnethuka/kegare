@@ -53,6 +53,11 @@ public final class RmtClient {
         VanillaFallback.register(RmtIds.FX_HEAL_PULSE_SELF, new VanillaFallback.Spec(ParticleTypes.END_ROD, 0, 0, 0.6, 0.0));
         VisualHooks.registerEffect(RmtIds.FX_CHANNEL_AURA_SELF);
         VisualHooks.registerEffect(RmtIds.FX_HEAL_PULSE_SELF);
+        // Background RMT's shimmer, for the Six Eyes (AuraClient plays it; at Vanilla it draws its own white dust instead). This
+        // stand-in is only for an effect that fails to load.
+        VisualHooks.registerEffect(RmtIds.FX_BACKGROUND_SHIMMER);
+        VanillaFallback.register(RmtIds.FX_BACKGROUND_SHIMMER, new VanillaFallback.Spec(
+                new net.minecraft.core.particles.DustParticleOptions(new org.joml.Vector3f(1f, 1f, 1f), 0.5f), 1, 0, 0.45, 0.0));
     }
 
     /** "Output 1.36x, injuries -20%" (the injuries only when there are any). */
