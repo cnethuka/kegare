@@ -80,7 +80,8 @@ Kegare runs on Minecraft 1.21.1 with NeoForge 21.1.x. Every player **and** the s
 KilaGraph, which Photon needs, is bundled inside Photon. Don't install it separately. Pick the NeoForge 1.21.1 file of each
 one. Minecraft refuses to start and names the missing mod if one is absent.
 
-Until there's a published release, build Kegare's jar yourself: see [Building from source](#building-from-source).
+Download Kegare's jar from the [releases page](https://github.com/cnethuka/kegare/releases), or build it yourself: see
+[Building from source](#building-from-source).
 
 ## Playing
 
