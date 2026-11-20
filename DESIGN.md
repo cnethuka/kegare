@@ -505,7 +505,7 @@ Malice is always shown as whole numbers (floored, like the HUD); the stored valu
   touch players' saved data, so anyone already born keeps the capacity they rolled. **Version 3** is the stronger Severed melee numbers.
   **Version 4** is the Impact System's Malice input (§3.23): its re-tuned weights and tiers, and battle damage's `strengthScale`,
   `radiusPerStrength` and slams' `strengthPerSpeed` with them (§3.24). **Version 5** is Blur's top speed, 0.56 to 0.7 (§3.27),
-  kept clearly faster than Accelerate's new clock (§3.26). **Version 6** is Six Eyes efficiency's curve (§3.32): `attunement` 0.8 to 1.5 and `rmtOutputWeight` 0.15 to 0.052. **Version 7** is
+  kept clearly faster than Accelerate's clock (§3.26). **Version 6** is Six Eyes efficiency's curve (§3.32): `attunement` 0.8 to 1.5 and `rmtOutputWeight` 0.15 to 0.052. **Version 7** is
   healing others by touch (§3.17): `reverse_malice_technique.others.range` 3 to 1. A later change to a shipped default that needs the same
   treatment adds its own table and bumps `CURRENT_VERSION`.
 
@@ -1275,7 +1275,7 @@ separate bar is filled from any of them.
     becomes available to place;
   - **lowering Refinement** (an admin command) takes newly locked abilities off the bar and stops them
     (`LoadoutService.removeLocked`). The slots are left empty, and a later unlock offers them a slot again;
-  - bars saved before there were nine slots (one per ability) keep their order and are padded on login;
+  - a saved bar shorter than nine slots keeps its order and is padded on login;
   - each slot holds one of those abilities, an unlocked shared ability, or nothing ("Empty slot"; casting it says
     so and costs nothing);
   - nothing is slotted twice: placing an ability that is already on the bar moves it (whatever was in the target
@@ -2066,8 +2066,8 @@ can't carry it:
 **Spam can't qualify.** Efficiency, performance and the opponent bonus can carry a one-move fight past 50, so every gate also asks for an average
 Technique use over the same fights (`minTechniqueUse`, 0-100; each fight's is stored with its score). One move repeated scores 12 at most, a real
 mix about 40, varied play 80 or more. Special Grade's has to be above 80 to mean anything, since with every other part full a 90 average already
-takes that. A Severed player's melee variety stands in, and is reachable at every gate. The score's weights are unaffected. Fights saved before this
-count as Technique use 0 and roll off as new ones come in.
+takes that. A Severed player's melee variety stands in, and is reachable at every gate. The score's weights are unaffected. A saved fight
+with no Technique use recorded counts as 0 and rolls off as new ones come in.
 
 **Peak Refinement** is the highest level ever reached on any technique. It survives rerolls, so rerolling doesn't block promotion. Severed
 players skip it. Promotion is tried after every qualifying fight, XP change and new Refinement level, and on login.
@@ -2136,7 +2136,7 @@ ultimate's special comes with the ultimate.
 - Lowering Refinement through an admin command takes newly locked abilities off the loadout.
 - `requireRefinementForAbilities` (default true): false unlocks everything, for testing and casual servers. Flipping it live re-validates
   everyone online. Refinement is still earned.
-- Players from before progression log in at Refinement 0 and drop to the level 0 kit.
+- A player with no progression data logs in at Refinement 0 and drops to the level 0 kit.
 
 #### Insight (player, kept on reroll and death)
 Three separate categories: **DOMINION, WARD, OUTPUT**. `Insight.recordFirst(player, firstKey, category, amount)` pays each `firstKey` once per
@@ -2149,7 +2149,7 @@ player, ever, saved per player. Which category each source pays into, and how mu
 | `survived_standstill` | Ward 5 | ever | wired |
 | `caught_in_dominion` | Dominion 5 | technique | hook only |
 | `clashed_with_dominion` | Dominion 5 | technique | hook only |
-| `unlocked_rmt` | Output 5 | ever (unlocking Reverse Malice Technique, any way; anyone who unlocked it before this paid is paid on login) | wired |
+| `unlocked_rmt` | Output 5 | ever (unlocking Reverse Malice Technique, any way; anyone who has it unlocked but wasn't paid is paid on login) | wired |
 | `rmt_survived_low` | Output 5 | ever (at 3 hearts or less during your own RMT, healed above it, alive 10 s later) | wired |
 | `healed_by_other` | Output 3 | ever (healed by another player's RMT, §3.17) | wired |
 | `first_black_spark` | Output 5 | ever (your first Black Spark, on anything living, §3.28) | wired |
@@ -2251,7 +2251,7 @@ Without the Malice the hit stays normal and the Strike waits until it expires. E
 - *Colors of the impacts:* the Strike impact takes the Innate color: it's what was on the fist going off, and gold under an Innate burst reads as two separate effects. The parry stays gold: it's the same cue whoever parried, and pale blue and lavender go thin against the sky.
 - *Information:* the color says which Innate you have before you've cast anything. §1 keeps techniques out of secret identity, so that's allowed, but it's a deliberate exception to silent PvP information, and it's only ever shown after a parry or dodge.
 
-**Severed** trade all their Malice for superhuman abilities, so their melee is stronger than standard, with no costs. `[melee.severed]` has their own numbers: dash 6 blocks every 2.5 s; perfect window 0.3 s; guard 50% off melee and nothing off techniques, held at most 4 s (no Malice to run out of); recovery 0.75 s. **No Reinforced Strike**, by any way (a perfect parry, a clean dodge, Closing Line): it's Malice, and they have none (`ReinforcedStrike.earn` refuses them), so they never get the "Reinforced" cue either. Instead a Severed perfect parry staggers the attacker for `parryStagger` (1.0 s against a standard 0.5 s, at the same Slowness): the opening comes from their reflexes. Dodges stay as they are. Closing Line's arrival gives a momentum hit instead (§3.27). A config file from before these numbers moves to them unless a value was changed by hand (`KegareConfigMigration`, version 3); the Strike's three old keys (`strikeWindow`, `strikeDamageBonus`, `strikeKnockback`) are dropped from an existing file by NeoForge's own correction when it loads, and `parryStagger` is added.
+**Severed** trade all their Malice for superhuman abilities, so their melee is stronger than standard, with no costs. `[melee.severed]` has their own numbers: dash 6 blocks every 2.5 s; perfect window 0.3 s; guard 50% off melee and nothing off techniques, held at most 4 s (no Malice to run out of); recovery 0.75 s. **No Reinforced Strike**, by any way (a perfect parry, a clean dodge, Closing Line): it's Malice, and they have none (`ReinforcedStrike.earn` refuses them), so they never get the "Reinforced" cue either. Instead a Severed perfect parry staggers the attacker for `parryStagger` (1.0 s against a standard 0.5 s, at the same Slowness): the opening comes from their reflexes. Dodges stay as they are. Closing Line's arrival gives a momentum hit instead (§3.27). An existing config moves to these numbers once unless a value was changed by hand (`KegareConfigMigration`, version 3); NeoForge's own correction drops keys the file no longer needs (`strikeWindow`, `strikeDamageBonus`, `strikeKnockback`) and adds `parryStagger` when it loads.
 
 **Impact moments** (`MeleeImpact`): `DASH_BURST`, `CLEAN_DODGE`, `PARRY_PERFECT`, `GUARD_HIT`, `STAGGER`, `STRIKE_HIT`, fired on the server tick the effect is applied. Sounds and effects hang off them, and `MeleeImpact.listen` is where the Impact System (§3.23) hooks in: each moment's listener gets both fighters where it has two (a parry's attacker, a Strike's striker).
 
@@ -2315,7 +2315,7 @@ move. Everything that landed on one victim in one server tick is added up (`Impa
   The numbers in brackets are each hit's strength by the rule (`/kegare debug impact log` shows it). The weights put each
   of those where it is, with no per-move minimum. The closest calls, about 5% from the line: a full Glacial Lance (2.67) and a Total
   Swap at equal health (3.00) either side of 2.84, and Shatter Shell's push (1.86) and an iron-sword Strike (2.10) either side of
-  1.98. Configs from before the Malice input are moved to these numbers once (`KegareConfigMigration` version 4), unless edited.
+  1.98. An existing config moves to these numbers once (`KegareConfigMigration` version 4), unless edited.
 
 **What each part does** (clients, `impact/client`). The server sends one `ImpactPayload` to the attacker, the victim and everyone
 within `witnessRange` (48) of the hit: tier, where it met the body, which way it went, its color, and who attacked and who was hit.
