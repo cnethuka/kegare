@@ -25,16 +25,18 @@ import org.joml.Vector3f;
 
 /**
  * What heal-others looks like (DESIGN §3.17), drawn here as our own mesh (it shows at every effects setting: the link is the tell, and the
- * moment is what you play by). The link: a white core in a soft green glow from the healer's hand to the healed one's chest, a slow
- * brightening running along it toward them, seen by everyone. In your own first person it starts low and to the right, in front of you,
- * never at your eyes. The moment: a soft green glow behind the one who glows for you, breathing, round their silhouette; only you are told.
- * White and green, never Malice violet.
+ * moment is what you play by). The link: a white core in a soft white glow from the healer's outstretched right hand (the pose,
+ * {@code rmt_on_another}) to the healed one's chest, a slow brightening running along it toward them, seen by everyone. In your own first
+ * person it starts low and to the right, in front of you, never at your eyes. The moment: a soft green glow behind the one who glows for
+ * you, breathing, round their silhouette; only you are told (green, like the orb: it's what teaches it). Never Malice violet.
  */
 final class RmtLinkClient {
     private static final ResourceLocation WHITE = ResourceLocation.withDefaultNamespace("textures/misc/white.png");
     /** A link not heard of for this long (its healer resends every second) goes out. */
     private static final int LINK_TIMEOUT = 30;
-    private static final int GREEN = 0x5FE38A, CORE = 0xF2FFF6, GLOW = 0x8CF5A9;
+    private static final int GREEN = 0x5FE38A, CORE = 0xFFFFFF, GLOW = 0xE4EAF2;
+    /** Near-black, a soft rim round the core: so the white holds against a bright sky (at night it melts into the dark). */
+    private static final int INK = 0x0C0910;
     private static final int SEGMENTS = 20;
 
     private record Heard(int target, long at) {}
@@ -90,7 +92,10 @@ final class RmtLinkClient {
         buffers.endBatch(type);
     }
 
-    /** Where the link leaves the healer: their right hand; in your own first person, low and to the right, in front of you. */
+    /**
+     * Where the link leaves the healer: the tip of their right hand, reaching straight out (the pose: the arm a little below level and turned
+     * a little in, from a shoulder about 0.72 of the way up); in your own first person, low and to the right, in front of you.
+     */
     private static Vec3 hand(Minecraft mc, Entity caster, Camera camera, float partial) {
         if (caster == mc.getCameraEntity() && mc.options.getCameraType().isFirstPerson()) {
             Vector3f look = camera.getLookVector(), left = camera.getLeftVector(), up = camera.getUpVector();
@@ -101,10 +106,13 @@ final class RmtLinkClient {
                 caster instanceof net.minecraft.world.entity.LivingEntity l2 ? l2.yBodyRot : caster.getYRot()) * Mth.DEG_TO_RAD;
         double fx = -Mth.sin(yaw), fz = Mth.cos(yaw); // forward
         double rx = -fz, rz = fx;                     // right
-        return caster.getPosition(partial).add(fx * 0.45 + rx * 0.38, caster.getBbHeight() * 0.62, fz * 0.45 + rz * 0.38);
+        return caster.getPosition(partial).add(fx * 0.58 + rx * 0.19, caster.getBbHeight() * 0.69, fz * 0.58 + rz * 0.19);
     }
 
-    /** A camera-facing ribbon: a narrow white core, a wider green glow fading to nothing at its edges, a brightening running along. */
+    /**
+     * A camera-facing ribbon: a narrow white core over a soft near-black rim, in a wider soft white glow fading to nothing at its edges, a
+     * brightening running along.
+     */
     private static void beam(VertexConsumer out, Matrix4f m, Vec3 cam, Vec3 from, Vec3 to, float time) {
         Vec3 axis = to.subtract(from);
         if (axis.lengthSqr() < 1.0e-4) return;
@@ -114,6 +122,7 @@ final class RmtLinkClient {
             Vec3 side = axis.cross(a.subtract(cam)).normalize();
             float pulse = 0.65f + 0.35f * Mth.sin((float) (t0 * Math.PI * 4) - time * 0.35f);
             ribbon(out, m, cam, a, b, side, 0.2, GLOW, (int) (110 * pulse));
+            ribbon(out, m, cam, a, b, side, 0.09, INK, 150);
             ribbon(out, m, cam, a, b, side, 0.055, CORE, (int) (240 * pulse));
         }
     }

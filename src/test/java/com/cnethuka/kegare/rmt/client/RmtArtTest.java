@@ -22,7 +22,7 @@ import java.util.Set;
 import javax.imageio.ImageIO;
 import org.junit.jupiter.api.Test;
 
-/** Reverse Malice Technique's channel: the white flame sheet its light is drawn from, and the pose that holds the fist to the chest. */
+/** Reverse Malice Technique's white flame sheet its light is drawn from, and its two poses: the fist held to the chest, the hand reaching out. */
 class RmtArtTest {
     private static final Path ASSETS = Path.of(System.getProperty("kegare.projectDir", "."), "src/main/resources/assets/kegare");
     private static final int CELL = 16;
@@ -88,12 +88,14 @@ class RmtArtTest {
     }
 
     @Test
-    void palLoadsTheChannelPoseAsALoop() throws IOException {
+    void palLoadsBothPosesAsLoops() throws IOException {
         Map<String, Animation> loaded = UniversalAnimLoader.loadAnimations(poseFile());
-        Animation pose = loaded.get(RmtIds.ANIM_CHANNEL.getPath());
-        assertNotNull(pose, RmtIds.ANIM_CHANNEL + " is in the file");
-        assertTrue(pose.length() > 0f);
-        assertNotEquals(Animation.LoopType.PLAY_ONCE, pose.loopType(), "it's held for as long as the channel runs");
+        for (var id : java.util.List.of(RmtIds.ANIM_CHANNEL, RmtIds.ANIM_ON_ANOTHER)) {
+            Animation pose = loaded.get(id.getPath());
+            assertNotNull(pose, id + " is in the file");
+            assertTrue(pose.length() > 0f);
+            assertNotEquals(Animation.LoopType.PLAY_ONCE, pose.loopType(), id + " is held for as long as the channel runs");
+        }
     }
 
     /**
@@ -102,14 +104,18 @@ class RmtArtTest {
      */
     @Test
     void onlyTheRightArmMovesFromRest() throws IOException {
-        JsonObject pose = poseFile().getAsJsonObject("animations").getAsJsonObject(RmtIds.ANIM_CHANNEL.getPath());
-        assertEquals(Set.of("right_arm"), pose.getAsJsonObject("bones").keySet());
-        assertFalse(pose.has("beginTick"), "PlayerAnimations does the fades");
-        assertFalse(pose.has("endTick"), "PlayerAnimations does the fades");
-        JsonObject arm = pose.getAsJsonObject("bones").getAsJsonObject("right_arm");
-        for (String channel : arm.keySet()) {
-            JsonArray first = arm.getAsJsonObject(channel).getAsJsonObject("0.0").getAsJsonArray("post");
-            for (int i = 0; i < 3; i++) assertEquals(0.0, first.get(i).getAsDouble(), 1e-9, channel + " starts at rest");
+        JsonObject animations = poseFile().getAsJsonObject("animations");
+        assertEquals(Set.of(RmtIds.ANIM_CHANNEL.getPath(), RmtIds.ANIM_ON_ANOTHER.getPath()), animations.keySet());
+        for (String name : animations.keySet()) {
+            JsonObject pose = animations.getAsJsonObject(name);
+            assertEquals(Set.of("right_arm"), pose.getAsJsonObject("bones").keySet(), name);
+            assertFalse(pose.has("beginTick"), name + ": PlayerAnimations does the fades");
+            assertFalse(pose.has("endTick"), name + ": PlayerAnimations does the fades");
+            JsonObject arm = pose.getAsJsonObject("bones").getAsJsonObject("right_arm");
+            for (String channel : arm.keySet()) {
+                JsonArray first = arm.getAsJsonObject(channel).getAsJsonObject("0.0").getAsJsonArray("post");
+                for (int i = 0; i < 3; i++) assertEquals(0.0, first.get(i).getAsDouble(), 1e-9, name + " " + channel + " starts at rest");
+            }
         }
     }
 }

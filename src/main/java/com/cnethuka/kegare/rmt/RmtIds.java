@@ -14,6 +14,8 @@ public final class RmtIds {
 
     /** While it channels: the right fist held to the chest, over the heart (the light pours off that fist). */
     public static final ResourceLocation ANIM_CHANNEL = Kegare.id("rmt_channel");
+    /** While it heals another: the right arm reaching straight out toward them (the link leaves that hand). */
+    public static final ResourceLocation ANIM_ON_ANOTHER = Kegare.id("rmt_on_another");
 
     /** While it channels: white light burning off the fist held to the chest, near-black scraps rising off its edge. */
     public static final ResourceLocation FX_CHANNEL_AURA = fx("rmt_channel_aura");

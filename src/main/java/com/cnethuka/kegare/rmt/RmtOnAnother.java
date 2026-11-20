@@ -32,10 +32,15 @@ import net.neoforged.neoforge.network.PacketDistributor;
  * luck they glow soft green to you alone for a few seconds; heal them then, and you know it for good. It heals the player you're looking
  * at within {@code range}, in line of sight, at {@code othersOutput} of YOUR output (your Grade, Peak and injuries, not theirs), for
  * {@code othersCost} times RMT's price. Any player, Severed included; never a mob. Ends when they leave range or sight, on your stun or
- * freeze, or out of Malice; keeps running at their full health; shares RMT's cooldown. The tell: a white-and-green link from your hand
- * to them, seen by everyone, and a soft chime as it starts.
+ * freeze, or out of Malice; keeps running at their full health; shares RMT's cooldown. The tell: your right hand reaching out to them
+ * and a white link from it to them, seen by everyone, and a soft chime as it starts.
  */
 public final class RmtOnAnother extends SpecialAbility {
+    /** While it heals: the right arm reaching out toward the one being healed (the link itself is RmtLinkClient's). */
+    private static final com.cnethuka.kegare.api.visual.AbilityVisuals VISUALS = com.cnethuka.kegare.api.visual.AbilityVisuals.builder()
+            .channelLoop(RmtIds.ANIM_ON_ANOTHER, null)
+            .build();
+
     /** Ticks between resends of the link; a client drops a link it hasn't heard about for a little longer than this. */
     static final int LINK_RESEND_TICKS = 20;
 
@@ -60,6 +65,7 @@ public final class RmtOnAnother extends SpecialAbility {
     @Override public double cost(ServerPlayer p) { return RmtConfig.COST.get() * RmtConfig.OTHERS_COST.get(); }
     @Override public double upkeepPerSecond(ServerPlayer p) { return RmtConfig.UPKEEP.get() * RmtConfig.OTHERS_COST.get(); }
     @Override public int maxChannelTicks(ServerPlayer p) { return RmtConfig.ticks(RmtConfig.MAX_DURATION); }
+    @Override public com.cnethuka.kegare.api.visual.AbilityVisuals visuals() { return VISUALS; }
     @Override
     public Object[] descriptionArgs() {
         return new Object[] {com.cnethuka.kegare.config.ConfigText.number(RmtConfig.OTHERS_RANGE),

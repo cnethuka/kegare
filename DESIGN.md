@@ -796,7 +796,7 @@ closing it or disconnecting at any point changes nothing.
   - Holding anything in either hand (a sword, an axe, a shield, a block), every animation leaves the hands to vanilla.
     PAL's model draws what's held at its real size right by the camera, usually edge on, so a cast would swing a dark blade or
     a shield's back through the view. Only an empty-handed cast shows its gesture.
-  - `keepVanillaHands`: never shown. Melee's animations, RMT's channel, every Rime cast, Swap's Mimic, Puppet Manipulation's way back
+  - `keepVanillaHands`: never shown. Melee's animations, RMT's channel and its healing another, every Rime cast, Swap's Mimic, Puppet Manipulation's way back
     and Zip, Time Manipulation's Standstill and Stasis Field, and Severed's winded and wall crash.
   - `handsWhileLevel`: shown only while you look no more than 15° down. The arms hang from the body, which doesn't tip
     with the view, so hands at chest height sit at the bottom corners of a level view and come up into its middle as you
@@ -1173,7 +1173,7 @@ Package `com.cnethuka.kegare.innate_technique.rime`. **Rarity: RARE.** All numbe
   | Stasis Field (Decelerate) | its own palm pushed at the ground (`stasis_field_cast`), where Decelerate flicks a blade; a slowed, ringing tick (`time_manipulation.stasis`); a glassy bronze dome snapping open over a clock face laid on the ground, and projectiles crawling through it |
   | Closing Line (Blur, Severed, §3.27) | a planted push-off (`closing_line_launch`), a crack and a burst of dust and grit off the ground where they left, and a heavy launch everyone nearby hears (`severed.closing_line_launch`, loud); on arrival a skid (`closing_line_arrive`, `severed.closing_line_arrive`) and dust where they stop |
   | Black Spark (Reinforced Fists, §3.28; not a special, but it gets a tell all the same) | black and red pixel art bursting from the point of contact for one sharp moment: jagged stair-stepped bolts, black with red edges, crackling outward round a black starburst, and black and red pixels thrown out and falling; the same for everyone, at every effects setting (Vanilla: black and red dust and crit sparks), and a sharp crack (`black_spark.crack`) everyone near hears |
-  | Reverse Malice Technique, on another (RMT, §3.17) | a white-and-green link from the healer's hand to the one healed, seen by everyone for as long as it lasts (`RmtLinkClient`, our own mesh, every effects setting), and a soft chime as it starts (an amethyst chime, high) |
+  | Reverse Malice Technique, on another (RMT, §3.17) | the healer's right hand reaching out to the one healed, and a white link from that hand to them, seen by everyone for as long as it lasts (`RmtLinkClient`, our own mesh, every effects setting), and a soft chime as it starts (an amethyst chime, high) |
 
   Standstill isn't a special, but it has a tell of its own all the same: the raised watch (`standstill_cast`), the sharp click
   (`time_manipulation.stop`) and a one-frame inverted flash (at Full) for everyone inside, then the gray.
@@ -1362,15 +1362,19 @@ negative is positive energy, which is why it heals, and why it heals with white 
     The healed one is paid `healed_by_other` once.
   - **Not known:** "You don't know how to do that yet.", and nothing is paid. Known, with nobody in reach: "No one to heal within 3
     blocks."
-  - **The tell** (§3.15): a white-and-green link from your hand to them, seen by everyone, and a soft chime as it starts.
+  - **The tell** (§3.15): your right hand reaching out to them and a white link from it to them, seen by everyone, and a soft chime as
+    it starts.
   - The Sorcerer screen's details for RMT say whether you can heal others.
-  - **Look** (`client/RmtLinkClient`, our own mesh, so it draws at every effects setting: the link is the tell and
-    the glow is what you play by). The link: a camera-facing ribbon, a narrow white core in a wider
-    soft green glow fading to nothing at its edges, a slow brightening running along it toward the healed one, from the healer's right
-    hand to their chest. In your own first person it starts low and to the right in front of you, never at your eyes. The moment's glow:
-    a soft green halo drawn behind them at their middle, so their own body hides its centre and it shows round their silhouette,
-    breathing, fading out over its last second; only the eligible player is sent it. White and green, never Malice violet. The healed one
-    gets RMT's heal pulse (their own quieter version in first person).
+  - **Look.** The pose (PAL `rmt_on_another`, in `player_animations/rmt.json`): while it heals, the healer's right arm reaches straight
+    out toward the one healed, a little below level and turned a little in, easing forward and back. Only the right arm is keyed. The
+    link (`client/RmtLinkClient`, our own mesh, so it draws at every effects setting: the link is the tell and the glow is what you play
+    by): a camera-facing ribbon, a narrow white core over a soft near-black rim (so it holds against a bright sky; at night the rim melts
+    into the dark), in a wider soft white glow fading to nothing at its edges, a slow brightening running along it toward the healed one,
+    from the tip of the outstretched hand to their chest. In your own first person your hands stay vanilla's (as for the channel) and
+    the link starts low and to the right in front of you, never at your eyes. The moment's glow: a soft green halo drawn behind them at
+    their middle, so their own body hides its centre and it shows round their silhouette, breathing, fading out over its last second;
+    only the eligible player is sent it. It stays green, like the orb: green is what teaches healing, white is healing. Never Malice
+    violet. The healed one gets RMT's heal pulse (their own quieter version in first person).
 - **Visuals:** positive energy poured into the body from the hand, so you can read at a glance who is healing.
   - **The pose:** while it channels, the right fist is held to the chest (PAL `rmt_channel`, `player_animations/rmt.json`): the arm
     across the chest on a diagonal from a slightly lowered shoulder, the fist on the upper chest just under the chin, breathing a
@@ -1383,7 +1387,8 @@ negative is positive energy, which is why it heals, and why it heals with white 
     (`ClientVisuals.turnWithBody`, §3.13), so it stays on the fist.
   - **Each heal** (`rmt/rmt_heal_pulse`): a white ring spreading on the ground with a brighter one inside it, white glints rising, a
     soft white flash.
-  - **Palette:** white, with near-black; no green (the orb that teaches it is the only green, §3.18) and never Malice violet.
+  - **Palette:** white, with near-black; no green except what teaches it (the orb, §3.18, and the glow of a moment to learn healing
+    others) and never Malice violet.
   - **Vanilla:** white dust at the fist while it channels, END_ROD sparkles for each heal.
   - **Your own first person:** your hands stay vanilla's (`PlayerAnimations.keepVanillaHands`): the raised arm would only cross the
     bottom of the view, and whatever you hold stays where it was. The fist's light sits just under your camera, so you get a quieter
@@ -1504,8 +1509,9 @@ negative is positive energy, which is why it heals, and why it heals with white 
   losing it runs it back, then a second try counts; fades on time, but never under someone following it; routes stay short of walls; the payload survives
   the wire; never for Severed players (forced or rolled) or after unlocking. `OrbPathTest`: 2000 routes each stay in range, take every step, wind, and are
   random; no tick moves the orb more than a third of the look cone; the curve passes through every point. `RmtTest` also checks RMT's
-  channel holds the fist to the chest with the light on it, and `RmtArtTest` the licks' sheet (hard edges, greys only, every frame lit,
-  mostly white and flickering) and the pose file (PAL loads it as a loop; only the right arm, from rest; no fades of its own).
+  channel holds the fist to the chest with the light on it and its healing another reaches out, and `RmtArtTest` the licks' sheet (hard
+  edges, greys only, every frame lit, mostly white and flickering) and the pose file (PAL loads both poses as loops; each keys only the
+  right arm, from rest; no fades of their own).
 
 ---
 

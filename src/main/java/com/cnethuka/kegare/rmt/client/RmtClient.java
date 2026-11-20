@@ -46,7 +46,7 @@ public final class RmtClient {
         // whatever you hold stays where it was). What's at the chest is just under your camera, bright in the middle of the view as you
         // look down: you get a few small licks there that don't bloom, and of each heal only the rings on the ground. At Vanilla, nothing
         // (the health bar says it).
-        PlayerAnimations.keepVanillaHands(java.util.List.of(RmtIds.ANIM_CHANNEL));
+        PlayerAnimations.keepVanillaHands(java.util.List.of(RmtIds.ANIM_CHANNEL, RmtIds.ANIM_ON_ANOTHER));
         ClientVisuals.setFirstPersonVariant(RmtIds.FX_CHANNEL_AURA, RmtIds.FX_CHANNEL_AURA_SELF);
         ClientVisuals.setFirstPersonVariant(RmtIds.FX_HEAL_PULSE, RmtIds.FX_HEAL_PULSE_SELF);
         VanillaFallback.register(RmtIds.FX_CHANNEL_AURA_SELF, new VanillaFallback.Spec(ParticleTypes.END_ROD, 0, 0, 0.08, 0.0));
