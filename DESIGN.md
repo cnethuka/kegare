@@ -44,8 +44,6 @@ game never names a bearer, heir or killer of a secret holder.
 - **Enforced in code:** `KegareAdvancements.SECRET_IDENTITY` lists every such ID. The advancement generator forces
   them hidden and silent, and datagen fails if one ever isn't.
 - **Current:** `clear_sight`, `the_cycle_continues`, `eyes_closed`, `blinded`, `somethings_missing`.
-- **Reserved for later content:** a few more IDs are already in the set, so they're covered automatically once they're
-  generated.
 - **Adding a new secret advancement:** add its ID to the set first.
 - **Exception: a secret tab root may be visible (never announced).** A tab only appears to players who have earned
   something in it, so a visible root reveals nothing to uninvolved players. A hidden root is never drawn until
@@ -1222,11 +1220,10 @@ separate bar is filled from any of them.
   pixels) and its short name as the tooltip:
   - **Innate**: the current innate technique's abilities (the ultimate in its own V tile). A reroll replaces them.
   - **Malice**: energy techniques any Malice user can learn and keeps through rerolls: Reinforcement and Reverse Malice Technique
-    (its special still heals others). Later: other energy techniques.
-  - **Melee**: close-combat abilities: Reinforced Fists. Later: martial arts and cursed-tool moves.
+    (its special still heals others).
+  - **Melee**: close-combat abilities: Reinforced Fists.
   Every ability belongs to exactly one, declared by the ability itself (`Ability.category()`, `INNATE` unless it says otherwise), so a
-  new ability just names its own. Melee will
-  take cursed-tool moves rather than a tab of their own for now. Malice and Melee abilities live in the shared-abilities
+  new ability just names its own. Malice and Melee abilities live in the shared-abilities
   registry behind them (`SharedAbilities`, unlocks in attachment `kegare:shared_abilities`, saved, kept on death): unlocked once and
   kept through every reroll. Reverse Malice Technique is the first that's found (§3.17); some are every Malice user's, with nothing to
   unlock (`SharedAbilities.registerForEveryone`: Reinforcement, Reinforced Fists, §3.28); Severed players never have those either. A
@@ -2141,10 +2138,8 @@ player, ever, saved per player. Which category each source pays into, and how mu
 | `hit_by_technique` | Ward 1 | technique (any landing on you, damaging or not) | wired |
 | `first_legendary_fight` | Output 5 | ever | wired |
 | `survived_standstill` | Ward 5 | ever | wired |
-| `hit_by_maximum_output` | Output 5 | technique | hook only |
 | `caught_in_dominion` | Dominion 5 | technique | hook only |
 | `clashed_with_dominion` | Dominion 5 | technique | hook only |
-| `book_chapter` | Dominion 2 | chapter of a later system | hook only |
 | `unlocked_rmt` | Output 5 | ever (unlocking Reverse Malice Technique, any way; anyone who unlocked it before this paid is paid on login) | wired |
 | `rmt_survived_low` | Output 5 | ever (at 3 hearts or less during your own RMT, healed above it, alive 10 s later) | wired |
 | `healed_by_other` | Output 3 | ever (healed by another player's RMT, §3.17) | wired |
@@ -2172,8 +2167,7 @@ For shared and system unlocks, separate from a technique's own abilities.
 - **Real entries:** `kegare:rmt_heal_others` (Reverse Malice Technique on another, §3.17): RMT unlocked and Output Insight at
   `healOthersInsight`, granted only by its moment. Each Background Task registers one too (§3.31). Dominions and later unlocks plug in when built.
   Tests use a test-only entry for the rest.
-- **Severed players and the planned unlocks.** Planned defences against sure-hits can use Refinement requirements: Severed players don't need them, since
-  sure-hits can't target them. Dominions and some other planned unlocks are also not for Severed players.
+- **Severed players and Dominions.** Dominions aren't for Severed players.
 
 #### What the player sees
 - **Sorcerer screen:** the Progress view, and greyed locked tiles and cards (§3.12).
@@ -3496,8 +3490,6 @@ levels or with a negative one.
 - **Dominions:** expansion, guaranteed-hit rules, clashes, counters, burnout.
 - **What progression waits for (§3.21):** later unlocks, Dominions among them, register through `Unlocks`, their first-time sources call
   `InsightHooks`, and later systems that need a player's Grade read `Progression.getGrade`.
-- **Malice-neutralizing tools:** weapons and items that bypass, drain or cancel Malice. Possibly Severed-focused
-  gear.
 - **PvE:** the **Kegare** (hostile spirit mobs), spawning, structures, progression.
 - **Open questions:**
   - Talisman recipe cost.
