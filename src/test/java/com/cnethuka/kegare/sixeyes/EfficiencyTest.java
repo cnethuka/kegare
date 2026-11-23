@@ -22,8 +22,8 @@ import com.cnethuka.kegare.progression.Grade;
 import com.cnethuka.kegare.progression.GradeService;
 import com.cnethuka.kegare.progression.Unlocks;
 import com.cnethuka.kegare.registry.KegareItems;
-import com.cnethuka.kegare.reinforcement.ReinforcementConfig;
-import com.cnethuka.kegare.reinforcement.ReinforcementIds;
+import com.cnethuka.kegare.flow.FlowConfig;
+import com.cnethuka.kegare.flow.FlowIds;
 import com.cnethuka.kegare.rmt.Rmt;
 import com.cnethuka.kegare.rmt.RmtConfig;
 import com.cnethuka.kegare.rmt.RmtFatigue;
@@ -92,7 +92,7 @@ class EfficiencyTest {
                 SightTest.eyes(server, p, true);
                 SharedAbilityService.unlock(p, Rmt.REVERSE_MALICE_TECHNIQUE);
                 Unlocks.grant(p, BackgroundRmt.ID);
-                assertEquals(LoadoutResult.OK, LoadoutService.edit(p, LoadoutService.Action.SET, 1, 0, Optional.of(ReinforcementIds.ABILITY)));
+                assertEquals(LoadoutResult.OK, LoadoutService.edit(p, LoadoutService.Action.SET, 1, 0, Optional.of(FlowIds.ABILITY)));
                 assertEquals(LoadoutResult.OK, LoadoutService.edit(p, LoadoutService.Action.SET, 2, 0, Optional.of(RmtIds.ABILITY)));
                 double factor = Efficiency.costFactor(p);
                 assertTrue(factor < 1.0, "a new bearer already wastes less");
@@ -101,10 +101,10 @@ class EfficiencyTest {
                 InnateTechniqueService.select(p, 1);
                 double before = malice(p);
                 CastManager.handleIntent(p, CastIntent.CAST_PRESS);
-                assertEquals(before - ReinforcementConfig.ON_COST.get() * factor, malice(p), EPS, "start cost");
+                assertEquals(before - FlowConfig.ON_COST.get() * factor, malice(p), EPS, "start cost");
                 before = malice(p);
                 for (int i = 0; i < 20; i++) CastManager.tick(p);
-                assertEquals(before - ReinforcementConfig.DRAIN.get() * factor, malice(p), EPS, "upkeep");
+                assertEquals(before - FlowConfig.DRAIN.get() * factor, malice(p), EPS, "upkeep");
                 CastManager.stopAll(p, EndReason.CANCELLED);
                 InnateTechniqueService.clearCooldowns(p);
 
@@ -131,7 +131,7 @@ class EfficiencyTest {
                 // However attuned, a cast costs at least 1; and it's never free.
                 GradeService.set(p, Grade.SPECIAL_GRADE);
                 Attunement.set(p, 1.0e6);
-                assertTrue(ReinforcementConfig.ON_COST.get() * Efficiency.costFactor(p) < 1.0, "setup: below 1 by the curve");
+                assertTrue(FlowConfig.ON_COST.get() * Efficiency.costFactor(p) < 1.0, "setup: below 1 by the curve");
                 InnateTechniqueService.select(p, 1);
                 before = malice(p);
                 CastManager.handleIntent(p, CastIntent.CAST_PRESS);

@@ -5,27 +5,27 @@ import com.cnethuka.kegare.config.ConfigText;
 import com.cnethuka.kegare.malice.MaliceService;
 import com.cnethuka.kegare.progression.Grade;
 import com.cnethuka.kegare.progression.UnlockRequirements;
-import com.cnethuka.kegare.reinforcement.Reinforcement;
+import com.cnethuka.kegare.flow.Flow;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerPlayer;
 
 /**
- * Background Reinforcement (DESIGN §3.31): Reinforcement (§3.16) kept up without thinking. Unlocked at Grade 3 (kept once earned).
+ * Background Flow (DESIGN §3.31): Flow (§3.16) kept up without thinking. Unlocked at Grade 3 (kept once earned).
  * While it runs you have {@code backgroundStrength} (0.4) of the ability's damage reductions and knockback resistance, for a smaller
- * drain. With the Reinforcement ability on too they don't stack: the stronger applies ({@link Reinforcement#strength}). Its aura is the
+ * drain. With the Flow ability on too they don't stack: the stronger applies ({@link Flow#strength}). Its aura is the
  * ability's, much calmer and fainter: a thin flow with a light outline, still shown to everyone.
  */
-public final class BackgroundReinforcement extends BackgroundTask {
-    public static final ResourceLocation ID = Kegare.id("background_reinforcement");
-    public static BackgroundReinforcement TASK;
+public final class BackgroundFlow extends BackgroundTask {
+    public static final ResourceLocation ID = Kegare.id("background_flow");
+    public static BackgroundFlow TASK;
 
-    private BackgroundReinforcement() {
+    private BackgroundFlow() {
         super(ID);
     }
 
     static void init() {
-        TASK = BackgroundTasks.register(new BackgroundReinforcement());
-        Reinforcement.addSource(player -> BackgroundTaskService.isRunning(player, ID) ? BackgroundTaskConfig.REINFORCEMENT_STRENGTH.get() : 0.0);
+        TASK = BackgroundTasks.register(new BackgroundFlow());
+        Flow.addSource(player -> BackgroundTaskService.isRunning(player, ID) ? BackgroundTaskConfig.FLOW_STRENGTH.get() : 0.0);
     }
 
     @Override
@@ -35,21 +35,21 @@ public final class BackgroundReinforcement extends BackgroundTask {
 
     @Override
     public double drainPerSecond(ServerPlayer player) {
-        return BackgroundTaskConfig.REINFORCEMENT_DRAIN.get();
+        return BackgroundTaskConfig.FLOW_DRAIN.get();
     }
 
     @Override
     public Object[] descriptionArgs() {
-        return new Object[] {ConfigText.percent(BackgroundTaskConfig.REINFORCEMENT_STRENGTH)};
+        return new Object[] {ConfigText.percent(BackgroundTaskConfig.FLOW_STRENGTH)};
     }
 
     @Override
     public void tick(ServerPlayer player) {
-        Reinforcement.update(player); // rewrites the modifier only when the strength changes
+        Flow.update(player); // rewrites the modifier only when the strength changes
     }
 
     @Override
     public void stopped(ServerPlayer player) {
-        Reinforcement.update(player);
+        Flow.update(player);
     }
 }

@@ -12,8 +12,8 @@ public final class BackgroundTaskEvents {
 
     public static void init() {
         BackgroundRmt.init();
-        BackgroundReinforcement.init();
-        SustainedFlow.init();
+        BackgroundFlow.init();
+        SteadyOutput.init();
         NeoForge.EVENT_BUS.addListener((PlayerTickEvent.Post e) -> {
             if (e.getEntity() instanceof ServerPlayer p && p.isAlive()) BackgroundTaskService.tick(p);
         });

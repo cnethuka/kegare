@@ -21,9 +21,9 @@ public final class LoadoutData {
             Codec.STRING.listOf().optionalFieldOf("slots", List.of()).forGetter(d -> d.slots.stream()
                     .map(s -> s.map(ResourceLocation::toString).orElse("")).toList()),
             ResourceLocation.CODEC.optionalFieldOf("built_for").forGetter(d -> Optional.ofNullable(d.builtFor)),
-            ResourceLocation.CODEC.listOf().optionalFieldOf("known", List.of()).forGetter(d -> List.copyOf(d.known))
+            com.cnethuka.kegare.registry.RenamedIds.CODEC.listOf().optionalFieldOf("known", List.of()).forGetter(d -> List.copyOf(d.known))
     ).apply(i, (slots, builtFor, known) -> new LoadoutData(slots.stream()
-            .map(s -> s.isEmpty() ? Optional.<ResourceLocation>empty() : Optional.ofNullable(ResourceLocation.tryParse(s))).toList(),
+            .map(s -> s.isEmpty() ? Optional.<ResourceLocation>empty() : Optional.ofNullable(ResourceLocation.tryParse(s)).map(com.cnethuka.kegare.registry.RenamedIds::current)).toList(),
             builtFor.orElse(null), known)));
 
     final List<Optional<ResourceLocation>> slots;

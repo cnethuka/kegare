@@ -19,7 +19,7 @@ import com.cnethuka.kegare.innatetechnique.InnateTechniqueService;
 import com.cnethuka.kegare.malice.MaliceService;
 import com.cnethuka.kegare.progression.Grade;
 import com.cnethuka.kegare.progression.GradeService;
-import com.cnethuka.kegare.reinforcement.ReinforcementIds;
+import com.cnethuka.kegare.flow.FlowIds;
 import com.cnethuka.kegare.loadout.LoadoutService;
 import com.cnethuka.kegare.loadout.LoadoutResult;
 import java.lang.reflect.RecordComponent;
@@ -67,16 +67,16 @@ class ReadsTest {
 
                 // The one at the crosshair gets full detail: a charge in progress, a toggle, a cooldown.
                 assertSame(target, Reads.focus(bearer), "the focus is the one at the crosshair");
-                assertEquals(LoadoutResult.OK, LoadoutService.edit(target, LoadoutService.Action.SET, 3, 0, Optional.of(ReinforcementIds.ABILITY)));
+                assertEquals(LoadoutResult.OK, LoadoutService.edit(target, LoadoutService.Action.SET, 3, 0, Optional.of(FlowIds.ABILITY)));
                 assertEquals(LoadoutResult.OK, LoadoutService.edit(target, LoadoutService.Action.SET, 4, 0, Optional.of(Rime.GLACIAL_LANCE.id())));
                 InnateTechniqueService.select(target, 3);
-                CastManager.handleIntent(target, CastIntent.CAST_PRESS); // Reinforcement on
+                CastManager.handleIntent(target, CastIntent.CAST_PRESS); // Flow on
                 InnateTechniqueService.startCooldown(target, Rime.RIME_SHELL);
                 InnateTechniqueService.select(target, 4);
                 CastManager.handleIntent(target, CastIntent.CAST_PRESS); // charging the lance
                 for (int i = 0; i < 5; i++) CastManager.tick(target);
                 ReadsPayload.Body full = Reads.detail(target).body().orElseThrow();
-                assertTrue(full.toggles().contains(ReinforcementIds.ABILITY), "active toggles");
+                assertTrue(full.toggles().contains(FlowIds.ABILITY), "active toggles");
                 assertTrue(full.cooldowns().stream().anyMatch(c -> c.seconds() > 0), "cooldowns");
                 ReadsPayload.Cast charging = full.cast().orElseThrow();
                 assertEquals(Rime.GLACIAL_LANCE.id(), charging.ability(), "what they're charging");
@@ -139,8 +139,8 @@ class ReadsTest {
                 FreezeService.addStacks(target, 2, null);
                 CombatHelper.stun(target, 30);
                 Burnout.apply(target, 200);
-                // Reinforcement on: its knockback resistance is in the attribute.
-                assertEquals(LoadoutResult.OK, LoadoutService.edit(target, LoadoutService.Action.SET, 3, 0, Optional.of(ReinforcementIds.ABILITY)));
+                // Flow on: its knockback resistance is in the attribute.
+                assertEquals(LoadoutResult.OK, LoadoutService.edit(target, LoadoutService.Action.SET, 3, 0, Optional.of(FlowIds.ABILITY)));
                 CombatHelper.clearStun(target);
                 InnateTechniqueService.select(target, 3);
                 CastManager.handleIntent(target, CastIntent.CAST_PRESS);
@@ -157,7 +157,7 @@ class ReadsTest {
                 assertTrue(v.armor() >= 6, "the chestplate counts: " + v.armor());
                 assertEquals(target.getAttributeValue(Attributes.ARMOR_TOUGHNESS), v.toughness(), 1e-6);
                 assertEquals(target.getAttributeValue(Attributes.KNOCKBACK_RESISTANCE), v.knockbackResistance(), 1e-6);
-                assertTrue(v.knockbackResistance() > 0, "Reinforcement's resistance shows: " + v.knockbackResistance());
+                assertTrue(v.knockbackResistance() > 0, "Flow's resistance shows: " + v.knockbackResistance());
                 assertEquals(target.getAttributeValue(Attributes.ATTACK_DAMAGE), v.attackDamage(), 1e-6, "the sword and Strength, counted");
                 assertTrue(v.attackDamage() > 5, "more than a fist: " + v.attackDamage());
                 assertEquals(target.getAttributeValue(Attributes.ATTACK_SPEED), v.attackSpeed(), 1e-6);
@@ -175,7 +175,7 @@ class ReadsTest {
                 assertTrue(status.freezeStacks() > 0);
                 assertEquals(CombatHelper.stunTicksRemaining(target), status.stunTicks(), "stunned");
                 assertEquals(Burnout.remaining(target), status.burnoutTicks(), "Burnout");
-                assertTrue(body.toggles().contains(ReinforcementIds.ABILITY), "what they've switched on, as before");
+                assertTrue(body.toggles().contains(FlowIds.ABILITY), "what they've switched on, as before");
 
                 // Through the wire, exactly.
                 net.minecraft.network.FriendlyByteBuf buf = new net.minecraft.network.FriendlyByteBuf(io.netty.buffer.Unpooled.buffer());

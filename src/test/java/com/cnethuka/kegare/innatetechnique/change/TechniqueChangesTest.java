@@ -211,7 +211,7 @@ class TechniqueChangesTest {
         unknownTechnique.add(id("no_technique"), null, plain("lost", 1, log), 1, null, "a");
         assertThrows(IllegalStateException.class, () -> unknownTechnique.checkAllFound(List.of(RIME), Set.of()));
         ChangeSet shared = new ChangeSet();
-        shared.tweak(com.cnethuka.kegare.reinforcement.Reinforcement.REINFORCEMENT.id(), new AbilityTweak() {}, "a");
+        shared.tweak(com.cnethuka.kegare.flow.Flow.FLOW.id(), new AbilityTweak() {}, "a");
         Set<ResourceLocation> every = Rime.RIME.get().everyAbility().stream().map(Ability::id).collect(Collectors.toSet());
         IllegalStateException sharedOne = assertThrows(IllegalStateException.class, () -> shared.checkAllFound(List.of(RIME), every));
         assertTrue(sharedOne.getMessage().contains("shared abilities"), sharedOne.getMessage());

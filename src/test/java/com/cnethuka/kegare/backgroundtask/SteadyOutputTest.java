@@ -23,9 +23,9 @@ import com.cnethuka.kegare.malice.MaliceService;
 import com.cnethuka.kegare.player.BirthService;
 import com.cnethuka.kegare.progression.RefinementService;
 import com.cnethuka.kegare.progression.Unlocks;
-import com.cnethuka.kegare.reinforcement.Reinforcement;
-import com.cnethuka.kegare.reinforcement.ReinforcementConfig;
-import com.cnethuka.kegare.reinforcement.ReinforcementIds;
+import com.cnethuka.kegare.flow.Flow;
+import com.cnethuka.kegare.flow.FlowConfig;
+import com.cnethuka.kegare.flow.FlowIds;
 import com.cnethuka.kegare.rmt.Rmt;
 import com.cnethuka.kegare.rmt.RmtConfig;
 import com.cnethuka.kegare.rmt.RmtIds;
@@ -37,9 +37,9 @@ import net.neoforged.testframework.junit.EphemeralTestServerProvider;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 
-/** Sustained Flow (DESIGN §3.31): every active toggle's upkeep, never a start cost, a channel or another Background Task. */
+/** Steady Output (DESIGN §3.31): every active toggle's upkeep, never a start cost, a channel or another Background Task. */
 @ExtendWith(EphemeralTestServerProvider.class)
-class SustainedFlowTest {
+class SteadyOutputTest {
     private static final double EPS = 1.0e-3;
 
     static ServerPlayer player(MinecraftServer server, String name, net.minecraft.core.Holder<com.cnethuka.kegare.api.technique.InnateTechnique> technique) {
@@ -53,11 +53,11 @@ class SustainedFlowTest {
     }
 
     private static void flow(ServerPlayer p, boolean on) {
-        Unlocks.grant(p, SustainedFlow.ID);
-        if (BackgroundTaskService.slot(p, 1).task().isEmpty()) assertEquals(BackgroundTaskResult.OK, BackgroundTaskService.set(p, 1, SustainedFlow.ID));
+        Unlocks.grant(p, SteadyOutput.ID);
+        if (BackgroundTaskService.slot(p, 1).task().isEmpty()) assertEquals(BackgroundTaskResult.OK, BackgroundTaskService.set(p, 1, SteadyOutput.ID));
         assertEquals(BackgroundTaskResult.OK, BackgroundTaskService.setOn(p, 1, on));
         BackgroundTaskService.tick(p);
-        assertEquals(on, BackgroundTaskService.isRunning(p, SustainedFlow.ID), "setup: Sustained Flow " + (on ? "on" : "off"));
+        assertEquals(on, BackgroundTaskService.isRunning(p, SteadyOutput.ID), "setup: Steady Output " + (on ? "on" : "off"));
     }
 
     private static double malice(ServerPlayer p) {
@@ -70,12 +70,12 @@ class SustainedFlowTest {
             try {
                 ServerPlayer p = player(server, "flow_unlock", Rime.RIME);
                 RefinementService.setLevel(p, 4);
-                assertFalse(Unlocks.has(p, SustainedFlow.ID), "Refinement 4: locked");
+                assertFalse(Unlocks.has(p, SteadyOutput.ID), "Refinement 4: locked");
                 RefinementService.setLevel(p, 5);
-                assertTrue(Unlocks.has(p, SustainedFlow.ID), "Refinement 5: unlocked");
+                assertTrue(Unlocks.has(p, SteadyOutput.ID), "Refinement 5: unlocked");
                 InnateTechniqueService.setInnateTechnique(p, Swap.SWAP.get());
                 assertEquals(0, RefinementService.level(p), "setup: a reroll resets Refinement");
-                assertTrue(Unlocks.has(p, SustainedFlow.ID), "kept once earned, even after a reroll");
+                assertTrue(Unlocks.has(p, SteadyOutput.ID), "kept once earned, even after a reroll");
             } finally {
                 TestServer.removePlayers(server);
             }
@@ -86,10 +86,10 @@ class SustainedFlowTest {
     void everyToggleDrainsLessWhileItRuns(MinecraftServer server) throws Exception {
         TestServer.onServerThread(server, () -> {
             try {
-                double keep = 1.0 - BackgroundTaskConfig.FLOW_REDUCTION.get();
+                double keep = 1.0 - BackgroundTaskConfig.UPKEEP_REDUCTION.get();
                 ServerPlayer rime = player(server, "flow_rime", Rime.RIME);
                 ServerPlayer time = player(server, "flow_time", TimeManipulation.TIME_MANIPULATION);
-                Ability[][] toggles = {{Fists.REINFORCED_FISTS, Reinforcement.REINFORCEMENT, Rime.RIME_SHELL}, {TimeManipulation.ACCELERATE}};
+                Ability[][] toggles = {{Fists.REINFORCED_FISTS, Flow.FLOW, Rime.RIME_SHELL}, {TimeManipulation.ACCELERATE}};
                 ServerPlayer[] players = {rime, time};
                 for (int i = 0; i < players.length; i++) {
                     ServerPlayer p = players[i];
@@ -113,11 +113,11 @@ class SustainedFlowTest {
     void theRealDrainNeverAStartCostAChannelOrATask(MinecraftServer server) throws Exception {
         TestServer.onServerThread(server, () -> {
             try {
-                double keep = 1.0 - BackgroundTaskConfig.FLOW_REDUCTION.get();
-                double flowDrain = BackgroundTaskConfig.FLOW_DRAIN.get();
+                double keep = 1.0 - BackgroundTaskConfig.UPKEEP_REDUCTION.get();
+                double flowDrain = BackgroundTaskConfig.OUTPUT_DRAIN.get();
                 ServerPlayer p = player(server, "flow_drain", Rime.RIME);
                 assertEquals(LoadoutResult.OK, LoadoutService.edit(p, LoadoutService.Action.SET, 1, 0, Optional.of(FistsIds.ABILITY)));
-                assertEquals(LoadoutResult.OK, LoadoutService.edit(p, LoadoutService.Action.SET, 2, 0, Optional.of(ReinforcementIds.ABILITY)));
+                assertEquals(LoadoutResult.OK, LoadoutService.edit(p, LoadoutService.Action.SET, 2, 0, Optional.of(FlowIds.ABILITY)));
                 flow(p, true);
 
                 // Start costs in full.
@@ -128,7 +128,7 @@ class SustainedFlowTest {
                 before = malice(p);
                 InnateTechniqueService.select(p, 2);
                 CastManager.handleIntent(p, CastIntent.CAST_PRESS);
-                assertEquals(before - ReinforcementConfig.ON_COST.get(), malice(p), EPS, "Reinforcement's onCost in full");
+                assertEquals(before - FlowConfig.ON_COST.get(), malice(p), EPS, "Flow's onCost in full");
 
                 // A second with both on and the flow running: their upkeep 30% less, the flow's own drain on top.
                 before = malice(p);
@@ -136,7 +136,7 @@ class SustainedFlowTest {
                     CastManager.tick(p);
                     BackgroundTaskService.tick(p);
                 }
-                assertEquals(before - (FistsConfig.DRAIN.get() + ReinforcementConfig.DRAIN.get()) * keep - flowDrain, malice(p), EPS,
+                assertEquals(before - (FistsConfig.DRAIN.get() + FlowConfig.DRAIN.get()) * keep - flowDrain, malice(p), EPS,
                         "the toggles' upkeep less flowReduction, plus its own drain");
                 InnateTechniqueService.select(p, 1);
                 CastManager.handleIntent(p, CastIntent.CAST_PRESS);

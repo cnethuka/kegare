@@ -16,7 +16,7 @@ import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.phys.Vec3;
 
 /**
- * Reinforcement, held: the first moments are the perfect window, and after that it's a guard that drains Malice. Letting go costs
+ * Flow, held: the first moments are the perfect window, and after that it's a guard that drains Malice. Letting go costs
  * a recovery with no parry at all, so mashing it leaves you open. All of it is timed here on the server, from when the press
  * arrived, and a modified client can't get a second window without sitting out the recovery.
  */

@@ -14,7 +14,7 @@ import net.minecraft.resources.ResourceLocation;
  */
 public final class SharedAbilityData {
     public static final Codec<SharedAbilityData> CODEC = RecordCodecBuilder.create(i -> i.group(
-            ResourceLocation.CODEC.listOf().optionalFieldOf("unlocked", List.of()).forGetter(d -> List.copyOf(d.unlocked)),
+            com.cnethuka.kegare.registry.RenamedIds.CODEC.listOf().optionalFieldOf("unlocked", List.of()).forGetter(d -> List.copyOf(d.unlocked)),
             Codec.LONG.optionalFieldOf("last_orb_roll", Long.MIN_VALUE).forGetter(d -> d.lastOrbRoll)
     ).apply(i, SharedAbilityData::new));
 

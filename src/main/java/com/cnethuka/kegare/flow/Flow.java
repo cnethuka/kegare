@@ -1,4 +1,4 @@
-package com.cnethuka.kegare.reinforcement;
+package com.cnethuka.kegare.flow;
 
 import com.cnethuka.kegare.loadout.SharedAbilities;
 import com.cnethuka.kegare.melee.MeleeHits;
@@ -21,20 +21,20 @@ import net.neoforged.neoforge.event.server.ServerStoppedEvent;
 import net.neoforged.neoforge.event.tick.PlayerTickEvent;
 
 /**
- * Reinforcement (DESIGN §3.16): what it does to the body. Its strength is 1 while the ability is on; other sources (Background
- * Reinforcement, §3.31) offer a strength of their own, and the strongest applies: they don't stack. At strength {@code s} you take
+ * Flow (DESIGN §3.16): what it does to the body. Its strength is 1 while the ability is on; other sources (Background
+ * Flow, §3.31) offer a strength of their own, and the strongest applies: they don't stack. At strength {@code s} you take
  * {@code reductionPhysical × s} less physical damage, {@code reductionTechnique × s} less technique damage, and have
  * {@code knockbackResistance × s} more knockback resistance. The void, /kill and starving are untouched.
  */
-public final class Reinforcement {
-    public static final ReinforcementAbility REINFORCEMENT = SharedAbilities.registerForEveryone(new ReinforcementAbility());
-    /** Other sources of reinforcement (Background Reinforcement): each says how strong it is on a player right now, 0 to 1. */
+public final class Flow {
+    public static final FlowAbility FLOW = SharedAbilities.registerForEveryone(new FlowAbility());
+    /** Other sources of Flow (Background Flow): each says how strong it is on a player right now, 0 to 1. */
     private static final List<ToDoubleFunction<ServerPlayer>> SOURCES = new CopyOnWriteArrayList<>();
 
-    private Reinforcement() {}
+    private Flow() {}
 
     public static void init() {
-        NeoForge.EVENT_BUS.addListener(EventPriority.LOW, Reinforcement::onDamage);
+        NeoForge.EVENT_BUS.addListener(EventPriority.LOW, Flow::onDamage);
         NeoForge.EVENT_BUS.addListener((PlayerTickEvent.Post e) -> {
             if (!(e.getEntity() instanceof ServerPlayer p)) return;
             if (p.tickCount % 10 == 0) update(p);
@@ -59,7 +59,7 @@ public final class Reinforcement {
 
     /** How reinforced they are right now: 1 with the ability on, else the strongest other source, else 0. */
     public static double strength(ServerPlayer player) {
-        double s = ReinforcementAbility.isOn(player) ? 1.0 : 0.0;
+        double s = FlowAbility.isOn(player) ? 1.0 : 0.0;
         for (ToDoubleFunction<ServerPlayer> source : SOURCES) s = Math.max(s, source.applyAsDouble(player));
         return Math.max(0, Math.min(1, s));
     }
@@ -78,16 +78,16 @@ public final class Reinforcement {
     private static void set(ServerPlayer player, double s) {
         AttributeInstance kb = player.getAttribute(Attributes.KNOCKBACK_RESISTANCE);
         if (kb == null) return;
-        double amount = ReinforcementConfig.KNOCKBACK_RESISTANCE.get() * Math.max(0, Math.min(1, s));
-        AttributeModifier current = kb.getModifier(ReinforcementIds.KNOCKBACK_MODIFIER);
+        double amount = FlowConfig.KNOCKBACK_RESISTANCE.get() * Math.max(0, Math.min(1, s));
+        AttributeModifier current = kb.getModifier(FlowIds.KNOCKBACK_MODIFIER);
         if (amount <= 0) {
-            if (current != null) kb.removeModifier(ReinforcementIds.KNOCKBACK_MODIFIER);
+            if (current != null) kb.removeModifier(FlowIds.KNOCKBACK_MODIFIER);
         } else if (current == null || Math.abs(current.amount() - amount) > 1.0e-9) { // only when it changes: no resend every tick
-            kb.addOrUpdateTransientModifier(new AttributeModifier(ReinforcementIds.KNOCKBACK_MODIFIER, amount, AttributeModifier.Operation.ADD_VALUE));
+            kb.addOrUpdateTransientModifier(new AttributeModifier(FlowIds.KNOCKBACK_MODIFIER, amount, AttributeModifier.Operation.ADD_VALUE));
         }
     }
 
-    /** The strongest source other than the ability (Background Reinforcement), 0 if none. */
+    /** The strongest source other than the ability (Background Flow), 0 if none. */
     public static double backgroundStrength(ServerPlayer player) {
         double s = 0;
         for (ToDoubleFunction<ServerPlayer> source : SOURCES) s = Math.max(s, source.applyAsDouble(player));
@@ -106,7 +106,7 @@ public final class Reinforcement {
     /** The full-strength reduction for a hit of this kind. */
     static double reduction(DamageSource source, ServerLevel level) {
         if (source.is(DamageTypeTags.BYPASSES_INVULNERABILITY) || source.is(DamageTypes.STARVE)) return 0;
-        return MeleeHits.of(source, level) == MeleeHits.Kind.TECHNIQUE ? ReinforcementConfig.REDUCTION_TECHNIQUE.get()
-                : ReinforcementConfig.REDUCTION_PHYSICAL.get();
+        return MeleeHits.of(source, level) == MeleeHits.Kind.TECHNIQUE ? FlowConfig.REDUCTION_TECHNIQUE.get()
+                : FlowConfig.REDUCTION_PHYSICAL.get();
     }
 }

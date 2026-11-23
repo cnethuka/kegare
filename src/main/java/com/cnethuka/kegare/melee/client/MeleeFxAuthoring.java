@@ -24,7 +24,7 @@ import org.joml.Vector3f;
 
 /**
  * DEV TOOL ({@code /kegare debug fx export}). The shared melee layer's effects.
- * Dash is air and pale white (Kinetic Manipulation), Parry is white on gold (Reinforcement). A ready fist and its Strike are the
+ * Dash is air and pale white (Kinetic Manipulation), Parry is white on gold (Flow). A ready fist and its Strike are the
  * exception, authored white and tinted at runtime with the Malice color the server says to show. All short and small: they say what
  * happened, at a glance, and get out of the way.
  */

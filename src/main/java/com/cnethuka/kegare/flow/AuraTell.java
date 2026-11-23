@@ -1,4 +1,4 @@
-package com.cnethuka.kegare.reinforcement;
+package com.cnethuka.kegare.flow;
 
 import com.cnethuka.kegare.combat.CombatHelper;
 import com.cnethuka.kegare.api.technique.InnateTechnique;
@@ -19,7 +19,7 @@ import net.minecraft.world.entity.Entity;
 import net.neoforged.neoforge.network.PacketDistributor;
 
 /**
- * What flows round a player's body, sent to each client as that client should see it: Reinforcement's aura (DESIGN §3.16) is open,
+ * What flows round a player's body, sent to each client as that client should see it: Flow's aura (DESIGN §3.16) is open,
  * so everyone sees it, the wearer in their own Malice color and everyone else in the color of the face they wear, as for the ready
  * fist ({@link MeleeTell}), so a disguise is never given away. Each viewer is sent their own copy, since some things show only to some
  * eyes ({@link #addShimmer}). Sent when it changes, checked every tick while there's something to show.
@@ -48,8 +48,8 @@ public final class AuraTell {
     /** What's on them for everyone: the full aura or the calm one, and whether they're in a fight. */
     static int flags(ServerPlayer player) {
         int flags = 0;
-        if (ReinforcementAbility.isOn(player)) flags |= AuraPayload.FULL;
-        else if (Reinforcement.backgroundStrength(player) > 0) flags |= AuraPayload.CALM;
+        if (FlowAbility.isOn(player)) flags |= AuraPayload.FULL;
+        else if (Flow.backgroundStrength(player) > 0) flags |= AuraPayload.CALM;
         if (flags != 0 && CombatHelper.isInCombat(player)) flags |= AuraPayload.FIGHT;
         return flags;
     }

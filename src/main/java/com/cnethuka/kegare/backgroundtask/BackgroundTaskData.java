@@ -18,7 +18,7 @@ public final class BackgroundTaskData {
     public record Slot(Optional<ResourceLocation> task, boolean on) {
         public static final Slot EMPTY = new Slot(Optional.empty(), false);
         static final Codec<Slot> CODEC = RecordCodecBuilder.create(i -> i.group(
-                ResourceLocation.CODEC.optionalFieldOf("task").forGetter(Slot::task),
+                com.cnethuka.kegare.registry.RenamedIds.CODEC.optionalFieldOf("task").forGetter(Slot::task),
                 Codec.BOOL.optionalFieldOf("on", false).forGetter(Slot::on)).apply(i, Slot::new));
     }
 

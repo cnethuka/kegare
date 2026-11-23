@@ -10,7 +10,7 @@ import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.phys.Vec3;
 
 /**
- * Reinforcement, spent: no key and no slot. A perfect parry or a clean dodge readies it, and the next melee hit in time lands
+ * Flow, spent: no key and no slot. A perfect parry or a clean dodge readies it, and the next melee hit in time lands
  * harder and pays by itself. It doesn't stack: earning it again only restarts the clock.
  */
 public final class ReinforcedStrike {

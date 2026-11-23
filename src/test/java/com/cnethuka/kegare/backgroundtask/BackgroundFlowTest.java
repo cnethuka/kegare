@@ -17,11 +17,11 @@ import com.cnethuka.kegare.player.BirthService;
 import com.cnethuka.kegare.progression.Grade;
 import com.cnethuka.kegare.progression.GradeService;
 import com.cnethuka.kegare.progression.Unlocks;
-import com.cnethuka.kegare.reinforcement.AuraPayload;
-import com.cnethuka.kegare.reinforcement.Reinforcement;
-import com.cnethuka.kegare.reinforcement.ReinforcementAbility;
-import com.cnethuka.kegare.reinforcement.ReinforcementConfig;
-import com.cnethuka.kegare.reinforcement.ReinforcementIds;
+import com.cnethuka.kegare.flow.AuraPayload;
+import com.cnethuka.kegare.flow.Flow;
+import com.cnethuka.kegare.flow.FlowAbility;
+import com.cnethuka.kegare.flow.FlowConfig;
+import com.cnethuka.kegare.flow.FlowIds;
 import java.util.Optional;
 import java.util.OptionalInt;
 import net.minecraft.server.MinecraftServer;
@@ -32,9 +32,9 @@ import net.neoforged.testframework.junit.EphemeralTestServerProvider;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 
-/** Background Reinforcement (DESIGN §3.31): Grade 3, a share of the ability's strength, never stacking with it. */
+/** Background Flow (DESIGN §3.31): Grade 3, a share of the ability's strength, never stacking with it. */
 @ExtendWith(EphemeralTestServerProvider.class)
-class BackgroundReinforcementTest {
+class BackgroundFlowTest {
     private static final double EPS = 1.0e-3;
 
     static ServerPlayer player(MinecraftServer server, String name) {
@@ -61,12 +61,12 @@ class BackgroundReinforcementTest {
         TestServer.onServerThread(server, () -> {
             try {
                 ServerPlayer p = player(server, "bgreinf_grade");
-                assertFalse(Unlocks.has(p, BackgroundReinforcement.ID), "Grade 4: locked");
-                assertEquals(BackgroundTaskResult.LOCKED, BackgroundTaskService.set(p, 0, BackgroundReinforcement.ID));
+                assertFalse(Unlocks.has(p, BackgroundFlow.ID), "Grade 4: locked");
+                assertEquals(BackgroundTaskResult.LOCKED, BackgroundTaskService.set(p, 0, BackgroundFlow.ID));
                 GradeService.set(p, Grade.GRADE_3);
-                assertTrue(Unlocks.has(p, BackgroundReinforcement.ID), "Grade 3: unlocked");
+                assertTrue(Unlocks.has(p, BackgroundFlow.ID), "Grade 3: unlocked");
                 InnateTechniqueService.setInnateTechnique(p, com.cnethuka.kegare.innate_technique.swap.Swap.SWAP.get());
-                assertTrue(Unlocks.has(p, BackgroundReinforcement.ID), "kept through a reroll");
+                assertTrue(Unlocks.has(p, BackgroundFlow.ID), "kept through a reroll");
             } finally {
                 TestServer.removePlayers(server);
             }
@@ -80,43 +80,43 @@ class BackgroundReinforcementTest {
                 ServerPlayer p = player(server, "bgreinf_strength");
                 ServerPlayer caster = player(server, "bgreinf_caster");
                 double kb = p.getAttributeValue(Attributes.KNOCKBACK_RESISTANCE);
-                double s = BackgroundTaskConfig.REINFORCEMENT_STRENGTH.get();
-                assertTrue(BackgroundTaskConfig.REINFORCEMENT_DRAIN.get() < ReinforcementConfig.DRAIN.get(), "a smaller drain");
+                double s = BackgroundTaskConfig.FLOW_STRENGTH.get();
+                assertTrue(BackgroundTaskConfig.FLOW_DRAIN.get() < FlowConfig.DRAIN.get(), "a smaller drain");
 
                 // Slots first: neither the bar nor the tasks change once the hits below have put them in a fight.
-                assertEquals(LoadoutResult.OK, LoadoutService.edit(p, LoadoutService.Action.SET, 1, 0, Optional.of(ReinforcementIds.ABILITY)));
-                Unlocks.grant(p, BackgroundReinforcement.ID);
-                assertEquals(BackgroundTaskResult.OK, BackgroundTaskService.set(p, 0, BackgroundReinforcement.ID));
+                assertEquals(LoadoutResult.OK, LoadoutService.edit(p, LoadoutService.Action.SET, 1, 0, Optional.of(FlowIds.ABILITY)));
+                Unlocks.grant(p, BackgroundFlow.ID);
+                assertEquals(BackgroundTaskResult.OK, BackgroundTaskService.set(p, 0, BackgroundFlow.ID));
                 double malice = MaliceService.get(p).current();
                 for (int i = 0; i < 20; i++) BackgroundTaskService.tick(p);
-                assertEquals(malice - BackgroundTaskConfig.REINFORCEMENT_DRAIN.get(), MaliceService.get(p).current(), EPS, "its drain");
-                assertEquals(s, Reinforcement.strength(p), EPS, "backgroundStrength");
-                assertEquals(kb + ReinforcementConfig.KNOCKBACK_RESISTANCE.get() * s, p.getAttributeValue(Attributes.KNOCKBACK_RESISTANCE), EPS,
+                assertEquals(malice - BackgroundTaskConfig.FLOW_DRAIN.get(), MaliceService.get(p).current(), EPS, "its drain");
+                assertEquals(s, Flow.strength(p), EPS, "backgroundStrength");
+                assertEquals(kb + FlowConfig.KNOCKBACK_RESISTANCE.get() * s, p.getAttributeValue(Attributes.KNOCKBACK_RESISTANCE), EPS,
                         "that share of the knockback resistance");
-                assertEquals(4f * (1 - ReinforcementConfig.REDUCTION_PHYSICAL.get() * s), taken(p, p.damageSources().generic()), EPS,
+                assertEquals(4f * (1 - FlowConfig.REDUCTION_PHYSICAL.get() * s), taken(p, p.damageSources().generic()), EPS,
                         "of the physical reduction");
-                assertEquals(4f * (1 - ReinforcementConfig.REDUCTION_TECHNIQUE.get() * s), taken(p, RimeDamage.source(p.level(), caster, caster)),
+                assertEquals(4f * (1 - FlowConfig.REDUCTION_TECHNIQUE.get() * s), taken(p, RimeDamage.source(p.level(), caster, caster)),
                         EPS, "of the technique reduction");
                 int look = AuraPayload.FULL | AuraPayload.CALM; // (the hits above put them in a fight, which only adds FIGHT)
-                assertEquals(AuraPayload.CALM, com.cnethuka.kegare.reinforcement.AuraTellAccess.flags(p) & look, "the calm aura, shown to everyone");
+                assertEquals(AuraPayload.CALM, com.cnethuka.kegare.flow.AuraTellAccess.flags(p) & look, "the calm aura, shown to everyone");
 
                 // The ability on as well: the stronger applies, they don't stack.
                 InnateTechniqueService.select(p, 1);
                 CastManager.handleIntent(p, CastIntent.CAST_PRESS);
-                assertTrue(ReinforcementAbility.isOn(p), "setup: the ability on");
+                assertTrue(FlowAbility.isOn(p), "setup: the ability on");
                 BackgroundTaskService.tick(p);
-                assertEquals(1.0, Reinforcement.strength(p), EPS, "the ability's, not more");
-                assertEquals(kb + ReinforcementConfig.KNOCKBACK_RESISTANCE.get(), p.getAttributeValue(Attributes.KNOCKBACK_RESISTANCE), EPS, "no stacking");
-                assertEquals(4f * (1 - ReinforcementConfig.REDUCTION_PHYSICAL.get()), taken(p, p.damageSources().generic()), EPS, "no stacking");
-                assertEquals(AuraPayload.FULL, com.cnethuka.kegare.reinforcement.AuraTellAccess.flags(p) & look, "the full aura");
+                assertEquals(1.0, Flow.strength(p), EPS, "the ability's, not more");
+                assertEquals(kb + FlowConfig.KNOCKBACK_RESISTANCE.get(), p.getAttributeValue(Attributes.KNOCKBACK_RESISTANCE), EPS, "no stacking");
+                assertEquals(4f * (1 - FlowConfig.REDUCTION_PHYSICAL.get()), taken(p, p.damageSources().generic()), EPS, "no stacking");
+                assertEquals(AuraPayload.FULL, com.cnethuka.kegare.flow.AuraTellAccess.flags(p) & look, "the full aura");
 
                 CastManager.handleIntent(p, CastIntent.CAST_PRESS);
-                assertFalse(ReinforcementAbility.isOn(p), "the ability off");
-                assertEquals(kb + ReinforcementConfig.KNOCKBACK_RESISTANCE.get() * s, p.getAttributeValue(Attributes.KNOCKBACK_RESISTANCE), EPS,
+                assertFalse(FlowAbility.isOn(p), "the ability off");
+                assertEquals(kb + FlowConfig.KNOCKBACK_RESISTANCE.get() * s, p.getAttributeValue(Attributes.KNOCKBACK_RESISTANCE), EPS,
                         "back to the background's");
                 BackgroundTaskService.setOn(p, 0, false);
                 BackgroundTaskService.tick(p);
-                assertEquals(0.0, Reinforcement.strength(p), EPS, "off: nothing");
+                assertEquals(0.0, Flow.strength(p), EPS, "off: nothing");
                 assertEquals(kb, p.getAttributeValue(Attributes.KNOCKBACK_RESISTANCE), EPS, "and no knockback resistance");
             } finally {
                 TestServer.removePlayers(server);

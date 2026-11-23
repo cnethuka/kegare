@@ -473,7 +473,7 @@ Malice is always shown as whole numbers (floored, like the HUD); the stored valu
 - **Server TOML** (`config/kegare-server.toml`, where NeoForge 21.1 keeps server configs; synced to clients and
   hot-reloaded when edited) holds **every balance number**.
   - Sections: `malice` (with `tiers`), `traits`, `roll` (with `weights` and `addonTechniques`),
-    `combat`, `rime` (§3.14), `swap` (§3.19), `puppet_manipulation` (§3.20), `time_manipulation` (§3.26), `severed` (§3.27), `melee` (§3.22), `impact` (§3.23), `battle_damage` (§3.24), `reverse_malice_technique` (§3.17), `reinforcement` (§3.16), `background_tasks` (§3.31), `six_eyes` (§3.32), `reinforced_fists` (§3.28), `timing` (§3.29), `too_fast_for_the_eye` (§3.30), `progression` (§3.21).
+    `combat`, `rime` (§3.14), `swap` (§3.19), `puppet_manipulation` (§3.20), `time_manipulation` (§3.26), `severed` (§3.27), `melee` (§3.22), `impact` (§3.23), `battle_damage` (§3.24), `reverse_malice_technique` (§3.17), `flow` (§3.16), `background_tasks` (§3.31), `six_eyes` (§3.32), `reinforced_fists` (§3.28), `timing` (§3.29), `too_fast_for_the_eye` (§3.30), `progression` (§3.21).
   - The `traits` section includes:
     - `sixEyesBirthChance`
     - `sixEyesTransferMode` (RANDOM | KILLER)
@@ -495,8 +495,12 @@ Malice is always shown as whole numbers (floored, like the HUD); the stored valu
   **Version 4** is the Impact System's Malice input (§3.23): its re-tuned weights and tiers, and battle damage's `strengthScale`,
   `radiusPerStrength` and slams' `strengthPerSpeed` with them (§3.24). **Version 5** is Blur's top speed, 0.56 to 0.7 (§3.27),
   kept clearly faster than Accelerate's clock (§3.26). **Version 6** is Six Eyes efficiency's curve (§3.32): `attunement` 0.8 to 1.5 and `rmtOutputWeight` 0.15 to 0.052. **Version 7** is
-  healing others by touch (§3.17): `reverse_malice_technique.others.range` 3 to 1. A later change to a shipped default that needs the same
-  treatment adds its own table and bumps `CURRENT_VERSION`.
+  healing others by touch (§3.17): `reverse_malice_technique.others.range` 3 to 1. **Version 8** carries options over to new names
+  (`Step.renamed`): `[reinforcement]` to `[flow]`, `[background_tasks.background_reinforcement]` to `[background_tasks.background_flow]`
+  and `[background_tasks.sustained_flow]` to `[background_tasks.steady_output]` (its `flowReduction` is `upkeepReduction`). NeoForge drops
+  keys it no longer knows before the file loads, so the mod's constructor reads the file first (`readBeforeLoading`); a value set by hand
+  under the old name is carried over, and one still at its old default isn't, so the new default applies. A later change to a shipped
+  default that needs the same treatment adds its own table and bumps `CURRENT_VERSION`.
 
 ### 3.10 Data generation and art
 - **Kegare's creative tab** (`KegareCreativeTab`, titled "Kegare", its icon the Purification Talisman): after the vanilla tabs, so it's on the creative screen's next page, reached with NeoForge's page arrows, like any mod's. It's filled from
@@ -1211,27 +1215,27 @@ separate bar is filled from any of them.
   more as the mod grows. One tab each on the Sorcerer screen's left edge, in this order, each with its own icon (hard
   pixels) and its short name as the tooltip:
   - **Innate**: the current innate technique's abilities (the ultimate in its own V tile). A reroll replaces them.
-  - **Malice**: energy techniques any Malice user can learn and keeps through rerolls: Reinforcement and Reverse Malice Technique
+  - **Malice**: energy techniques any Malice user can learn and keeps through rerolls: Flow and Reverse Malice Technique
     (its special still heals others).
   - **Melee**: close-combat abilities: Reinforced Fists.
   Every ability belongs to exactly one, declared by the ability itself (`Ability.category()`, `INNATE` unless it says otherwise), so a
   new ability just names its own. Malice and Melee abilities live in the shared-abilities
   registry behind them (`SharedAbilities`, unlocks in attachment `kegare:shared_abilities`, saved, kept on death): unlocked once and
   kept through every reroll. Reverse Malice Technique is the first that's found (§3.17); some are every Malice user's, with nothing to
-  unlock (`SharedAbilities.registerForEveryone`: Reinforcement, Reinforced Fists, §3.28); Severed players never have those either. A
+  unlock (`SharedAbilities.registerForEveryone`: Flow, Reinforced Fists, §3.28); Severed players never have those either. A
   locked one shows in its category as a greyed tile with a padlock, and its card says what unlocks it (`Ability.unlockHint`: Reverse
   Malice Technique's "Take in the green orb.").
-- **Reinforcement** (`kegare:reinforcement`, Malice, TOGGLE; package `reinforcement`). Lore: reinforcement
-  strengthens the body by routing energy through it, improving durability and force tolerance; every sorcerer in canon does it, so every
-  Malice user has it, with nothing to unlock (Severed never). The same rules as Reinforced Fists (§3.28): turning it on costs `onCost`
-  (40), it drains `drainPerSecond` (10) and goes off when Malice runs out, `rearmCooldown` (1.5 s) after it goes off; it keeps running
+- **Flow** (`kegare:flow`, Malice, TOGGLE; package `flow`). Lore: Malice routed through the whole body, the way every sorcerer in canon
+  reinforces themselves, improving durability and force tolerance; so every Malice user has it, with nothing to unlock (Severed never).
+  Saved data naming `kegare:reinforcement` reads as Flow (`RenamedIds`, also for Background Flow and Steady Output, §3.31). The same
+  rules as Reinforced Fists (§3.28): turning it on costs `onCost` (40), it drains `drainPerSecond` (10) and goes off when Malice runs out, `rearmCooldown` (1.5 s) after it goes off; it keeps running
   outside Technique Mode and through Burnout; death and logout end it. Both it and Reinforced Fists can run together.
-  - **Effect** (`Reinforcement`): you take `reductionPhysical` (25%) less physical damage and `reductionTechnique` (20%) less from
+  - **Effect** (`Flow`): you take `reductionPhysical` (25%) less physical damage and `reductionTechnique` (20%) less from
     techniques (as `MeleeHits` sorts a hit: a Kegare damage type or an attributed cast is a technique; everything else is physical),
     taken off what's left after armour, and `knockbackResistance` (+0.4, an attribute modifier) against knockback: the force
-    tolerance. The void, /kill and starving are untouched. It adds no damage (that's Reinforced Fists). Background Reinforcement
+    tolerance. The void, /kill and starving are untouched. It adds no damage (that's Reinforced Fists). Background Flow
     (§3.31) is another source of the same thing at a share of its strength; they never stack: the stronger applies. Numbers in
-    `[reinforcement]`.
+    `[flow]`.
   - **Look** (client `AuraClient`; our own art): Malice wrapped round the whole body, the way anime draws a sorcerer's energy flowing. A sheet of 16 frames
     (`entity/aura.png`, 192×384 each, 1.6 × 3.2 blocks) hugs the player's silhouette a little way out and rises into five flame-like
     tongues over the head and shoulders, always flowing upward (the noise scrolls up a period per loop; each tongue swells and sways in
@@ -1249,11 +1253,11 @@ separate bar is filled from any of them.
       wider (19%) low on the right round your arm: never in the middle 60%. Nothing round your own body in first person.
     - Reduced: the simpler sheet (`entity/aura_simple.png`: an even outline with no breaks or flicks) and half the wisps. Vanilla: dust
       in the Malice color rising round the body (none round your own in first person). An invisible player shows nothing.
-    - Visible to everyone: reinforcement is open. The color follows the ready fist's rules (§3.22): the wearer sees their own Malice
+    - Visible to everyone: Flow is open. The color follows the ready fist's rules (§3.22): the wearer sees their own Malice
       color, everyone else the color of the face they wear (`MeleeTell.seenByOthers`), so a disguise is never given away. Sent per
       viewer when it changes (`AuraTell`, `AuraPayload`).
   - Its own icon (a dark figure wrapped in Malice, three tongues over it), name and text; the combat panel outlines it green while on.
-  - **Tests:** `ReinforcementTest`: everyone's, in the Malice tab, Severed never; the toggle, onCost, the drain, Burnout, re-arm, out of
+  - **Tests:** `FlowTest`: everyone's, in the Malice tab, Severed never; the toggle, onCost, the drain, Burnout, re-arm, out of
     Malice; both reductions, the void untouched, knockback resistance on and off; running with Fists (no damage added, Fists' bonus,
     both drains); the aura's flags.
 - **The loadout** (attachment `kegare:loadout`, saved, kept on death; `LoadoutService`):
@@ -2191,7 +2195,7 @@ For shared and system unlocks, separate from a technique's own abilities.
 
 Dash, Parry and Reinforced Strike, for every player, in and out of Technique Mode. They aren't techniques: no slots, no casting, no Refinement or Assessment
 gates, and counters to techniques have nothing to act on. Low Malice is what limits them, and RMT doesn't touch them.
-Parry and Strike come from Reinforcement, which can spread a blow's stress and absorb its energy but can't undo the reaction: hence the
+Parry and Strike come from Flow, which can spread a blow's stress and absorb its energy but can't undo the reaction: hence the
 guard's recovery. Numbers: `[melee]` in `kegare-server.toml` (`MeleeConfig`), resolved per player by `MeleeNumbers`. State: the runtime attachment `kegare:melee`
 (`MeleeState`, in level game time, gone on death and logout, like a cast in progress).
 
@@ -3061,28 +3065,28 @@ ability on the bar, but it takes no bar slot and leaves the hands free.
   saying so), `BackgroundRmtStandstillTest` (paused while
   frozen, resumed with time), `RmtHealCountTest` (healing others counts for the caster, only what's healed).
 
-**Background Reinforcement** (`background_reinforcement`, `BackgroundReinforcement`; numbers in
-`[background_tasks.background_reinforcement]`)
+**Background Flow** (`background_flow`, `BackgroundFlow`; numbers in
+`[background_tasks.background_flow]`)
 - **Unlock:** Grade 3 (an Unlocks entry, kept once earned; never Severed).
-- **Effect:** Reinforcement (§3.16) at `backgroundStrength` (0.4) of the ability's: 10% less physical damage, 8% less from techniques,
-  +0.16 knockback resistance, for `drainPerSecond` 4 (the ability's is 10). It's a source of `Reinforcement.addSource`: with the
-  Reinforcement ability on too they don't stack, the stronger applies.
+- **Effect:** Flow (§3.16) at `backgroundStrength` (0.4) of the ability's: 10% less physical damage, 8% less from techniques,
+  +0.16 knockback resistance, for `drainPerSecond` 4 (the ability's is 10). It's a source of `Flow.addSource`: with the
+  Flow ability on too they don't stack, the stronger applies.
 - **Look:** the same aura as the ability, much calmer and fainter (`AuraPayload.CALM`): the simpler sheet with its even, light
   outline (drawn at 42% instead of 85%, so the ink is light too), 5% smaller, about 6 frames a second, a wisp every 16 ticks. It
   still shows to everyone, with the same disguise rules; in your own first person, the edge flow at half strength.
 - **Icon:** a small lit figure inside the loop.
-- **Tests:** `BackgroundReinforcementTest` (Grade 3, kept through a reroll; its drain, 0.4 of both reductions and the knockback
+- **Tests:** `BackgroundFlowTest` (Grade 3, kept through a reroll; its drain, 0.4 of both reductions and the knockback
   resistance; with the ability on, the ability's and no more; back to the background's when the ability goes off; nothing when off;
   the calm aura, then the full one).
 
-**Sustained Flow** (`sustained_flow`, `SustainedFlow`; numbers in `[background_tasks.sustained_flow]`)
+**Steady Output** (`steady_output`, `SteadyOutput`; numbers in `[background_tasks.steady_output]`)
 - **Unlock:** Refinement 5 (an Unlocks entry, not tied to the technique: kept once earned, even after a reroll; never Severed).
-- **Effect:** while it runs, the upkeep of your active toggles drains `flowReduction` (30%) less: Reinforced Fists, the Reinforcement
+- **Effect:** while it runs, the upkeep of your active toggles drains `upkeepReduction` (30%) less: Reinforced Fists, the Flow
   ability, Accelerate, Rime Shell and any other toggle's per-second cost (`CastManager.toggleUpkeep`, through
   `CastManager.addToggleUpkeepModifier`). Not other Background Tasks (they pay their own drain, outside the cast system), not a
   channel (RMT's upkeep stays), and never a start cost. Its own drain is small: `drainPerSecond` 1.5.
 - **Nothing visible.** Icon: two waves flowing level inside the loop.
-- **Tests:** `SustainedFlowTest` (Refinement 5, kept through a reroll; Fists, Reinforcement, Rime Shell and Accelerate each 30% less
+- **Tests:** `SteadyOutputTest` (Refinement 5, kept through a reroll; Fists, Flow, Rime Shell and Accelerate each 30% less
   with it and in full without it; the real drain with two toggles on; start costs, Background RMT's drain and RMT's channel in full).
 
 - **Tests:** `BackgroundTasksTest` (with test-only tasks): 2 slots, 3 with the eyes, none Severed; losing the eyes switches off the
@@ -3165,7 +3169,7 @@ for the eye" (§3.30).
   the body:
   - health and max health, and absorption when there is some;
   - armour, armour toughness and knockback resistance;
-  - attack damage, attack speed and movement speed as they are right now, every modifier counted (gear, effects, Reinforcement,
+  - attack damage, attack speed and movement speed as they are right now, every modifier counted (gear, effects, Flow,
     Accelerate), movement also as a share of the body's own base ("Move 0.130 (130%)"); an attribute it doesn't have isn't shown ("No
     attack" for a cow);
   - every active effect, hidden ones too, with its level and time left ("Speed II · 0:30", "∞" for one that never runs out), the
@@ -3188,7 +3192,7 @@ for the eye" (§3.30).
   bearer only, every 4 ticks: every player within 96 blocks at a glance, the health of the mobs in view (in front of the bearer, within 80
   degrees of where they look and 64 blocks, the nearest 24), and the body of the focus only. Nobody else is ever sent any of it.
 - **Tests:** `ReadsTest` (compact Reads with technique, Malice and health; a void's says nothing; the focus at the crosshair, toggles,
-  cooldowns and a charge in its detail; the whole body: health, absorption, armour from gear, Reinforcement's knockback resistance,
+  cooldowns and a charge in its detail; the whole body: health, absorption, armour from gear, Flow's knockback resistance,
   attack with a sword and Strength, Speed counted in movement, every effect with its level and time, a hidden one too, burning, Freeze,
   a stun, Burnout, hunger, through the wire exactly; a zombie at a glance and in full, one behind the bearer not in view; a disguise read
   as the wearer's own body; only the bearer is ever sent a Read; no field for anything secret, and a Special Grade reading the same as a
@@ -3253,7 +3257,7 @@ focus is the Read the server decides for itself, so that's the one it counts.
 - **Attunement** grows by using the eyes: `perFightSecond` (1) in a fight while holding them, `perRead` (3) for a full-detail Read of someone (each
   player at most once a minute; a void gives nothing), `perPin` (1) for a pin (each one at most once a minute; the server checks it's real). Saved;
   fully reset when the eyes pass on or are lost, so a new bearer starts out clumsy. Shown privately on the Sorcerer screen's Progress view.
-- **Efficiency:** every Malice cost the bearer pays (casts, upkeep, toggles, Background Tasks, Reinforcement, RMT) is multiplied by 1 / (1 + x), with
+- **Efficiency:** every Malice cost the bearer pays (casts, upkeep, toggles, Background Tasks, Flow, RMT) is multiplied by 1 / (1 + x), with
   x = `base` (0.25) + `grade` (0.35) x Grade step (0 at Grade 4, 6 at Special Grade) + `attunement` (1.5) x sqrt(Attunement / `attunementScale` (200))
   (`MaliceService.addCostModifier`, in the one place Malice is spent). x climbs without end and with no flat point, so costs keep falling towards free
   and never get there, with no cap in config (the weights are). Every cast still costs at least 1 Malice (`castCostOf`; upkeep is a little a tick, so it

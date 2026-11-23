@@ -1,9 +1,9 @@
-package com.cnethuka.kegare.reinforcement;
+package com.cnethuka.kegare.flow;
 
 import net.neoforged.neoforge.common.ModConfigSpec;
 
-/** Reinforcement's numbers (DESIGN §3.16, §3.31): {@code [reinforcement]} of {@code kegare-server.toml}. Times in seconds. */
-public final class ReinforcementConfig {
+/** Flow's numbers (DESIGN §3.16, §3.31): {@code [flow]} of {@code kegare-server.toml}. Times in seconds. */
+public final class FlowConfig {
     public static ModConfigSpec.DoubleValue ON_COST;
     public static ModConfigSpec.DoubleValue DRAIN;
     public static ModConfigSpec.DoubleValue REARM;
@@ -11,11 +11,11 @@ public final class ReinforcementConfig {
     public static ModConfigSpec.DoubleValue REDUCTION_TECHNIQUE;
     public static ModConfigSpec.DoubleValue KNOCKBACK_RESISTANCE;
 
-    private ReinforcementConfig() {}
+    private FlowConfig() {}
 
     public static void define(ModConfigSpec.Builder b) {
-        b.comment("Reinforcement (Malice, TOGGLE): Malice routed through the body, for durability and force tolerance. Every Malice user has it.",
-                "It adds no damage (that's Reinforced Fists); both can run together.").push("reinforcement");
+        b.comment("Flow (Malice, TOGGLE): Malice routed through the body, for durability and force tolerance. Every Malice user has it.",
+                "It adds no damage (that's Reinforced Fists); both can run together.").push("flow");
         ON_COST = b.comment("Malice to turn it on.").defineInRange("onCost", 40.0, 0.0, 100_000.0);
         DRAIN = b.comment("Malice drained per second while it's on. It turns off when Malice runs out.").defineInRange("drainPerSecond", 10.0, 0.0, 100_000.0);
         REARM = b.comment("After it turns off, this long before it can go on again.").defineInRange("rearmCooldown", 1.5, 0.0, 3600.0);

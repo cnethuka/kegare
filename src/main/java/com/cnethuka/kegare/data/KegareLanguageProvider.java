@@ -413,22 +413,22 @@ public final class KegareLanguageProvider extends LanguageProvider {
                 + MALICE + " regeneration while it runs, and shortens any Burnout. It pauses below %2$s " + MALICE + " and resumes above %3$s.");
         add("background_task.kegare.background_rmt.unlock", "Heal 500 health in total with your own Reverse Malice Technique.");
         add("unlock.kegare.background_rmt", "Background RMT");
-        add("background_task.kegare.background_reinforcement", "Background Reinforcement");
-        add("background_task.kegare.background_reinforcement.desc", "Reinforcement kept up without thinking: %1$s of the ability's damage "
-                + "reductions and knockback resistance, for less " + MALICE + ". With Reinforcement itself on, the stronger applies. A calm, "
+        add("background_task.kegare.background_flow", "Background Flow");
+        add("background_task.kegare.background_flow.desc", "Flow kept up without thinking: %1$s of the ability's damage "
+                + "reductions and knockback resistance, for less " + MALICE + ". With Flow itself on, the stronger applies. A calm, "
                 + "faint aura shows it to everyone.");
-        add("background_task.kegare.background_reinforcement.unlock", "Reach Grade 3.");
-        add("unlock.kegare.background_reinforcement", "Background Reinforcement");
-        add("background_task.kegare.sustained_flow", "Sustained Flow");
-        add("background_task.kegare.sustained_flow.desc", "A steady flow of " + MALICE + " that makes your active toggles cheaper to keep up: "
-                + "their upkeep drains %1$s less (Reinforced Fists, Reinforcement, Accelerate, Rime Shell and the rest). Never a start cost, and "
+        add("background_task.kegare.background_flow.unlock", "Reach Grade 3.");
+        add("unlock.kegare.background_flow", "Background Flow");
+        add("background_task.kegare.steady_output", "Steady Output");
+        add("background_task.kegare.steady_output.desc", MALICE + " let out steadily, so your active toggles are cheaper to keep up: "
+                + "their upkeep drains %1$s less (Reinforced Fists, Flow, Accelerate, Rime Shell and the rest). Never a start cost, and "
                 + "not other Background Tasks. Nothing shows.");
-        add("background_task.kegare.sustained_flow.unlock", "Reach Refinement 5.");
-        add("unlock.kegare.sustained_flow", "Sustained Flow");
+        add("background_task.kegare.steady_output.unlock", "Reach Refinement 5.");
+        add("unlock.kegare.steady_output", "Steady Output");
 
-        // Reinforcement (Malice, every Malice user's)
-        add("ability.kegare.reinforcement", "Reinforcement");
-        add("ability.kegare.reinforcement.desc", "Toggle: route " + MALICE + " through your whole body. You take %1$s less physical damage "
+        // Flow (Malice, every Malice user's)
+        add("ability.kegare.flow", "Flow");
+        add("ability.kegare.flow.desc", "Toggle: route " + MALICE + " through your whole body. You take %1$s less physical damage "
                 + "and %2$s less from techniques, and you're %3$s harder to knock back. It adds no damage. Turning it on costs " + MALICE
                 + ", it drains more while it runs, and it keeps running outside Technique Mode. Everyone can see it.");
 

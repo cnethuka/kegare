@@ -13,12 +13,12 @@ public final class BackgroundTaskConfig {
     public static ModConfigSpec.DoubleValue RMT_PAUSE_BELOW;
     public static ModConfigSpec.DoubleValue RMT_RESUME_ABOVE;
     public static ModConfigSpec.DoubleValue RMT_BURNOUT_FACTOR;
-    // Background Reinforcement
-    public static ModConfigSpec.DoubleValue REINFORCEMENT_STRENGTH;
-    public static ModConfigSpec.DoubleValue REINFORCEMENT_DRAIN;
-    // Sustained Flow
-    public static ModConfigSpec.DoubleValue FLOW_REDUCTION;
+    // Background Flow
+    public static ModConfigSpec.DoubleValue FLOW_STRENGTH;
     public static ModConfigSpec.DoubleValue FLOW_DRAIN;
+    // Steady Output
+    public static ModConfigSpec.DoubleValue UPKEEP_REDUCTION;
+    public static ModConfigSpec.DoubleValue OUTPUT_DRAIN;
 
     private BackgroundTaskConfig() {}
 
@@ -38,16 +38,16 @@ public final class BackgroundTaskConfig {
         RMT_BURNOUT_FACTOR = b.comment("While it runs, every Burnout applied to you lasts this share of its length.").defineInRange("burnoutFactor", 0.75, 0.0, 1.0);
         b.pop();
 
-        b.comment("Background Reinforcement: Reinforcement kept up without thinking, weaker. Unlocked at Grade 3.").push("background_reinforcement");
-        REINFORCEMENT_STRENGTH = b.comment("Its share of the Reinforcement ability's damage reductions and knockback resistance. With the ability on",
+        b.comment("Background Flow: Flow kept up without thinking, weaker. Unlocked at Grade 3.").push("background_flow");
+        FLOW_STRENGTH = b.comment("Its share of the Flow ability's damage reductions and knockback resistance. With the ability on",
                 "too, they don't stack: the stronger applies.").defineInRange("backgroundStrength", 0.4, 0.0, 1.0);
-        REINFORCEMENT_DRAIN = b.comment("Malice drained per second while it runs.").defineInRange("drainPerSecond", 4.0, 0.0, 100_000.0);
+        FLOW_DRAIN = b.comment("Malice drained per second while it runs.").defineInRange("drainPerSecond", 4.0, 0.0, 100_000.0);
         b.pop();
 
-        b.comment("Sustained Flow: a steady flow that makes your active toggles cheaper to keep up. Unlocked at Refinement 5.").push("sustained_flow");
-        FLOW_REDUCTION = b.comment("Share taken off every active toggle's per-second upkeep (Reinforced Fists, Reinforcement, Accelerate, Rime",
-                "Shell, any toggle). Never a start cost, never another Background Task.").defineInRange("flowReduction", 0.3, 0.0, 1.0);
-        FLOW_DRAIN = b.comment("Malice drained per second while it runs.").defineInRange("drainPerSecond", 1.5, 0.0, 100_000.0);
+        b.comment("Steady Output: Malice let out steadily, so your active toggles are cheaper to keep up. Unlocked at Refinement 5.").push("steady_output");
+        UPKEEP_REDUCTION = b.comment("Share taken off every active toggle's per-second upkeep (Reinforced Fists, Flow, Accelerate, Rime",
+                "Shell, any toggle). Never a start cost, never another Background Task.").defineInRange("upkeepReduction", 0.3, 0.0, 1.0);
+        OUTPUT_DRAIN = b.comment("Malice drained per second while it runs.").defineInRange("drainPerSecond", 1.5, 0.0, 100_000.0);
         b.pop();
 
         b.pop();

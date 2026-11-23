@@ -93,8 +93,8 @@ public final class KegareNetwork {
                 com.cnethuka.kegare.sixeyes.Edge.Spark::handle);
         registrar.playToClient(com.cnethuka.kegare.rmt.Repair.Payload.TYPE, com.cnethuka.kegare.rmt.Repair.Payload.STREAM_CODEC,
                 com.cnethuka.kegare.rmt.Repair.Payload::handle);
-        registrar.playToClient(com.cnethuka.kegare.reinforcement.AuraPayload.TYPE, com.cnethuka.kegare.reinforcement.AuraPayload.STREAM_CODEC,
-                com.cnethuka.kegare.reinforcement.AuraPayload::handle);
+        registrar.playToClient(com.cnethuka.kegare.flow.AuraPayload.TYPE, com.cnethuka.kegare.flow.AuraPayload.STREAM_CODEC,
+                com.cnethuka.kegare.flow.AuraPayload::handle);
         registrar.playToClient(com.cnethuka.kegare.rmt.OrbPayload.TYPE, com.cnethuka.kegare.rmt.OrbPayload.STREAM_CODEC,
                 com.cnethuka.kegare.rmt.OrbPayload::handle);
         registrar.playToClient(com.cnethuka.kegare.innate_technique.swap.SwapLink.Payload.TYPE,

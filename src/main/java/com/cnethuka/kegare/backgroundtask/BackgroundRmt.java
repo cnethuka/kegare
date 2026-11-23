@@ -9,7 +9,7 @@ import com.cnethuka.kegare.loadout.SharedAbilityService;
 import com.cnethuka.kegare.malice.MaliceService;
 import com.cnethuka.kegare.progression.UnlockRequirements;
 import com.cnethuka.kegare.progression.Unlocks;
-import com.cnethuka.kegare.reinforcement.AuraTell;
+import com.cnethuka.kegare.flow.AuraTell;
 import com.cnethuka.kegare.rmt.ReverseMaliceTechnique;
 import com.cnethuka.kegare.rmt.RmtConfig;
 import com.cnethuka.kegare.rmt.RmtIds;

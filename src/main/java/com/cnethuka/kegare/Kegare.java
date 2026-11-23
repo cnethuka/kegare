@@ -45,7 +45,7 @@ public final class Kegare {
         com.cnethuka.kegare.melee.MeleeLayer.init(modBus);
         com.cnethuka.kegare.severed.Severed.init(modBus); // a Severed player's body (DESIGN §3.27)
         com.cnethuka.kegare.rmt.Rmt.init(modBus); // registers Reverse Malice Technique as a shared ability
-        com.cnethuka.kegare.reinforcement.Reinforcement.init(); // Reinforcement, every Malice user's (DESIGN §3.16)
+        com.cnethuka.kegare.flow.Flow.init(); // Flow, every Malice user's (DESIGN §3.16)
         com.cnethuka.kegare.backgroundtask.BackgroundTaskEvents.init(); // Background Tasks (DESIGN §3.31)
         com.cnethuka.kegare.sixeyes.SixEyes.init(); // Six Eyes' gameplay (DESIGN §3.32)
         com.cnethuka.kegare.fists.Fists.init(modBus); // Reinforced Fists, every Malice user's (DESIGN §3.28)
@@ -64,6 +64,8 @@ public final class Kegare {
         modBus.addListener(KegareConfigMigration::onConfigLoading);
         modBus.addListener(com.cnethuka.kegare.database.LoginTask::register);
         com.cnethuka.kegare.database.StatEvents.init();
+        // Before it loads: options renamed since the file was written are read under their old names (DESIGN §3.9).
+        KegareConfigMigration.readBeforeLoading(net.neoforged.fml.loading.FMLPaths.CONFIGDIR.get().resolve("kegare-server.toml"));
         container.registerConfig(ModConfig.Type.SERVER, KegareServerConfig.SPEC);
         container.registerConfig(ModConfig.Type.CLIENT, KegareClientConfig.SPEC);
     }

@@ -113,7 +113,7 @@ public final class KegareServerConfig {
         com.cnethuka.kegare.impact.ImpactConfig.define(b);
         com.cnethuka.kegare.battledamage.BattleDamageConfig.define(b);
         com.cnethuka.kegare.rmt.RmtConfig.define(b);
-        com.cnethuka.kegare.reinforcement.ReinforcementConfig.define(b);
+        com.cnethuka.kegare.flow.FlowConfig.define(b);
         com.cnethuka.kegare.backgroundtask.BackgroundTaskConfig.define(b);
         com.cnethuka.kegare.sixeyes.SixEyesConfig.define(b);
         com.cnethuka.kegare.fists.FistsConfig.define(b);

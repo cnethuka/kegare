@@ -1,4 +1,4 @@
-package com.cnethuka.kegare.reinforcement.client;
+package com.cnethuka.kegare.flow.client;
 
 import com.cnethuka.kegare.Kegare;
 import com.cnethuka.kegare.api.visual.Visual;
@@ -7,7 +7,7 @@ import com.cnethuka.kegare.rmt.RmtIds;
 import com.cnethuka.kegare.config.KegareClientConfig;
 import com.cnethuka.kegare.config.KegareClientConfig.VfxQuality;
 import com.cnethuka.kegare.melee.MeleeTell;
-import com.cnethuka.kegare.reinforcement.AuraPayload;
+import com.cnethuka.kegare.flow.AuraPayload;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
@@ -42,14 +42,14 @@ import org.joml.Matrix4f;
 import org.joml.Vector3f;
 
 /**
- * Reinforcement's aura (DESIGN §3.16): Malice wrapped round the whole body, the way a sorcerer's energy is drawn flowing. The art
+ * Flow's aura (DESIGN §3.16): Malice wrapped round the whole body, the way a sorcerer's energy is drawn flowing. The art
  * ({@code textures/entity/aura.png}) is a sheet of frames that hugs the player's silhouette a little way out and rises into flame-like
  * tongues over the head and shoulders, always flowing upward, with a hard, near-black ink outline (irregular, with flicks and small
  * breaks) and inside it a see-through glow in the Malice color, strongest at the outline and thin near the body.
  * <ul>
  * <li>Drawn as an upright card facing the camera, just behind the player, so the body stays in front of it and readable; small
  * wisps peel off the tongues' tips and rise away.</li>
- * <li>Fuller and faster in a fight ({@link AuraPayload#FIGHT}), calmer out of one. Background Reinforcement alone
+ * <li>Fuller and faster in a fight ({@link AuraPayload#FIGHT}), calmer out of one. Background Flow alone
  * ({@link AuraPayload#CALM}): the same aura much calmer and fainter, a thin flow with a light outline.</li>
  * <li>Your own first person: only a faint flow up the edges of the view, round your arms' corner, never in the middle 60%.</li>
  * <li>Reduced: a simpler outline and fewer wisps. Vanilla: dust in the Malice color rising round the body. An invisible player shows

@@ -6,7 +6,7 @@ import com.cnethuka.kegare.rmt.RmtOutput;
 import net.minecraft.server.level.ServerPlayer;
 
 /**
- * Near-zero waste (DESIGN §3.32): every Malice cost a bearer pays (casts, upkeep, toggles, Background Tasks, Reinforcement, RMT) is
+ * Near-zero waste (DESIGN §3.32): every Malice cost a bearer pays (casts, upkeep, toggles, Background Tasks, Flow, RMT) is
  * multiplied by 1 / (1 + x), where x = {@code base} + {@code grade} x their Grade step (0 at Grade 4, 6 at Special Grade) + {@code attunement}
  * x sqrt(Attunement / {@code attunementScale}). x grows without limit or plateau, so the cost keeps falling towards free without reaching
  * it; config has no cap, only the weights. Every cast still costs at least 1 Malice. Eyewear and Strain never touch it.

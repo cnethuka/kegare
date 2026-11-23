@@ -1,4 +1,4 @@
-package com.cnethuka.kegare.reinforcement.client;
+package com.cnethuka.kegare.flow.client;
 
 import com.mojang.blaze3d.vertex.DefaultVertexFormat;
 import com.mojang.blaze3d.vertex.VertexFormat;

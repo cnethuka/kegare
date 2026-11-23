@@ -3,7 +3,13 @@ package com.cnethuka.kegare.config;
 import static java.util.Map.entry;
 
 import com.cnethuka.kegare.Kegare;
+import com.electronwill.nightconfig.core.UnmodifiableConfig;
+import com.electronwill.nightconfig.core.file.FileNotFoundAction;
+import com.electronwill.nightconfig.toml.TomlParser;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import net.neoforged.fml.config.ModConfig;
@@ -19,7 +25,7 @@ import net.neoforged.neoforge.common.ModConfigSpec;
  */
 public final class KegareConfigMigration {
     /** The version these numbers are for. A file with no {@code configVersion} reads as 1. */
-    public static final int CURRENT_VERSION = 7;
+    public static final int CURRENT_VERSION = 8;
 
     /** Version 2, the Malice rescale: each value it changed, with its old default. The new value is always the spec's default. */
     static final Map<String, Number> RESCALE_OLD_DEFAULTS = Map.ofEntries(
@@ -105,8 +111,15 @@ public final class KegareConfigMigration {
             entry("severed.blur.speed", 0.56)
     );
 
-    /** One migration: a file below {@code version} goes through it. */
-    record Step(int version, Map<String, Number> oldDefaults, String what) {}
+    /** One migration: a file below {@code version} goes through it. {@code renamed}: options that moved, by their old path. */
+    record Step(int version, Map<String, Number> oldDefaults, Map<String, Renamed> renamed, String what) {
+        Step(int version, Map<String, Number> oldDefaults, String what) {
+            this(version, oldDefaults, Map.of(), what);
+        }
+    }
+
+    /** An option that moved to {@code to}; {@code oldDefault} is what it defaulted to under its old name. */
+    record Renamed(String to, double oldDefault) {}
 
     /** Version 6, efficiency's curve (DESIGN §3.32): square-root weights, not logarithmic. The old values would make RMT heal at x3.6, not x1.9. */
     static final Map<String, Number> EFFICIENCY_CURVE_OLD_DEFAULTS = Map.ofEntries(
@@ -117,13 +130,34 @@ public final class KegareConfigMigration {
     static final Map<String, Number> HEAL_BY_TOUCH_OLD_DEFAULTS = Map.ofEntries(
             entry("reverse_malice_technique.others.range", 3.0));
 
+    /**
+     * Version 8, Reinforcement renamed Flow (DESIGN §3.16, §3.31), with Background Reinforcement and Sustained Flow (now Steady Output):
+     * their options under the new names. NeoForge drops the old keys and writes the new ones at their defaults, so a value set by hand
+     * under the old name is carried over; one still at its old default isn't, so the new default applies.
+     */
+    static final Map<String, Renamed> FLOW_RENAMES = Map.ofEntries(
+            entry("reinforcement.onCost", new Renamed("flow.onCost", 40.0)),
+            entry("reinforcement.drainPerSecond", new Renamed("flow.drainPerSecond", 10.0)),
+            entry("reinforcement.rearmCooldown", new Renamed("flow.rearmCooldown", 1.5)),
+            entry("reinforcement.reductionPhysical", new Renamed("flow.reductionPhysical", 0.25)),
+            entry("reinforcement.reductionTechnique", new Renamed("flow.reductionTechnique", 0.2)),
+            entry("reinforcement.knockbackResistance", new Renamed("flow.knockbackResistance", 0.4)),
+            entry("background_tasks.background_reinforcement.backgroundStrength", new Renamed("background_tasks.background_flow.backgroundStrength", 0.4)),
+            entry("background_tasks.background_reinforcement.drainPerSecond", new Renamed("background_tasks.background_flow.drainPerSecond", 4.0)),
+            entry("background_tasks.sustained_flow.flowReduction", new Renamed("background_tasks.steady_output.upkeepReduction", 0.3)),
+            entry("background_tasks.sustained_flow.drainPerSecond", new Renamed("background_tasks.steady_output.drainPerSecond", 1.5)));
+
     static final List<Step> STEPS = List.of(
             new Step(2, RESCALE_OLD_DEFAULTS, "the rescaled Malice numbers (new tiers, costs and regen)"),
             new Step(3, SEVERED_MELEE_OLD_DEFAULTS, "the stronger Severed melee numbers"),
             new Step(4, MALICE_INPUT_OLD_DEFAULTS, "the Impact System's Malice input (its weights, tiers and battle damage scale)"),
             new Step(5, BLUR_SPEED_OLD_DEFAULTS, "Blur's top speed, kept clearly faster than Accelerate"),
             new Step(6, EFFICIENCY_CURVE_OLD_DEFAULTS, "Six Eyes efficiency's new curve (its Attunement and RMT output weights)"),
-            new Step(7, HEAL_BY_TOUCH_OLD_DEFAULTS, "healing others by touch (its range)"));
+            new Step(7, HEAL_BY_TOUCH_OLD_DEFAULTS, "healing others by touch (its range)"),
+            new Step(8, Map.of(), FLOW_RENAMES, "Flow's new names (Reinforcement, Background Reinforcement and Sustained Flow renamed)"));
+
+    /** Renamed options set by hand in the file as it was before NeoForge loaded and corrected it (it drops keys it no longer knows). */
+    private static volatile Map<String, Double> beforeCorrection = Map.of();
 
     enum Action { NONE, MOVE_TO_NEW_DEFAULT, KEEP_HAND_EDITED }
 
@@ -133,6 +167,32 @@ public final class KegareConfigMigration {
     }
 
     private KegareConfigMigration() {}
+
+    /**
+     * Reads {@code kegare-server.toml} as it is on disk, before NeoForge loads it (which drops the old names), for the options that
+     * moved. Call from the mod's constructor: a server's config loads only when the server starts.
+     */
+    public static void readBeforeLoading(Path file) {
+        if (!Files.isRegularFile(file)) return;
+        try {
+            beforeCorrection = handSetRenamed(new TomlParser().parse(file, FileNotFoundAction.THROW_ERROR));
+        } catch (Exception e) {
+            Kegare.LOGGER.warn("kegare-server.toml: couldn't read it for renamed options; they'll start from their defaults", e);
+        }
+    }
+
+    /** Every renamed option {@code old} sets to something other than its old default, under its new path. */
+    static Map<String, Double> handSetRenamed(UnmodifiableConfig old) {
+        Map<String, Double> out = new HashMap<>();
+        for (Step step : STEPS) {
+            for (Map.Entry<String, Renamed> e : step.renamed().entrySet()) {
+                if (old.get(e.getKey()) instanceof Number n && n.doubleValue() != e.getValue().oldDefault()) {
+                    out.put(e.getValue().to(), n.doubleValue());
+                }
+            }
+        }
+        return out;
+    }
 
     public static void onConfigLoading(ModConfigEvent.Loading event) {
         ModConfig config = event.getConfig();
@@ -165,6 +225,17 @@ public final class KegareConfigMigration {
                 case NONE -> {}
             }
         }
+        List<String> carried = new ArrayList<>();
+        for (Renamed renamed : step.renamed().values()) {
+            Double value = beforeCorrection.get(renamed.to());
+            if (value == null) continue;
+            @SuppressWarnings("unchecked")
+            ModConfigSpec.ConfigValue<Double> to = (ModConfigSpec.ConfigValue<Double>) KegareServerConfig.SPEC.getValues().get(renamed.to());
+            if (to == null) continue;
+            to.set(value);
+            carried.add(renamed.to() + " = " + value);
+        }
+        if (!carried.isEmpty()) Kegare.LOGGER.info("kegare-server.toml: carried {} hand-set values over to {}: {}", carried.size(), step.what(), carried);
         if (moved > 0) Kegare.LOGGER.info("kegare-server.toml: moved {} values to {}", moved, step.what());
         if (!kept.isEmpty()) {
             kept.sort(null);

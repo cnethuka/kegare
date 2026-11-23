@@ -9,7 +9,7 @@ import net.minecraft.resources.ResourceLocation;
 
 /** What a player has earned from the {@link Unlocks} framework. Kept on death; {@link Unlocks} decides what a reroll takes. */
 public final class UnlockData {
-    public static final Codec<UnlockData> CODEC = ResourceLocation.CODEC.listOf().xmap(UnlockData::new, d -> new ArrayList<>(d.unlocked));
+    public static final Codec<UnlockData> CODEC = com.cnethuka.kegare.registry.RenamedIds.CODEC.listOf().xmap(UnlockData::new, d -> new ArrayList<>(d.unlocked));
 
     final Set<ResourceLocation> unlocked = new HashSet<>();
 

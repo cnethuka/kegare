@@ -34,7 +34,9 @@ class KegareConfigMigrationTest {
         KegareServerConfig.SPEC.correct(old, (action, path, incorrect, corrected) -> {
             if (action == com.electronwill.nightconfig.core.ConfigSpec.CorrectionAction.REMOVE) removed.add(String.join(".", path));
         });
-        assertEquals(java.util.Set.of("roll.includeTestInnateTechniques", "test_abilities"), java.util.Set.copyOf(removed), "those keys go, and nothing else");
+        assertEquals(java.util.Set.of("roll.includeTestInnateTechniques", "test_abilities", "reinforcement",
+                "background_tasks.background_reinforcement", "background_tasks.sustained_flow"), java.util.Set.copyOf(removed),
+                "those keys go (the renamed ones come back under their new names), and nothing else");
         assertTrue(KegareServerConfig.SPEC.isCorrect(old), "and then it's a correct file");
         assertFalse(old.contains("test_abilities"));
         assertEquals(hardPity, old.get("roll.hardPity"), "the rest as it was");
@@ -114,6 +116,26 @@ class KegareConfigMigrationTest {
         assertEquals(1.0, newDefault("reverse_malice_technique.others.range"), 1.0e-9, "touching");
         assertEquals(KegareConfigMigration.Action.MOVE_TO_NEW_DEFAULT, KegareConfigMigration.decide(3.0, 3.0, 1.0), "an old file's 3 moves");
         assertEquals(KegareConfigMigration.Action.KEEP_HAND_EDITED, KegareConfigMigration.decide(2.0, 3.0, 1.0), "a hand-set 2 stays");
+    }
+
+    @Test
+    void theFlowRenamesCarryOverHandSetValuesOnly() {
+        com.electronwill.nightconfig.core.CommentedConfig old = new com.electronwill.nightconfig.toml.TomlParser()
+                .parse(OLD_TOML, com.electronwill.nightconfig.core.file.FileNotFoundAction.THROW_ERROR);
+        assertEquals(Map.of(), KegareConfigMigration.handSetRenamed(old), "everything at its old default: the new defaults apply");
+        old.set("reinforcement.drainPerSecond", 15.0);
+        old.set("background_tasks.sustained_flow.flowReduction", 0.5);
+        assertEquals(Map.of("flow.drainPerSecond", 15.0, "background_tasks.steady_output.upkeepReduction", 0.5),
+                KegareConfigMigration.handSetRenamed(old), "set by hand: carried over under the new names");
+    }
+
+    @Test
+    void everyRenamedOptionLandsOnARealOneAndItsOldNameIsGone() {
+        assertEquals(10, KegareConfigMigration.FLOW_RENAMES.size());
+        for (Map.Entry<String, KegareConfigMigration.Renamed> e : KegareConfigMigration.FLOW_RENAMES.entrySet()) {
+            assertNotNull(KegareServerConfig.SPEC.getValues().get(e.getValue().to()), e.getValue().to());
+            assertTrue(KegareServerConfig.SPEC.getValues().get(e.getKey()) == null, e.getKey() + " is gone");
+        }
     }
 
     @Test

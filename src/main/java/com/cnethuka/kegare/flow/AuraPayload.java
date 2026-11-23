@@ -1,4 +1,4 @@
-package com.cnethuka.kegare.reinforcement;
+package com.cnethuka.kegare.flow;
 
 import com.cnethuka.kegare.Kegare;
 import java.util.function.Consumer;
@@ -12,9 +12,9 @@ import net.neoforged.neoforge.network.handling.IPayloadContext;
  * Malice color (RGB) of the face they show that viewer; {@code flags} say what's there.
  */
 public record AuraPayload(int entityId, int color, int flags) implements CustomPacketPayload {
-    /** The Reinforcement ability is on: the full aura. */
+    /** The Flow ability is on: the full aura. */
     public static final int FULL = 1;
-    /** Background Reinforcement alone: the same aura, much calmer and fainter. */
+    /** Background Flow alone: the same aura, much calmer and fainter. */
     public static final int CALM = 2;
     /** In a fight: fuller and faster. */
     public static final int FIGHT = 4;

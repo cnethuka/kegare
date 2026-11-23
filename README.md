@@ -54,7 +54,7 @@ that will share the mod's name, are still to come.
   winning; Refinement, which unlocks a technique's abilities as you land them; and Insight from first-time encounters. It
   changes no damage, costs or capacity.
 - **Reverse Malice Technique:** a shared healing ability, found through a green orb only its finder can see.
-- **Background Tasks:** keep Reinforcement or Reverse Malice Technique running without a bar slot, weaker than on the bar.
+- **Background Tasks:** keep Flow or Reverse Malice Technique running without a bar slot, weaker than on the bar.
 
 **Also**
 - **Eyewear:** a Blindfold and Sunglasses, worn in their own Curios slot.

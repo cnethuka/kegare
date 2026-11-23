@@ -203,7 +203,7 @@ public final class CastManager {
         PlayerSync.markDirty(player);
     }
 
-    /** Changes what an active toggle's upkeep drains each second (Sustained Flow, DESIGN §3.31). Never a start cost, never a channel. */
+    /** Changes what an active toggle's upkeep drains each second (Steady Output, DESIGN §3.31). Never a start cost, never a channel. */
     @FunctionalInterface
     public interface ToggleUpkeepModifier {
         double modify(ServerPlayer player, Ability ability, double perSecond);
