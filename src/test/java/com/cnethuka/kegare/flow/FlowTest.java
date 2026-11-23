@@ -37,7 +37,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import com.cnethuka.kegare.loadout.AbilityTabs;
 
-/** Flow (DESIGN §3.16): everyone's, Malice category, the toggle and its costs, both reductions, knockback, with Fists. */
+/** Flow (DESIGN §3.16): everyone's, Malice category, the toggle and its costs, and its four boosts: Offense, Defense, Movement, Technique. */
 @ExtendWith(EphemeralTestServerProvider.class)
 class FlowTest {
     private static final double EPS = 1.0e-3;
@@ -174,7 +174,7 @@ class FlowTest {
     }
 
     @Test
-    void itRunsWithFistsAndAddsNoDamage(MinecraftServer server) throws Exception {
+    void itRunsWithFistsAndTheirBonusesStack(MinecraftServer server) throws Exception {
         TestServer.onServerThread(server, () -> {
             TestServer.ensureOverworld(server);
             ServerLevel level = server.overworld();
@@ -191,7 +191,7 @@ class FlowTest {
                 golem.invulnerableTime = 0;
                 float hp = golem.getHealth();
                 golem.hurt(p.damageSources().playerAttack(p), 2f);
-                assertEquals(2f, hp - golem.getHealth(), EPS, "Flow adds no damage");
+                assertEquals(2f * (1 + FlowConfig.OFFENSE.get()), hp - golem.getHealth(), EPS, "Offense");
 
                 InnateTechniqueService.select(p, 2);
                 CastManager.handleIntent(p, CastIntent.CAST_PRESS);
@@ -200,7 +200,8 @@ class FlowTest {
                 golem.invulnerableTime = 0;
                 hp = golem.getHealth();
                 golem.hurt(p.damageSources().playerAttack(p), 2f);
-                assertEquals(2f * (1 + FistsConfig.FIST_BONUS.get()), hp - golem.getHealth(), EPS, "Fists' bonus, nothing more");
+                assertEquals(2f * (1 + FistsConfig.FIST_BONUS.get()) * (1 + FlowConfig.OFFENSE.get()), hp - golem.getHealth(), EPS,
+                        "Fists' bonus and Offense on top of it");
                 assertEquals(4f * (1 - FlowConfig.REDUCTION_PHYSICAL.get()), taken(p, p.damageSources().generic(), 4f), EPS,
                         "and the reduction with both on");
                 double malice = malice(p);
@@ -208,6 +209,88 @@ class FlowTest {
                 assertEquals(malice - FistsConfig.DRAIN.get() - FlowConfig.DRAIN.get(), malice(p), EPS, "both drain");
             } finally {
                 golem.discard();
+                TestServer.removePlayers(server);
+            }
+        });
+    }
+
+    @Test
+    void offenseIsOnEveryKindOfDamageTheyDealAndGoesWithIt(MinecraftServer server) throws Exception {
+        TestServer.onServerThread(server, () -> {
+            TestServer.ensureOverworld(server);
+            ServerLevel level = server.overworld();
+            IronGolem golem = new IronGolem(EntityType.IRON_GOLEM, level);
+            golem.moveTo(4.5, level.getHeight(Heightmap.Types.MOTION_BLOCKING, 8, 8), 8.5, 0f, 0f);
+            golem.setNoGravity(true);
+            golem.setNoAi(true);
+            level.addFreshEntity(golem);
+            try {
+                ServerPlayer p = player(server, "flow_offense");
+                ServerPlayer other = player(server, "flow_offense_other");
+                slot(p, 1);
+                turnOn(p);
+                golem.invulnerableTime = 0;
+                float hp = golem.getHealth();
+                golem.hurt(RimeDamage.source(level, p, p), 4f);
+                assertEquals(4f * (1 + FlowConfig.OFFENSE.get()), hp - golem.getHealth(), EPS, "a technique's hit too");
+                golem.invulnerableTime = 0;
+                hp = golem.getHealth();
+                golem.hurt(RimeDamage.source(level, other, other), 4f);
+                assertEquals(4f, hp - golem.getHealth(), EPS, "only their own hits");
+                CastManager.handleIntent(p, CastIntent.CAST_PRESS);
+                assertFalse(FlowAbility.isOn(p), "off");
+                golem.invulnerableTime = 0;
+                hp = golem.getHealth();
+                golem.hurt(p.damageSources().playerAttack(p), 2f);
+                assertEquals(2f, hp - golem.getHealth(), EPS, "off: nothing added");
+            } finally {
+                golem.discard();
+                TestServer.removePlayers(server);
+            }
+        });
+    }
+
+    @Test
+    void movementIsFasterAndDashRechargesSooner(MinecraftServer server) throws Exception {
+        TestServer.onServerThread(server, () -> {
+            try {
+                ServerPlayer p = player(server, "flow_move");
+                slot(p, 1);
+                double speed = p.getAttributeValue(Attributes.MOVEMENT_SPEED);
+                assertEquals(60, com.cnethuka.kegare.melee.Dash.recharge(p, 60), "off: Dash's own recharge");
+                turnOn(p);
+                assertEquals(speed * (1 + FlowConfig.MOVEMENT_SPEED.get()), p.getAttributeValue(Attributes.MOVEMENT_SPEED), EPS, "movementSpeed");
+                assertEquals(Math.round(60 * (1 - FlowConfig.DASH_RECHARGE.get())), com.cnethuka.kegare.melee.Dash.recharge(p, 60), "dashRecharge");
+                CastManager.handleIntent(p, CastIntent.CAST_PRESS);
+                assertEquals(speed, p.getAttributeValue(Attributes.MOVEMENT_SPEED), EPS, "off: the speed goes with it");
+            } finally {
+                TestServer.removePlayers(server);
+            }
+        });
+    }
+
+    @Test
+    void theInnateTechniqueCostsLessAndNothingElseDoes(MinecraftServer server) throws Exception {
+        TestServer.onServerThread(server, () -> {
+            try {
+                ServerPlayer p = player(server, "flow_technique");
+                slot(p, 1);
+                var shard = Rime.FROST_SHARD;
+                var rmt = com.cnethuka.kegare.rmt.Rmt.REVERSE_MALICE_TECHNIQUE;
+                assertEquals(100.0, CastManager.abilityCost(p, shard, 100.0), EPS, "off: in full");
+                turnOn(p);
+                assertEquals(100.0 * (1 - FlowConfig.TECHNIQUE_COST.get()), CastManager.abilityCost(p, shard, 100.0), EPS, "techniqueCost");
+                assertEquals(100.0, CastManager.abilityCost(p, rmt, 100.0), EPS, "a shared ability: in full");
+                assertEquals(100.0, CastManager.abilityCost(p, Flow.FLOW, 100.0), EPS, "Flow itself: in full");
+
+                // A real cast pays the lower price.
+                assertEquals(LoadoutResult.OK, LoadoutService.edit(p, LoadoutService.Action.SET, 2, 0, Optional.of(shard.id())));
+                InnateTechniqueService.select(p, 2);
+                MaliceService.refill(p);
+                double before = malice(p);
+                CastManager.handleIntent(p, CastIntent.CAST_PRESS);
+                assertEquals(before - shard.cost(p) * (1 - FlowConfig.TECHNIQUE_COST.get()), malice(p), EPS, "Frost Shard, cheaper");
+            } finally {
                 TestServer.removePlayers(server);
             }
         });

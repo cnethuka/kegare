@@ -8,6 +8,8 @@ import net.minecraft.world.phys.Vec3;
 public final class MeleeState {
     // Dash
     long dashReadyAt;
+    /** How long the last dash's recharge was (0: none yet), so the HUD's bar runs over it. */
+    int dashCooldown;
     @Nullable Vec3 dashDirection;
     double dashDistance;
     int dashTicksLeft;

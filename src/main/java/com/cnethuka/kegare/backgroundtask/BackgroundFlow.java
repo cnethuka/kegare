@@ -10,10 +10,10 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerPlayer;
 
 /**
- * Background Flow (DESIGN §3.31): Flow (§3.16) kept up without thinking. Unlocked at Grade 3 (kept once earned).
- * While it runs you have {@code backgroundStrength} (0.4) of the ability's damage reductions and knockback resistance, for a smaller
- * drain. With the Flow ability on too they don't stack: the stronger applies ({@link Flow#strength}). Its aura is the
- * ability's, much calmer and fainter: a thin flow with a light outline, still shown to everyone.
+ * Background Flow (DESIGN §3.31): Flow (§3.16) kept up without thinking. Unlocked at Grade 3 (kept once earned). While it runs you have
+ * {@code backgroundStrength} (0.4) of every one of the ability's boosts (Offense, Defense, Movement, Innate Technique), for a smaller drain.
+ * With the Flow ability on too they don't stack: the stronger applies ({@link Flow#strength}). Its aura is the ability's, much calmer and
+ * fainter, still shown to everyone.
  */
 public final class BackgroundFlow extends BackgroundTask {
     public static final ResourceLocation ID = Kegare.id("background_flow");

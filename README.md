@@ -40,6 +40,7 @@ that will share the mod's name, are still to come.
 
 **Fighting**
 - **Melee for everyone:** Dash, Parry and Reinforced Strike, in and out of Technique Mode.
+- **Flow:** let Malice flow through your whole body: you hit harder, take less, move faster, and your Innate Technique costs less.
 - **Reinforced Fists** wrap Malice round your fists. Land the Malice within a hair of a punch and it becomes a **Black Spark**,
   a far heavier hit.
 - **Hits that feel heavy:** a short freeze, a camera shake, a flash where the hit lands, and an impact frame for the biggest

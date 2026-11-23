@@ -39,8 +39,8 @@ public final class BackgroundTaskConfig {
         b.pop();
 
         b.comment("Background Flow: Flow kept up without thinking, weaker. Unlocked at Grade 3.").push("background_flow");
-        FLOW_STRENGTH = b.comment("Its share of the Flow ability's damage reductions and knockback resistance. With the ability on",
-                "too, they don't stack: the stronger applies.").defineInRange("backgroundStrength", 0.4, 0.0, 1.0);
+        FLOW_STRENGTH = b.comment("Its share of every one of Flow's boosts (Offense, Defense, Movement, Innate Technique). With the ability",
+                "on too, they don't stack: the stronger applies.").defineInRange("backgroundStrength", 0.4, 0.0, 1.0);
         FLOW_DRAIN = b.comment("Malice drained per second while it runs.").defineInRange("drainPerSecond", 4.0, 0.0, 100_000.0);
         b.pop();
 

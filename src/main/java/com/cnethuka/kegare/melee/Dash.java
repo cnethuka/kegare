@@ -52,6 +52,24 @@ public final class Dash {
         return clear;
     }
 
+    /** Changes how long Dash takes to recharge after a dash (Flow's Movement, DESIGN §3.16). */
+    @FunctionalInterface
+    public interface RechargeModifier {
+        int modify(ServerPlayer player, int ticks);
+    }
+
+    private static final java.util.List<RechargeModifier> RECHARGE_MODIFIERS = new java.util.concurrent.CopyOnWriteArrayList<>();
+
+    public static void addRechargeModifier(RechargeModifier modifier) {
+        RECHARGE_MODIFIERS.add(modifier);
+    }
+
+    /** How long this player's Dash takes to recharge, from its usual {@code ticks}. */
+    public static int recharge(ServerPlayer player, int ticks) {
+        for (RechargeModifier modifier : RECHARGE_MODIFIERS) ticks = modifier.modify(player, ticks);
+        return Math.max(0, ticks);
+    }
+
     /** The request. Everything here is the server's own: the client's only say is which way, and that's free anyway. */
     static void request(ServerPlayer player, int forward, int left) {
         MeleeState state = MeleeLayer.state(player);
@@ -68,7 +86,8 @@ public final class Dash {
         }
         if (state.guarding) Parry.end(player, state); // a guard can't go with you, and comes down like any other
         Vec3 from = player.position();
-        state.dashReadyAt = now + numbers.dashCooldownTicks();
+        state.dashCooldown = recharge(player, numbers.dashCooldownTicks());
+        state.dashReadyAt = now + state.dashCooldown;
         double speed = MeleeConfig.DASH_SPEED.get();
         state.dashDirection = direction;
         state.dashDistance = clear;

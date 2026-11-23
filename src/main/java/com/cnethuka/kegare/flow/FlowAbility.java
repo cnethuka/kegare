@@ -12,11 +12,10 @@ import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
 
 /**
- * Flow (Malice, TOGGLE, DESIGN §3.16): Malice routed through the body, improving its durability and force tolerance. Every
- * Malice user has it, with nothing to unlock; Severed never. Turning it on costs {@code onCost}; it drains {@code drainPerSecond} and turns
- * off when Malice runs out; {@code rearmCooldown} before it can go on again. It keeps running outside Technique Mode and through Burnout;
- * death and logout end it. While on, you take less damage and less knockback ({@link Flow}); it adds no damage. Malice wraps the
- * whole body, visible to everyone (client {@code AuraClient}).
+ * Flow (Malice, TOGGLE, DESIGN §3.16): Malice let flow through the whole body, boosting Offense, Defense, Movement and the Innate Technique
+ * ({@link Flow}). Every Malice user has it, with nothing to unlock; Severed never. Turning it on costs {@code onCost}; it drains
+ * {@code drainPerSecond} and turns off when Malice runs out; {@code rearmCooldown} before it can go on again. It keeps running outside
+ * Technique Mode and through Burnout; death and logout end it. Malice wraps the whole body, visible to everyone (client {@code AuraClient}).
  */
 public final class FlowAbility extends BaseAbility {
     FlowAbility() {
@@ -31,8 +30,9 @@ public final class FlowAbility extends BaseAbility {
 
     @Override
     public Object[] descriptionArgs() {
-        return new Object[] {ConfigText.percent(FlowConfig.REDUCTION_PHYSICAL), ConfigText.percent(FlowConfig.REDUCTION_TECHNIQUE),
-                ConfigText.percent(FlowConfig.KNOCKBACK_RESISTANCE)};
+        return new Object[] {ConfigText.percent(FlowConfig.OFFENSE), ConfigText.percent(FlowConfig.REDUCTION_PHYSICAL),
+                ConfigText.percent(FlowConfig.REDUCTION_TECHNIQUE), ConfigText.percent(FlowConfig.KNOCKBACK_RESISTANCE),
+                ConfigText.percent(FlowConfig.MOVEMENT_SPEED), ConfigText.percent(FlowConfig.DASH_RECHARGE), ConfigText.percent(FlowConfig.TECHNIQUE_COST)};
     }
 
     public static boolean isOn(ServerPlayer player) {

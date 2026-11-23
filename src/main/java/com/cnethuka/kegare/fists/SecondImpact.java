@@ -64,7 +64,7 @@ public final class SecondImpact {
         return new DamageSource(level.registryAccess().registryOrThrow(Registries.DAMAGE_TYPE).getHolderOrThrow(FistsIds.SECOND_IMPACT), attacker, attacker);
     }
 
-    static boolean isSecondImpact(DamageSource source) {
+    public static boolean isSecondImpact(DamageSource source) {
         return source.is(FistsIds.SECOND_IMPACT);
     }
 

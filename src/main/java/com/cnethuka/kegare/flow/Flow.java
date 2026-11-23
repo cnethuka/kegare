@@ -1,10 +1,15 @@
 package com.cnethuka.kegare.flow;
 
+import com.cnethuka.kegare.api.ability.AbilityCategory;
+import com.cnethuka.kegare.fists.SecondImpact;
+import com.cnethuka.kegare.innatetechnique.CastManager;
 import com.cnethuka.kegare.loadout.SharedAbilities;
+import com.cnethuka.kegare.melee.Dash;
 import com.cnethuka.kegare.melee.MeleeHits;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.function.ToDoubleFunction;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.tags.DamageTypeTags;
@@ -16,15 +21,21 @@ import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.neoforged.bus.api.EventPriority;
 import net.neoforged.neoforge.common.NeoForge;
 import net.neoforged.neoforge.event.entity.living.LivingDamageEvent;
+import net.neoforged.neoforge.event.entity.living.LivingIncomingDamageEvent;
 import net.neoforged.neoforge.event.entity.player.PlayerEvent;
 import net.neoforged.neoforge.event.server.ServerStoppedEvent;
 import net.neoforged.neoforge.event.tick.PlayerTickEvent;
 
 /**
- * Flow (DESIGN §3.16): what it does to the body. Its strength is 1 while the ability is on; other sources (Background
- * Flow, §3.31) offer a strength of their own, and the strongest applies: they don't stack. At strength {@code s} you take
- * {@code reductionPhysical × s} less physical damage, {@code reductionTechnique × s} less technique damage, and have
- * {@code knockbackResistance × s} more knockback resistance. The void, /kill and starving are untouched.
+ * Flow (DESIGN §3.16): what it does to the body. Its strength is 1 while the ability is on; other sources (Background Flow, §3.31) offer a
+ * strength of their own, and the strongest applies: they don't stack. At strength {@code s}:
+ * <ul>
+ *   <li>Offense: every hit you deal does {@code offense × s} more, on top of Reinforced Fists' bonus.</li>
+ *   <li>Defense: you take {@code reductionPhysical × s} less physical damage and {@code reductionTechnique × s} less technique damage, and
+ *   have {@code knockbackResistance × s} more knockback resistance. The void, /kill and starving are untouched.</li>
+ *   <li>Movement: {@code movementSpeed × s} faster, and Dash recharges {@code dashRecharge × s} sooner.</li>
+ *   <li>Innate Technique: its abilities cost {@code techniqueCost × s} less (casts, releases and upkeep).</li>
+ * </ul>
  */
 public final class Flow {
     public static final FlowAbility FLOW = SharedAbilities.registerForEveryone(new FlowAbility());
@@ -35,6 +46,10 @@ public final class Flow {
 
     public static void init() {
         NeoForge.EVENT_BUS.addListener(EventPriority.LOW, Flow::onDamage);
+        NeoForge.EVENT_BUS.addListener(Flow::onIncoming);
+        CastManager.addAbilityCostModifier((player, ability, amount) -> ability.category() == AbilityCategory.INNATE
+                ? amount * (1.0 - FlowConfig.TECHNIQUE_COST.get() * strength(player)) : amount);
+        Dash.addRechargeModifier((player, ticks) -> (int) Math.round(ticks * (1.0 - FlowConfig.DASH_RECHARGE.get() * strength(player))));
         NeoForge.EVENT_BUS.addListener((PlayerTickEvent.Post e) -> {
             if (!(e.getEntity() instanceof ServerPlayer p)) return;
             if (p.tickCount % 10 == 0) update(p);
@@ -64,7 +79,7 @@ public final class Flow {
         return Math.max(0, Math.min(1, s));
     }
 
-    /** Keeps the knockback resistance in step with how reinforced they are now (a source changed: call this). */
+    /** Keeps the attribute modifiers (knockback resistance, speed) in step with how strong it is now (a source changed: call this). */
     public static void update(ServerPlayer player) {
         set(player, strength(player));
     }
@@ -74,17 +89,34 @@ public final class Flow {
         set(player, Math.max(abilityOn ? 1.0 : 0.0, backgroundStrength(player)));
     }
 
-    /** Keeps the knockback resistance in step with the strength. */
+    /** Keeps the knockback resistance and the speed in step with the strength. */
     private static void set(ServerPlayer player, double s) {
-        AttributeInstance kb = player.getAttribute(Attributes.KNOCKBACK_RESISTANCE);
-        if (kb == null) return;
-        double amount = FlowConfig.KNOCKBACK_RESISTANCE.get() * Math.max(0, Math.min(1, s));
-        AttributeModifier current = kb.getModifier(FlowIds.KNOCKBACK_MODIFIER);
+        s = Math.max(0, Math.min(1, s));
+        modifier(player.getAttribute(Attributes.KNOCKBACK_RESISTANCE), FlowIds.KNOCKBACK_MODIFIER, FlowConfig.KNOCKBACK_RESISTANCE.get() * s,
+                AttributeModifier.Operation.ADD_VALUE);
+        modifier(player.getAttribute(Attributes.MOVEMENT_SPEED), FlowIds.SPEED_MODIFIER, FlowConfig.MOVEMENT_SPEED.get() * s,
+                AttributeModifier.Operation.ADD_MULTIPLIED_TOTAL);
+    }
+
+    private static void modifier(AttributeInstance attribute, ResourceLocation id, double amount, AttributeModifier.Operation operation) {
+        if (attribute == null) return;
+        AttributeModifier current = attribute.getModifier(id);
         if (amount <= 0) {
-            if (current != null) kb.removeModifier(FlowIds.KNOCKBACK_MODIFIER);
+            if (current != null) attribute.removeModifier(id);
         } else if (current == null || Math.abs(current.amount() - amount) > 1.0e-9) { // only when it changes: no resend every tick
-            kb.addOrUpdateTransientModifier(new AttributeModifier(FlowIds.KNOCKBACK_MODIFIER, amount, AttributeModifier.Operation.ADD_VALUE));
+            attribute.addOrUpdateTransientModifier(new AttributeModifier(id, amount, operation));
         }
+    }
+
+    /**
+     * Offense: more on every hit they deal, melee or weapon, projectile or technique, before the target's defences; at the same step as
+     * Reinforced Fists' bonus, so the two multiply. A Second Impact is a share of a Strike that's already had it.
+     */
+    private static void onIncoming(LivingIncomingDamageEvent event) {
+        DamageSource source = event.getSource();
+        if (!(source.getEntity() instanceof ServerPlayer attacker) || attacker == event.getEntity() || SecondImpact.isSecondImpact(source)) return;
+        double s = strength(attacker);
+        if (s > 0) event.setAmount(event.getAmount() * (float) (1.0 + FlowConfig.OFFENSE.get() * s));
     }
 
     /** The strongest source other than the ability (Background Flow), 0 if none. */

@@ -74,11 +74,16 @@ public final class MeleeLayer {
         syncHud(player);
     }
 
+    /** The recharge the HUD's bar runs over: the last dash's own (Flow shortens it), or the usual one. */
+    private static int dashCooldown(MeleeState state, MeleeNumbers numbers) {
+        return state.dashCooldown > 0 ? state.dashCooldown : numbers.dashCooldownTicks();
+    }
+
     /** Tells the owner what their HUD shows, if that changed. Times, so the client counts them down itself. */
     static void syncHud(ServerPlayer player) {
         MeleeState state = state(player);
         MeleeNumbers numbers = MeleeNumbers.of(player);
-        MeleeHudPayload hud = new MeleeHudPayload(state.dashReadyAt, numbers.dashCooldownTicks(), state.recoveryUntil, numbers.recoveryTicks(),
+        MeleeHudPayload hud = new MeleeHudPayload(state.dashReadyAt, dashCooldown(state, numbers), state.recoveryUntil, numbers.recoveryTicks(),
                 state.strikeUntil, state.strikeTicks, false);
         if (hud.equals(state.sent)) return;
         state.sent = hud;
@@ -88,7 +93,7 @@ public final class MeleeLayer {
     static void sendAttackReset(ServerPlayer player) {
         MeleeState state = state(player);
         MeleeNumbers numbers = MeleeNumbers.of(player);
-        PacketDistributor.sendToPlayer(player, new MeleeHudPayload(state.dashReadyAt, numbers.dashCooldownTicks(), state.recoveryUntil, numbers.recoveryTicks(),
+        PacketDistributor.sendToPlayer(player, new MeleeHudPayload(state.dashReadyAt, dashCooldown(state, numbers), state.recoveryUntil, numbers.recoveryTicks(),
                 state.strikeUntil, state.strikeTicks, true));
     }
 

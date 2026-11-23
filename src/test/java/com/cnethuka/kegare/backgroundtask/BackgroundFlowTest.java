@@ -80,6 +80,7 @@ class BackgroundFlowTest {
                 ServerPlayer p = player(server, "bgreinf_strength");
                 ServerPlayer caster = player(server, "bgreinf_caster");
                 double kb = p.getAttributeValue(Attributes.KNOCKBACK_RESISTANCE);
+                double speed = p.getAttributeValue(Attributes.MOVEMENT_SPEED);
                 double s = BackgroundTaskConfig.FLOW_STRENGTH.get();
                 assertTrue(BackgroundTaskConfig.FLOW_DRAIN.get() < FlowConfig.DRAIN.get(), "a smaller drain");
 
@@ -97,6 +98,11 @@ class BackgroundFlowTest {
                         "of the physical reduction");
                 assertEquals(4f * (1 - FlowConfig.REDUCTION_TECHNIQUE.get() * s), taken(p, RimeDamage.source(p.level(), caster, caster)),
                         EPS, "of the technique reduction");
+                assertEquals(speed * (1 + FlowConfig.MOVEMENT_SPEED.get() * s), p.getAttributeValue(Attributes.MOVEMENT_SPEED), EPS, "of the speed");
+                assertEquals(Math.round(60 * (1 - FlowConfig.DASH_RECHARGE.get() * s)), com.cnethuka.kegare.melee.Dash.recharge(p, 60),
+                        "of Dash's quicker recharge");
+                assertEquals(100.0 * (1 - FlowConfig.TECHNIQUE_COST.get() * s),
+                        CastManager.abilityCost(p, com.cnethuka.kegare.innate_technique.rime.Rime.FROST_SHARD, 100.0), EPS, "of the cheaper technique");
                 int look = AuraPayload.FULL | AuraPayload.CALM; // (the hits above put them in a fight, which only adds FIGHT)
                 assertEquals(AuraPayload.CALM, com.cnethuka.kegare.flow.AuraTellAccess.flags(p) & look, "the calm aura, shown to everyone");
 
@@ -118,6 +124,7 @@ class BackgroundFlowTest {
                 BackgroundTaskService.tick(p);
                 assertEquals(0.0, Flow.strength(p), EPS, "off: nothing");
                 assertEquals(kb, p.getAttributeValue(Attributes.KNOCKBACK_RESISTANCE), EPS, "and no knockback resistance");
+                assertEquals(speed, p.getAttributeValue(Attributes.MOVEMENT_SPEED), EPS, "and no speed");
             } finally {
                 TestServer.removePlayers(server);
             }

@@ -128,7 +128,7 @@ public final class CastManager {
         if (CombatHelper.isStunned(player)) return CastResult.STUNNED;
         if (InnateTechniqueService.cooldownRemaining(player, ability) > 0) return CastResult.ON_COOLDOWN;
         if (unmetRequirement(player, ability).isPresent()) return CastResult.REQUIREMENT_UNMET;
-        if (!MaliceService.canAffordCast(player, ability.cost(player))) return CastResult.NOT_ENOUGH_MALICE;
+        if (!MaliceService.canAffordCast(player, abilityCost(player, ability, ability.cost(player)))) return CastResult.NOT_ENOUGH_MALICE;
         if (!ability.canCast(ctx)) return CastResult.BLOCKED;
         return CastResult.OK;
     }
@@ -223,15 +223,34 @@ public final class CastManager {
     }
 
     /** A cast's start or release cost: at least 1 Malice, whatever lowers it. */
+    /** Changes what a cast of one ability really takes (Flow's Innate Technique boost, DESIGN §3.16): its cost, release cost and upkeep. */
+    @FunctionalInterface
+    public interface AbilityCostModifier {
+        double modify(ServerPlayer player, Ability ability, double amount);
+    }
+
+    private static final List<AbilityCostModifier> ABILITY_COST_MODIFIERS = new java.util.concurrent.CopyOnWriteArrayList<>();
+
+    public static void addAbilityCostModifier(AbilityCostModifier modifier) {
+        ABILITY_COST_MODIFIERS.add(modifier);
+    }
+
+    /** What {@code amount} of this ability's cost really asks for, before Malice's own cost modifiers (Six Eyes' efficiency) take theirs. */
+    public static double abilityCost(ServerPlayer player, Ability ability, double amount) {
+        if (amount <= 0) return amount;
+        for (AbilityCostModifier modifier : ABILITY_COST_MODIFIERS) amount = modifier.modify(player, ability, amount);
+        return amount;
+    }
+
     private static boolean payCast(ServerPlayer player, Ability ability, double amount) {
-        if (!MaliceService.trySpendCast(player, amount)) return false;
+        if (!MaliceService.trySpendCast(player, abilityCost(player, ability, amount))) return false;
         paid(player, ability, amount);
         return true;
     }
 
     /** Upkeep, a little a tick. */
     private static boolean pay(ServerPlayer player, Ability ability, double amount) {
-        if (!MaliceService.trySpend(player, amount)) return false;
+        if (!MaliceService.trySpend(player, abilityCost(player, ability, amount))) return false;
         paid(player, ability, amount);
         return true;
     }

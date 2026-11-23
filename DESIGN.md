@@ -1225,17 +1225,30 @@ separate bar is filled from any of them.
   unlock (`SharedAbilities.registerForEveryone`: Flow, Reinforced Fists, §3.28); Severed players never have those either. A
   locked one shows in its category as a greyed tile with a padlock, and its card says what unlocks it (`Ability.unlockHint`: Reverse
   Malice Technique's "Take in the green orb.").
-- **Flow** (`kegare:flow`, Malice, TOGGLE; package `flow`). Lore: Malice routed through the whole body, the way every sorcerer in canon
-  reinforces themselves, improving durability and force tolerance; so every Malice user has it, with nothing to unlock (Severed never).
+- **Flow** (`kegare:flow`, Malice, TOGGLE; package `flow`). Lore: Malice let flow through the whole body, the way every sorcerer in
+  canon reinforces themselves, so it lifts everything the body does; every Malice user has it, with nothing to unlock (Severed never).
   Saved data naming `kegare:reinforcement` reads as Flow (`RenamedIds`, also for Background Flow and Steady Output, §3.31). The same
-  rules as Reinforced Fists (§3.28): turning it on costs `onCost` (40), it drains `drainPerSecond` (10) and goes off when Malice runs out, `rearmCooldown` (1.5 s) after it goes off; it keeps running
-  outside Technique Mode and through Burnout; death and logout end it. Both it and Reinforced Fists can run together.
-  - **Effect** (`Flow`): you take `reductionPhysical` (25%) less physical damage and `reductionTechnique` (20%) less from
-    techniques (as `MeleeHits` sorts a hit: a Kegare damage type or an attributed cast is a technique; everything else is physical),
-    taken off what's left after armour, and `knockbackResistance` (+0.4, an attribute modifier) against knockback: the force
-    tolerance. The void, /kill and starving are untouched. It adds no damage (that's Reinforced Fists). Background Flow
-    (§3.31) is another source of the same thing at a share of its strength; they never stack: the stronger applies. Numbers in
-    `[flow]`.
+  rules as Reinforced Fists (§3.28): turning it on costs `onCost` (40), it drains `drainPerSecond` (12) and goes off when Malice runs
+  out, `rearmCooldown` (1.5 s) after it goes off; it keeps running outside Technique Mode and through Burnout; death and logout end it.
+  Both it and Reinforced Fists can run together.
+  - **Effect** (`Flow`): four boosts, all at its strength (1 with the ability on; Background Flow, §3.31, is another source at a share
+    of it, and they never stack: the stronger applies). Numbers in `[flow]`.
+    - **Offense:** every hit you deal does `offense` (15%) more: melee, weapons, projectiles and techniques alike (anything whose
+      source is you), before the target's defences (`LivingIncomingDamageEvent`). It's at the same step as Reinforced Fists' bonus, so
+      the two multiply; Black Spark and the zone come after both (§3.28). Not a Second Impact, which is a share of a Strike that's
+      already had it, and never your own hurt.
+    - **Defense:** you take `reductionPhysical` (25%) less physical damage and `reductionTechnique` (20%) less from techniques (as
+      `MeleeHits` sorts a hit: a Kegare damage type or an attributed cast is a technique; everything else is physical), taken off
+      what's left after armour, and `knockbackResistance` (+0.4, an attribute modifier) against knockback: the force tolerance. The
+      void, /kill and starving are untouched.
+    - **Movement:** `movementSpeed` (+15%, a multiplied-total attribute modifier, like Speed's) and Dash recharges `dashRecharge`
+      (25%) sooner (`Dash.addRechargeModifier`; the HUD's Dash bar runs over the shortened recharge).
+    - **Innate Technique:** its abilities cost `techniqueCost` (15%) less: casts, releases and upkeep, specials and the ultimate
+      too (every ability whose category is Innate, through `CastManager.addAbilityCostModifier`), before Six Eyes' efficiency takes
+      its share. What a cast counts as having paid (Landings, the Impact System's Malice input) stays the full price, so a cheaper
+      cast is never a weaker one. Shared abilities (RMT, Fists, Flow itself) pay in full.
+    - Flow only boosts. Flow variations of the base abilities (a different version of a number-key ability while Flow is on; R and V
+      stay as they are) will be added in a later update.
   - **Look** (client `AuraClient`; our own art): Malice wrapped round the whole body, the way anime draws a sorcerer's energy flowing. A sheet of 16 frames
     (`entity/aura.png`, 192×384 each, 1.6 × 3.2 blocks) hugs the player's silhouette a little way out and rises into five flame-like
     tongues over the head and shoulders, always flowing upward (the noise scrolls up a period per loop; each tongue swells and sways in
@@ -1258,8 +1271,9 @@ separate bar is filled from any of them.
       viewer when it changes (`AuraTell`, `AuraPayload`).
   - Its own icon (a dark figure wrapped in Malice, three tongues over it), name and text; the combat panel outlines it green while on.
   - **Tests:** `FlowTest`: everyone's, in the Malice tab, Severed never; the toggle, onCost, the drain, Burnout, re-arm, out of
-    Malice; both reductions, the void untouched, knockback resistance on and off; running with Fists (no damage added, Fists' bonus,
-    both drains); the aura's flags.
+    Malice; Offense on a technique's hit and a punch, only their own, gone when off; both reductions, the void untouched, knockback
+    resistance on and off; the speed and Dash's recharge; the Innate Technique cheaper (a real Frost Shard cast too) while shared
+    abilities and Flow itself pay in full; running with Fists (Fists' bonus and Offense multiply, both drains); the aura's flags.
 - **The loadout** (attachment `kegare:loadout`, saved, kept on death; `LoadoutService`):
   - **nine** regular slots (`LoadoutService.SLOTS`, number keys 1–9). By default the abilities the player has unlocked
     (§3.21; at Refinement 0, the first two) fill the first ones in order and the rest stay empty, ready for later
@@ -2203,7 +2217,7 @@ guard's recovery. Numbers: `[melee]` in `kegare-server.toml` (`MeleeConfig`), re
 ready when you possess is dropped).
 
 **Dash** (double-tap sprint, or a rebindable key with nothing bound by default).
-- About 4 blocks the way you're moving, or forward with no keys held; 3 s cooldown; 25 Malice. No invulnerability.
+- About 4 blocks the way you're moving, or forward with no keys held; 3 s cooldown (Flow shortens it, §3.16); 25 Malice. No invulnerability.
 - The double tap (`DoubleTap`) follows the sprint key if it's rebound, in a window set by client config `input.dashDoubleTapMillis` (300; 0 = off), also on the Settings page.
 - The client only says which movement keys are held (clamped on arrival). The server checks everything and sweeps the player's box through the world (`Dash.clearDistance`; a
   step counts as passable), so it never aims past a wall. Less than 0.5 blocks of room refuses it for free, with no cooldown. It's not allowed on a mount or while gliding.
@@ -3068,15 +3082,16 @@ ability on the bar, but it takes no bar slot and leaves the hands free.
 **Background Flow** (`background_flow`, `BackgroundFlow`; numbers in
 `[background_tasks.background_flow]`)
 - **Unlock:** Grade 3 (an Unlocks entry, kept once earned; never Severed).
-- **Effect:** Flow (§3.16) at `backgroundStrength` (0.4) of the ability's: 10% less physical damage, 8% less from techniques,
-  +0.16 knockback resistance, for `drainPerSecond` 4 (the ability's is 10). It's a source of `Flow.addSource`: with the
-  Flow ability on too they don't stack, the stronger applies.
+- **Effect:** Flow (§3.16) at `backgroundStrength` (0.4) of every one of the ability's boosts: 6% more damage dealt; 10% less
+  physical damage, 8% less from techniques and +0.16 knockback resistance; 6% faster and Dash recharging 10% sooner; Innate abilities
+  6% cheaper. For `drainPerSecond` 4 (the ability's is 12). It's a source of `Flow.addSource`: with the Flow ability on too they don't
+  stack, the stronger applies.
 - **Look:** the same aura as the ability, much calmer and fainter (`AuraPayload.CALM`): the simpler sheet with its even, light
   outline (drawn at 42% instead of 85%, so the ink is light too), 5% smaller, about 6 frames a second, a wisp every 16 ticks. It
   still shows to everyone, with the same disguise rules; in your own first person, the edge flow at half strength.
 - **Icon:** a small lit figure inside the loop.
-- **Tests:** `BackgroundFlowTest` (Grade 3, kept through a reroll; its drain, 0.4 of both reductions and the knockback
-  resistance; with the ability on, the ability's and no more; back to the background's when the ability goes off; nothing when off;
+- **Tests:** `BackgroundFlowTest` (Grade 3, kept through a reroll; its drain, 0.4 of both reductions, the knockback
+  resistance, the speed, Dash's quicker recharge and the cheaper technique; with the ability on, the ability's and no more; back to the background's when the ability goes off; nothing when off;
   the calm aura, then the full one).
 
 **Steady Output** (`steady_output`, `SteadyOutput`; numbers in `[background_tasks.steady_output]`)
