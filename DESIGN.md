@@ -2445,7 +2445,11 @@ A shared state that locks a player's innate technique for a while after somethin
 Dominions later.
 - **While it lasts**, every ability, special and the ultimate of their innate technique fizzles with "Burnt out (Xs).", nothing paid
   and no cooldown (`CastResult.BURNT_OUT`, checked right after the Refinement lock). Shared abilities (Reverse Malice Technique)
-  still cast, and a running toggle can still be switched off.
+  still cast.
+- **Anything of the technique still running stops** on the next tick after it burns out, with "<ability> stopped: burnt out.": a
+  toggle switches off (its own cooldown starts, and it pays no more upkeep), a charge is cancelled (nothing paid, no cooldown), a
+  channel ends (its cooldown starts). So Accelerate left on through a Standstill switches off when the Burnout lands. Shared abilities
+  keep running (a Reverse Malice Technique channel repairs it).
 - **API:** `Burnout.apply(player, ticks)` (never shortens one already running: the longer stands), `isBurntOut`, `remaining`,
   `shorten(player, ticks)` and `clear`. A `Burnout.Modifier` (`addModifier`) changes every Burnout's length as it's applied: the
   hook Background RMT uses to shorten it (§3.31).
@@ -2458,7 +2462,8 @@ Dominions later.
   innate technique slots and the ultimate (shared abilities stay lit). The end time travels in the sync (`SyncPayload.burntOutUntil`).
 
 **Tests:** `BurnoutTest` (blocks the technique and its special, nothing paid; RMT still casts; counts down; the longer stands; saved;
-not copied on death; the duration hook).
+not copied on death; the duration hook; a running toggle of the technique switching off and paying no more once burnt out, and RMT's
+channel running on).
 
 ### 3.26 Time Manipulation (LEGENDARY innate technique)
 Package `innate_technique.time_manipulation`. A mark to come back to, your own clock run fast and everyone else's slow, and at the

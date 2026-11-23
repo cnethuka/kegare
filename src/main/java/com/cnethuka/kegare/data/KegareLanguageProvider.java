@@ -480,6 +480,7 @@ public final class KegareLanguageProvider extends LanguageProvider {
         add("message.kegare.cast.busy", "Already casting.");
         add("message.kegare.cast.stunned", "Stunned! (%ss)");
         add("message.kegare.cast.burnt_out", "Burnt out (%ss).");
+        add("message.kegare.cast.burnt_out_stopped", "%s stopped: burnt out.");
         add("hud.kegare.burnt_out", "Burnt out %ss");
         add("message.kegare.cast.on_cooldown", "%s is on cooldown (%ss)");
         add("message.kegare.cast.not_enough_malice", "Not enough " + MALICE + " (need %s, have %s)");

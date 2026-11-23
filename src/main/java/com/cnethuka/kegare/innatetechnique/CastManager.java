@@ -332,6 +332,10 @@ public final class CastManager {
         InnateTechnique innateTechnique = current.get();
 
         CastState.Active cast = state.casting;
+        if (cast != null && Burnout.blocks(player, cast.ability)) {
+            burntOut(player, innateTechnique, cast); // burnt out mid-cast: the technique is locked, so it stops
+            cast = null;
+        }
         if (cast != null) {
             if (CombatHelper.isStunned(player)) {
                 interrupt(player);
@@ -360,8 +364,13 @@ public final class CastManager {
 
         for (CastState.Active toggle : List.copyOf(state.toggles.values())) {
             if (!state.toggles.containsValue(toggle)) continue; // another toggle's tick switched this one off
-            toggle.activeTicks++;
             Ability ability = toggle.ability;
+            if (Burnout.blocks(player, ability)) { // burnt out: the technique is locked, so its toggles switch off and stop paying
+                endToggle(player, innateTechnique, toggle, EndReason.CANCELLED);
+                player.displayClientMessage(Component.translatable("message.kegare.cast.burnt_out_stopped", ability.displayName()), true);
+                continue;
+            }
+            toggle.activeTicks++;
             if (unmetRequirement(player, ability).isPresent()) {
                 feedback(player, CastResult.REQUIREMENT_UNMET, ability);
                 endToggle(player, innateTechnique, toggle, EndReason.CANCELLED);
@@ -375,6 +384,23 @@ public final class CastManager {
     }
 
     // ------------------------------------------------------------------ ending
+
+    /**
+     * Burnt out mid-cast (DESIGN §3.25): a charge of the technique is cancelled (no cost, no cooldown), a channel ends (with its
+     * cooldown). Shared abilities never get here: Burnout doesn't lock them.
+     */
+    private static void burntOut(ServerPlayer player, InnateTechnique innateTechnique, CastState.Active cast) {
+        CastState state = state(player);
+        if (cast.ability.castType() == CastType.CHANNELED) {
+            endChannel(player, innateTechnique, cast, EndReason.CANCELLED);
+        } else {
+            state.casting = null;
+            VisualService.stopAbility(player, cast.ability, VisualPhase.CHARGE_LOOP);
+            cast.ability.onEnd(new AbilityContext(player, innateTechnique, cast.ability, cast.slot, chargeFraction(player, cast), cast.activeTicks), EndReason.CANCELLED);
+            PlayerSync.markDirty(player);
+        }
+        player.displayClientMessage(Component.translatable("message.kegare.cast.burnt_out_stopped", cast.ability.displayName()), true);
+    }
 
     /** Stun hook: cancels a charge (no cost, no cooldown) or ends a channel (with cooldown). Toggles keep running. */
     public static void interrupt(ServerPlayer player) {

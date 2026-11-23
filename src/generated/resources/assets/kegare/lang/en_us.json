@@ -1293,6 +1293,7 @@
   "message.kegare.birth.trait": "You were born with a rare trait: %s",
   "message.kegare.cast.blocked": "%s can't be cast right now.",
   "message.kegare.cast.burnt_out": "Burnt out (%ss).",
+  "message.kegare.cast.burnt_out_stopped": "%s stopped: burnt out.",
   "message.kegare.cast.busy": "Already casting.",
   "message.kegare.cast.charge_too_short": "%s fizzled. Hold longer to charge.",
   "message.kegare.cast.empty_slot": "That slot is empty. Fill it from the Sorcerer screen.",

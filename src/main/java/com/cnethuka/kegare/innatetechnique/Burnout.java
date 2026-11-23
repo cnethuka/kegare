@@ -13,8 +13,8 @@ import com.cnethuka.kegare.api.ability.Ability;
 /**
  * Burnout (DESIGN §3.25): a shared state that locks a player's innate technique for a while after something big (Time Manipulation's
  * Standstill; Dominions later). While it lasts, every ability, special and the ultimate of their innate technique fizzles with
- * "Burnt out (Xs).", nothing paid; shared abilities (Reverse Malice Technique) still work, and a running toggle can still be switched
- * off. It counts down only while they're online, so logging out never waits it out. Saved; cleared on death (it isn't copied to the
+ * "Burnt out (Xs).", nothing paid, and anything of it still running stops the moment it burns out (a toggle switches off, a charge is
+ * cancelled, a channel ends: {@code CastManager}); shared abilities (Reverse Malice Technique) still work. It counts down only while they're online, so logging out never waits it out. Saved; cleared on death (it isn't copied to the
  * respawned player). Shown on the HUD.
  * <p>
  * A {@link Modifier} changes the length of every Burnout as it's applied (Background RMT shortens it); {@link #shorten} takes time

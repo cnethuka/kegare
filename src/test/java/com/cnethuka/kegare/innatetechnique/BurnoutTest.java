@@ -78,6 +78,48 @@ class BurnoutTest {
         });
     }
 
+    /** Accelerate left on through a Standstill kept running, and paying, after the Burnout landed: anything of the technique stops. */
+    @Test
+    void aRunningToggleSwitchesOffWhenItBurnsOutAndRmtRunsOn(MinecraftServer server) throws Exception {
+        TestServer.onServerThread(server, () -> {
+            TestServer.ensureOverworld(server);
+            ServerPlayer p = TestServer.player(server, "burnout_toggle");
+            BirthService.rebirth(p, OptionalInt.of(3000));
+            InnateTechniqueService.setInnateTechnique(p, com.cnethuka.kegare.innate_technique.time_manipulation.TimeManipulation.TIME_MANIPULATION.get());
+            TestServer.advanceGameTime(server, KegareServerConfig.ticks(KegareServerConfig.COMBAT_TAG_SECONDS) + 1);
+            MaliceService.refill(p);
+            var accelerate = com.cnethuka.kegare.innate_technique.time_manipulation.TimeManipulation.ACCELERATE;
+            assertTrue(SharedAbilityService.unlock(p, Rmt.REVERSE_MALICE_TECHNIQUE));
+            assertEquals(LoadoutResult.OK, LoadoutService.edit(p, LoadoutService.Action.SET, 4, 0, Optional.of(Rmt.REVERSE_MALICE_TECHNIQUE.id())));
+
+            // Accelerate on, paying its upkeep.
+            InnateTechniqueService.select(p, 1);
+            CastManager.handleIntent(p, CastIntent.CAST_PRESS);
+            assertTrue(CastManager.isToggleActive(p, accelerate), "setup: Accelerate on");
+            double before = MaliceService.get(p).current();
+            CastManager.tick(p);
+            assertTrue(MaliceService.get(p).current() < before, "setup: it pays its upkeep");
+
+            // RMT channelling alongside it (a shared ability: Burnout never stops it).
+            InnateTechniqueService.select(p, 4);
+            p.setHealth(10f);
+            CastManager.handleIntent(p, CastIntent.CAST_PRESS);
+            assertNotNull(CastManager.state(p).casting(), "setup: RMT channelling");
+
+            // The Burnout lands: the next tick switches Accelerate off, with its own cooldown, and it pays nothing more.
+            Burnout.apply(p, 400);
+            CastManager.tick(p);
+            assertFalse(CastManager.isToggleActive(p, accelerate), "switched off when it burnt out");
+            assertTrue(InnateTechniqueService.cooldownRemaining(p, accelerate) > 0, "its cooldown started");
+            assertNotNull(CastManager.state(p).casting(), "RMT runs on");
+            CastManager.handleIntent(p, CastIntent.CAST_RELEASE);
+            before = MaliceService.get(p).current();
+            for (int i = 0; i < 40; i++) CastManager.tick(p);
+            assertEquals(before, MaliceService.get(p).current(), EPS, "nothing paid for Accelerate any more");
+            TestServer.removePlayers(server);
+        });
+    }
+
     @Test
     void itIsSavedNotCopiedOnDeathAndHasADurationHook(MinecraftServer server) throws Exception {
         TestServer.onServerThread(server, () -> {
