@@ -463,7 +463,7 @@ Everything that exists only for testing is under `/kegare debug`:
 | `/kegare debug swap unswappable <player> <on>` | For Swap (§3.19): cancels `SwapTargetEvent` for swaps targeting this player (a stand-in for a future immunity) |
 | `/kegare debug strings unmovable <player> <on>` | For Strings (§3.20): cancels `StringsTargetEvent` for this player (a stand-in for a future immunity) |
 | `/kegare debug fx export` | Dev client only: rewrite every effect in `FxCatalog` (§3.14) |
-| `/kegare debug fx play <name> [front\|self\|loop]` | Dev client only: preview an effect |
+| `/kegare debug fx play <name> [front\|self\|loop\|aura\|stop]` | Dev client only: preview an effect (`aura`: looping on your body in Swap's teal; `stop` ends it) |
 
 `debug fx` builds Photon effects, so it has to run on the client: `FxDevCommand` registers it in the dev client's own command tree, under the same `/kegare debug` and at the same level. NeoForge tries that tree first and sends anything it doesn't recognise on to the server, and the client's suggestions merge the two. Help lists it only outside a released game.
 
@@ -1107,7 +1107,7 @@ Package `com.cnethuka.kegare.innate_technique.rime`. **Rarity: RARE.** All numbe
 - **Effect authoring:** the effects are built from Photon's own objects in `RimeFxAuthoring` (building blocks in the
   shared `client.visual.FxKit`) and written with Photon's serializer, the same `.fx` format the editor exports. In a
   dev client, `/kegare debug fx export` rewrites every effect in `FxCatalog` (Rime's and RMT's, and the running game's
-  copy), and `/kegare debug fx play <name> [front|self|loop]` previews one. The command exists only in the dev environment.
+  copy), and `/kegare debug fx play <name> [front|self|loop|aura|stop]` previews one (`aura` loops it on your body, tinted). The command exists only in the dev environment.
 - **Advancements** (Rime tab, root `kegare:innate_technique/rime`, which unlocks on first rolling Rime). All are
   hidden, use `minecraft:impossible`, are awarded from code, and are never announced in chat: they would reveal who
   has Rime. Datagen enforces this for every advancement under `innate_technique/`. Only a player who currently holds
@@ -1249,23 +1249,25 @@ separate bar is filled from any of them.
       cast is never a weaker one. Shared abilities (RMT, Fists, Flow itself) pay in full.
     - Flow only boosts. Flow variations of the base abilities (a different version of a number-key ability while Flow is on; R and V
       stay as they are) will be added in a later update.
-  - **Look** (client `AuraClient`; our own art): Malice wrapped round the whole body, the way anime draws a sorcerer's energy flowing. A sheet of 16 frames
-    (`entity/aura.png`, 192×384 each, 1.6 × 3.2 blocks) hugs the player's silhouette a little way out and rises into five flame-like
-    tongues over the head and shoulders, always flowing upward (the noise scrolls up a period per loop; each tongue swells and sways in
-    its own phase). Round it a hard, near-black ink outline, irregular like a brush stroke, varying in thickness, with flicks flung off
-    it and small breaks; inside it a see-through glow in the Malice color (the white glow tinted by the vertex color; the ink stays
-    black), strongest at the outline and thin near the body so the player stays readable. Smooth, high-resolution art: its render
-    type (`AuraRenderTypes`) filters the texture linearly, translucent, unlit, no depth written. The ink outline and the moving tongues
-    are what stop it reading as glass.
-    - Drawn as an upright card facing the camera round the vertical, its feet at the player's, 0.32 blocks behind them from the camera,
-      so the body stands in front of it; scaled with the body (crouching shrinks it). Small wisps (`entity/aura_wisp.png`, an upward
-      teardrop with an ink edge) peel off the tongues' tips and rise and fade.
-    - Fuller and faster in a fight (`AuraPayload.FIGHT`, while combat-tagged): about 10% bigger, opaque instead of 85%, 18 frames a
-      second instead of 11, wisps every 3 ticks instead of 5, eased in and out.
-    - Your own first person: only a faint flow (`entity/aura_edge.png`) up both edges of the view, 13% of the width each, and a little
-      wider (19%) low on the right round your arm: never in the middle 60%. Nothing round your own body in first person.
-    - Reduced: the simpler sheet (`entity/aura_simple.png`: an even outline with no breaks or flicks) and half the wisps. Vanilla: dust
-      in the Malice color rising round the body (none round your own in first person). An invisible player shows nothing.
+  - **Look** (Photon, `fx/flow/`, authored in `FlowFxAuthoring`; played by client `AuraClient`; our own work): one flame standing round
+    the whole body and drawn up to a single point about 1.2 blocks over the head, the way anime draws a sorcerer's energy flowing.
+    Smooth, not pixel art: soft flames made from Photon's fire material (a radial glow broken up by noise rising through it),
+    alpha-blended so the shape holds on a bright sky, the faint outer edge cut away hard.
+    - The body of it: flames born round the legs and chest rise and shrink, and the emitter sits at the tip, so its pull inward is a
+      pull up too and every flame closes on the same point: narrow at the feet, widest round the head, one tip. Behind it, the same
+      flames a little bigger and near-black in the Malice color give the shape a dark edge against the sky. A brighter heart added as
+      light round the head and shoulders, thin tongues licking past the tip, a soft glow behind it all (mostly for the night), and
+      grey-ink wisps leaving the tip, left behind in the world as the player moves.
+    - The body stays clear: everything that burns is drawn pushed back from the camera (Kila's camera offset), so the flame stands
+      behind the player from every side, and the flame writes depth so its own shadow stays behind it whatever order they're drawn
+      in. Rides the player's body anchor (crouching lowers it).
+    - Fuller and faster in a fight (`AuraPayload.FIGHT`, while combat-tagged; `flow/aura_fight`): about 10% bigger, rising faster,
+      a third more flames. Switching plays the other loop over the first as it dies away.
+    - Your own first person (`flow/aura_self`): never round your head. A few small flames lick up at your sides a little ahead of
+      you, turned with your body, so they rise at the bottom corners of the view (round you when you look down); the middle stays
+      clear.
+    - Reduced: half the flames (Photon's own halving), the same shape. Vanilla: dust in the Malice color rising round the body (none
+      round your own in first person). An invisible player shows nothing.
     - Visible to everyone: Flow is open. The color follows the ready fist's rules (§3.22): the wearer sees their own Malice
       color, everyone else the color of the face they wear (`MeleeTell.seenByOthers`), so a disguise is never given away. Sent per
       viewer when it changes (`AuraTell`, `AuraPayload`).
@@ -3086,9 +3088,9 @@ ability on the bar, but it takes no bar slot and leaves the hands free.
   physical damage, 8% less from techniques and +0.16 knockback resistance; 6% faster and Dash recharging 10% sooner; Innate abilities
   6% cheaper. For `drainPerSecond` 4 (the ability's is 12). It's a source of `Flow.addSource`: with the Flow ability on too they don't
   stack, the stronger applies.
-- **Look:** the same aura as the ability, much calmer and fainter (`AuraPayload.CALM`): the simpler sheet with its even, light
-  outline (drawn at 42% instead of 85%, so the ink is light too), 5% smaller, about 6 frames a second, a wisp every 16 ticks. It
-  still shows to everyone, with the same disguise rules; in your own first person, the edge flow at half strength.
+- **Look:** the same aura as the ability, much calmer and fainter (`AuraPayload.CALM`, `flow/aura_calm`): 15% smaller, rising
+  slower, 40% of the flames at 55% of their strength, with no bright heart and no wisps. It still shows to everyone, with the same
+  disguise rules; in your own first person, fewer and fainter flames at your sides (`flow/aura_calm_self`).
 - **Icon:** a small lit figure inside the loop.
 - **Tests:** `BackgroundFlowTest` (Grade 3, kept through a reroll; its drain, 0.4 of both reductions, the knockback
   resistance, the speed, Dash's quicker recharge and the cheaper technique; with the ability on, the ability's and no more; back to the background's when the ability goes off; nothing when off;

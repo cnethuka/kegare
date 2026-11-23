@@ -27,7 +27,8 @@ import net.neoforged.neoforge.client.event.RegisterClientCommandsEvent;
 /**
  * DEV TOOL, registered only in the dev environment. {@code /kegare debug fx export} writes every effect in
  * {@link FxCatalog} into the project's resources (and the running game's copy, then drops Photon's cache so the new
- * versions play at once). {@code /kegare debug fx play <name> [self|front|loop]} previews one.
+ * versions play at once). {@code /kegare debug fx play <name> [self|front|loop|aura|stop]} previews one ({@code aura}: looping on the body,
+ * tinted; {@code stop} ends it).
  * This is the client's own command tree: anything it doesn't recognise under {@code /kegare} goes on to the server.
  * Text here is developer-only, so it is not in the lang file.
  */
@@ -48,7 +49,7 @@ public final class FxDevCommand {
                                                 .suggests((c, b) -> SharedSuggestionProvider.suggest(names(), b))
                                                 .executes(c -> play(c.getSource(), StringArgumentType.getString(c, "name"), "front"))
                                                 .then(Commands.argument("where", StringArgumentType.word())
-                                                        .suggests((c, b) -> SharedSuggestionProvider.suggest(List.of("front", "self", "loop"), b))
+                                                        .suggests((c, b) -> SharedSuggestionProvider.suggest(List.of("front", "self", "loop", "aura", "stop"), b))
                                                         .executes(c -> play(c.getSource(), StringArgumentType.getString(c, "name"),
                                                                 StringArgumentType.getString(c, "where")))))))));
     }
@@ -90,6 +91,9 @@ public final class FxDevCommand {
         switch (where) {
             case "self" -> ClientVisuals.playOnce(player, Visual.effect(id, Visual.Anchor.BODY));
             case "loop" -> ClientVisuals.startLoop(player, "dev:" + name, Visual.effect(id, Visual.Anchor.EYES), 0);
+            // On the body, looping, in Swap's teal (an aura as others see it): "stop" ends it.
+            case "aura" -> ClientVisuals.startLoop(player, "dev:aura", Visual.effect(id, Visual.Anchor.BODY).tinted(0xFF14B8A6), 0);
+            case "stop" -> ClientVisuals.stopLoop(player.level(), player.getId(), "dev:aura");
             default -> {
                 Vec3 at = player.getEyePosition().add(player.getLookAngle().scale(3));
                 if (Minecraft.getInstance().level != null) ClientVisuals.playAt(Minecraft.getInstance().level, at, Visual.effect(id, Visual.Anchor.BODY));

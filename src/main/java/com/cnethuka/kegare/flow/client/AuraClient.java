@@ -1,95 +1,57 @@
 package com.cnethuka.kegare.flow.client;
 
-import com.cnethuka.kegare.Kegare;
 import com.cnethuka.kegare.api.visual.Visual;
 import com.cnethuka.kegare.client.visual.ClientVisuals;
-import com.cnethuka.kegare.rmt.RmtIds;
 import com.cnethuka.kegare.config.KegareClientConfig;
 import com.cnethuka.kegare.config.KegareClientConfig.VfxQuality;
-import com.cnethuka.kegare.melee.MeleeTell;
 import com.cnethuka.kegare.flow.AuraPayload;
-import com.mojang.blaze3d.systems.RenderSystem;
-import com.mojang.blaze3d.vertex.PoseStack;
-import com.mojang.blaze3d.vertex.VertexConsumer;
-import java.util.ArrayList;
+import com.cnethuka.kegare.flow.FlowIds;
+import com.cnethuka.kegare.melee.MeleeTell;
+import com.cnethuka.kegare.rmt.RmtIds;
 import java.util.HashMap;
-import java.util.Iterator;
-import java.util.List;
 import java.util.Map;
-import net.minecraft.client.Camera;
-import net.minecraft.client.DeltaTracker;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.multiplayer.ClientLevel;
-import net.minecraft.client.renderer.LightTexture;
-import net.minecraft.client.renderer.MultiBufferSource;
-import net.minecraft.client.renderer.RenderType;
-import net.minecraft.client.renderer.texture.OverlayTexture;
 import net.minecraft.core.particles.DustParticleOptions;
 import net.minecraft.resources.ResourceLocation;
-import net.minecraft.util.Mth;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.entity.player.Player;
-import net.minecraft.world.phys.Vec3;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.neoforge.client.event.ClientPlayerNetworkEvent;
 import net.neoforged.neoforge.client.event.ClientTickEvent;
-import net.neoforged.neoforge.client.event.RegisterGuiLayersEvent;
-import net.neoforged.neoforge.client.event.RenderLevelStageEvent;
-import net.neoforged.neoforge.client.gui.VanillaGuiLayers;
 import net.neoforged.neoforge.common.NeoForge;
-import org.joml.Matrix4f;
+import org.jetbrains.annotations.Nullable;
 import org.joml.Vector3f;
 
 /**
- * Flow's aura (DESIGN §3.16): Malice wrapped round the whole body, the way a sorcerer's energy is drawn flowing. The art
- * ({@code textures/entity/aura.png}) is a sheet of frames that hugs the player's silhouette a little way out and rises into flame-like
- * tongues over the head and shoulders, always flowing upward, with a hard, near-black ink outline (irregular, with flicks and small
- * breaks) and inside it a see-through glow in the Malice color, strongest at the outline and thin near the body.
+ * Flow's aura (DESIGN §3.16) on every player who has it, as this client should see it: a Photon loop on the body
+ * ({@link FlowFxAuthoring}), one flame standing behind the player and drawn up to a point over the head.
  * <ul>
- * <li>Drawn as an upright card facing the camera, just behind the player, so the body stays in front of it and readable; small
- * wisps peel off the tongues' tips and rise away.</li>
- * <li>Fuller and faster in a fight ({@link AuraPayload#FIGHT}), calmer out of one. Background Flow alone
- * ({@link AuraPayload#CALM}): the same aura much calmer and fainter, a thin flow with a light outline.</li>
- * <li>Your own first person: only a faint flow up the edges of the view, round your arms' corner, never in the middle 60%.</li>
- * <li>Reduced: a simpler outline and fewer wisps. Vanilla: dust in the Malice color rising round the body. An invisible player shows
- * nothing.</li>
+ * <li>Fuller and faster in a fight ({@link AuraPayload#FIGHT}). Background Flow alone ({@link AuraPayload#CALM}): the same, much calmer
+ * and fainter.</li>
+ * <li>Your own first person: only a few flames licking up at your sides, never round your head.</li>
+ * <li>Reduced: half the flames (Photon's own reduction). Vanilla: dust in the Malice color rising round the body (none round your own in
+ * first person). An invisible player shows nothing.</li>
  * </ul>
- * The color is what the server sends this viewer ({@code AuraTell}): under a disguise, the face's.
+ * The color is what the server sends this viewer ({@code AuraTell}): under a disguise, the face's. Background RMT's shimmer rides the
+ * same message and is played here too.
  */
 public final class AuraClient {
-    static final ResourceLocation SHEET = Kegare.id("textures/entity/aura.png");
-    static final ResourceLocation SHEET_SIMPLE = Kegare.id("textures/entity/aura_simple.png");
-    static final ResourceLocation WISP = Kegare.id("textures/entity/aura_wisp.png");
-    static final ResourceLocation EDGE = Kegare.id("textures/entity/aura_edge.png");
     /** Background RMT's shimmer, seen by everyone: RMT's white light, a Photon loop on the player (DESIGN §3.31). */
     private static final String SHIMMER_LOOP = "background_rmt_shimmer";
-    static final ResourceLocation LAYER = Kegare.id("aura_edges");
-    /** The sheet: frames, size in blocks, and the feet's height above its bottom edge, for a body 1.8 tall. */
-    static final int FRAMES = 16;
-    static final float SHEET_W = 1.6f, SHEET_H = 3.2f, FEET = 0.30f, BODY = 1.8f;
-    /** How far behind the player (from the camera) the card stands. */
-    static final float BEHIND = 0.32f;
-    /** Frames a tick: calm, out of a fight, in one. */
-    static final float SPEED_CALM = 0.32f, SPEED = 0.55f, SPEED_FIGHT = 0.9f;
-    /** In a fight the aura stands this much bigger (and the calm one this much smaller). */
-    static final float FULLER = 0.1f, CALMER = -0.05f;
-    /** Opacity of the full aura out of a fight and in one, and of the calm one. */
-    static final float ALPHA = 0.85f, ALPHA_FIGHT = 1f, ALPHA_CALM = 0.42f;
-    /** The tongues' tips (left to right, blocks from the middle and above the feet, for a body 1.8 tall), where wisps peel off. */
-    static final float[][] TIPS = {{-0.46f, 2.05f}, {-0.24f, 2.3f}, {0f, 2.55f}, {0.22f, 2.32f}, {0.45f, 2.05f}};
-    /** First person: the flow's width at each edge as a share of the screen (the middle 60% stays clear), and how strong it is. */
-    static final float EDGE_SHARE = 0.12f, EDGE_ARM_SHARE = 0.18f, EDGE_ALPHA = 0.22f, EDGE_ALPHA_CALM = 0.11f;
+    /** Flow's aura, a Photon loop on the player. */
+    private static final String AURA_LOOP = "flow_aura";
 
     private static final RandomSource RANDOM = RandomSource.create();
 
     /** A player's aura as this client knows it. */
     private static final class Entry {
         AuraPayload payload;
-        float phase = RANDOM.nextFloat() * FRAMES, prevPhase = phase;
-        /** 0 calm, 1 in a fight, followed smoothly. */
-        float fight, prevFight;
-        int wispClock;
+        int shimmerClock;
+        /** What's playing now (null: nothing), so the loop restarts only when what should show changes. */
+        @Nullable ResourceLocation playing;
+        int playingTint;
+        VfxQuality playingQuality;
 
         Entry(AuraPayload payload) {
             this.payload = payload;
@@ -106,57 +68,28 @@ public final class AuraClient {
         boolean shimmer() {
             return payload.has(AuraPayload.SHIMMER);
         }
-
-        int shimmerClock;
-    }
-
-    /** Whether the shimmer's Photon loop is playing on this player. */
-    private static boolean shimmerPlaying(Player player) {
-        return ClientVisuals.loopTime(player, SHIMMER_LOOP, 0f) != null;
-    }
-
-    /** A wisp off a tongue: where it is in the world, how it drifts, its age. */
-    private static final class Wisp {
-        Vec3 at, prev;
-        final Vec3 drift;
-        final int rgb, life;
-        final float size, alpha;
-        int age;
-
-        Wisp(Vec3 at, Vec3 drift, int rgb, int life, float size, float alpha) {
-            this.at = at;
-            this.prev = at;
-            this.drift = drift;
-            this.rgb = rgb;
-            this.life = life;
-            this.size = size;
-            this.alpha = alpha;
-        }
     }
 
     private static final Map<Integer, Entry> SHOWN = new HashMap<>();
-    private static final List<Wisp> WISPS = new ArrayList<>();
 
     private AuraClient() {}
 
     public static void init(IEventBus modBus) {
         AuraPayload.setClientHandler(AuraClient::update);
-        modBus.addListener((RegisterGuiLayersEvent e) -> e.registerBelow(VanillaGuiLayers.CROSSHAIR, LAYER, AuraClient::renderEdges));
+        ClientVisuals.turnWithBody(FlowIds.FX_AURA_SELF, FlowFxAuthoring.SELF_AT);
+        ClientVisuals.turnWithBody(FlowIds.FX_AURA_CALM_SELF, FlowFxAuthoring.SELF_AT);
         NeoForge.EVENT_BUS.addListener((ClientTickEvent.Post e) -> tick());
-        NeoForge.EVENT_BUS.addListener((RenderLevelStageEvent e) -> {
-            // After clouds and weather: the aura writes no depth, so anything drawn after it would paint over it.
-            if (e.getStage() == RenderLevelStageEvent.Stage.AFTER_WEATHER) {
-                render(e.getCamera(), e.getPartialTick().getGameTimeDeltaPartialTick(false));
-            }
-        });
-        NeoForge.EVENT_BUS.addListener((ClientPlayerNetworkEvent.LoggingOut e) -> clear());
+        NeoForge.EVENT_BUS.addListener((ClientPlayerNetworkEvent.LoggingOut e) -> SHOWN.clear());
     }
 
     static void update(AuraPayload payload) {
         if (payload.flags() == 0) {
             SHOWN.remove(payload.entityId());
             ClientLevel level = Minecraft.getInstance().level;
-            if (level != null) ClientVisuals.stopLoop(level, payload.entityId(), SHIMMER_LOOP);
+            if (level != null) {
+                ClientVisuals.stopLoop(level, payload.entityId(), SHIMMER_LOOP);
+                ClientVisuals.stopLoop(level, payload.entityId(), AURA_LOOP);
+            }
             return;
         }
         Entry entry = SHOWN.get(payload.entityId());
@@ -164,13 +97,8 @@ public final class AuraClient {
         else entry.payload = payload;
     }
 
-    static void clear() {
-        SHOWN.clear();
-        WISPS.clear();
-    }
-
     /** What's shown on this player for you (null if nothing, or you can't see them). */
-    @org.jetbrains.annotations.Nullable
+    @Nullable
     public static AuraPayload on(Player player) {
         Entry entry = SHOWN.get(player.getId());
         Minecraft mc = Minecraft.getInstance();
@@ -186,70 +114,47 @@ public final class AuraClient {
         return player == mc.getCameraEntity() && mc.options.getCameraType().isFirstPerson();
     }
 
-    private static float scale(Player player) {
-        return player.getBbHeight() / BODY;
-    }
-
-    // ---------------------------------------------------------------------------------------------- ticking
-
     private static void tick() {
         Minecraft mc = Minecraft.getInstance();
         ClientLevel level = mc.level;
         if (level == null || mc.isPaused()) return;
-        Vec3 cam = mc.gameRenderer.getMainCamera().getPosition();
-        for (Iterator<Map.Entry<Integer, Entry>> it = SHOWN.entrySet().iterator(); it.hasNext(); ) {
-            Map.Entry<Integer, Entry> e = it.next();
+        for (Map.Entry<Integer, Entry> e : SHOWN.entrySet()) {
             Entry entry = e.getValue();
-            entry.prevPhase = entry.phase;
-            entry.prevFight = entry.fight;
-            float target = entry.payload.has(AuraPayload.FIGHT) ? 1f : 0f;
-            entry.fight += (target - entry.fight) * 0.15f;
-            entry.phase += entry.calm() ? SPEED_CALM : Mth.lerp(entry.fight, SPEED, SPEED_FIGHT);
-            if (entry.phase >= FRAMES * 64) {
-                entry.phase -= FRAMES * 64;
-                entry.prevPhase -= FRAMES * 64;
-            }
             if (!(level.getEntity(e.getKey()) instanceof Player player)) continue;
             boolean visible = player.isAlive() && on(player) != null;
             boolean mine = firstPerson(mc, player);
             shimmer(level, player, entry, visible && entry.shimmer() && !mine);
-            if (!visible) continue;
-            if (!entry.aura()) continue;
-            int rgb = MeleeTell.bright(entry.payload.color()) & 0xFFFFFF;
-            if (quality() == VfxQuality.VANILLA) {
-                if (!mine) dust(level, player, entry, rgb);
-                continue;
-            }
-            if (mine) continue;
-            // Wisps: one every so often off a tongue's tip, more often in a fight, rarer at Reduced and on the calm aura.
-            int every = entry.calm() ? 16 : entry.fight > 0.5f ? 3 : 5;
-            if (quality() == VfxQuality.REDUCED) every *= 2;
-            if (++entry.wispClock >= every) {
-                entry.wispClock = 0;
-                wisp(player, entry, rgb, cam);
-            }
-        }
-        for (Iterator<Wisp> it = WISPS.iterator(); it.hasNext(); ) {
-            Wisp w = it.next();
-            w.prev = w.at;
-            w.at = w.at.add(w.drift.scale(1.0 - 0.4 * w.age / (double) w.life));
-            if (++w.age >= w.life) it.remove();
+            aura(level, player, entry, visible && entry.aura(), mine);
         }
     }
 
-    /** A wisp at one of the tongues' tips, in the card's plane as the camera sees it now. */
-    private static void wisp(Player player, Entry entry, int rgb, Vec3 cam) {
-        float s = scale(player);
-        float[] tip = TIPS[RANDOM.nextInt(TIPS.length)];
-        Vec3 pos = player.position();
-        Vec3 away = new Vec3(pos.x - cam.x, 0, pos.z - cam.z);
-        Vec3 right = away.lengthSqr() < 1.0e-4 ? Vec3.directionFromRotation(0, player.getYRot() + 90) : new Vec3(-away.z, 0, away.x).normalize();
-        double lateral = (tip[0] + (RANDOM.nextFloat() - 0.5f) * 0.12f) * s;
-        Vec3 at = pos.add(right.scale(lateral)).add(0, (tip[1] - 0.15f) * s, 0);
-        Vec3 drift = right.scale((RANDOM.nextFloat() - 0.5f) * 0.012 + lateral * 0.01).add(0, 0.035 + RANDOM.nextFloat() * 0.02, 0)
-                .add(player.getDeltaMovement().multiply(0.5, 0, 0.5));
-        float alpha = entry.calm() ? ALPHA_CALM : 0.9f;
-        WISPS.add(new Wisp(at, drift, rgb, 12 + RANDOM.nextInt(8), (0.10f + RANDOM.nextFloat() * 0.07f) * s, alpha));
+    /** Which of the aura's effects shows on this player now. */
+    static ResourceLocation effect(AuraPayload payload, boolean mine) {
+        boolean calm = !payload.has(AuraPayload.FULL) && payload.has(AuraPayload.CALM);
+        if (calm) return mine ? FlowIds.FX_AURA_CALM_SELF : FlowIds.FX_AURA_CALM;
+        if (mine) return FlowIds.FX_AURA_SELF;
+        return payload.has(AuraPayload.FIGHT) ? FlowIds.FX_AURA_FIGHT : FlowIds.FX_AURA;
+    }
+
+    /** Keeps the right loop playing on them, in the color they're shown in; Vanilla: dust instead. */
+    private static void aura(ClientLevel level, Player player, Entry entry, boolean shown, boolean mine) {
+        VfxQuality quality = quality();
+        boolean vanilla = quality == VfxQuality.VANILLA;
+        ResourceLocation fx = shown && !vanilla ? effect(entry.payload, mine) : null;
+        boolean playing = ClientVisuals.loopTime(player, AURA_LOOP, 0f) != null;
+        if (fx == null) {
+            if (playing) ClientVisuals.stopLoop(level, player.getId(), AURA_LOOP);
+            entry.playing = null;
+        } else {
+            int tint = 0xFF000000 | MeleeTell.bright(entry.payload.color()) & 0xFFFFFF;
+            if (!playing || !fx.equals(entry.playing) || tint != entry.playingTint || quality != entry.playingQuality) {
+                ClientVisuals.startLoop(player, AURA_LOOP, Visual.effect(fx, Visual.Anchor.BODY).tinted(tint), 0);
+                entry.playing = fx;
+                entry.playingTint = tint;
+                entry.playingQuality = quality;
+            }
+        }
+        if (shown && vanilla && !mine) dust(level, player, entry, MeleeTell.bright(entry.payload.color()) & 0xFFFFFF);
     }
 
     /**
@@ -258,7 +163,7 @@ public final class AuraClient {
      */
     private static void shimmer(ClientLevel level, Player player, Entry entry, boolean shown) {
         boolean vanilla = quality() == VfxQuality.VANILLA;
-        boolean playing = shimmerPlaying(player);
+        boolean playing = ClientVisuals.loopTime(player, SHIMMER_LOOP, 0f) != null;
         if (shown && !vanilla && !playing) {
             ClientVisuals.startLoop(player, SHIMMER_LOOP, Visual.effect(RmtIds.FX_BACKGROUND_SHIMMER, Visual.Anchor.BODY), 0);
         } else if ((!shown || vanilla) && playing) {
@@ -274,7 +179,7 @@ public final class AuraClient {
 
     /** Vanilla: dust in the Malice color rising round the body. */
     private static void dust(ClientLevel level, Player player, Entry entry, int rgb) {
-        int count = entry.calm() ? (RANDOM.nextInt(3) == 0 ? 1 : 0) : entry.fight > 0.5f ? 3 : 2;
+        int count = entry.calm() ? (RANDOM.nextInt(3) == 0 ? 1 : 0) : entry.payload.has(AuraPayload.FIGHT) ? 3 : 2;
         Vector3f color = new Vector3f((rgb >> 16 & 0xFF) / 255f, (rgb >> 8 & 0xFF) / 255f, (rgb & 0xFF) / 255f);
         DustParticleOptions dust = new DustParticleOptions(color, entry.calm() ? 0.7f : 1.0f);
         double w = player.getBbWidth() * 0.5 + 0.2;
@@ -283,118 +188,5 @@ public final class AuraClient {
             level.addParticle(dust, player.getX() + Math.cos(a) * w, player.getY() + RANDOM.nextDouble() * player.getBbHeight() * 1.1,
                     player.getZ() + Math.sin(a) * w, 0, 0.6, 0);
         }
-    }
-
-    // ---------------------------------------------------------------------------------------------- the body
-
-    private static void render(Camera camera, float partial) {
-        if (SHOWN.isEmpty() && WISPS.isEmpty()) return;
-        Minecraft mc = Minecraft.getInstance();
-        ClientLevel level = mc.level;
-        if (level == null || quality() == VfxQuality.VANILLA) return;
-        Vec3 cam = camera.getPosition();
-        MultiBufferSource.BufferSource buffers = mc.renderBuffers().bufferSource();
-        PoseStack pose = new PoseStack();
-        boolean simple = quality() == VfxQuality.REDUCED;
-        for (Map.Entry<Integer, Entry> e : SHOWN.entrySet()) {
-            Entry entry = e.getValue();
-            if (!entry.aura() || !(level.getEntity(e.getKey()) instanceof Player player) || !player.isAlive() || on(player) == null) continue;
-            if (firstPerson(mc, player)) continue;
-            body(pose, buffers, entry, player, cam, partial, simple);
-        }
-        if (!WISPS.isEmpty()) {
-            Vector3f right = new Vector3f(camera.getLeftVector()).negate(), up = new Vector3f(camera.getUpVector());
-            VertexConsumer out = buffers.getBuffer(AuraRenderTypes.SMOOTH.apply(WISP));
-            for (Wisp w : WISPS) {
-                float t = (w.age + partial) / w.life;
-                float alpha = w.alpha * (t < 0.15f ? t / 0.15f : 1f - (t - 0.15f) / 0.85f);
-                float size = w.size * (1f - 0.45f * t);
-                Vec3 at = w.prev.lerp(w.at, partial).subtract(cam);
-                quad(out, pose.last().pose(), at, right, up, size, size * 2f, 0f, 1f, w.rgb, alpha);
-            }
-        }
-        buffers.endBatch(AuraRenderTypes.SMOOTH.apply(SHEET));
-        buffers.endBatch(AuraRenderTypes.SMOOTH.apply(SHEET_SIMPLE));
-        buffers.endBatch(AuraRenderTypes.SMOOTH.apply(WISP));
-    }
-
-    /** The card behind the body, facing the camera round the vertical, the feet at the player's feet. */
-    private static void body(PoseStack pose, MultiBufferSource buffers, Entry entry, Player player, Vec3 cam, float partial, boolean simple) {
-        float fight = Mth.lerp(partial, entry.prevFight, entry.fight);
-        boolean calm = entry.calm();
-        float s = scale(player) * (1f + (calm ? CALMER : FULLER * fight));
-        float alpha = calm ? ALPHA_CALM : Mth.lerp(fight, ALPHA, ALPHA_FIGHT);
-        Vec3 feet = player.getPosition(partial);
-        Vec3 away = new Vec3(feet.x - cam.x, 0, feet.z - cam.z);
-        Vec3 dir = away.lengthSqr() < 1.0e-4 ? Vec3.directionFromRotation(0, player.getViewYRot(partial)) : away.normalize();
-        Vec3 centre = feet.add(dir.scale(BEHIND * scale(player))).subtract(cam);
-        Vector3f right = new Vector3f((float) -dir.z, 0f, (float) dir.x), up = new Vector3f(0f, 1f, 0f);
-        int frame = Math.floorMod((int) Mth.lerp(partial, entry.prevPhase, entry.phase), FRAMES);
-        float u0 = frame / (float) FRAMES, u1 = (frame + 1) / (float) FRAMES;
-        Vec3 mid = centre.add(0, (SHEET_H / 2f - FEET) * s, 0);
-        int rgb = MeleeTell.bright(entry.payload.color()) & 0xFFFFFF;
-        VertexConsumer out = buffers.getBuffer(AuraRenderTypes.SMOOTH.apply(simple || calm ? SHEET_SIMPLE : SHEET));
-        quad(out, pose.last().pose(), mid, right, up, SHEET_W * s / 2f, SHEET_H * s / 2f, u0, u1, rgb, alpha);
-    }
-
-    /** A quad centred at {@code at}, {@code halfW} along {@code right} and {@code halfH} along {@code up}, the texture's u from u0 to u1. */
-    private static void quad(VertexConsumer out, Matrix4f pose, Vec3 at, Vector3f right, Vector3f up, float halfW, float halfH, float u0, float u1,
-                             int rgb, float alpha) {
-        float x = (float) at.x, y = (float) at.y, z = (float) at.z;
-        vertex(out, pose, x - right.x * halfW - up.x * halfH, y - right.y * halfW - up.y * halfH, z - right.z * halfW - up.z * halfH, u0, 1f, rgb, alpha);
-        vertex(out, pose, x + right.x * halfW - up.x * halfH, y + right.y * halfW - up.y * halfH, z + right.z * halfW - up.z * halfH, u1, 1f, rgb, alpha);
-        vertex(out, pose, x + right.x * halfW + up.x * halfH, y + right.y * halfW + up.y * halfH, z + right.z * halfW + up.z * halfH, u1, 0f, rgb, alpha);
-        vertex(out, pose, x - right.x * halfW + up.x * halfH, y - right.y * halfW + up.y * halfH, z - right.z * halfW + up.z * halfH, u0, 0f, rgb, alpha);
-    }
-
-    private static void vertex(VertexConsumer out, Matrix4f pose, float x, float y, float z, float u, float v, int rgb, float alpha) {
-        out.addVertex(pose, x, y, z).setColor(rgb >> 16 & 0xFF, rgb >> 8 & 0xFF, rgb & 0xFF, Mth.clamp((int) (alpha * 255), 0, 255)).setUv(u, v)
-                .setOverlay(OverlayTexture.NO_OVERLAY).setLight(LightTexture.FULL_BRIGHT).setNormal(0f, 1f, 0f);
-    }
-
-    // ---------------------------------------------------------------------------------------------- your own first person
-
-    /** A faint flow up both edges of the view, a little wider low on the right where your arm is; the middle 60% stays clear. */
-    private static void renderEdges(GuiGraphics g, DeltaTracker delta) {
-        Minecraft mc = Minecraft.getInstance();
-        if (mc.player == null || mc.options.hideGui || !firstPerson(mc, mc.player) || quality() == VfxQuality.VANILLA) return;
-        Entry entry = SHOWN.get(mc.player.getId());
-        if (entry == null || !entry.aura() || on(mc.player) == null) return;
-        float partial = delta.getGameTimeDeltaPartialTick(false);
-        int frame = Math.floorMod((int) Mth.lerp(partial, entry.prevPhase, entry.phase), FRAMES);
-        int w = g.guiWidth(), h = g.guiHeight();
-        int rgb = MeleeTell.bright(entry.payload.color()) & 0xFFFFFF;
-        float alpha = entry.calm() ? EDGE_ALPHA_CALM : EDGE_ALPHA * (1f + 0.3f * entry.fight);
-        mc.getTextureManager().getTexture(EDGE).setFilter(true, false);
-        RenderSystem.enableBlend();
-        RenderSystem.defaultBlendFunc();
-        RenderSystem.setShaderColor((rgb >> 16 & 0xFF) / 255f, (rgb >> 8 & 0xFF) / 255f, (rgb & 0xFF) / 255f, alpha);
-        int edge = Math.round(w * EDGE_SHARE), arm = Math.round(w * EDGE_ARM_SHARE);
-        edgeStrip(g, frame, 0, 0, edge, h, false, 1f, 1f);
-        edgeStrip(g, frame, w - edge, 0, edge, h, true, 1f, 1f);
-        // round your arm: low on the right, fading in from nothing at its top
-        edgeStrip(g, (frame + FRAMES / 2) % FRAMES, w - arm, h * 2 / 5, arm, h - h * 2 / 5, true, 0f, 0.7f);
-        RenderSystem.setShaderColor(1f, 1f, 1f, 1f);
-        RenderSystem.disableBlend();
-    }
-
-    /** One strip of the edge flow: the texture's screen edge at the left, or mirrored to the right. */
-    private static void edgeStrip(GuiGraphics g, int frame, int x, int y, int width, int height, boolean mirrored, float topAlpha, float bottomAlpha) {
-        float u0 = frame / (float) FRAMES, u1 = (frame + 1) / (float) FRAMES;
-        if (mirrored) {
-            float t = u0;
-            u0 = u1;
-            u1 = t;
-        }
-        RenderSystem.setShader(net.minecraft.client.renderer.GameRenderer::getPositionTexColorShader);
-        RenderSystem.setShaderTexture(0, EDGE);
-        Matrix4f m = g.pose().last().pose();
-        com.mojang.blaze3d.vertex.BufferBuilder b = com.mojang.blaze3d.vertex.Tesselator.getInstance().begin(
-                com.mojang.blaze3d.vertex.VertexFormat.Mode.QUADS, com.mojang.blaze3d.vertex.DefaultVertexFormat.POSITION_TEX_COLOR);
-        b.addVertex(m, x, y, 0).setUv(u0, 0f).setColor(1f, 1f, 1f, topAlpha);
-        b.addVertex(m, x, y + height, 0).setUv(u0, 1f).setColor(1f, 1f, 1f, bottomAlpha);
-        b.addVertex(m, x + width, y + height, 0).setUv(u1, 1f).setColor(1f, 1f, 1f, bottomAlpha);
-        b.addVertex(m, x + width, y, 0).setUv(u1, 0f).setColor(1f, 1f, 1f, topAlpha);
-        com.mojang.blaze3d.vertex.BufferUploader.drawWithShader(b.buildOrThrow());
     }
 }

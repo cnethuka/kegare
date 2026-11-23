@@ -297,6 +297,18 @@ class FlowTest {
     }
 
     @Test
+    void theAurasEffectsAreAllThereAndTheOldSheetIsGone() {
+        java.nio.file.Path assets = java.nio.file.Path.of(System.getProperty("kegare.projectDir", "."), "src/main/resources/assets/kegare");
+        for (net.minecraft.resources.ResourceLocation fx : java.util.List.of(FlowIds.FX_AURA, FlowIds.FX_AURA_FIGHT, FlowIds.FX_AURA_CALM,
+                FlowIds.FX_AURA_SELF, FlowIds.FX_AURA_CALM_SELF)) {
+            assertTrue(java.nio.file.Files.isRegularFile(assets.resolve("fx/" + fx.getPath() + ".fx")), fx.toString());
+        }
+        for (String old : java.util.List.of("aura", "aura_simple", "aura_wisp", "aura_edge")) {
+            assertFalse(java.nio.file.Files.exists(assets.resolve("textures/entity/" + old + ".png")), old + ": the Photon aura replaced it");
+        }
+    }
+
+    @Test
     void theAuraShowsToEveryoneFullerInAFight(MinecraftServer server) throws Exception {
         TestServer.onServerThread(server, () -> {
             try {

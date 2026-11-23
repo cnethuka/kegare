@@ -188,7 +188,7 @@ Requires JDK 21 (e.g. Temurin). Point `JAVA_HOME` at it if it isn't your default
 | `./gradlew runClient -PquickPlayWorld=<world>` | Dev client, straight into an existing singleplayer world |
 | `./gradlew runClient -PquickPlay=localhost` | Dev client, straight onto a server |
 | `./gradlew runServer` | Dev dedicated server (`run/eula.txt` must say `eula=true`) |
-| `/kegare debug fx export` (dev client only) | Rebuild every technique's Photon effects into `assets/kegare/fx/` from the authoring classes (`RimeFxAuthoring`, `MeleeFxAuthoring`, …); `/kegare debug fx play <name>` previews one |
+| `/kegare debug fx export` (dev client only) | Rebuild every technique's Photon effects into `assets/kegare/fx/` from the authoring classes (`RimeFxAuthoring`, `MeleeFxAuthoring`, …); `/kegare debug fx play <name>` previews one (`aura` loops it on your body in Swap's teal, `stop` ends that) |
 | `/kegare debug impact <player> <tier> <attacker\|victim\|witness> <melee\|technique>` | Play an Impact System tier on that player's own screen only (nothing lands), to tune how it looks in the client config's `[impact]` (DESIGN §3.23) |
 | `/kegare debug impact log <true\|false>` | Every hit's tier and the numbers behind it go to its attacker and victim, to tune the server's `[impact]` thresholds |
 | `/kegare debug screen <player> <effect> <seconds>` | Play a whole-screen effect (`kegare:grayscale`) on a player's screen; 0 stops it |
