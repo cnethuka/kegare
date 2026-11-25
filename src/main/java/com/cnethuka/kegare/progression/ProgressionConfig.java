@@ -190,8 +190,8 @@ public final class ProgressionConfig {
         b.pop();
         b.pop();
 
-        b.comment("Refinement: per technique, reset by a reroll. Earned only by landing the current technique's abilities on real targets.",
-                "It only unlocks things: it never changes damage, cost or cooldown.").push("refinement");
+        b.comment("Refinement: per technique, reset by a reroll. Earned only by landing the current technique's abilities on real targets.")
+                .push("refinement");
         REFINEMENT_MAX_LEVEL = b.comment("The top level.").defineInRange("maxLevel", 10, 1, 1000);
         REFINEMENT_XP_BASE = b.comment("Level L costs xpBase * L^xpExponent XP. By default that puts level 2 (the third ability) about",
                         "12 minutes into fighting mobs, or 4 fighting players, and level 9 (the full kit) several sessions in.")

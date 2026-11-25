@@ -11,8 +11,7 @@ import net.minecraft.world.entity.player.Player;
 
 /**
  * Refinement: per technique, levels 0-10 (config), earned only by landing the current technique's abilities on real
- * targets ({@link Landings}). It only unlocks things: nothing here changes damage, cost or cooldown. Severed players have
- * none, since nothing can land for them.
+ * targets ({@link Landings}). Severed players have none, since nothing can land for them.
  */
 public final class RefinementService {
     /** Told whenever a player's level changes, up or down. */

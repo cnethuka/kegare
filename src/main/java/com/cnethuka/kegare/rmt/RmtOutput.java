@@ -9,8 +9,7 @@ import net.minecraft.server.level.ServerPlayer;
 
 /**
  * How strongly a player's Reverse Malice Technique heals (DESIGN §3.17): {@code healPerSecond} times this. In canon, how fast reverse
- * cursed energy heals rides on the user's output, so this is a deliberate exception to §3.21's rule that progression only unlocks
- * things: output = 1 + a Grade bonus (0 at Grade 4, {@code output.gradeBonus} at Special Grade, evenly up the ladder) + a Peak
+ * cursed energy heals rides on the user's output: output = 1 + a Grade bonus (0 at Grade 4, {@code output.gradeBonus} at Special Grade, evenly up the ladder) + a Peak
  * Refinement bonus (0 at 0, {@code output.peakBonus} at the top level). Peak, not Refinement: Refinement resets on a reroll, and RMT
  * belongs to the player, not the technique. Then injuries drag it down ({@link RmtFatigue}), and later systems can change it
  * ({@link #addModifier}: Six Eyes, Black Spark's zone).

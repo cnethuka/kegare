@@ -52,8 +52,7 @@ own), and the hostile spirits that will share the mod's name, are still to come.
 **Growing**
 - **Loadout:** nine ability slots and a fixed ultimate.
 - **Progression:** a private Grade ladder earned mostly in PvP, and promoted by how well you use your technique rather than by
-  winning; Refinement, which unlocks a technique's abilities as you land them; and Insight from first-time encounters. It
-  changes no damage, costs or capacity.
+  winning; Refinement, which unlocks a technique's abilities as you land them; and Insight from first-time encounters.
 - **Reverse Malice Technique:** a shared healing ability, found through a green orb only its finder can see.
 - **Background Tasks:** keep Flow or Reverse Malice Technique running without a bar slot, weaker than on the bar.
 - **Incomplete Dominion:** expand your inner space with Malice alone: a pitch-black barrier spreads out from you and everyone inside is

@@ -1357,8 +1357,7 @@ negative is positive energy, which is why it heals, and why it heals with white 
 - **Output** (`RmtOutput`, `[reverse_malice_technique.output]`): 1 + a Grade bonus (0 at Grade 4 up to `gradeBonus` 0.3 at Special
   Grade, evenly along the ladder) + a Peak Refinement bonus (0 at 0 up to `peakBonus` 0.3 at the top level). A normal player tops
   out at 1.6x. Peak, not Refinement: Refinement resets on a reroll, and RMT belongs to the player, not the technique.
-  **This is a deliberate exception to §3.21's rule that progression only unlocks things: in canon, how fast reverse cursed
-  energy heals rides on the user's output.** Other systems change it through `RmtOutput.addModifier` (Six Eyes,
+  In canon, how fast reverse cursed energy heals rides on the user's output. Other systems change it through `RmtOutput.addModifier` (Six Eyes,
   §3.32; Black Spark's zone, §3.28, uses it: ×1.2 and no fatigue drag while in the zone).
 - **Injury fatigue** (`RmtFatigue`, `[reverse_malice_technique.fatigue]`): injuries piling up drag the output down.
   It comes from damage **taken** (what came off your health, any source), never from healing, and healing doesn't take it away.
@@ -1990,10 +1989,10 @@ counting unloaded puppets, lowering the config.
 
 ### 3.21 Progression (package `progression`)
 What a player builds up over time: **Grade**, **Assessment**, **Refinement** and **Insight**, plus a registry for what they
-unlock. **None of it changes damage, costs, cooldowns or Malice capacity.** Two deliberate exceptions: Reverse Malice Technique heals faster with
-Grade and Peak Refinement (its output, §3.17), because in canon reverse healing rides on the user's output; and a Dominion holds longer
-before it breaks with Grade and Refinement (§3.35), because the more a sorcerer has mastered, the longer their barrier holds. Every number is in `[progression]` of
-`kegare-server.toml`. The server decides everything; the client only displays synced values.
+unlock. Besides what it unlocks, Reverse Malice Technique heals faster with Grade and Peak Refinement (its output, §3.17), because in canon
+reverse healing rides on the user's output; and a Dominion holds longer before it breaks with Grade and Refinement (§3.35), because the
+more a sorcerer has mastered, the longer their barrier holds. Progression's own numbers are in `[progression]` of `kegare-server.toml`.
+The server decides everything; the client only displays synced values.
 
 | | Belongs to | On reroll | On death | Seen by |
 |---|---|---|---|---|
@@ -2099,8 +2098,8 @@ with no Technique use recorded counts as 0 and rolls off as new ones come in.
 players skip it. Promotion is tried after every qualifying fight, XP change and new Refinement level, and on login.
 
 #### Refinement (per technique, resets on reroll)
-Levels 0-10 (`refinement.maxLevel`). It **only unlocks things**: it never changes damage, cost or cooldown (the one exception: Peak
-Refinement raises Reverse Malice Technique's output, §3.17, on purpose). Severed players have none.
+Levels 0-10 (`refinement.maxLevel`). It unlocks a technique's abilities (below) and makes a full Dominion hold longer (§3.35); Peak
+Refinement raises Reverse Malice Technique's output (§3.17) and makes an Incomplete Dominion hold longer. Severed players have none.
 
 - **Curve:** level L costs `xpBase × L^xpExponent` (30 × L^1.6): 30, 91, 174, 276, 394, 527, 675, 836, 1009, 1194. Level 2, the third ability, takes
   121 XP in total, and level 9, the full kit, takes 4012.
@@ -3552,8 +3551,7 @@ HUD with the melee cues (§3.6): "Dominion 73" with a bar, a mark at half way, g
 with it.
 
 **How long it holds** (`DominionMastery`, numbers in `[dominion.mastery]`): until it breaks on its own, after its `durationSeconds`
-scaled by how far its caster has come. **A deliberate exception to §3.21's rule that progression only unlocks things,** like Reverse Malice
-Technique's output: the more a sorcerer has mastered, the longer their barrier holds.
+scaled by how far its caster has come: the more a sorcerer has mastered, the longer their barrier holds.
 - **Mastery,** 0 to 1: their Grade (0 at Grade 4 to 1 at Special Grade, evenly up the ladder) and their Refinement (0 to the top level),
   weighed by `gradeWeight` (0.5: half each). A full Dominion counts its technique's own Refinement (it's that technique's ultimate, so a
   reroll starts it over); an Incomplete Dominion counts Peak Refinement (it belongs to the player, and Peak is what it's learned from).

@@ -10,8 +10,7 @@ import net.minecraft.server.level.ServerPlayer;
  * Mastery, from 0 to 1, is their Grade (Grade 4 to Special Grade, evenly up the ladder) and their Refinement (0 to the top level), weighed
  * by {@code mastery.gradeWeight}: for a full Dominion its technique's Refinement (it's that technique's ultimate), for an Incomplete one
  * their Peak Refinement (it belongs to the player, and Peak is what it's learned from). The share runs from {@code mastery.leastShare} at
- * none to {@code mastery.mostShare} at all of it. A deliberate exception to §3.21's rule that progression only unlocks things, like
- * Reverse Malice Technique's output.
+ * none to {@code mastery.mostShare} at all of it.
  */
 public final class DominionMastery {
     private DominionMastery() {}
