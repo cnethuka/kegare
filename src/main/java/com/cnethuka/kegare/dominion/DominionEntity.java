@@ -61,6 +61,8 @@ public class DominionEntity extends Entity {
     private static final EntityDataAccessor<Boolean> DATA_CRACKED = SynchedEntityData.defineId(DominionEntity.class, EntityDataSerializers.BOOLEAN);
     /** The entity id of the Dominion it's clashing with, or -1. */
     private static final EntityDataAccessor<Integer> DATA_CLASH_WITH = SynchedEntityData.defineId(DominionEntity.class, EntityDataSerializers.INT);
+    /** The barrier's other side: its inner space's sky, at the middle of its plot (not its shell in the world). */
+    private static final EntityDataAccessor<Boolean> DATA_INNER = SynchedEntityData.defineId(DominionEntity.class, EntityDataSerializers.BOOLEAN);
 
     /** Every barrier in a level, per side, for the checks that run on every move (kept as they're added to and removed from a level). */
     private static final List<DominionEntity> SERVER = new CopyOnWriteArrayList<>();
@@ -78,16 +80,19 @@ public class DominionEntity extends Entity {
     boolean ended;
     /** Where the caster stood when a clash began: they can't move far from it while they hold it. */
     @Nullable Vec3 holdAt;
+    /** Its inner space, once it has one (its shell in the world's). */
+    @Nullable InnerSpace space;
+    /** The shell in the world this is the inner side of (an inner view's). */
+    @Nullable DominionEntity anchor;
 
     // ---- client only: whether the local player is on the inside of it, and what its drawing keeps
     boolean localTrapped;
     private final ClientCache clientCache = new ClientCache();
 
-    /** What a client's drawing of it keeps between frames (the ground's heights, its ruins). */
+    /** What a client's drawing of it keeps between frames (the ground's heights while it opens, its cracks). */
     public static final class ClientCache {
         public int[] columns;
         public int columnsAt;
-        public java.util.List<?> ruins;
         /** Its cracks: where it's been hit and how far they reach (the client's {@code BarrierCracks}). */
         public java.util.List<?> cracks;
     }
@@ -111,11 +116,16 @@ public class DominionEntity extends Entity {
     }
 
     DominionEntity(ServerLevel level, ServerPlayer caster, DominionSpec spec) {
+        this(level, caster, spec, caster.position());
+    }
+
+    /** A shell in the world round {@code centre}. */
+    DominionEntity(ServerLevel level, ServerPlayer caster, DominionSpec spec, Vec3 centre) {
         this(DominionRegistry.DOMINION.get(), level);
         this.caster = caster.getUUID();
         this.spec = spec;
         this.barrierLeft = spec.barrierStrength();
-        setPos(caster.getX(), caster.getY(), caster.getZ());
+        setPos(centre.x, centre.y, centre.z);
         DominionLook look = spec.look();
         entityData.set(DATA_COMPLETE, spec.complete());
         entityData.set(DATA_RADIUS, (float) spec.radius());
@@ -127,7 +137,7 @@ public class DominionEntity extends Entity {
         entityData.set(DATA_FOG, look.fogColor());
         entityData.set(DATA_FOG_END, look.fogEnd());
         entityData.set(DATA_SHELL, look.shellColor());
-        entityData.set(DATA_GROUND, look.groundPattern().map(ResourceLocation::toString).orElse(""));
+        entityData.set(DATA_GROUND, look.ground().map(ResourceLocation::toString).orElse(""));
         entityData.set(DATA_RUINS, look.ruins());
         entityData.set(DATA_DUST, look.dustColor());
         entityData.set(DATA_CRACKED, look.cracked());
@@ -153,6 +163,47 @@ public class DominionEntity extends Entity {
         builder.define(DATA_DUST, -1);
         builder.define(DATA_CRACKED, false);
         builder.define(DATA_CLASH_WITH, -1);
+        builder.define(DATA_INNER, false);
+    }
+
+    /** Its inner side, at the middle of its inner space: its sky, as big as the space, sealed already. */
+    static DominionEntity innerOf(DominionEntity shell, InnerSpace space) {
+        DominionEntity d = new DominionEntity(DominionRegistry.DOMINION.get(), space.level);
+        d.anchor = shell;
+        d.caster = shell.caster;
+        d.spec = shell.spec;
+        Vec3 m = space.middle();
+        d.setPos(m.x, m.y, m.z);
+        d.entityData.set(DATA_INNER, true);
+        d.entityData.set(DATA_COMPLETE, shell.complete());
+        d.entityData.set(DATA_RADIUS, (float) space.radius);
+        d.entityData.set(DATA_OPEN_TICKS, 0);
+        d.entityData.set(DATA_DURATION, shell.duration());
+        d.entityData.set(DATA_BARRIER, shell.barrier());
+        d.entityData.set(DATA_CASTER, shell.casterEntityId());
+        d.entityData.set(DATA_ABILITY, shell.entityData.get(DATA_ABILITY));
+        DominionLook look = shell.look();
+        d.entityData.set(DATA_SKY, look.skyColor());
+        d.entityData.set(DATA_FOG, look.fogColor());
+        d.entityData.set(DATA_FOG_END, look.fogEnd());
+        d.entityData.set(DATA_SHELL, look.shellColor());
+        d.entityData.set(DATA_GROUND, look.ground().map(ResourceLocation::toString).orElse(""));
+        d.entityData.set(DATA_RUINS, look.ruins());
+        d.entityData.set(DATA_DUST, look.dustColor());
+        d.entityData.set(DATA_CRACKED, look.cracked());
+        d.setState(State.OPEN);
+        d.markClosed(0);
+        return d;
+    }
+
+    /** Whether this is a barrier's inner side (its inner space's sky), not its shell in the world. */
+    public boolean isInner() {
+        return entityData.get(DATA_INNER);
+    }
+
+    /** The Dominion itself: the shell in the world, whichever side this is. */
+    public DominionEntity primary() {
+        return anchor != null ? anchor : this;
     }
 
     // ---------------------------------------------------------------------------------------------- both sides
@@ -163,6 +214,7 @@ public class DominionEntity extends Entity {
 
     void setState(State state) {
         entityData.set(DATA_STATE, (byte) state.ordinal());
+        if (space != null && space.inner != null && space.inner != this) space.inner.entityData.set(DATA_STATE, (byte) state.ordinal());
     }
 
     /** Closed and trapping: nobody crosses it. */
@@ -207,6 +259,7 @@ public class DominionEntity extends Entity {
 
     void setBarrierShare(float share) {
         entityData.set(DATA_BARRIER, Math.max(0f, Math.min(1f, share)));
+        if (space != null && space.inner != null) space.inner.entityData.set(DATA_BARRIER, Math.max(0f, Math.min(1f, share)));
     }
 
     public int casterEntityId() {

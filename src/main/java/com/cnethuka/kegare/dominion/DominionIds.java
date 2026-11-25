@@ -13,8 +13,8 @@ public final class DominionIds {
     public static final List<ResourceLocation> ANIMATIONS = List.of(ANIM_INCOMPLETE_CAST);
     /** Your own first-person hands stay vanilla's for these (a two-armed sweep would fill the view). */
     public static final List<ResourceLocation> FIRST_PERSON_VANILLA = List.of(ANIM_INCOMPLETE_CAST);
-    /** The cracked grey ground an Incomplete Dominion lays over the real one (a block mark, DESIGN §3.35). */
-    public static final ResourceLocation WASTELAND_GROUND = Kegare.id("wasteland");
+    /** The block an Incomplete Dominion's inner space's floor is made of (DESIGN §3.35). */
+    public static final ResourceLocation WASTELAND_GROUND = Kegare.id("wasteland_ground");
 
     private DominionIds() {}
 }

@@ -56,8 +56,9 @@ own), and the hostile spirits that will share the mod's name, are still to come.
   changes no damage, costs or capacity.
 - **Reverse Malice Technique:** a shared healing ability, found through a green orb only its finder can see.
 - **Background Tasks:** keep Flow or Reverse Malice Technique running without a bar slot, weaker than on the bar.
-- **Incomplete Dominion:** expand your inner space with Malice alone: a barrier rises round you and traps everyone inside with you,
-  and while it stands your technique costs less, cools down faster and hits harder. Learned from your Grade and your highest
+- **Incomplete Dominion:** expand your inner space with Malice alone: a pitch-black barrier spreads out from you and everyone inside is
+  taken into your inner space, a grey wasteland of real blocks, while the world outside is left untouched. While it stands your
+  technique costs less, cools down faster and hits harder; it cracks white where it's hit, and shatters. Learned from your Grade and your highest
   Refinement; it takes half of a Dominion Meter that fills as you fight players. Open one over another and they clash: hold on
   and win a tug of war on timing, or fight it out.
 

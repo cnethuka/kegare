@@ -295,8 +295,19 @@ public static final DominionUltimate STORM_DOMINION = new DominionUltimate(Resou
 
     @Override
     public DominionLook look() {
-        // sky inside, fog, how far you see, the shell from outside, a ground mark, ruins, dust color (-1: none), already cracked as it closes
-        return new DominionLook(0x2B3550, 0x2B3550, 28f, 0x101420, Optional.empty(), false, 0xA0B0D0, false);
+        // its inner space's sky, fog, how far you see, the shell from outside, its floor's block, Kegare's ruins, dust color (-1: none),
+        // already cracked as it closes
+        return new DominionLook(0x2B3550, 0x2B3550, 28f, 0x101420, Optional.of(ResourceLocation.withDefaultNamespace("blue_ice")), false,
+                0xA0B0D0, false);
+    }
+
+    @Override
+    public void furnish(DominionInterior interior) {
+        // A few spires of your own, on the floor Kegare laid.
+        for (int i = 0; i < 6; i++) {
+            BlockPos at = interior.centre().offset(interior.random().nextInt(21) - 10, 0, interior.random().nextInt(21) - 10);
+            for (int y = 0; y < 4; y++) interior.place(at.above(y), Blocks.PACKED_ICE.defaultBlockState());
+        }
     }
 
     @Override
@@ -310,20 +321,24 @@ public static final DominionUltimate STORM_DOMINION = new DominionUltimate(Resou
 ```
 
 Kegare does everything else: opening takes a full **Dominion Meter** (filled by damage in fights) and the ultimate's Malice, and is refused
-with nothing paid to a Severed player, on a full brain meter, with one already open, and where it can't open. The barrier rises, closes,
-traps whoever is inside (never a boss), stops projectiles, takes hits until it breaks, ends after its time, and burns its caster out.
-Opening over another Dominion starts a clash, and the caster has to keep V held through it.
+with nothing paid to a Severed player, on a full brain meter, while burnt out, with one already open, and where it can't open. The
+barrier spreads from its caster and seals; everything alive inside (never a boss) is taken into its **inner space**, a plot of real
+blocks in a dimension of its own, and let out again where it came from as it ends. The barrier stops projectiles, takes hits from
+outside on its shell and from inside on its inner space's sky until it breaks, ends after its time, and burns its caster out. The
+world under the shell is never touched. Opening over another Dominion starts a clash, and the caster has to keep V held through it.
 
 | Method | What it does |
 |---|---|
-| `look()` | **Required.** What its inside looks like, drawn by the clients over the real world: nothing in the world changes. The sky inside goes from its fog color at the horizon to its sky color overhead. A ground pattern `yourmod:name` is the texture `yourmod:textures/marks/name.png`: 64 x 16, four 16 x 16 tiles side by side, hard pixels. |
-| `sureHit()` | Whether its technique can't miss inside (default true). `ctx.sureHitTargets()` lists who it reaches: everything trapped inside but its caster and what they own, never a Severed player, and nothing while it's contested. |
+| `look()` | **Required.** Its shell from outside, and its inner space: its sky (from its fog color at the horizon to its sky color overhead, drawn by the clients), its fog, the block its floor is made of (`ground`, a block ID: empty for Kegare's wasteland ground), Kegare's ruins or not, and dust. |
+| `innerRadius` | How far its inner space reaches (`[dominion.full]`'s `innerRadius`, 32, unless you override it): bigger than its shell, as the inside is bigger than it looks. |
+| `furnish(interior)` | Places your own blocks in its inner space as it's built, after Kegare has cleared it and laid its floor (and ruins). `DominionInterior` gives its level, its `centre` (the middle of its floor), its `radius`, a `random` and `place(pos, state)`, which ignores anything outside its dome. It's rebuilt from scratch every time, so place freely. |
+| `sureHit()` | Whether its technique can't miss inside (default true). `ctx.sureHitTargets()` lists who it reaches: everything in its inner space but its caster and what they own, never a Severed player, and nothing while it's contested. |
 | `radius`, `durationTicks`, `barrierStrength` | Its barrier, per caster. Kegare's `[dominion.full]` numbers unless you override them. |
 | `onOpen`, `tickInside`, `onClose(ctx, broken)` | When it closes, every tick it's open, and as it ends. |
 | `canOpen(ctx)` | Your own reasons to refuse it before anything is paid. |
 
-`KegareDominions` answers questions from anywhere on the server: a caster's open Dominion (`of`), whether something is trapped
-(`isTrapped`), and who a caster's sure-hit reaches (`sureHitTargets`).
+`KegareDominions` answers questions from anywhere on the server: a caster's open Dominion (`of`), whether something is in one's inner
+space (`isTrapped`), and who a caster's sure-hit reaches (`sureHitTargets`).
 
 ## Uninstalling an addon
 

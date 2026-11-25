@@ -114,11 +114,15 @@ class ClashTest {
             Clash clash = Clashes.of(da);
             assertNotNull(clash, "they clash");
             assertSame(clash, Clashes.of(db));
-            assertSame(da, clash.first().dominion(), "the one that was there first");
+            assertSame(da, clash.first().dominion().primary(), "the one that was there first (met in its inner space, at its sky)");
+            assertSame(da.space.inner, clash.first().dominion(), "the clash is in its inner space");
+            assertTrue(InnerSpaces.isInnerSpace(db.level()), "opened by someone it took in");
             assertEquals(DominionEntity.State.CLASH, da.state());
+            assertEquals(DominionEntity.State.CLASH, da.space.inner.state(), "its sky half-formed too");
             assertEquals(DominionEntity.State.CLASH, db.state());
-            assertEquals(db.getId(), da.clashWith());
-            assertTrue(Dominions.trapping(b).isEmpty(), "half-formed: nobody's trapped");
+            assertEquals(db.getId(), da.space.inner.clashWith());
+            assertTrue(Dominions.trapping(b).isEmpty(), "contested: nobody's held by a sealed barrier");
+            assertTrue(InnerSpaces.isInnerSpace(b.level()), "though nobody's let out of the inner space while it lasts");
             assertTrue(Insight.get(b, InsightCategory.DOMINION) > insight, "clashed_with_dominion paid");
 
             DominionMeter.set(c, 100);
@@ -126,6 +130,12 @@ class ClashTest {
             Optional<Component> refused = Dominions.refusal(c, IncompleteDominions.spec(c));
             assertTrue(refused.isPresent() && refused.get().getContents().toString().contains("message.kegare.dominion.clash.full"),
                     "a third side is refused: " + refused);
+            ServerPlayer inside = DominionTest.at(s, "clash_inside", 0, 0);
+            InnerSpaces.move(inside, da.space.level, da.space.middle().add(3, 0, 0), 0f, 0f);
+            DominionMeter.set(inside, 100);
+            Optional<Component> insideToo = Dominions.refusal(inside, IncompleteDominions.spec(inside));
+            assertTrue(insideToo.isPresent() && insideToo.get().getContents().toString().contains("message.kegare.dominion.clash.full"),
+                    "inside its inner space too: " + insideToo);
             assertNull(Dominions.open(c, IncompleteDominions.spec(c), CastIntent.CAST_RELEASE));
             assertEquals(100, DominionMeter.get(c), EPS, "and pays nothing");
             assertEquals(malice, MaliceService.get(c).current(), EPS);
@@ -148,8 +158,10 @@ class ClashTest {
             assertEquals(Clash.Phase.OVER, c.phase());
             assertTrue(da.isRemoved(), "a's barrier broke");
             assertEquals(DominionConfig.ticks(DominionConfig.INCOMPLETE_BURNOUT), Burnout.remaining(a), "and a burns out as usual");
-            assertTrue(db.isClosed(), "b's closes");
-            assertTrue(Dominions.trapping(a).isPresent(), "on whoever's inside now");
+            DominionEntity won = Dominions.ownedBy(b).orElseThrow();
+            assertTrue(won.isClosed(), "b's stands sealed: it took the inner space over");
+            assertTrue(won.level() == da.level() && won.centre().distanceTo(da.centre()) < 1.0e-6, "its shell in the world where a's was");
+            assertTrue(InnerSpaces.isInnerSpace(a.level()) && Dominions.trapping(a).isPresent(), "everyone still inside, now in b's");
             assertEquals(0, Burnout.remaining(b));
             assertTrue(earned(b, KegareAdvancements.DOMINION_PUSHBACK), "won before the fight: Pushback");
             assertFalse(earned(a, KegareAdvancements.DOMINION_PUSHBACK));
@@ -195,6 +207,7 @@ class ClashTest {
             assertTrue(db.isRemoved(), "b's barrier broke");
             assertEquals(DominionConfig.ticks(DominionConfig.INCOMPLETE_BURNOUT), Burnout.remaining(b), "b burns out");
             assertTrue(da.isClosed(), "a's closes again");
+            assertTrue(InnerSpaces.isInnerSpace(b.level()), "with b still in its inner space");
             assertEquals(used, da.tickCount - da.closedAt(), "with the time it had used kept");
             assertTrue(earned(a, KegareAdvancements.DOMINION_PUSHBACK));
         });

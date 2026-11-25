@@ -86,6 +86,7 @@ game never names a bearer, heir or killer of a secret holder.
 | `kegare:brain` | yes | yes | the brain meter, 0 to 100: what repairing burnt-out techniques has cost (§3.17) |
 | `kegare:six_eyes` | yes | yes | a Six Eyes bearer's Attunement, Strain and collapse risk; wiped when the eyes go (§3.32) |
 | `kegare:dominion` | yes | yes | the Dominion Meter, 0 to 100 (§3.35) |
+| `kegare:inner_return` | yes | no | where a player taken into a Dominion's inner space came from (dimension, position, facing), to send them back (§3.35) |
 | `kegare:cast_state` | no | no | runtime: active charge/channel, active toggles |
 | `kegare:sync_state` | no | no | runtime: "needs sync" flag |
 | `kegare:landing_state` | no | no | runtime: when each ability last landed on each target, who the player last traded hits with |
@@ -1184,7 +1185,7 @@ Package `com.cnethuka.kegare.innate_technique.rime`. **Rarity: RARE.** All numbe
   | Closing Line (Blur, Severed, §3.27) | a planted push-off (`closing_line_launch`), a crack and a burst of dust and grit off the ground where they left, and a heavy launch everyone nearby hears (`severed.closing_line_launch`, loud); on arrival a skid (`closing_line_arrive`, `severed.closing_line_arrive`) and dust where they stop |
   | Black Spark (Reinforced Fists, §3.28; not a special, but it gets a tell all the same) | black and red pixel art bursting from the point of contact for one sharp moment: jagged stair-stepped bolts, black with red edges, crackling outward round a black starburst, and black and red pixels thrown out and falling; the same for everyone, at every effects setting (Vanilla: black and red dust and crit sparks), and a sharp crack (`black_spark.crack`) everyone near hears |
   | Reverse Malice Technique, on another (RMT, §3.17) | the healer's right hand reaching out onto the one healed (they must be touching), with RMT's white flames burning on it, seen by everyone for as long as it lasts (the pose at every effects setting; the flames Photon, white dust at Vanilla), and a soft chime as it starts (an amethyst chime, high) |
-  | Incomplete Dominion (shared, §3.35; not a special, but it gets a tell all the same) | its own cast (`incomplete_dominion_cast`: the hands pressed together before the chest, then flung apart and down as the head comes up), the pitch-black barrier rising out of the ground round the caster for its whole second, and a low swelling drone everyone near hears as it starts, sealing shut as it closes (`dominion.open`); everyone it closes on sees "Incomplete Dominion" across the screen |
+  | Incomplete Dominion (shared, §3.35; not a special, but it gets a tell all the same) | its seal held for the whole second (`incomplete_dominion_cast`: the wisdom fist, one fist at the chest and the other hand closed over it from above), ink flooding the ground from the caster's feet and the black barrier expanding from them, and a low swelling drone everyone near hears as it starts, sealing shut as it closes (`dominion.open`); everyone it takes in sees "Incomplete Dominion" across the screen |
 
   Standstill isn't a special, but it has a tell of its own all the same: the raised watch (`standstill_cast`), the sharp click
   (`time_manipulation.stop`) and a one-frame inverted flash (at Full) for everyone inside, then the gray.
@@ -3401,7 +3402,7 @@ package in it carries `@ApiStatus.Experimental`. The guide for mod makers is `do
 | `KegareApi` | the registry keys `INNATE_TECHNIQUES` and `TRAITS`, the registries, `isKegares`, and shared abilities: `registerSharedAbility`, `registerSharedAbilityForEveryone`, `unlockSharedAbility`, `hasSharedAbility` |
 | `KegareProgression` | `landed`, `landedOnItsOwn`, `during`, `addAttributor`: the cases Refinement and Assessment can't see from a hit (§3.21) |
 | `api.change` | `TechniqueChanges` (`add`, `addAfter`, `replace`, `tweak`, `isChanged`, `changedAbilities`) and `AbilityTweak`: changing techniques that already exist (below) |
-| `api.dominion` | `DominionUltimate`, `DominionLook`, `DominionContext`, `KegareDominions`: a technique's ultimate as a full Dominion (§3.35) |
+| `api.dominion` | `DominionUltimate`, `DominionLook`, `DominionContext`, `DominionInterior`, `KegareDominions`: a technique's ultimate as a full Dominion, and its inner space (§3.35) |
 | `KegareApi` (advancements) | `techniqueTab` (a technique tab's root, to parent an addon's own advancements to) and `awardAdvancement` |
 
 Kegare's own techniques, abilities and traits are built on these same types; nothing is wrapped.
@@ -3475,13 +3476,15 @@ any Malice user can learn it (below). Numbers in `[dominion]` of `kegare-server.
   (`BrainDamage.refusesDominion`, §3.17: "Your brain can't take another Dominion."), while burnt out ("Burnt out (Xs).": Burnout is
   what stands between one Dominion and the next, §3.17), with one already open ("Your Dominion is already open."), or short of meter
   ("Your Dominion Meter isn't full.", "Your Dominion Meter needs 50.").
-- The barrier rises round where its caster stands for `openSeconds` (1): anyone can still get out. Then it closes, and everything alive
-  inside (the middle of its box within the sphere) is trapped until it ends or breaks: players, mobs and the caster, never a spectator
-  or a boss.
+- The caster holds their seal for `openSeconds` (1) while their inner space spills out of them: ink floods the ground from their feet
+  out to the barrier's radius, and the barrier expands from them as a sphere, thin and smoky at first, solid black by the time it
+  reaches its full size. Anyone can still get out. Then it seals, and everything alive inside (the middle of its box within the sphere)
+  is taken into its inner space (below) until it ends or breaks: players, mobs and the caster, never a spectator or a boss.
 
 **The barrier** is a sphere of `radius` round the caster's feet, so a dome over the ground (a full Dominion's: `radius` 16,
-`durationSeconds` 30, `barrierStrength` 40).
-- **Nobody crosses it, either way.** Every move is cut where it meets the shell (`DominionBounds`, from `Entity.collide` through
+`durationSeconds` 30, `barrierStrength` 40). Sealed, it has two sides: its black shell, which stays in the world, and its inner
+space's sky, which is the same barrier seen from inside.
+- **Nobody crosses it, either way.** Outside, nothing gets through the shell; inside, nothing gets past the inner space's sky. Every move is cut where it meets the shell (`DominionBounds`, from `Entity.collide` through
   `EntityCollideMixin`): on the server for everything living, and on each client for its own player, whom the server tells which side
   they're on as it closes (`DominionNet.Trapped`). Both sides cut a move the same way, so nobody is pulled back for walking into it, and
   a move is only ever cut, never lengthened, so nothing is pushed into a wall. Anything that gets across another way (a teleport, chorus
@@ -3489,23 +3492,53 @@ any Malice user can learn it (below). Numbers in `[dominion]` of `kegare-server.
   cancelled through their target events (`SwapTargetEvent`, `TimeTargetEvent`, `StringsTargetEvent`).
 - **Projectiles stop at it.** A projectile's hit whose path crosses the shell is cancelled (`ProjectileImpactEvent`), and one that
   crossed it in a tick without hitting anything is removed; either way the barrier takes the hit.
-- **Hits across it land on it.** Damage from one side to the other (by where its source is) is cancelled and hits the barrier instead.
-- **Barrier strength:** it takes the Impact System's strength (§3.23) of every hit on it, from inside and out: a swing at the shell (the
+- **Hits across it land on it.** Damage from one side of a sealed shell to the other (by where its source is: only something left on
+  the wrong side of it could) is cancelled and hits the barrier instead.
+- **Barrier strength:** it takes the Impact System's strength (§3.23) of every hit on it, from outside on its shell and from inside on its
+  inner space's sky, one strength for both: a swing at the shell (the
   shell within `meleeReach`, 3, along the look with no block or body nearer; the weapon's damage with Reinforced Fists and Flow's Offense,
   by its own charge, as an air swing doesn't reset vanilla's attack timer on the server), blows across it, projectiles
   (`projectileStrength` 0.3, or an arrow's own damage if more), and area blasts within `blastReach` (2.5) of the shell, full at the shell
   and less further off. Its own caster's hits never count. When it runs out the barrier breaks and the Dominion ends at once.
 - **Bosses** (§4) are never trapped, held or moved by it, and take damage inside as usual.
 
-**The interior is drawn, never built.** What a Dominion's inside looks like (`DominionLook`: the sky inside the shell, fog, the shell's
-color from outside, a block mark laid over the ground, ruins, dust, cracks) is drawn by the clients over the real terrain (see "The
-look" below). Nothing in the
-world changes: the barrier is a rule on the server and a drawing on the clients, carried by a marker at its centre (`DominionEntity`,
-no hitbox, synced data only) that is never saved. So a crash or a server stop mid-Dominion leaves nothing behind, and there's nothing to
-restore on the next start. Building it from temporary blocks with a saved snapshot to restore was the other way, and the riskier: tens of
-thousands of block changes and their lighting each time, chunk saves that can race the snapshot so a crash between them leaves blocks
-behind, block entities to lift out and put back, and a slow restore that can close over people. Battle damage inside follows its usual
-mode (§3.24).
+**The inner space** (`InnerSpaces`, `InnerSpace`; dimension `kegare:inner_space`). A sealed Dominion is a separate space built of real
+blocks, the way a sorcerer's inner space is made real, and everyone it seals in is taken into it. The world under its shell is never
+touched, and is simply there again afterwards.
+- **Where:** one dimension holds every inner space, each in its own plot, 1024 blocks from the next (`InnerSpaces.SPACING`). It's a
+  void with no mobs and no weather, and the sun is held at noon. A plot is taken as a Dominion opens and freed when it's over. Its
+  chunks, and the shell's in the world, are held loaded meanwhile by a chunk ticket, which is never saved.
+- **Size:** fairly big, but not too big: `innerRadius`, 24 for an Incomplete Dominion and 32 for a full one. That's bigger than the
+  shell outside (10 and 16): the inside is bigger than it looks.
+- **Built** while the barrier spreads, a share each tick, with whatever is left finished as it seals:
+  - everything in the plot is cleared;
+  - then its floor: a disc a little wider than the space, its ground block on top of two layers of unbreakable Dominion Foundation;
+  - then its ruins;
+  - then whatever its technique adds (`DominionUltimate.furnish`).
+  The ground and ruins can be broken, and they drop nothing. Nothing can be placed in an inner space.
+- **Taken in** as it seals: everything alive inside the shell, never a boss or a spectator. Each lands at the same place relative to
+  the caster, spread out by how much bigger the inside is, on the floor, and lifted clear if a ruin stands there. Players keep where
+  they came from (attachment `kegare:inner_return`, saved); the Dominion keeps where its mobs came from. For those taken in, a short
+  blackout, then the inner space fades in.
+- **Inside,** the inner space's sky is the barrier's other side, drawn by the clients, and every move inside is cut where it meets it.
+  Hits on it break the same barrier.
+- **Let out** when it ends or breaks:
+  - those inside see it end (its sky cracking, then the white shatter);
+  - `returnDelaySeconds` (0.5) later, everyone and everything in the inner space (players, mobs, dropped items, experience) is back in
+    the world. A player goes to the spot they were taken from; anything else to its place inside, drawn back in to the shell's size.
+  - What happened inside stays there: battle damage (§3.24) and broken ruins vanish with it.
+- **Safe from crashes:** the world outside never changes, so there's nothing to restore.
+  - A player who logs in inside an inner space that's no longer open (after a crash, a stop, or logging out inside) is sent back to
+    where they came from, or to the world's spawn if that's lost.
+  - A server stop lets everyone out first.
+  - Once a second, anyone in the inner space dimension that no Dominion holds and no plot is letting out (put there by a command, say)
+    is sent back the same way.
+  - A plot left half-built is cleared the next time it's used.
+  - A real server makes the dimension from Kegare's data like any other level. The JUnit test server makes only its preset's levels,
+    so the tests make it themselves, the same way.
+- **Why not change the world in place:** building from temporary blocks over the real terrain needs a saved snapshot to restore, and a
+  crash between saves leaves blocks behind. It also means tens of thousands of block changes and their lighting each time, containers
+  to lift out and put back, and people caught as it's restored. The inner space only ever changes its own plot.
 
 **The Dominion Meter** (`DominionMeter`, attachment `kegare:dominion`, 0 to 100, saved, kept on death; Postgres storage covers it through
 the attachment registry, §3.33): `perDamageDealt` (2) per point of damage dealt to a player in a fight and `perDamageTaken` (1.5) per
@@ -3514,24 +3547,31 @@ combat. A Severed player's never fills. It's private to its owner (`DominionNet.
 HUD with the melee cues (§3.6): "Dominion 73" with a bar, a mark at half way, gold when full, only while they have a Dominion to open
 with it.
 
-**Ending:** when its time is up, when it breaks, when its caster dies, logs out or changes dimension, by command, or in a clash.
-Everyone inside is released. Its caster burns out (§3.25): `dominionBurnout` (60 s) for a full Dominion, kept equal to the brain meter's
+**Ending:** when its time is up, when it breaks, when its caster dies, logs out or changes dimension (being taken into its own inner
+space doesn't count), by command, or in a clash. Everyone inside is let out (above). Its caster burns out (§3.25): `dominionBurnout` (60 s) for a full Dominion, kept equal to the brain meter's
 `dominionBurnoutAssumed` so the repair math holds (§3.17). Logging out or leaving the dimension still burns them out; dying doesn't
 (death clears Burnout).
 
 **Sure-hit** (`DominionContext.sureHitTargets`, `KegareDominions.sureHitTargets`): a full Dominion's technique can't miss inside it. The
-hook lists everything trapped inside but its caster and what its caster owns, and never a Severed player, who has no Malice for it to
+hook lists everything in its inner space but its caster and what its caster owns, and never a Severed player, who has no Malice for it to
 find. Empty while it's rising or contested, or for a Dominion with no sure-hit. Nothing uses it yet.
 
 **Insight:** caught inside someone else's Dominion as it closes pays `caught_in_dominion` (§3.21), once per kind of Dominion (the ability
 that opened it: a technique's ultimate, or the Incomplete Dominion).
 
 **The look** (`DominionRenderer`, `DominionFx`, `ClashClient`; all our own drawing and vanilla particles, no Photon, so the same at
-Full, Reduced and Vanilla, where Reduced and Vanilla place fewer ruins and half the dust and shards):
-- **The barrier** is a smooth sphere (96 x 48 quads, so its outline is a curve up close, untextured) round its centre, rising out of
-  the ground round its caster's feet over its opening second. From outside it's a solid wall of its shell color (pitch black for the
-  Incomplete Dominion): nothing inside shows through. From inside it's its sky, all but opaque (97%): its fog color at the horizon
-  blending to its sky color overhead. Both full-bright and lit evenly, so it reads the same by day and night and from every side.
+Full, Reduced and Vanilla, where Reduced and Vanilla make half the ink, dust and shards):
+- **Opening** (the tell, §3.15): the caster holds their seal (the Incomplete Dominion's: `incomplete_dominion_cast`, the wisdom-fist
+  seal, one fist at the chest and the other hand closed over it from above, held still for the whole second and let go as it seals).
+  Ink floods the ground from their feet: black laid over the top faces round them, out to the barrier's radius in the first third of
+  the second, its edge ragged, with ink spattering up off it. The barrier expands from the caster's middle as a sphere, its radius
+  easing out to full over the second: thin, see-through and smoky at first (ink thrown off its front), thickening to solid black as it
+  reaches its size. Sealing, it snaps solid with a dull pulse. Those it takes in get a short blackout and the inner space fading in, and
+  a moment's blackout again as they're let out.
+- **The barrier** is a smooth sphere (96 x 48 quads, so its outline is a curve up close, untextured) round its centre. From outside
+  it's a solid wall of its shell color (pitch black for the Incomplete Dominion): nothing inside shows through, and from the world
+  there's nothing inside to see. From inside its inner space it's its sky, opaque: its fog color at the horizon blending to its sky
+  color overhead. Both full-bright and lit evenly, so it reads the same by day and night and from every side.
 - **Cracks** (`BarrierCracks`): white, glowing, drawn as geometry on the shell (no texture, so sharp up close and far off). A hit
   opens a star of five to seven cracks where it landed, straight runs with sharp kinks and the odd branch, or, landing on cracks
   already there, makes them reach further: a star reaches further for the share of the barrier's strength it took (the hit moment
@@ -3545,18 +3585,15 @@ Full, Reduced and Vanilla, where Reduced and Vanilla place fewer ruins and half 
   sphere swelling and gone in 7 ticks), its shell above the ground in white shards (648; 288 at Reduced and Vanilla), each flying out
   and up, turning and shrinking, falling, fading over 1.5 s, and 180 white motes and sparks (half at Reduced and Vanilla). In your own
   first person no shard is drawn within 2 blocks of your eyes.
-- **The ground:** every top face inside the sphere (read from the heightmap a client has, refreshed every two seconds, so battle
-  damage moves it) is laid over with its ground pattern, one 16 x 16 tile a block, four tiles chosen and turned by position, spreading
-  out from the caster as the barrier rises. **Ruins:** seven (four at Reduced and Vanilla) columns and wall stubs of broken stone
-  (`textures/marks/ruin_stone.png`, 16 a block), seeded by where the Dominion stands so everyone sees the same, between half way and
-  the shell, rising with it. They're drawing only: nothing collides with them. The ground and ruins are lit by the world but never
-  darker than block light 11, so at night they still match the sky. **Dust:** inside, round the viewer, white ash and slow motes of
-  its dust color (five a tick, half at Reduced and Vanilla), never within 2 blocks of a first-person camera.
+- **The ground and the ruins are real blocks** in its inner space (above), in the world's own light (the inner space's sun is held at
+  noon). **Dust:** inside, round the viewer, white ash and slow motes of its dust color (five a tick, half at Reduced and Vanilla),
+  never within 2 blocks of a first-person camera.
 - **The Incomplete Dominion's wasteland** (`IncompleteDominions.WASTELAND`): sky `0x6F6B66` overhead and `0x8E8983` at the horizon and
-  in the fog (fog ends at 30 blocks), shell `0x000000` (pitch black), ground `kegare:wasteland` (`textures/marks/wasteland.png`: grey
-  dust in four shades, one or two pixel-wide cracks with a light edge, pebbles), ruins, dust `0xA7A29B`, not cracked (it cracks only
-  where it's hit). No Malice color anywhere.
-- **Moments:** opening plays `dominion.open` (a low drone swelling as the barrier rises, air rushing up through it, and a heavy soft
+  in the fog (fog ends at 40 blocks), shell `0x000000` (pitch black), ground `kegare:wasteland_ground` (grey dust in four shades, one
+  or two pixel-wide cracks with a light edge, pebbles: four looks, each turned at random), ruins of `kegare:wasteland_ruin` (grey stone
+  bricks, cracked: columns and wall stubs, one for about every 120 blocks of floor, between a quarter of the way out and the sky), dust
+  `0xA7A29B`, not cracked (it cracks only where it's hit). No Malice color anywhere.
+- **Moments:** opening plays `dominion.open` (a low drone swelling as the barrier spreads, air rushing up through it, and a heavy soft
   seal a second in, as it closes) for everyone near; a hit on the barrier a glass knock, its cracks and a spray of white sparks where
   it landed; breaking plays `dominion.break` (one huge crack, the shell falling apart in lower and lower pieces, a rumble) with the
   white shatter; ending on its own a beacon powering down. Its name crosses the screen of everyone it closes on.
@@ -3564,8 +3601,13 @@ Full, Reduced and Vanilla, where Reduced and Vanilla place fewer ruins and half 
   from any side) round the circle where they meet, with sparks and grit flying off it, and `dominion.clash` where it began (two low
   tones beating against each other, grit scraping between them, a hard knock).
 
-**Clashes** (`Clashes`, `Clash`; numbers in `[dominion.clash]`): a Dominion opening over one that's opening or open (their spheres
-overlap) starts a clash instead of being refused.
+**Clashes** (`Clashes`, `Clash`; numbers in `[dominion.clash]`): a Dominion opening over another starts a clash instead of being
+refused, in either of two places:
+- **In the world,** over one that's still spreading (their spheres overlap). Over one that has sealed, it's refused with nothing paid
+  ("That Dominion is sealed: break in, or open yours inside it.").
+- **In an inner space,** opened by someone it took in. Nothing opens in an inner space any other way ("Not here: this is someone's
+  inner space."). While that clash lasts, nobody is let out of the inner space and its sky is half-formed like any clashing barrier.
+
 - **Two sides at most.** A third Dominion opening over one that's clashing is refused ("Two Dominions are already clashing here."), and
   one over two at once too ("Too many Dominions are in the way."), with nothing paid. The sides are kept as a list (`MAX_SIDES`), so only
   the bar would need rethinking for more.
@@ -3586,8 +3628,10 @@ overlap) starts a clash instead of being refused.
   out of Malice or a barrier cracked apart loses at once.
 - **Fight** (`fightSeconds` 15): free again. Each caster's score is the damage they deal the other (after defences, as the fight
   record has it, §3.21); nobody else's damage counts. The higher wins; within `tieMargin` (10% of the higher) it's a tie.
-- **The result:** the loser's barrier breaks and they burn out as their Dominion would; the winner's closes again on whoever is inside
-  then, with the time it had used kept (one that never closed gets its whole time). A tie breaks both, and both burn out for
+- **The result:** the loser's barrier breaks and they burn out as their Dominion would; the winner's closes again, with the time it had
+  used kept (one that never closed gets its whole time), on whoever is inside then. One opened inside another's inner space that wins
+  takes the space over: the loser's shell breaks, the winner's stands in the world where it did, and the inner space is rebuilt as the
+  winner's round everyone still in it. One that loses there just breaks, and the inner space it was opened in carries on. A tie breaks both, and both burn out for
   `exhaustedBurnout` (45 s) instead. A caster dying, logging out, leaving or a command ending one side hands the other the win, with
   nothing earned. Advancements (Base tab, hidden, silent, §3.11): *Pushback* for a win before the fight, *Fight Me* for one in it,
   *Mutual Destruction* for a tie.
@@ -3621,33 +3665,45 @@ in `[dominion.incomplete]`): the inner space expanded with Malice alone, with no
   everyone it closes on. The Six Eyes read it on its caster: "Holding open Incomplete Dominion" (§3.32).
 
 **Addon API** (`api.dominion`, experimental, §3.34): a technique's ultimate is a full Dominion by being a `DominionUltimate`: its
-`look()`, `sureHit()`, its barrier's `radius`, `durationTicks` and `barrierStrength` (the `[dominion.full]` numbers unless overridden),
-`onOpen`, `tickInside` and `onClose`, and `canOpen` for its own refusals. Kegare does the rest: the meter and brain checks, the barrier,
-trapping, hits, ending, Burnout and clashes. `KegareDominions` answers who is trapped and who a sure-hit reaches.
+`look()` (its floor a block of its choosing), `sureHit()`, its barrier's `radius`, `durationTicks` and `barrierStrength` and its
+`innerRadius` (the `[dominion.full]` numbers unless overridden), `furnish(DominionInterior)` to place its own blocks in its inner space
+after the floor, `onOpen`, `tickInside` and `onClose`, and `canOpen` for its own refusals. Kegare does the rest: the meter and brain
+checks, the barrier, the inner space and taking everyone in and out, hits, ending, Burnout and clashes. `KegareDominions` answers who is
+in it and who a sure-hit reaches.
 
 **Tests:** `DominionTest` (a full meter, an unbroken brain and only one at a time to open, Severed never; whatever is inside when it
-closes trapped, outside not, a boss never; moves cut at the shell from both sides, a boss not held; a teleport across put back; a
-projectile crossing it stopped and its hit cancelled; a blow across it landing on it, one inside landing as usual; hits from inside and
-out, the caster's not, a swing at the shell; breaking, ending at once and burning out its caster; not one block changed after it ends,
-breaks or the server forgets it as a crash would, and its marker never saved; its time running out, its hooks, dominionBurnout equal to
-the brain's assumption, logging out, leaving the dimension and dying ending it; the sure-hit finding someone inside but never its caster
-or a Severed player; caught_in_dominion paid once), `DominionMeterTest` (filling from damage dealt and taken, capped at 100, draining only
-out of combat, saved), `IncompleteDominionTest` (shared and in the Malice tab; learned from the Grade and the Peak Refinement, on the bar,
-kept through a reroll, a Grade short never; Dominion Insight lowering the Refinement, rounding down, half at most; never a Severed player's,
-not even from an admin; a short meter refused with nothing paid, half the meter and its Malice taken through the real cast, the smaller
-radius, the wasteland and the pitch-black, uncracked shell, its name in a Six Eyes read, no sure-hit, the shorter duration, the short Burnout, refused
-while burnt out; breaking at its own strength; the cheaper casts, faster cooldowns and harder hits for its caster alone, only while it
-stands, gone when it ends), `ClashTest` (opening over another starts a clash, both half-formed with nobody trapped, Insight paid, a third
-side refused with nothing paid; not holding on in the Grip loses, the loser breaking and burning out, the winner closing again on whoever
-is inside, Pushback; the Maintain's drain, a miss pushing back and cracking, too late a miss, hits pushing all the way, the winner keeping
-the time it had used; an Incomplete Dominion's handicap against a full one; running dry and letting go losing; no attacking or casting
-while holding on, held in place, free in the Fight; the Fight's score from the two casters' damage alone, Fight Me; a close fight
-breaking both with the exhausted Burnout, Mutual Destruction; a side ended by command forfeiting with nothing won, top-tier to each other
-only while clashing; the advancements hidden and silent on the Base tab), `DominionVisualsTest` (the cast animation loads and keeps your own hands vanilla's; the icon,
-wasteland and ruin stone hard pixel art, 16 a block, grey; cracks on the shell, measured along, the same shape on every client, reaching
-further for a harder hit and a weaker barrier up to a limit, a hit on cracks adding to them and elsewhere starting its own, only so many;
-the shatter's shards cut from the shell above the ground, fewer at Reduced and Vanilla, flying outward; a clash's seam on both shells,
-and none for spheres apart or one inside the other).
+seals taken into its inner space, outside not, a boss never and left in the world; moves cut at its sky from inside and at its shell
+from outside, a boss not held; a teleport across put back on either side; projectiles stopped at the shell from outside and at its sky
+from inside, a hit across the shell cancelled, one barrier taking both; hits inside its inner space landing as usual; hits from inside
+and out, the caster's not, a swing at the shell and one at its sky; breaking, ending at once, burning out its caster and letting everyone
+out; not one block in the world changed after it ends, breaks or the server forgets it as a crash would, the one left inside by the
+crash sent back as they log in, and its marker never saved; its time running out, its hooks, dominionBurnout equal to the brain's
+assumption, logging out, leaving the dimension and dying ending it; the sure-hit finding someone inside but never its caster or a
+Severed player; caught_in_dominion paid once), `InnerSpaceTest` (its dimension there; everyone inside taken in, the caster at the
+middle and the rest spread out by how much bigger it is, on its floor of real ground over foundation, where each came from kept, its sky
+standing in it; let out to where they were, nothing left to remember, the plot let go; a mob taken in and let out to where it was, an
+item dropped inside back near the shell; the world under it never touched; a plot cleared of what was left in it before it's used again;
+nothing opening in an inner space but a clash over its sky; opening over a sealed one from outside refused with nothing paid; a player
+left inside sent back as they log in; a stray put in one no Dominion holds sent back; its caster taken in without ending it),
+`DominionMeterTest` (filling from damage dealt and taken, capped at 100, draining only out of combat, saved), `IncompleteDominionTest`
+(shared and in the Malice tab; learned from the Grade and the Peak Refinement, on the bar, kept through a reroll, a Grade short never;
+Dominion Insight lowering the Refinement, rounding down, half at most; never a Severed player's, not even from an admin; a short meter
+refused with nothing paid, half the meter and its Malice taken through the real cast, the smaller radius, the wasteland and the
+pitch-black, uncracked shell, its name in a Six Eyes read, no sure-hit, the shorter duration, the short Burnout, refused while burnt
+out; breaking at its own strength; the cheaper casts, faster cooldowns and harder hits for its caster alone, only while it stands, gone
+when it ends), `ClashTest` (opening in another's inner space starts a clash at its sky, both half-formed, nobody let out, Insight paid, a
+third side refused from outside and from inside with nothing paid; not holding on in the Grip loses, the loser breaking and burning out,
+the one opened inside taking the inner space over, its shell where the loser's was and everyone still inside, Pushback; the Maintain's
+drain, a miss pushing back and cracking, too late a miss, hits pushing all the way, the winner closing again with the time it had used
+and the loser still in its inner space; an Incomplete Dominion's handicap against a full one; running dry and letting go losing; no
+attacking or casting while holding on, held in place, free in the Fight; the Fight's score from the two casters' damage alone, Fight Me;
+a close fight breaking both with the exhausted Burnout, Mutual Destruction; a side ended by command forfeiting with nothing won, top-tier
+to each other only while clashing; the advancements hidden and silent on the Base tab), `DominionVisualsTest` (the seal animation loads
+and keeps your own hands vanilla's; the icon hard pixel art; the wasteland's blocks pixel art, 16 a block, full faces, grey, each with
+its model and blockstate; cracks on the shell, measured along, the same shape on every client, reaching further for a harder hit and a
+weaker barrier up to a limit, a hit on cracks adding to them and elsewhere starting its own, only so many; the shatter's shards cut from
+the shell above the ground, fewer at Reduced and Vanilla, flying outward; a clash's seam on both shells, and none for spheres apart or
+one inside the other).
 
 ---
 

@@ -37,11 +37,11 @@ import net.neoforged.neoforge.event.entity.player.PlayerEvent;
 public final class IncompleteDominions {
     public static final IncompleteDominion ABILITY = SharedAbilities.register(new IncompleteDominion());
     /**
-     * The inner space with nothing of a technique in it: grey cracked ground, an ash sky, ruins and drifting dust, and from outside a
-     * pitch-black, smooth shell that cracks white only where it's hit. No Malice color anywhere, so every Incomplete Dominion looks the
+     * The inner space with nothing of a technique in it: grey cracked ground and ruins of real blocks, an ash sky and drifting dust, and
+     * from outside a pitch-black, smooth shell that cracks white only where it's hit. No Malice color anywhere, so every Incomplete Dominion looks the
      * same whoever opens it.
      */
-    public static final DominionLook WASTELAND = new DominionLook(0x6F6B66, 0x8E8983, 30f, 0x000000, Optional.of(DominionIds.WASTELAND_GROUND),
+    public static final DominionLook WASTELAND = new DominionLook(0x6F6B66, 0x8E8983, 40f, 0x000000, Optional.of(DominionIds.WASTELAND_GROUND),
             true, 0xA7A29B, false);
     /** Its cooldown rate's key ({@link CooldownRates}). */
     private static final String RATE = "incomplete_dominion";
@@ -81,7 +81,8 @@ public final class IncompleteDominions {
     }
 
     public static DominionSpec spec(ServerPlayer caster) {
-        return new DominionSpec(DominionIds.INCOMPLETE, false, DominionConfig.INCOMPLETE_RADIUS.get(), DominionConfig.ticks(DominionConfig.INCOMPLETE_DURATION),
+        return new DominionSpec(DominionIds.INCOMPLETE, false, DominionConfig.INCOMPLETE_RADIUS.get(), DominionConfig.INCOMPLETE_INNER_RADIUS.get(),
+                DominionConfig.ticks(DominionConfig.INCOMPLETE_DURATION),
                 DominionConfig.INCOMPLETE_BARRIER.get(), DominionConfig.ticks(DominionConfig.INCOMPLETE_BURNOUT), DominionConfig.INCOMPLETE_METER_SHARE.get(),
                 WASTELAND, false, HOOKS);
     }

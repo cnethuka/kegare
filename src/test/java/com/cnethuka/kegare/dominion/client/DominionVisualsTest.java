@@ -70,24 +70,25 @@ class DominionVisualsTest {
     }
 
     @Test
-    void theWastelandIsPixelArtSixteenABlock() throws IOException {
-        BufferedImage ground = ImageIO.read(asset("textures/marks/wasteland.png").toFile());
-        assertEquals(16, ground.getHeight(), "one block high");
-        assertEquals(64, ground.getWidth(), "four tiles side by side");
-        hardPixels(ground, "the ground");
-        for (int y = 0; y < 16; y++) for (int x = 0; x < 64; x++) assertEquals(255, ground.getRGB(x, y) >>> 24, "the ground covers its face");
-        BufferedImage ruin = ImageIO.read(asset("textures/marks/ruin_stone.png").toFile());
-        assertEquals(16, ruin.getHeight());
-        assertEquals(32, ruin.getWidth(), "two tiles");
-        hardPixels(ruin, "the ruins");
-        // No Malice color: the wasteland is grey, whoever opens it.
-        for (BufferedImage image : new BufferedImage[] {ground, ruin}) {
-            for (int y = 0; y < image.getHeight(); y++) {
-                for (int x = 0; x < image.getWidth(); x++) {
+    void theWastelandsBlocksArePixelArtSixteenABlock() throws IOException {
+        String[] textures = {"wasteland_ground_0", "wasteland_ground_1", "wasteland_ground_2", "wasteland_ground_3", "wasteland_ruin_0",
+                "wasteland_ruin_1", "dominion_foundation"};
+        for (String name : textures) {
+            BufferedImage image = ImageIO.read(asset("textures/block/" + name + ".png").toFile());
+            assertEquals(16, image.getWidth(), name + ": 16 a block");
+            assertEquals(16, image.getHeight(), name);
+            hardPixels(image, name);
+            for (int y = 0; y < 16; y++) {
+                for (int x = 0; x < 16; x++) {
                     int rgb = image.getRGB(x, y), r = rgb >> 16 & 0xFF, g = rgb >> 8 & 0xFF, b = rgb & 0xFF;
-                    assertTrue(Math.max(r, Math.max(g, b)) - Math.min(r, Math.min(g, b)) <= 16, "grey, not colored: " + Integer.toHexString(rgb));
+                    assertEquals(255, rgb >>> 24, name + ": a full block face");
+                    assertTrue(Math.max(r, Math.max(g, b)) - Math.min(r, Math.min(g, b)) <= 16, name + ": grey, no Malice color: " + Integer.toHexString(rgb));
                 }
             }
+            assertTrue(Files.isRegularFile(asset("models/block/" + name + ".json")), name + " has its model");
+        }
+        for (String block : new String[] {"wasteland_ground", "wasteland_ruin", "dominion_foundation"}) {
+            assertTrue(Files.isRegularFile(asset("blockstates/" + block + ".json")), block + " has its blockstate");
         }
     }
 

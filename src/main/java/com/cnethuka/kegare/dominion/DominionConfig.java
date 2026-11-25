@@ -15,11 +15,14 @@ public final class DominionConfig {
     public static ModConfigSpec.DoubleValue FULL_DURATION;
     public static ModConfigSpec.DoubleValue FULL_BARRIER;
     public static ModConfigSpec.DoubleValue DOMINION_BURNOUT;
+    public static ModConfigSpec.IntValue FULL_INNER_RADIUS;
+    public static ModConfigSpec.DoubleValue RETURN_DELAY;
     public static ModConfigSpec.DoubleValue MELEE_REACH;
     public static ModConfigSpec.DoubleValue BLAST_REACH;
     public static ModConfigSpec.DoubleValue PROJECTILE_STRENGTH;
     // The Incomplete Dominion
     public static ModConfigSpec.DoubleValue INCOMPLETE_RADIUS;
+    public static ModConfigSpec.IntValue INCOMPLETE_INNER_RADIUS;
     public static ModConfigSpec.DoubleValue INCOMPLETE_DURATION;
     public static ModConfigSpec.DoubleValue INCOMPLETE_BARRIER;
     public static ModConfigSpec.DoubleValue INCOMPLETE_BURNOUT;
@@ -70,11 +73,15 @@ public final class DominionConfig {
                 .defineInRange("meleeReach", 3.0, 0.5, 8.0);
         BLAST_REACH = b.comment("An area blast this close to the shell, inside or outside, hits the barrier (full strength at the shell, less",
                 "further off).").defineInRange("blastReach", 2.5, 0.0, 16.0);
+        RETURN_DELAY = b.comment("As a Dominion ends, how long those in its inner space see it end before they're back in the world.")
+                .defineInRange("returnDelaySeconds", 0.5, 0.0, 5.0);
         PROJECTILE_STRENGTH = b.comment("A plain projectile stopped by the barrier hits it this hard (the Impact System's strength). A cast's",
                 "projectile adds the Malice behind its cast, by the Impact System's rule.").defineInRange("projectileStrength", 0.3, 0.0, 100.0);
 
         b.comment("A full Dominion: a technique's ultimate (none ships yet).").push("full");
         FULL_RADIUS = b.comment("The barrier's radius.").defineInRange("radius", 16.0, 2.0, 64.0);
+        FULL_INNER_RADIUS = b.comment("How far its inner space reaches (bigger than its shell: the inside is bigger than it looks).")
+                .defineInRange("innerRadius", 32, 4, 96);
         FULL_DURATION = b.comment("How long it stays open once closed.").defineInRange("durationSeconds", 30.0, 1.0, 600.0);
         FULL_BARRIER = b.comment("Barrier strength: the Impact System's strength of the hits it takes before it breaks.")
                 .defineInRange("barrierStrength", 40.0, 0.1, 100_000.0);
@@ -87,6 +94,8 @@ public final class DominionConfig {
                 "it; it's weaker than a full Dominion and finds nobody (no sure-hit), but inside it its caster's technique runs better.")
                 .push("incomplete");
         INCOMPLETE_RADIUS = b.comment("The barrier's radius.").defineInRange("radius", 10.0, 2.0, 64.0);
+        INCOMPLETE_INNER_RADIUS = b.comment("How far its inner space reaches (bigger than its shell: the inside is bigger than it looks).")
+                .defineInRange("innerRadius", 24, 4, 96);
         INCOMPLETE_DURATION = b.comment("How long it stays open once closed.").defineInRange("durationSeconds", 20.0, 1.0, 600.0);
         INCOMPLETE_BARRIER = b.comment("Barrier strength: the Impact System's strength of the hits it takes before it breaks.")
                 .defineInRange("barrierStrength", 10.0, 0.1, 100_000.0);

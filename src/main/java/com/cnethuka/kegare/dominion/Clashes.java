@@ -84,11 +84,12 @@ public final class Clashes {
 
     /** The open rule: one Dominion in the way, and not already clashing. Anything else is refused, and nothing is paid. */
     static Optional<Component> refuse(ServerPlayer caster, DominionSpec spec, List<DominionEntity> overlapping) {
-        if (overlapping.size() >= MAX_SIDES) return Optional.of(Component.translatable("message.kegare.dominion.clash.crowded"));
-        DominionEntity other = overlapping.get(0);
-        if (of(other) != null || other.state() == DominionEntity.State.CLASH) {
-            return Optional.of(Component.translatable("message.kegare.dominion.clash.full"));
+        for (DominionEntity other : overlapping) {
+            if (of(other) != null || other.state() == DominionEntity.State.CLASH) {
+                return Optional.of(Component.translatable("message.kegare.dominion.clash.full"));
+            }
         }
+        if (overlapping.size() >= MAX_SIDES) return Optional.of(Component.translatable("message.kegare.dominion.clash.crowded"));
         return Optional.empty();
     }
 
@@ -97,13 +98,14 @@ public final class Clashes {
         Clash c = new Clash(side(first), side(second), RandomSource.create());
         ServerLevel level = (ServerLevel) second.level();
         for (Clash.Side s : c.sides) {
-            DominionEntity d = s.dominion;
-            boolean wasClosed = d.isClosed();
+            DominionEntity d = s.dominion, shell = d.primary();
+            boolean heldInWorld = shell.isClosed() && shell.space == null;
+            shell.setState(DominionEntity.State.CLASH); // its inner space's sky too
             d.setState(DominionEntity.State.CLASH);
-            d.trapped.clear();
+            if (shell.space == null) shell.trapped.clear(); // in the world, nobody's held while it's contested; an inner space keeps everyone
             ServerPlayer caster = Dominions.caster(d);
             d.holdAt = caster == null ? null : caster.position();
-            if (wasClosed) { // nobody is trapped in it now: every client near lets go of its side
+            if (heldInWorld) { // nobody is held in it now: every client near lets go of its side
                 double range = d.radius() + 96;
                 for (ServerPlayer p : level.players()) {
                     if (p.distanceToSqr(d) < range * range) PacketDistributor.sendToPlayer(p, new DominionNet.Trapped(d.getId(), false));
@@ -113,8 +115,9 @@ public final class Clashes {
         first.setClashWith(second.getId());
         second.setClashWith(first.getId());
         ServerPlayer a = Dominions.caster(first), b = Dominions.caster(second);
-        if (a != null && second.spec != null) InsightHooks.clashedWithDominion(a, second.spec.ability());
-        if (b != null && first.spec != null) InsightHooks.clashedWithDominion(b, first.spec.ability());
+        DominionSpec firstSpec = first.primary().spec, secondSpec = second.primary().spec;
+        if (a != null && secondSpec != null) InsightHooks.clashedWithDominion(a, secondSpec.ability());
+        if (b != null && firstSpec != null) InsightHooks.clashedWithDominion(b, firstSpec.ability());
         // Heard and seen where they meet.
         Vec3 dir = second.centre().subtract(first.centre());
         double gap = dir.length();
@@ -126,7 +129,8 @@ public final class Clashes {
     }
 
     private static Clash.Side side(DominionEntity d) {
-        return new Clash.Side(d, d.isClosed() ? Math.max(0, d.tickCount - d.closedAt()) : -1);
+        DominionEntity shell = d.primary(); // its time is its shell's
+        return new Clash.Side(d, shell.isClosed() ? Math.max(0, shell.tickCount - shell.closedAt()) : -1);
     }
 
     // ---------------------------------------------------------------------------------------------- running it
@@ -238,15 +242,23 @@ public final class Clashes {
     private static void win(Clash c, Clash.Side winner, Clash.Result result) {
         Clash.Side loser = c.other(winner);
         over(c);
-        if (!loser.dominion.ended) Dominions.end(loser.dominion, Dominions.EndReason.CLASH_LOST); // they burn out as usual
-        closeAgain(winner);
+        DominionEntity lost = loser.dominion.primary(), won = winner.dominion.primary();
+        if (lost.space != null && won.space == null && InnerSpaces.isInnerSpace(won.level())) {
+            Dominions.takeOver(lost, won); // opened in the loser's inner space, and won it
+        } else {
+            if (!lost.ended) Dominions.end(lost, Dominions.EndReason.CLASH_LOST); // they burn out as usual
+            closeAgain(winner);
+        }
         tell(c, winner, result);
     }
 
     private static void tie(Clash c) {
         over(c);
-        for (Clash.Side s : c.sides) {
-            if (!s.dominion.ended) Dominions.end(s.dominion, Dominions.EndReason.CLASH_TIE);
+        // One opened in another's inner space first, so it's let out with everyone when that space ends.
+        List<Clash.Side> order = new java.util.ArrayList<>(c.sides);
+        order.sort(java.util.Comparator.comparing(s -> s.dominion.primary().space != null));
+        for (Clash.Side s : order) {
+            if (!s.dominion.primary().ended) Dominions.end(s.dominion.primary(), Dominions.EndReason.CLASH_TIE);
             ServerPlayer caster = caster(s);
             if (caster != null && caster.isAlive()) Burnout.apply(caster, DominionConfig.ticks(DominionConfig.CLASH_EXHAUSTED_BURNOUT));
         }
@@ -265,7 +277,7 @@ public final class Clashes {
 
     /** The winner's barrier closes again, with the time it had used kept, on whoever is inside now. */
     private static void closeAgain(Clash.Side winner) {
-        DominionEntity d = winner.dominion;
+        DominionEntity d = winner.dominion.primary();
         if (d.ended || d.isRemoved()) return;
         Dominions.close(d, Math.max(0, winner.usedTicks), winner.usedTicks < 0);
     }
@@ -288,6 +300,13 @@ public final class Clashes {
         Clash.Side other = c.other(gone);
         over(c);
         if (reason == Dominions.EndReason.SERVER_STOP) return;
+        DominionEntity otherShell = other.dominion.primary();
+        if (gone.dominion.primary().space != null && InnerSpaces.isInnerSpace(otherShell.level()) && otherShell.space == null) {
+            // The inner space it was opened in is ending with everyone in it: it goes too, nothing won or lost.
+            Dominions.endQuietly(otherShell);
+            tell(c, other, Clash.Result.FORFEIT);
+            return;
+        }
         closeAgain(other);
         // Cracked apart in the Maintain is still losing it there; anything else is a forfeit.
         tell(c, other, reason == Dominions.EndReason.BROKEN ? Clash.Result.MAINTAIN : Clash.Result.FORFEIT);

@@ -1,0 +1,70 @@
+{
+  "variants": {
+    "": [
+      {
+        "model": "kegare:block/wasteland_ground_0",
+        "y": 0
+      },
+      {
+        "model": "kegare:block/wasteland_ground_0",
+        "y": 90
+      },
+      {
+        "model": "kegare:block/wasteland_ground_0",
+        "y": 180
+      },
+      {
+        "model": "kegare:block/wasteland_ground_0",
+        "y": 270
+      },
+      {
+        "model": "kegare:block/wasteland_ground_1",
+        "y": 0
+      },
+      {
+        "model": "kegare:block/wasteland_ground_1",
+        "y": 90
+      },
+      {
+        "model": "kegare:block/wasteland_ground_1",
+        "y": 180
+      },
+      {
+        "model": "kegare:block/wasteland_ground_1",
+        "y": 270
+      },
+      {
+        "model": "kegare:block/wasteland_ground_2",
+        "y": 0
+      },
+      {
+        "model": "kegare:block/wasteland_ground_2",
+        "y": 90
+      },
+      {
+        "model": "kegare:block/wasteland_ground_2",
+        "y": 180
+      },
+      {
+        "model": "kegare:block/wasteland_ground_2",
+        "y": 270
+      },
+      {
+        "model": "kegare:block/wasteland_ground_3",
+        "y": 0
+      },
+      {
+        "model": "kegare:block/wasteland_ground_3",
+        "y": 90
+      },
+      {
+        "model": "kegare:block/wasteland_ground_3",
+        "y": 180
+      },
+      {
+        "model": "kegare:block/wasteland_ground_3",
+        "y": 270
+      }
+    ]
+  }
+}

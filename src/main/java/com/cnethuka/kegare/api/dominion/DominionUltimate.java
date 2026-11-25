@@ -16,8 +16,9 @@ import net.minecraft.server.level.ServerPlayer;
  * a caster whose Dominion is already open, and where it can't open. Kegare raises and closes the barrier, traps whoever is inside, takes
  * the hits on it, ends it and burns its caster out; it also runs clashes with other Dominions. What it does inside is yours.
  * <p>
- * Its barrier's size, how long it stays and how much it takes are {@code [dominion.full]}'s unless you override them. Its key is V, and
- * in a clash its caster has to keep holding it.
+ * Its barrier's size, its inner space's size, how long it stays and how much it takes are {@code [dominion.full]}'s unless you override
+ * them. Sealed, everyone inside is taken into its inner space: a plot of real blocks of its own, its floor from its look, furnished by
+ * {@link #furnish}. Its key is V, and in a clash its caster has to keep holding it.
  */
 public abstract class DominionUltimate extends BaseAbility {
     protected DominionUltimate(ResourceLocation id) {
@@ -43,6 +44,14 @@ public abstract class DominionUltimate extends BaseAbility {
     public double barrierStrength(ServerPlayer caster) {
         return DominionConfig.FULL_BARRIER.get();
     }
+
+    /** How far its inner space reaches (bigger than its shell: the inside is bigger than it looks). */
+    public int innerRadius(ServerPlayer caster) {
+        return DominionConfig.FULL_INNER_RADIUS.get();
+    }
+
+    /** Furnishes its inner space as it's built, after Kegare has laid its floor (and ruins). Nothing by default. */
+    public void furnish(DominionInterior interior) {}
 
     /** It has closed: whoever is inside is trapped. */
     public void onOpen(DominionContext ctx) {}

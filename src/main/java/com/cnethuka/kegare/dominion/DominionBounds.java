@@ -24,8 +24,12 @@ public final class DominionBounds {
         Vec3 from = DominionEntity.middle(entity);
         Vec3 to = from.add(move), start = to;
         for (DominionEntity d : all) {
-            if (d.isClosed()) {
-                boolean inside = client ? d.localTrapped : d.trapped.contains(entity.getUUID());
+            if (d.isInner()) {
+                // Its inner space: nobody gets past its sky, sealed or contested; only what's in it is held.
+                if (from.distanceTo(d.centre()) < d.radius() + 1) to = within(d.centre(), d.radius() - DominionEntity.margin(living), from, to);
+            } else if (d.isClosed()) {
+                // With an inner space, nobody's held in the world: everyone near its shell is outside it.
+                boolean inside = client ? d.localTrapped : d.space == null && d.trapped.contains(entity.getUUID());
                 double margin = DominionEntity.margin(living);
                 to = inside ? within(d.centre(), d.radius() - margin, from, to) : outside(d.centre(), d.radius() + margin, from, to);
             }

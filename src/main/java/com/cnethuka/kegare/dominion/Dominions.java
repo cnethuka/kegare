@@ -83,6 +83,7 @@ public final class Dominions {
     private Dominions() {}
 
     public static void init() {
+        InnerSpaces.init();
         NeoForge.EVENT_BUS.addListener((ServerTickEvent.Post e) -> serverTick());
         NeoForge.EVENT_BUS.addListener(EventPriority.HIGHEST, Dominions::onIncoming);
         NeoForge.EVENT_BUS.addListener(Dominions::onProjectileImpact);
@@ -144,6 +145,13 @@ public final class Dominions {
                     Math.round(needed)));
         }
         List<DominionEntity> overlapping = overlapping((ServerLevel) caster.level(), caster.position(), spec.radius(), null);
+        if (InnerSpaces.isInnerSpace(caster.level())) {
+            // In an inner space, only over its own sky: a clash with the Dominion that took them in.
+            if (overlapping.stream().noneMatch(DominionEntity::isInner)) return Optional.of(Component.translatable("message.kegare.dominion.inner_space"));
+        } else if (overlapping.stream().anyMatch(o -> o.closedAt() >= 0 && o.state() != DominionEntity.State.CLASH)) {
+            // One that has sealed is a separate space now: break in, or be taken in and open yours there.
+            return Optional.of(Component.translatable("message.kegare.dominion.sealed"));
+        }
         if (!overlapping.isEmpty()) {
             if (OPEN_RULES.isEmpty()) return Optional.of(Component.translatable("message.kegare.dominion.in_the_way"));
             for (OpenRule rule : OPEN_RULES) {
@@ -166,6 +174,7 @@ public final class Dominions {
         DominionEntity d = new DominionEntity(level, caster, spec);
         d.releaseIntent = releaseIntent;
         level.addFreshEntity(d);
+        if (!InnerSpaces.isInnerSpace(level)) d.space = InnerSpaces.take(d, spec); // built while its barrier spreads
         List<DominionEntity> overlapping = overlapping(level, d.centre(), spec.radius(), d);
         moment(d, DominionNet.Moment.OPENING, d.centre(), 0f);
         if (!overlapping.isEmpty()) OVERLAP_LISTENERS.forEach(l -> l.accept(d, overlapping));
@@ -185,18 +194,27 @@ public final class Dominions {
 
     static void tick(DominionEntity d) {
         if (d.ended) return;
+        if (d.isInner()) { // its shell runs it; this only keeps everyone inside
+            if (d.anchor == null || d.anchor.ended || d.anchor.isRemoved()) d.discard();
+            else keepInside(d);
+            return;
+        }
         if (d.spec == null || d.caster == null) { // only ever made by open(); anything else is stray
             d.discard();
             return;
         }
         ServerPlayer caster = caster(d);
-        if (caster == null || !caster.isAlive() || caster.level() != d.level()) {
+        boolean present = caster != null && (caster.level() == d.level() || d.space != null && caster.level() == d.space.level);
+        if (caster == null || !caster.isAlive() || !present) {
             end(d, EndReason.CASTER_GONE);
             return;
         }
         switch (d.state()) {
             case OPENING -> {
-                if (d.tickCount >= d.openTicks()) close(d);
+                if (d.space != null) d.space.buildSome();
+                if (d.tickCount < d.openTicks()) break;
+                if (InnerSpaces.isInnerSpace(d.level())) endQuietly(d); // one opened in an inner space only ever clashes
+                else close(d);
             }
             case OPEN -> {
                 keepSides(d);
@@ -220,18 +238,101 @@ public final class Dominions {
         ServerLevel level = (ServerLevel) d.level();
         d.setState(DominionEntity.State.OPEN);
         d.markClosed(usedTicks);
+        if (d.space != null && d.space.inner != null) { // it had sealed before (a clash it won): everyone is still in its inner space
+            d.space.inner.markClosed(usedTicks);
+            return;
+        }
         d.trapped.clear();
         ServerPlayer caster = caster(d);
-        for (LivingEntity e : level.getEntitiesOfClass(LivingEntity.class, box(d, 1), e -> constrained(e) && d.contains(DominionEntity.middle(e)))) {
-            d.trapped.add(e.getUUID());
+        List<LivingEntity> in = level.getEntitiesOfClass(LivingEntity.class, box(d, 1), e -> constrained(e) && d.contains(DominionEntity.middle(e)));
+        for (LivingEntity e : in) d.trapped.add(e.getUUID());
+        if (d.space != null) {
+            // Sealed: its inner space is finished, its sky stands in it, and everyone inside is taken in.
+            d.space.finishBuilding();
+            d.space.outerCentre = d.centre();
+            d.space.outerRadius = d.radius();
+            d.space.inner = DominionEntity.innerOf(d, d.space);
+            d.space.level.addFreshEntity(d.space.inner);
+            InnerSpaces.takeIn(d.space, d.centre(), in);
+        } else {
+            // No inner space could be made (no dimension for it): they're held in the world instead, each client told its side.
+            for (ServerPlayer p : level.players()) {
+                boolean inside = d.trapped.contains(p.getUUID());
+                if (inside || p.distanceToSqr(d) < Math.pow(d.radius() + 96, 2)) PacketDistributor.sendToPlayer(p, new DominionNet.Trapped(d.getId(), inside));
+            }
         }
-        for (ServerPlayer p : level.players()) {
-            boolean inside = d.trapped.contains(p.getUUID());
-            if (inside || p.distanceToSqr(d) < Math.pow(d.radius() + 96, 2)) PacketDistributor.sendToPlayer(p, new DominionNet.Trapped(d.getId(), inside));
-            if (inside && p != caster) InsightHooks.caughtInDominion(p, d.spec.ability());
+        for (LivingEntity e : in) {
+            if (e instanceof ServerPlayer p && p != caster) InsightHooks.caughtInDominion(p, d.spec.ability());
         }
         moment(d, DominionNet.Moment.CLOSED, d.centre(), 0f);
         if (firstTime) d.spec.hooks().onOpen(d.context());
+    }
+
+    /**
+     * A clash in its inner space went to the Dominion opened there: it takes the space over. The loser's shell breaks (they burn out as
+     * usual) and the winner's stands in the world where it did; the inner space is rebuilt as the winner's round everyone still in it, its
+     * time whole. Returns the winner's shell.
+     */
+    static DominionEntity takeOver(DominionEntity loser, DominionEntity winner) {
+        InnerSpace space = loser.space;
+        ServerPlayer caster = caster(winner);
+        if (space == null || caster == null || winner.spec == null) {
+            end(loser, EndReason.CLASH_LOST);
+            endQuietly(winner);
+            return loser;
+        }
+        java.util.Set<UUID> held = new java.util.HashSet<>(loser.trapped);
+        DominionEntity oldSky = space.inner;
+        if (oldSky != null) send(oldSky, DominionNet.Moment.BROKE, oldSky.centre(), 0f); // its sky shatters for everyone inside
+        loser.space = null; // the space isn't let go: it's the winner's now
+        end(loser, EndReason.CLASH_LOST);
+        if (oldSky != null) {
+            oldSky.ended = true;
+            oldSky.discard();
+        }
+        space.inner = null;
+        endQuietly(winner); // its opening in the inner space is over: its shell is in the world now
+        DominionEntity shell = new DominionEntity(space.outerLevel, caster, winner.spec, space.outerCentre);
+        shell.releaseIntent = winner.releaseIntent;
+        shell.keyHeld = winner.keyHeld;
+        space.outerLevel.addFreshEntity(shell);
+        shell.space = space;
+        InnerSpaces.rebuild(space, winner.spec, shell.centre(), shell.radius());
+        shell.setState(DominionEntity.State.OPEN);
+        shell.markClosed(0);
+        shell.trapped.addAll(held);
+        shell.trapped.add(caster.getUUID());
+        space.inner = DominionEntity.innerOf(shell, space);
+        space.level.addFreshEntity(space.inner);
+        for (UUID id : held) {
+            if (space.level.getEntity(id) instanceof ServerPlayer p && p != caster) InsightHooks.caughtInDominion(p, winner.spec.ability());
+        }
+        moment(shell, DominionNet.Moment.CLOSED, shell.centre(), 0f);
+        winner.spec.hooks().onOpen(shell.context());
+        return shell;
+    }
+
+    /** Gone with no ending of its own: no Burnout, no hooks, nobody told (one opened in an inner space that the space outlived). */
+    static void endQuietly(DominionEntity d) {
+        if (d.ended) return;
+        d.ended = true;
+        d.trapped.clear();
+        if (d.space != null) {
+            InnerSpaces.collapse(d.space, 0);
+            d.space = null;
+        }
+        d.discard();
+    }
+
+    /** Its inner side: nobody gets past its sky (anyone who does another way is put back). */
+    private static void keepInside(DominionEntity d) {
+        ServerLevel level = (ServerLevel) d.level();
+        Vec3 c = d.centre();
+        double r = d.radius();
+        for (LivingEntity e : level.getEntitiesOfClass(LivingEntity.class, box(d, 6), Dominions::constrained)) {
+            double margin = DominionEntity.margin(e);
+            if (DominionEntity.middle(e).distanceTo(c) > r - margin + 0.3) put(e, c, r - margin - 0.05);
+        }
     }
 
     /** Whoever is on the wrong side of a closed barrier (a teleport, a swap that wasn't stopped) is put back on their own. */
@@ -242,10 +343,11 @@ public final class Dominions {
         for (LivingEntity e : level.getEntitiesOfClass(LivingEntity.class, box(d, 4), Dominions::constrained)) {
             Vec3 m = DominionEntity.middle(e);
             double dist = m.distanceTo(c), margin = DominionEntity.margin(e);
-            boolean inside = d.trapped.contains(e.getUUID());
+            boolean inside = d.space == null && d.trapped.contains(e.getUUID()); // with an inner space, nobody's held in the world
             if (inside && dist > r - margin + 0.3) put(e, c, r - margin - 0.05);
             else if (!inside && dist < r + margin - 0.3) put(e, c, r + margin + 0.05);
         }
+        if (d.space != null) return; // its inner side keeps them in (keepInside)
         // Trapped and somewhere else entirely (another level, or far off after a teleport): back inside.
         for (UUID id : List.copyOf(d.trapped)) {
             Entity e = level.getEntity(id);
@@ -306,6 +408,10 @@ public final class Dominions {
 
     /** Ends it now: everyone inside is released and its caster burns out (a full Dominion for dominionBurnout, an Incomplete one less). */
     public static void end(DominionEntity d, EndReason reason) {
+        if (d.isInner() && d.anchor != null) {
+            end(d.anchor, reason);
+            return;
+        }
         if (d.ended) return;
         d.ended = true;
         ServerPlayer caster = caster(d);
@@ -316,39 +422,56 @@ public final class Dominions {
         }
         moment(d, reason == EndReason.BROKEN || reason == EndReason.CLASH_LOST || reason == EndReason.CLASH_TIE ? DominionNet.Moment.BROKE
                 : DominionNet.Moment.ENDED, d.centre(), 0f);
+        letOut(d, reason == EndReason.SERVER_STOP);
         d.trapped.clear();
         d.discard();
+    }
+
+    /** Its inner space ends: everyone in it sees it go, then they're let out (at once as the server stops). */
+    private static void letOut(DominionEntity d, boolean now) {
+        if (d.space == null) return;
+        InnerSpaces.collapse(d.space, now ? 0 : DominionConfig.ticks(DominionConfig.RETURN_DELAY));
+        d.space = null;
     }
 
     /** The caster's barrier, if they have one open, opening or clashing. */
     public static Optional<DominionEntity> ownedBy(ServerPlayer caster) {
         for (DominionEntity d : DominionEntity.allServer()) {
-            if (!d.ended && !d.isRemoved() && caster.getUUID().equals(d.caster)) return Optional.of(d);
+            if (!d.ended && !d.isRemoved() && !d.isInner() && caster.getUUID().equals(d.caster)) return Optional.of(d);
         }
         return Optional.empty();
     }
 
     /** The closed barrier this entity is trapped in, if any. */
     public static Optional<DominionEntity> trapping(LivingEntity e) {
-        for (DominionEntity d : DominionEntity.in(e.level())) {
-            if (!d.ended && d.isClosed() && d.trapped.contains(e.getUUID())) return Optional.of(d);
+        for (DominionEntity d : DominionEntity.allServer()) {
+            if (!d.ended && !d.isInner() && d.isClosed() && d.trapped.contains(e.getUUID())) return Optional.of(d);
         }
         return Optional.empty();
     }
 
-    /** Its caster, if they're in its level. */
-    @Nullable
-    public static ServerPlayer caster(DominionEntity d) {
-        if (d.caster == null || !(d.level() instanceof ServerLevel level)) return null;
-        return level.getPlayerByUUID(d.caster) instanceof ServerPlayer p ? p : null;
+    /** The Dominion holding this player in (sealed in its inner space, or contested in a clash), if any. */
+    public static Optional<DominionEntity> holding(Entity e) {
+        for (DominionEntity d : DominionEntity.allServer()) {
+            if (!d.ended && !d.isInner() && d.closedAt() >= 0 && d.trapped.contains(e.getUUID())) return Optional.of(d);
+        }
+        return Optional.empty();
     }
 
-    /** Everything living trapped inside right now (the caster included). */
+    /** Its caster, wherever they are (in its inner space, or still in the world). */
+    @Nullable
+    public static ServerPlayer caster(DominionEntity d) {
+        if (d.caster == null || d.getServer() == null) return null;
+        return com.cnethuka.kegare.progression.Attribution.player(d.getServer(), d.caster);
+    }
+
+    /** Everything living it holds right now, in its inner space (the caster included). */
     public static List<LivingEntity> inside(DominionEntity d) {
+        DominionEntity p = d.primary();
         List<LivingEntity> out = new ArrayList<>();
-        if (!d.isClosed()) return out;
-        ServerLevel level = (ServerLevel) d.level();
-        for (UUID id : d.trapped) {
+        if (!p.isClosed()) return out;
+        ServerLevel level = p.space != null ? p.space.level : (ServerLevel) p.level();
+        for (UUID id : p.trapped) {
             if (level.getEntity(id) instanceof LivingEntity e && e.isAlive()) out.add(e);
         }
         return out;
@@ -396,7 +519,9 @@ public final class Dominions {
 
     /** A player died, logged out or changed dimension: their own Dominion ends, and they're trapped in none. */
     private static void onGone(ServerPlayer p, boolean burnsOut) {
+        if (InnerSpaces.MOVING.contains(p.getUUID())) return; // taken in or let out: that's no leaving
         for (DominionEntity d : List.copyOf(DominionEntity.allServer())) {
+            if (d.isInner()) continue;
             d.trapped.remove(p.getUUID());
             if (p.getUUID().equals(d.caster) && !d.ended) {
                 if (burnsOut && d.spec != null) Burnout.apply(p, d.spec.burnoutTicks());
@@ -414,6 +539,7 @@ public final class Dominions {
         if (d.spec != null && caster != null) d.spec.hooks().onClose(d.context(), false);
         END_LISTENERS.forEach(l -> l.accept(d, EndReason.CASTER_GONE));
         moment(d, DominionNet.Moment.ENDED, d.centre(), 0f);
+        letOut(d, false);
         d.trapped.clear();
         d.discard();
     }
@@ -422,22 +548,24 @@ public final class Dominions {
 
     /** A hit on the barrier of this strength (the Impact System's), at this point on it, by {@code by} (its caster's own never count). */
     public static void hit(DominionEntity d, double strength, Vec3 at, @Nullable Entity by) {
-        if (d.ended || strength <= 0) return;
-        if (by != null && by.getUUID().equals(d.caster)) return;
-        d.barrierLeft -= strength;
-        double whole = d.spec == null ? 1 : d.spec.barrierStrength();
-        d.setBarrierShare((float) (d.barrierLeft / whole));
+        DominionEntity p = d.primary(); // its shell in the world holds its strength, whichever side was hit
+        if (p.ended || d.ended || strength <= 0) return;
+        if (by != null && by.getUUID().equals(p.caster)) return;
+        p.barrierLeft -= strength;
+        double whole = p.spec == null ? 1 : p.spec.barrierStrength();
+        p.setBarrierShare((float) (p.barrierLeft / whole));
         moment(d, DominionNet.Moment.HIT, at, (float) (strength / whole)); // the share it took: how far its cracks spread
-        if (d.barrierLeft <= 0) end(d, EndReason.BROKEN);
+        if (p.barrierLeft <= 0) end(p, EndReason.BROKEN);
     }
 
     /** Takes a share of its strength off directly (a clash's missed prompt cracks it), heard as a hit at its top. Run out, it breaks. */
     public static void crack(DominionEntity d, double share) {
-        if (d.ended || d.spec == null || share <= 0) return;
-        d.barrierLeft -= share * d.spec.barrierStrength();
-        d.setBarrierShare((float) (d.barrierLeft / d.spec.barrierStrength()));
+        DominionEntity p = d.primary();
+        if (p.ended || p.spec == null || share <= 0) return;
+        p.barrierLeft -= share * p.spec.barrierStrength();
+        p.setBarrierShare((float) (p.barrierLeft / p.spec.barrierStrength()));
         moment(d, DominionNet.Moment.HIT, d.centre().add(0, d.radius(), 0), (float) share);
-        if (d.barrierLeft <= 1.0e-9) end(d, EndReason.BROKEN);
+        if (p.barrierLeft <= 1.0e-9) end(p, EndReason.BROKEN);
     }
 
     /** A hit across a closed barrier lands on it instead (and so does any harm done from one side to the other). */
@@ -561,7 +689,21 @@ public final class Dominions {
     // ---------------------------------------------------------------------------------------------- telling the clients
 
     /** A moment of this barrier's, to every player near enough to see it. */
-    static void moment(DominionEntity d, int kind, Vec3 at, float strength) {
+    static void moment(DominionEntity view, int kind, Vec3 at, float strength) {
+        DominionEntity shell = view.primary();
+        Vec3 dir = at.subtract(view.centre());
+        send(shell, kind, view == shell ? at : onSide(shell, dir), strength);
+        DominionEntity sky = shell.space != null ? shell.space.inner : null;
+        if (sky != null && !sky.isRemoved()) send(sky, kind, view == sky ? at : onSide(sky, dir), strength);
+    }
+
+    /** The same place on another side of the barrier: its centre, or the point on it in the same direction. */
+    private static Vec3 onSide(DominionEntity side, Vec3 dir) {
+        return dir.lengthSqr() < 1.0e-8 ? side.centre() : side.centre().add(dir.normalize().scale(side.radius()));
+    }
+
+    /** A moment to every player near one side of the barrier. */
+    static void send(DominionEntity d, int kind, Vec3 at, float strength) {
         ServerLevel level = (ServerLevel) d.level();
         DominionNet.Moment payload = new DominionNet.Moment(kind, d.getId(), at.x, at.y, at.z, (float) d.radius(), strength, d.complete(),
                 d.look().cracked(), d.look().shellColor(), d.abilityId().toString());
@@ -575,8 +717,10 @@ public final class Dominions {
     public static void forgetAllAsIfCrashed() {
         for (DominionEntity d : List.copyOf(DominionEntity.allServer())) {
             d.ended = true;
+            d.space = null;
             d.discard();
         }
+        InnerSpaces.forgetAll();
         LAST_SWING.clear();
     }
 

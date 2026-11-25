@@ -30,9 +30,9 @@ import net.neoforged.neoforge.common.NeoForge;
 import org.joml.Vector3f;
 
 /**
- * Dominions' moments and air, on a client (DESIGN §3.35): its own sounds (rising and closing, breaking, clashing), the cracks a hit
- * leaves ({@link BarrierCracks}) and a spray of white sparks, dust drifting inside a barrier while you're in it, sparks off a clash's
- * seam, and a broken barrier's white shatter: its cracks race across the whole shell, then it bursts into white shards with a white
+ * Dominions' moments and air, on a client (DESIGN §3.35): its own sounds (spreading and sealing, breaking, clashing), ink spattering as
+ * it opens, the cracks a hit leaves ({@link BarrierCracks}) and a spray of white sparks, dust drifting in its inner space, sparks off a
+ * clash's seam, and a broken barrier's white shatter: its cracks race across the whole shell, then it bursts into white shards with a white
  * flash. All our own drawing and vanilla particles (no Photon), so the same at every effects setting; Reduced and Vanilla make about
  * half the shards and particles.
  */
@@ -71,6 +71,8 @@ public final class DominionFx {
     static final int FLASH_TICKS = 7;
     private static final List<Shatter> SHATTERS = new ArrayList<>();
     private static final RandomSource RANDOM = RandomSource.create();
+    /** No ink drop closer than this to the camera, in any view. */
+    private static final double INK_CLEAR = 5.0;
     /** Nothing spawned closer than this to a first-person camera (DESIGN §3.13). */
     private static final double NEAR = 2.0;
     private static final ParticleOptions WHITE_DUST = new DustParticleOptions(new Vector3f(1f, 1f, 1f), 1.0f);
@@ -208,8 +210,9 @@ public final class DominionFx {
         float share = share();
         for (DominionEntity d : DominionEntity.in(level)) {
             BarrierCracks.tick(d, damage(d));
+            if (d.state() == DominionEntity.State.OPENING && !d.isInner()) ink(level, camera, d, share);
             int dust = d.look().dustColor();
-            if (dust != -1 && d.risen(0f) >= 1f && d.contains(cam)) {
+            if (dust != -1 && d.isInner() && d.contains(cam)) {
                 int count = Math.max(1, Math.round(5 * share));
                 for (int i = 0; i < count; i++) {
                     Vec3 p = cam.add((RANDOM.nextDouble() - 0.5) * 24, (RANDOM.nextDouble() - 0.3) * 10, (RANDOM.nextDouble() - 0.5) * 24);
@@ -241,6 +244,30 @@ public final class DominionFx {
             if (now - s.at == CRACK_TICKS) burst(level, camera, s);
         }
         SHATTERS.removeIf(s -> now - s.at > CRACK_TICKS + SHARD_TICKS);
+    }
+
+    /** As it opens: ink spattering up off the edge of what's spreading over the ground, and thrown off the barrier's front as it expands. */
+    private static void ink(ClientLevel level, Camera camera, DominionEntity d, float share) {
+        float t = DominionRenderer.opened(d, 0f);
+        float reach = DominionRenderer.inkReach(d, t), r = DominionRenderer.openRadius(d, t);
+        Vec3 c = d.centre(), cam = camera.getPosition();
+        int count = Math.max(2, Math.round(12 * share));
+        for (int i = 0; i < count; i++) {
+            Vec3 at, v;
+            if (i % 2 == 0 && reach < d.radius()) {
+                double a = RANDOM.nextDouble() * Mth.TWO_PI;
+                at = c.add(Math.cos(a) * reach, 0.15, Math.sin(a) * reach);
+                v = new Vec3(Math.cos(a) * 0.04, 0.06 + RANDOM.nextDouble() * 0.06, Math.sin(a) * 0.04);
+            } else {
+                double yaw = RANDOM.nextDouble() * Mth.TWO_PI, up = Math.asin(RANDOM.nextDouble());
+                Vec3 dir = new Vec3(Math.cos(yaw) * Math.cos(up), Math.sin(up), Math.sin(yaw) * Math.cos(up));
+                at = c.add(dir.scale(r));
+                v = dir.scale(0.06);
+            }
+            // Ink drops are big: none close to anyone's eyes (the front sweeps past those it takes in).
+            if (at.distanceTo(cam) < INK_CLEAR) continue;
+            spawn(level, camera, ParticleTypes.SQUID_INK, at, v);
+        }
     }
 
     /** How cracked a barrier is: the strength it's lost, and a quarter more for one that closes already cracked. */

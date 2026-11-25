@@ -4,22 +4,20 @@ import java.util.Optional;
 import net.minecraft.resources.ResourceLocation;
 
 /**
- * What a Dominion's inside looks like, drawn by each client over the real world (nothing in the world changes): the sky and fog inside the
- * barrier, the barrier's own color, a pattern laid over the ground's top faces, ruins standing in it, dust drifting through it, and
- * whether its shell is cracked.
+ * What a Dominion looks like (DESIGN §3.35): its shell from outside, the sky and fog of its inner space, the block its inner space's floor
+ * is made of, ruins standing on it, dust drifting through it, and whether its shell is cracked. The inner space is built of real blocks in
+ * a dimension of its own; its sky is drawn by the clients.
  *
- * @param skyColor     RGB of the inside of the shell overhead: the sky from inside
- * @param fogColor     RGB of the fog inside, and of the sky inside at the horizon (it blends to {@code skyColor} overhead)
- * @param fogEnd       how far you see inside, in blocks
- * @param shellColor   RGB of the barrier seen from outside, a solid wall of it (0x000000: pitch black, as the Incomplete Dominion's)
- * @param groundPattern a block mark laid over every top face inside, or empty for none: {@code <namespace>:<path>} names the texture
- *                      {@code <namespace>:textures/marks/<path>.png}, 64 x 16, four 16 x 16 tiles side by side (pixel art at 16 texels
- *                      a block, hard pixels), one picked and turned for each block by where it is
- * @param ruins        broken ruins stand in it
- * @param dustColor    RGB of dust drifting through it, or -1 for none
- * @param cracked      the shell closes already cracked: white cracks glowing on it from the start, as if it had lost a quarter of its
- *                      strength (every shell cracks as it's hit, cracked or not)
+ * @param skyColor   RGB of its inner space's sky overhead
+ * @param fogColor   RGB of the fog in its inner space, and of its sky at the horizon (it blends to {@code skyColor} overhead)
+ * @param fogEnd     how far you see in its inner space, in blocks
+ * @param shellColor RGB of the barrier seen from outside, a solid wall of it (0x000000: pitch black, as the Incomplete Dominion's)
+ * @param ground     the block its inner space's floor is made of (a block ID), or empty for Kegare's wasteland ground
+ * @param ruins      broken ruins of Kegare's stand on its floor
+ * @param dustColor  RGB of dust drifting through its inner space, or -1 for none
+ * @param cracked    the shell closes already cracked: white cracks glowing on it from the start, as if it had lost a quarter of its
+ *                   strength (every shell cracks as it's hit, cracked or not)
  */
-public record DominionLook(int skyColor, int fogColor, float fogEnd, int shellColor, Optional<ResourceLocation> groundPattern, boolean ruins,
+public record DominionLook(int skyColor, int fogColor, float fogEnd, int shellColor, Optional<ResourceLocation> ground, boolean ruins,
                            int dustColor, boolean cracked) {
 }

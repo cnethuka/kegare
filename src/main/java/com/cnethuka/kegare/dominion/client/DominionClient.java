@@ -6,6 +6,7 @@ import com.cnethuka.kegare.client.gui.GuiDraw;
 import com.cnethuka.kegare.dominion.DominionEntity;
 import com.cnethuka.kegare.dominion.DominionNet;
 import com.cnethuka.kegare.dominion.DominionRegistry;
+import com.cnethuka.kegare.dominion.InnerSpaces;
 import javax.annotation.Nullable;
 import net.minecraft.Util;
 import net.minecraft.client.Camera;
@@ -31,6 +32,11 @@ import net.neoforged.neoforge.common.NeoForge;
  */
 public final class DominionClient {
     private static final ResourceLocation TITLE_LAYER = Kegare.id("dominion_title");
+    private static final ResourceLocation BLACKOUT_LAYER = Kegare.id("dominion_blackout");
+    /** The blackout: held black this long (ms), then fading over {@link #BLACKOUT_FADE}. */
+    private static final long BLACKOUT_HOLD = 120, BLACKOUT_FADE = 550;
+    private static long blackoutAt = -1;
+    @Nullable private static net.minecraft.resources.ResourceKey<net.minecraft.world.level.Level> lastLevel;
     private static final int BAR_WIDTH = 34;
     private static final int METER_COLOR = 0xFFD8D2E6;
     private static float meter;
@@ -55,7 +61,26 @@ public final class DominionClient {
         ClashClient.init(modBus);
         DominionFx.init();
         modBus.addListener((EntityRenderersEvent.RegisterRenderers e) -> e.registerEntityRenderer(DominionRegistry.DOMINION.get(), DominionRenderer::new));
-        modBus.addListener((RegisterGuiLayersEvent e) -> e.registerAbove(VanillaGuiLayers.CROSSHAIR, TITLE_LAYER, DominionClient::renderTitle));
+        modBus.addListener((RegisterGuiLayersEvent e) -> {
+            e.registerAbove(VanillaGuiLayers.CROSSHAIR, TITLE_LAYER, DominionClient::renderTitle);
+            e.registerAboveAll(BLACKOUT_LAYER, DominionClient::renderBlackout);
+        });
+        // Vanilla's "Loading terrain" while the new level comes in: black instead, going into or out of an inner space.
+        NeoForge.EVENT_BUS.addListener((net.neoforged.neoforge.client.event.ScreenEvent.Render.Post e) -> {
+            Minecraft mc = Minecraft.getInstance();
+            if (!(e.getScreen() instanceof net.minecraft.client.gui.screens.ReceivingLevelScreen)) return;
+            boolean inner = mc.level != null && mc.level.dimension() == InnerSpaces.LEVEL || lastLevel == InnerSpaces.LEVEL;
+            if (inner) e.getGuiGraphics().fill(0, 0, e.getGuiGraphics().guiWidth(), e.getGuiGraphics().guiHeight(), 0xFF000000);
+        });
+        // Taken into an inner space, or let out of one: a moment's blackout, then it fades in.
+        NeoForge.EVENT_BUS.addListener((net.neoforged.neoforge.client.event.ClientTickEvent.Post e) -> {
+            Minecraft mc = Minecraft.getInstance();
+            var now = mc.level == null ? null : mc.level.dimension();
+            if (now != null && lastLevel != null && now != lastLevel && (now == InnerSpaces.LEVEL || lastLevel == InnerSpaces.LEVEL)) {
+                blackoutAt = Util.getMillis();
+            }
+            lastLevel = now;
+        });
         // The Incomplete Dominion's sweep would cross the middle of your own first-person view: there it's vanilla's hands.
         com.cnethuka.kegare.client.visual.PlayerAnimations.keepVanillaHands(com.cnethuka.kegare.dominion.DominionIds.FIRST_PERSON_VANILLA);
         NeoForge.EVENT_BUS.addListener(DominionClient::onFog);
@@ -64,6 +89,8 @@ public final class DominionClient {
             meter = 0;
             shown = false;
             title = null;
+            lastLevel = null;
+            blackoutAt = -1;
         });
     }
 
@@ -74,7 +101,7 @@ public final class DominionClient {
         if (mc.level == null) return null;
         Vec3 at = camera.getPosition();
         for (DominionEntity d : DominionEntity.in(mc.level)) {
-            if (d.contains(at) && d.risen(0f) >= 1f) return d;
+            if ((d.isInner() || d.localTrapped()) && d.contains(at) && d.risen(0f) >= 1f) return d;
         }
         return null;
     }
@@ -101,8 +128,10 @@ public final class DominionClient {
         Minecraft mc = Minecraft.getInstance();
         if (mc.level == null) return;
         DominionFx.moment(m);
-        // Its name, across the screen of everyone it closes on.
-        if (m.kind() == DominionNet.Moment.CLOSED && mc.level.getEntity(m.dominion()) instanceof DominionEntity d && d.localTrapped()) {
+        // Its name, across the screen of everyone it takes in (they're in its inner space by now).
+        boolean inside = mc.level.dimension() == InnerSpaces.LEVEL
+                || mc.level.getEntity(m.dominion()) instanceof DominionEntity d && d.localTrapped();
+        if (m.kind() == DominionNet.Moment.CLOSED && inside) {
             ResourceLocation ability = ResourceLocation.tryParse(m.ability());
             if (ability != null) {
                 title = Component.translatable(Util.makeDescriptionId("ability", ability));
@@ -138,6 +167,18 @@ public final class DominionClient {
         float alpha = age < 6 ? age / 6f : age > 40 ? 1f - (age - 40) / 20f : 1f;
         int a = Mth.clamp((int) (alpha * 255), 8, 255);
         GuiDraw.centered(g, mc.font, title, g.guiWidth() / 2, g.guiHeight() / 3, 2.5f, (a << 24) | 0xEDE8F2);
+    }
+
+    /** Taken in or let out: the screen black a moment, then fading. */
+    private static void renderBlackout(GuiGraphics g, DeltaTracker delta) {
+        if (blackoutAt < 0) return;
+        long age = Util.getMillis() - blackoutAt;
+        if (age > BLACKOUT_HOLD + BLACKOUT_FADE) {
+            blackoutAt = -1;
+            return;
+        }
+        float alpha = age < BLACKOUT_HOLD ? 1f : 1f - (age - BLACKOUT_HOLD) / (float) BLACKOUT_FADE;
+        g.fill(0, 0, g.guiWidth(), g.guiHeight(), Mth.clamp(Math.round(alpha * 255), 0, 255) << 24);
     }
 
     /** The local player's meter (0 to 100). */

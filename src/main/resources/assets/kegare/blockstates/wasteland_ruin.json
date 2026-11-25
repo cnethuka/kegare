@@ -1,0 +1,12 @@
+{
+  "variants": {
+    "": [
+      {
+        "model": "kegare:block/wasteland_ruin_0"
+      },
+      {
+        "model": "kegare:block/wasteland_ruin_1"
+      }
+    ]
+  }
+}

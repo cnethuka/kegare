@@ -36,6 +36,7 @@ public final class Clash {
     record Prompt(int id, int key, double beatMs) {}
 
     public static final class Side {
+        /** Its barrier where the clash is: in an inner space, that's the space's sky (the Dominion itself is its shell, {@code primary()}). */
         final DominionEntity dominion;
         final UUID caster;
         /** How long it had been closed before the clash, or -1 if it never had. */
@@ -125,9 +126,10 @@ public final class Clash {
         return null;
     }
 
+    /** The side this barrier is (either side of it: its shell in the world or its inner space's sky). */
     @Nullable
     public Side sideOf(DominionEntity d) {
-        for (Side s : sides) if (s.dominion == d) return s;
+        for (Side s : sides) if (s.dominion == d || s.dominion.primary() == d.primary()) return s;
         return null;
     }
 }

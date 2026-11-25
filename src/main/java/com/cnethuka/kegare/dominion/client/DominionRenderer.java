@@ -2,7 +2,6 @@ package com.cnethuka.kegare.dominion.client;
 
 import com.cnethuka.kegare.Kegare;
 import com.cnethuka.kegare.api.dominion.DominionLook;
-import com.cnethuka.kegare.config.KegareClientConfig;
 import com.cnethuka.kegare.dominion.DominionEntity;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
@@ -10,45 +9,37 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.renderer.LevelRenderer;
 import net.minecraft.client.renderer.LightTexture;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.renderer.entity.EntityRenderer;
 import net.minecraft.client.renderer.entity.EntityRendererProvider;
 import net.minecraft.client.renderer.texture.OverlayTexture;
-import net.minecraft.core.BlockPos;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.Mth;
-import net.minecraft.util.RandomSource;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.levelgen.Heightmap;
 import net.minecraft.world.phys.Vec3;
 
 /**
- * A Dominion (DESIGN §3.35), drawn: the barrier, a smooth sphere round its centre rising out of the ground as it opens; from outside a
- * solid wall of its shell color (pitch black for the Incomplete Dominion), from inside its sky, darker overhead and hazy at the horizon.
- * White cracks glow on it where it's been hit and spread as it weakens ({@link BarrierCracks}). Inside, the ground's top faces are laid
- * over with its pattern (pixel art, 16 a block), and ruins stand on it, rising with the barrier. Contested in a clash, both shells flicker
- * half-there and a bright seam grinds where they meet. Nothing here touches the world: it's all drawn over it, so nothing is left when
- * it goes.
+ * A Dominion (DESIGN §3.35), drawn. Opening: ink floods the ground from its caster's feet and the barrier expands from them as a sphere,
+ * thin and smoky at first, solid black as it reaches its size; sealing, it snaps solid with a pulse. Sealed: from the world a smooth,
+ * solid wall of its shell color (pitch black for the Incomplete Dominion), and inside its inner space a sky, hazy at the horizon and
+ * darker overhead (the space itself is real blocks). White cracks glow on both sides where it's been hit and spread as it weakens
+ * ({@link BarrierCracks}). Contested in a clash, it flickers half-there and a bright seam grinds where the two meet.
  */
 public class DominionRenderer extends EntityRenderer<DominionEntity> {
     static final ResourceLocation WHITE = Kegare.id("textures/marks/white.png");
-    static final ResourceLocation RUIN = Kegare.id("textures/marks/ruin_stone.png");
     /** Fine enough that its outline is a curve, not a polygon, close up. */
     private static final int SLICES = 96, STACKS = 48;
-    /** Ground tiles in a pattern's strip (16 x 16 each, side by side). */
-    private static final int GROUND_VARIANTS = 4;
-    /** How far off a top face the ground pattern is drawn, so it never flickers into it. */
+    /** The ink has spread to its full reach this far through the opening. */
+    static final float INK_SPREAD = 0.35f;
+    /** How far off a top face the ink is drawn, so it never flickers into it. */
     private static final float LIFT = 0.012f;
-    /** Re-read the ground's heights this often (battle damage moves it). */
-    private static final int GROUND_REFRESH = 40;
-    /**
-     * The inner space has its own grey daylight: its ground and ruins are drawn at least this bright (as block light, 0 to 15), so at
-     * night they still match its ash sky.
-     */
-    private static final int GLOW = 11;
+    /** Re-read the ground's heights this often while it opens. */
+    private static final int GROUND_REFRESH = 10;
+    /** The pulse as it seals, in ticks. */
+    private static final int SEAL_TICKS = 4;
 
     public DominionRenderer(EntityRendererProvider.Context context) {
         super(context);
@@ -61,39 +52,112 @@ public class DominionRenderer extends EntityRenderer<DominionEntity> {
 
     @Override
     public void render(DominionEntity d, float yaw, float partialTick, PoseStack pose, MultiBufferSource buffers, int light) {
-        float risen = d.risen(partialTick);
-        if (risen <= 0f) return;
         Minecraft mc = Minecraft.getInstance();
-        Vec3 cam = mc.gameRenderer.getMainCamera().getPosition();
-        boolean inside = d.contains(cam);
         DominionLook look = d.look();
         float time = d.tickCount + partialTick;
         boolean clash = d.state() == DominionEntity.State.CLASH;
         float flicker = clash ? 0.5f + 0.12f * Mth.sin(time * 0.9f + d.getId()) + 0.05f * Mth.sin(time * 2.3f) : 1f;
-
-        if (look.groundPattern().isPresent()) ground(d, look.groundPattern().get(), risen, pose, buffers, mc.level);
-        if (look.ruins()) ruins(d, risen, pose, buffers, mc.level);
-
-        float r = (float) d.radius();
-        float top = r * risen; // rising out of the ground round its feet: only what's below the top of the risen part is there yet
         PoseStack.Pose p = pose.last();
-        if (inside) {
-            // The sky inside: hazy (its fog color) at the horizon, its sky color overhead, all but opaque.
-            shell(buffers.getBuffer(RenderType.entityTranslucent(WHITE)), p, r, top, look.fogColor(), look.skyColor(), 0.97f * flicker);
-        } else {
-            // From outside a solid wall: nothing inside shows through (half of it in a clash).
-            shell(buffers.getBuffer(RenderType.entityTranslucent(WHITE)), p, r, top, look.shellColor(), look.shellColor(), flicker);
-        }
-        // Its cracks, glowing white where it's been hit; drawn after the shell (their own buffer), so they always lie over it.
+        float r = (float) d.radius();
         List<BarrierCracks.Star> stars = BarrierCracks.stars(d);
-        if (!stars.isEmpty()) BarrierCracks.draw(buffers.getBuffer(RenderType.entityTranslucentEmissive(WHITE)), p, stars, r, top, inside, flicker);
+
+        if (d.isInner() || d.localTrapped()) {
+            // Inside: its sky, hazy (its fog color) at the horizon, its sky color overhead, opaque, so no other sky shows.
+            shell(buffers.getBuffer(RenderType.entityTranslucent(WHITE)), p, r, r, look.fogColor(), look.skyColor(), flicker);
+            if (!stars.isEmpty()) BarrierCracks.draw(buffers.getBuffer(RenderType.entityTranslucentEmissive(WHITE)), p, stars, r, r, true, flicker);
+        } else if (d.state() == DominionEntity.State.OPENING) {
+            opening(d, partialTick, pose, buffers, mc.level, look);
+        } else {
+            // Sealed, from the world: a solid wall, swelling a moment as it seals.
+            int sealedFor = d.closedAt() < 0 ? SEAL_TICKS : d.tickCount - d.closedAt();
+            float pulse = sealedFor < SEAL_TICKS ? 1f + 0.05f * (1f - (sealedFor + partialTick) / SEAL_TICKS) : 1f;
+            shell(buffers.getBuffer(RenderType.entityTranslucent(WHITE)), p, r * pulse, r * pulse, look.shellColor(), look.shellColor(), flicker);
+            if (!stars.isEmpty()) BarrierCracks.draw(buffers.getBuffer(RenderType.entityTranslucentEmissive(WHITE)), p, stars, r, r, false, flicker);
+        }
         // The seam where two clashing barriers meet: drawn once, by the one with the lower id.
         if (clash && d.level().getEntity(d.clashWith()) instanceof DominionEntity other && d.getId() < other.getId()) seam(d, other, time, pose, buffers);
     }
 
+    // ---------------------------------------------------------------------------------------------- opening
+
+    /** How far through its opening it is, 0 to 1. */
+    static float opened(DominionEntity d, float partialTick) {
+        return Mth.clamp((d.tickCount + partialTick) / Math.max(1, d.openTicks()), 0f, 1f);
+    }
+
+    /** The barrier's radius while it opens: out from the caster fast, easing into its full size. */
+    static float openRadius(DominionEntity d, float t) {
+        float ease = 1f - (1f - t) * (1f - t) * (1f - t);
+        return Math.max(0.4f, (float) d.radius() * ease);
+    }
+
+    /** The ink's reach on the ground while it opens: out to the barrier's radius in the first third. */
+    static float inkReach(DominionEntity d, float t) {
+        return (float) d.radius() * Math.min(1f, t / INK_SPREAD);
+    }
+
+    /** Ink spreading over the ground from the caster, and the barrier expanding from them: smoky and see-through, then solid. */
+    private static void opening(DominionEntity d, float partialTick, PoseStack pose, MultiBufferSource buffers, Level level, DominionLook look) {
+        float t = opened(d, partialTick);
+        ink(d, t, pose, buffers, level);
+        PoseStack.Pose p = pose.last();
+        float r = openRadius(d, t);
+        VertexConsumer out = buffers.getBuffer(RenderType.entityTranslucent(WHITE));
+        // A thin haze just ahead of it, gone as it thickens: its front, still smoke.
+        shell(out, p, r * 1.07f, r * 1.07f, look.shellColor(), look.shellColor(), 0.28f * (1f - t));
+        shell(out, p, r, r, look.shellColor(), look.shellColor(), 0.3f + 0.7f * t * t);
+    }
+
+    /** Black over the ground's top faces round the caster, its edge ragged and soft, out to {@link #inkReach}. */
+    private static void ink(DominionEntity d, float t, PoseStack pose, MultiBufferSource buffers, Level level) {
+        float reach = inkReach(d, t);
+        if (reach < 0.3f) return;
+        int[] cols = columns(d, level);
+        VertexConsumer out = buffers.getBuffer(RenderType.entityTranslucent(WHITE));
+        PoseStack.Pose p = pose.last();
+        Vec3 c = d.centre();
+        float phase = d.getId() * 1.7f;
+        for (int i = 0; i < cols.length; i += 3) {
+            int x = cols[i], y = cols[i + 1], z = cols[i + 2];
+            double dx = x + 0.5 - c.x, dz = z + 0.5 - c.z, dist = Math.sqrt(dx * dx + dz * dz);
+            double angle = Math.atan2(dz, dx);
+            double edge = reach * (0.86 + 0.08 * Math.sin(angle * 5 + phase) + 0.06 * Math.sin(angle * 11 + phase * 2.3));
+            if (dist > edge) continue;
+            int alpha = Math.round(235 * Mth.clamp((float) ((edge - dist) / 1.5), 0f, 1f));
+            if (alpha <= 0) continue;
+            float fx = (float) (x - c.x), fy = (float) (y - c.y) + LIFT, fz = (float) (z - c.z);
+            float[][] corners = {{fx, fz}, {fx, fz + 1}, {fx + 1, fz + 1}, {fx + 1, fz}};
+            for (float[] corner : corners) {
+                out.addVertex(p, corner[0], fy, corner[1]).setColor(0, 0, 0, alpha).setUv(0.5f, 0.5f).setOverlay(OverlayTexture.NO_OVERLAY)
+                        .setLight(LightTexture.FULL_BRIGHT).setNormal(p, 0f, 1f, 0f);
+            }
+        }
+    }
+
+    /** Every top face of the ground round it (from the heightmap a client has: MOTION_BLOCKING; it's never sent the others), kept a while. */
+    private static int[] columns(DominionEntity d, Level level) {
+        DominionEntity.ClientCache cache = d.clientCache();
+        if (cache.columns != null && d.tickCount - cache.columnsAt < GROUND_REFRESH) return cache.columns;
+        Vec3 c = d.centre();
+        int r = Mth.ceil(d.radius());
+        List<Integer> out = new ArrayList<>();
+        for (int x = Mth.floor(c.x) - r; x <= Mth.floor(c.x) + r; x++) {
+            for (int z = Mth.floor(c.z) - r; z <= Mth.floor(c.z) + r; z++) {
+                int y = level.getHeight(Heightmap.Types.MOTION_BLOCKING, x, z);
+                if (!d.contains(new Vec3(x + 0.5, y, z + 0.5))) continue;
+                out.add(x);
+                out.add(y);
+                out.add(z);
+            }
+        }
+        cache.columns = out.stream().mapToInt(Integer::intValue).toArray();
+        cache.columnsAt = d.tickCount;
+        return cache.columns;
+    }
+
     // ---------------------------------------------------------------------------------------------- the shell
 
-    /** The sphere, smooth and untextured, its quads cut where the barrier hasn't risen to yet. Colored {@code low} at the horizon and {@code high} overhead. */
+    /** The sphere, smooth and untextured, cut above {@code top}. Colored {@code low} at the horizon and {@code high} overhead. */
     static void shell(VertexConsumer out, PoseStack.Pose p, float r, float top, int low, int high, float alpha) {
         int a = Mth.clamp(Math.round(alpha * 255), 0, 255);
         if (a <= 0) return;
@@ -135,140 +199,6 @@ public class DominionRenderer extends EntityRenderer<DominionEntity> {
                 .setLight(LightTexture.FULL_BRIGHT).setNormal(p, 0f, 1f, 0f);
     }
 
-    // ---------------------------------------------------------------------------------------------- the ground and the ruins
-
-    /**
-     * Every top face of the ground inside the sphere: (x, y, z) of the air above it, read from the heightmap a client has (MOTION_BLOCKING:
-     * a client is never sent the others), kept a while.
-     */
-    private static int[] columns(DominionEntity d, Level level) {
-        DominionEntity.ClientCache cache = d.clientCache();
-        if (cache.columns != null && d.tickCount - cache.columnsAt < GROUND_REFRESH) return cache.columns;
-        Vec3 c = d.centre();
-        int r = Mth.ceil(d.radius());
-        List<Integer> out = new ArrayList<>();
-        for (int x = Mth.floor(c.x) - r; x <= Mth.floor(c.x) + r; x++) {
-            for (int z = Mth.floor(c.z) - r; z <= Mth.floor(c.z) + r; z++) {
-                int y = level.getHeight(Heightmap.Types.MOTION_BLOCKING, x, z);
-                if (!d.contains(new Vec3(x + 0.5, y, z + 0.5))) continue;
-                out.add(x);
-                out.add(y);
-                out.add(z);
-            }
-        }
-        cache.columns = out.stream().mapToInt(Integer::intValue).toArray();
-        cache.columnsAt = d.tickCount;
-        return cache.columns;
-    }
-
-    /** The ground's top faces under its pattern, spreading out from the centre as the barrier rises. */
-    private static void ground(DominionEntity d, ResourceLocation pattern, float risen, PoseStack pose, MultiBufferSource buffers, Level level) {
-        int[] cols = columns(d, level);
-        if (cols.length == 0) return;
-        ResourceLocation texture = ResourceLocation.fromNamespaceAndPath(pattern.getNamespace(), "textures/marks/" + pattern.getPath() + ".png");
-        VertexConsumer out = buffers.getBuffer(RenderType.entityCutoutNoCull(texture));
-        PoseStack.Pose p = pose.last();
-        Vec3 c = d.centre();
-        double reach = d.radius() * Math.min(1f, risen * 1.15f);
-        for (int i = 0; i < cols.length; i += 3) {
-            int x = cols[i], y = cols[i + 1], z = cols[i + 2];
-            double dx = x + 0.5 - c.x, dz = z + 0.5 - c.z;
-            if (dx * dx + dz * dz > reach * reach) continue;
-            int light = glow(LevelRenderer.getLightColor(level, new BlockPos(x, y, z)));
-            int hash = (x * 73428767) ^ (z * 912931) ^ (y * 4271);
-            int variant = Math.floorMod(hash, GROUND_VARIANTS), turn = Math.floorMod(hash >> 8, 4);
-            float u0 = variant / (float) GROUND_VARIANTS, u1 = (variant + 1) / (float) GROUND_VARIANTS;
-            float fx = (float) (x - c.x), fy = (float) (y - c.y) + LIFT, fz = (float) (z - c.z);
-            float[][] corners = {{fx, fz}, {fx, fz + 1}, {fx + 1, fz + 1}, {fx + 1, fz}};
-            float[][] uvs = {{u0, 0}, {u0, 1}, {u1, 1}, {u1, 0}};
-            for (int k = 0; k < 4; k++) {
-                float[] corner = corners[k], uv = uvs[(k + turn) % 4];
-                out.addVertex(p, corner[0], fy, corner[1]).setColor(255, 255, 255, 255).setUv(uv[0], uv[1])
-                        .setOverlay(OverlayTexture.NO_OVERLAY).setLight(light).setNormal(p, 0f, 1f, 0f);
-            }
-        }
-    }
-
-    private static int glow(int light) {
-        return LightTexture.block(light) >= GLOW ? light : LightTexture.pack(GLOW, LightTexture.sky(light));
-    }
-
-    /** A ruin: blocks of broken stone, by the world's grid, standing on the ground. Heights in blocks; the top one can be part of one. */
-    record Ruin(int x, int z, float[] heights, boolean alongX) {}
-
-    /** Its ruins: the same for everyone who sees it (seeded by where it is), out between half way and the shell. */
-    @SuppressWarnings("unchecked")
-    private static List<Ruin> ruinsOf(DominionEntity d) {
-        DominionEntity.ClientCache cache = d.clientCache();
-        if (cache.ruins != null) return (List<Ruin>) cache.ruins;
-        Vec3 c = d.centre();
-        RandomSource rng = RandomSource.create(Mth.floor(c.x) * 341873128712L ^ Mth.floor(c.z) * 132897987541L ^ Mth.floor(c.y));
-        int count = KegareClientConfig.VFX_QUALITY.get() == KegareClientConfig.VfxQuality.FULL ? 7 : 4;
-        List<Ruin> out = new ArrayList<>();
-        for (int i = 0; i < count; i++) {
-            double angle = Mth.TWO_PI * (i + rng.nextFloat() * 0.6f) / count;
-            double dist = d.radius() * (0.5 + rng.nextDouble() * 0.32);
-            int x = Mth.floor(c.x + Math.cos(angle) * dist), z = Mth.floor(c.z + Math.sin(angle) * dist);
-            int length = rng.nextFloat() < 0.5f ? 1 : 2 + rng.nextInt(2);
-            float[] heights = new float[length];
-            for (int k = 0; k < length; k++) {
-                heights[k] = length == 1 ? 1.5f + rng.nextFloat() * 1.6f : 0.4f + rng.nextFloat() * 1.4f;
-            }
-            out.add(new Ruin(x, z, heights, rng.nextBoolean()));
-        }
-        cache.ruins = out;
-        return out;
-    }
-
-    private static void ruins(DominionEntity d, float risen, PoseStack pose, MultiBufferSource buffers, Level level) {
-        VertexConsumer out = buffers.getBuffer(RenderType.entityCutoutNoCull(RUIN));
-        PoseStack.Pose p = pose.last();
-        Vec3 c = d.centre();
-        float grow = Mth.clamp((risen - 0.3f) / 0.7f, 0f, 1f); // they rise with the barrier, after it's begun
-        if (grow <= 0f) return;
-        for (Ruin ruin : ruinsOf(d)) {
-            for (int k = 0; k < ruin.heights().length; k++) {
-                int bx = ruin.x() + (ruin.alongX() ? k : 0), bz = ruin.z() + (ruin.alongX() ? 0 : k);
-                int by = level.getHeight(Heightmap.Types.MOTION_BLOCKING, bx, bz);
-                if (!d.contains(new Vec3(bx + 0.5, by + 0.5, bz + 0.5))) continue;
-                float h = ruin.heights()[k] * grow;
-                int light = glow(LevelRenderer.getLightColor(level, new BlockPos(bx, by, bz)));
-                column(out, p, (float) (bx - c.x), (float) (by - c.y), (float) (bz - c.z), h, light, Math.floorMod(bx * 31 + bz * 17, 2));
-            }
-        }
-    }
-
-    /** A 1 x 1 column of stone {@code h} blocks tall, a face per block so the texture keeps 16 a block. */
-    private static void column(VertexConsumer out, PoseStack.Pose p, float x, float y, float z, float h, int light, int variant) {
-        float u0 = variant * 0.5f, u1 = u0 + 0.5f;
-        for (float y0 = 0; y0 < h - 1.0e-3f; y0 += 1f) {
-            float y1 = Math.min(h, y0 + 1f), vTop = 1f - (y1 - y0);
-            // Sides, shaded as the world shades them.
-            face(out, p, x, y + y0, z, x + 1, y + y1, z, u0, u1, vTop, 0f, 0f, -1f, light, 0.8f);
-            face(out, p, x + 1, y + y0, z + 1, x, y + y1, z + 1, u0, u1, vTop, 0f, 0f, 1f, light, 0.8f);
-            face(out, p, x, y + y0, z + 1, x, y + y1, z, u0, u1, vTop, -1f, 0f, 0f, light, 0.6f);
-            face(out, p, x + 1, y + y0, z, x + 1, y + y1, z + 1, u0, u1, vTop, 1f, 0f, 0f, light, 0.6f);
-        }
-        // The broken top.
-        int shade = 255;
-        float[][] corners = {{x, z}, {x, z + 1}, {x + 1, z + 1}, {x + 1, z}};
-        float[][] uvs = {{u0, 0}, {u0, 1}, {u1, 1}, {u1, 0}};
-        for (int k = 0; k < 4; k++) {
-            out.addVertex(p, corners[k][0], y + h, corners[k][1]).setColor(shade, shade, shade, 255).setUv(uvs[k][0], uvs[k][1])
-                    .setOverlay(OverlayTexture.NO_OVERLAY).setLight(light).setNormal(p, 0f, 1f, 0f);
-        }
-    }
-
-    /** One upright face from (x0, y0, z0) to (x1, y1, z1), its texture's top cut to the part that's there ({@code vTop}). */
-    private static void face(VertexConsumer out, PoseStack.Pose p, float x0, float y0, float z0, float x1, float y1, float z1, float u0, float u1,
-            float vTop, float nx, float ny, float nz, int light, float shadeF) {
-        int s = Math.round(255 * shadeF);
-        out.addVertex(p, x0, y0, z0).setColor(s, s, s, 255).setUv(u0, 1f).setOverlay(OverlayTexture.NO_OVERLAY).setLight(light).setNormal(p, nx, ny, nz);
-        out.addVertex(p, x1, y0, z1).setColor(s, s, s, 255).setUv(u1, 1f).setOverlay(OverlayTexture.NO_OVERLAY).setLight(light).setNormal(p, nx, ny, nz);
-        out.addVertex(p, x1, y1, z1).setColor(s, s, s, 255).setUv(u1, vTop).setOverlay(OverlayTexture.NO_OVERLAY).setLight(light).setNormal(p, nx, ny, nz);
-        out.addVertex(p, x0, y1, z0).setColor(s, s, s, 255).setUv(u0, vTop).setOverlay(OverlayTexture.NO_OVERLAY).setLight(light).setNormal(p, nx, ny, nz);
-    }
-
     // ---------------------------------------------------------------------------------------------- a clash's seam
 
     /** Where two spheres meet: the circle they share, as (centre, axis, radius), or empty if they don't. */
@@ -304,9 +234,7 @@ public class DominionRenderer extends EntityRenderer<DominionEntity> {
             double w0 = 0.3 + 0.22 * Mth.sin(time * 3.1f + i * 1.3f), w1 = 0.3 + 0.22 * Mth.sin(time * 3.1f + (i + 1) * 1.3f);
             Vec3 r0 = e1.scale(Math.cos(t0)).add(e2.scale(Math.sin(t0))), r1 = e1.scale(Math.cos(t1)).add(e2.scale(Math.sin(t1)));
             Vec3 a = mid.add(r0.scale(h)), b = mid.add(r1.scale(h));
-            // Across the circle's plane.
             seamQuad(out, p, a.subtract(n.scale(w0)), b.subtract(n.scale(w1)), b.add(n.scale(w1)), a.add(n.scale(w0)), alpha);
-            // Flat in it.
             seamQuad(out, p, a.subtract(r0.scale(w0)), b.subtract(r1.scale(w1)), b.add(r1.scale(w1)), a.add(r0.scale(w0)), alpha);
         }
     }

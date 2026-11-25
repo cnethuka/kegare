@@ -75,8 +75,10 @@ public final class TestServer {
     /** Takes every test player out of the overworld again, so one test's players never get in the way of the next. */
     public static void removePlayers(MinecraftServer server) {
         if (server.overworld() == null) return; // nothing in this test touched the world
-        for (ServerPlayer p : java.util.List.copyOf(server.overworld().players())) {
-            server.overworld().removePlayerImmediately(p, net.minecraft.world.entity.Entity.RemovalReason.DISCARDED);
+        for (net.minecraft.server.level.ServerLevel level : server.getAllLevels()) { // a Dominion's inner space is a level of its own
+            for (ServerPlayer p : java.util.List.copyOf(level.players())) {
+                level.removePlayerImmediately(p, net.minecraft.world.entity.Entity.RemovalReason.DISCARDED);
+            }
         }
     }
 
@@ -97,6 +99,8 @@ public final class TestServer {
         // Nor does the world break under them: a test's big hits would leave holes where the next test stands. BattleDamageTest sets
         // each mode itself.
         com.cnethuka.kegare.battledamage.BattleDamageConfig.MODE.set(com.cnethuka.kegare.battledamage.BattleDamageConfig.Mode.COSMETIC);
+        // A Dominion's inner space lets everyone out at once as it ends: the world never ticks in a test, so a delay would hold them in.
+        com.cnethuka.kegare.dominion.DominionConfig.RETURN_DELAY.set(0.0);
         if (server.overworld() == null) {
             try {
                 Method createLevels = MinecraftServer.class.getDeclaredMethod("createLevels", ChunkProgressListener.class);
@@ -111,7 +115,45 @@ public final class TestServer {
                 throw new IllegalStateException("couldn't create the test server's levels", e);
             }
         }
+        ensureInnerSpace(server);
         testAreaReady(server.overworld());
+    }
+
+    /**
+     * Dominions' inner space dimension (DESIGN §3.35). A real server makes it from Kegare's data like any other level; the test server
+     * makes only the preset's levels, so it's made here, the same way: its own dimension type, a void.
+     */
+    private static void ensureInnerSpace(MinecraftServer server) {
+        var key = com.cnethuka.kegare.dominion.InnerSpaces.LEVEL;
+        if (server.getLevel(key) != null) return;
+        try {
+            var access = server.registryAccess();
+            var type = access.registryOrThrow(net.minecraft.core.registries.Registries.DIMENSION_TYPE).getHolderOrThrow(
+                    net.minecraft.resources.ResourceKey.create(net.minecraft.core.registries.Registries.DIMENSION_TYPE, key.location()));
+            var voidBiome = access.registryOrThrow(net.minecraft.core.registries.Registries.BIOME).getHolderOrThrow(net.minecraft.world.level.biome.Biomes.THE_VOID);
+            var settings = new net.minecraft.world.level.levelgen.flat.FlatLevelGeneratorSettings(java.util.Optional.empty(), voidBiome, java.util.List.of());
+            var stem = new net.minecraft.world.level.dimension.LevelStem(type, new net.minecraft.world.level.levelgen.FlatLevelSource(settings));
+            java.lang.reflect.Field storage = MinecraftServer.class.getDeclaredField("storageSource");
+            java.lang.reflect.Field executor = MinecraftServer.class.getDeclaredField("executor");
+            java.lang.reflect.Field levels = MinecraftServer.class.getDeclaredField("levels");
+            storage.setAccessible(true);
+            executor.setAccessible(true);
+            levels.setAccessible(true);
+            var data = new net.minecraft.world.level.storage.DerivedLevelData(server.getWorldData(), server.getWorldData().overworldData());
+            var level = new net.minecraft.server.level.ServerLevel(server, (java.util.concurrent.Executor) executor.get(server),
+                    (net.minecraft.world.level.storage.LevelStorageSource.LevelStorageAccess) storage.get(server), data, key, stem,
+                    new ChunkProgressListener() {
+                        @Override public void updateSpawnPos(ChunkPos center) {}
+                        @Override public void onStatusChange(ChunkPos pos, @Nullable ChunkStatus status) {}
+                        @Override public void start() {}
+                        @Override public void stop() {}
+                    }, false, 0L, java.util.List.of(), false, server.overworld().getRandomSequences());
+            @SuppressWarnings("unchecked")
+            var map = (java.util.Map<net.minecraft.resources.ResourceKey<net.minecraft.world.level.Level>, net.minecraft.server.level.ServerLevel>) levels.get(server);
+            map.put(key, level);
+        } catch (ReflectiveOperationException e) {
+            throw new IllegalStateException("couldn't make the inner space level", e);
+        }
     }
 
     /** The chunks round the origin the tests work in, held loaded for the whole run. */
@@ -148,6 +190,23 @@ public final class TestServer {
         for (net.minecraft.world.entity.Entity e : level.getEntitiesOfClass(net.minecraft.world.entity.Entity.class, area,
                 e -> !(e instanceof net.minecraft.world.entity.player.Player))) {
             e.discard();
+        }
+    }
+
+    /**
+     * Waits, pumping the chunk system, until the chunks round {@code centre} have their entities ticking (a Dominion's inner space holds
+     * its plot loaded with a ticket, which only takes hold as the chunk system runs: the world never ticks in a test).
+     */
+    public static void entitiesTicking(net.minecraft.server.level.ServerLevel level, net.minecraft.core.BlockPos centre, int chunks) {
+        long deadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(30);
+        for (int x = -chunks; x <= chunks; x++) {
+            for (int z = -chunks; z <= chunks; z++) {
+                net.minecraft.core.BlockPos pos = centre.offset(x * 16, 0, z * 16);
+                while (!level.isPositionEntityTicking(pos)) {
+                    if (System.nanoTime() > deadline) throw new IllegalStateException("the chunk at " + pos + " never got its entities ticking");
+                    if (!level.getChunkSource().pollTask()) java.util.concurrent.locks.LockSupport.parkNanos(1_000_000);
+                }
+            }
         }
     }
 

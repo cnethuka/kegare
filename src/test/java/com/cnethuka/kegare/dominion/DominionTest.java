@@ -147,7 +147,7 @@ class DominionTest {
     }
 
     @Test
-    void whatsInsideWhenItClosesIsTrappedAndNobodyCrosses(MinecraftServer server) throws Exception {
+    void whatsInsideWhenItSealsIsTakenInAndNobodyCrosses(MinecraftServer server) throws Exception {
         TestServer.onServerThread(server, () -> {
             ServerLevel level = level(server);
             Pig pig = EntityType.PIG.create(level);
@@ -163,30 +163,34 @@ class DominionTest {
                 wither.setNoAi(true);
                 level.addFreshEntity(wither);
                 DominionEntity d = open(caster);
-                assertTrue(d.trapped.isEmpty(), "rising: nobody yet");
+                assertTrue(d.trapped.isEmpty(), "spreading: nobody yet");
                 closed(d);
-                assertTrue(d.trapped.contains(caster.getUUID()) && d.trapped.contains(in.getUUID()) && d.trapped.contains(pig.getUUID()), "inside: trapped");
+                assertTrue(d.trapped.contains(caster.getUUID()) && d.trapped.contains(in.getUUID()) && d.trapped.contains(pig.getUUID()), "inside: taken in");
                 assertFalse(d.trapped.contains(out.getUUID()), "outside: not");
                 assertFalse(d.trapped.contains(wither.getUUID()), "a boss: never");
+                assertTrue(wither.level() == level, "and it stays in the world");
                 assertTrue(KegareDominions.isTrapped(in));
+                DominionEntity sky = d.space.inner;
+                assertTrue(in.level() == sky.level(), "in its inner space");
 
-                // Walking at the shell from either side stops at it.
+                // Walking at its sky from inside stops at it; walking at its shell from outside stops at that.
                 Vec3 outward = new Vec3(10, 0, 0);
-                in.moveTo(8 + d.radius() - 1, in.getY(), 8);
+                in.moveTo(sky.centre().x + sky.radius() - 1, in.getY(), sky.centre().z);
                 Vec3 cut = DominionBounds.limit(in, outward);
-                double end = DominionEntity.middle(in).add(cut).distanceTo(d.centre());
-                assertTrue(end <= d.radius() - DominionEntity.margin(in) + 1.0e-6, "the trapped stop inside it: " + end);
+                double end = DominionEntity.middle(in).add(cut).distanceTo(sky.centre());
+                assertTrue(end <= sky.radius() - DominionEntity.margin(in) + 1.0e-6, "inside, they stop at its sky: " + end);
                 Vec3 cutOut = DominionBounds.limit(out, new Vec3(-20, 0, 0));
                 double endOut = DominionEntity.middle(out).add(cutOut).distanceTo(d.centre());
-                assertTrue(endOut >= d.radius() + DominionEntity.margin(out) - 1.0e-6, "the rest stop outside it: " + endOut);
+                assertTrue(endOut >= d.radius() + DominionEntity.margin(out) - 1.0e-6, "outside, they stop at its shell: " + endOut);
                 assertSame(outward, DominionBounds.limit(wither, outward), "a boss isn't held");
 
-                // Teleported across (anything but walking): put back on their side the next tick.
-                in.moveTo(8 + 30, in.getY(), 8);
+                // Got across another way (a teleport): put back on their side the next tick.
+                in.moveTo(sky.centre().x + sky.radius() + 6, in.getY(), sky.centre().z);
                 out.moveTo(9, out.getY(), 8);
+                step(sky, 1);
                 step(d, 1);
-                assertTrue(DominionEntity.middle(in).distanceTo(d.centre()) < d.radius(), "back inside");
-                assertTrue(DominionEntity.middle(out).distanceTo(d.centre()) > d.radius(), "back outside");
+                assertTrue(DominionEntity.middle(in).distanceTo(sky.centre()) < sky.radius(), "back inside its inner space");
+                assertTrue(DominionEntity.middle(out).distanceTo(d.centre()) > d.radius(), "back outside its shell");
             } finally {
                 pig.discard();
                 wither.discard();
@@ -196,10 +200,11 @@ class DominionTest {
     }
 
     @Test
-    void projectilesStopAtItAndHitsAcrossItLandOnIt(MinecraftServer server) throws Exception {
+    void projectilesStopAtItFromEitherSideAndHitsInsideLand(MinecraftServer server) throws Exception {
         TestServer.onServerThread(server, () -> {
             ServerLevel level = level(server);
             Arrow flying = EntityType.ARROW.create(level), hitting = EntityType.ARROW.create(level);
+            Arrow leaving = null;
             try {
                 ServerPlayer caster = at(server, "dom_proj_caster", 8, 8);
                 ServerPlayer in = at(server, "dom_proj_in", 12, 8);
@@ -208,8 +213,8 @@ class DominionTest {
                 closed(d);
                 double whole = d.barrierLeft;
 
-                // An arrow that crossed the shell this tick without hitting anything: gone, and the barrier took it.
-                double y = in.getY() + 1;
+                // From outside: an arrow that crossed the shell this tick without hitting anything is gone, and the barrier took it.
+                double y = out.getY() + 1;
                 flying.setPos(8 + d.radius() - 1, y, 8);
                 flying.xo = 8 + d.radius() + 1;
                 flying.yo = y;
@@ -225,24 +230,34 @@ class DominionTest {
                 hitting.yo = y;
                 hitting.zo = 8;
                 level.addFreshEntity(hitting);
-                ProjectileImpactEvent event = new ProjectileImpactEvent(hitting, new EntityHitResult(in));
+                ProjectileImpactEvent event = new ProjectileImpactEvent(hitting, new BlockHitResult(new Vec3(8, y, 8),
+                        net.minecraft.core.Direction.UP, BlockPos.containing(8, y, 8), false));
                 Dominions.onProjectileImpact(event);
                 assertTrue(event.isCanceled() && hitting.isRemoved(), "its hit across the barrier is cancelled");
 
-                // A blow across it lands on it, not on them.
+                // From inside: one crossing its sky stops there too, and takes from the same barrier.
+                DominionEntity sky = d.space.inner;
                 double before = d.barrierLeft;
+                leaving = EntityType.ARROW.create(sky.level());
+                double iy = in.getY() + 1;
+                leaving.setPos(sky.centre().x + sky.radius() + 1, iy, sky.centre().z);
+                leaving.xo = sky.centre().x + sky.radius() - 1;
+                leaving.yo = iy;
+                leaving.zo = sky.centre().z;
+                sky.level().addFreshEntity(leaving);
+                Dominions.stopProjectiles(sky);
+                assertTrue(leaving.isRemoved(), "stopped at its sky");
+                assertTrue(d.barrierLeft < before, "one barrier, hit from either side");
+
+                // Inside, hits land as usual.
                 float health = in.getHealth();
-                in.invulnerableTime = 0;
-                in.hurt(in.damageSources().playerAttack(out), 6f);
-                assertEquals(health, in.getHealth(), 1.0e-4, "nothing gets through");
-                assertTrue(d.barrierLeft < before, "the barrier took it");
-                // From the same side it lands as usual.
                 in.invulnerableTime = 0;
                 in.hurt(in.damageSources().playerAttack(caster), 2f);
                 assertEquals(health - 2f, in.getHealth(), 1.0e-4, "inside, hits land");
             } finally {
                 flying.discard();
                 hitting.discard();
+                if (leaving != null) leaving.discard();
                 cleanUp(server);
             }
         });
@@ -272,11 +287,20 @@ class DominionTest {
                 double beforeSwing = d.barrierLeft;
                 Dominions.swingsAtTheShell(d);
                 assertTrue(d.barrierLeft < beforeSwing, "a swing at it hits it");
+                // And one at its sky from inside.
+                DominionEntity sky = d.space.inner;
+                in.moveTo(sky.centre().x + sky.radius() - 1.5, in.getY(), sky.centre().z, -90f, 0f); // facing +x: toward its sky
+                in.swinging = true;
+                in.swingTime = 0;
+                double beforeInside = d.barrierLeft;
+                Dominions.swingsAtTheShell(sky);
+                assertTrue(d.barrierLeft < beforeInside, "a swing at its sky hits it too");
 
                 Dominions.hit(d, whole, d.centre(), out);
                 assertTrue(d.isRemoved() && d.ended, "broken: it ends at once");
                 assertEquals(DominionConfig.ticks(DominionConfig.DOMINION_BURNOUT), Burnout.remaining(caster), "and its caster burns out");
                 assertFalse(KegareDominions.isTrapped(in), "everyone inside is free");
+                assertTrue(in.level() == level(server), "and back in the world");
                 assertSame(new Vec3(5, 0, 0).getClass(), DominionBounds.limit(in, new Vec3(30, 0, 0)).getClass());
                 assertEquals(30, DominionBounds.limit(in, new Vec3(30, 0, 0)).x, EPS, "nothing holds them now");
             } finally {
@@ -292,7 +316,8 @@ class DominionTest {
             try {
                 assertFalse(DominionRegistry.DOMINION.get().canSerialize(), "its marker is never saved");
                 ServerPlayer caster = at(server, "dom_world_caster", 8, 8);
-                List<BlockState> before = blocks(level, BlockPos.containing(8, caster.getY(), 8), 18);
+                BlockPos where = BlockPos.containing(8, caster.getY(), 8);
+                List<BlockState> before = blocks(level, where, 18);
                 for (int round = 0; round < 3; round++) {
                     DominionEntity d = open(caster);
                     closed(d);
@@ -304,7 +329,11 @@ class DominionTest {
                     }
                     assertTrue(d.isRemoved(), "gone, round " + round);
                     assertTrue(DominionEntity.in(level).isEmpty(), "no barrier left, round " + round);
-                    assertEquals(before, blocks(level, BlockPos.containing(8, caster.getY(), 8), 18), "not one block changed, round " + round);
+                    assertEquals(before, blocks(level, where, 18), "not one block changed, round " + round);
+                    if (round == 2) { // left in its inner space by the crash: sent back as they log in
+                        InnerSpaces.onLogin(caster);
+                        assertTrue(caster.level() == level, "back in the world after the crash");
+                    }
                     Burnout.clear(caster);
                 }
             } finally {
@@ -381,7 +410,7 @@ class DominionTest {
                 assertTrue(found.contains(target), "someone inside");
                 assertFalse(found.contains(caster), "never its caster");
                 assertFalse(found.contains(severed), "never a Severed player: no Malice to find");
-                assertTrue(d.trapped.contains(severed.getUUID()), "though they're as trapped as anyone");
+                assertTrue(d.trapped.contains(severed.getUUID()), "though they're as taken in as anyone");
             } finally {
                 cleanUp(server);
             }
