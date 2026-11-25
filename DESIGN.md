@@ -800,7 +800,7 @@ closing it or disconnecting at any point changes nothing.
   of pale blue swirls in the middle of a fight. Everyone else still sees yours, since they show who's slowed, and so do you
   in third person.
 - **Near the camera:** a positional effect closer than 2 blocks to a first-person camera isn't drawn, or it would sit in front of your eyes. `ClientVisuals.setNearCameraDistance` lowers that for one effect (Reinforced Strike's impact, 1 block: only the target is that close).
-- **On your own screen:** `ClientVisuals.setFirstPersonVariant` swaps an effect riding a player for a quieter one, for that player in first person only (the dash's trail, the parry's spark and the guard's hit, RMT's light). At Vanilla a loop's stand-in follows the variant too (often nothing).
+- **On your own screen:** `ClientVisuals.setFirstPersonVariant` swaps an effect riding a player for a quieter one, for that player in first person only (the dash's trail, the parry's spark and the guard's hit, RMT's light). A loop follows your view while it runs: switch into or out of first person (F5) and it changes over to the other one that tick, so your own third-person view always shows what everyone else sees. At Vanilla a loop's stand-in follows the variant too (often nothing).
 - **Your own hands** (`PlayerAnimations`). In your own first person an animation can show your arms (PAL's first-person
   model), or leave the hands to vanilla. Everyone else always sees the whole animation. Nothing may fill the middle of the
   view, so:

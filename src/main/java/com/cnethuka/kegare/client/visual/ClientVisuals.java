@@ -32,17 +32,23 @@ public final class ClientVisuals {
 
     private static final class Loop {
         final Visual visual;
-        @Nullable final FXEffectExecutor executor;
+        @Nullable FXEffectExecutor executor;
+        /** The effect its executor plays: the visual's own, or its first-person variant. */
+        @Nullable ResourceLocation playing;
         final int growTicks;
+        final int lifetimeTicks;
         final long startTick;
         final boolean animation;
         /** Projectile trails fade out; every other loop shows a state and must vanish the moment it ends. */
         final boolean trail;
 
-        Loop(Visual visual, @Nullable FXEffectExecutor executor, int growTicks, long startTick, boolean animation, boolean trail) {
+        Loop(Visual visual, @Nullable FXEffectExecutor executor, @Nullable ResourceLocation playing, int growTicks, int lifetimeTicks,
+             long startTick, boolean animation, boolean trail) {
             this.visual = visual;
             this.executor = executor;
+            this.playing = playing;
             this.growTicks = growTicks;
+            this.lifetimeTicks = lifetimeTicks;
             this.startTick = startTick;
             this.animation = animation;
             this.trail = trail;
@@ -122,19 +128,25 @@ public final class ClientVisuals {
         }
         boolean trail = TRAIL_KEY.equals(key) || visual.linger();
         FXEffectExecutor executor = null;
-        if (visual.effect().isPresent() && !DRAWN_BY_MOVE.contains(visual.effect().get())) {
-            VfxQuality quality = KegareClientConfig.VFX_QUALITY.get();
-            if (quality != VfxQuality.VANILLA) {
-                executor = PhotonEffects.onEntity(firstPersonVariant(entity, visual.effect().get()), entity, visual.anchor(),
-                        quality == VfxQuality.REDUCED, !trail);
-                PhotonEffects.tint(executor, visual.tint());
-                if (growTicks > 0) PhotonEffects.scale(executor, GROW_FROM + (1f - GROW_FROM) * Math.min(1f, elapsedTicks / (float) growTicks));
-                if (lifetimeTicks > 0) PhotonEffects.persistLifetime(executor, lifetimeTicks);
-            }
+        ResourceLocation playing = null;
+        if (visual.effect().isPresent() && !DRAWN_BY_MOVE.contains(visual.effect().get())
+                && KegareClientConfig.VFX_QUALITY.get() != VfxQuality.VANILLA) {
+            playing = firstPersonVariant(entity, visual.effect().get());
+            executor = playLoop(entity, visual, playing, trail, lifetimeTicks);
+            if (growTicks > 0) PhotonEffects.scale(executor, GROW_FROM + (1f - GROW_FROM) * Math.min(1f, elapsedTicks / (float) growTicks));
         }
-        LOOPS.computeIfAbsent(entity.getId(), id -> new HashMap<>())
-                .put(key, new Loop(visual, executor, growTicks, entity.level().getGameTime() - Math.max(0, elapsedTicks), animation, trail));
+        LOOPS.computeIfAbsent(entity.getId(), id -> new HashMap<>()).put(key, new Loop(visual, executor, playing, growTicks, lifetimeTicks,
+                entity.level().getGameTime() - Math.max(0, elapsedTicks), animation, trail));
         LISTENERS.forEach(l -> l.loopStarted(entity, key, visual));
+    }
+
+    /** A loop's effect on an entity, in Photon. */
+    @Nullable
+    private static FXEffectExecutor playLoop(Entity entity, Visual visual, ResourceLocation effect, boolean trail, int lifetimeTicks) {
+        FXEffectExecutor executor = PhotonEffects.onEntity(effect, entity, visual.anchor(), KegareClientConfig.VFX_QUALITY.get() == VfxQuality.REDUCED, !trail);
+        PhotonEffects.tint(executor, visual.tint());
+        if (lifetimeTicks > 0) PhotonEffects.persistLifetime(executor, lifetimeTicks);
+        return executor;
     }
 
     public static void stopLoop(net.minecraft.world.level.Level level, int entityId, String key) {
@@ -389,6 +401,16 @@ public final class ClientVisuals {
                 continue;
             }
             for (Loop loop : entry.getValue().values()) {
+                // Into or out of your own first person mid-loop (F5): the other of the effect and its first-person variant, from now.
+                if (loop.playing != null) {
+                    ResourceLocation want = firstPersonVariant(entity, loop.visual.effect().get());
+                    if (!want.equals(loop.playing)) {
+                        PhotonEffects.stop(loop.executor, true);
+                        int left = loop.lifetimeTicks > 0 ? Math.max(1, loop.lifetimeTicks - (int) (now - loop.startTick)) : 0;
+                        loop.executor = playLoop(entity, loop.visual, want, loop.trail, left);
+                        loop.playing = want;
+                    }
+                }
                 if (loop.growTicks > 0 && loop.executor != null) {
                     float t = Math.min(1f, (now - loop.startTick) / (float) loop.growTicks);
                     PhotonEffects.scale(loop.executor, GROW_FROM + (1f - GROW_FROM) * t);
