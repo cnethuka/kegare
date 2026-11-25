@@ -10,7 +10,6 @@ import javax.annotation.Nullable;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.server.level.ServerLevel;
-import net.minecraft.util.Mth;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.block.Block;
@@ -117,21 +116,31 @@ public final class InnerSpace implements DominionInterior {
 
     /**
      * The build, in steps: clear the plot (only sections that hold anything are looked through, so a fresh plot costs nearly nothing),
-     * lay the floor (its ground over two layers of foundation), stand its ruins, then let its technique furnish it.
+     * lay the floor (its ground over a layer under it, on bedrock), stand its ruins, then let its technique furnish it. All vanilla blocks
+     * ({@link Wasteland}), unless its look names a ground of its own.
      */
     private final class Build {
         final DominionSpec spec;
-        final BlockState ground;
+        /** Its look's own ground, or null for the wasteland's. */
+        @Nullable final BlockState ground;
+        final Wasteland wasteland = new Wasteland(random);
         int stage;
         final List<BlockPos> clear = new ArrayList<>();
         int at;
         final List<BlockPos> floor = new ArrayList<>();
-        final List<BlockPos> ruins = new ArrayList<>();
+        final List<Map.Entry<BlockPos, BlockState>> standing = new ArrayList<>();
 
         Build(DominionSpec spec) {
             this.spec = spec;
-            this.ground = spec.look().ground().flatMap(id -> BuiltInRegistries.BLOCK.getOptional(id)).map(Block::defaultBlockState)
-                    .orElse(DominionRegistry.WASTELAND_GROUND.get().defaultBlockState());
+            this.ground = spec.look().ground().flatMap(id -> BuiltInRegistries.BLOCK.getOptional(id)).map(Block::defaultBlockState).orElse(null);
+        }
+
+        /** The floor's block at a spot: its top, the layer under it, and bedrock under that, so nobody digs out. */
+        private BlockState floorAt(BlockPos pos) {
+            int depth = centre.getY() - pos.getY();
+            if (depth >= 3) return Blocks.BEDROCK.defaultBlockState();
+            if (ground != null) return ground;
+            return depth == 1 ? wasteland.ground(pos.getX(), pos.getZ()) : wasteland.below(pos.getX(), pos.getZ());
         }
 
         /** Does up to {@code budget} blocks' worth. Returns whether it's done. */
@@ -161,15 +170,16 @@ public final class InnerSpace implements DominionInterior {
                             break;
                         }
                         BlockPos pos = floor.get(at++);
-                        set(pos, pos.getY() == centre.getY() - 1 ? ground : DominionRegistry.DOMINION_FOUNDATION.get().defaultBlockState());
+                        set(pos, floorAt(pos));
                         used++;
                     }
                     case 3 -> {
-                        if (at >= ruins.size()) {
+                        if (at >= standing.size()) {
                             stage = 4;
                             break;
                         }
-                        set(ruins.get(at++), DominionRegistry.WASTELAND_RUIN.get().defaultBlockState());
+                        Map.Entry<BlockPos, BlockState> next = standing.get(at++);
+                        set(next.getKey(), next.getValue());
                         used++;
                     }
                     case 4 -> {
@@ -223,23 +233,8 @@ public final class InnerSpace implements DominionInterior {
                 }
             }
             if (!spec.look().ruins()) return;
-            int count = Math.max(4, Math.round((float) (Math.PI * radius * radius / 120.0)));
-            for (int i = 0; i < count; i++) {
-                double angle = Mth.TWO_PI * (i + random.nextFloat() * 0.7f) / count;
-                double dist = radius * (0.25 + random.nextDouble() * 0.6);
-                int x = centre.getX() + Mth.floor(Math.cos(angle) * dist), z = centre.getZ() + Mth.floor(Math.sin(angle) * dist);
-                boolean alongX = random.nextBoolean();
-                if (random.nextFloat() < 0.45f) { // a column, broken off
-                    int h = 2 + random.nextInt(3);
-                    for (int y = 0; y < h; y++) ruins.add(new BlockPos(x, centre.getY() + y, z));
-                } else { // a wall stub, its top uneven
-                    int length = 2 + random.nextInt(3);
-                    for (int k = 0; k < length; k++) {
-                        int h = 1 + random.nextInt(3);
-                        for (int y = 0; y < h; y++) ruins.add(new BlockPos(x + (alongX ? k : 0), centre.getY() + y, z + (alongX ? 0 : k)));
-                    }
-                }
-            }
+            // Nothing stands right under its sky.
+            standing.addAll(wasteland.standing(centre, radius, radius - 1.5, ground != null, random).entrySet());
         }
 
         private void set(BlockPos pos, BlockState state) {

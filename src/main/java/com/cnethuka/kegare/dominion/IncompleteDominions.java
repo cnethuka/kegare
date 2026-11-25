@@ -37,11 +37,11 @@ import net.neoforged.neoforge.event.entity.player.PlayerEvent;
 public final class IncompleteDominions {
     public static final IncompleteDominion ABILITY = SharedAbilities.register(new IncompleteDominion());
     /**
-     * The inner space with nothing of a technique in it: grey cracked ground and ruins of real blocks, an ash sky and drifting dust, and
+     * The inner space with nothing of a technique in it: grey ground and ruins of vanilla blocks ({@link Wasteland}), an ash sky and drifting dust, and
      * from outside a pitch-black, smooth shell that cracks white only where it's hit. No Malice color anywhere, so every Incomplete Dominion looks the
      * same whoever opens it.
      */
-    public static final DominionLook WASTELAND = new DominionLook(0x6F6B66, 0x8E8983, 40f, 0x000000, Optional.of(DominionIds.WASTELAND_GROUND),
+    public static final DominionLook WASTELAND = new DominionLook(0x6F6B66, 0x8E8983, 40f, 0x000000, Optional.empty(),
             true, 0xA7A29B, false);
     /** Its cooldown rate's key ({@link CooldownRates}). */
     private static final String RATE = "incomplete_dominion";

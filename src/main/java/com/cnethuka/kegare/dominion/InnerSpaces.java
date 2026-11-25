@@ -27,7 +27,9 @@ import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 import net.neoforged.neoforge.common.NeoForge;
 import net.neoforged.neoforge.event.entity.player.PlayerEvent;
+import net.neoforged.neoforge.event.level.BlockDropsEvent;
 import net.neoforged.neoforge.event.level.BlockEvent;
+import net.neoforged.neoforge.event.level.ExplosionEvent;
 import net.neoforged.neoforge.event.server.ServerStoppedEvent;
 import net.neoforged.neoforge.event.tick.ServerTickEvent;
 
@@ -64,6 +66,17 @@ public final class InnerSpaces {
         // Nothing is built in someone's inner space: it's gone when it ends, and whatever was placed with it.
         NeoForge.EVENT_BUS.addListener((BlockEvent.EntityPlaceEvent e) -> {
             if (e.getLevel() instanceof Level level && isInnerSpace(level)) e.setCanceled(true);
+        });
+        // Nor taken out of it: what it's built of drops nothing when broken, by hand or by a blast (or it would be let out with everyone).
+        NeoForge.EVENT_BUS.addListener((BlockDropsEvent e) -> {
+            if (isInnerSpace(e.getLevel())) e.setCanceled(true);
+        });
+        NeoForge.EVENT_BUS.addListener((ExplosionEvent.Detonate e) -> {
+            if (!isInnerSpace(e.getLevel())) return;
+            for (BlockPos pos : e.getAffectedBlocks()) {
+                if (!e.getLevel().getBlockState(pos).isAir()) e.getLevel().removeBlock(pos, false);
+            }
+            e.getAffectedBlocks().clear();
         });
         NeoForge.EVENT_BUS.addListener((ServerStoppedEvent e) -> forgetAll());
     }
@@ -152,7 +165,7 @@ public final class InnerSpaces {
                 hz *= max / len;
             }
             Vec3 to = new Vec3(m.x + hx, m.y + Mth.clamp(off.y, 0, s.radius * 0.5), m.z + hz);
-            clearRuins(s, e, to); // no ruin stands where someone lands
+            clearStanding(s, e, to); // nothing stands where someone lands
             if (e instanceof ServerPlayer p) {
                 p.setData(DominionRegistry.INNER_RETURN, new InnerReturn(Optional.of(p.level().dimension()), p.position(), p.getYRot(), p.getXRot()));
             } else {
@@ -163,13 +176,17 @@ public final class InnerSpaces {
         }
     }
 
-    /** Any ruin block in the space an entity will take up there, gone (the floor stays). */
-    private static void clearRuins(InnerSpace s, Entity e, Vec3 at) {
+    /** Whatever stands on the floor where an entity will land (a ruin, rubble, a bush), gone right up, so nothing's left hanging over them. */
+    private static void clearStanding(InnerSpace s, Entity e, Vec3 at) {
         AABB box = e.getDimensions(e.getPose()).makeBoundingBox(at);
-        for (BlockPos pos : BlockPos.betweenClosed(BlockPos.containing(box.minX, box.minY, box.minZ), BlockPos.containing(box.maxX, box.maxY, box.maxZ))) {
-            if (s.level.getBlockState(pos).is(DominionRegistry.WASTELAND_RUIN.get())) s.place(pos, net.minecraft.world.level.block.Blocks.AIR.defaultBlockState());
+        int floor = s.centre.getY(), top = Math.max(floor + STANDS_UP_TO, BlockPos.containing(0, box.maxY, 0).getY());
+        for (BlockPos pos : BlockPos.betweenClosed(BlockPos.containing(box.minX, floor, box.minZ), BlockPos.containing(box.maxX, top, box.maxZ))) {
+            if (!s.level.getBlockState(pos).isAir()) s.place(pos, net.minecraft.world.level.block.Blocks.AIR.defaultBlockState());
         }
     }
+
+    /** No ruin stands taller than this. */
+    private static final int STANDS_UP_TO = 8;
 
     /** It's over: everyone and everything in it goes back to the world {@code delayTicks} from now (at once for 0), and the plot goes. */
     static void collapse(InnerSpace s, int delayTicks) {

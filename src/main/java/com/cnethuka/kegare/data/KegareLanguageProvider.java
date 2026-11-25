@@ -1024,9 +1024,6 @@ public final class KegareLanguageProvider extends LanguageProvider {
         add("gui.kegare.six_eyes.read.dominion", "Holding open %s");
         add("message.kegare.dominion.sealed", "That " + DOMINION + " is sealed: break in, or open yours inside it.");
         add("message.kegare.dominion.inner_space", "Not here: this is someone's inner space.");
-        add("block.kegare.wasteland_ground", "Wasteland Ground");
-        add("block.kegare.wasteland_ruin", "Wasteland Ruin");
-        add("block.kegare.dominion_foundation", DOMINION + " Foundation");
         add("message.kegare.dominion.clash.crowded", "Too many " + DOMINION + "s are in the way.");
         add("message.kegare.dominion.clash.full", "Two " + DOMINION + "s are already clashing here.");
         add("message.kegare.dominion.clash.holding", "You're holding your " + DOMINION + ".");

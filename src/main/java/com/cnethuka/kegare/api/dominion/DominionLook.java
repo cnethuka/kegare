@@ -12,8 +12,10 @@ import net.minecraft.resources.ResourceLocation;
  * @param fogColor   RGB of the fog in its inner space, and of its sky at the horizon (it blends to {@code skyColor} overhead)
  * @param fogEnd     how far you see in its inner space, in blocks
  * @param shellColor RGB of the barrier seen from outside, a solid wall of it (0x000000: pitch black, as the Incomplete Dominion's)
- * @param ground     the block its inner space's floor is made of (a block ID), or empty for Kegare's wasteland ground
- * @param ruins      broken ruins of Kegare's stand on its floor
+ * @param ground     the block its inner space's floor is made of (a block ID), or empty for Kegare's wasteland ground (a patchwork of
+ *                   vanilla tuff, andesite, stone, cobblestone and coarse dirt)
+ * @param ruins      Kegare's ruins stand on its floor: broken columns and walls of vanilla stone bricks, with rubble round them (and on
+ *                   the wasteland ground, dead bushes, loose stones and pebbles)
  * @param dustColor  RGB of dust drifting through its inner space, or -1 for none
  * @param cracked    the shell closes already cracked: white cracks glowing on it from the start, as if it had lost a quarter of its
  *                   strength (every shell cracks as it's hit, cracked or not)

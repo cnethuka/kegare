@@ -329,7 +329,7 @@ world under the shell is never touched. Opening over another Dominion starts a c
 
 | Method | What it does |
 |---|---|
-| `look()` | **Required.** Its shell from outside, and its inner space: its sky (from its fog color at the horizon to its sky color overhead, drawn by the clients), its fog, the block its floor is made of (`ground`, a block ID: empty for Kegare's wasteland ground), Kegare's ruins or not, and dust. |
+| `look()` | **Required.** Its shell from outside, and its inner space: its sky (from its fog color at the horizon to its sky color overhead, drawn by the clients), its fog, the block its floor is made of (`ground`, a block ID: empty for Kegare's wasteland ground, a patchwork of vanilla stone), Kegare's ruins or not, and dust. |
 | `innerRadius` | How far its inner space reaches (`[dominion.full]`'s `innerRadius`, 32, unless you override it): bigger than its shell, as the inside is bigger than it looks. |
 | `furnish(interior)` | Places your own blocks in its inner space as it's built, after Kegare has cleared it and laid its floor (and ruins). `DominionInterior` gives its level, its `centre` (the middle of its floor), its `radius`, a `random` and `place(pos, state)`, which ignores anything outside its dome. It's rebuilt from scratch every time, so place freely. |
 | `sureHit()` | Whether its technique can't miss inside (default true). `ctx.sureHitTargets()` lists who it reaches: everything in its inner space but its caster and what they own, never a Severed player, and nothing while it's contested. |

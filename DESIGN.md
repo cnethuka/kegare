@@ -3512,12 +3512,15 @@ touched, and is simply there again afterwards.
   shell outside (10 and 16): the inside is bigger than it looks.
 - **Built** while the barrier spreads, a share each tick, with whatever is left finished as it seals:
   - everything in the plot is cleared;
-  - then its floor: a disc a little wider than the space, its ground block on top of two layers of unbreakable Dominion Foundation;
-  - then its ruins;
+  - then its floor: a disc a little wider than the space, its ground on top of a layer under it, on bedrock, so nobody digs out;
+  - then what stands on it: its ruins and rubble;
   - then whatever its technique adds (`DominionUltimate.furnish`).
-  The ground and ruins can be broken, and they drop nothing. Nothing can be placed in an inner space.
+  It's all vanilla blocks (`Wasteland`), and none that falls (no gravel or sand), so nothing it's made of can land in the world when
+  everyone's let out. The ground and ruins can be broken, by hand or by a blast, and they drop nothing (block drops are cancelled in the
+  inner space dimension, and a blast there removes what it breaks itself). Nothing can be placed in an inner space.
 - **Taken in** as it seals: everything alive inside the shell, never a boss or a spectator. Each lands at the same place relative to
-  the caster, spread out by how much bigger the inside is, on the floor, and lifted clear if a ruin stands there. Players keep where
+  the caster, spread out by how much bigger the inside is, on the floor; whatever stands where they land (a ruin, rubble, a bush) is
+  cleared away, right up. Players keep where
   they came from (attachment `kegare:inner_return`, saved); the Dominion keeps where its mobs came from. For those taken in, a short
   blackout, then the inner space fades in.
 - **Inside,** the inner space's sky is the barrier's other side, drawn by the clients, and every move inside is cut where it meets it.
@@ -3589,9 +3592,16 @@ Full, Reduced and Vanilla, where Reduced and Vanilla make half the ink, dust and
   noon). **Dust:** inside, round the viewer, white ash and slow motes of its dust color (five a tick, half at Reduced and Vanilla),
   never within 2 blocks of a first-person camera.
 - **The Incomplete Dominion's wasteland** (`IncompleteDominions.WASTELAND`): sky `0x6F6B66` overhead and `0x8E8983` at the horizon and
-  in the fog (fog ends at 40 blocks), shell `0x000000` (pitch black), ground `kegare:wasteland_ground` (grey dust in four shades, one
-  or two pixel-wide cracks with a light edge, pebbles: four looks, each turned at random), ruins of `kegare:wasteland_ruin` (grey stone
-  bricks, cracked: columns and wall stubs, one for about every 120 blocks of floor, between a quarter of the way out and the sky), dust
+  in the fog (fog ends at 40 blocks), shell `0x000000` (pitch black). Its inner space is all vanilla blocks (`Wasteland`):
+  - **ground:** a patchwork, from two layers of noise: mostly tuff and andesite with some stone and cobblestone; rocky patches of
+    cobblestone, andesite and cobbled deepslate; dirt patches of coarse dirt; now and then an old cracked stone brick. Under it a layer
+    of stone, tuff and andesite, then bedrock.
+  - **ruins** (one for about every 120 blocks of floor, between a quarter of the way out and its sky): broken columns, wall stubs with
+    uneven tops and gaps, corners of two low walls, and columns fallen over, of stone bricks (cracked, now and then cobblestone, andesite
+    or a chiseled one), their tops broken off in slabs and stairs, with rubble round each (slabs, stairs, loose cobblestone and andesite).
+  - **over the rest:** dead bushes on the coarse dirt, loose rubble and stone-button pebbles. Nothing stands within 1.5 blocks of its
+    sky.
+  - dust
   `0xA7A29B`, not cracked (it cracks only where it's hit). No Malice color anywhere.
 - **Moments:** opening plays `dominion.open` (a low drone swelling as the barrier spreads, air rushing up through it, and a heavy soft
   seal a second in, as it closes) for everyone near; a hit on the barrier a glass knock, its cracks and a spray of white sparks where
@@ -3680,8 +3690,10 @@ out; not one block in the world changed after it ends, breaks or the server forg
 crash sent back as they log in, and its marker never saved; its time running out, its hooks, dominionBurnout equal to the brain's
 assumption, logging out, leaving the dimension and dying ending it; the sure-hit finding someone inside but never its caster or a
 Severed player; caught_in_dominion paid once), `InnerSpaceTest` (its dimension there; everyone inside taken in, the caster at the
-middle and the rest spread out by how much bigger it is, on its floor of real ground over foundation, where each came from kept, its sky
-standing in it; let out to where they were, nothing left to remember, the plot let go; a mob taken in and let out to where it was, an
+middle and the rest spread out by how much bigger it is, on its floor of real ground over bedrock, where each came from kept, its sky
+standing in it; let out to where they were, nothing left to remember, the plot let go; the wasteland all vanilla blocks, none that
+falls, on bedrock everywhere, its ground a patchwork, ruins and rubble on it and nothing right under its sky, nothing dropped by a block
+broken by hand with the right tool or by a blast, which still breaks what it reaches but never the bedrock; a mob taken in and let out to where it was, an
 item dropped inside back near the shell; the world under it never touched; a plot cleared of what was left in it before it's used again;
 nothing opening in an inner space but a clash over its sky; opening over a sealed one from outside refused with nothing paid; a player
 left inside sent back as they log in; a stray put in one no Dominion holds sent back; its caster taken in without ending it),
@@ -3699,8 +3711,7 @@ and the loser still in its inner space; an Incomplete Dominion's handicap agains
 attacking or casting while holding on, held in place, free in the Fight; the Fight's score from the two casters' damage alone, Fight Me;
 a close fight breaking both with the exhausted Burnout, Mutual Destruction; a side ended by command forfeiting with nothing won, top-tier
 to each other only while clashing; the advancements hidden and silent on the Base tab), `DominionVisualsTest` (the seal animation loads
-and keeps your own hands vanilla's; the icon hard pixel art; the wasteland's blocks pixel art, 16 a block, full faces, grey, each with
-its model and blockstate; cracks on the shell, measured along, the same shape on every client, reaching further for a harder hit and a
+and keeps your own hands vanilla's; the icon hard pixel art; cracks on the shell, measured along, the same shape on every client, reaching further for a harder hit and a
 weaker barrier up to a limit, a hit on cracks adding to them and elsewhere starting its own, only so many; the shatter's shards cut from
 the shell above the ground, fewer at Reduced and Vanilla, flying outward; a clash's seam on both shells, and none for spheres apart or
 one inside the other).

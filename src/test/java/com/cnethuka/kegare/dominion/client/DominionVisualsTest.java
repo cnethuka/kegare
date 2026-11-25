@@ -70,29 +70,6 @@ class DominionVisualsTest {
     }
 
     @Test
-    void theWastelandsBlocksArePixelArtSixteenABlock() throws IOException {
-        String[] textures = {"wasteland_ground_0", "wasteland_ground_1", "wasteland_ground_2", "wasteland_ground_3", "wasteland_ruin_0",
-                "wasteland_ruin_1", "dominion_foundation"};
-        for (String name : textures) {
-            BufferedImage image = ImageIO.read(asset("textures/block/" + name + ".png").toFile());
-            assertEquals(16, image.getWidth(), name + ": 16 a block");
-            assertEquals(16, image.getHeight(), name);
-            hardPixels(image, name);
-            for (int y = 0; y < 16; y++) {
-                for (int x = 0; x < 16; x++) {
-                    int rgb = image.getRGB(x, y), r = rgb >> 16 & 0xFF, g = rgb >> 8 & 0xFF, b = rgb & 0xFF;
-                    assertEquals(255, rgb >>> 24, name + ": a full block face");
-                    assertTrue(Math.max(r, Math.max(g, b)) - Math.min(r, Math.min(g, b)) <= 16, name + ": grey, no Malice color: " + Integer.toHexString(rgb));
-                }
-            }
-            assertTrue(Files.isRegularFile(asset("models/block/" + name + ".json")), name + " has its model");
-        }
-        for (String block : new String[] {"wasteland_ground", "wasteland_ruin", "dominion_foundation"}) {
-            assertTrue(Files.isRegularFile(asset("blockstates/" + block + ".json")), block + " has its blockstate");
-        }
-    }
-
-    @Test
     void cracksLieOnTheShellAndAreTheSameForEveryone() {
         Vec3 dir = new Vec3(0.3, 0.8, -0.2).normalize();
         List<BarrierCracks.Line> lines = BarrierCracks.lines(dir, BarrierCracks.seed(dir));

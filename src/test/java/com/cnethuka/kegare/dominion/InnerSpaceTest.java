@@ -81,8 +81,8 @@ class InnerSpaceTest {
             assertEquals(m.x + 4 * space.spread(), b.getX(), 1.0e-3, "the other where they stood, spread out by how much bigger it is");
             assertEquals(m.y, b.getY(), 1.0e-3, "on its floor");
             assertTrue(space.spread() > 1, "bigger inside than out");
-            assertEquals(DominionRegistry.WASTELAND_GROUND.get(), inner.getBlockState(space.centre.below()).getBlock(), "its ground, real");
-            assertEquals(DominionRegistry.DOMINION_FOUNDATION.get(), inner.getBlockState(space.centre.below(2)).getBlock(), "on its foundation");
+            assertFalse(inner.getBlockState(space.centre.below()).isAir(), "its ground, real");
+            assertEquals(Blocks.BEDROCK, inner.getBlockState(space.centre.below(3)).getBlock(), "on bedrock");
             assertTrue(a.getData(DominionRegistry.INNER_RETURN).present(), "where they came from, kept");
             assertTrue(Dominions.trapping(b).isPresent());
             assertNotNull(space.inner, "its sky stands in it");
@@ -93,6 +93,60 @@ class InnerSpaceTest {
             assertEquals(bAt.x, b.getX(), EPS, "to where they were");
             assertFalse(b.getData(DominionRegistry.INNER_RETURN).present(), "nothing left to remember");
             assertTrue(InnerSpaces.open().isEmpty(), "the plot let go");
+        });
+    }
+
+    @Test
+    void theWastelandIsVanillaBlocksOnBedrockAndNothingInItDrops(MinecraftServer server) throws Exception {
+        run(server, s -> {
+            ServerPlayer a = DominionTest.at(s, "inner_vanilla", 8, 8);
+            DominionEntity d = open(a);
+            DominionTest.closed(d);
+            InnerSpace space = d.space;
+            ServerLevel inner = InnerSpaces.level(s);
+            BlockPos c = space.centre;
+            int reach = space.radius + InnerSpace.FLOOR_MARGIN, standing = 0;
+            java.util.Set<net.minecraft.world.level.block.Block> ground = new java.util.HashSet<>();
+            BlockPos ruin = null;
+            for (int dx = -reach; dx <= reach; dx++) {
+                for (int dz = -reach; dz <= reach; dz++) {
+                    if (dx * dx + dz * dz > reach * reach) continue;
+                    for (int y = c.getY() - 3; y <= c.getY() + space.radius; y++) {
+                        BlockPos pos = new BlockPos(c.getX() + dx, y, c.getZ() + dz);
+                        var state = inner.getBlockState(pos);
+                        if (state.isAir()) continue;
+                        assertEquals("minecraft", net.minecraft.core.registries.BuiltInRegistries.BLOCK.getKey(state.getBlock()).getNamespace(),
+                                "vanilla blocks only: " + state + " at " + pos);
+                        assertFalse(state.getBlock() instanceof net.minecraft.world.level.block.FallingBlock, "nothing that falls: " + state);
+                        if (y == c.getY() - 3) assertEquals(Blocks.BEDROCK, state.getBlock(), "bedrock under it all");
+                        if (y == c.getY() - 1) ground.add(state.getBlock());
+                        if (y >= c.getY()) {
+                            standing++;
+                            assertTrue(Math.sqrt(dx * dx + dz * dz) <= space.radius - 1, "nothing stands right under its sky: " + pos);
+                            if (state.is(Blocks.STONE_BRICKS) || state.is(Blocks.CRACKED_STONE_BRICKS)) ruin = pos;
+                        }
+                    }
+                    assertEquals(Blocks.BEDROCK, inner.getBlockState(new BlockPos(c.getX() + dx, c.getY() - 3, c.getZ() + dz)).getBlock(), "bedrock under it all");
+                }
+            }
+            assertTrue(ground.size() >= 4, "its ground a patchwork: " + ground);
+            assertTrue(standing > 40, "ruins and rubble stand on it: " + standing);
+            assertNotNull(ruin, "ruins of stone bricks");
+
+            // Broken by hand, with the right tool: nothing drops.
+            a.setGameMode(net.minecraft.world.level.GameType.SURVIVAL);
+            a.setItemInHand(net.minecraft.world.InteractionHand.MAIN_HAND, new ItemStack(Items.DIAMOND_PICKAXE));
+            assertTrue(a.gameMode.destroyBlock(ruin), "setup: broken");
+            assertTrue(inner.getBlockState(ruin).isAir());
+            BlockPos under = c.below().east(2);
+            assertTrue(a.gameMode.destroyBlock(under), "setup: the ground broken");
+            // Nor by a blast, though it still breaks what it reaches.
+            BlockPos blast = c.east(6);
+            inner.setBlock(blast.below(), Blocks.COBBLESTONE.defaultBlockState(), 3);
+            inner.explode(null, blast.getX() + 0.5, blast.getY(), blast.getZ() + 0.5, 3f, net.minecraft.world.level.Level.ExplosionInteraction.TNT);
+            assertTrue(inner.getBlockState(blast.below()).isAir(), "the blast broke the ground");
+            assertEquals(Blocks.BEDROCK, inner.getBlockState(blast.below(3)).getBlock(), "but never the bedrock");
+            assertTrue(inner.getEntitiesOfClass(ItemEntity.class, new net.minecraft.world.phys.AABB(c).inflate(reach)).isEmpty(), "nothing dropped");
         });
     }
 

@@ -1,6 +1,0 @@
-{
-  "parent": "minecraft:block/cube_all",
-  "textures": {
-    "all": "kegare:block/wasteland_ruin_0"
-  }
-}
