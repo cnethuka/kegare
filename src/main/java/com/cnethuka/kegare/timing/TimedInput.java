@@ -9,7 +9,9 @@ public enum TimedInput {
     /** The guard going up (the Parry key). */
     PARRY,
     /** A cast key going down in Technique Mode: the moment the intent is on its way (Six Eyes' uncovered edge reads it, DESIGN §3.32). */
-    CAST;
+    CAST,
+    /** A Dominion clash's timing prompt key going down (DESIGN §3.35). */
+    CLASH;
 
     public static TimedInput byId(int id) {
         TimedInput[] all = values();

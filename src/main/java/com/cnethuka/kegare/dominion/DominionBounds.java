@@ -30,11 +30,18 @@ public final class DominionBounds {
                 to = inside ? within(d.centre(), d.radius() - margin, from, to) : outside(d.centre(), d.radius() + margin, from, to);
             }
             if (!client && d.holdAt != null && entity.getUUID().equals(d.caster)) {
-                to = within(d.holdAt.add(0, entity.getBbHeight() / 2.0, 0), ClashHold.leash(), from, to);
+                to = within(d.holdAt.add(0, entity.getBbHeight() / 2.0, 0), DominionConfig.CLASH_LEASH.get(), from, to);
             }
         }
+        Vec3 hold = localHold;
+        if (client && hold != null) to = within(hold.add(0, entity.getBbHeight() / 2.0, 0), localLeash, from, to);
         return to == start ? move : to.subtract(from); // untouched: the very same move back
     }
+
+    /** Client: where the local player is held in a clash's Maintain, and how far they may go from it (the server says), or null. */
+    @javax.annotation.Nullable
+    public static volatile Vec3 localHold;
+    public static volatile double localLeash;
 
     /** Keeps {@code to} within {@code limit} of {@code c}; one already beyond it can't go further out. */
     static Vec3 within(Vec3 c, double limit, Vec3 from, Vec3 to) {
@@ -51,20 +58,5 @@ public final class DominionBounds {
         if (dist >= allowed) return to;
         if (dist < 1.0e-6) return from;
         return c.add(to.subtract(c).scale(allowed / dist));
-    }
-
-    /** How far a clash's caster may move from where they stood (the clash sets it). */
-    public static final class ClashHold {
-        private static double leash = 1.5;
-
-        private ClashHold() {}
-
-        public static double leash() {
-            return leash;
-        }
-
-        public static void setLeash(double blocks) {
-            leash = blocks;
-        }
     }
 }

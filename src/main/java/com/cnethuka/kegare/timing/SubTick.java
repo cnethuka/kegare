@@ -41,6 +41,15 @@ public final class SubTick {
         return at == null ? OptionalDouble.empty() : OptionalDouble.of(at);
     }
 
+    /**
+     * A moment on {@link #nowMs}'s clock as this player's own clock reads it (so their client can draw something due then, a clash's
+     * prompt), or empty with no estimate of their clock yet.
+     */
+    public static OptionalDouble toClientMs(Player player, double serverMs) {
+        PlayerClock clock = CLOCKS.get(player.getUUID());
+        return clock == null || !clock.synced() ? OptionalDouble.empty() : OptionalDouble.of(serverMs - clock.offset());
+    }
+
     /** From this player's latest {@code a} to their latest {@code b}, in ms (negative if {@code b} came first); empty if either is missing. */
     public static OptionalDouble gap(Player player, TimedInput a, TimedInput b) {
         OptionalDouble from = time(player, a), to = time(player, b);

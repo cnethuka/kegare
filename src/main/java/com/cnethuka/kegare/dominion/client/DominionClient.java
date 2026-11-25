@@ -55,6 +55,7 @@ public final class DominionClient {
         };
         DominionNet.Moment.clientHandler = DominionClient::moment;
         StatusLayer.addExtra(DominionClient::renderMeter);
+        ClashClient.init(modBus);
         modBus.addListener((EntityRenderersEvent.RegisterRenderers e) -> e.registerEntityRenderer(DominionRegistry.DOMINION.get(), DominionRenderer::new));
         modBus.addListener((RegisterGuiLayersEvent e) -> e.registerAbove(VanillaGuiLayers.CROSSHAIR, TITLE_LAYER, DominionClient::renderTitle));
         // The Incomplete Dominion's sweep would cross the middle of your own first-person view: there it's vanilla's hands.
@@ -118,6 +119,7 @@ public final class DominionClient {
             case DominionNet.Moment.HIT -> mc.level.playLocalSound(at.x, at.y, at.z, SoundEvents.GLASS_HIT, SoundSource.PLAYERS, 1.2f, 0.6f, false);
             case DominionNet.Moment.BROKE -> mc.level.playLocalSound(at.x, at.y, at.z, SoundEvents.GLASS_BREAK, SoundSource.PLAYERS, 2.0f, 0.5f, false);
             case DominionNet.Moment.ENDED -> mc.level.playLocalSound(at.x, at.y, at.z, SoundEvents.BEACON_DEACTIVATE, SoundSource.PLAYERS, 1.4f, 0.6f, false);
+            case DominionNet.Moment.CLASH -> mc.level.playLocalSound(at.x, at.y, at.z, SoundEvents.ANVIL_LAND, SoundSource.PLAYERS, 1.6f, 0.5f, false);
             default -> {}
         }
     }

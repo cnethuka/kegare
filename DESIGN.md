@@ -349,8 +349,10 @@ All timestamps use **level game time**. They persist across restarts and are ide
 - **Sub-tick timing** (§3.29): `TimingNet.Stamp` (C→S, an input stamped with the client's clock, sent at the key press), `TimingNet.Ping`
   (S→C) and `TimingNet.Pong` (C→S, the client's clock), all handled on the network thread. Reinforced Fists' look is `FistsPayload` (§3.28).
 - Dominions (§3.35) add `DominionNet.Meter` (S→C, to its owner), `DominionNet.Trapped` (S→C: which side of a barrier you're on) and
-  `DominionNet.Moment` (S→C: a barrier opening, closing, hit, breaking or ending), and the Six Eyes' full detail
-  (`ReadsPayload.Body`) carries the Dominion a player holds open.
+  `DominionNet.Moment` (S→C: a barrier opening, closing, hit, breaking or ending, or a clash starting), and the Six Eyes' full detail
+  (`ReadsPayload.Body`) carries the Dominion a player holds open. A clash adds `DominionNet.ClashState` (S→C, to its two casters, every
+  tick), `DominionNet.ClashPrompt` (S→C, a timing prompt and then its result), `DominionNet.ClashHold` (C→S: the caster's Dominion key held
+  or not) and `DominionNet.ClashPress` (C→S: a prompt key, stamped first as `TimedInput.CLASH`).
 - Network version `31` (`KegareNetwork.VERSION`). Bump it whenever a payload's format changes; mismatched clients are refused.
 
 ### 3.6 HUD
@@ -385,7 +387,8 @@ All timestamps use **level game time**. They persist across restarts and are ide
   - accents along the tray and crest in the technique's Malice color.
 - The selected ability's name shows above hearts/food for 2 s after a number key selects it (`kegare:combat_name`).
 - The melee layer's cues sit under the crosshair, in and out of Technique Mode and for Severed players too, only while there's something to show: **Reinforced** (gold, a Strike is ready; never for the Severed, who have no Strike), **Dash** and **Recovering** with thin countdown bars (§3.22). Severed players' own cues follow them there: **Blur**, **Winded** and
-  **Closing Line** (the last two with countdown bars, §3.27). Black Spark's zone adds **120%** with the zone's time left (§3.28), and the Dominion Meter its **Dominion 73** and bar, only while there's a Dominion to open with it (§3.35).
+  **Closing Line** (the last two with countdown bars, §3.27). Black Spark's zone adds **120%** with the zone's time left (§3.28), and the Dominion Meter its **Dominion 73** and bar, only while there's a Dominion to open with it (§3.35). A Dominion clash's
+  two casters get its own overlay over the upper middle of the screen: the key to hold, the tug of war, the prompts and the scores (§3.35).
 - Severed players never get the panel (G is Blur for them, §3.27). Everything is hidden when F1 hides the GUI and in spectator
   mode. Client config `hud.enabled` turns all of it off.
 
@@ -590,6 +593,9 @@ Each tab has its own root.
 | *Nothing to Celebrate* (under 120%) | challenge | hidden | a chain of 4 |
 | *Blessed by the Sparks* (under Nothing to Celebrate) | challenge | hidden | a chain of 7 |
 | *Lights Out* (under 120%) | challenge | hidden | a Black Spark sent a player into a block hard enough for a wall-slam crater (§3.24), with battle damage on or off; anyone |
+| *Pushback* | goal | hidden, **silent** (being able to open a Dominion is a floor under a private Grade, §3.21) | won a Dominion clash before it came to a fight: the other was pushed all the way, let go, ran out of Malice or cracked apart (§3.35) |
+| *Fight Me* | challenge | hidden, **silent** | won a Dominion clash in the fight, by damage (§3.35) |
+| *Mutual Destruction* | task | hidden, **silent** | a Dominion clash too close to call: both broke (§3.35) |
 
 **Six Eyes tab** (root `clear_sight`). Everything here is **silent**, and every advancement except the root is
 **hidden** (secret-identity rule and its visible-root exception, §1):
@@ -2166,7 +2172,7 @@ player, ever, saved per player. Which category each source pays into, and how mu
 | `first_legendary_fight` | Output 5 | ever | wired |
 | `survived_standstill` | Ward 5 | ever | wired |
 | `caught_in_dominion` | Dominion 5 | kind of Dominion (§3.35) | wired |
-| `clashed_with_dominion` | Dominion 5 | technique | hook only |
+| `clashed_with_dominion` | Dominion 5 | kind of Dominion (the other side's, §3.35) | wired |
 | `unlocked_rmt` | Output 5 | ever (unlocking Reverse Malice Technique, any way; anyone who has it unlocked but wasn't paid is paid on login) | wired |
 | `rmt_survived_low` | Output 5 | ever (at 3 hearts or less during your own RMT, healed above it, alive 10 s later) | wired |
 | `healed_by_other` | Output 3 | ever (healed by another player's RMT, §3.17) | wired |
@@ -2956,7 +2962,8 @@ A shared system so timing can be judged finer than a 50 ms tick. Numbers in `[ti
   with its own monotonic clock in ms (`timing/client/ClientStamps`), the moment the key or button goes down, and sends the stamp there
   and then (`TimingNet.Stamp`), ahead of the packet that does the thing at the next client tick. Sent at the press, its trip to the
   server is only the network's. An attack is stamped when the button goes down with an entity under the crosshair; Fists' number key
-  in Technique Mode when Fists are in that slot. A stamp nothing claims within half a second is dropped. How fine a stamp is depends on
+  in Technique Mode when Fists are in that slot; a Dominion clash's prompt key while a prompt waits (`CLASH`, §3.35). A stamp nothing
+  claims within half a second is dropped. How fine a stamp is depends on
   the frame rate: the game reads keys once a frame.
 - **The clock:** the server pings each player (`TimingNet.Ping`, answered at once with their clock, `TimingNet.Pong`) every
   `clockSyncSeconds` (2), and five times 200 ms apart when they join. Stamps, pings and answers are handled on the network thread as they
@@ -3269,7 +3276,8 @@ focus is the Read the server decides for itself, so that's the one it counts.
   itself and so of the cast's own tell, and the cue goes out there and then (`Edge.Spark`: for half a second their outline turns gold, unlike a cast's white pulse, with a gold flash at their head, through walls, and
   a chime; the network thread reads a snapshot each tick leaves, so it touches no live game state). It's a key press read, so it also shows
   for a cast that goes on to fizzle. Within `edgeRange` (64). Covered, they see the cast when it starts, like everyone (the outline's pulse, above).
-  For now "top-tier" is a Special Grade player; `Edge.addTopTier` is where later systems add more, a Dominion clash among them.
+  "Top-tier" is a Special Grade player, or the other side of a Dominion clash the bearer is in (§3.35); `Edge.addTopTier` is where
+  later systems add more.
 - **Max Strain:** severe brain fatigue, mental exhaustion and a risk of central nervous system overload.
   - A throbbing headache: a red pulse from the edges of the screen (14% of the shorter side, nothing in the middle) and a heartbeat sound
     (`WARDEN_HEARTBEAT`, every 0.8 s). The map, Reads and voids stay sharp. Not on the death screen: it waits for the respawn.
@@ -3517,6 +3525,38 @@ find. Empty while it's rising or contested, or for a Dominion with no sure-hit. 
 **Insight:** caught inside someone else's Dominion as it closes pays `caught_in_dominion` (§3.21), once per kind of Dominion (the ability
 that opened it: a technique's ultimate, or the Incomplete Dominion).
 
+**Clashes** (`Clashes`, `Clash`; numbers in `[dominion.clash]`): a Dominion opening over one that's opening or open (their spheres
+overlap) starts a clash instead of being refused.
+- **Two sides at most.** A third Dominion opening over one that's clashing is refused ("Two Dominions are already clashing here."), and
+  one over two at once too ("Too many Dominions are in the way."), with nothing paid. The sides are kept as a list (`MAX_SIDES`), so only
+  the bar would need rethinking for more.
+- **Meanwhile both barriers are half-formed:** nobody is trapped (whoever was is let go), no sure-hit, they take no hits, and their time
+  stands still. Each caster's Insight pays `clashed_with_dominion` once per kind of Dominion they clash with (§3.21). Each is top-tier to
+  the other for the Six Eyes' uncovered edge (§3.32). Everyone near hears it begin where the two meet.
+- **Grip** (`gripSeconds` 2): both casters have to be holding the key that opens their Dominion (its bar slot for an Incomplete
+  Dominion, V for a full one): the one that opened over the other usually still is; the one whose Dominion was already open presses it
+  again. Their client says whether the key is down (`ClashHold`). Not holding it then loses (both not: a tie).
+- **Maintain** (`maintainSeconds` 10): held within `leash` (1.5) of where they stood (the server and their own client both cut the
+  move), unable to attack (no hit of theirs lands, hand, weapon, projectile or technique) or cast (a cast key says "You're holding your
+  Dominion."), each pays `drainPerSecond` (15) Malice. A tug of war: every `promptEveryMin` to `promptEveryMax` (1 to 2 s) each caster
+  gets a prompt, one of jump, sneak or sprint (their own bindings), shown `promptLeadMs` (900) ahead of its beat. Their press is judged
+  by sub-tick timing (§3.29, `TimedInput.CLASH`): the right key within `promptWindowMs` (500, half each side) of the beat is a hit and
+  pushes the bar `pushPerHit` (0.2) toward the other; the wrong key, too early, too late or no press is a miss, pushing it back
+  `pushPerMiss` (0.1) and cracking their own barrier by `crackPerMiss` (0.1 of its strength). A press with no prompt waiting is ignored.
+  An Incomplete Dominion against a full one pushes `incompleteHandicap` (30%) less. Pushed all the way, letting go of the key, running
+  out of Malice or a barrier cracked apart loses at once.
+- **Fight** (`fightSeconds` 15): free again. Each caster's score is the damage they deal the other (after defences, as the fight
+  record has it, §3.21); nobody else's damage counts. The higher wins; within `tieMargin` (10% of the higher) it's a tie.
+- **The result:** the loser's barrier breaks and they burn out as their Dominion would; the winner's closes again on whoever is inside
+  then, with the time it had used kept (one that never closed gets its whole time). A tie breaks both, and both burn out for
+  `exhaustedBurnout` (45 s) instead. A caster dying, logging out, leaving or a command ending one side hands the other the win, with
+  nothing earned. Advancements (Base tab, hidden, silent, §3.11): *Pushback* for a win before the fight, *Fight Me* for one in it,
+  *Mutual Destruction* for a tie.
+- **What the casters see** (`ClashClient`): "Hold" and the key at the start; then the bar, theirs from the left and yours from the
+  right meeting where it stands, your barrier's strength under it, "Let go!" if the server stops seeing the key; each prompt's key in a
+  box with a frame closing on it to meet it on the beat, lit while the window is open, then "Hit" or "Miss"; in the Fight, both scores;
+  at the end, "Clash won", "Clash lost" or "Both broke".
+
 **The Incomplete Dominion** (`kegare:incomplete_dominion`, shared, Malice, INSTANT; `IncompleteDominion`, `IncompleteDominions`; numbers
 in `[dominion.incomplete]`): the inner space expanded with Malice alone, with nothing of a technique in it.
 - **Learned** through the unlock framework (§3.21, entry `kegare:incomplete_dominion`): `unlock.grade` (Semi-Grade 2) and
@@ -3558,7 +3598,13 @@ kept through a reroll, a Grade short never; Dominion Insight lowering the Refine
 not even from an admin; a short meter refused with nothing paid, half the meter and its Malice taken through the real cast, the smaller
 radius, the wasteland and the cracked shell, its name in a Six Eyes read, no sure-hit, the shorter duration, the short Burnout, refused
 while burnt out; breaking at its own strength; the cheaper casts, faster cooldowns and harder hits for its caster alone, only while it
-stands, gone when it ends).
+stands, gone when it ends), `ClashTest` (opening over another starts a clash, both half-formed with nobody trapped, Insight paid, a third
+side refused with nothing paid; not holding on in the Grip loses, the loser breaking and burning out, the winner closing again on whoever
+is inside, Pushback; the Maintain's drain, a miss pushing back and cracking, too late a miss, hits pushing all the way, the winner keeping
+the time it had used; an Incomplete Dominion's handicap against a full one; running dry and letting go losing; no attacking or casting
+while holding on, held in place, free in the Fight; the Fight's score from the two casters' damage alone, Fight Me; a close fight
+breaking both with the exhausted Burnout, Mutual Destruction; a side ended by command forfeiting with nothing won, top-tier to each other
+only while clashing; the advancements hidden and silent on the Base tab).
 
 ---
 

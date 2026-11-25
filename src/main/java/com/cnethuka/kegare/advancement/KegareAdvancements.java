@@ -37,6 +37,10 @@ public final class KegareAdvancements {
     public static final ResourceLocation RECOGNIZED = Kegare.id("recognized");
     public static final ResourceLocation OUTSIDE_THE_LADDER = Kegare.id("outside_the_ladder");
     public static final ResourceLocation FULL_KIT = Kegare.id("full_kit");
+    // Dominion clashes (Base tab, hidden and silent: being able to open a Dominion is a floor under a private Grade)
+    public static final ResourceLocation DOMINION_PUSHBACK = com.cnethuka.kegare.dominion.DominionAdvancements.PUSHBACK;
+    public static final ResourceLocation DOMINION_FIGHT_ME = com.cnethuka.kegare.dominion.DominionAdvancements.FIGHT_ME;
+    public static final ResourceLocation DOMINION_MUTUAL_DESTRUCTION = com.cnethuka.kegare.dominion.DominionAdvancements.MUTUAL_DESTRUCTION;
     // Six Eyes tab (root: clear_sight)
     public static final ResourceLocation CLEAR_SIGHT = Kegare.id("clear_sight");
     public static final ResourceLocation THE_CYCLE_CONTINUES = Kegare.id("the_cycle_continues");
@@ -61,14 +65,15 @@ public final class KegareAdvancements {
     /**
      * Not secret, but never announced because they reveal PvP information: overflowing gives away Malice capacity,
      * chosen_by_fate a Legendary innate technique, a_green_light and its_been_a_while that a player can heal (RMT),
-     * always_on that they heal in the background, and the progression ones a player's Grade or technique progress.
+     * always_on that they heal in the background, the progression ones a player's Grade or technique progress, and the Dominion clash ones
+     * that a player can open a Dominion (a floor under their Grade).
      */
     public static final Set<ResourceLocation> SILENT = Set.of(OVERFLOWING, CHOSEN_BY_FATE, A_GREEN_LIGHT, ITS_BEEN_A_WHILE, ALWAYS_ON,
-            MOVING_UP, PROVEN, RECOGNIZED, OUTSIDE_THE_LADDER, FULL_KIT);
+            MOVING_UP, PROVEN, RECOGNIZED, OUTSIDE_THE_LADDER, FULL_KIT, DOMINION_PUSHBACK, DOMINION_FIGHT_ME, DOMINION_MUTUAL_DESTRUCTION);
 
     /** Silent AND hidden until earned (datagen enforces both): nobody should even learn they exist from the tab. */
     public static final Set<ResourceLocation> SILENT_HIDDEN = Set.of(A_GREEN_LIGHT, ITS_BEEN_A_WHILE, ALWAYS_ON,
-            MOVING_UP, PROVEN, RECOGNIZED, OUTSIDE_THE_LADDER, FULL_KIT);
+            MOVING_UP, PROVEN, RECOGNIZED, OUTSIDE_THE_LADDER, FULL_KIT, DOMINION_PUSHBACK, DOMINION_FIGHT_ME, DOMINION_MUTUAL_DESTRUCTION);
 
     private KegareAdvancements() {}
 

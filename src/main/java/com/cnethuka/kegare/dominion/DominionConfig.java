@@ -31,6 +31,22 @@ public final class DominionConfig {
     public static ModConfigSpec.DoubleValue INCOMPLETE_OUTPUT;
     public static ModConfigSpec.EnumValue<Grade> INCOMPLETE_UNLOCK_GRADE;
     public static ModConfigSpec.IntValue INCOMPLETE_UNLOCK_REFINEMENT;
+    // Clashes
+    public static ModConfigSpec.DoubleValue CLASH_GRIP;
+    public static ModConfigSpec.DoubleValue CLASH_MAINTAIN;
+    public static ModConfigSpec.DoubleValue CLASH_FIGHT;
+    public static ModConfigSpec.DoubleValue CLASH_DRAIN;
+    public static ModConfigSpec.DoubleValue CLASH_LEASH;
+    public static ModConfigSpec.DoubleValue CLASH_PROMPT_MIN;
+    public static ModConfigSpec.DoubleValue CLASH_PROMPT_MAX;
+    public static ModConfigSpec.IntValue CLASH_PROMPT_LEAD_MS;
+    public static ModConfigSpec.IntValue CLASH_PROMPT_WINDOW_MS;
+    public static ModConfigSpec.DoubleValue CLASH_PUSH_PER_HIT;
+    public static ModConfigSpec.DoubleValue CLASH_PUSH_PER_MISS;
+    public static ModConfigSpec.DoubleValue CLASH_CRACK_PER_MISS;
+    public static ModConfigSpec.DoubleValue CLASH_INCOMPLETE_HANDICAP;
+    public static ModConfigSpec.DoubleValue CLASH_TIE_MARGIN;
+    public static ModConfigSpec.DoubleValue CLASH_EXHAUSTED_BURNOUT;
 
     private DominionConfig() {}
 
@@ -93,6 +109,35 @@ public final class DominionConfig {
                 "Insight lowers it, by progression.unlocks' refinementLoweredPerInsight, at most refinementLoweredCap of it.")
                 .defineInRange("peakRefinement", 6, 0, 10);
         b.pop();
+        b.pop();
+
+        b.comment("Clashes: a Dominion opening over one that's opening or open. Two sides at most. First both casters hold on (Maintain):",
+                "a tug of war won by timing, pushed all the way wins. If neither is pushed out, they fight (Fight): the one who deals the",
+                "other more damage wins. The loser's barrier breaks and they burn out; the winner's closes. Too close to call, both break.")
+                .push("clash");
+        CLASH_GRIP = b.comment("At the start, how long both casters have to be holding the key that opens their Dominion (the one whose",
+                "Dominion was already open has to press it again). Not holding it then loses.").defineInRange("gripSeconds", 2.0, 0.0, 10.0);
+        CLASH_MAINTAIN = b.comment("How long the Maintain phase lasts before it comes to a fight.").defineInRange("maintainSeconds", 10.0, 1.0, 120.0);
+        CLASH_FIGHT = b.comment("How long the Fight phase lasts.").defineInRange("fightSeconds", 15.0, 1.0, 300.0);
+        CLASH_DRAIN = b.comment("Malice each caster pays a second while they hold on in Maintain. Running out loses at once.")
+                .defineInRange("drainPerSecond", 15.0, 0.0, 10_000.0);
+        CLASH_LEASH = b.comment("In Maintain, how far a caster can move from where they stood.").defineInRange("leash", 1.5, 0.0, 16.0);
+        CLASH_PROMPT_MIN = b.comment("The shortest time between two of a caster's timing prompts.").defineInRange("promptEveryMin", 1.0, 0.3, 10.0);
+        CLASH_PROMPT_MAX = b.comment("The longest time between two of a caster's timing prompts.").defineInRange("promptEveryMax", 2.0, 0.3, 10.0);
+        CLASH_PROMPT_LEAD_MS = b.comment("How long a prompt shows before its beat, in ms.").defineInRange("promptLeadMs", 900, 100, 5000);
+        CLASH_PROMPT_WINDOW_MS = b.comment("The window round a prompt's beat that counts as a hit, in ms (half before it, half after), judged",
+                "by sub-tick timing.").defineInRange("promptWindowMs", 500, 50, 2000);
+        CLASH_PUSH_PER_HIT = b.comment("A hit pushes the bar this far toward the other side (all the way is 1).").defineInRange("pushPerHit", 0.2, 0.0, 1.0);
+        CLASH_PUSH_PER_MISS = b.comment("A miss (the wrong key, too early, too late or not at all) pushes the bar back this far.")
+                .defineInRange("pushPerMiss", 0.1, 0.0, 1.0);
+        CLASH_CRACK_PER_MISS = b.comment("A miss also cracks your own barrier: this share of its strength. A barrier that runs out breaks and",
+                "loses the clash.").defineInRange("crackPerMiss", 0.1, 0.0, 1.0);
+        CLASH_INCOMPLETE_HANDICAP = b.comment("An Incomplete Dominion against a full one pushes this much less (0.3: 30% less).")
+                .defineInRange("incompleteHandicap", 0.3, 0.0, 0.95);
+        CLASH_TIE_MARGIN = b.comment("In the Fight phase, scores this close (a share of the higher) are a tie: both barriers break.")
+                .defineInRange("tieMargin", 0.1, 0.0, 1.0);
+        CLASH_EXHAUSTED_BURNOUT = b.comment("Burnout on both casters after a tie, instead of their Dominions' own.")
+                .defineInRange("exhaustedBurnout", 45.0, 0.0, 3600.0);
         b.pop();
         b.pop();
     }

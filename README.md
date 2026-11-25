@@ -58,7 +58,8 @@ own), and the hostile spirits that will share the mod's name, are still to come.
 - **Background Tasks:** keep Flow or Reverse Malice Technique running without a bar slot, weaker than on the bar.
 - **Incomplete Dominion:** expand your inner space with Malice alone: a barrier rises round you and traps everyone inside with you,
   and while it stands your technique costs less, cools down faster and hits harder. Learned from your Grade and your highest
-  Refinement; it takes half of a Dominion Meter that fills as you fight players.
+  Refinement; it takes half of a Dominion Meter that fills as you fight players. Open one over another and they clash: hold on
+  and win a tug of war on timing, or fight it out.
 
 **Also**
 - **Eyewear:** a Blindfold and Sunglasses, worn in their own Curios slot.

@@ -203,15 +203,23 @@ public final class Dominions {
                 d.spec.hooks().tickInside(d.context());
                 if (d.tickCount - d.closedAt() >= d.duration()) end(d, EndReason.EXPIRED);
             }
-            case CLASH -> {} // the clash runs it (DESIGN §3.35)
+            case CLASH -> {} // its clash runs it (Clashes, DESIGN §3.35)
         }
     }
 
     /** The barrier closes: whatever is alive inside is trapped. */
     public static void close(DominionEntity d) {
+        close(d, 0, true);
+    }
+
+    /**
+     * Closes it, as if it had already been closed for {@code usedTicks} (a clash's winner closing again keeps the time it had used), and
+     * runs its {@code onOpen} only if {@code firstTime}.
+     */
+    static void close(DominionEntity d, int usedTicks, boolean firstTime) {
         ServerLevel level = (ServerLevel) d.level();
         d.setState(DominionEntity.State.OPEN);
-        d.markClosed();
+        d.markClosed(usedTicks);
         d.trapped.clear();
         ServerPlayer caster = caster(d);
         for (LivingEntity e : level.getEntitiesOfClass(LivingEntity.class, box(d, 1), e -> constrained(e) && d.contains(DominionEntity.middle(e)))) {
@@ -223,7 +231,7 @@ public final class Dominions {
             if (inside && p != caster) InsightHooks.caughtInDominion(p, d.spec.ability());
         }
         moment(d, DominionNet.Moment.CLOSED, d.centre(), 0f);
-        d.spec.hooks().onOpen(d.context());
+        if (firstTime) d.spec.hooks().onOpen(d.context());
     }
 
     /** Whoever is on the wrong side of a closed barrier (a teleport, a swap that wasn't stopped) is put back on their own. */
@@ -423,11 +431,13 @@ public final class Dominions {
         if (d.barrierLeft <= 0) end(d, EndReason.BROKEN);
     }
 
-    /** Takes strength off directly (a clash's missed prompt cracks it), with no hit drawn. */
+    /** Takes a share of its strength off directly (a clash's missed prompt cracks it), heard as a hit at its top. Run out, it breaks. */
     public static void crack(DominionEntity d, double share) {
-        if (d.ended || d.spec == null) return;
+        if (d.ended || d.spec == null || share <= 0) return;
         d.barrierLeft -= share * d.spec.barrierStrength();
         d.setBarrierShare((float) (d.barrierLeft / d.spec.barrierStrength()));
+        moment(d, DominionNet.Moment.HIT, d.centre().add(0, d.radius(), 0), (float) (share * d.spec.barrierStrength()));
+        if (d.barrierLeft <= 1.0e-9) end(d, EndReason.BROKEN);
     }
 
     /** A hit across a closed barrier lands on it instead (and so does any harm done from one side to the other). */

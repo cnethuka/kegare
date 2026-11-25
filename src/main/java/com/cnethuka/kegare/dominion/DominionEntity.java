@@ -177,8 +177,9 @@ public class DominionEntity extends Entity {
         return entityData.get(DATA_CLOSED_AT);
     }
 
-    void markClosed() {
-        entityData.set(DATA_CLOSED_AT, tickCount);
+    /** It closes now, as if it had been closed {@code usedTicks} already. */
+    void markClosed(int usedTicks) {
+        entityData.set(DATA_CLOSED_AT, tickCount - Math.max(0, usedTicks));
     }
 
     public int duration() {

@@ -641,6 +641,9 @@ public final class KegareLanguageProvider extends LanguageProvider {
         advancement("a_green_light", "A Green Light", "Unlock Reverse Malice Technique");
         advancement("its_been_a_while", "It's been a while, huh?", "Use Reverse Malice Technique on the brink of death");
         advancement("bush_camper", "Bush Camper", "Steal another person's kill");
+        advancement("pushback", "Pushback", "Win a " + DOMINION + " clash before it comes to a fight");
+        advancement("fight_me", "Fight Me", "Win a " + DOMINION + " clash in the fight");
+        advancement("mutual_destruction", "Mutual Destruction", "Clash " + DOMINION + "s to a draw: both break");
         advancement("somethings_missing", "Something's Missing", "Read someone and find nothing there");
         advancement("are_they_high", "Are They High?", "Explain Reverse Malice Technique to the person you're fighting");
         advancement("always_on", "Always On", "Heal enough with Reverse Malice Technique that it keeps going on its own");
@@ -1016,6 +1019,20 @@ public final class KegareLanguageProvider extends LanguageProvider {
                 + " Insight lowers the Refinement needed.");
         add("unlock.kegare.incomplete_dominion", "Incomplete " + DOMINION);
         add("gui.kegare.six_eyes.read.dominion", "Holding open %s");
+        add("message.kegare.dominion.clash.crowded", "Too many " + DOMINION + "s are in the way.");
+        add("message.kegare.dominion.clash.full", "Two " + DOMINION + "s are already clashing here.");
+        add("message.kegare.dominion.clash.holding", "You're holding your " + DOMINION + ".");
+        add("hud.kegare.dominion.clash.grip", "Hold %s");
+        add("hud.kegare.dominion.clash.maintain", "Hold on %ss");
+        add("hud.kegare.dominion.clash.fight", "Fight %ss");
+        add("hud.kegare.dominion.clash.score", "You %s · Them %s");
+        add("hud.kegare.dominion.clash.won", "Clash won");
+        add("hud.kegare.dominion.clash.lost", "Clash lost");
+        add("hud.kegare.dominion.clash.tie", "Both broke");
+        add("hud.kegare.dominion.clash.hit", "Hit");
+        add("hud.kegare.dominion.clash.miss", "Miss");
+        add("hud.kegare.dominion.clash.let_go", "Let go!");
+        add("hud.kegare.dominion.clash.nowhere", "Its key isn't on your bar");
         add("commands.kegare.help.debug.dominion.unlock", "Give a player the Incomplete " + DOMINION + ", whatever it takes.");
         add("commands.kegare.help.debug.dominion.lock", "Take the Incomplete " + DOMINION + " away from a player (they learn it again once "
                 + "they next meet what it takes).");
