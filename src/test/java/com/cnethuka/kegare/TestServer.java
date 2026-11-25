@@ -124,6 +124,7 @@ public final class TestServer {
      * makes only the preset's levels, so it's made here, the same way: its own dimension type, a void.
      */
     private static void ensureInnerSpace(MinecraftServer server) {
+        com.cnethuka.kegare.dominion.InnerSpaces.layOutFrom(Long.parseLong(System.getenv().getOrDefault("KEGARE_INNER_SEED", "1")));
         var key = com.cnethuka.kegare.dominion.InnerSpaces.LEVEL;
         if (server.getLevel(key) != null) return;
         try {

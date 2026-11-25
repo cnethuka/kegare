@@ -29,6 +29,9 @@ public final class InnerSpace implements DominionInterior {
     /** How far past its radius the floor reaches, so nobody sees its edge. */
     static final int FLOOR_MARGIN = 3;
 
+    /** Tests: lay every inner space out from this seed (and its slot), so they're the same every run. Null: at random. */
+    @Nullable static Long seed;
+
     final int slot;
     final ServerLevel level;
     final BlockPos centre;
@@ -57,7 +60,7 @@ public final class InnerSpace implements DominionInterior {
         this.outerLevel = outerLevel;
         this.outerCentre = outerCentre;
         this.outerRadius = outerRadius;
-        this.random = RandomSource.create();
+        this.random = seed == null ? RandomSource.create() : RandomSource.create(seed + slot);
     }
 
     // ---------------------------------------------------------------------------------------------- DominionInterior

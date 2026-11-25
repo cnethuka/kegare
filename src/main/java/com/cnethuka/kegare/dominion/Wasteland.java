@@ -121,9 +121,10 @@ final class Wasteland {
                 }
             }
         }
+        // Its sky is a dome: nothing stands within reach of it, at any height (the top of each block counted).
         out.keySet().removeIf(p -> {
-            double dx = p.getX() + 0.5 - (middle.getX() + 0.5), dz = p.getZ() + 0.5 - (middle.getZ() + 0.5);
-            return dx * dx + dz * dz > reach * reach;
+            double dx = p.getX() + 0.5 - (middle.getX() + 0.5), dz = p.getZ() + 0.5 - (middle.getZ() + 0.5), dy = p.getY() + 1 - floorY;
+            return dx * dx + dz * dz + dy * dy > reach * reach;
         });
         return out;
     }

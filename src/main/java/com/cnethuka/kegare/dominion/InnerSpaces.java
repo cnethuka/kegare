@@ -359,6 +359,11 @@ public final class InnerSpaces {
         else if (!isInnerSpace(p.level())) p.removeData(DominionRegistry.INNER_RETURN);
     }
 
+    /** Tests: lay every inner space out from this seed, the same every run. */
+    public static void layOutFrom(long seed) {
+        InnerSpace.seed = seed;
+    }
+
     /** Every plot open now (tests). */
     static List<InnerSpace> open() {
         return List.copyOf(OPEN);

@@ -122,7 +122,8 @@ class InnerSpaceTest {
                         if (y == c.getY() - 1) ground.add(state.getBlock());
                         if (y >= c.getY()) {
                             standing++;
-                            assertTrue(Math.sqrt(dx * dx + dz * dz) <= space.radius - 1, "nothing stands right under its sky: " + pos);
+                            double h = y + 1 - c.getY();
+                            assertTrue(Math.sqrt(dx * dx + dz * dz + h * h) <= space.radius - 1, "nothing stands right under its sky: " + pos);
                             if (state.is(Blocks.STONE_BRICKS) || state.is(Blocks.CRACKED_STONE_BRICKS)) ruin = pos;
                         }
                     }
