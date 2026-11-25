@@ -176,7 +176,8 @@ class IncompleteDominionTest {
                 DominionTest.closed(d);
                 assertTrue(Dominions.trapping(other).isPresent(), "setup: the other is inside");
                 assertTrue(Dominions.sureHitTargets(d).isEmpty(), "it finds nobody: no sure-hit");
-                assertEquals(DominionConfig.ticks(DominionConfig.INCOMPLETE_DURATION), d.duration(), "shorter than a full one");
+                assertEquals(DominionMastery.durationTicks(p, false, DominionConfig.ticks(DominionConfig.INCOMPLETE_DURATION)), d.duration(),
+                        "its own duration, scaled by its caster's mastery");
 
                 DominionTest.step(d, d.duration());
                 assertTrue(d.isRemoved(), "its time runs out");

@@ -82,7 +82,7 @@ public final class IncompleteDominions {
 
     public static DominionSpec spec(ServerPlayer caster) {
         return new DominionSpec(DominionIds.INCOMPLETE, false, DominionConfig.INCOMPLETE_RADIUS.get(), DominionConfig.INCOMPLETE_INNER_RADIUS.get(),
-                DominionConfig.ticks(DominionConfig.INCOMPLETE_DURATION),
+                DominionMastery.durationTicks(caster, false, DominionConfig.ticks(DominionConfig.INCOMPLETE_DURATION)),
                 DominionConfig.INCOMPLETE_BARRIER.get(), DominionConfig.ticks(DominionConfig.INCOMPLETE_BURNOUT), DominionConfig.INCOMPLETE_METER_SHARE.get(),
                 WASTELAND, false, HOOKS);
     }

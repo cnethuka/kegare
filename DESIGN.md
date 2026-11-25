@@ -1990,8 +1990,9 @@ counting unloaded puppets, lowering the config.
 
 ### 3.21 Progression (package `progression`)
 What a player builds up over time: **Grade**, **Assessment**, **Refinement** and **Insight**, plus a registry for what they
-unlock. **None of it changes damage, costs, cooldowns or Malice capacity.** One deliberate exception: Reverse Malice Technique heals faster with
-Grade and Peak Refinement (its output, §3.17), because in canon reverse healing rides on the user's output. Every number is in `[progression]` of
+unlock. **None of it changes damage, costs, cooldowns or Malice capacity.** Two deliberate exceptions: Reverse Malice Technique heals faster with
+Grade and Peak Refinement (its output, §3.17), because in canon reverse healing rides on the user's output; and a Dominion holds longer
+before it breaks with Grade and Refinement (§3.35), because the more a sorcerer has mastered, the longer their barrier holds. Every number is in `[progression]` of
 `kegare-server.toml`. The server decides everything; the client only displays synced values.
 
 | | Belongs to | On reroll | On death | Seen by |
@@ -3550,8 +3551,21 @@ combat. A Severed player's never fills. It's private to its owner (`DominionNet.
 HUD with the melee cues (§3.6): "Dominion 73" with a bar, a mark at half way, gold when full, only while they have a Dominion to open
 with it.
 
-**Ending:** when its time is up, when it breaks, when its caster dies, logs out or changes dimension (being taken into its own inner
-space doesn't count), by command, or in a clash. Everyone inside is let out (above). Its caster burns out (§3.25): `dominionBurnout` (60 s) for a full Dominion, kept equal to the brain meter's
+**How long it holds** (`DominionMastery`, numbers in `[dominion.mastery]`): until it breaks on its own, after its `durationSeconds`
+scaled by how far its caster has come. **A deliberate exception to §3.21's rule that progression only unlocks things,** like Reverse Malice
+Technique's output: the more a sorcerer has mastered, the longer their barrier holds.
+- **Mastery,** 0 to 1: their Grade (0 at Grade 4 to 1 at Special Grade, evenly up the ladder) and their Refinement (0 to the top level),
+  weighed by `gradeWeight` (0.5: half each). A full Dominion counts its technique's own Refinement (it's that technique's ultimate, so a
+  reroll starts it over); an Incomplete Dominion counts Peak Refinement (it belongs to the player, and Peak is what it's learned from).
+- **The share** of `durationSeconds` it holds for runs from `leastShare` (0.6) at none of it to `mostShare` (1.5) at all of it. An
+  Incomplete Dominion: 12 s at Grade 4 with no Refinement, about 20 s where it's learned (Semi-Grade 2, Peak 6), 30 s at Special Grade and
+  the top Refinement. A full Dominion: 18 s to 45 s. An addon's `durationTicks` is its base, scaled the same way. It's set as it opens and
+  doesn't change while it stands.
+- **When it's up, it breaks:** its cracks race over it and it shatters white with its breaking sound, as if broken (Moments, below). For
+  `onClose` it's still its time running out (`broken` is false), and its caster burns out as usual.
+
+**Ending:** when its time is up (it breaks, above), when it's broken, when its caster dies, logs out or changes dimension (being taken
+into its own inner space doesn't count), by command, or in a clash. Everyone inside is let out (above). Its caster burns out (§3.25): `dominionBurnout` (60 s) for a full Dominion, kept equal to the brain meter's
 `dominionBurnoutAssumed` so the repair math holds (§3.17). Logging out or leaving the dimension still burns them out; dying doesn't
 (death clears Burnout).
 
@@ -3606,7 +3620,8 @@ Full, Reduced and Vanilla, where Reduced and Vanilla make half the ink, dust and
 - **Moments:** opening plays `dominion.open` (a low drone swelling as the barrier spreads, air rushing up through it, and a heavy soft
   seal a second in, as it closes) for everyone near; a hit on the barrier a glass knock, its cracks and a spray of white sparks where
   it landed; breaking plays `dominion.break` (one huge crack, the shell falling apart in lower and lower pieces, a rumble) with the
-  white shatter; ending on its own a beacon powering down. Its name crosses the screen of everyone it closes on.
+  white shatter, and so does its time running out (it's held as long as its caster could hold it, and gives way); ending any other way
+  (a command, its caster gone) a beacon powering down. Its name crosses the screen of everyone it closes on.
 - **A clash, seen by everyone:** both shells half there and flickering, a bright jittering seam (two crossed strips, so it reads
   from any side) round the circle where they meet, with sparks and grit flying off it, and `dominion.clash` where it began (two low
   tones beating against each other, grit scraping between them, a hard knock).
@@ -3661,7 +3676,8 @@ in `[dominion.incomplete]`): the inner space expanded with Malice alone, with no
 - **Slotted** on the bar like any shared ability (a number key), never on V: the ultimate stays the technique's.
 - **Opening** takes `meterShare` (half) of the Dominion Meter and `cost` (150) Malice, then `cooldownSeconds` (30) from the cast;
   refused, with nothing paid, for the reasons any Dominion is (above). Its barrier is smaller, weaker and shorter
-  than a full one's: `radius` 10, `barrierStrength` 10 (a quarter of a full one's), `durationSeconds` 20. It finds
+  than a full one's: `radius` 10, `barrierStrength` 10 (a quarter of a full one's), `durationSeconds` 20 (12 to 30 s by its caster's
+  mastery, above). It finds
   nobody: no sure-hit. Afterwards its caster burns out for `incompleteBurnout` (15 s), broken or not.
 - **The look:** the same for everyone who opens one, with no Malice color: a grey wasteland (grey cracked ground, an ash sky, ruins
   and dust) inside a pitch-black, smooth shell that cracks white where it's hit (`IncompleteDominions.WASTELAND`).
@@ -3697,11 +3713,15 @@ broken by hand with the right tool or by a blast, which still breaks what it rea
 item dropped inside back near the shell; the world under it never touched; a plot cleared of what was left in it before it's used again;
 nothing opening in an inner space but a clash over its sky; opening over a sealed one from outside refused with nothing paid; a player
 left inside sent back as they log in; a stray put in one no Dominion holds sent back; its caster taken in without ending it),
-`DominionMeterTest` (filling from damage dealt and taken, capped at 100, draining only out of combat, saved), `IncompleteDominionTest`
+`DominionMeterTest` (filling from damage dealt and taken, capped at 100, draining only out of combat, saved), `DominionMasteryTest`
+(mastery from Grade and Refinement, half each, never past the top; the share from least to most; an Incomplete Dominion holding the
+least at Grade 4, about its base where it's learned, the most at Special Grade and the top Refinement, a reroll taking none of it away,
+and the barrier holding that long; a full Dominion's, an addon's own duration scaled the same way, on its technique's own Refinement;
+its time running out breaking it, a command or its caster gone ending it quietly), `IncompleteDominionTest`
 (shared and in the Malice tab; learned from the Grade and the Peak Refinement, on the bar, kept through a reroll, a Grade short never;
 Dominion Insight lowering the Refinement, rounding down, half at most; never a Severed player's, not even from an admin; a short meter
 refused with nothing paid, half the meter and its Malice taken through the real cast, the smaller radius, the wasteland and the
-pitch-black, uncracked shell, its name in a Six Eyes read, no sure-hit, the shorter duration, the short Burnout, refused while burnt
+pitch-black, uncracked shell, its name in a Six Eyes read, no sure-hit, its own duration scaled by its caster's mastery, the short Burnout, refused while burnt
 out; breaking at its own strength; the cheaper casts, faster cooldowns and harder hits for its caster alone, only while it stands, gone
 when it ends), `ClashTest` (opening in another's inner space starts a clash at its sky, both half-formed, nobody let out, Insight paid, a
 third side refused from outside and from inside with nothing paid; not holding on in the Grip loses, the loser breaking and burning out,

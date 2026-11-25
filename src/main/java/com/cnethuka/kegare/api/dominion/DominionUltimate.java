@@ -37,6 +37,10 @@ public abstract class DominionUltimate extends BaseAbility {
         return DominionConfig.FULL_RADIUS.get();
     }
 
+    /**
+     * How long it holds once closed before it breaks, before Kegare scales it by its caster's mastery (their Grade and their technique's
+     * Refinement: from {@code dominion.mastery.leastShare} of this to {@code mostShare} of it).
+     */
     public int durationTicks(ServerPlayer caster) {
         return DominionConfig.ticks(DominionConfig.FULL_DURATION);
     }

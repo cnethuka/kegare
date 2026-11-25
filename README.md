@@ -58,7 +58,8 @@ own), and the hostile spirits that will share the mod's name, are still to come.
 - **Background Tasks:** keep Flow or Reverse Malice Technique running without a bar slot, weaker than on the bar.
 - **Incomplete Dominion:** expand your inner space with Malice alone: a pitch-black barrier spreads out from you and everyone inside is
   taken into your inner space, a grey wasteland of real blocks, while the world outside is left untouched. While it stands your
-  technique costs less, cools down faster and hits harder; it cracks white where it's hit, and shatters. Learned from your Grade and your highest
+  technique costs less, cools down faster and hits harder; it cracks white where it's hit, and shatters, on its own once it's held as long
+  as you can hold it (longer the higher your Grade and Refinement). Learned from your Grade and your highest
   Refinement; it takes half of a Dominion Meter that fills as you fight players. Open one over another and they clash: hold on
   and win a tug of war on timing, or fight it out.
 

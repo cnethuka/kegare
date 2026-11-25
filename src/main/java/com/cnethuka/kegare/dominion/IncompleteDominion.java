@@ -53,8 +53,8 @@ public final class IncompleteDominion extends BaseAbility {
     @Override
     public Object[] descriptionArgs() {
         return new Object[] {ConfigText.percent(DominionConfig.INCOMPLETE_METER_SHARE), ConfigText.number(DominionConfig.INCOMPLETE_RADIUS),
-                ConfigText.number(DominionConfig.INCOMPLETE_DURATION), ConfigText.percent(DominionConfig.INCOMPLETE_TECHNIQUE_COST),
+                ConfigText.times(DominionConfig.INCOMPLETE_DURATION, DominionConfig.MASTERY_LEAST_SHARE), ConfigText.percent(DominionConfig.INCOMPLETE_TECHNIQUE_COST),
                 Math.round((DominionConfig.INCOMPLETE_COOLDOWN_RATE.get() - 1.0) * 100) + "%", ConfigText.percent(DominionConfig.INCOMPLETE_OUTPUT),
-                ConfigText.number(DominionConfig.INCOMPLETE_BURNOUT)};
+                ConfigText.number(DominionConfig.INCOMPLETE_BURNOUT), ConfigText.times(DominionConfig.INCOMPLETE_DURATION, DominionConfig.MASTERY_MOST_SHARE)};
     }
 }

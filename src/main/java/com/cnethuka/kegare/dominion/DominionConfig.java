@@ -24,6 +24,10 @@ public final class DominionConfig {
     public static ModConfigSpec.DoubleValue INCOMPLETE_RADIUS;
     public static ModConfigSpec.IntValue INCOMPLETE_INNER_RADIUS;
     public static ModConfigSpec.DoubleValue INCOMPLETE_DURATION;
+    // How long one holds, by its caster's mastery
+    public static ModConfigSpec.DoubleValue MASTERY_GRADE_WEIGHT;
+    public static ModConfigSpec.DoubleValue MASTERY_LEAST_SHARE;
+    public static ModConfigSpec.DoubleValue MASTERY_MOST_SHARE;
     public static ModConfigSpec.DoubleValue INCOMPLETE_BARRIER;
     public static ModConfigSpec.DoubleValue INCOMPLETE_BURNOUT;
     public static ModConfigSpec.DoubleValue INCOMPLETE_METER_SHARE;
@@ -78,11 +82,23 @@ public final class DominionConfig {
         PROJECTILE_STRENGTH = b.comment("A plain projectile stopped by the barrier hits it this hard (the Impact System's strength). A cast's",
                 "projectile adds the Malice behind its cast, by the Impact System's rule.").defineInRange("projectileStrength", 0.3, 0.0, 100.0);
 
+        b.comment("How long a Dominion holds before it breaks rides on its caster's mastery: their Grade (Grade 4 to Special Grade) and",
+                "their Refinement (0 to the top level; a full Dominion's technique's own, an Incomplete one's Peak Refinement), weighed",
+                "together into 0 to 1. Its durationSeconds is scaled from leastShare at none of it to mostShare at all of it.").push("mastery");
+        MASTERY_GRADE_WEIGHT = b.comment("How much of mastery is Grade; the rest is Refinement (0.5: half each).")
+                .defineInRange("gradeWeight", 0.5, 0.0, 1.0);
+        MASTERY_LEAST_SHARE = b.comment("The share of its durationSeconds a Dominion holds for with no mastery (Grade 4, Refinement 0).")
+                .defineInRange("leastShare", 0.6, 0.05, 10.0);
+        MASTERY_MOST_SHARE = b.comment("The share with all of it (Special Grade, the top Refinement).")
+                .defineInRange("mostShare", 1.5, 0.05, 10.0);
+        b.pop();
+
         b.comment("A full Dominion: a technique's ultimate (none ships yet).").push("full");
         FULL_RADIUS = b.comment("The barrier's radius.").defineInRange("radius", 16.0, 2.0, 64.0);
         FULL_INNER_RADIUS = b.comment("How far its inner space reaches (bigger than its shell: the inside is bigger than it looks).")
                 .defineInRange("innerRadius", 32, 4, 96);
-        FULL_DURATION = b.comment("How long it stays open once closed.").defineInRange("durationSeconds", 30.0, 1.0, 600.0);
+        FULL_DURATION = b.comment("How long it holds once closed before it breaks, before its caster's mastery scales it (mastery).")
+                .defineInRange("durationSeconds", 30.0, 1.0, 600.0);
         FULL_BARRIER = b.comment("Barrier strength: the Impact System's strength of the hits it takes before it breaks.")
                 .defineInRange("barrierStrength", 40.0, 0.1, 100_000.0);
         DOMINION_BURNOUT = b.comment("Burnout on the caster afterwards. Keep it equal to",
@@ -96,7 +112,8 @@ public final class DominionConfig {
         INCOMPLETE_RADIUS = b.comment("The barrier's radius.").defineInRange("radius", 10.0, 2.0, 64.0);
         INCOMPLETE_INNER_RADIUS = b.comment("How far its inner space reaches (bigger than its shell: the inside is bigger than it looks).")
                 .defineInRange("innerRadius", 24, 4, 96);
-        INCOMPLETE_DURATION = b.comment("How long it stays open once closed.").defineInRange("durationSeconds", 20.0, 1.0, 600.0);
+        INCOMPLETE_DURATION = b.comment("How long it holds once closed before it breaks, before its caster's mastery scales it (mastery).")
+                .defineInRange("durationSeconds", 20.0, 1.0, 600.0);
         INCOMPLETE_BARRIER = b.comment("Barrier strength: the Impact System's strength of the hits it takes before it breaks.")
                 .defineInRange("barrierStrength", 10.0, 0.1, 100_000.0);
         INCOMPLETE_BURNOUT = b.comment("Burnout on the caster afterwards.").defineInRange("incompleteBurnout", 15.0, 0.0, 3600.0);

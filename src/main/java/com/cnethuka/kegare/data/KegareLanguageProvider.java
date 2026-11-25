@@ -1015,7 +1015,8 @@ public final class KegareLanguageProvider extends LanguageProvider {
         add("ability.kegare.incomplete_dominion", "Incomplete " + DOMINION);
         add("ability.kegare.incomplete_dominion.desc", "Expand your inner space with " + MALICE + " alone, without your technique in it. It "
                 + "takes %1$s of your " + DOMINION + " Meter and its cost in " + MALICE + ": a barrier rises %2$s blocks round you and closes a "
-                + "moment later on whoever is still inside, trapping them with you for %3$s seconds. It's weaker than a full " + DOMINION + " and "
+                + "moment later on whoever is still inside, trapping them with you until it breaks: %3$s to %8$s seconds, longer the higher your "
+                + "Grade and Peak Refinement. It's weaker than a full " + DOMINION + " and "
                 + "finds nobody, but while it stands your innate technique costs %4$s less, its cooldowns run %5$s faster and its hits do %6$s "
                 + "more. Afterwards you're burnt out for %7$s seconds.");
         add("ability.kegare.incomplete_dominion.unlock", "Reach %1$s, and Refinement %2$s on any technique. " + DOMINION

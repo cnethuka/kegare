@@ -20,7 +20,15 @@ public final class ConfigText {
 
     /** Whole numbers without a point ("3"), anything else to one place ("1.5"). */
     public static String number(ModConfigSpec.ConfigValue<? extends Number> value) {
-        double v = value(value);
+        return number(value(value));
+    }
+
+    /** A config value times another ("12" for 20 x 0.6), formatted as {@link #number}. */
+    public static String times(ModConfigSpec.ConfigValue<? extends Number> value, ModConfigSpec.ConfigValue<? extends Number> by) {
+        return number(value(value) * value(by));
+    }
+
+    private static String number(double v) {
         if (Math.abs(v - Math.rint(v)) < 1.0e-9) return Long.toString(Math.round(v));
         return String.format(Locale.ROOT, "%.1f", v);
     }

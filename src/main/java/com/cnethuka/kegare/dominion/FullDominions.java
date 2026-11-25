@@ -12,7 +12,7 @@ public final class FullDominions {
     private FullDominions() {}
 
     public static DominionSpec spec(DominionUltimate ultimate, ServerPlayer caster) {
-        return new DominionSpec(ultimate.id(), true, ultimate.radius(caster), ultimate.innerRadius(caster), ultimate.durationTicks(caster), ultimate.barrierStrength(caster),
+        return new DominionSpec(ultimate.id(), true, ultimate.radius(caster), ultimate.innerRadius(caster), DominionMastery.durationTicks(caster, true, ultimate.durationTicks(caster)), ultimate.barrierStrength(caster),
                 DominionConfig.ticks(DominionConfig.DOMINION_BURNOUT), 1.0, ultimate.look(), ultimate.sureHit(), new DominionSpec.Hooks() {
                     @Override public void onOpen(DominionContext ctx) { ultimate.onOpen(ctx); }
                     @Override public void tickInside(DominionContext ctx) { ultimate.tickInside(ctx); }

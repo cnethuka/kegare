@@ -420,11 +420,18 @@ public final class Dominions {
         if (caster != null && d.spec != null && reason != EndReason.CLASH_TIE && reason != EndReason.SERVER_STOP && caster.isAlive()) {
             Burnout.apply(caster, d.spec.burnoutTicks());
         }
-        moment(d, reason == EndReason.BROKEN || reason == EndReason.CLASH_LOST || reason == EndReason.CLASH_TIE ? DominionNet.Moment.BROKE
-                : DominionNet.Moment.ENDED, d.centre(), 0f);
+        moment(d, momentFor(reason), d.centre(), 0f);
         letOut(d, reason == EndReason.SERVER_STOP);
         d.trapped.clear();
         d.discard();
+    }
+
+    /**
+     * How everyone sees it end: broken (its cracks racing over it, the white shatter, its breaking sound) when it's broken, lost in a
+     * clash, or held as long as its caster could hold it; going out quietly when it's ended any other way (a command, its caster gone).
+     */
+    static int momentFor(EndReason reason) {
+        return reason.broken() || reason == EndReason.EXPIRED ? DominionNet.Moment.BROKE : DominionNet.Moment.ENDED;
     }
 
     /** Its inner space ends: everyone in it sees it go, then they're let out (at once as the server stops). */

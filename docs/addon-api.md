@@ -333,7 +333,7 @@ world under the shell is never touched. Opening over another Dominion starts a c
 | `innerRadius` | How far its inner space reaches (`[dominion.full]`'s `innerRadius`, 32, unless you override it): bigger than its shell, as the inside is bigger than it looks. |
 | `furnish(interior)` | Places your own blocks in its inner space as it's built, after Kegare has cleared it and laid its floor (and ruins). `DominionInterior` gives its level, its `centre` (the middle of its floor), its `radius`, a `random` and `place(pos, state)`, which ignores anything outside its dome. It's rebuilt from scratch every time, so place freely. |
 | `sureHit()` | Whether its technique can't miss inside (default true). `ctx.sureHitTargets()` lists who it reaches: everything in its inner space but its caster and what they own, never a Severed player, and nothing while it's contested. |
-| `radius`, `durationTicks`, `barrierStrength` | Its barrier, per caster. Kegare's `[dominion.full]` numbers unless you override them. |
+| `radius`, `durationTicks`, `barrierStrength` | Its barrier, per caster. Kegare's `[dominion.full]` numbers unless you override them. `durationTicks` is its base: Kegare scales it by the caster's mastery (their Grade and your technique's Refinement, from `[dominion.mastery]`'s `leastShare` to `mostShare` of it), and when it's up the barrier breaks. |
 | `onOpen`, `tickInside`, `onClose(ctx, broken)` | When it closes, every tick it's open, and as it ends. |
 | `canOpen(ctx)` | Your own reasons to refuse it before anything is paid. |
 
