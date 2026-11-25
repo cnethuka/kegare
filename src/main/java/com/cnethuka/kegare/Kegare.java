@@ -55,6 +55,7 @@ public final class Kegare {
         com.cnethuka.kegare.dominion.DominionRegistry.register(modBus); // Dominions (DESIGN §3.35)
         com.cnethuka.kegare.dominion.Dominions.init();
         com.cnethuka.kegare.dominion.DominionMeter.init();
+        com.cnethuka.kegare.dominion.IncompleteDominions.init();
         // Addons' changes to innate techniques (DESIGN §3.34): their damage tweaks, and the join check that a client has the same ones.
         net.neoforged.neoforge.common.NeoForge.EVENT_BUS.addListener(net.neoforged.bus.api.EventPriority.HIGH,
                 com.cnethuka.kegare.innatetechnique.change.TechniqueViews::onIncomingDamage);

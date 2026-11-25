@@ -349,7 +349,8 @@ All timestamps use **level game time**. They persist across restarts and are ide
 - **Sub-tick timing** (§3.29): `TimingNet.Stamp` (C→S, an input stamped with the client's clock, sent at the key press), `TimingNet.Ping`
   (S→C) and `TimingNet.Pong` (C→S, the client's clock), all handled on the network thread. Reinforced Fists' look is `FistsPayload` (§3.28).
 - Dominions (§3.35) add `DominionNet.Meter` (S→C, to its owner), `DominionNet.Trapped` (S→C: which side of a barrier you're on) and
-  `DominionNet.Moment` (S→C: a barrier opening, closing, hit, breaking or ending).
+  `DominionNet.Moment` (S→C: a barrier opening, closing, hit, breaking or ending), and the Six Eyes' full detail
+  (`ReadsPayload.Body`) carries the Dominion a player holds open.
 - Network version `31` (`KegareNetwork.VERSION`). Bump it whenever a payload's format changes; mismatched clients are refused.
 
 ### 3.6 HUD
@@ -432,6 +433,8 @@ Every command reads `/kegare <system> <action> [player] [value]`.
 | `/kegare debug rmt fatigue <player> <amount>` | Set how much injuries take off a player's Reverse Malice Technique output (0 to 1, §3.17) |
 | `/kegare debug brain <player> <value>` | Set the brain meter, 0 to 100 (§3.17) |
 | `/kegare debug dominion meter <player> <value>` | Set the Dominion Meter, 0 to 100 (§3.35) |
+| `/kegare debug dominion unlock <player>` | Give a player the Incomplete Dominion, whatever it takes (never a Severed player) (§3.35) |
+| `/kegare debug dominion lock <player>` | Take it away (off the bar, ended if open); they learn it again once they next meet what it takes (§3.35) |
 | `/kegare debug dominion end <player>` | End a player's Dominion now; they burn out as usual (§3.35) |
 | `/kegare debug sixeyes strain <player> <value>` | Set a player's Strain, 0 to 100 (§3.32) |
 | `/kegare debug sixeyes attunement <player> <value>` | Set a player's Attunement (§3.32) |
@@ -797,7 +800,7 @@ closing it or disconnecting at any point changes nothing.
   - Holding anything in either hand (a sword, an axe, a shield, a block), every animation leaves the hands to vanilla.
     PAL's model draws what's held at its real size right by the camera, usually edge on, so a cast would swing a dark blade or
     a shield's back through the view. Only an empty-handed cast shows its gesture.
-  - `keepVanillaHands`: never shown. Melee's animations, RMT's channel and its healing another, every Rime cast, Swap's Mimic, Puppet Manipulation's way back
+  - `keepVanillaHands`: never shown. Melee's animations, RMT's channel and its healing another, the Incomplete Dominion's cast, every Rime cast, Swap's Mimic, Puppet Manipulation's way back
     and Zip, Time Manipulation's Standstill and Stasis Field, and Severed's winded and wall crash.
   - `handsWhileLevel`: shown only while you look no more than 15° down. The arms hang from the body, which doesn't tip
     with the view, so hands at chest height sit at the bottom corners of a level view and come up into its middle as you
@@ -1175,6 +1178,7 @@ Package `com.cnethuka.kegare.innate_technique.rime`. **Rarity: RARE.** All numbe
   | Closing Line (Blur, Severed, §3.27) | a planted push-off (`closing_line_launch`), a crack and a burst of dust and grit off the ground where they left, and a heavy launch everyone nearby hears (`severed.closing_line_launch`, loud); on arrival a skid (`closing_line_arrive`, `severed.closing_line_arrive`) and dust where they stop |
   | Black Spark (Reinforced Fists, §3.28; not a special, but it gets a tell all the same) | black and red pixel art bursting from the point of contact for one sharp moment: jagged stair-stepped bolts, black with red edges, crackling outward round a black starburst, and black and red pixels thrown out and falling; the same for everyone, at every effects setting (Vanilla: black and red dust and crit sparks), and a sharp crack (`black_spark.crack`) everyone near hears |
   | Reverse Malice Technique, on another (RMT, §3.17) | the healer's right hand reaching out onto the one healed (they must be touching), with RMT's white flames burning on it, seen by everyone for as long as it lasts (the pose at every effects setting; the flames Photon, white dust at Vanilla), and a soft chime as it starts (an amethyst chime, high) |
+  | Incomplete Dominion (shared, §3.35; not a special, but it gets a tell all the same) | its own cast (`incomplete_dominion_cast`: the hands pressed together before the chest, then flung apart and down as the head comes up), the grey cracked barrier rising out of the ground round the caster for its whole second, and a low swelling hum everyone near hears as it starts; everyone it closes on sees "Incomplete Dominion" across the screen |
 
   Standstill isn't a special, but it has a tell of its own all the same: the raised watch (`standstill_cast`), the sharp click
   (`time_manipulation.stop`) and a one-frame inverted flash (at Full) for everyone inside, then the gray.
@@ -1220,8 +1224,8 @@ separate bar is filled from any of them.
   more as the mod grows. One tab each on the Sorcerer screen's left edge, in this order, each with its own icon (hard
   pixels) and its short name as the tooltip:
   - **Innate**: the current innate technique's abilities (the ultimate in its own V tile). A reroll replaces them.
-  - **Malice**: energy techniques any Malice user can learn and keeps through rerolls: Flow and Reverse Malice Technique
-    (its special still heals others).
+  - **Malice**: energy techniques any Malice user can learn and keeps through rerolls: Flow, Reverse Malice Technique
+    (its special still heals others) and the Incomplete Dominion (§3.35).
   - **Melee**: close-combat abilities: Reinforced Fists.
   Every ability belongs to exactly one, declared by the ability itself (`Ability.category()`, `INNATE` unless it says otherwise), so a
   new ability just names its own. Malice and Melee abilities live in the shared-abilities
@@ -2188,9 +2192,12 @@ For shared and system unlocks, separate from a technique's own abilities.
   config number counts as it stands). `.grantedOnly()` makes meeting it only eligibility: `evaluate` never gives it; the system that teaches it calls
   `Unlocks.grant(player, id)` (and `Unlocks.eligible` asks whether it could). `Unlocks.revoke` is for admins.
 - **Real entries:** `kegare:rmt_heal_others` (Reverse Malice Technique on another, §3.17): RMT unlocked and Output Insight at
-  `healOthersInsight`, granted only by its moment. Each Background Task registers one too (§3.31). Dominions and later unlocks plug in when built.
+  `healOthersInsight`, granted only by its moment. Each Background Task registers one too (§3.31). `kegare:incomplete_dominion` (the
+  Incomplete Dominion, §3.35): a Grade and a Peak Refinement, the Refinement lowered by Dominion Insight. It asks for Peak Refinement,
+  not the current technique's, so its condition reads it and lowers it by the same rule (`Unlocks.refinementNeeded(player, refinement,
+  category)`); kept once earned. Later unlocks plug in when built.
   Tests use a test-only entry for the rest.
-- **Severed players and Dominions.** Dominions aren't for Severed players.
+- **Severed players and Dominions.** Dominions aren't for Severed players: the Incomplete Dominion's entry never passes for one.
 
 #### What the player sees
 - **Sorcerer screen:** the Progress view, and greyed locked tiles and cards (§3.12).
@@ -2470,7 +2477,7 @@ A shared state that locks a player's innate technique for a while after somethin
 Dominions (§3.35).
 - **While it lasts**, every ability, special and the ultimate of their innate technique fizzles with "Burnt out (Xs).", nothing paid
   and no cooldown (`CastResult.BURNT_OUT`, checked right after the Refinement lock). Shared abilities (Reverse Malice Technique)
-  still cast.
+  still cast, but no Dominion opens, the Incomplete Dominion included (§3.35: the same words, from its refusal).
 - **Anything of the technique still running stops** on the next tick after it burns out, with "<ability> stopped: burnt out.": a
   toggle switches off (its own cooldown starts, and it pays no more upkeep), a charge is cancelled (nothing paid, no cooldown), a
   channel ends (its cooldown starts). So Accelerate left on through a Standstill switches off when the Burnout lands. Shared abilities
@@ -3187,7 +3194,8 @@ for the eye" (§3.30).
 - **Full detail:** the one body nearest the crosshair, player or mob (the server works it out from where the bearer looks: the nearest
   within 20 degrees and 96 blocks, walls don't matter) gets a panel beside it. First, for a player: what they're
   charging or channelling and how far ("Charging Glacial Lance 60%", "Channelling Reverse Malice Technique 3.2s"), their active toggles,
-  "Background RMT running" when it is (everyone sees its shimmer; the eyes read what it is, §3.31) and their cooldowns, or "Idle". Then
+  "Background RMT running" when it is (everyone sees its shimmer; the eyes read what it is, §3.31), the Dominion they hold open by its
+  name ("Holding open Incomplete Dominion", §3.35) and their cooldowns, or "Idle". Then
   the body:
   - health and max health, and absorption when there is some;
   - armour, armour toughness and knockback resistance;
@@ -3456,8 +3464,9 @@ any Malice user can learn it (below). Numbers in `[dominion]` of `kegare-server.
 **Opening** (`Dominions.open`, from its ability's cast; `Dominions.refusal` says why not, and a refusal costs nothing):
 - It takes the Dominion Meter (a full Dominion all of it, an Incomplete one half) plus its ability's Malice, paid by the cast.
 - Refused for a Severed player ("With no Malice, there's no inner space to expand."), on a full brain meter
-  (`BrainDamage.refusesDominion`, §3.17: "Your brain can't take another Dominion."), with one already open ("Your Dominion is already
-  open."), or short of meter ("Your Dominion Meter isn't full.", "Your Dominion Meter needs 50.").
+  (`BrainDamage.refusesDominion`, §3.17: "Your brain can't take another Dominion."), while burnt out ("Burnt out (Xs).": Burnout is
+  what stands between one Dominion and the next, §3.17), with one already open ("Your Dominion is already open."), or short of meter
+  ("Your Dominion Meter isn't full.", "Your Dominion Meter needs 50.").
 - The barrier rises round where its caster stands for `openSeconds` (1): anyone can still get out. Then it closes, and everything alive
   inside (the middle of its box within the sphere) is trapped until it ends or breaks: players, mobs and the caster, never a spectator
   or a boss.
@@ -3508,6 +3517,30 @@ find. Empty while it's rising or contested, or for a Dominion with no sure-hit. 
 **Insight:** caught inside someone else's Dominion as it closes pays `caught_in_dominion` (§3.21), once per kind of Dominion (the ability
 that opened it: a technique's ultimate, or the Incomplete Dominion).
 
+**The Incomplete Dominion** (`kegare:incomplete_dominion`, shared, Malice, INSTANT; `IncompleteDominion`, `IncompleteDominions`; numbers
+in `[dominion.incomplete]`): the inner space expanded with Malice alone, with nothing of a technique in it.
+- **Learned** through the unlock framework (§3.21, entry `kegare:incomplete_dominion`): `unlock.grade` (Semi-Grade 2) and
+  `unlock.peakRefinement` (6), the highest Refinement reached on any technique, lowered by Dominion Insight by the framework's rule
+  (10 Insight a level, half at most: 30 Insight makes it 3). Peak Refinement, not the current technique's, so a reroll never takes it,
+  and it's kept once learned whatever happens to the Grade later. Learning it unlocks the shared ability, shows the toast and puts it in
+  the first empty slot of the bar. A Severed player never has it, not even from an admin. Its card says what it takes ("Reach
+  Semi-Grade 2, and Refinement 6 on any technique. Dominion Insight lowers the Refinement needed.").
+- **Slotted** on the bar like any shared ability (a number key), never on V: the ultimate stays the technique's.
+- **Opening** takes `meterShare` (half) of the Dominion Meter and `cost` (150) Malice, then `cooldownSeconds` (30) from the cast;
+  refused, with nothing paid, for the reasons any Dominion is (above). Its barrier is smaller, weaker and shorter
+  than a full one's: `radius` 10, `barrierStrength` 10 (a quarter of a full one's), `durationSeconds` 20, its shell cracked. It finds
+  nobody: no sure-hit. Afterwards its caster burns out for `incompleteBurnout` (15 s), broken or not.
+- **The look:** the same for everyone who opens one, with no Malice color: a grey wasteland (grey cracked ground, an ash sky, ruins
+  and dust) inside a dark cracked shell (`IncompleteDominions.WASTELAND`).
+- **For its caster, while it stands** (closed; not while it rises, nor in a clash), and for nobody else inside: their innate
+  technique's casts, releases and upkeep cost `boosts.techniqueCost` (25%) less (through `CastManager.addAbilityCostModifier`, like
+  Flow's, so a cast still counts as its full price for Landings and the Impact System), its cooldowns run at `boosts.cooldownRate`
+  (×1.5, a `CooldownRates` rate on the technique's own cooldowns) and its hits do `boosts.output` (15%) more, before the target's
+  defences (a hit is the technique's when `MeleeHits` says so and it isn't a shared ability's or a Second Impact). Shared abilities pay
+  and cool down as usual.
+- **Its tell** is in §3.15's table: its own cast, the barrier rising, a sound everyone near hears, and its name across the screen of
+  everyone it closes on. The Six Eyes read it on its caster: "Holding open Incomplete Dominion" (§3.32).
+
 **Addon API** (`api.dominion`, experimental, §3.34): a technique's ultimate is a full Dominion by being a `DominionUltimate`: its
 `look()`, `sureHit()`, its barrier's `radius`, `durationTicks` and `barrierStrength` (the `[dominion.full]` numbers unless overridden),
 `onOpen`, `tickInside` and `onClose`, and `canOpen` for its own refusals. Kegare does the rest: the meter and brain checks, the barrier,
@@ -3520,7 +3553,12 @@ out, the caster's not, a swing at the shell; breaking, ending at once and burnin
 breaks or the server forgets it as a crash would, and its marker never saved; its time running out, its hooks, dominionBurnout equal to
 the brain's assumption, logging out, leaving the dimension and dying ending it; the sure-hit finding someone inside but never its caster
 or a Severed player; caught_in_dominion paid once), `DominionMeterTest` (filling from damage dealt and taken, capped at 100, draining only
-out of combat, saved).
+out of combat, saved), `IncompleteDominionTest` (shared and in the Malice tab; learned from the Grade and the Peak Refinement, on the bar,
+kept through a reroll, a Grade short never; Dominion Insight lowering the Refinement, rounding down, half at most; never a Severed player's,
+not even from an admin; a short meter refused with nothing paid, half the meter and its Malice taken through the real cast, the smaller
+radius, the wasteland and the cracked shell, its name in a Six Eyes read, no sure-hit, the shorter duration, the short Burnout, refused
+while burnt out; breaking at its own strength; the cheaper casts, faster cooldowns and harder hits for its caster alone, only while it
+stands, gone when it ends).
 
 ---
 

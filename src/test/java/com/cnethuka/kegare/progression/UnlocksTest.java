@@ -90,10 +90,11 @@ class UnlocksTest {
     }
 
     @Test
-    void theRealEntriesAreHealingOthersAndTheBackgroundTasks() {
-        // Healing others (DESIGN §3.17) and the Background Tasks (§3.31); later unlocks plug in when they're built.
+    void theRealEntriesAreHealingOthersTheBackgroundTasksAndTheIncompleteDominion() {
+        // Healing others (DESIGN §3.17), the Background Tasks (§3.31) and the Incomplete Dominion (§3.35); later unlocks plug in when they're built.
         assertEquals(java.util.Set.of(com.cnethuka.kegare.rmt.RmtIds.ON_ANOTHER_UNLOCK, com.cnethuka.kegare.backgroundtask.BackgroundRmt.ID,
-                        com.cnethuka.kegare.backgroundtask.BackgroundFlow.ID, com.cnethuka.kegare.backgroundtask.SteadyOutput.ID),
+                        com.cnethuka.kegare.backgroundtask.BackgroundFlow.ID, com.cnethuka.kegare.backgroundtask.SteadyOutput.ID,
+                        com.cnethuka.kegare.dominion.DominionIds.INCOMPLETE),
                 java.util.Set.copyOf(Unlocks.registered()));
     }
 

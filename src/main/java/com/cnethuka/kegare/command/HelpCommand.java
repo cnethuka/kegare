@@ -108,6 +108,8 @@ final class HelpCommand {
             entry("debug shared unlock <player> <ability>", "commands.kegare.help.debug.shared.unlock"),
             entry("debug shared lock <player> <ability>", "commands.kegare.help.debug.shared.lock"),
             entry("debug dominion meter <player> <value>", "commands.kegare.help.debug.dominion.meter"),
+            entry("debug dominion unlock <player>", "commands.kegare.help.debug.dominion.unlock"),
+            entry("debug dominion lock <player>", "commands.kegare.help.debug.dominion.lock"),
             entry("debug dominion end <player>", "commands.kegare.help.debug.dominion.end"),
             entry("debug brain <player> <value>", "commands.kegare.help.debug.brain"),
             entry("debug sixeyes strain <player> <value>", "commands.kegare.help.debug.sixeyes.strain"),

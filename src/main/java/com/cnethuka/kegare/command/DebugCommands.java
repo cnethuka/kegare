@@ -101,7 +101,7 @@ final class DebugCommands {
                                         return 1;
                                     });
                                 })))))
-                // Dominions (DESIGN §3.35): the Dominion Meter, and ending one now.
+                // Dominions (DESIGN §3.35): the Dominion Meter, the Incomplete Dominion given or taken, and ending one now.
                 .then(Commands.literal("dominion")
                         .then(Commands.literal("meter").then(player()
                                 .then(Commands.argument("value", com.mojang.brigadier.arguments.DoubleArgumentType.doubleArg(0.0, 100.0)).executes(c -> {
@@ -112,6 +112,23 @@ final class DebugCommands {
                                         return 1;
                                     });
                                 }))))
+                        .then(Commands.literal("unlock").then(player().executes(c -> forEachPlayer(c, (source, player) -> {
+                            if (com.cnethuka.kegare.malice.MaliceService.isSevered(player)) {
+                                return fail(source, "commands.kegare.debug.shared.severed", player.getDisplayName(), com.cnethuka.kegare.dominion.IncompleteDominions.ABILITY.displayName());
+                            }
+                            if (!com.cnethuka.kegare.dominion.IncompleteDominions.teach(player)) {
+                                return fail(source, "commands.kegare.debug.shared.already", player.getDisplayName(), com.cnethuka.kegare.dominion.IncompleteDominions.ABILITY.displayName());
+                            }
+                            say(source, "commands.kegare.debug.shared.unlocked", com.cnethuka.kegare.dominion.IncompleteDominions.ABILITY.displayName(), player.getDisplayName());
+                            return 1;
+                        }))))
+                        .then(Commands.literal("lock").then(player().executes(c -> forEachPlayer(c, (source, player) -> {
+                            if (!com.cnethuka.kegare.dominion.IncompleteDominions.forget(player)) {
+                                return fail(source, "commands.kegare.debug.shared.not_unlocked", player.getDisplayName(), com.cnethuka.kegare.dominion.IncompleteDominions.ABILITY.displayName());
+                            }
+                            say(source, "commands.kegare.debug.shared.locked", com.cnethuka.kegare.dominion.IncompleteDominions.ABILITY.displayName(), player.getDisplayName());
+                            return 1;
+                        }))))
                         .then(Commands.literal("end").then(player().executes(c -> forEachPlayer(c, (source, player) -> {
                             var open = com.cnethuka.kegare.dominion.Dominions.ownedBy(player);
                             if (open.isEmpty()) {

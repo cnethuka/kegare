@@ -166,6 +166,7 @@ public final class Reads {
         List<ReadsPayload.Cooldown> cooldowns = new ArrayList<>();
         List<ResourceLocation> toggles = new ArrayList<>();
         boolean backgroundRmt = false;
+        Optional<ResourceLocation> dominion = Optional.empty();
         if (body instanceof ServerPlayer other) {
             cast = CastManager.currentCast(other).map(active -> cast(other, active));
             long now = other.level().getGameTime();
@@ -175,8 +176,9 @@ public final class Reads {
             }
             for (CastState.Active t : CastManager.activeToggles(other)) toggles.add(t.ability().id());
             backgroundRmt = com.cnethuka.kegare.backgroundtask.BackgroundRmt.running(other);
+            dominion = com.cnethuka.kegare.dominion.Dominions.ownedBy(other).map(com.cnethuka.kegare.dominion.DominionEntity::abilityId);
         }
-        return new ReadsPayload.Focus(body.getId(), Optional.of(new ReadsPayload.Body(cast, cooldowns, toggles, backgroundRmt, vitals(body), effects(body), status(body))));
+        return new ReadsPayload.Focus(body.getId(), Optional.of(new ReadsPayload.Body(cast, cooldowns, toggles, backgroundRmt, dominion, vitals(body), effects(body), status(body))));
     }
 
     /** Health, defence, offence and movement as they are right now, with every modifier counted. */

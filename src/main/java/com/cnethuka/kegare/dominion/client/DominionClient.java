@@ -57,6 +57,8 @@ public final class DominionClient {
         StatusLayer.addExtra(DominionClient::renderMeter);
         modBus.addListener((EntityRenderersEvent.RegisterRenderers e) -> e.registerEntityRenderer(DominionRegistry.DOMINION.get(), DominionRenderer::new));
         modBus.addListener((RegisterGuiLayersEvent e) -> e.registerAbove(VanillaGuiLayers.CROSSHAIR, TITLE_LAYER, DominionClient::renderTitle));
+        // The Incomplete Dominion's sweep would cross the middle of your own first-person view: there it's vanilla's hands.
+        com.cnethuka.kegare.client.visual.PlayerAnimations.keepVanillaHands(com.cnethuka.kegare.dominion.DominionIds.FIRST_PERSON_VANILLA);
         NeoForge.EVENT_BUS.addListener(DominionClient::onFog);
         NeoForge.EVENT_BUS.addListener(DominionClient::onFogColor);
         NeoForge.EVENT_BUS.addListener((ClientPlayerNetworkEvent.LoggingOut e) -> {

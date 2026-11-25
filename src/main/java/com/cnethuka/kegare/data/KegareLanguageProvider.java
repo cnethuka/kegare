@@ -1006,6 +1006,19 @@ public final class KegareLanguageProvider extends LanguageProvider {
         add("message.kegare.dominion.meter_full", "Your Dominion Meter isn't full.");
         add("message.kegare.dominion.meter_part", "Your Dominion Meter needs %s.");
         add("message.kegare.dominion.in_the_way", "Another Dominion is in the way.");
+        add("ability.kegare.incomplete_dominion", "Incomplete " + DOMINION);
+        add("ability.kegare.incomplete_dominion.desc", "Expand your inner space with " + MALICE + " alone, without your technique in it. It "
+                + "takes %1$s of your " + DOMINION + " Meter and its cost in " + MALICE + ": a barrier rises %2$s blocks round you and closes a "
+                + "moment later on whoever is still inside, trapping them with you for %3$s seconds. It's weaker than a full " + DOMINION + " and "
+                + "finds nobody, but while it stands your innate technique costs %4$s less, its cooldowns run %5$s faster and its hits do %6$s "
+                + "more. Afterwards you're burnt out for %7$s seconds.");
+        add("ability.kegare.incomplete_dominion.unlock", "Reach %1$s, and Refinement %2$s on any technique. " + DOMINION
+                + " Insight lowers the Refinement needed.");
+        add("unlock.kegare.incomplete_dominion", "Incomplete " + DOMINION);
+        add("gui.kegare.six_eyes.read.dominion", "Holding open %s");
+        add("commands.kegare.help.debug.dominion.unlock", "Give a player the Incomplete " + DOMINION + ", whatever it takes.");
+        add("commands.kegare.help.debug.dominion.lock", "Take the Incomplete " + DOMINION + " away from a player (they learn it again once "
+                + "they next meet what it takes).");
         add("commands.kegare.debug.sixeyes.strain", "%s's Strain is now %s.");
         add("commands.kegare.debug.sixeyes.attunement", "%s's Attunement is now %s.");
         add("commands.kegare.help.debug.sixeyes.attunement", "Set a player's Attunement.");

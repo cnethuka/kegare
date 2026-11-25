@@ -18,8 +18,8 @@ Black Flash).
 > **Made with generative AI.** Kegare's code and assets were made with generative AI, from a human designer's specifications.
 > See [How Kegare was made](#how-kegare-was-made).
 
-**Status:** early development (version 0.2.4-alpha). Expect changes, balance passes and the odd bug. Dominions, and the hostile spirits
-that will share the mod's name, are still to come.
+**Status:** early development (version 0.2.4-alpha). Expect changes, balance passes and the odd bug. Full Dominions (a technique's
+own), and the hostile spirits that will share the mod's name, are still to come.
 
 ## Features
 
@@ -56,6 +56,9 @@ that will share the mod's name, are still to come.
   changes no damage, costs or capacity.
 - **Reverse Malice Technique:** a shared healing ability, found through a green orb only its finder can see.
 - **Background Tasks:** keep Flow or Reverse Malice Technique running without a bar slot, weaker than on the bar.
+- **Incomplete Dominion:** expand your inner space with Malice alone: a barrier rises round you and traps everyone inside with you,
+  and while it stands your technique costs less, cools down faster and hits harder. Learned from your Grade and your highest
+  Refinement; it takes half of a Dominion Meter that fills as you fight players.
 
 **Also**
 - **Eyewear:** a Blindfold and Sunglasses, worn in their own Curios slot.

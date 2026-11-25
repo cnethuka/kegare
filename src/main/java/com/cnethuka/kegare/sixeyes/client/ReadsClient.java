@@ -297,7 +297,7 @@ public final class ReadsClient {
         return glance == null ? null : glance.energy().flatMap(ReadsPayload.Energy::technique).map(KegareRegistries.INNATE_TECHNIQUE::get).orElse(null);
     }
 
-    /** What they're doing: charging or channelling and how far, their toggles, Background RMT, their cooldowns, or "Idle". */
+    /** What they're doing: charging or channelling and how far, their toggles, Background RMT, a Dominion they hold open, their cooldowns, or "Idle". */
     private static List<Component> activity(ReadsPayload.Body body, @Nullable InnateTechnique technique) {
         List<Component> out = new ArrayList<>();
         body.cast().ifPresent(cast -> {
@@ -318,6 +318,9 @@ public final class ReadsClient {
         if (body.backgroundRmt()) {
             out.add(Component.translatable("gui.kegare.six_eyes.read.running", Component.translatable("background_task.kegare.background_rmt")));
         }
+        // The Dominion they hold open, by its name: "Holding open Incomplete Dominion".
+        body.dominion().ifPresent(id -> out.add(Component.translatable("gui.kegare.six_eyes.read.dominion",
+                Component.translatable(net.minecraft.Util.makeDescriptionId("ability", id)))));
         if (!body.cooldowns().isEmpty()) {
             List<Component> parts = new ArrayList<>();
             for (ReadsPayload.Cooldown c : body.cooldowns()) {

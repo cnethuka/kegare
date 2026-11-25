@@ -1,5 +1,6 @@
 package com.cnethuka.kegare.dominion;
 
+import com.cnethuka.kegare.progression.Grade;
 import net.neoforged.neoforge.common.ModConfigSpec;
 
 /** Dominions' numbers (DESIGN §3.35): {@code [dominion]} of {@code kegare-server.toml}. Times in seconds, distances in blocks. */
@@ -17,6 +18,19 @@ public final class DominionConfig {
     public static ModConfigSpec.DoubleValue MELEE_REACH;
     public static ModConfigSpec.DoubleValue BLAST_REACH;
     public static ModConfigSpec.DoubleValue PROJECTILE_STRENGTH;
+    // The Incomplete Dominion
+    public static ModConfigSpec.DoubleValue INCOMPLETE_RADIUS;
+    public static ModConfigSpec.DoubleValue INCOMPLETE_DURATION;
+    public static ModConfigSpec.DoubleValue INCOMPLETE_BARRIER;
+    public static ModConfigSpec.DoubleValue INCOMPLETE_BURNOUT;
+    public static ModConfigSpec.DoubleValue INCOMPLETE_METER_SHARE;
+    public static ModConfigSpec.DoubleValue INCOMPLETE_COST;
+    public static ModConfigSpec.DoubleValue INCOMPLETE_COOLDOWN;
+    public static ModConfigSpec.DoubleValue INCOMPLETE_TECHNIQUE_COST;
+    public static ModConfigSpec.DoubleValue INCOMPLETE_COOLDOWN_RATE;
+    public static ModConfigSpec.DoubleValue INCOMPLETE_OUTPUT;
+    public static ModConfigSpec.EnumValue<Grade> INCOMPLETE_UNLOCK_GRADE;
+    public static ModConfigSpec.IntValue INCOMPLETE_UNLOCK_REFINEMENT;
 
     private DominionConfig() {}
 
@@ -51,6 +65,34 @@ public final class DominionConfig {
         DOMINION_BURNOUT = b.comment("Burnout on the caster afterwards. Keep it equal to",
                 "reverse_malice_technique.repair.dominionBurnoutAssumed, so the brain's repair math stays right.")
                 .defineInRange("dominionBurnout", 60.0, 0.0, 3600.0);
+        b.pop();
+
+        b.comment("The Incomplete Dominion: the inner space expanded with Malice alone, without a technique in it. Any Malice user can learn",
+                "it; it's weaker than a full Dominion and finds nobody (no sure-hit), but inside it its caster's technique runs better.")
+                .push("incomplete");
+        INCOMPLETE_RADIUS = b.comment("The barrier's radius.").defineInRange("radius", 10.0, 2.0, 64.0);
+        INCOMPLETE_DURATION = b.comment("How long it stays open once closed.").defineInRange("durationSeconds", 20.0, 1.0, 600.0);
+        INCOMPLETE_BARRIER = b.comment("Barrier strength: the Impact System's strength of the hits it takes before it breaks.")
+                .defineInRange("barrierStrength", 10.0, 0.1, 100_000.0);
+        INCOMPLETE_BURNOUT = b.comment("Burnout on the caster afterwards.").defineInRange("incompleteBurnout", 15.0, 0.0, 3600.0);
+        INCOMPLETE_METER_SHARE = b.comment("The share of a full Dominion Meter it takes to open (0.5: half).")
+                .defineInRange("meterShare", 0.5, 0.0, 1.0);
+        INCOMPLETE_COST = b.comment("Malice it costs to open, on top of the meter.").defineInRange("cost", 150.0, 0.0, 100_000.0);
+        INCOMPLETE_COOLDOWN = b.comment("Its cooldown, from the moment it's cast.").defineInRange("cooldownSeconds", 30.0, 0.0, 3600.0);
+        b.comment("What it does for its caster while it stands (not while it rises, nor in a clash), and for nobody else.").push("boosts");
+        INCOMPLETE_TECHNIQUE_COST = b.comment("Their innate technique's casts, releases and upkeep cost this much less (0.25: a quarter).")
+                .defineInRange("techniqueCost", 0.25, 0.0, 0.9);
+        INCOMPLETE_COOLDOWN_RATE = b.comment("Their innate technique's cooldowns run this fast (1.5: half again as fast).")
+                .defineInRange("cooldownRate", 1.5, 1.0, 4.0);
+        INCOMPLETE_OUTPUT = b.comment("Their innate technique's hits do this much more (0.15: 15%), before the target's defences.")
+                .defineInRange("output", 0.15, 0.0, 2.0);
+        b.pop();
+        b.comment("What it takes to learn it. Kept once learned, through rerolls. Severed players never can.").push("unlock");
+        INCOMPLETE_UNLOCK_GRADE = b.comment("The Grade needed.").defineEnum("grade", Grade.SEMI_GRADE_2);
+        INCOMPLETE_UNLOCK_REFINEMENT = b.comment("The Peak Refinement needed (the highest Refinement reached on any technique). Dominion",
+                "Insight lowers it, by progression.unlocks' refinementLoweredPerInsight, at most refinementLoweredCap of it.")
+                .defineInRange("peakRefinement", 6, 0, 10);
+        b.pop();
         b.pop();
         b.pop();
     }

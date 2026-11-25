@@ -133,6 +133,10 @@ public final class Dominions {
     public static Optional<Component> refusal(ServerPlayer caster, DominionSpec spec) {
         if (MaliceService.isSevered(caster)) return Optional.of(Component.translatable("message.kegare.dominion.severed"));
         if (BrainDamage.refusesDominion(caster)) return Optional.of(Component.translatable("message.kegare.dominion.brain_full"));
+        // Burnout is what stands between one Dominion and the next (DESIGN §3.17), an Incomplete one too, though it isn't the technique's.
+        if (Burnout.isBurntOut(caster)) {
+            return Optional.of(Component.translatable("message.kegare.cast.burnt_out", com.cnethuka.kegare.innatetechnique.CastManager.seconds(Burnout.remaining(caster))));
+        }
         if (ownedBy(caster).isPresent()) return Optional.of(Component.translatable("message.kegare.dominion.already_open"));
         double needed = spec.meterNeeded() * DominionData.MAX;
         if (DominionMeter.get(caster) + 1.0e-6 < needed) {

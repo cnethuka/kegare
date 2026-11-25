@@ -31,8 +31,14 @@ public record UnlockRequirements(Grade grade, int refinement, Map<InsightCategor
      * @param cap the most it can take off, as a share of the requirement
      */
     public int effectiveRefinement(ToIntFunction<InsightCategory> insightOf, double rate, double cap) {
-        if (loweredBy == null || refinement <= 0) return refinement;
-        int lowered = (int) Math.floor(Math.min(insightOf.applyAsInt(loweredBy) * rate, refinement * cap));
+        if (loweredBy == null) return refinement;
+        return lowered(refinement, insightOf.applyAsInt(loweredBy), rate, cap);
+    }
+
+    /** A Refinement requirement once {@code insight} points of its matching Insight have lowered it, by the rule above. */
+    public static int lowered(int refinement, int insight, double rate, double cap) {
+        if (refinement <= 0) return refinement;
+        int lowered = (int) Math.floor(Math.min(insight * rate, refinement * cap));
         return Math.max(1, refinement - Math.max(0, lowered));
     }
 

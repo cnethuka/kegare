@@ -285,7 +285,7 @@ class KegareCommandTest {
             assertEquals(trait, op(server, "kegare trait status nope").error());
             assertEquals("Unknown Grade: nope. Use /kegare grade list to see them all.", op(server, "kegare grade set typo nope").error());
             assertEquals("Unknown Insight category: nope. Choose from dominion, ward, output.", op(server, "kegare insight add typo nope 1").error());
-            assertEquals("Unknown shared ability: nope. Choose from reverse_malice_technique, steady.", op(server, "kegare debug shared unlock typo nope").error());
+            assertEquals("Unknown shared ability: nope. Choose from reverse_malice_technique, incomplete_dominion, steady.", op(server, "kegare debug shared unlock typo nope").error());
             assertEquals("Unknown system: nope. Use /kegare help to see them all.", op(server, "kegare help nope").error());
 
             assertTrue(op(server, "kegare innate list").ok().text().contains("rime"), "and the list it points at has what to type");
