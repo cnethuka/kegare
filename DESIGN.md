@@ -3691,7 +3691,10 @@ in `[dominion.incomplete]`): the inner space expanded with Malice alone, with no
   Flow's, so a cast still counts as its full price for Landings and the Impact System), its cooldowns run at `boosts.cooldownRate`
   (×1.5, a `CooldownRates` rate on the technique's own cooldowns) and its hits do `boosts.output` (15%) more, before the target's
   defences (a hit is the technique's when `MeleeHits` says so and it isn't a shared ability's or a Second Impact). Shared abilities pay
-  and cool down as usual.
+  and cool down as usual. They also have vanilla **Strength I, Resistance I and Speed I** (`boosts.strength`, `resistance`, `speed`: the
+  level, 0 for I, -1 for none; `DominionEffects`), shown as usual. Each lasts until its time is up, so the icons count down with it and
+  a crash can't leave one behind for longer, and goes the moment it stops standing (it ends, or a clash begins). Only what it put on is
+  taken off: a potion of their own stays.
 - **Its tell** is in §3.15's table: its own cast, the barrier rising, a sound everyone near hears, and its name across the screen of
   everyone it closes on. The Six Eyes read it on its caster: "Holding open Incomplete Dominion" (§3.32).
 
@@ -3728,7 +3731,7 @@ Dominion Insight lowering the Refinement, rounding down, half at most; never a S
 refused with nothing paid, half the meter and its Malice taken through the real cast, the smaller radius, the wasteland and the
 pitch-black, uncracked shell, its name in a Six Eyes read, no sure-hit, its own duration scaled by its caster's mastery, the short Burnout, refused while burnt
 out; breaking at its own strength; the cheaper casts, faster cooldowns and harder hits for its caster alone, only while it stands, gone
-when it ends), `ClashTest` (opening in another's inner space starts a clash at its sky, both half-formed, nobody let out, Insight paid, a
+when it ends; Strength, Resistance and Speed on its caster alone, as long as it has left, taken off as it ends, a potion of their own kept), `ClashTest` (opening in another's inner space starts a clash at its sky, both half-formed, nobody let out, Insight paid, a
 third side refused from outside and from inside with nothing paid; not holding on in the Grip loses, the loser breaking and burning out,
 the one opened inside taking the inner space over, its shell where the loser's was and everyone still inside, Pushback; the Maintain's
 drain, a miss pushing back and cracking, too late a miss, hits pushing all the way, the winner closing again with the time it had used

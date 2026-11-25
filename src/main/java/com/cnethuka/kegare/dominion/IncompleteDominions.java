@@ -57,9 +57,18 @@ public final class IncompleteDominions {
         }
 
         @Override
+        public void tickInside(DominionContext ctx) {
+            ServerPlayer caster = ctx.caster();
+            if (caster != null) Dominions.ownedBy(caster).filter(d -> !d.complete() && d.isClosed()).ifPresent(d -> DominionEffects.standing(caster, d));
+        }
+
+        @Override
         public void onClose(DominionContext ctx, boolean broken) {
             ServerPlayer caster = ctx.caster();
-            if (caster != null) CooldownRates.remove(caster, RATE);
+            if (caster != null) {
+                CooldownRates.remove(caster, RATE);
+                DominionEffects.takeOff(caster);
+            }
         }
     };
 
@@ -74,6 +83,7 @@ public final class IncompleteDominions {
         NeoForge.EVENT_BUS.addListener((PlayerEvent.PlayerLoggedInEvent e) -> {
             if (e.getEntity() instanceof ServerPlayer p && Unlocks.has(p, DominionIds.INCOMPLETE)) learn(p);
         });
+        DominionEffects.init();
         DominionMeter.addShownWhen(p -> SharedAbilityService.isUnlocked(p, DominionIds.INCOMPLETE));
         CastManager.addAbilityCostModifier((player, ability, amount) -> ability.category() == AbilityCategory.INNATE && boosted(player)
                 ? amount * (1.0 - DominionConfig.INCOMPLETE_TECHNIQUE_COST.get()) : amount);

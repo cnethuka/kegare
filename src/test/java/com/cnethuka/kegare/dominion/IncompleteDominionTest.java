@@ -215,6 +215,45 @@ class IncompleteDominionTest {
     }
 
     @Test
+    void itsCasterHasStrengthResistanceAndSpeedWhileItStands(MinecraftServer server) throws Exception {
+        TestServer.onServerThread(server, () -> {
+            try {
+                ServerPlayer p = DominionTest.at(server, "inc_effects", 8, 8);
+                ServerPlayer other = DominionTest.at(server, "inc_effects_other", 11, 8);
+                var STRENGTH = net.minecraft.world.effect.MobEffects.DAMAGE_BOOST;
+                var RESISTANCE = net.minecraft.world.effect.MobEffects.DAMAGE_RESISTANCE;
+                var SPEED = net.minecraft.world.effect.MobEffects.MOVEMENT_SPEED;
+                p.removeAllEffects();
+                // A Speed II potion of their own, before it opens.
+                p.addEffect(new net.minecraft.world.effect.MobEffectInstance(SPEED, 20 * 600, 1));
+                DominionMeter.set(p, 100);
+                DominionEntity d = Dominions.open(p, IncompleteDominions.spec(p), CastIntent.CAST_RELEASE);
+                assertNotNull(d);
+                DominionTest.step(d, 3);
+                assertFalse(p.hasEffect(STRENGTH), "nothing while it rises");
+                DominionTest.closed(d);
+                DominionTest.step(d, 1);
+                for (var e : java.util.List.of(STRENGTH, RESISTANCE)) {
+                    var inst = p.getEffect(e);
+                    assertNotNull(inst, e.getRegisteredName() + " while it stands");
+                    assertEquals(0, inst.getAmplifier(), "level I");
+                    int left = d.duration() - (d.tickCount - d.closedAt());
+                    assertTrue(inst.getDuration() >= left && inst.getDuration() <= left + 5, "as long as it has left (test players never count it down): " + inst.getDuration() + " vs " + left);
+                }
+                assertEquals(1, p.getEffect(SPEED).getAmplifier(), "their own stronger potion still shows");
+                assertFalse(other.hasEffect(STRENGTH) || other.hasEffect(RESISTANCE), "its caster's alone");
+
+                Dominions.end(d, Dominions.EndReason.COMMAND);
+                assertFalse(p.hasEffect(STRENGTH) || p.hasEffect(RESISTANCE), "gone as it ends");
+                assertTrue(p.hasEffect(SPEED) && p.getEffect(SPEED).getAmplifier() == 1, "a potion of their own stays");
+                p.removeAllEffects();
+            } finally {
+                DominionTest.cleanUp(server);
+            }
+        });
+    }
+
+    @Test
     void itsBoostsAreItsCastersAloneAndOnlyWhileItStands(MinecraftServer server) throws Exception {
         TestServer.onServerThread(server, () -> {
             try {

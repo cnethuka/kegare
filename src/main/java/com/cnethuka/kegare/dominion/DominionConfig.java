@@ -36,6 +36,9 @@ public final class DominionConfig {
     public static ModConfigSpec.DoubleValue INCOMPLETE_TECHNIQUE_COST;
     public static ModConfigSpec.DoubleValue INCOMPLETE_COOLDOWN_RATE;
     public static ModConfigSpec.DoubleValue INCOMPLETE_OUTPUT;
+    public static ModConfigSpec.IntValue INCOMPLETE_STRENGTH;
+    public static ModConfigSpec.IntValue INCOMPLETE_RESISTANCE;
+    public static ModConfigSpec.IntValue INCOMPLETE_SPEED;
     public static ModConfigSpec.EnumValue<Grade> INCOMPLETE_UNLOCK_GRADE;
     public static ModConfigSpec.IntValue INCOMPLETE_UNLOCK_REFINEMENT;
     // Clashes
@@ -128,6 +131,12 @@ public final class DominionConfig {
                 .defineInRange("cooldownRate", 1.5, 1.0, 4.0);
         INCOMPLETE_OUTPUT = b.comment("Their innate technique's hits do this much more (0.15: 15%), before the target's defences.")
                 .defineInRange("output", 0.15, 0.0, 2.0);
+        INCOMPLETE_STRENGTH = b.comment("Strength on them while it stands: 0 is Strength I, 1 is II; -1 for none.")
+                .defineInRange("strength", 0, -1, 4);
+        INCOMPLETE_RESISTANCE = b.comment("Resistance on them while it stands: 0 is Resistance I, 1 is II; -1 for none.")
+                .defineInRange("resistance", 0, -1, 3);
+        INCOMPLETE_SPEED = b.comment("Speed on them while it stands: 0 is Speed I, 1 is II; -1 for none.")
+                .defineInRange("speed", 0, -1, 4);
         b.pop();
         b.comment("What it takes to learn it. Kept once learned, through rerolls. Severed players never can.").push("unlock");
         INCOMPLETE_UNLOCK_GRADE = b.comment("The Grade needed.").defineEnum("grade", Grade.SEMI_GRADE_2);
