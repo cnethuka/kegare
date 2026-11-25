@@ -5,9 +5,7 @@ import com.cnethuka.kegare.api.technique.InnateTechniqueRarity;
 import com.cnethuka.kegare.innatetechnique.InnateTechniqueService;
 import net.minecraft.server.level.ServerPlayer;
 
-/**
- * Where Insight comes from. The Dominion hooks have no callers yet: Dominions call them once they're built.
- */
+/** Where Insight comes from. */
 public final class InsightHooks {
     private InsightHooks() {}
 
@@ -52,13 +50,16 @@ public final class InsightHooks {
         return pay(player, InsightSource.SURVIVED_STANDSTILL, "");
     }
 
-    /** For the future Dominions. Once per technique. */
-    public static boolean caughtInDominion(ServerPlayer player, InnateTechnique technique) {
-        return pay(player, InsightSource.CAUGHT_IN_DOMINION, technique.id().toString());
+    /**
+     * Trapped inside someone else's Dominion as it closed (DESIGN §3.35). Once per kind of Dominion: {@code dominion} is the ability that
+     * opened it (a technique's ultimate, so once per technique, or the Incomplete Dominion).
+     */
+    public static boolean caughtInDominion(ServerPlayer player, net.minecraft.resources.ResourceLocation dominion) {
+        return pay(player, InsightSource.CAUGHT_IN_DOMINION, dominion.toString());
     }
 
-    /** For the future Dominions. Once per technique. */
-    public static boolean clashedWithDominion(ServerPlayer player, InnateTechnique technique) {
-        return pay(player, InsightSource.CLASHED_WITH_DOMINION, technique.id().toString());
+    /** Took part in a Dominion clash (DESIGN §3.35), against a Dominion opened by {@code dominion}. Once per kind, as above. */
+    public static boolean clashedWithDominion(ServerPlayer player, net.minecraft.resources.ResourceLocation dominion) {
+        return pay(player, InsightSource.CLASHED_WITH_DOMINION, dominion.toString());
     }
 }

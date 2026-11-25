@@ -992,6 +992,20 @@ public final class KegareLanguageProvider extends LanguageProvider {
         add("commands.kegare.debug.shared.severed", "%s is " + SEVERED + " and can't unlock %s.");
         add("commands.kegare.debug.task.unknown", "Unknown Background Task: %s. Choose from %s.");
         add("commands.kegare.debug.brain", "%s's brain meter is now %s.");
+        add("commands.kegare.debug.dominion.meter", "%s's Dominion Meter is now %s.");
+        add("commands.kegare.debug.dominion.none", "%s has no Dominion open.");
+        add("commands.kegare.debug.dominion.ended", "Ended %s's Dominion.");
+        add("commands.kegare.help.debug.dominion.meter", "Set a player's Dominion Meter (0 to 100).");
+        add("commands.kegare.help.debug.dominion.end", "End a player's Dominion now (they burn out as usual).");
+
+        // Dominions (DESIGN §3.35)
+        add("hud.kegare.dominion.meter", "Dominion %s");
+        add("message.kegare.dominion.severed", "With no Malice, there's no inner space to expand.");
+        add("message.kegare.dominion.brain_full", "Your brain can't take another Dominion.");
+        add("message.kegare.dominion.already_open", "Your Dominion is already open.");
+        add("message.kegare.dominion.meter_full", "Your Dominion Meter isn't full.");
+        add("message.kegare.dominion.meter_part", "Your Dominion Meter needs %s.");
+        add("message.kegare.dominion.in_the_way", "Another Dominion is in the way.");
         add("commands.kegare.debug.sixeyes.strain", "%s's Strain is now %s.");
         add("commands.kegare.debug.sixeyes.attunement", "%s's Attunement is now %s.");
         add("commands.kegare.help.debug.sixeyes.attunement", "Set a player's Attunement.");

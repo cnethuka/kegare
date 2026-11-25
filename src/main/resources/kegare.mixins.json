@@ -24,7 +24,8 @@
     "MobAttackBoxInvoker",
     "AttachmentTypeAccessor",
     "PlayerDataStorageMixin",
-    "PlayerListLoadMixin"
+    "PlayerListLoadMixin",
+    "EntityCollideMixin"
   ],
   "client": [
     "client.PlayerInfoMixin",

@@ -120,6 +120,7 @@ public final class KegareServerConfig {
         com.cnethuka.kegare.timing.TimingConfig.define(b);
         com.cnethuka.kegare.sight.SightConfig.define(b);
         com.cnethuka.kegare.progression.ProgressionConfig.define(b);
+        com.cnethuka.kegare.dominion.DominionConfig.define(b);
 
 
         SPEC = b.build();

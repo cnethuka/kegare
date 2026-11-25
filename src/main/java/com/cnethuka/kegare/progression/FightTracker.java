@@ -78,9 +78,21 @@ public final class FightTracker {
         return server.overworld().getGameTime();
     }
 
+    /** Told of every hit counted between two players (after defences, capped at the victim's max health): the Dominion Meter fills from it. */
+    public interface DamageListener {
+        void onDamage(ServerPlayer attacker, ServerPlayer victim, double amount);
+    }
+
+    private static final List<DamageListener> DAMAGE_LISTENERS = new java.util.concurrent.CopyOnWriteArrayList<>();
+
+    public static void addDamageListener(DamageListener listener) {
+        DAMAGE_LISTENERS.add(listener);
+    }
+
     /** A player damaged another player. Starts their fight if there isn't one. */
     public static void damage(ServerPlayer attacker, ServerPlayer victim, double amount) {
         if (attacker == victim || amount <= 0) return;
+        for (DamageListener listener : DAMAGE_LISTENERS) listener.onDamage(attacker, victim, amount);
         Live live = open(attacker, victim);
         live.fight.damage(attacker.getUUID(), amount, now(attacker.server));
         LAST_ACTIVE.put(attacker.getUUID(), Pair.of(attacker.getUUID(), victim.getUUID()));

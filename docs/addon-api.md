@@ -283,6 +283,48 @@ Your lang, config, assets, networking and saved data. Kegare's network version n
 Kegare's **code** is MIT-licensed, but its **assets** (models, textures, sounds, player animations and effects) are All Rights Reserved:
 make your own instead of copying Kegare's into your addon. See the README's License section.
 
+## A full Dominion as an ultimate
+
+A technique's ultimate can be a **full Dominion**: its inner space expanded round its caster inside a barrier, carrying the technique
+(DESIGN §3.35). Build the ultimate on `DominionUltimate` (package `com.cnethuka.kegare.api.dominion`, **experimental**) and give it to the
+builder's `ultimate(...)`:
+
+```java
+public static final DominionUltimate STORM_DOMINION = new DominionUltimate(ResourceLocation.fromNamespaceAndPath(MOD_ID, "storm_dominion")) {
+    @Override public double cost(ServerPlayer player) { return 400; }
+
+    @Override
+    public DominionLook look() {
+        // sky inside, fog, how far you see, the shell from outside, a ground mark, ruins, dust color (-1: none), a cracked shell
+        return new DominionLook(0x2B3550, 0x2B3550, 28f, 0x101420, Optional.empty(), false, 0xA0B0D0, false);
+    }
+
+    @Override
+    public void tickInside(DominionContext ctx) {
+        if (ctx.ticksOpen() % 20 != 0) return;
+        for (LivingEntity target : ctx.sureHitTargets()) {
+            target.hurt(ctx.caster().damageSources().indirectMagic(ctx.caster(), ctx.caster()), 2f);
+        }
+    }
+};
+```
+
+Kegare does everything else: opening takes a full **Dominion Meter** (filled by damage in fights) and the ultimate's Malice, and is refused
+with nothing paid to a Severed player, on a full brain meter, with one already open, and where it can't open. The barrier rises, closes,
+traps whoever is inside (never a boss), stops projectiles, takes hits until it breaks, ends after its time, and burns its caster out.
+Opening over another Dominion starts a clash, and the caster has to keep V held through it.
+
+| Method | What it does |
+|---|---|
+| `look()` | **Required.** What its inside looks like, drawn by the clients over the real world: nothing in the world changes. |
+| `sureHit()` | Whether its technique can't miss inside (default true). `ctx.sureHitTargets()` lists who it reaches: everything trapped inside but its caster and what they own, never a Severed player, and nothing while it's contested. |
+| `radius`, `durationTicks`, `barrierStrength` | Its barrier, per caster. Kegare's `[dominion.full]` numbers unless you override them. |
+| `onOpen`, `tickInside`, `onClose(ctx, broken)` | When it closes, every tick it's open, and as it ends. |
+| `canOpen(ctx)` | Your own reasons to refuse it before anything is paid. |
+
+`KegareDominions` answers questions from anywhere on the server: a caster's open Dominion (`of`), whether something is trapped
+(`isTrapped`), and who a caster's sure-hit reaches (`sureHitTargets`).
+
 ## Uninstalling an addon
 
 Players are safe if a server removes your addon: anyone who held one of its techniques gets a free reroll on login, slots holding its

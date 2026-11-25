@@ -52,6 +52,9 @@ public final class Kegare {
         com.cnethuka.kegare.sight.DelayedSight.init(); // too fast for the eye: Blur and Accelerate seen where they were (DESIGN §3.30)
         com.cnethuka.kegare.impact.Impacts.init(); // hit-stop, shake, flashes and impact frames (DESIGN §3.23)
         com.cnethuka.kegare.battledamage.BattleDamage.init(); // big hits break the world (DESIGN §3.24)
+        com.cnethuka.kegare.dominion.DominionRegistry.register(modBus); // Dominions (DESIGN §3.35)
+        com.cnethuka.kegare.dominion.Dominions.init();
+        com.cnethuka.kegare.dominion.DominionMeter.init();
         // Addons' changes to innate techniques (DESIGN §3.34): their damage tweaks, and the join check that a client has the same ones.
         net.neoforged.neoforge.common.NeoForge.EVENT_BUS.addListener(net.neoforged.bus.api.EventPriority.HIGH,
                 com.cnethuka.kegare.innatetechnique.change.TechniqueViews::onIncomingDamage);

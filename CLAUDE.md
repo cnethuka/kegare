@@ -13,7 +13,7 @@
   §3 Systems (§3.1 Malice, §3.2 Traits, §3.3 Innate technique framework, §3.4 Rolls, §3.5 Input and networking, §3.6 HUD,
   §3.8 Commands, §3.9 Config, §3.10 Data generation and art, §3.11 Advancements, §3.12 GUIs, §3.13 Animations and VFX,
   §3.14 Rime, §3.15 Specials and the tell rule, §3.16 Loadout, §3.17-3.18 RMT, §3.19 Swap, §3.20 Puppet Manipulation,
-  §3.21 Progression, §3.22 Melee, §3.23 Impact System, §3.24 Battle damage, §3.25 Burnout, §3.26 Time Manipulation, §3.27 Severed, §3.28 Reinforced Fists and Black Spark, §3.29 Sub-tick timing, §3.30 Too fast for the eye, §3.31 Background Tasks, §3.32 Six Eyes, §3.33 Postgres storage, §3.34 Addon API), §4 Extension
+  §3.21 Progression, §3.22 Melee, §3.23 Impact System, §3.24 Battle damage, §3.25 Burnout, §3.26 Time Manipulation, §3.27 Severed, §3.28 Reinforced Fists and Black Spark, §3.29 Sub-tick timing, §3.30 Too fast for the eye, §3.31 Background Tasks, §3.32 Six Eyes, §3.33 Postgres storage, §3.34 Addon API, §3.35 Dominions), §4 Extension
   points, §5 Future. Read the section before touching a system; update it in the same commit when behaviour or visuals change.
 - `README.md`: required mods, content list, dev commands and keys.
 - `api/` (`com.cnethuka.kegare.api`): the addon API, the only public part of Kegare (DESIGN §3.34), experimental until 1.0;

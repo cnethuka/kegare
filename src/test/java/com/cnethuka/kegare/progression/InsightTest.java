@@ -99,9 +99,9 @@ class InsightTest {
             assertTrue(InsightHooks.survivedStandstill(p));
             assertFalse(InsightHooks.survivedStandstill(p));
             assertEquals(5, Insight.get(p, InsightCategory.WARD));
-            assertTrue(InsightHooks.caughtInDominion(p, rime));
-            assertTrue(InsightHooks.clashedWithDominion(p, rime));
-            assertFalse(InsightHooks.caughtInDominion(p, rime));
+            assertTrue(InsightHooks.caughtInDominion(p, rime.id()));
+            assertTrue(InsightHooks.clashedWithDominion(p, rime.id()));
+            assertFalse(InsightHooks.caughtInDominion(p, rime.id()));
             assertEquals(5 + 5, Insight.get(p, InsightCategory.DOMINION));
         });
     }

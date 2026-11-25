@@ -85,6 +85,7 @@ game never names a bearer, heir or killer of a secret holder.
 | `kegare:background_tasks` | yes | yes | three Background Task slots, each a task ID or nothing, on or off (§3.31) |
 | `kegare:brain` | yes | yes | the brain meter, 0 to 100: what repairing burnt-out techniques has cost (§3.17) |
 | `kegare:six_eyes` | yes | yes | a Six Eyes bearer's Attunement, Strain and collapse risk; wiped when the eyes go (§3.32) |
+| `kegare:dominion` | yes | yes | the Dominion Meter, 0 to 100 (§3.35) |
 | `kegare:cast_state` | no | no | runtime: active charge/channel, active toggles |
 | `kegare:sync_state` | no | no | runtime: "needs sync" flag |
 | `kegare:landing_state` | no | no | runtime: when each ability last landed on each target, who the player last traded hits with |
@@ -347,7 +348,9 @@ All timestamps use **level game time**. They persist across restarts and are ide
   see behind where it is), and vanilla's own teleport and head packets for the delayed image.
 - **Sub-tick timing** (§3.29): `TimingNet.Stamp` (C→S, an input stamped with the client's clock, sent at the key press), `TimingNet.Ping`
   (S→C) and `TimingNet.Pong` (C→S, the client's clock), all handled on the network thread. Reinforced Fists' look is `FistsPayload` (§3.28).
-- Network version `30` (`KegareNetwork.VERSION`). Bump it whenever a payload's format changes; mismatched clients are refused.
+- Dominions (§3.35) add `DominionNet.Meter` (S→C, to its owner), `DominionNet.Trapped` (S→C: which side of a barrier you're on) and
+  `DominionNet.Moment` (S→C: a barrier opening, closing, hit, breaking or ending).
+- Network version `31` (`KegareNetwork.VERSION`). Bump it whenever a payload's format changes; mismatched clients are refused.
 
 ### 3.6 HUD
 **Rule: the combat HUD does not exist until the player asks for it** (art in `textures/gui/combat/`).
@@ -381,7 +384,7 @@ All timestamps use **level game time**. They persist across restarts and are ide
   - accents along the tray and crest in the technique's Malice color.
 - The selected ability's name shows above hearts/food for 2 s after a number key selects it (`kegare:combat_name`).
 - The melee layer's cues sit under the crosshair, in and out of Technique Mode and for Severed players too, only while there's something to show: **Reinforced** (gold, a Strike is ready; never for the Severed, who have no Strike), **Dash** and **Recovering** with thin countdown bars (§3.22). Severed players' own cues follow them there: **Blur**, **Winded** and
-  **Closing Line** (the last two with countdown bars, §3.27). Black Spark's zone adds **120%** with the zone's time left (§3.28).
+  **Closing Line** (the last two with countdown bars, §3.27). Black Spark's zone adds **120%** with the zone's time left (§3.28), and the Dominion Meter its **Dominion 73** and bar, only while there's a Dominion to open with it (§3.35).
 - Severed players never get the panel (G is Blur for them, §3.27). Everything is hidden when F1 hides the GUI and in spectator
   mode. Client config `hud.enabled` turns all of it off.
 
@@ -428,6 +431,8 @@ Every command reads `/kegare <system> <action> [player] [value]`.
 | `/kegare debug spark zone <player> <seconds>` | Put them in the zone for that long (0 ends it); it starts no chain (§3.28) |
 | `/kegare debug rmt fatigue <player> <amount>` | Set how much injuries take off a player's Reverse Malice Technique output (0 to 1, §3.17) |
 | `/kegare debug brain <player> <value>` | Set the brain meter, 0 to 100 (§3.17) |
+| `/kegare debug dominion meter <player> <value>` | Set the Dominion Meter, 0 to 100 (§3.35) |
+| `/kegare debug dominion end <player>` | End a player's Dominion now; they burn out as usual (§3.35) |
 | `/kegare debug sixeyes strain <player> <value>` | Set a player's Strain, 0 to 100 (§3.32) |
 | `/kegare debug sixeyes attunement <player> <value>` | Set a player's Attunement (§3.32) |
 | `/kegare debug rmt healed <player> <amount>` | Set how much a player has healed with their own RMT; Background RMT unlocks at 500 (§3.31) |
@@ -1427,7 +1432,7 @@ negative is positive energy, which is why it heals, and why it heals with white 
   too few words, no fight, a hit over 10 s ago, the other past 16 blocks, more than 20 s between the halves, half from someone else,
   without It's been a while; the typo distances.
 - **Repairing a burnt-out technique** (`Repair`, numbers in `[reverse_malice_technique.repair]`). Canon: a technique burnt out
-  by a Domain can be repaired with reverse cursed technique, destroying and healing the part of the brain where the technique is
+  by a Dominion can be repaired with reverse cursed technique, destroying and healing the part of the brain where the technique is
   stored. It has a cost (the user's wounds go unhealed while they do it, and the brain bleeds), and the brain can stand only so
   many repairs. So, for every RMT user:
   - **Channelling RMT while burnt out (§3.25) repairs the technique first.** No extra key. The Burnout counts down faster by
@@ -1439,7 +1444,7 @@ negative is positive energy, which is why it heals, and why it heals with white 
     at the chin on purpose: a wide patch at the mouth reads as a blob, and a bar on down the chest as a tongue. Readable at 7 blocks on a light or a dark skin, by day and at night. It stays 2 s after the repair stops, then goes from the nose down. `Repair.Payload` to everyone tracking them, not in your own first person).
   - **Repairing gives the ultimate back.** The ultimate is part of the technique, so a repair that finishes the Burnout off (whatever
     caused it) clears the cooldown of the player's innate technique's ultimate at once; no other ability's cooldown is touched. Canon:
-    Burnout is all that stands between one Domain and the next; once it's repaired another can open at once, and only the brain's
+    Burnout is all that stands between one Dominion and the next; once it's repaired another can open at once, and only the brain's
     limit stops that. "Finishes it off" means the channel ran unbroken to the end, including when the Burnout's own countdown takes the very last
     tick. A Burnout that runs out by itself leaves the cooldown as it is, and so does a repair that stops early (let go, a stun, out of
     Malice, the brain filling), even if the Burnout then runs out by itself. Background RMT only shortens Burnout and never touches the
@@ -1461,9 +1466,9 @@ negative is positive energy, which is why it heals, and why it heals with white 
     refuse to open. Six Eyes gets no exemption.
   - **Healing:** `brainHealPerSecond` (0.15) a second out of a fight (full to empty in about 11 minutes); a night slept through clears
     it for everyone who slept it (`SleepFinishedTimeEvent`).
-  - **The anchor:** Dominions don't exist yet, so a Domain's Burnout is assumed to be `dominionBurnoutAssumed` (60 s). From an empty
+  - **The anchor:** a full Dominion's Burnout is `dominionBurnoutAssumed` (60 s), kept equal to `dominion.full.dominionBurnout` (§3.35). From an empty
     meter, four full repairs fit (the meter at 17, 37, 60 and 87), and the fifth stops 41% of the way in (24.6 s of a 60 s Burnout,
-    8.2 s of Standstill's 20 s): a fifth Domain, not a sixth. The count is the same for every technique and every Burnout length, and it
+    8.2 s of Standstill's 20 s): a fifth Dominion, not a sixth. The count is the same for every technique and every Burnout length, and it
     doesn't depend on how strong the player is (a strong one repairs faster, for the same cost).
   - **Private:** the meter shows only on the Sorcerer screen's Progress view (a bar, "Brain: 37% worn by repairs", in the private
     progression sync) and in `/kegare info`. `/kegare debug brain <player> <value>` sets it.
@@ -2156,7 +2161,7 @@ player, ever, saved per player. Which category each source pays into, and how mu
 | `hit_by_technique` | Ward 1 | technique (any landing on you, damaging or not) | wired |
 | `first_legendary_fight` | Output 5 | ever | wired |
 | `survived_standstill` | Ward 5 | ever | wired |
-| `caught_in_dominion` | Dominion 5 | technique | hook only |
+| `caught_in_dominion` | Dominion 5 | kind of Dominion (§3.35) | wired |
 | `clashed_with_dominion` | Dominion 5 | technique | hook only |
 | `unlocked_rmt` | Output 5 | ever (unlocking Reverse Malice Technique, any way; anyone who has it unlocked but wasn't paid is paid on login) | wired |
 | `rmt_survived_low` | Output 5 | ever (at 3 hearts or less during your own RMT, healed above it, alive 10 s later) | wired |
@@ -2461,8 +2466,8 @@ the wall, the gamerule off breaking nothing while a pending rebuild still finish
 
 ### 3.25 Burnout (`innatetechnique.Burnout`)
 
-A shared state that locks a player's innate technique for a while after something big: Time Manipulation's Standstill now (§3.26),
-Dominions later.
+A shared state that locks a player's innate technique for a while after something big: Time Manipulation's Standstill (§3.26) and
+Dominions (§3.35).
 - **While it lasts**, every ability, special and the ultimate of their innate technique fizzles with "Burnt out (Xs).", nothing paid
   and no cooldown (`CastResult.BURNT_OUT`, checked right after the Refinement lock). Shared abilities (Reverse Malice Technique)
   still cast.
@@ -3065,7 +3070,7 @@ ability on the bar, but it takes no bar slot and leaves the hands free.
   stops it: stuns and Burnout don't. A player frozen in a Standstill (§3.26, `TimeStops.frozen`) has it paused while time is stopped
   for them, and it resumes with it.
 - **Burnout:** while it runs, every Burnout applied to you lasts ×`burnoutFactor` (0.75), through `Burnout.Modifier` (§3.25):
-  Standstill's now, Dominions' later. The quarter it takes off is paid on the brain meter as that share of a full repair (§3.17). It
+  Standstill's and Dominions' alike. The quarter it takes off is paid on the brain meter as that share of a full repair (§3.17). It
   never touches the ultimate's cooldown: only a finished repair gives that back.
 - **Who can tell:** everyone. Healing moves energy through the body, so anyone running it shows a faint white shimmer: RMT's white licks
   (`rmt/background_rmt_shimmer`, Photon, the channel's sprite sheet, §3.17), small (0.08 to 0.13 blocks) and few (seven every 10 ticks),
@@ -3380,6 +3385,7 @@ package in it carries `@ApiStatus.Experimental`. The guide for mod makers is `do
 | `KegareApi` | the registry keys `INNATE_TECHNIQUES` and `TRAITS`, the registries, `isKegares`, and shared abilities: `registerSharedAbility`, `registerSharedAbilityForEveryone`, `unlockSharedAbility`, `hasSharedAbility` |
 | `KegareProgression` | `landed`, `landedOnItsOwn`, `during`, `addAttributor`: the cases Refinement and Assessment can't see from a hit (§3.21) |
 | `api.change` | `TechniqueChanges` (`add`, `addAfter`, `replace`, `tweak`, `isChanged`, `changedAbilities`) and `AbilityTweak`: changing techniques that already exist (below) |
+| `api.dominion` | `DominionUltimate`, `DominionLook`, `DominionContext`, `KegareDominions`: a technique's ultimate as a full Dominion (§3.35) |
 | `KegareApi` (advancements) | `techniqueTab` (a technique tab's root, to parent an addon's own advancements to) and `awardAdvancement` |
 
 Kegare's own techniques, abilities and traits are built on these same types; nothing is wrapped.
@@ -3440,6 +3446,81 @@ Refinement; its shared ability unlocked; who is in the roll pool, and real rolls
 `roll.addonTechniques` off. Kegare's own tests run with it loaded, Frost Field tweaked included: `RealPoolRollTest` rolls Kegare's pool alone (addons off),
 `KegareCommandTest` sees its technique, trait and shared ability by short name and by full ID, and checks who keeps a shared short name, `TechniqueUnlocksTest` refuses a definition without unlock
 levels or with a negative one.
+
+### 3.35 Dominions (package `dominion`)
+A sorcerer's inner space, expanded into the world inside a barrier. A **full Dominion** carries its technique: it's that technique's
+ultimate (V), and only some techniques have one (Rime's and Puppet Manipulation's come later; Swap's and Time Manipulation's ultimates
+are Total Swap and Standstill). An **Incomplete Dominion** is the inner space expanded with Malice alone, without the technique in it:
+any Malice user can learn it (below). Numbers in `[dominion]` of `kegare-server.toml`.
+
+**Opening** (`Dominions.open`, from its ability's cast; `Dominions.refusal` says why not, and a refusal costs nothing):
+- It takes the Dominion Meter (a full Dominion all of it, an Incomplete one half) plus its ability's Malice, paid by the cast.
+- Refused for a Severed player ("With no Malice, there's no inner space to expand."), on a full brain meter
+  (`BrainDamage.refusesDominion`, §3.17: "Your brain can't take another Dominion."), with one already open ("Your Dominion is already
+  open."), or short of meter ("Your Dominion Meter isn't full.", "Your Dominion Meter needs 50.").
+- The barrier rises round where its caster stands for `openSeconds` (1): anyone can still get out. Then it closes, and everything alive
+  inside (the middle of its box within the sphere) is trapped until it ends or breaks: players, mobs and the caster, never a spectator
+  or a boss.
+
+**The barrier** is a sphere of `radius` round the caster's feet, so a dome over the ground (a full Dominion's: `radius` 16,
+`durationSeconds` 30, `barrierStrength` 40).
+- **Nobody crosses it, either way.** Every move is cut where it meets the shell (`DominionBounds`, from `Entity.collide` through
+  `EntityCollideMixin`): on the server for everything living, and on each client for its own player, whom the server tells which side
+  they're on as it closes (`DominionNet.Trapped`). Both sides cut a move the same way, so nobody is pulled back for walking into it, and
+  a move is only ever cut, never lengthened, so nothing is pushed into a wall. Anything that gets across another way (a teleport, chorus
+  fruit, a command) is put back on its own side the next tick, clear of blocks if it can be. Swaps, Rewind and Strings across it are
+  cancelled through their target events (`SwapTargetEvent`, `TimeTargetEvent`, `StringsTargetEvent`).
+- **Projectiles stop at it.** A projectile's hit whose path crosses the shell is cancelled (`ProjectileImpactEvent`), and one that
+  crossed it in a tick without hitting anything is removed; either way the barrier takes the hit.
+- **Hits across it land on it.** Damage from one side to the other (by where its source is) is cancelled and hits the barrier instead.
+- **Barrier strength:** it takes the Impact System's strength (§3.23) of every hit on it, from inside and out: a swing at the shell (the
+  shell within `meleeReach`, 3, along the look with no block or body nearer; the weapon's damage with Reinforced Fists and Flow's Offense,
+  by its own charge, as an air swing doesn't reset vanilla's attack timer on the server), blows across it, projectiles
+  (`projectileStrength` 0.3, or an arrow's own damage if more), and area blasts within `blastReach` (2.5) of the shell, full at the shell
+  and less further off. Its own caster's hits never count. When it runs out the barrier breaks and the Dominion ends at once.
+- **Bosses** (§4) are never trapped, held or moved by it, and take damage inside as usual.
+
+**The interior is drawn, never built.** What a Dominion's inside looks like (`DominionLook`: the sky inside the shell, fog, the shell's
+color from outside, a block mark laid over the ground, ruins, dust, cracks) is drawn by the clients over the real terrain. Nothing in the
+world changes: the barrier is a rule on the server and a drawing on the clients, carried by a marker at its centre (`DominionEntity`,
+no hitbox, synced data only) that is never saved. So a crash or a server stop mid-Dominion leaves nothing behind, and there's nothing to
+restore on the next start. Building it from temporary blocks with a saved snapshot to restore was the other way, and the riskier: tens of
+thousands of block changes and their lighting each time, chunk saves that can race the snapshot so a crash between them leaves blocks
+behind, block entities to lift out and put back, and a slow restore that can close over people. Battle damage inside follows its usual
+mode (§3.24).
+
+**The Dominion Meter** (`DominionMeter`, attachment `kegare:dominion`, 0 to 100, saved, kept on death; Postgres storage covers it through
+the attachment registry, §3.33): `perDamageDealt` (2) per point of damage dealt to a player in a fight and `perDamageTaken` (1.5) per
+point taken from one (§3.21's damage record: after defences, a hit capped at the victim's max health), and `drainPerSecond` (0.25) out of
+combat. A Severed player's never fills. It's private to its owner (`DominionNet.Meter`, when its whole number changes) and shows on the
+HUD with the melee cues (§3.6): "Dominion 73" with a bar, a mark at half way, gold when full, only while they have a Dominion to open
+with it.
+
+**Ending:** when its time is up, when it breaks, when its caster dies, logs out or changes dimension, by command, or in a clash.
+Everyone inside is released. Its caster burns out (§3.25): `dominionBurnout` (60 s) for a full Dominion, kept equal to the brain meter's
+`dominionBurnoutAssumed` so the repair math holds (§3.17). Logging out or leaving the dimension still burns them out; dying doesn't
+(death clears Burnout).
+
+**Sure-hit** (`DominionContext.sureHitTargets`, `KegareDominions.sureHitTargets`): a full Dominion's technique can't miss inside it. The
+hook lists everything trapped inside but its caster and what its caster owns, and never a Severed player, who has no Malice for it to
+find. Empty while it's rising or contested, or for a Dominion with no sure-hit. Nothing uses it yet.
+
+**Insight:** caught inside someone else's Dominion as it closes pays `caught_in_dominion` (§3.21), once per kind of Dominion (the ability
+that opened it: a technique's ultimate, or the Incomplete Dominion).
+
+**Addon API** (`api.dominion`, experimental, §3.34): a technique's ultimate is a full Dominion by being a `DominionUltimate`: its
+`look()`, `sureHit()`, its barrier's `radius`, `durationTicks` and `barrierStrength` (the `[dominion.full]` numbers unless overridden),
+`onOpen`, `tickInside` and `onClose`, and `canOpen` for its own refusals. Kegare does the rest: the meter and brain checks, the barrier,
+trapping, hits, ending, Burnout and clashes. `KegareDominions` answers who is trapped and who a sure-hit reaches.
+
+**Tests:** `DominionTest` (a full meter, an unbroken brain and only one at a time to open, Severed never; whatever is inside when it
+closes trapped, outside not, a boss never; moves cut at the shell from both sides, a boss not held; a teleport across put back; a
+projectile crossing it stopped and its hit cancelled; a blow across it landing on it, one inside landing as usual; hits from inside and
+out, the caster's not, a swing at the shell; breaking, ending at once and burning out its caster; not one block changed after it ends,
+breaks or the server forgets it as a crash would, and its marker never saved; its time running out, its hooks, dominionBurnout equal to
+the brain's assumption, logging out, leaving the dimension and dying ending it; the sure-hit finding someone inside but never its caster
+or a Severed player; caught_in_dominion paid once), `DominionMeterTest` (filling from damage dealt and taken, capped at 100, draining only
+out of combat, saved).
 
 ---
 
@@ -3514,7 +3595,8 @@ levels or with a negative one.
 - **The addon API, next steps (§3.34):** one shared target event for every technique, the Impact System hook, read-only events (casts,
   technique changes, unlocks, Refinement and Grade), client hooks (visuals, HUD, the effect setting), and publishing (Modrinth's Maven, a
   sources jar). Changing shared abilities.
-- **Dominions:** expansion, guaranteed-hit rules, clashes, counters, burnout.
+- **Full Dominions:** Rime's and Puppet Manipulation's, on `DominionUltimate` with their own interiors and sure-hits (§3.35); counters to
+  Dominions.
 - **What progression waits for (§3.21):** later unlocks, Dominions among them, register through `Unlocks`, their first-time sources call
   `InsightHooks`, and later systems that need a player's Grade read `Progression.getGrade`.
 - **PvE:** the **Kegare** (hostile spirit mobs), spawning, structures, progression.

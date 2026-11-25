@@ -101,6 +101,27 @@ final class DebugCommands {
                                         return 1;
                                     });
                                 })))))
+                // Dominions (DESIGN §3.35): the Dominion Meter, and ending one now.
+                .then(Commands.literal("dominion")
+                        .then(Commands.literal("meter").then(player()
+                                .then(Commands.argument("value", com.mojang.brigadier.arguments.DoubleArgumentType.doubleArg(0.0, 100.0)).executes(c -> {
+                                    double value = com.mojang.brigadier.arguments.DoubleArgumentType.getDouble(c, "value");
+                                    return forEachPlayer(c, (source, player) -> {
+                                        com.cnethuka.kegare.dominion.DominionMeter.set(player, value);
+                                        say(source, "commands.kegare.debug.dominion.meter", player.getDisplayName(), Math.round(value));
+                                        return 1;
+                                    });
+                                }))))
+                        .then(Commands.literal("end").then(player().executes(c -> forEachPlayer(c, (source, player) -> {
+                            var open = com.cnethuka.kegare.dominion.Dominions.ownedBy(player);
+                            if (open.isEmpty()) {
+                                say(source, "commands.kegare.debug.dominion.none", player.getDisplayName());
+                                return 0;
+                            }
+                            com.cnethuka.kegare.dominion.Dominions.end(open.get(), com.cnethuka.kegare.dominion.Dominions.EndReason.COMMAND);
+                            say(source, "commands.kegare.debug.dominion.ended", player.getDisplayName());
+                            return 1;
+                        })))))
                 // The brain meter (DESIGN §3.17): what repairing burnt-out techniques has cost, 0 to 100.
                 .then(Commands.literal("brain").then(player()
                         .then(Commands.argument("value", com.mojang.brigadier.arguments.DoubleArgumentType.doubleArg(0.0, 100.0)).executes(c -> {
