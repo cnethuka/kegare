@@ -15,6 +15,9 @@ public final class RmtState {
     /** Game time the orb fades; pushed back every tick of a follow, so it can't fade under them. */
     long orbExpires;
     int followTicks;
+    /** The look the server last had from them, and when (real time, ms) it last changed. */
+    @Nullable Vec3 lastLook;
+    long lastLookMs;
     /** The whole route, fixed when it's rolled. */
     int followTotal;
     long lastHitByPlayer = Long.MIN_VALUE;
@@ -63,6 +66,7 @@ public final class RmtState {
     void clearOrb() {
         path = null;
         followTicks = 0;
+        lastLook = null;
     }
 
     public long lastHitByPlayer() {

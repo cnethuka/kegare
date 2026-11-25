@@ -143,7 +143,10 @@ class GreenOrbTest {
                 GreenOrbService.force(p);
                 RmtState state = GreenOrbService.state(p);
                 p.lookAt(EntityAnchorArgument.Anchor.EYES, state.orb());
-                for (int i = 0; i < state.followTotal() * 10; i++) GreenOrbService.tick(p);
+                for (int i = 0; i < state.followTotal() * 10; i++) {
+                    NOW[0] += 50; // real time passes too: a still look is a still look, not one not yet heard
+                    GreenOrbService.tick(p);
+                }
                 assertFalse(SharedAbilityService.isUnlocked(p, RmtIds.ABILITY), "run " + run);
                 assertTrue(state.followTicks() < state.followTotal() / 2, "it never got far from their look: " + state.followTicks());
             }
@@ -273,6 +276,72 @@ class GreenOrbTest {
     }
 
     /** Eyes on the orb, tick by tick. */
+    /** Real time for the orb's look checks, held still unless a test moves it. */
+    private static final long[] NOW = {0};
+
+    static {
+        GreenOrbService.clock = () -> NOW[0];
+    }
+
+    @Test
+    void aLagSpikeNeitherMovesItOnNorSendsItBack(MinecraftServer server) throws Exception {
+        TestServer.onServerThread(server, () -> {
+            TestServer.ensureOverworld(server);
+            ServerPlayer p = born(server, "orb_lag_spike");
+            GreenOrbService.force(p);
+            RmtState state = GreenOrbService.state(p);
+            follow(p, 30);
+            // The server catching up: tick after tick with no new look from them, in a moment of real time.
+            for (int i = 0; i < 40; i++) GreenOrbService.tick(p);
+            assertEquals(30, state.followTicks(), "held where it was");
+            // Once it's been a still look for a while, it's theirs again: off it, it runs back.
+            lookAway(p, state);
+            GreenOrbService.tick(p);
+            assertEquals(30 - RmtConfig.ORB_FOLLOW_REWIND.get(), state.followTicks());
+            follow(p, state.followTotal());
+            assertTrue(SharedAbilityService.isUnlocked(p, RmtIds.ABILITY), "and it's still taken in");
+        });
+    }
+
+    @Test
+    void aHighPingFollowsItBehindAndStillCounts(MinecraftServer server) throws Exception {
+        TestServer.onServerThread(server, () -> {
+            TestServer.ensureOverworld(server);
+            int behind = 10; // half a second of the route: what a 500 ms ping sees
+            ServerPlayer laggy = born(server, "orb_high_ping");
+            setPing(laggy, 500);
+            GreenOrbService.force(laggy);
+            followBehind(laggy, behind);
+            assertTrue(SharedAbilityService.isUnlocked(laggy, RmtIds.ABILITY), "500 ms behind, and it counts");
+
+            ServerPlayer near = born(server, "orb_no_ping");
+            GreenOrbService.force(near);
+            followBehind(near, behind);
+            assertFalse(SharedAbilityService.isUnlocked(near, RmtIds.ABILITY), "with no ping, that far behind isn't following it");
+            setPing(laggy, 0);
+        });
+    }
+
+    /** Looks where the orb was {@code behind} ticks ago, each tick, for as long as the route lasts (and some). */
+    private static void followBehind(ServerPlayer p, int behind) {
+        RmtState state = GreenOrbService.state(p);
+        for (int i = 0; i < state.followTotal() * 3 && state.hasOrb(); i++) {
+            p.lookAt(EntityAnchorArgument.Anchor.EYES, state.path().at(Math.max(0, state.followTicks() - behind) / (double) state.followTotal()));
+            NOW[0] += 50;
+            GreenOrbService.tick(p);
+        }
+    }
+
+    private static void setPing(ServerPlayer p, int ms) {
+        try {
+            java.lang.reflect.Field f = net.minecraft.server.network.ServerCommonPacketListenerImpl.class.getDeclaredField("latency");
+            f.setAccessible(true);
+            f.setInt(p.connection, ms);
+        } catch (ReflectiveOperationException e) {
+            throw new IllegalStateException(e);
+        }
+    }
+
     private static void follow(ServerPlayer p, int ticks) {
         RmtState state = GreenOrbService.state(p);
         for (int i = 0; i < ticks && state.hasOrb(); i++) {

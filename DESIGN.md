@@ -1519,8 +1519,12 @@ negative is positive energy, which is why it heals, and why it heals with white 
 - **Taking it in: follow it to the end.** Each tick the server checks the player's look against where the orb is now (within `lookAngle`,
   10°). While it's in sight it moves on along the route, and the route takes **3 s** (`followSeconds`), so about **30°/s** to track; the dots go out as it passes them.
   Out of sight, it runs back **3× as fast** (`followRewind`), and the dots come back. So looking at it without moving gets nowhere: it wanders off to the edge of
-  the look and hovers there. Losing it isn't final: catch it again and it carries on from there, or run it from the start while time remains. High ping makes the
-  orb move slower rather than fail, since it only moves on when the server sees the look on it. The server sends the progress every tick it changes, and the client only draws
+  the look and hovers there. Losing it isn't final: catch it again and it carries on from there, or run it from the start while time remains.
+  - **Lag:** what a player sees is their ping behind the server, so a look on the orb anywhere it has been over their ping's worth of
+    ticks (one more tick, at most 20) counts as on it. A look that hasn't changed counts as not yet heard from them for their ping plus
+    250 ms of real time, and the orb neither moves on nor runs back meanwhile, so a server catching up after a lag spike (ticks back to
+    back with no new look) can't run it off and send it back to the start. After that a still look is a still look: on it, it moves on;
+    off it, it runs back. The server sends the progress every tick it changes, and the client only draws
   it, swelling it as it nears the end. A new route is rolled for every orb. On success:
   - RMT is unlocked (kept for good, through rerolls);
   - **real healing** of **8 HP** (`unlockHeal`), never above max health;
@@ -1533,7 +1537,7 @@ negative is positive energy, which is why it heals, and why it heals with white 
   is waiting, RMT locked/unlocked, and eligibility.
 - **Tests:** `GreenOrbTest`: no roll above the threshold, one roll per cooldown, then again after it; where it starts and that it
   waits; a new route every orb; following to the last tick unlocks and heals, capped at max health; staring without following never does (25 routes);
-  losing it runs it back, then a second try counts; fades on time, but never under someone following it; routes stay short of walls; the payload survives
+  losing it runs it back, then a second try counts; a lag spike holds it where it was; a 500 ms ping following half a second behind still takes it in, and no ping that far behind doesn't; fades on time, but never under someone following it; routes stay short of walls; the payload survives
   the wire; never for Severed players (forced or rolled) or after unlocking. `OrbPathTest`: 2000 routes each stay in range, take every step, wind, and are
   random; no tick moves the orb more than a third of the look cone; the curve passes through every point. `RmtTest` also checks RMT's
   channel holds the fist to the chest with the light on it and its healing another reaches out, and `RmtArtTest` the licks' sheet (hard

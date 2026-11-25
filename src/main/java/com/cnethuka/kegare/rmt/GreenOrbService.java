@@ -39,6 +39,13 @@ public final class GreenOrbService {
     public static final Supplier<AttachmentType<RmtState>> STATE = ATTACHMENTS.register("rmt_state",
             () -> AttachmentType.builder(() -> new RmtState()).build());
 
+    /** At most this many ticks of the route behind the orb count as on it, however high their ping. */
+    static final int MAX_LAG_TICKS = 20;
+    /** A look that hasn't changed counts as not yet heard from them for this long (ms) past their ping. */
+    static final long HOLD_MS = 250;
+    /** Real time, in ms (tests set their own). */
+    static java.util.function.LongSupplier clock = net.minecraft.Util::getMillis;
+
     /** Closer than this and the look check would be meaningless, as when pressed against a wall. */
     private static final double MIN_DISTANCE = 0.75;
 
@@ -134,7 +141,16 @@ public final class GreenOrbService {
             return;
         }
         int before = state.followTicks;
-        if (isLookingAt(player, state.orb())) {
+        // A look the server hasn't heard anything new about (a lag spike, a server catching up) neither moves it on nor back.
+        Vec3 look = player.getLookAngle();
+        long now = clock.getAsLong();
+        if (state.lastLook == null || !state.lastLook.equals(look)) {
+            state.lastLook = look;
+            state.lastLookMs = now;
+        } else if (now - state.lastLookMs < latency(player) + HOLD_MS) {
+            return;
+        }
+        if (onOrb(player, state)) {
             if (++state.followTicks >= state.followTotal) {
                 takeIn(player);
                 return;
@@ -143,6 +159,23 @@ public final class GreenOrbService {
             state.followTicks = Math.max(0, state.followTicks - RmtConfig.ORB_FOLLOW_REWIND.get());
         }
         if (state.followTicks != before) PacketDistributor.sendToPlayer(player, OrbPayload.progress(state.followTicks));
+    }
+
+    /** Their ping, in ms (none for a player with no connection of its own). */
+    private static long latency(ServerPlayer player) {
+        return player.connection == null ? 0 : Math.max(0, player.connection.latency());
+    }
+
+    /**
+     * Whether their look is on it: where it is, or anywhere it has been along the route over their ping's worth of ticks (what they
+     * see is that far behind the server), up to {@link #MAX_LAG_TICKS}.
+     */
+    static boolean onOrb(ServerPlayer player, RmtState state) {
+        int behind = Math.min(MAX_LAG_TICKS, (int) Math.ceil(latency(player) / 50.0) + 1);
+        for (int k = 0; k <= behind && state.followTicks - k >= 0; k++) {
+            if (isLookingAt(player, state.path.at((state.followTicks - k) / (double) state.followTotal))) return true;
+        }
+        return false;
     }
 
     private static boolean isLookingAt(ServerPlayer player, Vec3 point) {
