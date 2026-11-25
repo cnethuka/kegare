@@ -142,6 +142,7 @@ class InnerSpaceTest {
             assertTrue(a.gameMode.destroyBlock(under), "setup: the ground broken");
             // Nor by a blast, though it still breaks what it reaches.
             BlockPos blast = c.east(6);
+            for (int up = 0; up < 8; up++) inner.setBlock(blast.above(up), Blocks.AIR.defaultBlockState(), 3); // no ruin to shield it
             inner.setBlock(blast.below(), Blocks.COBBLESTONE.defaultBlockState(), 3);
             inner.explode(null, blast.getX() + 0.5, blast.getY(), blast.getZ() + 0.5, 3f, net.minecraft.world.level.Level.ExplosionInteraction.TNT);
             assertTrue(inner.getBlockState(blast.below()).isAir(), "the blast broke the ground");
