@@ -56,7 +56,7 @@ public class DominionRenderer extends EntityRenderer<DominionEntity> {
         DominionLook look = d.look();
         float time = d.tickCount + partialTick;
         boolean clash = d.state() == DominionEntity.State.CLASH;
-        float flicker = clash ? 0.5f + 0.12f * Mth.sin(time * 0.9f + d.getId()) + 0.05f * Mth.sin(time * 2.3f) : 1f;
+        float flicker = clash ? clashOpacity(time, d.getId(), DominionFx.flashes()) : 1f;
         PoseStack.Pose p = pose.last();
         float r = (float) d.radius();
         List<BarrierCracks.Star> stars = BarrierCracks.stars(d);
@@ -75,7 +75,12 @@ public class DominionRenderer extends EntityRenderer<DominionEntity> {
             if (!stars.isEmpty()) BarrierCracks.draw(buffers.getBuffer(RenderType.entityTranslucentEmissive(WHITE)), p, stars, r, r, false, flicker);
         }
         // The seam where two clashing barriers meet: drawn once, by the one with the lower id.
-        if (clash && d.level().getEntity(d.clashWith()) instanceof DominionEntity other && d.getId() < other.getId()) seam(d, other, time, pose, buffers);
+        if (clash && d.level().getEntity(d.clashWith()) instanceof DominionEntity other && d.getId() < other.getId()) seam(d, other, DominionFx.flashes() ? time : 0f, pose, buffers);
+    }
+
+    /** How solid a contested barrier is: half there, flickering (steady with flashes off). */
+    static float clashOpacity(float time, int id, boolean flashes) {
+        return flashes ? 0.5f + 0.12f * Mth.sin(time * 0.9f + id) + 0.05f * Mth.sin(time * 2.3f) : 0.5f;
     }
 
     // ---------------------------------------------------------------------------------------------- opening
@@ -214,7 +219,8 @@ public class DominionRenderer extends EntityRenderer<DominionEntity> {
 
     /**
      * A bright band round the circle where the two barriers grind against each other, jittering: two strips crossed (one flat in the
-     * circle's plane, one across it), so it reads from every side, lifted just off the shells so it never flickers into them.
+     * circle's plane, one across it), so it reads from every side, lifted just off the shells so it never flickers into them. Still at a
+     * {@code time} that doesn't move (flashes off).
      */
     private static void seam(DominionEntity d, DominionEntity other, float time, PoseStack pose, MultiBufferSource buffers) {
         Optional<double[]> meet = meeting(d.centre(), d.radius(), other.centre(), other.radius());

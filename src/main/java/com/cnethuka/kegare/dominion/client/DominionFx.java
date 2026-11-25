@@ -88,6 +88,16 @@ public final class DominionFx {
         return KegareClientConfig.VFX_QUALITY.get() == KegareClientConfig.VfxQuality.FULL;
     }
 
+    /** Whether Dominions may flash on your screen: your setting, and off while the game's own Hide Lightning Flashes is on. */
+    static boolean flashes() {
+        return KegareClientConfig.DOMINION_FLASHES.get() && !Minecraft.getInstance().options.hideLightningFlash().get();
+    }
+
+    /** A shard's color: white, or with flashes off the barrier's own as it's seen (its shell from outside, its sky from inside). */
+    static int shardColor(boolean flashes, boolean inside, int shell, int fog) {
+        return flashes ? 0xFFFFFF : inside ? fog : shell;
+    }
+
     private static float share() {
         return full() ? 1f : 0.5f;
     }
@@ -322,7 +332,8 @@ public final class DominionFx {
                 float b = t - CRACK_TICKS;
                 RenderType type = RenderType.entityTranslucentEmissive(DominionRenderer.WHITE);
                 VertexConsumer out = buffers.getBuffer(type);
-                if (b < FLASH_TICKS) {
+                boolean flashes = flashes();
+                if (flashes && b < FLASH_TICKS) {
                     float flash = 0.9f * (1f - b / FLASH_TICKS);
                     DominionRenderer.shell(out, p, s.radius * (1f + 0.035f * b), s.radius * 2, 0xFFFFFF, 0xFFFFFF, flash * flash);
                 }
@@ -333,7 +344,7 @@ public final class DominionFx {
                     for (Shard shard : s.shards) {
                         Vec3 a = corner(shard, shard.a(), b), c1 = corner(shard, shard.b(), b), c2 = corner(shard, shard.c(), b);
                         if (firstPerson && a.add(c1).add(c2).scale(1 / 3.0).distanceTo(eye) < NEAR) continue; // never in front of your eyes
-                        triangle(out, p, a, c1, c2, alpha);
+                        triangle(out, p, a, c1, c2, shardColor(flashes, s.seenInside, s.shell, s.fog), alpha);
                     }
                 }
                 buffers.endBatch(type);
@@ -342,10 +353,10 @@ public final class DominionFx {
         }
     }
 
-    /** A white shard, both faces, lit in full (facing up, where the entity shader's lights are) so it stays white as it turns. */
-    private static void triangle(VertexConsumer out, PoseStack.Pose p, Vec3 a, Vec3 b, Vec3 c, int alpha) {
+    /** A shard, both faces, lit in full (facing up, where the entity shader's lights are) so it stays its color as it turns. */
+    private static void triangle(VertexConsumer out, PoseStack.Pose p, Vec3 a, Vec3 b, Vec3 c, int rgb, int alpha) {
         for (Vec3 v : new Vec3[] {a, b, c, c}) { // a quad with its last corner twice: a triangle
-            out.addVertex(p, (float) v.x, (float) v.y, (float) v.z).setColor(255, 255, 255, alpha).setUv(0.5f, 0.5f)
+            out.addVertex(p, (float) v.x, (float) v.y, (float) v.z).setColor(rgb >> 16 & 0xFF, rgb >> 8 & 0xFF, rgb & 0xFF, alpha).setUv(0.5f, 0.5f)
                     .setOverlay(OverlayTexture.NO_OVERLAY).setLight(LightTexture.FULL_BRIGHT).setNormal(p, 0f, 1f, 0f);
         }
     }

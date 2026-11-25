@@ -133,4 +133,18 @@ class DominionVisualsTest {
         assertTrue(DominionRenderer.meeting(a, 4, new Vec3(20, 0, 0), 4).isEmpty(), "apart: nothing");
         assertTrue(DominionRenderer.meeting(a, 10, new Vec3(1, 0, 0), 2).isEmpty(), "one inside the other: nothing");
     }
+
+    @Test
+    void withFlashesOffNothingTurnsWhiteAndAClashHoldsSteady() {
+        assertTrue(com.cnethuka.kegare.config.KegareClientConfig.DOMINION_FLASHES.getDefault(), "on by default");
+        assertEquals(0xFFFFFF, DominionFx.shardColor(true, false, 0x000000, 0x8E8983), "on: white shards");
+        assertEquals(0x000000, DominionFx.shardColor(false, false, 0x000000, 0x8E8983), "off, from outside: its shell's color");
+        assertEquals(0x8E8983, DominionFx.shardColor(false, true, 0x000000, 0x8E8983), "off, from inside: its sky's");
+        boolean moves = false;
+        for (int t = 0; t < 60; t++) {
+            assertEquals(0.5f, DominionRenderer.clashOpacity(t, 7, false), 0f, "off: steady");
+            moves |= Math.abs(DominionRenderer.clashOpacity(t, 7, true) - 0.5f) > 0.05f;
+        }
+        assertTrue(moves, "on: it flickers");
+    }
 }

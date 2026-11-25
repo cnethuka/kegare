@@ -492,7 +492,7 @@ Malice is always shown as whole numbers (floored, like the HUD); the stored valu
     - `sixEyesTransferDelaySeconds` (30)
     - `uniqueTraitInactiveDays` (0 = off; fractions allowed)
 - **Client TOML:** `hud.enabled`, `input.dashDoubleTapMillis` (§3.22),
-  `visuals.firstPersonAnimations`, `visuals.animationFades`, `visuals.vfxQuality`, and for the roll reveal (§3.12)
+  `visuals.firstPersonAnimations`, `visuals.animationFades`, `visuals.vfxQuality`, `visuals.dominionFlashes` (§3.35), and for the roll reveal (§3.12)
   `reveal.animation` (scenes on/off), `reveal.alwaysFull`, `reveal.reducedMotion`, `reveal.fakeOutChance` (0.2),
   `reveal.debugForceFakeOut` and `reveal.seenTechniques`, and `impact` (§3.23: shake, hit-stop, impact frames and each
   tier's look). All but `hud.enabled`, `reveal.fakeOutChance`, `reveal.debugForceFakeOut`, `reveal.seenTechniques` and
@@ -722,7 +722,7 @@ closing it or disconnecting at any point changes nothing.
     (Full / Reduced / Vanilla), your own animations in first person, the roll reveal animation, always playing the full
     reveal, and reduced motion in the reveal. Screen shake (§3.23) is a slider instead: drag or click along its track,
     0 to 200% in steps of 5% (a notch marks 100%), saved when it's let go. Impact frames (§3.23) are an On / Off row,
-    since a whole-screen flash can bother some people.
+    since a whole-screen flash can bother some people, and so are Dominions' flashes (§3.35).
 - **Right column:** the player model (follows the mouse), Malice current / capacity with the bar in the technique's
   Malice color, the tier, and regen per second (or "Regen paused"). In a window too narrow for them (640x480), the amount and
   "Regen paused" each take a second line and the model gives up the height; shrinking them would land the font on fractions of a
@@ -3600,6 +3600,9 @@ Full, Reduced and Vanilla, where Reduced and Vanilla make half the ink, dust and
   sphere swelling and gone in 7 ticks), its shell above the ground in white shards (648; 288 at Reduced and Vanilla), each flying out
   and up, turning and shrinking, falling, fading over 1.5 s, and 180 white motes and sparks (half at Reduced and Vanilla). In your own
   first person no shard is drawn within 2 blocks of your eyes.
+- **Flashes off** (`visuals.dominionFlashes`, on by default; also off while the game's Hide Lightning Flashes is on): a broken barrier
+  has no white flash and its shards are its own color as seen (its shell's from outside, its fog's from inside), and a clash's shells
+  and seam hold steady instead of flickering and jittering. Cracks and sparks stay. Yours alone: nobody else's view changes.
 - **The ground and the ruins are real blocks** in its inner space (above), in the world's own light (the inner space's sun is held at
   noon). **Dust:** inside, round the viewer, white ash and slow motes of its dust color (five a tick, half at Reduced and Vanilla),
   never within 2 blocks of a first-person camera.
@@ -3731,7 +3734,7 @@ a close fight breaking both with the exhausted Burnout, Mutual Destruction; a si
 to each other only while clashing; the advancements hidden and silent on the Base tab), `DominionVisualsTest` (the seal animation loads
 and keeps your own hands vanilla's; the icon hard pixel art; cracks on the shell, measured along, the same shape on every client, reaching further for a harder hit and a
 weaker barrier up to a limit, a hit on cracks adding to them and elsewhere starting its own, only so many; the shatter's shards cut from
-the shell above the ground, fewer at Reduced and Vanilla, flying outward; a clash's seam on both shells, and none for spheres apart or
+the shell above the ground, fewer at Reduced and Vanilla, flying outward; with flashes off a broken barrier's shards its own color and a clash steady; a clash's seam on both shells, and none for spheres apart or
 one inside the other).
 
 ---

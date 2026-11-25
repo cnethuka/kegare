@@ -728,6 +728,7 @@ public final class KegareLanguageProvider extends LanguageProvider {
         add("gui.kegare.settings.animation_fades", "Blend animations in and out");
         add("gui.kegare.settings.shake", "Screen shake when hits land: %s");
         add("gui.kegare.settings.impact_frames", "Impact frames (black-and-white flash on the biggest hits, Full only)");
+        add("gui.kegare.settings.dominion_flashes", DOMINION + " flashes (the white flash as one breaks, the flicker of a clash)");
         add("gui.kegare.settings.reveal", "Roll reveal animation");
         add("gui.kegare.settings.reveal_always_full", "Always play a technique's full reveal");
         add("gui.kegare.settings.reveal_reduced_motion", "Reveal: fewer flashes, no shake");

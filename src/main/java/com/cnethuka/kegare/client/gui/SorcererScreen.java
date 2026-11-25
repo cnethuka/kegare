@@ -705,6 +705,7 @@ public final class SorcererScreen extends Screen {
         y = optionRow(g, 4, "gui.kegare.settings.animation_fades", ON_OFF, KegareClientConfig.ANIMATION_FADES.get() ? 0 : 1, x, y, w, mouseX, mouseY) + 5;
         y = sliderRow(g, SHAKE_SLIDER, "gui.kegare.settings.shake", KegareClientConfig.SHAKE_STRENGTH.get(), x, y, w, mouseX, mouseY) + 5;
         y = optionRow(g, 8, "gui.kegare.settings.impact_frames", ON_OFF, KegareClientConfig.IMPACT_FRAMES.get() ? 0 : 1, x, y, w, mouseX, mouseY) + 5;
+        y = optionRow(g, 11, "gui.kegare.settings.dominion_flashes", ON_OFF, KegareClientConfig.DOMINION_FLASHES.get() ? 0 : 1, x, y, w, mouseX, mouseY) + 5;
         y = optionRow(g, 3, "gui.kegare.settings.reveal", ON_OFF, KegareClientConfig.REVEAL_ANIMATION.get() ? 0 : 1, x, y, w, mouseX, mouseY) + 5;
         y = optionRow(g, 5, "gui.kegare.settings.reveal_always_full", ON_OFF, KegareClientConfig.REVEAL_ALWAYS_FULL.get() ? 0 : 1, x, y, w, mouseX, mouseY) + 5;
         y = optionRow(g, 6, "gui.kegare.settings.reveal_reduced_motion", ON_OFF, KegareClientConfig.REVEAL_REDUCED_MOTION.get() ? 0 : 1, x, y, w, mouseX, mouseY);
@@ -813,6 +814,7 @@ public final class SorcererScreen extends Screen {
             case 7 -> KegareClientConfig.DASH_DOUBLE_TAP_MILLIS.set(DOUBLE_TAP_MILLIS[value]);
             case 8 -> KegareClientConfig.IMPACT_FRAMES.set(value == 0);
             case 9 -> KegareClientConfig.SIX_EYES_MINIMAP.set(value == 0);
+            case 11 -> KegareClientConfig.DOMINION_FLASHES.set(value == 0);
             case 10 -> KegareClientConfig.SIX_EYES_READ_TAGS.set(READ_TAG_VALUES[value]);
             default -> {
                 return;

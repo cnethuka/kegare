@@ -64,8 +64,8 @@ own), and the hostile spirits that will share the mod's name, are still to come.
 
 **Also**
 - **Eyewear:** a Blindfold and Sunglasses, worn in their own Curios slot.
-- **Your own settings:** ability effects at Full, Reduced or Vanilla, screen shake from 0 to 200%, and impact frames on or off
-  (Sorcerer screen, then Settings).
+- **Your own settings:** ability effects at Full, Reduced or Vanilla, screen shake from 0 to 200%, and impact frames and Dominions' flashes on
+  or off (Sorcerer screen, then Settings).
 - **Server-authoritative:** every gameplay number is in `config/kegare-server.toml`.
 - **Optional Postgres storage**, so several servers can share players, and leaderboards.
 
