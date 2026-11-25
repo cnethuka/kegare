@@ -246,6 +246,7 @@ publishing {
 tasks.named('jar', Jar).configure {
     from('LICENSE')
     from('LICENSE-ASSETS')
+    exclude '.cache/**' // data generation's own record of what it wrote
 }
 
 tasks.withType(JavaCompile).configureEach {
