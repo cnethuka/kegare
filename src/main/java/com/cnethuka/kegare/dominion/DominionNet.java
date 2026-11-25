@@ -61,7 +61,7 @@ public final class DominionNet {
 
     /**
      * A moment to draw and hear where it happened: the barrier closing (with its name, for those inside), a hit on it, it breaking, it
-     * ending, or a clash starting (where the two barriers meet). {@code strength} is the hit's (or 0); {@code complete} and {@code cracked} say which kind of shell.
+     * ending, or a clash starting (where the two barriers meet). {@code strength}, for a hit, is the share of the barrier's whole strength it took (or 0); {@code complete} and {@code cracked} say which kind of shell.
      */
     public record Moment(int kind, int dominion, double x, double y, double z, float radius, float strength, boolean complete, boolean cracked,
                          int shellColor, String ability) implements CustomPacketPayload {

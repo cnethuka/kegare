@@ -14,6 +14,8 @@ import java.io.IOException;
 import java.io.Reader;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import javax.imageio.ImageIO;
 import net.minecraft.resources.ResourceLocation;
@@ -22,7 +24,7 @@ import org.junit.jupiter.api.Test;
 
 /**
  * Dominions' shipped art (DESIGN §3.35): the animation (Player Animation Library loads every one the code plays, each with its
- * first-person rule), the icon and the wasteland as hard pixel art, the cracked shell smooth and high-res, and where a clash's seam goes.
+ * first-person rule), the icon and the wasteland as hard pixel art, the barrier's cracks and its shatter, and where a clash's seam goes.
  */
 class DominionVisualsTest {
     private static JsonObject file() throws IOException {
@@ -90,13 +92,53 @@ class DominionVisualsTest {
     }
 
     @Test
-    void theCrackedShellIsSmoothAndHighRes() throws IOException {
-        for (String name : new String[] {"shell_cracked", "shell_cracked_faint"}) {
-            BufferedImage shell = ImageIO.read(asset("textures/entity/dominion/" + name + ".png").toFile());
-            assertTrue(shell.getWidth() >= 1024 && shell.getHeight() >= 512, name + " is high-res");
-            String meta = Files.readString(asset("textures/entity/dominion/" + name + ".png.mcmeta"));
-            assertTrue(JsonParser.parseString(meta).getAsJsonObject().getAsJsonObject("texture").get("blur").getAsBoolean(),
-                    name + " is drawn smooth (blur), not by hard pixels");
+    void cracksLieOnTheShellAndAreTheSameForEveryone() {
+        Vec3 dir = new Vec3(0.3, 0.8, -0.2).normalize();
+        List<BarrierCracks.Line> lines = BarrierCracks.lines(dir, BarrierCracks.seed(dir));
+        assertTrue(lines.size() >= 5, "a star of five or more");
+        for (BarrierCracks.Line line : lines) {
+            for (Vec3 point : line.points()) assertEquals(1.0, point.length(), 1.0e-9, "on the sphere");
+            for (int k = 1; k < line.at().length; k++) assertTrue(line.at()[k] > line.at()[k - 1], "measured out along the crack");
+        }
+        long arms = lines.stream().filter(l -> l.points()[0].dot(dir) > 1 - 1.0e-9).count();
+        assertTrue(arms >= 5, "five or more running out from where it was hit (the rest branch off them): " + arms);
+        List<BarrierCracks.Line> again = BarrierCracks.lines(dir, BarrierCracks.seed(dir));
+        assertEquals(lines.size(), again.size(), "the same shape on every client");
+        assertEquals(lines.get(2).points()[3], again.get(2).points()[3]);
+    }
+
+    @Test
+    void cracksSpreadAsItTakesHits() {
+        float first = BarrierCracks.reach(0.05f, 0.05f);
+        assertTrue(BarrierCracks.reach(0.1f, 0.05f) > first, "a harder hit there reaches further");
+        assertTrue(BarrierCracks.reach(0.05f, 0.6f) > first, "and every star reaches further as the barrier weakens");
+        assertEquals(BarrierCracks.MAX_REACH, BarrierCracks.reach(5f, 1f), 1.0e-6, "up to a limit");
+
+        List<BarrierCracks.Star> stars = new ArrayList<>();
+        Vec3 here = new Vec3(0, 1, 0), near = new Vec3(0.05, 1, 0).normalize(), far = new Vec3(1, 0.2, 0).normalize();
+        BarrierCracks.add(stars, here, 0.05f);
+        BarrierCracks.add(stars, near, 0.05f);
+        assertEquals(1, stars.size(), "a hit on cracks already there adds to them");
+        BarrierCracks.add(stars, far, 0.05f);
+        assertEquals(2, stars.size(), "elsewhere it starts its own");
+        for (int i = 0; i < 100; i++) BarrierCracks.add(stars, new Vec3(Math.cos(i), 0.3, Math.sin(i)).normalize(), 0.01f);
+        assertTrue(stars.size() <= BarrierCracks.MAX_STARS, "only so many");
+    }
+
+    @Test
+    void itShattersIntoPiecesOfItsOwnShell() {
+        float r = 10f;
+        List<DominionFx.Shard> shards = DominionFx.shards(r, net.minecraft.util.RandomSource.create(5), true);
+        assertTrue(shards.size() > 300, "many pieces");
+        assertTrue(DominionFx.shards(r, net.minecraft.util.RandomSource.create(5), false).size() < shards.size(), "fewer at Reduced and Vanilla");
+        for (DominionFx.Shard s : shards) {
+            for (Vec3 c : new Vec3[] {s.a(), s.b(), s.c()}) {
+                assertEquals(r, c.length(), 1.0e-6, "cut from the shell");
+                assertTrue(c.y >= -1.0e-6, "above the ground");
+                assertEquals(0, c.distanceTo(DominionFx.corner(s, c, 0f)), 1.0e-9, "where it was as it bursts");
+            }
+            Vec3 later = DominionFx.corner(s, s.centroid(), 5f);
+            assertTrue(later.subtract(s.centroid()).dot(s.centroid()) > 0, "flying outward (before it falls)");
         }
     }
 

@@ -26,19 +26,18 @@ import net.minecraft.world.level.levelgen.Heightmap;
 import net.minecraft.world.phys.Vec3;
 
 /**
- * A Dominion (DESIGN §3.35), drawn: the barrier, a sphere round its centre rising out of the ground as it opens; from outside its shell
- * color, from inside its sky, darker overhead and hazy at the horizon. An Incomplete Dominion's shell is cracked all over (a smooth,
- * high-res texture), and a full one cracks as it takes hits. Inside, the ground's top faces are laid over with its pattern (pixel art,
- * 16 a block, in the world's light), and ruins stand on it, rising with the barrier. Contested in a clash, both shells flicker half-there
- * and a bright seam grinds where they meet. Nothing here touches the world: it's all drawn over it, so nothing is left when it goes.
+ * A Dominion (DESIGN §3.35), drawn: the barrier, a smooth sphere round its centre rising out of the ground as it opens; from outside a
+ * solid wall of its shell color (pitch black for the Incomplete Dominion), from inside its sky, darker overhead and hazy at the horizon.
+ * White cracks glow on it where it's been hit and spread as it weakens ({@link BarrierCracks}). Inside, the ground's top faces are laid
+ * over with its pattern (pixel art, 16 a block), and ruins stand on it, rising with the barrier. Contested in a clash, both shells flicker
+ * half-there and a bright seam grinds where they meet. Nothing here touches the world: it's all drawn over it, so nothing is left when
+ * it goes.
  */
 public class DominionRenderer extends EntityRenderer<DominionEntity> {
     static final ResourceLocation WHITE = Kegare.id("textures/marks/white.png");
-    static final ResourceLocation CRACKED = Kegare.id("textures/entity/dominion/shell_cracked.png");
-    /** The same cracks, faint: the inside of a cracked shell against its own sky. */
-    static final ResourceLocation CRACKED_FAINT = Kegare.id("textures/entity/dominion/shell_cracked_faint.png");
     static final ResourceLocation RUIN = Kegare.id("textures/marks/ruin_stone.png");
-    private static final int SLICES = 48, STACKS = 24;
+    /** Fine enough that its outline is a curve, not a polygon, close up. */
+    private static final int SLICES = 96, STACKS = 48;
     /** Ground tiles in a pattern's strip (16 x 16 each, side by side). */
     private static final int GROUND_VARIANTS = 4;
     /** How far off a top face the ground pattern is drawn, so it never flickers into it. */
@@ -79,30 +78,23 @@ public class DominionRenderer extends EntityRenderer<DominionEntity> {
         float top = r * risen; // rising out of the ground round its feet: only what's below the top of the risen part is there yet
         PoseStack.Pose p = pose.last();
         if (inside) {
-            // The sky inside: hazy (its fog color) at the horizon, its sky color overhead, all but opaque; its cracks faint against it.
-            shell(buffers.getBuffer(RenderType.entityTranslucent(look.cracked() ? CRACKED_FAINT : WHITE)), p, r, top, look.fogColor(),
-                    look.skyColor(), 0.97f * flicker, look.cracked() ? 1f : 0f);
+            // The sky inside: hazy (its fog color) at the horizon, its sky color overhead, all but opaque.
+            shell(buffers.getBuffer(RenderType.entityTranslucent(WHITE)), p, r, top, look.fogColor(), look.skyColor(), 0.97f * flicker);
         } else {
-            shell(buffers.getBuffer(RenderType.entityTranslucent(look.cracked() ? CRACKED : WHITE)), p, r, top, look.shellColor(),
-                    look.shellColor(), 0.86f * flicker, look.cracked() ? 1f : 0f);
+            // From outside a solid wall: nothing inside shows through (half of it in a clash).
+            shell(buffers.getBuffer(RenderType.entityTranslucent(WHITE)), p, r, top, look.shellColor(), look.shellColor(), flicker);
         }
-        // A full Dominion's shell cracks as it takes hits; an Incomplete one's is cracked from the start.
-        float damage = 1f - d.barrier();
-        if (!look.cracked() && damage > 0.02f) {
-            int lighter = brighter(inside ? look.skyColor() : look.shellColor(), 0.35f);
-            shell(buffers.getBuffer(RenderType.entityTranslucent(CRACKED)), p, r * 0.998f, top, lighter, lighter, Math.min(0.9f, damage) * flicker, 1f);
-        }
+        // Its cracks, glowing white where it's been hit; drawn after the shell (their own buffer), so they always lie over it.
+        List<BarrierCracks.Star> stars = BarrierCracks.stars(d);
+        if (!stars.isEmpty()) BarrierCracks.draw(buffers.getBuffer(RenderType.entityTranslucentEmissive(WHITE)), p, stars, r, top, inside, flicker);
         // The seam where two clashing barriers meet: drawn once, by the one with the lower id.
         if (clash && d.level().getEntity(d.clashWith()) instanceof DominionEntity other && d.getId() < other.getId()) seam(d, other, time, pose, buffers);
     }
 
     // ---------------------------------------------------------------------------------------------- the shell
 
-    /**
-     * The sphere, its quads cut where the barrier hasn't risen to yet. Colored {@code low} at the horizon and {@code high} overhead;
-     * {@code textured}: 1 to show the texture's cracks (an Incomplete Dominion's), 0 for a plain shell.
-     */
-    static void shell(VertexConsumer out, PoseStack.Pose p, float r, float top, int low, int high, float alpha, float textured) {
+    /** The sphere, smooth and untextured, its quads cut where the barrier hasn't risen to yet. Colored {@code low} at the horizon and {@code high} overhead. */
+    static void shell(VertexConsumer out, PoseStack.Pose p, float r, float top, int low, int high, float alpha) {
         int a = Mth.clamp(Math.round(alpha * 255), 0, 255);
         if (a <= 0) return;
         for (int i = 0; i < STACKS; i++) {
@@ -111,22 +103,16 @@ public class DominionRenderer extends EntityRenderer<DominionEntity> {
             float y0 = Mth.sin(a0) * r, y1 = Mth.sin(a1) * r;
             if (y0 > top) break;
             y1 = Math.min(y1, top);
-            float lat1 = (float) Math.asin(Mth.clamp(y1 / r, -1f, 1f));
             float r0 = Mth.cos(a0) * r, r1 = (float) Math.sqrt(Math.max(0, r * r - y1 * y1));
-            // The texture runs from overhead (0) to the horizon (1), mirrored below it.
-            float tv0 = 1f - Math.abs(a0) / (Mth.PI / 2), tv1 = 1f - Math.abs(lat1) / (Mth.PI / 2);
             int c0 = color(low, high, Math.max(0f, y0 / r)), c1 = color(low, high, Math.max(0f, y1 / r));
             for (int j = 0; j < SLICES; j++) {
-                float u0 = (float) j / SLICES, u1 = (float) (j + 1) / SLICES;
-                float t0 = Mth.TWO_PI * u0, t1 = Mth.TWO_PI * u1;
+                float t0 = Mth.TWO_PI * j / SLICES, t1 = Mth.TWO_PI * (j + 1) / SLICES;
                 float x00 = Mth.cos(t0) * r0, z00 = Mth.sin(t0) * r0, x01 = Mth.cos(t1) * r0, z01 = Mth.sin(t1) * r0;
                 float x10 = Mth.cos(t0) * r1, z10 = Mth.sin(t0) * r1, x11 = Mth.cos(t1) * r1, z11 = Mth.sin(t1) * r1;
-                float su0 = textured > 0 ? u0 : 0.5f, su1 = textured > 0 ? u1 : 0.5f;
-                float sv0 = textured > 0 ? tv0 : 0.5f, sv1 = textured > 0 ? tv1 : 0.5f;
-                vertex(out, p, x00, y0, z00, su0, sv0, c0, a);
-                vertex(out, p, x01, y0, z01, su1, sv0, c0, a);
-                vertex(out, p, x11, y1, z11, su1, sv1, c1, a);
-                vertex(out, p, x10, y1, z10, su0, sv1, c1, a);
+                vertex(out, p, x00, y0, z00, c0, a);
+                vertex(out, p, x01, y0, z01, c0, a);
+                vertex(out, p, x11, y1, z11, c1, a);
+                vertex(out, p, x10, y1, z10, c1, a);
             }
         }
     }
@@ -143,11 +129,10 @@ public class DominionRenderer extends EntityRenderer<DominionEntity> {
         return Math.round(r + (255 - r) * by) << 16 | Math.round(g + (255 - g) * by) << 8 | Math.round(b + (255 - b) * by);
     }
 
-    private static void vertex(VertexConsumer out, PoseStack.Pose p, float x, float y, float z, float u, float v, int rgb, int a) {
-        float len = Mth.sqrt(x * x + y * y + z * z);
-        float nx = len < 1.0e-4f ? 0 : x / len, ny = len < 1.0e-4f ? 1 : y / len, nz = len < 1.0e-4f ? 0 : z / len;
-        out.addVertex(p, x, y, z).setColor(rgb >> 16 & 0xFF, rgb >> 8 & 0xFF, rgb & 0xFF, a).setUv(u, v).setOverlay(OverlayTexture.NO_OVERLAY)
-                .setLight(LightTexture.FULL_BRIGHT).setNormal(p, nx, ny, nz);
+    /** Facing up, where the entity shader's two lights are: lit in full, so its color is the same all round (no shading on a sky or a wall). */
+    private static void vertex(VertexConsumer out, PoseStack.Pose p, float x, float y, float z, int rgb, int a) {
+        out.addVertex(p, x, y, z).setColor(rgb >> 16 & 0xFF, rgb >> 8 & 0xFF, rgb & 0xFF, a).setUv(0.5f, 0.5f).setOverlay(OverlayTexture.NO_OVERLAY)
+                .setLight(LightTexture.FULL_BRIGHT).setNormal(p, 0f, 1f, 0f);
     }
 
     // ---------------------------------------------------------------------------------------------- the ground and the ruins

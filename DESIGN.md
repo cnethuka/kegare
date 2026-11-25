@@ -526,8 +526,7 @@ Malice is always shown as whole numbers (floored, like the HUD); the stored valu
     `art/blockbench/string_animations.bbmodel`, which has its own plain rig (§3.20). The game blends every animation in and out in
     code, which Blockbench doesn't show.
   - **Textures** (GUI, items, entities, block marks): the PNGs under `assets/kegare/textures/`, edited in an image editor. Hard
-    pixels on low-res textures, never antialiased or soft-edged. A technique's own objects can be high-res and smooth, drawn with
-    `"blur": true` in their `.mcmeta`: the cracked Dominion shell (`textures/entity/dominion/shell_cracked*.png`, §3.35).
+    pixels on low-res textures, never antialiased or soft-edged.
   - **Sounds:** the `.ogg` files under `assets/kegare/sounds/`.
 - **GUI and item art** is drawn to look hand-pixelled.
   - **Direction ("defiled ink"):** blackened cursed-iron frames lit from the top-left with a violet rim, smoky
@@ -1185,7 +1184,7 @@ Package `com.cnethuka.kegare.innate_technique.rime`. **Rarity: RARE.** All numbe
   | Closing Line (Blur, Severed, §3.27) | a planted push-off (`closing_line_launch`), a crack and a burst of dust and grit off the ground where they left, and a heavy launch everyone nearby hears (`severed.closing_line_launch`, loud); on arrival a skid (`closing_line_arrive`, `severed.closing_line_arrive`) and dust where they stop |
   | Black Spark (Reinforced Fists, §3.28; not a special, but it gets a tell all the same) | black and red pixel art bursting from the point of contact for one sharp moment: jagged stair-stepped bolts, black with red edges, crackling outward round a black starburst, and black and red pixels thrown out and falling; the same for everyone, at every effects setting (Vanilla: black and red dust and crit sparks), and a sharp crack (`black_spark.crack`) everyone near hears |
   | Reverse Malice Technique, on another (RMT, §3.17) | the healer's right hand reaching out onto the one healed (they must be touching), with RMT's white flames burning on it, seen by everyone for as long as it lasts (the pose at every effects setting; the flames Photon, white dust at Vanilla), and a soft chime as it starts (an amethyst chime, high) |
-  | Incomplete Dominion (shared, §3.35; not a special, but it gets a tell all the same) | its own cast (`incomplete_dominion_cast`: the hands pressed together before the chest, then flung apart and down as the head comes up), the grey cracked barrier rising out of the ground round the caster for its whole second, and a low swelling drone everyone near hears as it starts, sealing shut as it closes (`dominion.open`); everyone it closes on sees "Incomplete Dominion" across the screen |
+  | Incomplete Dominion (shared, §3.35; not a special, but it gets a tell all the same) | its own cast (`incomplete_dominion_cast`: the hands pressed together before the chest, then flung apart and down as the head comes up), the pitch-black barrier rising out of the ground round the caster for its whole second, and a low swelling drone everyone near hears as it starts, sealing shut as it closes (`dominion.open`); everyone it closes on sees "Incomplete Dominion" across the screen |
 
   Standstill isn't a special, but it has a tell of its own all the same: the raised watch (`standstill_cast`), the sharp click
   (`time_manipulation.stop`) and a one-frame inverted flash (at Full) for everyone inside, then the gray.
@@ -3529,12 +3528,23 @@ that opened it: a technique's ultimate, or the Incomplete Dominion).
 
 **The look** (`DominionRenderer`, `DominionFx`, `ClashClient`; all our own drawing and vanilla particles, no Photon, so the same at
 Full, Reduced and Vanilla, where Reduced and Vanilla place fewer ruins and half the dust and shards):
-- **The barrier** is a sphere (48 x 24 quads) round its centre, rising out of the ground round its caster's feet over its opening
-  second. From outside it's its shell color at 86%; from inside its sky, all but opaque (97%): its fog color at the horizon blending
-  to its sky color overhead, full-bright, so it reads the same by day and night. A cracked shell (an Incomplete Dominion's) wears a
-  smooth, high-res crack texture (1024 x 512, webs of straight-run cracks with sharp kinks radiating from a few points, bilinear
-  `blur`), heavy outside and faint inside against the sky. A full Dominion's plain shell takes the same cracks over it as it's hit,
-  stronger as its strength runs out, so a barrier near breaking shows it from both sides.
+- **The barrier** is a smooth sphere (96 x 48 quads, so its outline is a curve up close, untextured) round its centre, rising out of
+  the ground round its caster's feet over its opening second. From outside it's a solid wall of its shell color (pitch black for the
+  Incomplete Dominion): nothing inside shows through. From inside it's its sky, all but opaque (97%): its fog color at the horizon
+  blending to its sky color overhead. Both full-bright and lit evenly, so it reads the same by day and night and from every side.
+- **Cracks** (`BarrierCracks`): white, glowing, drawn as geometry on the shell (no texture, so sharp up close and far off). A hit
+  opens a star of five to seven cracks where it landed, straight runs with sharp kinks and the odd branch, or, landing on cracks
+  already there, makes them reach further: a star reaches further for the share of the barrier's strength it took (the hit moment
+  carries that share) and for how weak the whole barrier is. As the barrier weakens, new fractures also open across it, one for every
+  12% of its strength gone, so one near breaking is cracked all over. Each star's shape comes from where it is, and the new fractures'
+  places from where the Dominion stands, so every client sees the same cracks; one that first sees a barrier already damaged opens its
+  fractures at once. A star grows into its reach over a few ticks rather than at once. Seen from outside a crack is a white core with
+  a soft white glow; from inside, against the lighter sky, a white core with a dark rim. A look that's `cracked` closes as if it had
+  already lost a quarter of its strength. Cracks show at every effects setting: they're how much the barrier has left.
+- **The white shatter:** when it breaks, its cracks race across the whole shell for 3 ticks, then it bursts: a white flash (a white
+  sphere swelling and gone in 7 ticks), its shell above the ground in white shards (648; 288 at Reduced and Vanilla), each flying out
+  and up, turning and shrinking, falling, fading over 1.5 s, and 180 white motes and sparks (half at Reduced and Vanilla). In your own
+  first person no shard is drawn within 2 blocks of your eyes.
 - **The ground:** every top face inside the sphere (read from the heightmap a client has, refreshed every two seconds, so battle
   damage moves it) is laid over with its ground pattern, one 16 x 16 tile a block, four tiles chosen and turned by position, spreading
   out from the caster as the barrier rises. **Ruins:** seven (four at Reduced and Vanilla) columns and wall stubs of broken stone
@@ -3543,13 +3553,13 @@ Full, Reduced and Vanilla, where Reduced and Vanilla place fewer ruins and half 
   darker than block light 11, so at night they still match the sky. **Dust:** inside, round the viewer, white ash and slow motes of
   its dust color (five a tick, half at Reduced and Vanilla), never within 2 blocks of a first-person camera.
 - **The Incomplete Dominion's wasteland** (`IncompleteDominions.WASTELAND`): sky `0x6F6B66` overhead and `0x8E8983` at the horizon and
-  in the fog (fog ends at 30 blocks), shell `0x57534E`, ground `kegare:wasteland` (`textures/marks/wasteland.png`: grey dust in
-  four shades, one or two pixel-wide cracks with a light edge, pebbles), ruins, dust `0xA7A29B`, cracked. No Malice color anywhere.
+  in the fog (fog ends at 30 blocks), shell `0x000000` (pitch black), ground `kegare:wasteland` (`textures/marks/wasteland.png`: grey
+  dust in four shades, one or two pixel-wide cracks with a light edge, pebbles), ruins, dust `0xA7A29B`, not cracked (it cracks only
+  where it's hit). No Malice color anywhere.
 - **Moments:** opening plays `dominion.open` (a low drone swelling as the barrier rises, air rushing up through it, and a heavy soft
-  seal a second in, as it closes) for everyone near; a hit on the barrier a glass knock and a spray of grey shards and sparks where it
-  landed; breaking plays `dominion.break` (one huge crack, the shell falling apart in lower and lower pieces, a rumble) as the shell
-  swells 6% and fades over 0.7 s, shedding 160 grey shards; ending on its own a beacon powering down. Its name crosses the screen of
-  everyone it closes on.
+  seal a second in, as it closes) for everyone near; a hit on the barrier a glass knock, its cracks and a spray of white sparks where
+  it landed; breaking plays `dominion.break` (one huge crack, the shell falling apart in lower and lower pieces, a rumble) with the
+  white shatter; ending on its own a beacon powering down. Its name crosses the screen of everyone it closes on.
 - **A clash, seen by everyone:** both shells half there and flickering, a bright jittering seam (two crossed strips, so it reads
   from any side) round the circle where they meet, with sparks and grit flying off it, and `dominion.clash` where it began (two low
   tones beating against each other, grit scraping between them, a hard knock).
@@ -3597,10 +3607,10 @@ in `[dominion.incomplete]`): the inner space expanded with Malice alone, with no
 - **Slotted** on the bar like any shared ability (a number key), never on V: the ultimate stays the technique's.
 - **Opening** takes `meterShare` (half) of the Dominion Meter and `cost` (150) Malice, then `cooldownSeconds` (30) from the cast;
   refused, with nothing paid, for the reasons any Dominion is (above). Its barrier is smaller, weaker and shorter
-  than a full one's: `radius` 10, `barrierStrength` 10 (a quarter of a full one's), `durationSeconds` 20, its shell cracked. It finds
+  than a full one's: `radius` 10, `barrierStrength` 10 (a quarter of a full one's), `durationSeconds` 20. It finds
   nobody: no sure-hit. Afterwards its caster burns out for `incompleteBurnout` (15 s), broken or not.
 - **The look:** the same for everyone who opens one, with no Malice color: a grey wasteland (grey cracked ground, an ash sky, ruins
-  and dust) inside a dark cracked shell (`IncompleteDominions.WASTELAND`).
+  and dust) inside a pitch-black, smooth shell that cracks white where it's hit (`IncompleteDominions.WASTELAND`).
 - **For its caster, while it stands** (closed; not while it rises, nor in a clash), and for nobody else inside: their innate
   technique's casts, releases and upkeep cost `boosts.techniqueCost` (25%) less (through `CastManager.addAbilityCostModifier`, like
   Flow's, so a cast still counts as its full price for Landings and the Impact System), its cooldowns run at `boosts.cooldownRate`
@@ -3625,7 +3635,7 @@ or a Severed player; caught_in_dominion paid once), `DominionMeterTest` (filling
 out of combat, saved), `IncompleteDominionTest` (shared and in the Malice tab; learned from the Grade and the Peak Refinement, on the bar,
 kept through a reroll, a Grade short never; Dominion Insight lowering the Refinement, rounding down, half at most; never a Severed player's,
 not even from an admin; a short meter refused with nothing paid, half the meter and its Malice taken through the real cast, the smaller
-radius, the wasteland and the cracked shell, its name in a Six Eyes read, no sure-hit, the shorter duration, the short Burnout, refused
+radius, the wasteland and the pitch-black, uncracked shell, its name in a Six Eyes read, no sure-hit, the shorter duration, the short Burnout, refused
 while burnt out; breaking at its own strength; the cheaper casts, faster cooldowns and harder hits for its caster alone, only while it
 stands, gone when it ends), `ClashTest` (opening over another starts a clash, both half-formed with nobody trapped, Insight paid, a third
 side refused with nothing paid; not holding on in the Grip loses, the loser breaking and burning out, the winner closing again on whoever
@@ -3634,8 +3644,10 @@ the time it had used; an Incomplete Dominion's handicap against a full one; runn
 while holding on, held in place, free in the Fight; the Fight's score from the two casters' damage alone, Fight Me; a close fight
 breaking both with the exhausted Burnout, Mutual Destruction; a side ended by command forfeiting with nothing won, top-tier to each other
 only while clashing; the advancements hidden and silent on the Base tab), `DominionVisualsTest` (the cast animation loads and keeps your own hands vanilla's; the icon,
-wasteland and ruin stone hard pixel art, 16 a block, grey; the cracked shells high-res and smooth; a clash's seam on both shells, and
-none for spheres apart or one inside the other).
+wasteland and ruin stone hard pixel art, 16 a block, grey; cracks on the shell, measured along, the same shape on every client, reaching
+further for a harder hit and a weaker barrier up to a limit, a hit on cracks adding to them and elsewhere starting its own, only so many;
+the shatter's shards cut from the shell above the ground, fewer at Reduced and Vanilla, flying outward; a clash's seam on both shells,
+and none for spheres apart or one inside the other).
 
 ---
 

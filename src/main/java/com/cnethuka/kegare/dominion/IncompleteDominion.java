@@ -11,7 +11,7 @@ import net.minecraft.server.level.ServerPlayer;
 
 /**
  * The Incomplete Dominion (shared, Malice, INSTANT; DESIGN §3.35): the inner space expanded with Malice alone. It takes half the
- * Dominion Meter and its cost in Malice, and opens a smaller, weaker barrier with a cracked shell round its caster for a shorter time,
+ * Dominion Meter and its cost in Malice, and opens a smaller, weaker barrier, pitch black, round its caster for a shorter time,
  * the same grey wasteland inside for everyone who opens one. It finds nobody (no sure-hit); instead its caster's technique runs better
  * inside it while it stands. Slotted on the bar like any shared ability, never on V. Learned through the unlock framework
  * ({@link IncompleteDominions}); Severed players never have it.

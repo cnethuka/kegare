@@ -88,6 +88,8 @@ public class DominionEntity extends Entity {
         public int[] columns;
         public int columnsAt;
         public java.util.List<?> ruins;
+        /** Its cracks: where it's been hit and how far they reach (the client's {@code BarrierCracks}). */
+        public java.util.List<?> cracks;
     }
 
     public ClientCache clientCache() {

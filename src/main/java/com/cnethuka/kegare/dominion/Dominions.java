@@ -427,7 +427,7 @@ public final class Dominions {
         d.barrierLeft -= strength;
         double whole = d.spec == null ? 1 : d.spec.barrierStrength();
         d.setBarrierShare((float) (d.barrierLeft / whole));
-        moment(d, DominionNet.Moment.HIT, at, (float) strength);
+        moment(d, DominionNet.Moment.HIT, at, (float) (strength / whole)); // the share it took: how far its cracks spread
         if (d.barrierLeft <= 0) end(d, EndReason.BROKEN);
     }
 
@@ -436,7 +436,7 @@ public final class Dominions {
         if (d.ended || d.spec == null || share <= 0) return;
         d.barrierLeft -= share * d.spec.barrierStrength();
         d.setBarrierShare((float) (d.barrierLeft / d.spec.barrierStrength()));
-        moment(d, DominionNet.Moment.HIT, d.centre().add(0, d.radius(), 0), (float) (share * d.spec.barrierStrength()));
+        moment(d, DominionNet.Moment.HIT, d.centre().add(0, d.radius(), 0), (float) share);
         if (d.barrierLeft <= 1.0e-9) end(d, EndReason.BROKEN);
     }
 

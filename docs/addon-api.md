@@ -295,7 +295,7 @@ public static final DominionUltimate STORM_DOMINION = new DominionUltimate(Resou
 
     @Override
     public DominionLook look() {
-        // sky inside, fog, how far you see, the shell from outside, a ground mark, ruins, dust color (-1: none), a cracked shell
+        // sky inside, fog, how far you see, the shell from outside, a ground mark, ruins, dust color (-1: none), already cracked as it closes
         return new DominionLook(0x2B3550, 0x2B3550, 28f, 0x101420, Optional.empty(), false, 0xA0B0D0, false);
     }
 

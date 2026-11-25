@@ -11,13 +11,14 @@ import net.minecraft.resources.ResourceLocation;
  * @param skyColor     RGB of the inside of the shell overhead: the sky from inside
  * @param fogColor     RGB of the fog inside, and of the sky inside at the horizon (it blends to {@code skyColor} overhead)
  * @param fogEnd       how far you see inside, in blocks
- * @param shellColor   RGB of the barrier seen from outside
+ * @param shellColor   RGB of the barrier seen from outside, a solid wall of it (0x000000: pitch black, as the Incomplete Dominion's)
  * @param groundPattern a block mark laid over every top face inside, or empty for none: {@code <namespace>:<path>} names the texture
  *                      {@code <namespace>:textures/marks/<path>.png}, 64 x 16, four 16 x 16 tiles side by side (pixel art at 16 texels
  *                      a block, hard pixels), one picked and turned for each block by where it is
  * @param ruins        broken ruins stand in it
  * @param dustColor    RGB of dust drifting through it, or -1 for none
- * @param cracked      the shell shows cracks (an Incomplete Dominion's does)
+ * @param cracked      the shell closes already cracked: white cracks glowing on it from the start, as if it had lost a quarter of its
+ *                      strength (every shell cracks as it's hit, cracked or not)
  */
 public record DominionLook(int skyColor, int fogColor, float fogEnd, int shellColor, Optional<ResourceLocation> groundPattern, boolean ruins,
                            int dustColor, boolean cracked) {

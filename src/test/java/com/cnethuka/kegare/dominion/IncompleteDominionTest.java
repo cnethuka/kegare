@@ -168,7 +168,8 @@ class IncompleteDominionTest {
                 assertFalse(d.complete(), "incomplete");
                 assertEquals(DominionConfig.INCOMPLETE_RADIUS.get(), d.radius(), EPS, "smaller than a full one");
                 assertTrue(d.radius() < DominionConfig.FULL_RADIUS.get());
-                assertTrue(d.look().cracked(), "its shell cracked");
+                assertEquals(0x000000, d.look().shellColor(), "its shell pitch black");
+                assertFalse(d.look().cracked(), "and smooth: it cracks only where it's hit");
                 assertEquals(IncompleteDominions.WASTELAND, d.look(), "the one wasteland, whoever opens it");
                 assertEquals(Optional.of(DominionIds.INCOMPLETE), Reads.detail(p).body().orElseThrow().dominion(), "the Six Eyes read it by name");
 
