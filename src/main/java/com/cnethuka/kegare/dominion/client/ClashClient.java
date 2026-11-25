@@ -159,7 +159,7 @@ public final class ClashClient {
     private static void render(GuiGraphics g, DeltaTracker delta) {
         Minecraft mc = Minecraft.getInstance();
         if (mc.options.hideGui || mc.player == null) return;
-        int cx = g.guiWidth() / 2, top = g.guiHeight() / 4;
+        int cx = g.guiWidth() / 2, top = g.guiHeight() / 7 + 10; // above a Dominion's name, which shows at a third of the way down
         long now = ClientStamps.nowMs();
         DominionNet.ClashState s = state;
         if (s == null) {
@@ -187,7 +187,7 @@ public final class ClashClient {
                 GuiDraw.centered(g, mc.font, Component.translatable("hud.kegare.dominion.clash.maintain", left), cx, top - 12, 1f, 0xFFEDE8F2);
                 bar(g, cx, top, s.bar(), s.barrier());
                 if (!s.holding()) GuiDraw.centered(g, mc.font, Component.translatable("hud.kegare.dominion.clash.let_go"), cx, top + 14, 1f, MISS);
-                drawPrompt(g, mc, cx, top + 44, now);
+                drawPrompt(g, mc, cx, top + 38, now);
             }
             case 2 -> { // Fight: the scores
                 GuiDraw.centered(g, mc.font, Component.translatable("hud.kegare.dominion.clash.fight", left), cx, top - 12, 1f, 0xFFEDE8F2);
@@ -199,7 +199,7 @@ public final class ClashClient {
         if (judged != 0 && now - judgedAt < 500) {
             boolean hit = judged == DominionNet.ClashPrompt.HIT;
             GuiDraw.centered(g, mc.font, Component.translatable(hit ? "hud.kegare.dominion.clash.hit" : "hud.kegare.dominion.clash.miss"),
-                    cx, top + 76, 1.5f, hit ? HIT : MISS);
+                    cx, top + 62, 1f, hit ? HIT : MISS);
         }
     }
 

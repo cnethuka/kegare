@@ -14,10 +14,7 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
-import net.minecraft.sounds.SoundEvents;
-import net.minecraft.sounds.SoundSource;
 import net.minecraft.util.Mth;
-import net.minecraft.world.entity.Entity;
 import net.minecraft.world.phys.Vec3;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.neoforge.client.event.ClientPlayerNetworkEvent;
@@ -56,6 +53,7 @@ public final class DominionClient {
         DominionNet.Moment.clientHandler = DominionClient::moment;
         StatusLayer.addExtra(DominionClient::renderMeter);
         ClashClient.init(modBus);
+        DominionFx.init();
         modBus.addListener((EntityRenderersEvent.RegisterRenderers e) -> e.registerEntityRenderer(DominionRegistry.DOMINION.get(), DominionRenderer::new));
         modBus.addListener((RegisterGuiLayersEvent e) -> e.registerAbove(VanillaGuiLayers.CROSSHAIR, TITLE_LAYER, DominionClient::renderTitle));
         // The Incomplete Dominion's sweep would cross the middle of your own first-person view: there it's vanilla's hands.
@@ -102,25 +100,14 @@ public final class DominionClient {
     private static void moment(DominionNet.Moment m) {
         Minecraft mc = Minecraft.getInstance();
         if (mc.level == null) return;
-        Vec3 at = new Vec3(m.x(), m.y(), m.z());
-        switch (m.kind()) {
-            case DominionNet.Moment.OPENING -> mc.level.playLocalSound(at.x, at.y, at.z, SoundEvents.BEACON_POWER_SELECT, SoundSource.PLAYERS, 1.6f, 0.5f, false);
-            case DominionNet.Moment.CLOSED -> {
-                mc.level.playLocalSound(at.x, at.y, at.z, SoundEvents.BEACON_ACTIVATE, SoundSource.PLAYERS, 1.6f, 0.5f, false);
-                Entity e = mc.level.getEntity(m.dominion());
-                if (e instanceof DominionEntity d && d.localTrapped()) {
-                    ResourceLocation ability = ResourceLocation.tryParse(m.ability());
-                    if (ability != null) {
-                        title = Component.translatable(Util.makeDescriptionId("ability", ability));
-                        titleAt = mc.level.getGameTime();
-                    }
-                }
+        DominionFx.moment(m);
+        // Its name, across the screen of everyone it closes on.
+        if (m.kind() == DominionNet.Moment.CLOSED && mc.level.getEntity(m.dominion()) instanceof DominionEntity d && d.localTrapped()) {
+            ResourceLocation ability = ResourceLocation.tryParse(m.ability());
+            if (ability != null) {
+                title = Component.translatable(Util.makeDescriptionId("ability", ability));
+                titleAt = mc.level.getGameTime();
             }
-            case DominionNet.Moment.HIT -> mc.level.playLocalSound(at.x, at.y, at.z, SoundEvents.GLASS_HIT, SoundSource.PLAYERS, 1.2f, 0.6f, false);
-            case DominionNet.Moment.BROKE -> mc.level.playLocalSound(at.x, at.y, at.z, SoundEvents.GLASS_BREAK, SoundSource.PLAYERS, 2.0f, 0.5f, false);
-            case DominionNet.Moment.ENDED -> mc.level.playLocalSound(at.x, at.y, at.z, SoundEvents.BEACON_DEACTIVATE, SoundSource.PLAYERS, 1.4f, 0.6f, false);
-            case DominionNet.Moment.CLASH -> mc.level.playLocalSound(at.x, at.y, at.z, SoundEvents.ANVIL_LAND, SoundSource.PLAYERS, 1.6f, 0.5f, false);
-            default -> {}
         }
     }
 

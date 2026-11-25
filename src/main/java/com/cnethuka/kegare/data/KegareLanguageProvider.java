@@ -174,6 +174,9 @@ public final class KegareLanguageProvider extends LanguageProvider {
         add("subtitles.kegare.puppet_manipulation.curio_thump", "Heavy thump");
         add("subtitles.kegare.impact.boom", "Deep boom");
         add("subtitles.kegare.black_spark.crack", "Black spark cracks");
+        add("subtitles.kegare.dominion.open", DOMINION + " rises");
+        add("subtitles.kegare.dominion.break", DOMINION + " breaks");
+        add("subtitles.kegare.dominion.clash", DOMINION + "s clash");
         add("message.kegare.swap.switchback_refused", "Something stops the swap back.");
         // Puppet Manipulation
         add("innate_technique.kegare.puppet_manipulation", "Puppet Manipulation");

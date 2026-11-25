@@ -79,8 +79,20 @@ public class DominionEntity extends Entity {
     /** Where the caster stood when a clash began: they can't move far from it while they hold it. */
     @Nullable Vec3 holdAt;
 
-    // ---- client only: whether the local player is on the inside of it
+    // ---- client only: whether the local player is on the inside of it, and what its drawing keeps
     boolean localTrapped;
+    private final ClientCache clientCache = new ClientCache();
+
+    /** What a client's drawing of it keeps between frames (the ground's heights, its ruins). */
+    public static final class ClientCache {
+        public int[] columns;
+        public int columnsAt;
+        public java.util.List<?> ruins;
+    }
+
+    public ClientCache clientCache() {
+        return clientCache;
+    }
 
     /** Client: whether the local player is trapped inside it (the server says, as it closes). */
     public boolean localTrapped() {

@@ -5,6 +5,24 @@
     ],
     "subtitle": "subtitles.kegare.black_spark.crack"
   },
+  "dominion.break": {
+    "sounds": [
+      "kegare:dominion/break"
+    ],
+    "subtitle": "subtitles.kegare.dominion.break"
+  },
+  "dominion.clash": {
+    "sounds": [
+      "kegare:dominion/clash"
+    ],
+    "subtitle": "subtitles.kegare.dominion.clash"
+  },
+  "dominion.open": {
+    "sounds": [
+      "kegare:dominion/open"
+    ],
+    "subtitle": "subtitles.kegare.dominion.open"
+  },
   "impact.boom": {
     "sounds": [
       "kegare:impact/boom"

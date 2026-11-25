@@ -40,7 +40,7 @@ public final class IncompleteDominions {
      * The inner space with nothing of a technique in it: grey cracked ground, an ash sky, ruins and drifting dust, and a dark cracked
      * shell from outside. No Malice color anywhere, so every Incomplete Dominion looks the same whoever opens it.
      */
-    public static final DominionLook WASTELAND = new DominionLook(0x8E8A85, 0x837E79, 30f, 0x3C3936, Optional.of(DominionIds.WASTELAND_GROUND),
+    public static final DominionLook WASTELAND = new DominionLook(0x6F6B66, 0x8E8983, 30f, 0x57534E, Optional.of(DominionIds.WASTELAND_GROUND),
             true, 0xA7A29B, true);
     /** Its cooldown rate's key ({@link CooldownRates}). */
     private static final String RATE = "incomplete_dominion";

@@ -316,7 +316,7 @@ Opening over another Dominion starts a clash, and the caster has to keep V held 
 
 | Method | What it does |
 |---|---|
-| `look()` | **Required.** What its inside looks like, drawn by the clients over the real world: nothing in the world changes. |
+| `look()` | **Required.** What its inside looks like, drawn by the clients over the real world: nothing in the world changes. The sky inside goes from its fog color at the horizon to its sky color overhead. A ground pattern `yourmod:name` is the texture `yourmod:textures/marks/name.png`: 64 x 16, four 16 x 16 tiles side by side, hard pixels. |
 | `sureHit()` | Whether its technique can't miss inside (default true). `ctx.sureHitTargets()` lists who it reaches: everything trapped inside but its caster and what they own, never a Severed player, and nothing while it's contested. |
 | `radius`, `durationTicks`, `barrierStrength` | Its barrier, per caster. Kegare's `[dominion.full]` numbers unless you override them. |
 | `onOpen`, `tickInside`, `onClose(ctx, broken)` | When it closes, every tick it's open, and as it ends. |
