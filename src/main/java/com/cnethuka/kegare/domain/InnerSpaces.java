@@ -208,12 +208,13 @@ public final class InnerSpaces {
      */
     static void letOut(InnerSpace s) {
         MinecraftServer server = s.level.getServer();
-        for (Entity e : s.level.getEntitiesOfClass(Entity.class, box(s), e -> !(e instanceof DomainEntity) && !e.isPassenger())) {
-            if (e.isRemoved()) continue;
-            if (e instanceof ServerPlayer p) {
-                sendBack(p, server);
-                continue;
-            }
+        // Players from the level's own list, not an entity search: one in a chunk that isn't open to searches yet is still let out.
+        AABB plot = box(s);
+        for (ServerPlayer p : List.copyOf(s.level.players())) {
+            if (!p.isRemoved() && plot.contains(p.position())) sendBack(p, server);
+        }
+        for (Entity e : s.level.getEntitiesOfClass(Entity.class, plot, e -> !(e instanceof DomainEntity) && !e.isPassenger())) {
+            if (e.isRemoved() || e instanceof ServerPlayer) continue;
             Vec3 origin = s.mobOrigins.get(e.getUUID());
             Entity moved = move(e, s.outerLevel, origin != null ? origin : drawnBack(s, e.position()), e.getYRot(), e.getXRot());
             if (moved != null && origin == null) liftClear(moved);
