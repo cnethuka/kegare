@@ -97,7 +97,7 @@ public final class SorcererScreen extends Screen {
     private static final ResourceLocation ICON_BACKGROUND = Kegare.id("view_background");
     private static final int TILE = CombatPanelLayer.SLOT_SIZE;
     private static final int TILE_INSET = 2;
-    /** The tile and card for an ultimate still locked until its Dominion (Rime, Puppet Manipulation): there's no ability to show. */
+    /** The tile and card for an ultimate still locked until its Domain (Rime, Puppet Manipulation): there's no ability to show. */
     private static final ResourceLocation ULTIMATE_LOCKED = Kegare.id("ultimate_locked");
     private static final int TAB_SIZE = 24;
     private static final long STATUS_MS = 3500;
@@ -376,7 +376,7 @@ public final class SorcererScreen extends Screen {
 
     /**
      * The ultimate, after the others, labelled V as on the bar. Clicking it keeps its card in the big box; it never goes in hand, since
-     * the ultimate isn't placed on the bar. Locked by Refinement: greyed, with a padlock and the level; locked until its Dominion: a
+     * the ultimate isn't placed on the bar. Locked by Refinement: greyed, with a padlock and the level; locked until its Domain: a
      * padlock alone.
      */
     private void renderUltimateTile(GuiGraphics g, InnateTechnique technique, SyncPayload data, int x, int ty, int mouseX, int mouseY) {
@@ -612,7 +612,7 @@ public final class SorcererScreen extends Screen {
 
         y += GuiDraw.text(g, font, Component.translatable("gui.kegare.sorcerer.progress.insight"), x, y, 1f, 0xFFD8D2E0) + 1;
         y += GuiDraw.wrapped(g, font, Component.translatable("gui.kegare.sorcerer.progress.insight.values",
-                Component.translatable(InsightCategory.DOMINION.translationKey()), p.dominion(),
+                Component.translatable(InsightCategory.DOMAIN.translationKey()), p.domain(),
                 Component.translatable(InsightCategory.WARD.translationKey()), p.ward(),
                 Component.translatable(InsightCategory.OUTPUT.translationKey()), p.output()), x, y, w, GuiDraw.GRAY);
         if (data.severed()) return y;
@@ -705,7 +705,7 @@ public final class SorcererScreen extends Screen {
         y = optionRow(g, 4, "gui.kegare.settings.animation_fades", ON_OFF, KegareClientConfig.ANIMATION_FADES.get() ? 0 : 1, x, y, w, mouseX, mouseY) + 5;
         y = sliderRow(g, SHAKE_SLIDER, "gui.kegare.settings.shake", KegareClientConfig.SHAKE_STRENGTH.get(), x, y, w, mouseX, mouseY) + 5;
         y = optionRow(g, 8, "gui.kegare.settings.impact_frames", ON_OFF, KegareClientConfig.IMPACT_FRAMES.get() ? 0 : 1, x, y, w, mouseX, mouseY) + 5;
-        y = optionRow(g, 11, "gui.kegare.settings.dominion_flashes", ON_OFF, KegareClientConfig.DOMINION_FLASHES.get() ? 0 : 1, x, y, w, mouseX, mouseY) + 5;
+        y = optionRow(g, 11, "gui.kegare.settings.domain_flashes", ON_OFF, KegareClientConfig.DOMAIN_FLASHES.get() ? 0 : 1, x, y, w, mouseX, mouseY) + 5;
         y = optionRow(g, 3, "gui.kegare.settings.reveal", ON_OFF, KegareClientConfig.REVEAL_ANIMATION.get() ? 0 : 1, x, y, w, mouseX, mouseY) + 5;
         y = optionRow(g, 5, "gui.kegare.settings.reveal_always_full", ON_OFF, KegareClientConfig.REVEAL_ALWAYS_FULL.get() ? 0 : 1, x, y, w, mouseX, mouseY) + 5;
         y = optionRow(g, 6, "gui.kegare.settings.reveal_reduced_motion", ON_OFF, KegareClientConfig.REVEAL_REDUCED_MOTION.get() ? 0 : 1, x, y, w, mouseX, mouseY);
@@ -814,7 +814,7 @@ public final class SorcererScreen extends Screen {
             case 7 -> KegareClientConfig.DASH_DOUBLE_TAP_MILLIS.set(DOUBLE_TAP_MILLIS[value]);
             case 8 -> KegareClientConfig.IMPACT_FRAMES.set(value == 0);
             case 9 -> KegareClientConfig.SIX_EYES_MINIMAP.set(value == 0);
-            case 11 -> KegareClientConfig.DOMINION_FLASHES.set(value == 0);
+            case 11 -> KegareClientConfig.DOMAIN_FLASHES.set(value == 0);
             case 10 -> KegareClientConfig.SIX_EYES_READ_TAGS.set(READ_TAG_VALUES[value]);
             default -> {
                 return;

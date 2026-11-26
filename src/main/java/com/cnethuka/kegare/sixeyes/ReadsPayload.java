@@ -89,13 +89,13 @@ public record ReadsPayload(List<Glance> glances, List<MobGlance> mobs, Optional<
 
     /**
      * Everything about one body. A mob does nothing to cast, cool down or switch on. {@code backgroundRmt}: Background RMT is running on
-     * them (everyone sees its shimmer; the eyes read what it is). {@code dominion}: the ability whose Dominion they hold open (DESIGN
+     * them (everyone sees its shimmer; the eyes read what it is). {@code domain}: the ability whose Domain they hold open (DESIGN
      * §3.35), if any.
      */
     public record Body(Optional<Cast> cast, List<Cooldown> cooldowns, List<ResourceLocation> toggles, boolean backgroundRmt,
-                       Optional<ResourceLocation> dominion, Vitals vitals, List<Effect> effects, Status status) {
+                       Optional<ResourceLocation> domain, Vitals vitals, List<Effect> effects, Status status) {
         // Eight fields: more than StreamCodec.composite takes, so written out field by field, in this order.
-        private static final StreamCodec<io.netty.buffer.ByteBuf, Optional<ResourceLocation>> DOMINION = ResourceLocation.STREAM_CODEC.apply(ByteBufCodecs::optional);
+        private static final StreamCodec<io.netty.buffer.ByteBuf, Optional<ResourceLocation>> DOMAIN = ResourceLocation.STREAM_CODEC.apply(ByteBufCodecs::optional);
         private static final StreamCodec<FriendlyByteBuf, Optional<Cast>> CAST = Cast.CODEC.apply(ByteBufCodecs::optional);
         private static final StreamCodec<FriendlyByteBuf, List<Cooldown>> COOLDOWNS = Cooldown.CODEC.apply(ByteBufCodecs.list());
         private static final StreamCodec<io.netty.buffer.ByteBuf, List<ResourceLocation>> TOGGLES = ResourceLocation.STREAM_CODEC.apply(ByteBufCodecs.list());
@@ -106,12 +106,12 @@ public record ReadsPayload(List<Glance> glances, List<MobGlance> mobs, Optional<
                     COOLDOWNS.encode(buf, b.cooldowns());
                     TOGGLES.encode(buf, b.toggles());
                     buf.writeBoolean(b.backgroundRmt());
-                    DOMINION.encode(buf, b.dominion());
+                    DOMAIN.encode(buf, b.domain());
                     Vitals.CODEC.encode(buf, b.vitals());
                     EFFECTS.encode(buf, b.effects());
                     Status.CODEC.encode(buf, b.status());
                 },
-                buf -> new Body(CAST.decode(buf), COOLDOWNS.decode(buf), TOGGLES.decode(buf), buf.readBoolean(), DOMINION.decode(buf), Vitals.CODEC.decode(buf),
+                buf -> new Body(CAST.decode(buf), COOLDOWNS.decode(buf), TOGGLES.decode(buf), buf.readBoolean(), DOMAIN.decode(buf), Vitals.CODEC.decode(buf),
                         EFFECTS.decode(buf), Status.CODEC.decode(buf)));
     }
 

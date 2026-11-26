@@ -20,7 +20,7 @@ import com.cnethuka.kegare.api.ability.Ability;
 
 /**
  * An innate technique (registry {@code kegare:innate_technique}): a rarity, an ordered list of abilities (picked with the number keys
- * or scroll wheel in Technique Mode; each may have a special on R) and an optional ultimate (V; Dominions will plug in here).
+ * or scroll wheel in Technique Mode; each may have a special on R) and an optional ultimate (V; Domains will plug in here).
  * Register new ones with a {@code DeferredRegister} on {@link KegareApi#INNATE_TECHNIQUES}.
  */
 public class InnateTechnique {
@@ -118,7 +118,7 @@ public class InnateTechnique {
         return rollable;
     }
 
-    /** No ultimate yet, but one is planned (its Dominion comes later): the ultimate slot shows as locked. */
+    /** No ultimate yet, but one is planned (its Domain comes later): the ultimate slot shows as locked. */
     public final boolean ultimateLocked() {
         return ultimateLocked;
     }

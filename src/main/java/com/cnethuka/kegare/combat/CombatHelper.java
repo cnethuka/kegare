@@ -9,7 +9,7 @@ import net.minecraft.world.entity.LivingEntity;
 import net.neoforged.neoforge.common.Tags;
 
 /**
- * Shared combat state for abilities, dominions and anything else that needs it.
+ * Shared combat state for abilities, domains and anything else that needs it.
  * Works on any {@link LivingEntity}; damage-based tagging is wired for players in {@code PlayerEvents}.
  * Reads never create the attachment, so querying mobs is free.
  */

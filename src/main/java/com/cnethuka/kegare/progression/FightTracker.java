@@ -78,7 +78,7 @@ public final class FightTracker {
         return server.overworld().getGameTime();
     }
 
-    /** Told of every hit counted between two players (after defences, capped at the victim's max health): the Dominion Meter fills from it. */
+    /** Told of every hit counted between two players (after defences, capped at the victim's max health): the Domain Meter fills from it. */
     public interface DamageListener {
         void onDamage(ServerPlayer attacker, ServerPlayer victim, double amount);
     }

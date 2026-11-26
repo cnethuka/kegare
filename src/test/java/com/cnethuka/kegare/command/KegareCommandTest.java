@@ -284,8 +284,8 @@ class KegareCommandTest {
             assertEquals(trait, op(server, "kegare trait release nope").error());
             assertEquals(trait, op(server, "kegare trait status nope").error());
             assertEquals("Unknown Grade: nope. Use /kegare grade list to see them all.", op(server, "kegare grade set typo nope").error());
-            assertEquals("Unknown Insight category: nope. Choose from dominion, ward, output.", op(server, "kegare insight add typo nope 1").error());
-            assertEquals("Unknown shared ability: nope. Choose from reverse_malice_technique, incomplete_dominion, steady.", op(server, "kegare debug shared unlock typo nope").error());
+            assertEquals("Unknown Insight category: nope. Choose from domain, ward, output.", op(server, "kegare insight add typo nope 1").error());
+            assertEquals("Unknown shared ability: nope. Choose from reverse_malice_technique, incomplete_domain, steady.", op(server, "kegare debug shared unlock typo nope").error());
             assertEquals("Unknown system: nope. Use /kegare help to see them all.", op(server, "kegare help nope").error());
 
             assertTrue(op(server, "kegare innate list").ok().text().contains("rime"), "and the list it points at has what to type");
@@ -634,7 +634,7 @@ class KegareCommandTest {
                     "trait list", "trait give plain_text six_eyes", "trait get plain_text", "info plain_text", "trait status six_eyes", "trait release six_eyes", "trait status six_eyes", "trait get plain_text",
                     "malice get plain_text", "malice set plain_text 5", "malice fill plain_text", "malice capacity plain_text 900",
                     "grade list", "grade get plain_text", "grade set plain_text grade_2", "grade add plain_text 1", "assessment get plain_text", "assessment add plain_text 60 someone",
-                    "refinement get plain_text", "refinement set plain_text 2", "insight get plain_text", "insight add plain_text dominion 1",
+                    "refinement get plain_text", "refinement set plain_text 2", "insight get plain_text", "insight add plain_text domain 1",
                     "loadout reset plain_text", "cooldown reset plain_text", "cooldown reset plain_text dash", "debug stun plain_text 1", "debug pity plain_text 3", "debug reroll plain_text swap",
                     "debug orb spawn plain_text", "debug orb status plain_text", "debug shared unlock plain_text reverse_malice_technique", "debug shared lock plain_text reverse_malice_technique",
                     "debug swap unswappable plain_text true", "debug swap unswappable plain_text false", "debug rmt fatigue plain_text 0.3", "debug rmt others unlock plain_text", "debug rmt others lock plain_text", "debug strings unmovable plain_text true", "debug strings unmovable plain_text false",

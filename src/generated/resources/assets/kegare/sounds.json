@@ -5,23 +5,23 @@
     ],
     "subtitle": "subtitles.kegare.black_spark.crack"
   },
-  "dominion.break": {
+  "domain.break": {
     "sounds": [
-      "kegare:dominion/break"
+      "kegare:domain/break"
     ],
-    "subtitle": "subtitles.kegare.dominion.break"
+    "subtitle": "subtitles.kegare.domain.break"
   },
-  "dominion.clash": {
+  "domain.clash": {
     "sounds": [
-      "kegare:dominion/clash"
+      "kegare:domain/clash"
     ],
-    "subtitle": "subtitles.kegare.dominion.clash"
+    "subtitle": "subtitles.kegare.domain.clash"
   },
-  "dominion.open": {
+  "domain.open": {
     "sounds": [
-      "kegare:dominion/open"
+      "kegare:domain/open"
     ],
-    "subtitle": "subtitles.kegare.dominion.open"
+    "subtitle": "subtitles.kegare.domain.open"
   },
   "impact.boom": {
     "sounds": [

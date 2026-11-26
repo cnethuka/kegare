@@ -31,7 +31,7 @@ import net.minecraft.server.level.ServerPlayer;
  */
 public record ProgressionSnapshot(int grade, float gradeXp, float gradeXpNeeded, Optional<Assessment> assessment,
                                   int refinement, float refinementXp, float refinementXpNeeded, int peakRefinement, int maxRefinement,
-                                  int dominion, int ward, int output, Map<ResourceLocation, Integer> locked, int brain, Optional<Eyes> eyes) {
+                                  int domain, int ward, int output, Map<ResourceLocation, Integer> locked, int brain, Optional<Eyes> eyes) {
     /**
      * @param costFactor multiplier on every Malice cost
      * @param rmtFactor multiplier on RMT's output
@@ -53,7 +53,7 @@ public record ProgressionSnapshot(int grade, float gradeXp, float gradeXpNeeded,
         return new ProgressionSnapshot(grade.ordinal(), (float) GradeService.get(player).xp(), grade.next().map(GradeService::xpCost).orElse(0.0).floatValue(), assessment,
                 refinement.level(), (float) refinement.xp(), refinement.level() >= max ? 0f : (float) RefinementService.xpForLevel(refinement.level() + 1),
                 refinement.peak(), max,
-                Insight.get(player, InsightCategory.DOMINION), Insight.get(player, InsightCategory.WARD), Insight.get(player, InsightCategory.OUTPUT), locked,
+                Insight.get(player, InsightCategory.DOMAIN), Insight.get(player, InsightCategory.WARD), Insight.get(player, InsightCategory.OUTPUT), locked,
                 (int) Math.round(com.cnethuka.kegare.rmt.BrainDamage.get(player)),
                 com.cnethuka.kegare.sixeyes.SixEyes.isBearer(player) ? Optional.of(new Eyes((int) Math.floor(com.cnethuka.kegare.sixeyes.Attunement.get(player)),
                         (float) com.cnethuka.kegare.sixeyes.Efficiency.costFactor(player), (float) com.cnethuka.kegare.sixeyes.Efficiency.rmtFactor(player))) : Optional.empty());
@@ -86,7 +86,7 @@ public record ProgressionSnapshot(int grade, float gradeXp, float gradeXpNeeded,
         buf.writeFloat(refinementXpNeeded);
         buf.writeVarInt(peakRefinement);
         buf.writeVarInt(maxRefinement);
-        buf.writeVarInt(dominion);
+        buf.writeVarInt(domain);
         buf.writeVarInt(ward);
         buf.writeVarInt(output);
         buf.writeMap(locked, FriendlyByteBuf::writeResourceLocation, FriendlyByteBuf::writeVarInt);

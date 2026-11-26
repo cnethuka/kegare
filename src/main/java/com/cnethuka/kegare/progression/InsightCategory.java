@@ -4,7 +4,7 @@ import java.util.Locale;
 
 /** The three separate kinds of Insight. What a player has learned of each is only ever shown to them. */
 public enum InsightCategory {
-    DOMINION,
+    DOMAIN,
     WARD,
     OUTPUT;
 

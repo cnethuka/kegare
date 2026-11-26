@@ -101,42 +101,42 @@ final class DebugCommands {
                                         return 1;
                                     });
                                 })))))
-                // Dominions (DESIGN §3.35): the Dominion Meter, the Incomplete Dominion given or taken, and ending one now.
-                .then(Commands.literal("dominion")
+                // Domains (DESIGN §3.35): the Domain Meter, the Incomplete Domain given or taken, and ending one now.
+                .then(Commands.literal("domain")
                         .then(Commands.literal("meter").then(player()
                                 .then(Commands.argument("value", com.mojang.brigadier.arguments.DoubleArgumentType.doubleArg(0.0, 100.0)).executes(c -> {
                                     double value = com.mojang.brigadier.arguments.DoubleArgumentType.getDouble(c, "value");
                                     return forEachPlayer(c, (source, player) -> {
-                                        com.cnethuka.kegare.dominion.DominionMeter.set(player, value);
-                                        say(source, "commands.kegare.debug.dominion.meter", player.getDisplayName(), Math.round(value));
+                                        com.cnethuka.kegare.domain.DomainMeter.set(player, value);
+                                        say(source, "commands.kegare.debug.domain.meter", player.getDisplayName(), Math.round(value));
                                         return 1;
                                     });
                                 }))))
                         .then(Commands.literal("unlock").then(player().executes(c -> forEachPlayer(c, (source, player) -> {
                             if (com.cnethuka.kegare.malice.MaliceService.isSevered(player)) {
-                                return fail(source, "commands.kegare.debug.shared.severed", player.getDisplayName(), com.cnethuka.kegare.dominion.IncompleteDominions.ABILITY.displayName());
+                                return fail(source, "commands.kegare.debug.shared.severed", player.getDisplayName(), com.cnethuka.kegare.domain.IncompleteDomains.ABILITY.displayName());
                             }
-                            if (!com.cnethuka.kegare.dominion.IncompleteDominions.teach(player)) {
-                                return fail(source, "commands.kegare.debug.shared.already", player.getDisplayName(), com.cnethuka.kegare.dominion.IncompleteDominions.ABILITY.displayName());
+                            if (!com.cnethuka.kegare.domain.IncompleteDomains.teach(player)) {
+                                return fail(source, "commands.kegare.debug.shared.already", player.getDisplayName(), com.cnethuka.kegare.domain.IncompleteDomains.ABILITY.displayName());
                             }
-                            say(source, "commands.kegare.debug.shared.unlocked", com.cnethuka.kegare.dominion.IncompleteDominions.ABILITY.displayName(), player.getDisplayName());
+                            say(source, "commands.kegare.debug.shared.unlocked", com.cnethuka.kegare.domain.IncompleteDomains.ABILITY.displayName(), player.getDisplayName());
                             return 1;
                         }))))
                         .then(Commands.literal("lock").then(player().executes(c -> forEachPlayer(c, (source, player) -> {
-                            if (!com.cnethuka.kegare.dominion.IncompleteDominions.forget(player)) {
-                                return fail(source, "commands.kegare.debug.shared.not_unlocked", player.getDisplayName(), com.cnethuka.kegare.dominion.IncompleteDominions.ABILITY.displayName());
+                            if (!com.cnethuka.kegare.domain.IncompleteDomains.forget(player)) {
+                                return fail(source, "commands.kegare.debug.shared.not_unlocked", player.getDisplayName(), com.cnethuka.kegare.domain.IncompleteDomains.ABILITY.displayName());
                             }
-                            say(source, "commands.kegare.debug.shared.locked", com.cnethuka.kegare.dominion.IncompleteDominions.ABILITY.displayName(), player.getDisplayName());
+                            say(source, "commands.kegare.debug.shared.locked", com.cnethuka.kegare.domain.IncompleteDomains.ABILITY.displayName(), player.getDisplayName());
                             return 1;
                         }))))
                         .then(Commands.literal("end").then(player().executes(c -> forEachPlayer(c, (source, player) -> {
-                            var open = com.cnethuka.kegare.dominion.Dominions.ownedBy(player);
+                            var open = com.cnethuka.kegare.domain.Domains.ownedBy(player);
                             if (open.isEmpty()) {
-                                say(source, "commands.kegare.debug.dominion.none", player.getDisplayName());
+                                say(source, "commands.kegare.debug.domain.none", player.getDisplayName());
                                 return 0;
                             }
-                            com.cnethuka.kegare.dominion.Dominions.end(open.get(), com.cnethuka.kegare.dominion.Dominions.EndReason.COMMAND);
-                            say(source, "commands.kegare.debug.dominion.ended", player.getDisplayName());
+                            com.cnethuka.kegare.domain.Domains.end(open.get(), com.cnethuka.kegare.domain.Domains.EndReason.COMMAND);
+                            say(source, "commands.kegare.debug.domain.ended", player.getDisplayName());
                             return 1;
                         })))))
                 // The brain meter (DESIGN §3.17): what repairing burnt-out techniques has cost, 0 to 100.

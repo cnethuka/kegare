@@ -14,7 +14,7 @@ import net.neoforged.neoforge.registries.DeferredRegister;
 
 /**
  * Puppet Manipulation (EPIC): half-size puppets of yourself, charged with Malice. Puppet Creation makes them; the
- * Dominion ultimate comes later (locked). All numbers: [puppet_manipulation] in kegare-server.toml.
+ * Domain ultimate comes later (locked). All numbers: [puppet_manipulation] in kegare-server.toml.
  */
 public final class PuppetManipulation {
     public static final DeferredRegister<InnateTechnique> INNATE_TECHNIQUES = DeferredRegister.create(KegareRegistries.INNATE_TECHNIQUE_KEY, Kegare.MODID);

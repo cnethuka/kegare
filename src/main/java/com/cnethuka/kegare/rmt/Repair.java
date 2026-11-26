@@ -32,7 +32,7 @@ import net.neoforged.neoforge.network.handling.IPayloadContext;
  * again). No extra key. Others see a nosebleed while it goes on (the tell, {@link Payload}). Every RMT user, Six Eyes included.
  * <p>
  * The ultimate is part of the technique: a repair that finishes the Burnout off clears the ultimate's cooldown at once (canon: a burnt-out
- * technique is all that stands between one Dominion and the next). One that stops early, for whatever reason, clears nothing, even if the Burnout then runs out.
+ * technique is all that stands between one Domain and the next). One that stops early, for whatever reason, clears nothing, even if the Burnout then runs out.
  * Giving the ultimate back costs a full repair, whatever the timing: finishing it off also pays for the share its own countdown took.
  */
 public final class Repair {

@@ -201,7 +201,7 @@ final class ProgressionCommands {
 
     private static int insightGet(CommandSourceStack source, ServerPlayer player) {
         say(source, "commands.kegare.insight.get", player.getDisplayName(),
-                Insight.get(player, InsightCategory.DOMINION), Insight.get(player, InsightCategory.WARD), Insight.get(player, InsightCategory.OUTPUT));
+                Insight.get(player, InsightCategory.DOMAIN), Insight.get(player, InsightCategory.WARD), Insight.get(player, InsightCategory.OUTPUT));
         return 1;
     }
 

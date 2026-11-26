@@ -12,7 +12,7 @@ import net.neoforged.neoforge.network.registration.PayloadRegistrar;
  * decided and saved; screens are cosmetic.
  */
 public final class KegareNetwork {
-    public static final String VERSION = "31";
+    public static final String VERSION = "32";
 
     private KegareNetwork() {}
 
@@ -45,20 +45,20 @@ public final class KegareNetwork {
         registrar.playToServer(com.cnethuka.kegare.melee.MeleeIntentPayload.TYPE, com.cnethuka.kegare.melee.MeleeIntentPayload.STREAM_CODEC,
                 com.cnethuka.kegare.melee.MeleeIntentPayload::handle);
         // server -> client (state and decided results)
-        registrar.playToClient(com.cnethuka.kegare.dominion.DominionNet.Meter.TYPE, com.cnethuka.kegare.dominion.DominionNet.Meter.STREAM_CODEC,
-                com.cnethuka.kegare.dominion.DominionNet.Meter::handle);
-        registrar.playToClient(com.cnethuka.kegare.dominion.DominionNet.Trapped.TYPE, com.cnethuka.kegare.dominion.DominionNet.Trapped.STREAM_CODEC,
-                com.cnethuka.kegare.dominion.DominionNet.Trapped::handle);
-        registrar.playToClient(com.cnethuka.kegare.dominion.DominionNet.Moment.TYPE, com.cnethuka.kegare.dominion.DominionNet.Moment.STREAM_CODEC,
-                com.cnethuka.kegare.dominion.DominionNet.Moment::handle);
-        registrar.playToClient(com.cnethuka.kegare.dominion.DominionNet.ClashState.TYPE, com.cnethuka.kegare.dominion.DominionNet.ClashState.STREAM_CODEC,
-                com.cnethuka.kegare.dominion.DominionNet.ClashState::handle);
-        registrar.playToClient(com.cnethuka.kegare.dominion.DominionNet.ClashPrompt.TYPE, com.cnethuka.kegare.dominion.DominionNet.ClashPrompt.STREAM_CODEC,
-                com.cnethuka.kegare.dominion.DominionNet.ClashPrompt::handle);
-        registrar.playToServer(com.cnethuka.kegare.dominion.DominionNet.ClashHold.TYPE, com.cnethuka.kegare.dominion.DominionNet.ClashHold.STREAM_CODEC,
-                com.cnethuka.kegare.dominion.DominionNet.ClashHold::handle);
-        registrar.playToServer(com.cnethuka.kegare.dominion.DominionNet.ClashPress.TYPE, com.cnethuka.kegare.dominion.DominionNet.ClashPress.STREAM_CODEC,
-                com.cnethuka.kegare.dominion.DominionNet.ClashPress::handle);
+        registrar.playToClient(com.cnethuka.kegare.domain.DomainNet.Meter.TYPE, com.cnethuka.kegare.domain.DomainNet.Meter.STREAM_CODEC,
+                com.cnethuka.kegare.domain.DomainNet.Meter::handle);
+        registrar.playToClient(com.cnethuka.kegare.domain.DomainNet.Trapped.TYPE, com.cnethuka.kegare.domain.DomainNet.Trapped.STREAM_CODEC,
+                com.cnethuka.kegare.domain.DomainNet.Trapped::handle);
+        registrar.playToClient(com.cnethuka.kegare.domain.DomainNet.Moment.TYPE, com.cnethuka.kegare.domain.DomainNet.Moment.STREAM_CODEC,
+                com.cnethuka.kegare.domain.DomainNet.Moment::handle);
+        registrar.playToClient(com.cnethuka.kegare.domain.DomainNet.ClashState.TYPE, com.cnethuka.kegare.domain.DomainNet.ClashState.STREAM_CODEC,
+                com.cnethuka.kegare.domain.DomainNet.ClashState::handle);
+        registrar.playToClient(com.cnethuka.kegare.domain.DomainNet.ClashPrompt.TYPE, com.cnethuka.kegare.domain.DomainNet.ClashPrompt.STREAM_CODEC,
+                com.cnethuka.kegare.domain.DomainNet.ClashPrompt::handle);
+        registrar.playToServer(com.cnethuka.kegare.domain.DomainNet.ClashHold.TYPE, com.cnethuka.kegare.domain.DomainNet.ClashHold.STREAM_CODEC,
+                com.cnethuka.kegare.domain.DomainNet.ClashHold::handle);
+        registrar.playToServer(com.cnethuka.kegare.domain.DomainNet.ClashPress.TYPE, com.cnethuka.kegare.domain.DomainNet.ClashPress.STREAM_CODEC,
+                com.cnethuka.kegare.domain.DomainNet.ClashPress::handle);
         registrar.playToClient(com.cnethuka.kegare.melee.MeleeDashPayload.TYPE, com.cnethuka.kegare.melee.MeleeDashPayload.STREAM_CODEC,
                 com.cnethuka.kegare.melee.MeleeDashPayload::handle);
         registrar.playToClient(com.cnethuka.kegare.melee.MeleeTellPayload.TYPE, com.cnethuka.kegare.melee.MeleeTellPayload.STREAM_CODEC,

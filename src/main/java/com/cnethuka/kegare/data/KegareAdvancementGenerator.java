@@ -81,10 +81,10 @@ public final class KegareAdvancementGenerator implements AdvancementProvider.Adv
         child(saver, awakening, KegareAdvancements.OUTSIDE_THE_LADDER, "outside_the_ladder", Items.NETHERITE_INGOT, AdvancementType.CHALLENGE, true);
         child(saver, awakening, KegareAdvancements.FULL_KIT, "full_kit", Items.BUNDLE, AdvancementType.GOAL, true);
 
-        // Dominion clashes (§3.35): hidden and silent, since being able to open a Dominion is a floor under a private Grade.
-        child(saver, awakening, KegareAdvancements.DOMINION_PUSHBACK, "pushback", Items.PISTON, AdvancementType.GOAL, true);
-        child(saver, awakening, KegareAdvancements.DOMINION_FIGHT_ME, "fight_me", Items.GOLDEN_SWORD, AdvancementType.CHALLENGE, true);
-        child(saver, awakening, KegareAdvancements.DOMINION_MUTUAL_DESTRUCTION, "mutual_destruction", Items.TNT, AdvancementType.TASK, true);
+        // Domain clashes (§3.35): hidden and silent, since being able to open a Domain is a floor under a private Grade.
+        child(saver, awakening, KegareAdvancements.DOMAIN_PUSHBACK, "pushback", Items.PISTON, AdvancementType.GOAL, true);
+        child(saver, awakening, KegareAdvancements.DOMAIN_FIGHT_ME, "fight_me", Items.GOLDEN_SWORD, AdvancementType.CHALLENGE, true);
+        child(saver, awakening, KegareAdvancements.DOMAIN_MUTUAL_DESTRUCTION, "mutual_destruction", Items.TNT, AdvancementType.TASK, true);
 
         // Reinforced Fists and Black Spark (§3.28): hidden, announced, Challenge, players only.
         child(saver, awakening, com.cnethuka.kegare.fists.FistsAdvancements.LOCKED_IN, "locked_in", Items.TARGET, AdvancementType.CHALLENGE, true);

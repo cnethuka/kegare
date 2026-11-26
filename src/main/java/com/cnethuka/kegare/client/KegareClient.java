@@ -49,7 +49,7 @@ public final class KegareClient {
         com.cnethuka.kegare.impact.client.ImpactClient.init(modBus);
         com.cnethuka.kegare.battledamage.client.BattleDamageClient.init();
         BurnoutHud.init();
-        com.cnethuka.kegare.dominion.client.DominionClient.init(modBus); // Dominions (DESIGN §3.35)
+        com.cnethuka.kegare.domain.client.DomainClient.init(modBus); // Domains (DESIGN §3.35)
     }
 
     /** Emblem/icon art is looked up once per texture; forget the answers when resource packs change. */

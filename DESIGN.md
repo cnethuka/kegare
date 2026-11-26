@@ -3,7 +3,7 @@
 A cursed-energy combat framework for **NeoForge 21.1.x / Minecraft 1.21.1 / Java 21**, built mainly for **PvP with friends**.
 It covers the base systems (§3.1–3.13) and the content built on them: specials (§3.15), the loadout (§3.16), Reverse
 Malice Technique (§3.17–3.18), the innate techniques Rime (§3.14), Swap (§3.19), Puppet Manipulation (§3.20) and Time Manipulation (§3.26), and
-progression (§3.21). Mobs (the Kegare), dominions and lore come later (§5).
+progression (§3.21). Mobs (the Kegare), domains and lore come later (§5).
 
 - Mod ID: `kegare` · Package: `com.cnethuka.kegare` · Build: ModDevGradle MDK
 - Everything is server-authoritative. Clients send key intents and render what the server syncs.
@@ -19,7 +19,7 @@ config keys, lang keys and command names.
 |---|---|---|
 | Cursed energy | `malice` (`MaliceData`, `kegare:malice`, `/kegare malice`) | Malice |
 | Per-player power | `innate_technique` (`InnateTechnique`, `kegare:innate_technique`, `/kegare innate`) | Innate Technique |
-| Ultimate space (future) | `dominion` | Dominion |
+| Ultimate space (future) | `domain` | Domain |
 | Zero-Malice flag | `severed` | Severed |
 | Reroll item | `purification_talisman` | Purification Talisman |
 
@@ -80,13 +80,13 @@ game never names a bearer, heir or killer of a secret holder.
 | `kegare:grade` | yes | yes | Grade, XP toward the next step, fights per opponent in the rolling window, this window's mob XP (§3.21) |
 | `kegare:assessment` | yes | yes | recent qualifying fights: score, Technique use, opponent, tick (§3.21) |
 | `kegare:refinement` | yes | yes | level and XP (current technique), Peak Refinement, landings per target in the rolling window (§3.21) |
-| `kegare:insight` | yes | yes | Dominion, Ward and Output values, the first-time keys already paid (§3.21) |
+| `kegare:insight` | yes | yes | Domain, Ward and Output values, the first-time keys already paid (§3.21) |
 | `kegare:unlocks` | yes | yes | IDs held in the unlock framework (§3.21) |
 | `kegare:background_tasks` | yes | yes | three Background Task slots, each a task ID or nothing, on or off (§3.31) |
 | `kegare:brain` | yes | yes | the brain meter, 0 to 100: what repairing burnt-out techniques has cost (§3.17) |
 | `kegare:six_eyes` | yes | yes | a Six Eyes bearer's Attunement, Strain and collapse risk; wiped when the eyes go (§3.32) |
-| `kegare:dominion` | yes | yes | the Dominion Meter, 0 to 100 (§3.35) |
-| `kegare:inner_return` | yes | no | where a player taken into a Dominion's inner space came from (dimension, position, facing), to send them back (§3.35) |
+| `kegare:domain` | yes | yes | the Domain Meter, 0 to 100 (§3.35) |
+| `kegare:inner_return` | yes | no | where a player taken into a Domain's inner space came from (dimension, position, facing), to send them back (§3.35) |
 | `kegare:cast_state` | no | no | runtime: active charge/channel, active toggles |
 | `kegare:sync_state` | no | no | runtime: "needs sync" flag |
 | `kegare:landing_state` | no | no | runtime: when each ability last landed on each target, who the player last traded hits with |
@@ -182,7 +182,7 @@ All timestamps use **level game time**. They persist across restarts and are ide
   - a rarity (COMMON / RARE / EPIC / LEGENDARY)
   - an ordered **ability list**, cast with the number keys in Technique Mode (§3.5); each ability may
     have a **special**, with R (§3.15)
-  - an optional **ultimate** (the ultimate key, where dominions will plug in)
+  - an optional **ultimate** (the ultimate key, where domains will plug in)
   - a **Malice color** (`Builder.maliceColor(0xRRGGBB)`, read with `maliceColor()`; default Malice purple
     `#9D4EDD`, `InnateTechnique.DEFAULT_MALICE_COLOR`). It colors the Malice bar's fill, glow and ghost fill on the
     HUD and the Sorcerer screen, and the Technique Mode glow. Display only: definitions are registry-synced, so the
@@ -349,12 +349,12 @@ All timestamps use **level game time**. They persist across restarts and are ide
   see behind where it is), and vanilla's own teleport and head packets for the delayed image.
 - **Sub-tick timing** (§3.29): `TimingNet.Stamp` (C→S, an input stamped with the client's clock, sent at the key press), `TimingNet.Ping`
   (S→C) and `TimingNet.Pong` (C→S, the client's clock), all handled on the network thread. Reinforced Fists' look is `FistsPayload` (§3.28).
-- Dominions (§3.35) add `DominionNet.Meter` (S→C, to its owner), `DominionNet.Trapped` (S→C: which side of a barrier you're on) and
-  `DominionNet.Moment` (S→C: a barrier opening, closing, hit, breaking or ending, or a clash starting), and the Six Eyes' full detail
-  (`ReadsPayload.Body`) carries the Dominion a player holds open. A clash adds `DominionNet.ClashState` (S→C, to its two casters, every
-  tick), `DominionNet.ClashPrompt` (S→C, a timing prompt and then its result), `DominionNet.ClashHold` (C→S: the caster's Dominion key held
-  or not) and `DominionNet.ClashPress` (C→S: a prompt key, stamped first as `TimedInput.CLASH`).
-- Network version `31` (`KegareNetwork.VERSION`). Bump it whenever a payload's format changes; mismatched clients are refused.
+- Domains (§3.35) add `DomainNet.Meter` (S→C, to its owner), `DomainNet.Trapped` (S→C: which side of a barrier you're on) and
+  `DomainNet.Moment` (S→C: a barrier opening, closing, hit, breaking or ending, or a clash starting), and the Six Eyes' full detail
+  (`ReadsPayload.Body`) carries the Domain a player holds open. A clash adds `DomainNet.ClashState` (S→C, to its two casters, every
+  tick), `DomainNet.ClashPrompt` (S→C, a timing prompt and then its result), `DomainNet.ClashHold` (C→S: the caster's Domain key held
+  or not) and `DomainNet.ClashPress` (C→S: a prompt key, stamped first as `TimedInput.CLASH`).
+- Network version `32` (`KegareNetwork.VERSION`). Bump it whenever a payload's format changes; mismatched clients are refused.
 
 ### 3.6 HUD
 **Rule: the combat HUD does not exist until the player asks for it** (art in `textures/gui/combat/`).
@@ -381,14 +381,14 @@ All timestamps use **level game time**. They persist across restarts and are ide
     The number on the centre plate stays full size up to five digits (Vast reaches 11000); only a custom config goes wider, and
     that shrinks to 75%.
   - **tray**: the nine loadout slots (§3.16; 20 px, a 1 px rim round the icon, 2 px apart), then the 24 px ultimate
-    in its iron-and-gold frame (a padlock while locked: no Dominion yet, or Refinement hasn't reached it, §3.21). Each slot: icon, its number key as bound (big, bottom-right), cooldown sweep with seconds left, a white flash
+    in its iron-and-gold frame (a padlock while locked: no Domain yet, or Refinement hasn't reached it, §3.21). Each slot: icon, its number key as bound (big, bottom-right), cooldown sweep with seconds left, a white flash
     when it comes off cooldown, and a small **R** plate (gold letter if the ability has a special and it's unlocked, dull if not). The
     selected slot is lit gold; active toggles get a green outline, the casting ability a gold one. Empty loadout
     slots show only their number. Grade and XP are never on the combat HUD;
   - accents along the tray and crest in the technique's Malice color.
 - The selected ability's name shows above hearts/food for 2 s after a number key selects it (`kegare:combat_name`).
 - The melee layer's cues sit under the crosshair, in and out of Technique Mode and for Severed players too, only while there's something to show: **Reinforced** (gold, a Strike is ready; never for the Severed, who have no Strike), **Dash** and **Recovering** with thin countdown bars (§3.22). Severed players' own cues follow them there: **Blur**, **Winded** and
-  **Closing Line** (the last two with countdown bars, §3.27). Black Spark's zone adds **120%** with the zone's time left (§3.28), and the Dominion Meter its **Dominion 73** and bar, only while there's a Dominion to open with it (§3.35). A Dominion clash's
+  **Closing Line** (the last two with countdown bars, §3.27). Black Spark's zone adds **120%** with the zone's time left (§3.28), and the Domain Meter its **Domain 73** and bar, only while there's a Domain to open with it (§3.35). A Domain clash's
   two casters get its own overlay over the upper middle of the screen: the key to hold, the tug of war, the prompts and the scores (§3.35).
 - Severed players never get the panel (G is Blur for them, §3.27). Everything is hidden when F1 hides the GUI and in spectator
   mode. Client config `hud.enabled` turns all of it off.
@@ -436,10 +436,10 @@ Every command reads `/kegare <system> <action> [player] [value]`.
 | `/kegare debug spark zone <player> <seconds>` | Put them in the zone for that long (0 ends it); it starts no chain (§3.28) |
 | `/kegare debug rmt fatigue <player> <amount>` | Set how much injuries take off a player's Reverse Malice Technique output (0 to 1, §3.17) |
 | `/kegare debug brain <player> <value>` | Set the brain meter, 0 to 100 (§3.17) |
-| `/kegare debug dominion meter <player> <value>` | Set the Dominion Meter, 0 to 100 (§3.35) |
-| `/kegare debug dominion unlock <player>` | Give a player the Incomplete Dominion, whatever it takes (never a Severed player) (§3.35) |
-| `/kegare debug dominion lock <player>` | Take it away (off the bar, ended if open); they learn it again once they next meet what it takes (§3.35) |
-| `/kegare debug dominion end <player>` | End a player's Dominion now; they burn out as usual (§3.35) |
+| `/kegare debug domain meter <player> <value>` | Set the Domain Meter, 0 to 100 (§3.35) |
+| `/kegare debug domain unlock <player>` | Give a player the Incomplete Domain, whatever it takes (never a Severed player) (§3.35) |
+| `/kegare debug domain lock <player>` | Take it away (off the bar, ended if open); they learn it again once they next meet what it takes (§3.35) |
+| `/kegare debug domain end <player>` | End a player's Domain now; they burn out as usual (§3.35) |
 | `/kegare debug sixeyes strain <player> <value>` | Set a player's Strain, 0 to 100 (§3.32) |
 | `/kegare debug sixeyes attunement <player> <value>` | Set a player's Attunement (§3.32) |
 | `/kegare debug rmt healed <player> <amount>` | Set how much a player has healed with their own RMT; Background RMT unlocks at 500 (§3.31) |
@@ -492,7 +492,7 @@ Malice is always shown as whole numbers (floored, like the HUD); the stored valu
     - `sixEyesTransferDelaySeconds` (30)
     - `uniqueTraitInactiveDays` (0 = off; fractions allowed)
 - **Client TOML:** `hud.enabled`, `input.dashDoubleTapMillis` (§3.22),
-  `visuals.firstPersonAnimations`, `visuals.animationFades`, `visuals.vfxQuality`, `visuals.dominionFlashes` (§3.35), and for the roll reveal (§3.12)
+  `visuals.firstPersonAnimations`, `visuals.animationFades`, `visuals.vfxQuality`, `visuals.domainFlashes` (§3.35), and for the roll reveal (§3.12)
   `reveal.animation` (scenes on/off), `reveal.alwaysFull`, `reveal.reducedMotion`, `reveal.fakeOutChance` (0.2),
   `reveal.debugForceFakeOut` and `reveal.seenTechniques`, and `impact` (§3.23: shake, hit-stop, impact frames and each
   tier's look). All but `hud.enabled`, `reveal.fakeOutChance`, `reveal.debugForceFakeOut`, `reveal.seenTechniques` and
@@ -511,7 +511,10 @@ Malice is always shown as whole numbers (floored, like the HUD); the stored valu
   (`Step.renamed`): `[reinforcement]` to `[flow]`, `[background_tasks.background_reinforcement]` to `[background_tasks.background_flow]`
   and `[background_tasks.sustained_flow]` to `[background_tasks.steady_output]` (its `flowReduction` is `upkeepReduction`). NeoForge drops
   keys it no longer knows before the file loads, so the mod's constructor reads the file first (`readBeforeLoading`); a value set by hand
-  under the old name is carried over, and one still at its old default isn't, so the new default applies. A later change to a shipped
+  under the old name is carried over, and one still at its old default isn't, so the new default applies. **Version 9** moves every
+  option whose path names Dominions to the same path naming Domains (`[dominion]` to `[domain]`, `dominionBurnoutAssumed` to
+  `domainBurnoutAssumed`, the Insight sources `caught_in_dominion` and `clashed_with_dominion`), with its value as it was, a category
+  of `DOMINION` read as `DOMAIN` (`domainMoves`, `moveDomains`). A later change to a shipped
   default that needs the same treatment adds its own table and bumps `CURRENT_VERSION`.
 
 ### 3.10 Data generation and art
@@ -594,9 +597,9 @@ Each tab has its own root.
 | *Nothing to Celebrate* (under 120%) | challenge | hidden | a chain of 4 |
 | *Blessed by the Sparks* (under Nothing to Celebrate) | challenge | hidden | a chain of 7 |
 | *Lights Out* (under 120%) | challenge | hidden | a Black Spark sent a player into a block hard enough for a wall-slam crater (§3.24), with battle damage on or off; anyone |
-| *Pushback* | goal | hidden, **silent** (being able to open a Dominion is a floor under a private Grade, §3.21) | won a Dominion clash before it came to a fight: the other was pushed all the way, let go, ran out of Malice or cracked apart (§3.35) |
-| *Fight Me* | challenge | hidden, **silent** | won a Dominion clash in the fight, by damage (§3.35) |
-| *Mutual Destruction* | task | hidden, **silent** | a Dominion clash too close to call: both broke (§3.35) |
+| *Pushback* | goal | hidden, **silent** (being able to open a Domain is a floor under a private Grade, §3.21) | won a Domain clash before it came to a fight: the other was pushed all the way, let go, ran out of Malice or cracked apart (§3.35) |
+| *Fight Me* | challenge | hidden, **silent** | won a Domain clash in the fight, by damage (§3.35) |
+| *Mutual Destruction* | task | hidden, **silent** | a Domain clash too close to call: both broke (§3.35) |
 
 **Six Eyes tab** (root `clear_sight`). Everything here is **silent**, and every advancement except the root is
 **hidden** (secret-identity rule and its visible-root exception, §1):
@@ -699,7 +702,7 @@ closing it or disconnecting at any point changes nothing.
   abilities show a padlock. A technique ability that Refinement hasn't reached is a greyed tile with a padlock and its
   required level; it can't be picked up (§3.21). On the Innate tab the ultimate follows the abilities as one more tile,
   labelled V as on the bar: greyed with a padlock and its level while Refinement hasn't reached it, a padlock alone while it waits
-  for its Dominion (Rime, Puppet Manipulation: "Ultimate: Locked"). Clicking it keeps its card; it's never picked up, since the
+  for its Domain (Rime, Puppet Manipulation: "Ultimate: Locked"). Clicking it keeps its card; it's never picked up, since the
   ultimate isn't placed on the bar.
 - **Details box** (the large well) shows whatever ability is hovered (a tile or a bar slot). Clicking a tile or a bar slot (the
   ultimate's included) keeps it there, so a long description stays while the mouse moves into the box to scroll it. It lists:
@@ -722,7 +725,7 @@ closing it or disconnecting at any point changes nothing.
     (Full / Reduced / Vanilla), your own animations in first person, the roll reveal animation, always playing the full
     reveal, and reduced motion in the reveal. Screen shake (§3.23) is a slider instead: drag or click along its track,
     0 to 200% in steps of 5% (a notch marks 100%), saved when it's let go. Impact frames (§3.23) are an On / Off row,
-    since a whole-screen flash can bother some people, and so are Dominions' flashes (§3.35).
+    since a whole-screen flash can bother some people, and so are Domains' flashes (§3.35).
 - **Right column:** the player model (follows the mouse), Malice current / capacity with the bar in the technique's
   Malice color, the tier, and regen per second (or "Regen paused"). In a window too narrow for them (640x480), the amount and
   "Regen paused" each take a second line and the model gives up the height; shrinking them would land the font on fractions of a
@@ -807,7 +810,7 @@ closing it or disconnecting at any point changes nothing.
   - Holding anything in either hand (a sword, an axe, a shield, a block), every animation leaves the hands to vanilla.
     PAL's model draws what's held at its real size right by the camera, usually edge on, so a cast would swing a dark blade or
     a shield's back through the view. Only an empty-handed cast shows its gesture.
-  - `keepVanillaHands`: never shown. Melee's animations, RMT's channel and its healing another, the Incomplete Dominion's cast, every Rime cast, Swap's Mimic, Puppet Manipulation's way back
+  - `keepVanillaHands`: never shown. Melee's animations, RMT's channel and its healing another, the Incomplete Domain's cast, every Rime cast, Swap's Mimic, Puppet Manipulation's way back
     and Zip, Time Manipulation's Standstill and Stasis Field, and Severed's winded and wall crash.
   - `handsWhileLevel`: shown only while you look no more than 15° down. The arms hang from the body, which doesn't tip
     with the view, so hands at chest height sit at the bottom corners of a level view and come up into its middle as you
@@ -856,7 +859,7 @@ Package `com.cnethuka.kegare.innate_technique.rime`. **Rarity: RARE.** All numbe
   | **Shatter Shell** (Rime Shell) | INSTANT | Burst outward: everyone within 4.5 blocks is knocked back (1.4) and gets +2 Freeze stacks. With Rime Shell on, the shell is used up (`EndReason.CONSUMED`) and it costs 32; with no shell up it costs 88. The HUD and Sorcerer screen show whichever applies right now. Cooldown 8 s. |
 
 - **No ultimate yet.** The V slot shows a padlock in the HUD and the Sorcerer screen, and pressing V says it is locked
-  (`InnateTechnique.Builder.lockedUltimate()`). Rime's Dominion comes later.
+  (`InnateTechnique.Builder.lockedUltimate()`). Rime's Domain comes later.
 - **Projectiles** are real entities with velocity (`FrostShardEntity`, `GlacialLanceEntity`, `SplinterShardEntity`, vanilla throwables
   rendered as their item sprite). Damage type `kegare:rime` (`data/kegare/damage_type/rime.json`, freezing hurt
   sound): the caster is the source entity, the projectile the direct entity, so kills are credited to the caster.
@@ -1185,7 +1188,7 @@ Package `com.cnethuka.kegare.innate_technique.rime`. **Rarity: RARE.** All numbe
   | Closing Line (Blur, Severed, §3.27) | a planted push-off (`closing_line_launch`), a crack and a burst of dust and grit off the ground where they left, and a heavy launch everyone nearby hears (`severed.closing_line_launch`, loud); on arrival a skid (`closing_line_arrive`, `severed.closing_line_arrive`) and dust where they stop |
   | Black Spark (Reinforced Fists, §3.28; not a special, but it gets a tell all the same) | black and red pixel art bursting from the point of contact for one sharp moment: jagged stair-stepped bolts, black with red edges, crackling outward round a black starburst, and black and red pixels thrown out and falling; the same for everyone, at every effects setting (Vanilla: black and red dust and crit sparks), and a sharp crack (`black_spark.crack`) everyone near hears |
   | Reverse Malice Technique, on another (RMT, §3.17) | the healer's right hand reaching out onto the one healed (they must be touching), with RMT's white flames burning on it, seen by everyone for as long as it lasts (the pose at every effects setting; the flames Photon, white dust at Vanilla), and a soft chime as it starts (an amethyst chime, high) |
-  | Incomplete Dominion (shared, §3.35; not a special, but it gets a tell all the same) | its seal held for the whole second (`incomplete_dominion_cast`: the wisdom fist, one fist at the chest and the other hand closed over it from above), ink flooding the ground from the caster's feet and the black barrier expanding from them, and a low swelling drone everyone near hears as it starts, sealing shut as it closes (`dominion.open`); everyone it takes in sees "Incomplete Dominion" across the screen |
+  | Incomplete Domain (shared, §3.35; not a special, but it gets a tell all the same) | its seal held for the whole second (`incomplete_domain_cast`: the wisdom fist, one fist at the chest and the other hand closed over it from above), ink flooding the ground from the caster's feet and the black barrier expanding from them, and a low swelling drone everyone near hears as it starts, sealing shut as it closes (`domain.open`); everyone it takes in sees "Incomplete Domain" across the screen |
 
   Standstill isn't a special, but it has a tell of its own all the same: the raised watch (`standstill_cast`), the sharp click
   (`time_manipulation.stop`) and a one-frame inverted flash (at Full) for everyone inside, then the gray.
@@ -1232,7 +1235,7 @@ separate bar is filled from any of them.
   pixels) and its short name as the tooltip:
   - **Innate**: the current innate technique's abilities (the ultimate in its own V tile). A reroll replaces them.
   - **Malice**: energy techniques any Malice user can learn and keeps through rerolls: Flow, Reverse Malice Technique
-    (its special still heals others) and the Incomplete Dominion (§3.35).
+    (its special still heals others) and the Incomplete Domain (§3.35).
   - **Melee**: close-combat abilities: Reinforced Fists.
   Every ability belongs to exactly one, declared by the ability itself (`Ability.category()`, `INNATE` unless it says otherwise), so a
   new ability just names its own. Malice and Melee abilities live in the shared-abilities
@@ -1442,7 +1445,7 @@ negative is positive energy, which is why it heals, and why it heals with white 
   too few words, no fight, a hit over 10 s ago, the other past 16 blocks, more than 20 s between the halves, half from someone else,
   without It's been a while; the typo distances.
 - **Repairing a burnt-out technique** (`Repair`, numbers in `[reverse_malice_technique.repair]`). Canon: a technique burnt out
-  by a Dominion can be repaired with reverse cursed technique, destroying and healing the part of the brain where the technique is
+  by a Domain can be repaired with reverse cursed technique, destroying and healing the part of the brain where the technique is
   stored. It has a cost (the user's wounds go unhealed while they do it, and the brain bleeds), and the brain can stand only so
   many repairs. So, for every RMT user:
   - **Channelling RMT while burnt out (§3.25) repairs the technique first.** No extra key. The Burnout counts down faster by
@@ -1454,7 +1457,7 @@ negative is positive energy, which is why it heals, and why it heals with white 
     at the chin on purpose: a wide patch at the mouth reads as a blob, and a bar on down the chest as a tongue. Readable at 7 blocks on a light or a dark skin, by day and at night. It stays 2 s after the repair stops, then goes from the nose down. `Repair.Payload` to everyone tracking them, not in your own first person).
   - **Repairing gives the ultimate back.** The ultimate is part of the technique, so a repair that finishes the Burnout off (whatever
     caused it) clears the cooldown of the player's innate technique's ultimate at once; no other ability's cooldown is touched. Canon:
-    Burnout is all that stands between one Dominion and the next; once it's repaired another can open at once, and only the brain's
+    Burnout is all that stands between one Domain and the next; once it's repaired another can open at once, and only the brain's
     limit stops that. "Finishes it off" means the channel ran unbroken to the end, including when the Burnout's own countdown takes the very last
     tick. A Burnout that runs out by itself leaves the cooldown as it is, and so does a repair that stops early (let go, a stun, out of
     Malice, the brain filling), even if the Burnout then runs out by itself. Background RMT only shortens Burnout and never touches the
@@ -1462,9 +1465,9 @@ negative is positive energy, which is why it heals, and why it heals with white 
     countdown took, unpaid, before or during the repair (otherwise RMT's own 15 s cooldown would mean each
     repair paid only for the ~40% of Standstill's Burnout still left, and Standstill could go 14 times before the brain stopped it).
   - **The brain meter** (`BrainDamage`, attachment `kegare:brain`, 0 to 100, saved, kept on death). Every full repair gives the
-    ultimate back, so every one costs the same whatever the Burnout's real length: what a full repair of `dominionBurnoutAssumed`
+    ultimate back, so every one costs the same whatever the Burnout's real length: what a full repair of `domainBurnoutAssumed`
     costs. Taking away a share of a Burnout costs that share: every second of a Burnout L long taken away adds `brainPerSecond` (0.262)
-    x `dominionBurnoutAssumed` / L x (1 + `brainEscalation` (1) x meter / 100). L is the length it had when applied, before anything
+    x `domainBurnoutAssumed` / L x (1 + `brainEscalation` (1) x meter / 100). L is the length it had when applied, before anything
     shortened it, saved with it, so a 20 s Standstill Burnout costs what a 60 s one does and a second of a short one costs more. Each
     repair adds more than the last (the same tissue destroyed again). Background RMT's passive shortening (§3.31) is a share like any
     other, paid when it's applied: shortening a Burnout by a quarter and then repairing the rest costs one full repair, so nothing gets
@@ -1472,13 +1475,13 @@ negative is positive energy, which is why it heals, and why it heals with white 
     nothing back). `Burnout` saves what's been paid for with it.
   - **Full:** "Your brain can't take another repair." on the action bar, repair stops and the Burnout runs its full length (RMT heals the
     body again: there's nothing left it can do for the technique). A repair that fills it stops where
-    it filled. Background RMT shortens nothing while it's full. `BrainDamage.refusesDominion` is the hook for Dominions (later) to
+    it filled. Background RMT shortens nothing while it's full. `BrainDamage.refusesDomain` is the hook for Domains (later) to
     refuse to open. Six Eyes gets no exemption.
   - **Healing:** `brainHealPerSecond` (0.15) a second out of a fight (full to empty in about 11 minutes); a night slept through clears
     it for everyone who slept it (`SleepFinishedTimeEvent`).
-  - **The anchor:** a full Dominion's Burnout is `dominionBurnoutAssumed` (60 s), kept equal to `dominion.full.dominionBurnout` (§3.35). From an empty
+  - **The anchor:** a Domain Expansion's Burnout is `domainBurnoutAssumed` (60 s), kept equal to `domain.full.domainBurnout` (§3.35). From an empty
     meter, four full repairs fit (the meter at 17, 37, 60 and 87), and the fifth stops 41% of the way in (24.6 s of a 60 s Burnout,
-    8.2 s of Standstill's 20 s): a fifth Dominion, not a sixth. The count is the same for every technique and every Burnout length, and it
+    8.2 s of Standstill's 20 s): a fifth Domain, not a sixth. The count is the same for every technique and every Burnout length, and it
     doesn't depend on how strong the player is (a strong one repairs faster, for the same cost).
   - **Private:** the meter shows only on the Sorcerer screen's Progress view (a bar, "Brain: 37% worn by repairs", in the private
     progression sync) and in `/kegare info`. `/kegare debug brain <player> <value>` sets it.
@@ -1488,7 +1491,7 @@ negative is positive energy, which is why it heals, and why it heals with white 
     early stop only its share and a natural end nothing; Background RMT's shortening costing its share, and the rest of
     the repair the rest, none when full; the ultimate's cooldown cleared by a finished repair, even when the countdown takes the last
     tick, and not by a natural end, letting go, a stun, running out of Malice, the brain filling or Background RMT, with other
-    abilities' cooldowns untouched; full refusing, the body healed, the Dominion hook, a Six Eyes bearer no
+    abilities' cooldowns untouched; full refusing, the body healed, the Domain hook, a Six Eyes bearer no
     different; nearly full repairing until full; healing out of a fight, none in one; a night's sleep clearing it).
 - **Tests:** `RmtTest`: Severed can't unlock; locked can't be slotted; swap a Rime ability for it; cast at full health, still running
   there, a hit healed as it lands, never above max or absorption; R fizzles; start cost, a twentieth a tick, healPerSecond after a
@@ -1762,7 +1765,7 @@ Swap ignoring it; bosses and armor stands never targets). `LoadoutTest` covers t
 ### 3.20 Puppet Manipulation (EPIC innate technique)
 Package `innate_technique.puppet_manipulation`. Half-size puppets of yourself, charged with Malice: command them, ride
 inside them, set them off, or let one stand in for you. Malice color lavender `#C4B5FD` (also the puppets' glow); tab
-icon armor stand; ultimate locked (its Dominion comes later). All numbers in `[puppet_manipulation]` of
+icon armor stand; ultimate locked (its Domain comes later). All numbers in `[puppet_manipulation]` of
 `kegare-server.toml` (seconds, blocks).
 
 **The puppet** (`PuppetEntity`, a `PathfinderMob`; saved with its chunk, never despawns, no loot or XP):
@@ -1994,7 +1997,7 @@ counting unloaded puppets, lowering the config.
 ### 3.21 Progression (package `progression`)
 What a player builds up over time: **Grade**, **Assessment**, **Refinement** and **Insight**, plus a registry for what they
 unlock. Besides what it unlocks, Reverse Malice Technique heals faster with Grade and Peak Refinement (its output, §3.17), because in canon
-reverse healing rides on the user's output; and a Dominion holds longer before it breaks with Grade and Refinement (§3.35), because the
+reverse healing rides on the user's output; and a Domain holds longer before it breaks with Grade and Refinement (§3.35), because the
 more a sorcerer has mastered, the longer their barrier holds. Progression's own numbers are in `[progression]` of `kegare-server.toml`.
 The server decides everything; the client only displays synced values.
 
@@ -2102,8 +2105,8 @@ with no Technique use recorded counts as 0 and rolls off as new ones come in.
 players skip it. Promotion is tried after every qualifying fight, XP change and new Refinement level, and on login.
 
 #### Refinement (per technique, resets on reroll)
-Levels 0-10 (`refinement.maxLevel`). It unlocks a technique's abilities (below) and makes a full Dominion hold longer (§3.35); Peak
-Refinement raises Reverse Malice Technique's output (§3.17) and makes an Incomplete Dominion hold longer. Severed players have none.
+Levels 0-10 (`refinement.maxLevel`). It unlocks a technique's abilities (below) and makes a Domain Expansion hold longer (§3.35); Peak
+Refinement raises Reverse Malice Technique's output (§3.17) and makes an Incomplete Domain hold longer. Severed players have none.
 
 - **Curve:** level L costs `xpBase × L^xpExponent` (30 × L^1.6): 30, 91, 174, 276, 394, 527, 675, 836, 1009, 1194. Level 2, the third ability, takes
   121 XP in total, and level 9, the full kit, takes 4012.
@@ -2152,7 +2155,7 @@ config (`["kegare:frost_field=1"]`). **A technique that sets none can't be built
 | 5 | special of 3 | Ice Path | Send Off | Chain Burst | Stasis Field |
 | 6 | ability 5 | | | Strings (with Reel In and Tie) | |
 | 7 | special of 4 | Shatter Shell | Momentum Exchange | Stand-In | |
-| 8 | ultimate | locked until Dominions | Total Swap | locked until Dominions | Standstill |
+| 8 | ultimate | locked until Domains | Total Swap | locked until Domains | Standstill |
 | 9 | special of 5 | | | Zip and Leash | |
 
 A level past `maxLevel` means `maxLevel`; abilities past the fifth wait for level 10 unless set; an
@@ -2168,7 +2171,7 @@ ultimate's special comes with the ultimate.
 - A player with no progression data logs in at Refinement 0 and drops to the level 0 kit.
 
 #### Insight (player, kept on reroll and death)
-Three separate categories: **DOMINION, WARD, OUTPUT**. `Insight.recordFirst(player, firstKey, category, amount)` pays each `firstKey` once per
+Three separate categories: **DOMAIN, WARD, OUTPUT**. `Insight.recordFirst(player, firstKey, category, amount)` pays each `firstKey` once per
 player, ever, saved per player. Which category each source pays into, and how much, is in `progression.insight`.
 
 | Source (`InsightHooks`) | Default | Pays once per | Status |
@@ -2176,8 +2179,8 @@ player, ever, saved per player. Which category each source pays into, and how mu
 | `hit_by_technique` | Ward 1 | technique (any landing on you, damaging or not) | wired |
 | `first_legendary_fight` | Output 5 | ever | wired |
 | `survived_standstill` | Ward 5 | ever | wired |
-| `caught_in_dominion` | Dominion 5 | kind of Dominion (§3.35) | wired |
-| `clashed_with_dominion` | Dominion 5 | kind of Dominion (the other side's, §3.35) | wired |
+| `caught_in_domain` | Domain 5 | kind of Domain (§3.35) | wired |
+| `clashed_with_domain` | Domain 5 | kind of Domain (the other side's, §3.35) | wired |
 | `unlocked_rmt` | Output 5 | ever (unlocking Reverse Malice Technique, any way; anyone who has it unlocked but wasn't paid is paid on login) | wired |
 | `rmt_survived_low` | Output 5 | ever (at 3 hearts or less during your own RMT, healed above it, alive 10 s later) | wired |
 | `healed_by_other` | Output 3 | ever (healed by another player's RMT, §3.17) | wired |
@@ -2203,12 +2206,12 @@ For shared and system unlocks, separate from a technique's own abilities.
   config number counts as it stands). `.grantedOnly()` makes meeting it only eligibility: `evaluate` never gives it; the system that teaches it calls
   `Unlocks.grant(player, id)` (and `Unlocks.eligible` asks whether it could). `Unlocks.revoke` is for admins.
 - **Real entries:** `kegare:rmt_heal_others` (Reverse Malice Technique on another, §3.17): RMT unlocked and Output Insight at
-  `healOthersInsight`, granted only by its moment. Each Background Task registers one too (§3.31). `kegare:incomplete_dominion` (the
-  Incomplete Dominion, §3.35): a Grade and a Peak Refinement, the Refinement lowered by Dominion Insight. It asks for Peak Refinement,
+  `healOthersInsight`, granted only by its moment. Each Background Task registers one too (§3.31). `kegare:incomplete_domain` (the
+  Incomplete Domain, §3.35): a Grade and a Peak Refinement, the Refinement lowered by Domain Insight. It asks for Peak Refinement,
   not the current technique's, so its condition reads it and lowers it by the same rule (`Unlocks.refinementNeeded(player, refinement,
   category)`); kept once earned. Later unlocks plug in when built.
   Tests use a test-only entry for the rest.
-- **Severed players and Dominions.** Dominions aren't for Severed players: the Incomplete Dominion's entry never passes for one.
+- **Severed players and Domains.** Domains aren't for Severed players: the Incomplete Domain's entry never passes for one.
 
 #### What the player sees
 - **Sorcerer screen:** the Progress view, and greyed locked tiles and cards (§3.12).
@@ -2218,7 +2221,7 @@ For shared and system unlocks, separate from a technique's own abilities.
   A promotion that earns an advancement also shows that advancement's own toast, to the same player. Levels with nothing to unlock show none.
 - **Saved** with attachments (§2), copied on death. Synced to the owner only, in `SyncPayload`, never with an attachment's own `.sync`.
 - **Advancements** (§3.11): silent and hidden. Every existing technique advancement can still be earned, because each is awarded by using an ability
-  that a level from 0 to 9 unlocks; none needs a Dominion. Swap's Total Swap ones wait for level 8, and so do Time
+  that a level from 0 to 9 unlocks; none needs a Domain. Swap's Total Swap ones wait for level 8, and so do Time
   Manipulation's Standstill ones.
 
 #### Rules for every future technique
@@ -2485,10 +2488,10 @@ the wall, the gamerule off breaking nothing while a pending rebuild still finish
 ### 3.25 Burnout (`innatetechnique.Burnout`)
 
 A shared state that locks a player's innate technique for a while after something big: Time Manipulation's Standstill (§3.26) and
-Dominions (§3.35).
+Domains (§3.35).
 - **While it lasts**, every ability, special and the ultimate of their innate technique fizzles with "Burnt out (Xs).", nothing paid
   and no cooldown (`CastResult.BURNT_OUT`, checked right after the Refinement lock). Shared abilities (Reverse Malice Technique)
-  still cast, but no Dominion opens, the Incomplete Dominion included (§3.35: the same words, from its refusal).
+  still cast, but no Domain opens, the Incomplete Domain included (§3.35: the same words, from its refusal).
 - **Anything of the technique still running stops** on the next tick after it burns out, with "<ability> stopped: burnt out.": a
   toggle switches off (its own cooldown starts, and it pays no more upkeep), a charge is cancelled (nothing paid, no cooldown), a
   channel ends (its cooldown starts). So Accelerate left on through a Standstill switches off when the Burnout lands. Shared abilities
@@ -2967,7 +2970,7 @@ A shared system so timing can be judged finer than a 50 ms tick. Numbers in `[ti
   with its own monotonic clock in ms (`timing/client/ClientStamps`), the moment the key or button goes down, and sends the stamp there
   and then (`TimingNet.Stamp`), ahead of the packet that does the thing at the next client tick. Sent at the press, its trip to the
   server is only the network's. An attack is stamped when the button goes down with an entity under the crosshair; Fists' number key
-  in Technique Mode when Fists are in that slot; a Dominion clash's prompt key while a prompt waits (`CLASH`, §3.35). A stamp nothing
+  in Technique Mode when Fists are in that slot; a Domain clash's prompt key while a prompt waits (`CLASH`, §3.35). A stamp nothing
   claims within half a second is dropped. How fine a stamp is depends on
   the frame rate: the game reads keys once a frame.
 - **The clock:** the server pings each player (`TimingNet.Ping`, answered at once with their clock, `TimingNet.Pong`) every
@@ -3089,7 +3092,7 @@ ability on the bar, but it takes no bar slot and leaves the hands free.
   stops it: stuns and Burnout don't. A player frozen in a Standstill (§3.26, `TimeStops.frozen`) has it paused while time is stopped
   for them, and it resumes with it.
 - **Burnout:** while it runs, every Burnout applied to you lasts ×`burnoutFactor` (0.75), through `Burnout.Modifier` (§3.25):
-  Standstill's and Dominions' alike. The quarter it takes off is paid on the brain meter as that share of a full repair (§3.17). It
+  Standstill's and Domains' alike. The quarter it takes off is paid on the brain meter as that share of a full repair (§3.17). It
   never touches the ultimate's cooldown: only a finished repair gives that back.
 - **Who can tell:** everyone. Healing moves energy through the body, so anyone running it shows a faint white shimmer: RMT's white licks
   (`rmt/background_rmt_shimmer`, Photon, the channel's sprite sheet, §3.17), small (0.08 to 0.13 blocks) and few (seven every 10 ticks),
@@ -3206,8 +3209,8 @@ for the eye" (§3.30).
 - **Full detail:** the one body nearest the crosshair, player or mob (the server works it out from where the bearer looks: the nearest
   within 20 degrees and 96 blocks, walls don't matter) gets a panel beside it. First, for a player: what they're
   charging or channelling and how far ("Charging Glacial Lance 60%", "Channelling Reverse Malice Technique 3.2s"), their active toggles,
-  "Background RMT running" when it is (everyone sees its shimmer; the eyes read what it is, §3.31), the Dominion they hold open by its
-  name ("Holding open Incomplete Dominion", §3.35) and their cooldowns, or "Idle". Then
+  "Background RMT running" when it is (everyone sees its shimmer; the eyes read what it is, §3.31), the Domain they hold open by its
+  name ("Holding open Incomplete Domain", §3.35) and their cooldowns, or "Idle". Then
   the body:
   - health and max health, and absorption when there is some;
   - armour, armour toughness and knockback resistance;
@@ -3281,7 +3284,7 @@ focus is the Read the server decides for itself, so that's the one it counts.
   itself and so of the cast's own tell, and the cue goes out there and then (`Edge.Spark`: for half a second their outline turns gold, unlike a cast's white pulse, with a gold flash at their head, through walls, and
   a chime; the network thread reads a snapshot each tick leaves, so it touches no live game state). It's a key press read, so it also shows
   for a cast that goes on to fizzle. Within `edgeRange` (64). Covered, they see the cast when it starts, like everyone (the outline's pulse, above).
-  "Top-tier" is a Special Grade player, or the other side of a Dominion clash the bearer is in (§3.35); `Edge.addTopTier` is where
+  "Top-tier" is a Special Grade player, or the other side of a Domain clash the bearer is in (§3.35); `Edge.addTopTier` is where
   later systems add more.
 - **Max Strain:** severe brain fatigue, mental exhaustion and a risk of central nervous system overload.
   - A throbbing headache: a red pulse from the edges of the screen (14% of the shorter side, nothing in the middle) and a heartbeat sound
@@ -3406,7 +3409,7 @@ package in it carries `@ApiStatus.Experimental`. The guide for mod makers is `do
 | `KegareApi` | the registry keys `INNATE_TECHNIQUES` and `TRAITS`, the registries, `isKegares`, and shared abilities: `registerSharedAbility`, `registerSharedAbilityForEveryone`, `unlockSharedAbility`, `hasSharedAbility` |
 | `KegareProgression` | `landed`, `landedOnItsOwn`, `during`, `addAttributor`: the cases Refinement and Assessment can't see from a hit (§3.21) |
 | `api.change` | `TechniqueChanges` (`add`, `addAfter`, `replace`, `tweak`, `isChanged`, `changedAbilities`) and `AbilityTweak`: changing techniques that already exist (below) |
-| `api.dominion` | `DominionUltimate`, `DominionLook`, `DominionContext`, `DominionInterior`, `KegareDominions`: a technique's ultimate as a full Dominion, and its inner space (§3.35) |
+| `api.domain` | `DomainExpansion`, `DomainLook`, `DomainContext`, `DomainInterior`, `KegareDomains`: a technique's ultimate as a Domain Expansion, and its inner space (§3.35) |
 | `KegareApi` (advancements) | `techniqueTab` (a technique tab's root, to parent an addon's own advancements to) and `awardAdvancement` |
 
 Kegare's own techniques, abilities and traits are built on these same types; nothing is wrapped.
@@ -3468,29 +3471,29 @@ Refinement; its shared ability unlocked; who is in the roll pool, and real rolls
 `KegareCommandTest` sees its technique, trait and shared ability by short name and by full ID, and checks who keeps a shared short name, `TechniqueUnlocksTest` refuses a definition without unlock
 levels or with a negative one.
 
-### 3.35 Dominions (package `dominion`)
-A sorcerer's inner space, expanded into the world inside a barrier. A **full Dominion** carries its technique: it's that technique's
+### 3.35 Domain System (package `domain`)
+A sorcerer's inner space, expanded into the world inside a barrier. A **Domain Expansion** carries its technique: it's that technique's
 ultimate (V), and only some techniques have one (Rime's and Puppet Manipulation's come later; Swap's and Time Manipulation's ultimates
-are Total Swap and Standstill). An **Incomplete Dominion** is the inner space expanded with Malice alone, without the technique in it:
-any Malice user can learn it (below). Numbers in `[dominion]` of `kegare-server.toml`.
+are Total Swap and Standstill). An **Incomplete Domain** is the inner space expanded with Malice alone, without the technique in it:
+any Malice user can learn it (below). Numbers in `[domain]` of `kegare-server.toml`.
 
-**Opening** (`Dominions.open`, from its ability's cast; `Dominions.refusal` says why not, and a refusal costs nothing):
-- It takes the Dominion Meter (a full Dominion all of it, an Incomplete one half) plus its ability's Malice, paid by the cast.
+**Opening** (`Domains.open`, from its ability's cast; `Domains.refusal` says why not, and a refusal costs nothing):
+- It takes the Domain Meter (a Domain Expansion all of it, an Incomplete one half) plus its ability's Malice, paid by the cast.
 - Refused for a Severed player ("With no Malice, there's no inner space to expand."), on a full brain meter
-  (`BrainDamage.refusesDominion`, §3.17: "Your brain can't take another Dominion."), while burnt out ("Burnt out (Xs).": Burnout is
-  what stands between one Dominion and the next, §3.17), with one already open ("Your Dominion is already open."), or short of meter
-  ("Your Dominion Meter isn't full.", "Your Dominion Meter needs 50.").
+  (`BrainDamage.refusesDomain`, §3.17: "Your brain can't take another Domain."), while burnt out ("Burnt out (Xs).": Burnout is
+  what stands between one Domain and the next, §3.17), with one already open ("Your Domain is already open."), or short of meter
+  ("Your Domain Meter isn't full.", "Your Domain Meter needs 50.").
 - The caster holds their seal for `openSeconds` (1) while their inner space spills out of them: ink floods the ground from their feet
   out to the barrier's radius, and the barrier expands from them as a sphere, thin and smoky at first, solid black by the time it
   reaches its full size. Anyone can still get out. Then it seals, and everything alive inside (the middle of its box within the sphere)
   is taken into its inner space (below) until it ends or breaks: players, mobs and the caster, never a spectator or a boss.
 
-**The barrier** is a sphere of `radius` round the caster's feet, so a dome over the ground (a full Dominion's: `radius` 16,
+**The barrier** is a sphere of `radius` round the caster's feet, so a dome over the ground (a Domain Expansion's: `radius` 16,
 `durationSeconds` 30, `barrierStrength` 40). Sealed, it has two sides: its black shell, which stays in the world, and its inner
 space's sky, which is the same barrier seen from inside.
-- **Nobody crosses it, either way.** Outside, nothing gets through the shell; inside, nothing gets past the inner space's sky. Every move is cut where it meets the shell (`DominionBounds`, from `Entity.collide` through
+- **Nobody crosses it, either way.** Outside, nothing gets through the shell; inside, nothing gets past the inner space's sky. Every move is cut where it meets the shell (`DomainBounds`, from `Entity.collide` through
   `EntityCollideMixin`): on the server for everything living, and on each client for its own player, whom the server tells which side
-  they're on as it closes (`DominionNet.Trapped`). Both sides cut a move the same way, so nobody is pulled back for walking into it, and
+  they're on as it closes (`DomainNet.Trapped`). Both sides cut a move the same way, so nobody is pulled back for walking into it, and
   a move is only ever cut, never lengthened, so nothing is pushed into a wall. Anything that gets across another way (a teleport, chorus
   fruit, a command) is put back on its own side the next tick, clear of blocks if it can be. Swaps, Rewind and Strings across it are
   cancelled through their target events (`SwapTargetEvent`, `TimeTargetEvent`, `StringsTargetEvent`).
@@ -3503,29 +3506,29 @@ space's sky, which is the same barrier seen from inside.
   shell within `meleeReach`, 3, along the look with no block or body nearer; the weapon's damage with Reinforced Fists and Flow's Offense,
   by its own charge, as an air swing doesn't reset vanilla's attack timer on the server), blows across it, projectiles
   (`projectileStrength` 0.3, or an arrow's own damage if more), and area blasts within `blastReach` (2.5) of the shell, full at the shell
-  and less further off. Its own caster's hits never count. When it runs out the barrier breaks and the Dominion ends at once.
+  and less further off. Its own caster's hits never count. When it runs out the barrier breaks and the Domain ends at once.
 - **Bosses** (§4) are never trapped, held or moved by it, and take damage inside as usual.
 
-**The inner space** (`InnerSpaces`, `InnerSpace`; dimension `kegare:inner_space`). A sealed Dominion is a separate space built of real
+**The inner space** (`InnerSpaces`, `InnerSpace`; dimension `kegare:inner_space`). A sealed Domain is a separate space built of real
 blocks, the way a sorcerer's inner space is made real, and everyone it seals in is taken into it. The world under its shell is never
 touched, and is simply there again afterwards.
 - **Where:** one dimension holds every inner space, each in its own plot, 1024 blocks from the next (`InnerSpaces.SPACING`). It's a
-  void with no mobs and no weather, and the sun is held at noon. A plot is taken as a Dominion opens and freed when it's over. Its
+  void with no mobs and no weather, and the sun is held at noon. A plot is taken as a Domain opens and freed when it's over. Its
   chunks, and the shell's in the world, are held loaded meanwhile by a chunk ticket, which is never saved.
-- **Size:** fairly big, but not too big: `innerRadius`, 24 for an Incomplete Dominion and 32 for a full one. That's bigger than the
+- **Size:** fairly big, but not too big: `innerRadius`, 24 for an Incomplete Domain and 32 for a full one. That's bigger than the
   shell outside (10 and 16): the inside is bigger than it looks.
 - **Built** while the barrier spreads, a share each tick, with whatever is left finished as it seals:
   - everything in the plot is cleared;
   - then its floor: a disc a little wider than the space, its ground on top of a layer under it, on bedrock, so nobody digs out;
   - then what stands on it: its ruins and rubble;
-  - then whatever its technique adds (`DominionUltimate.furnish`).
+  - then whatever its technique adds (`DomainExpansion.furnish`).
   It's all vanilla blocks (`Wasteland`), and none that falls (no gravel or sand), so nothing it's made of can land in the world when
   everyone's let out. The ground and ruins can be broken, by hand or by a blast, and they drop nothing (block drops are cancelled in the
   inner space dimension, and a blast there removes what it breaks itself). Nothing can be placed in an inner space.
 - **Taken in** as it seals: everything alive inside the shell, never a boss or a spectator. Each lands at the same place relative to
   the caster, spread out by how much bigger the inside is, on the floor; whatever stands where they land (a ruin, rubble, a bush) is
   cleared away, right up. Players keep where
-  they came from (attachment `kegare:inner_return`, saved); the Dominion keeps where its mobs came from. For those taken in, a short
+  they came from (attachment `kegare:inner_return`, saved); the Domain keeps where its mobs came from. For those taken in, a short
   blackout, then the inner space fades in.
 - **Inside,** the inner space's sky is the barrier's other side, drawn by the clients, and every move inside is cut where it meets it.
   Hits on it break the same barrier.
@@ -3540,7 +3543,7 @@ touched, and is simply there again afterwards.
   - A server stop lets everyone out first.
   - The world it stands in is kept awake while it's open: a level with nobody in it stops ticking its entities after 15 seconds, and
     with everyone taken in, nothing would count its time down or end it.
-  - Once a second, anyone in the inner space dimension that no Dominion holds and no plot is letting out (put there by a command, say)
+  - Once a second, anyone in the inner space dimension that no Domain holds and no plot is letting out (put there by a command, say)
     is sent back the same way.
   - A plot left half-built is cleared the next time it's used.
   - A real server makes the dimension from Kegare's data like any other level. The JUnit test server makes only its preset's levels,
@@ -3549,40 +3552,44 @@ touched, and is simply there again afterwards.
   crash between saves leaves blocks behind. It also means tens of thousands of block changes and their lighting each time, containers
   to lift out and put back, and people caught as it's restored. The inner space only ever changes its own plot.
 
-**The Dominion Meter** (`DominionMeter`, attachment `kegare:dominion`, 0 to 100, saved, kept on death; Postgres storage covers it through
+**Saved under the name Dominion:** the Incomplete Dominion in a loadout, the shared abilities or the unlocks reads as the Incomplete
+Domain (`RenamedIds`); Insight's `dominion` and the firsts naming it read as Domain's; a meter saved as `kegare:dominion` moves to
+`kegare:domain` on login. In world files and Postgres alike.
+
+**The Domain Meter** (`DomainMeter`, attachment `kegare:domain`, 0 to 100, saved, kept on death; Postgres storage covers it through
 the attachment registry, §3.33): `perDamageDealt` (2) per point of damage dealt to a player in a fight and `perDamageTaken` (1.5) per
 point taken from one (§3.21's damage record: after defences, a hit capped at the victim's max health), and `drainPerSecond` (0.25) out of
-combat. A Severed player's never fills. It's private to its owner (`DominionNet.Meter`, when its whole number changes) and shows on the
-HUD with the melee cues (§3.6): "Dominion 73" with a bar, a mark at half way, gold when full, only while they have a Dominion to open
+combat. A Severed player's never fills. It's private to its owner (`DomainNet.Meter`, when its whole number changes) and shows on the
+HUD with the melee cues (§3.6): "Domain 73" with a bar, a mark at half way, gold when full, only while they have a Domain to open
 with it.
 
-**How long it holds** (`DominionMastery`, numbers in `[dominion.mastery]`): until it breaks on its own, after its `durationSeconds`
+**How long it holds** (`DomainMastery`, numbers in `[domain.mastery]`): until it breaks on its own, after its `durationSeconds`
 scaled by how far its caster has come: the more a sorcerer has mastered, the longer their barrier holds.
 - **Mastery,** 0 to 1: their Grade (0 at Grade 4 to 1 at Special Grade, evenly up the ladder) and their Refinement (0 to the top level),
-  weighed by `gradeWeight` (0.5: half each). A full Dominion counts its technique's own Refinement (it's that technique's ultimate, so a
-  reroll starts it over); an Incomplete Dominion counts Peak Refinement (it belongs to the player, and Peak is what it's learned from).
+  weighed by `gradeWeight` (0.5: half each). A Domain Expansion counts its technique's own Refinement (it's that technique's ultimate, so a
+  reroll starts it over); an Incomplete Domain counts Peak Refinement (it belongs to the player, and Peak is what it's learned from).
 - **The share** of `durationSeconds` it holds for runs from `leastShare` (0.6) at none of it to `mostShare` (1.5) at all of it. An
-  Incomplete Dominion: 12 s at Grade 4 with no Refinement, about 20 s where it's learned (Semi-Grade 2, Peak 6), 30 s at Special Grade and
-  the top Refinement. A full Dominion: 18 s to 45 s. An addon's `durationTicks` is its base, scaled the same way. It's set as it opens and
+  Incomplete Domain: 12 s at Grade 4 with no Refinement, about 20 s where it's learned (Semi-Grade 2, Peak 6), 30 s at Special Grade and
+  the top Refinement. A Domain Expansion: 18 s to 45 s. An addon's `durationTicks` is its base, scaled the same way. It's set as it opens and
   doesn't change while it stands.
 - **When it's up, it breaks:** its cracks race over it and it shatters white with its breaking sound, as if broken (Moments, below). For
   `onClose` it's still its time running out (`broken` is false), and its caster burns out as usual.
 
 **Ending:** when its time is up (it breaks, above), when it's broken, when its caster dies, logs out or changes dimension (being taken
-into its own inner space doesn't count), by command, or in a clash. Everyone inside is let out (above). Its caster burns out (§3.25): `dominionBurnout` (60 s) for a full Dominion, kept equal to the brain meter's
-`dominionBurnoutAssumed` so the repair math holds (§3.17). Logging out or leaving the dimension still burns them out; dying doesn't
+into its own inner space doesn't count), by command, or in a clash. Everyone inside is let out (above). Its caster burns out (§3.25): `domainBurnout` (60 s) for a Domain Expansion, kept equal to the brain meter's
+`domainBurnoutAssumed` so the repair math holds (§3.17). Logging out or leaving the dimension still burns them out; dying doesn't
 (death clears Burnout).
 
-**Sure-hit** (`DominionContext.sureHitTargets`, `KegareDominions.sureHitTargets`): a full Dominion's technique can't miss inside it. The
+**Sure-hit** (`DomainContext.sureHitTargets`, `KegareDomains.sureHitTargets`): a Domain Expansion's technique can't miss inside it. The
 hook lists everything in its inner space but its caster and what its caster owns, and never a Severed player, who has no Malice for it to
-find. Empty while it's rising or contested, or for a Dominion with no sure-hit. Nothing uses it yet.
+find. Empty while it's rising or contested, or for a Domain with no sure-hit. Nothing uses it yet.
 
-**Insight:** caught inside someone else's Dominion as it closes pays `caught_in_dominion` (§3.21), once per kind of Dominion (the ability
-that opened it: a technique's ultimate, or the Incomplete Dominion).
+**Insight:** caught inside someone else's Domain as it closes pays `caught_in_domain` (§3.21), once per kind of Domain (the ability
+that opened it: a technique's ultimate, or the Incomplete Domain).
 
-**The look** (`DominionRenderer`, `DominionFx`, `ClashClient`; all our own drawing and vanilla particles, no Photon, so the same at
+**The look** (`DomainRenderer`, `DomainFx`, `ClashClient`; all our own drawing and vanilla particles, no Photon, so the same at
 Full, Reduced and Vanilla, where Reduced and Vanilla make half the ink, dust and shards):
-- **Opening** (the tell, §3.15): the caster holds their seal (the Incomplete Dominion's: `incomplete_dominion_cast`, the wisdom-fist
+- **Opening** (the tell, §3.15): the caster holds their seal (the Incomplete Domain's: `incomplete_domain_cast`, the wisdom-fist
   seal, one fist at the chest and the other hand closed over it from above, held still for the whole second and let go as it seals).
   Ink floods the ground from their feet: black laid over the top faces round them, out to the barrier's radius in the first third of
   the second, its edge ragged, with ink spattering up off it. The barrier expands from the caster's middle as a sphere, its radius
@@ -3590,7 +3597,7 @@ Full, Reduced and Vanilla, where Reduced and Vanilla make half the ink, dust and
   reaches its size. Sealing, it snaps solid with a dull pulse. Those it takes in get a short blackout and the inner space fading in, and
   a moment's blackout again as they're let out.
 - **The barrier** is a smooth sphere (96 x 48 quads, so its outline is a curve up close, untextured) round its centre. From outside
-  it's a solid wall of its shell color (pitch black for the Incomplete Dominion): nothing inside shows through, and from the world
+  it's a solid wall of its shell color (pitch black for the Incomplete Domain): nothing inside shows through, and from the world
   there's nothing inside to see. From inside its inner space it's its sky, opaque: its fog color at the horizon blending to its sky
   color overhead. Both full-bright and lit evenly, so it reads the same by day and night and from every side.
 - **Cracks** (`BarrierCracks`): white, glowing, drawn as geometry on the shell (no texture, so sharp up close and far off). A hit
@@ -3598,7 +3605,7 @@ Full, Reduced and Vanilla, where Reduced and Vanilla make half the ink, dust and
   already there, makes them reach further: a star reaches further for the share of the barrier's strength it took (the hit moment
   carries that share) and for how weak the whole barrier is. As the barrier weakens, new fractures also open across it, one for every
   12% of its strength gone, so one near breaking is cracked all over. Each star's shape comes from where it is, and the new fractures'
-  places from where the Dominion stands, so every client sees the same cracks; one that first sees a barrier already damaged opens its
+  places from where the Domain stands, so every client sees the same cracks; one that first sees a barrier already damaged opens its
   fractures at once. A star grows into its reach over a few ticks rather than at once. Seen from outside a crack is a white core with
   a soft white glow; from inside, against the lighter sky, a white core with a dark rim. A look that's `cracked` closes as if it had
   already lost a quarter of its strength. Cracks show at every effects setting: they're how much the barrier has left.
@@ -3606,13 +3613,13 @@ Full, Reduced and Vanilla, where Reduced and Vanilla make half the ink, dust and
   sphere swelling and gone in 7 ticks), its shell above the ground in white shards (648; 288 at Reduced and Vanilla), each flying out
   and up, turning and shrinking, falling, fading over 1.5 s, and 180 white motes and sparks (half at Reduced and Vanilla). In your own
   first person no shard is drawn within 2 blocks of your eyes.
-- **Flashes off** (`visuals.dominionFlashes`, on by default; also off while the game's Hide Lightning Flashes is on): a broken barrier
+- **Flashes off** (`visuals.domainFlashes`, on by default; also off while the game's Hide Lightning Flashes is on): a broken barrier
   has no white flash and its shards are its own color as seen (its shell's from outside, its fog's from inside), and a clash's shells
   and seam hold steady instead of flickering and jittering. Cracks and sparks stay. Yours alone: nobody else's view changes.
 - **The ground and the ruins are real blocks** in its inner space (above), in the world's own light (the inner space's sun is held at
   noon). **Dust:** inside, round the viewer, white ash and slow motes of its dust color (five a tick, half at Reduced and Vanilla),
   never within 2 blocks of a first-person camera.
-- **The Incomplete Dominion's wasteland** (`IncompleteDominions.WASTELAND`): sky `0x6F6B66` overhead and `0x8E8983` at the horizon and
+- **The Incomplete Domain's wasteland** (`IncompleteDomains.WASTELAND`): sky `0x6F6B66` overhead and `0x8E8983` at the horizon and
   in the fog (fog ends at 40 blocks), shell `0x000000` (pitch black). Its inner space is all vanilla blocks (`Wasteland`):
   - **ground:** a patchwork, from two layers of noise: mostly tuff and andesite with some stone and cobblestone; rocky patches of
     cobblestone, andesite and cobbled deepslate; dirt patches of coarse dirt; now and then an old cracked stone brick. Under it a layer
@@ -3624,43 +3631,43 @@ Full, Reduced and Vanilla, where Reduced and Vanilla make half the ink, dust and
     sky.
   - dust
   `0xA7A29B`, not cracked (it cracks only where it's hit). No Malice color anywhere.
-- **Moments:** opening plays `dominion.open` (a low drone swelling as the barrier spreads, air rushing up through it, and a heavy soft
+- **Moments:** opening plays `domain.open` (a low drone swelling as the barrier spreads, air rushing up through it, and a heavy soft
   seal a second in, as it closes) for everyone near; a hit on the barrier a glass knock, its cracks and a spray of white sparks where
-  it landed; breaking plays `dominion.break` (one huge crack, the shell falling apart in lower and lower pieces, a rumble) with the
+  it landed; breaking plays `domain.break` (one huge crack, the shell falling apart in lower and lower pieces, a rumble) with the
   white shatter, and so does its time running out (it's held as long as its caster could hold it, and gives way); ending any other way
   (a command, its caster gone) a beacon powering down. Its name crosses the screen of everyone it closes on.
 - **A clash, seen by everyone:** both shells half there and flickering, a bright jittering seam (two crossed strips, so it reads
-  from any side) round the circle where they meet, with sparks and grit flying off it, and `dominion.clash` where it began (two low
+  from any side) round the circle where they meet, with sparks and grit flying off it, and `domain.clash` where it began (two low
   tones beating against each other, grit scraping between them, a hard knock).
 
-**Clashes** (`Clashes`, `Clash`; numbers in `[dominion.clash]`): a Dominion opening over another starts a clash instead of being
+**Clashes** (`Clashes`, `Clash`; numbers in `[domain.clash]`): a Domain opening over another starts a clash instead of being
 refused, in either of two places:
 - **In the world,** over one that's still spreading (their spheres overlap). Over one that has sealed, it's refused with nothing paid
-  ("That Dominion is sealed: break in, or open yours inside it.").
+  ("That Domain is sealed: break in, or open yours inside it.").
 - **In an inner space,** opened by someone it took in. Nothing opens in an inner space any other way ("Not here: this is someone's
   inner space."). While that clash lasts, nobody is let out of the inner space and its sky is half-formed like any clashing barrier.
 
-- **Two sides at most.** A third Dominion opening over one that's clashing is refused ("Two Dominions are already clashing here."), and
-  one over two at once too ("Too many Dominions are in the way."), with nothing paid. The sides are kept as a list (`MAX_SIDES`), so only
+- **Two sides at most.** A third Domain opening over one that's clashing is refused ("Two Domains are already clashing here."), and
+  one over two at once too ("Too many Domains are in the way."), with nothing paid. The sides are kept as a list (`MAX_SIDES`), so only
   the bar would need rethinking for more.
 - **Meanwhile both barriers are half-formed:** nobody is trapped (whoever was is let go), no sure-hit, they take no hits, and their time
-  stands still. Each caster's Insight pays `clashed_with_dominion` once per kind of Dominion they clash with (§3.21). Each is top-tier to
+  stands still. Each caster's Insight pays `clashed_with_domain` once per kind of Domain they clash with (§3.21). Each is top-tier to
   the other for the Six Eyes' uncovered edge (§3.32). Everyone near hears it begin where the two meet.
-- **Grip** (`gripSeconds` 2): both casters have to be holding the key that opens their Dominion (its bar slot for an Incomplete
-  Dominion, V for a full one): the one that opened over the other usually still is; the one whose Dominion was already open presses it
+- **Grip** (`gripSeconds` 2): both casters have to be holding the key that opens their Domain (its bar slot for an Incomplete
+  Domain, V for a full one): the one that opened over the other usually still is; the one whose Domain was already open presses it
   again. Their client says whether the key is down (`ClashHold`). Not holding it then loses (both not: a tie).
 - **Maintain** (`maintainSeconds` 10): held within `leash` (1.5) of where they stood (the server and their own client both cut the
   move), unable to attack (no hit of theirs lands, hand, weapon, projectile or technique) or cast (a cast key says "You're holding your
-  Dominion."), each pays `drainPerSecond` (15) Malice. A tug of war: every `promptEveryMin` to `promptEveryMax` (1 to 2 s) each caster
+  Domain."), each pays `drainPerSecond` (15) Malice. A tug of war: every `promptEveryMin` to `promptEveryMax` (1 to 2 s) each caster
   gets a prompt, one of jump, sneak or sprint (their own bindings), shown `promptLeadMs` (900) ahead of its beat. Their press is judged
   by sub-tick timing (§3.29, `TimedInput.CLASH`): the right key within `promptWindowMs` (500, half each side) of the beat is a hit and
   pushes the bar `pushPerHit` (0.2) toward the other; the wrong key, too early, too late or no press is a miss, pushing it back
   `pushPerMiss` (0.1) and cracking their own barrier by `crackPerMiss` (0.1 of its strength). A press with no prompt waiting is ignored.
-  An Incomplete Dominion against a full one pushes `incompleteHandicap` (30%) less. Pushed all the way, letting go of the key, running
+  An Incomplete Domain against a full one pushes `incompleteHandicap` (30%) less. Pushed all the way, letting go of the key, running
   out of Malice or a barrier cracked apart loses at once.
 - **Fight** (`fightSeconds` 15): free again. Each caster's score is the damage they deal the other (after defences, as the fight
   record has it, §3.21); nobody else's damage counts. The higher wins; within `tieMargin` (10% of the higher) it's a tie.
-- **The result:** the loser's barrier breaks and they burn out as their Dominion would; the winner's closes again, with the time it had
+- **The result:** the loser's barrier breaks and they burn out as their Domain would; the winner's closes again, with the time it had
   used kept (one that never closed gets its whole time), on whoever is inside then. One opened inside another's inner space that wins
   takes the space over: the loser's shell breaks, the winner's stands in the world where it did, and the inner space is rebuilt as the
   winner's round everyone still in it. One that loses there just breaks, and the inner space it was opened in carries on. A tie breaks both, and both burn out for
@@ -3672,64 +3679,64 @@ refused, in either of two places:
   box with a frame closing on it to meet it on the beat, lit while the window is open, then "Hit" or "Miss"; in the Fight, both scores;
   at the end, "Clash won", "Clash lost" or "Both broke".
 
-**The Incomplete Dominion** (`kegare:incomplete_dominion`, shared, Malice, INSTANT; `IncompleteDominion`, `IncompleteDominions`; numbers
-in `[dominion.incomplete]`): the inner space expanded with Malice alone, with nothing of a technique in it.
-- **Learned** through the unlock framework (§3.21, entry `kegare:incomplete_dominion`): `unlock.grade` (Semi-Grade 2) and
-  `unlock.peakRefinement` (6), the highest Refinement reached on any technique, lowered by Dominion Insight by the framework's rule
+**The Incomplete Domain** (`kegare:incomplete_domain`, shared, Malice, INSTANT; `IncompleteDomain`, `IncompleteDomains`; numbers
+in `[domain.incomplete]`): the inner space expanded with Malice alone, with nothing of a technique in it.
+- **Learned** through the unlock framework (§3.21, entry `kegare:incomplete_domain`): `unlock.grade` (Semi-Grade 2) and
+  `unlock.peakRefinement` (6), the highest Refinement reached on any technique, lowered by Domain Insight by the framework's rule
   (10 Insight a level, half at most: 30 Insight makes it 3). Peak Refinement, not the current technique's, so a reroll never takes it,
   and it's kept once learned whatever happens to the Grade later. Learning it unlocks the shared ability, shows the toast and puts it in
   the first empty slot of the bar. A Severed player never has it, not even from an admin. Its card says what it takes ("Reach
-  Semi-Grade 2, and Refinement 6 on any technique. Dominion Insight lowers the Refinement needed.").
+  Semi-Grade 2, and Refinement 6 on any technique. Domain Insight lowers the Refinement needed.").
 - **Slotted** on the bar like any shared ability (a number key), never on V: the ultimate stays the technique's.
-- **Opening** takes `meterShare` (half) of the Dominion Meter and `cost` (150) Malice, then `cooldownSeconds` (30) from the cast;
-  refused, with nothing paid, for the reasons any Dominion is (above). Its barrier is smaller, weaker and shorter
+- **Opening** takes `meterShare` (half) of the Domain Meter and `cost` (150) Malice, then `cooldownSeconds` (30) from the cast;
+  refused, with nothing paid, for the reasons any Domain is (above). Its barrier is smaller, weaker and shorter
   than a full one's: `radius` 10, `barrierStrength` 10 (a quarter of a full one's), `durationSeconds` 20 (12 to 30 s by its caster's
   mastery, above). It finds
   nobody: no sure-hit. Afterwards its caster burns out for `incompleteBurnout` (15 s), broken or not.
 - **The look:** the same for everyone who opens one, with no Malice color: a grey wasteland (grey cracked ground, an ash sky, ruins
-  and dust) inside a pitch-black, smooth shell that cracks white where it's hit (`IncompleteDominions.WASTELAND`).
+  and dust) inside a pitch-black, smooth shell that cracks white where it's hit (`IncompleteDomains.WASTELAND`).
 - **For its caster, while it stands** (closed; not while it rises, nor in a clash), and for nobody else inside: their innate
   technique's casts, releases and upkeep cost `boosts.techniqueCost` (25%) less (through `CastManager.addAbilityCostModifier`, like
   Flow's, so a cast still counts as its full price for Landings and the Impact System), its cooldowns run at `boosts.cooldownRate`
   (×1.5, a `CooldownRates` rate on the technique's own cooldowns) and its hits do `boosts.output` (15%) more, before the target's
   defences (a hit is the technique's when `MeleeHits` says so and it isn't a shared ability's or a Second Impact). Shared abilities pay
   and cool down as usual. They also have vanilla **Strength I, Resistance I and Speed I** (`boosts.strength`, `resistance`, `speed`: the
-  level, 0 for I, -1 for none; `DominionEffects`), shown as usual. Each lasts until its time is up, so the icons count down with it and
+  level, 0 for I, -1 for none; `DomainEffects`), shown as usual. Each lasts until its time is up, so the icons count down with it and
   a crash can't leave one behind for longer, and goes the moment it stops standing (it ends, or a clash begins). Only what it put on is
   taken off: a potion of their own stays.
 - **Its tell** is in §3.15's table: its own cast, the barrier rising, a sound everyone near hears, and its name across the screen of
-  everyone it closes on. The Six Eyes read it on its caster: "Holding open Incomplete Dominion" (§3.32).
+  everyone it closes on. The Six Eyes read it on its caster: "Holding open Incomplete Domain" (§3.32).
 
-**Addon API** (`api.dominion`, experimental, §3.34): a technique's ultimate is a full Dominion by being a `DominionUltimate`: its
+**Addon API** (`api.domain`, experimental, §3.34): a technique's ultimate is a Domain Expansion by being a `DomainExpansion`: its
 `look()` (its floor a block of its choosing), `sureHit()`, its barrier's `radius`, `durationTicks` and `barrierStrength` and its
-`innerRadius` (the `[dominion.full]` numbers unless overridden), `furnish(DominionInterior)` to place its own blocks in its inner space
+`innerRadius` (the `[domain.full]` numbers unless overridden), `furnish(DomainInterior)` to place its own blocks in its inner space
 after the floor, `onOpen`, `tickInside` and `onClose`, and `canOpen` for its own refusals. Kegare does the rest: the meter and brain
-checks, the barrier, the inner space and taking everyone in and out, hits, ending, Burnout and clashes. `KegareDominions` answers who is
+checks, the barrier, the inner space and taking everyone in and out, hits, ending, Burnout and clashes. `KegareDomains` answers who is
 in it and who a sure-hit reaches.
 
-**Tests:** `DominionTest` (a full meter, an unbroken brain and only one at a time to open, Severed never; whatever is inside when it
+**Tests:** `DomainTest` (a full meter, an unbroken brain and only one at a time to open, Severed never; whatever is inside when it
 seals taken into its inner space, outside not, a boss never and left in the world; moves cut at its sky from inside and at its shell
 from outside, a boss not held; a teleport across put back on either side; projectiles stopped at the shell from outside and at its sky
 from inside, a hit across the shell cancelled, one barrier taking both; hits inside its inner space landing as usual; hits from inside
 and out, the caster's not, a swing at the shell and one at its sky; breaking, ending at once, burning out its caster and letting everyone
 out; not one block in the world changed after it ends, breaks or the server forgets it as a crash would, the one left inside by the
-crash sent back as they log in, and its marker never saved; its time running out, its hooks, dominionBurnout equal to the brain's
+crash sent back as they log in, and its marker never saved; its time running out, its hooks, domainBurnout equal to the brain's
 assumption, logging out, leaving the dimension and dying ending it; the sure-hit finding someone inside but never its caster or a
-Severed player; caught_in_dominion paid once), `InnerSpaceTest` (its dimension there; everyone inside taken in, the caster at the
+Severed player; caught_in_domain paid once), `InnerSpaceTest` (its dimension there; everyone inside taken in, the caster at the
 middle and the rest spread out by how much bigger it is, on its floor of real ground over bedrock, where each came from kept, its sky
 standing in it; let out to where they were, nothing left to remember, the plot let go; the wasteland all vanilla blocks, none that
 falls, on bedrock everywhere, its ground a patchwork, ruins and rubble on it and nothing right under its sky, nothing dropped by a block
 broken by hand with the right tool or by a blast, which still breaks what it reaches but never the bedrock; a mob taken in and let out to where it was, an
 item dropped inside back near the shell; the world under it never touched; a plot cleared of what was left in it before it's used again;
 nothing opening in an inner space but a clash over its sky; opening over a sealed one from outside refused with nothing paid; a player
-left inside sent back as they log in; a stray put in one no Dominion holds sent back; its caster taken in without ending it),
-`DominionMeterTest` (filling from damage dealt and taken, capped at 100, draining only out of combat, saved), `DominionMasteryTest`
-(mastery from Grade and Refinement, half each, never past the top; the share from least to most; an Incomplete Dominion holding the
+left inside sent back as they log in; a stray put in one no Domain holds sent back; its caster taken in without ending it),
+`DomainMeterTest` (filling from damage dealt and taken, capped at 100, draining only out of combat, saved), `DomainMasteryTest`
+(mastery from Grade and Refinement, half each, never past the top; the share from least to most; an Incomplete Domain holding the
 least at Grade 4, about its base where it's learned, the most at Special Grade and the top Refinement, a reroll taking none of it away,
-and the barrier holding that long; a full Dominion's, an addon's own duration scaled the same way, on its technique's own Refinement;
-its time running out breaking it, a command or its caster gone ending it quietly), `IncompleteDominionTest`
+and the barrier holding that long; a Domain Expansion's, an addon's own duration scaled the same way, on its technique's own Refinement;
+its time running out breaking it, a command or its caster gone ending it quietly), `IncompleteDomainTest`
 (shared and in the Malice tab; learned from the Grade and the Peak Refinement, on the bar, kept through a reroll, a Grade short never;
-Dominion Insight lowering the Refinement, rounding down, half at most; never a Severed player's, not even from an admin; a short meter
+Domain Insight lowering the Refinement, rounding down, half at most; never a Severed player's, not even from an admin; a short meter
 refused with nothing paid, half the meter and its Malice taken through the real cast, the smaller radius, the wasteland and the
 pitch-black, uncracked shell, its name in a Six Eyes read, no sure-hit, its own duration scaled by its caster's mastery, the short Burnout, refused while burnt
 out; breaking at its own strength; the cheaper casts, faster cooldowns and harder hits for its caster alone, only while it stands, gone
@@ -3737,10 +3744,10 @@ when it ends; Strength, Resistance and Speed on its caster alone, as long as it 
 third side refused from outside and from inside with nothing paid; not holding on in the Grip loses, the loser breaking and burning out,
 the one opened inside taking the inner space over, its shell where the loser's was and everyone still inside, Pushback; the Maintain's
 drain, a miss pushing back and cracking, too late a miss, hits pushing all the way, the winner closing again with the time it had used
-and the loser still in its inner space; an Incomplete Dominion's handicap against a full one; running dry and letting go losing; no
+and the loser still in its inner space; an Incomplete Domain's handicap against a full one; running dry and letting go losing; no
 attacking or casting while holding on, held in place, free in the Fight; the Fight's score from the two casters' damage alone, Fight Me;
 a close fight breaking both with the exhausted Burnout, Mutual Destruction; a side ended by command forfeiting with nothing won, top-tier
-to each other only while clashing; the advancements hidden and silent on the Base tab), `DominionVisualsTest` (the seal animation loads
+to each other only while clashing; the advancements hidden and silent on the Base tab), `DomainVisualsTest` (the seal animation loads
 and keeps your own hands vanilla's; the icon hard pixel art; cracks on the shell, measured along, the same shape on every client, reaching further for a harder hit and a
 weaker barrier up to a limit, a hit on cracks adding to them and elsewhere starting its own, only so many; the shatter's shards cut from
 the shell above the ground, fewer at Reduced and Vanilla, flying outward; with flashes off a broken barrier's shards its own color and a clash steady; a clash's seam on both shells, and none for spheres apart or
@@ -3800,8 +3807,8 @@ one inside the other).
   Decelerate's cooldown slow, §3.26). **Seeing through disguises:** ask
   `Disguises` (`isDisguised`, `getRealIdentity`, `getDisguisedAs`), never what is drawn.
 - **New trait:** register a `Trait` subclass (unique or not) and override its hooks.
-- **Dominions:** an innate technique's `ultimate` ability. It uses `CombatHelper` (stun, combat) and the shared
-  `CastManager.validate` checks. Dominion-specific state gets its own attachment.
+- **Domains:** an innate technique's `ultimate` ability. It uses `CombatHelper` (stun, combat) and the shared
+  `CastManager.validate` checks. Domain-specific state gets its own attachment.
 - **Cost or cooldown modifiers** (e.g. from traits): `Ability.cost(player)` and `cooldownTicks(player)` already
   receive the caster. A CHARGED ability whose cost grows with the charge overrides `releaseCost(player, charge)`.
 - **Taking over the keys** (a possession, a channelled state): `CastManager.addInterceptor` gets first say over every
@@ -3815,13 +3822,13 @@ one inside the other).
 ## 5. Future (TBD)
 
 - **Innate techniques:** more real ones, with their abilities, balance and visuals.
-- **Rime's Dominion** (its ultimate; the slot is locked until then).
+- **Rime's Domain** (its ultimate; the slot is locked until then).
 - **The addon API, next steps (§3.34):** one shared target event for every technique, the Impact System hook, read-only events (casts,
   technique changes, unlocks, Refinement and Grade), client hooks (visuals, HUD, the effect setting), and publishing (Modrinth's Maven, a
   sources jar). Changing shared abilities.
-- **Full Dominions:** Rime's and Puppet Manipulation's, on `DominionUltimate` with their own interiors and sure-hits (§3.35); counters to
-  Dominions.
-- **What progression waits for (§3.21):** later unlocks, Dominions among them, register through `Unlocks`, their first-time sources call
+- **Domain Expansions:** Rime's and Puppet Manipulation's, on `DomainExpansion` with their own interiors and sure-hits (§3.35); counters to
+  Domains.
+- **What progression waits for (§3.21):** later unlocks, Domains among them, register through `Unlocks`, their first-time sources call
   `InsightHooks`, and later systems that need a player's Grade read `Progression.getGrade`.
 - **PvE:** the **Kegare** (hostile spirit mobs), spawning, structures, progression.
 - **Open questions:**

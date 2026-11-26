@@ -50,13 +50,13 @@ public final class KegareSounds {
     // Black Spark (§3.28): one sharp crack at the point of contact.
     public static final DeferredHolder<SoundEvent, SoundEvent> BLACK_SPARK = register("black_spark.crack", "black_spark/crack");
 
-    // Dominions (§3.35): a barrier rising and closing, a barrier breaking, two Dominions clashing.
+    // Domains (§3.35): a barrier rising and closing, a barrier breaking, two Domains clashing.
     /** A low drone swelling as the barrier rises, air rushing up through it, and a heavy soft seal as it closes (a second in). */
-    public static final DeferredHolder<SoundEvent, SoundEvent> DOMINION_OPEN = register("dominion.open", "dominion/open");
+    public static final DeferredHolder<SoundEvent, SoundEvent> DOMAIN_OPEN = register("domain.open", "domain/open");
     /** One huge crack, the shell falling apart in lower and lower pieces, a rumble under it. */
-    public static final DeferredHolder<SoundEvent, SoundEvent> DOMINION_BREAK = register("dominion.break", "dominion/break");
+    public static final DeferredHolder<SoundEvent, SoundEvent> DOMAIN_BREAK = register("domain.break", "domain/break");
     /** Two low tones beating against each other, grit scraping between them, a hard knock as they meet. */
-    public static final DeferredHolder<SoundEvent, SoundEvent> DOMINION_CLASH = register("dominion.clash", "dominion/clash");
+    public static final DeferredHolder<SoundEvent, SoundEvent> DOMAIN_CLASH = register("domain.clash", "domain/clash");
 
     // Time Manipulation (§3.26): a pocket watch's clicks and ticks, wound, run backward, whirled, and stopped.
     /** A watch's sharp click: Point Maker's mark and return, Decelerate's hand striking. */

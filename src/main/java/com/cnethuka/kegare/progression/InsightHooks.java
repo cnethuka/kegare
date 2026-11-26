@@ -51,15 +51,15 @@ public final class InsightHooks {
     }
 
     /**
-     * Trapped inside someone else's Dominion as it closed (DESIGN §3.35). Once per kind of Dominion: {@code dominion} is the ability that
-     * opened it (a technique's ultimate, so once per technique, or the Incomplete Dominion).
+     * Trapped inside someone else's Domain as it closed (DESIGN §3.35). Once per kind of Domain: {@code domain} is the ability that
+     * opened it (a technique's ultimate, so once per technique, or the Incomplete Domain).
      */
-    public static boolean caughtInDominion(ServerPlayer player, net.minecraft.resources.ResourceLocation dominion) {
-        return pay(player, InsightSource.CAUGHT_IN_DOMINION, dominion.toString());
+    public static boolean caughtInDomain(ServerPlayer player, net.minecraft.resources.ResourceLocation domain) {
+        return pay(player, InsightSource.CAUGHT_IN_DOMAIN, domain.toString());
     }
 
-    /** Took part in a Dominion clash (DESIGN §3.35), against a Dominion opened by {@code dominion}. Once per kind, as above. */
-    public static boolean clashedWithDominion(ServerPlayer player, net.minecraft.resources.ResourceLocation dominion) {
-        return pay(player, InsightSource.CLASHED_WITH_DOMINION, dominion.toString());
+    /** Took part in a Domain clash (DESIGN §3.35), against a Domain opened by {@code domain}. Once per kind, as above. */
+    public static boolean clashedWithDomain(ServerPlayer player, net.minecraft.resources.ResourceLocation domain) {
+        return pay(player, InsightSource.CLASHED_WITH_DOMAIN, domain.toString());
     }
 }

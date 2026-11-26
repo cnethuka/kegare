@@ -7,14 +7,15 @@ import net.minecraft.resources.ResourceLocation;
 
 /**
  * IDs Kegare has renamed, read as their new names wherever a player's saved data holds them (loadout slots, Background Task slots,
- * unlocks), in the world's files and in Postgres alike: Reinforcement became Flow, Background Reinforcement Background Flow, and Sustained
- * Flow Steady Output. Saved again, they're written under the new name.
+ * unlocks), in the world's files and in Postgres alike: Reinforcement became Flow, Background Reinforcement Background Flow, Sustained
+ * Flow Steady Output, and the Incomplete Dominion the Incomplete Domain. Saved again, they're written under the new name.
  */
 public final class RenamedIds {
     static final Map<ResourceLocation, ResourceLocation> RENAMED = Map.of(
             Kegare.id("reinforcement"), Kegare.id("flow"),
             Kegare.id("background_reinforcement"), Kegare.id("background_flow"),
-            Kegare.id("sustained_flow"), Kegare.id("steady_output"));
+            Kegare.id("sustained_flow"), Kegare.id("steady_output"),
+            Kegare.id("incomplete_dominion"), Kegare.id("incomplete_domain"));
 
     /** {@link ResourceLocation#CODEC}, reading a renamed ID as its new one. */
     public static final Codec<ResourceLocation> CODEC = ResourceLocation.CODEC.xmap(RenamedIds::current, id -> id);

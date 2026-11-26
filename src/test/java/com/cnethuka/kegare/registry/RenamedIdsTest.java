@@ -45,8 +45,24 @@ class RenamedIdsTest {
 
     @Test
     void onlyTheRenamedIdsChange() {
-        assertEquals(3, RenamedIds.RENAMED.size());
+        assertEquals(4, RenamedIds.RENAMED.size());
         assertEquals(com.cnethuka.kegare.Kegare.id("flow"), RenamedIds.current(com.cnethuka.kegare.Kegare.id("reinforcement")));
         assertEquals(com.cnethuka.kegare.Kegare.id("reinforced_fists"), RenamedIds.current(com.cnethuka.kegare.Kegare.id("reinforced_fists")));
+    }
+
+    @Test
+    void theIncompleteDominionIsNowTheIncompleteDomain() {
+        String out = roundTrip(LoadoutData.CODEC, "{\"slots\":[\"kegare:incomplete_dominion\",\"\"],\"known\":[]}");
+        assertTrue(out.contains("\"kegare:incomplete_domain\"") && !out.contains("dominion"), out);
+        String unlocks = roundTrip(UnlockData.CODEC, "[\"kegare:incomplete_dominion\"]");
+        assertTrue(unlocks.contains("kegare:incomplete_domain") && !unlocks.contains("dominion"), unlocks);
+        String shared = roundTrip(SharedAbilityData.CODEC, "{\"unlocked\":[\"kegare:incomplete_dominion\"]}");
+        assertTrue(shared.contains("kegare:incomplete_domain"), shared);
+        // Insight: the old field, and the firsts it already paid (so none pays twice).
+        String insight = roundTrip(com.cnethuka.kegare.progression.InsightData.CODEC,
+                "{\"dominion\":15,\"ward\":3,\"firsts\":[\"caught_in_dominion/kegare:incomplete_dominion\",\"first_parry\"]}");
+        assertTrue(insight.contains("\"domain\":15") && insight.contains("\"ward\":3"), insight);
+        assertTrue(insight.contains("caught_in_domain/kegare:incomplete_domain") && insight.contains("first_parry"), insight);
+        assertFalse(insight.contains("dominion"), "written under the new names only: " + insight);
     }
 }

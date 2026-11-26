@@ -13,7 +13,7 @@ import net.minecraft.world.entity.player.Player;
 
 /**
  * The framework for shared and system unlocks, separate from {@link TechniqueUnlocks}: a registry systems add to with
- * {@link #register} (Background Tasks, RMT on another and the Incomplete Dominion do). Each entry needs a {@code unlock.<namespace>.<path>} lang line for its toast.
+ * {@link #register} (Background Tasks, RMT on another and the Incomplete Domain do). Each entry needs a {@code unlock.<namespace>.<path>} lang line for its toast.
  * <p>
  * Every player is re-evaluated whenever their Grade, Refinement or Insight changes, and on login. An unlock tied to its
  * technique is lost on a reroll and when Refinement falls below it; any other stays once earned.
@@ -62,7 +62,7 @@ public final class Unlocks {
 
     /**
      * A Refinement requirement as this player's Insight in {@code loweredBy} lowers it now, by the framework's rule: for an entry that asks
-     * for something other than current Refinement (the Incomplete Dominion's Peak Refinement), through its condition.
+     * for something other than current Refinement (the Incomplete Domain's Peak Refinement), through its condition.
      */
     public static int refinementNeeded(Player player, int refinement, InsightCategory loweredBy) {
         return UnlockRequirements.lowered(refinement, Insight.get(player, loweredBy), ProgressionConfig.INSIGHT_REFINEMENT_RATE.get(),

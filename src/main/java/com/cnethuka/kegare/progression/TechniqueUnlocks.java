@@ -114,7 +114,7 @@ public final class TechniqueUnlocks {
 
     /**
      * Full Kit: their Refinement has reached every ability and special of a real technique. The ultimate doesn't count, since
-     * two techniques can't have one until Dominions exist. Judged by the level itself, so casual servers with the requirement
+     * two techniques can't have one until Domains exist. Judged by the level itself, so casual servers with the requirement
      * off have to earn it the same way.
      */
     static void checkFullKit(ServerPlayer player) {

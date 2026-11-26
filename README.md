@@ -18,7 +18,7 @@ Black Flash).
 > **Made with generative AI.** Kegare's code and assets were made with generative AI, from a human designer's specifications.
 > See [How Kegare was made](#how-kegare-was-made).
 
-**Status:** early development (version 0.3.1-alpha). Expect changes, balance passes and the odd bug. Full Dominions (a technique's
+**Status:** early development (version 0.3.1-alpha). Expect changes, balance passes and the odd bug. Domain Expansions (a technique's
 own), and the hostile spirits that will share the mod's name, are still to come.
 
 ## Features
@@ -55,16 +55,16 @@ own), and the hostile spirits that will share the mod's name, are still to come.
   winning; Refinement, which unlocks a technique's abilities as you land them; and Insight from first-time encounters.
 - **Reverse Malice Technique:** a shared healing ability, found through a green orb only its finder can see.
 - **Background Tasks:** keep Flow or Reverse Malice Technique running without a bar slot, weaker than on the bar.
-- **Incomplete Dominion:** expand your inner space with Malice alone: a pitch-black barrier spreads out from you and everyone inside is
+- **Incomplete Domain:** expand your inner space with Malice alone: a pitch-black barrier spreads out from you and everyone inside is
   taken into your inner space, a grey wasteland of real blocks, while the world outside is left untouched. While it stands your
   technique costs less, cools down faster and hits harder, and you get Strength, Resistance and Speed; it cracks white where it's hit, and shatters, on its own once it's held as long
   as you can hold it (longer the higher your Grade and Refinement). Learned from your Grade and your highest
-  Refinement; it takes half of a Dominion Meter that fills as you fight players. Open one over another and they clash: hold on
+  Refinement; it takes half of a Domain Meter that fills as you fight players. Open one over another and they clash: hold on
   and win a tug of war on timing, or fight it out.
 
 **Also**
 - **Eyewear:** a Blindfold and Sunglasses, worn in their own Curios slot.
-- **Your own settings:** ability effects at Full, Reduced or Vanilla, screen shake from 0 to 200%, and impact frames and Dominions' flashes on
+- **Your own settings:** ability effects at Full, Reduced or Vanilla, screen shake from 0 to 200%, and impact frames and Domains' flashes on
   or off (Sorcerer screen, then Settings).
 - **Server-authoritative:** every gameplay number is in `config/kegare-server.toml`.
 - **Optional Postgres storage**, so several servers can share players, and leaderboards.

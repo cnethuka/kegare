@@ -20,7 +20,7 @@ public final class KegareClientConfig {
     public static final ModConfigSpec.BooleanValue FIRST_PERSON_ANIMATIONS;
     public static final ModConfigSpec.BooleanValue ANIMATION_FADES;
     public static final ModConfigSpec.EnumValue<VfxQuality> VFX_QUALITY;
-    public static final ModConfigSpec.BooleanValue DOMINION_FLASHES;
+    public static final ModConfigSpec.BooleanValue DOMAIN_FLASHES;
     public static final ModConfigSpec.IntValue DASH_DOUBLE_TAP_MILLIS;
     /** The Impact System's look (DESIGN §3.23): yours alone. When a hit lands, and how hard, is the server's. */
     public static final ModConfigSpec.DoubleValue SHAKE_STRENGTH;
@@ -78,9 +78,9 @@ public final class KegareClientConfig {
                 .define("animationFades", true);
         VFX_QUALITY = b.comment("Ability effects: FULL (Photon), REDUCED (Photon, about half the particles) or VANILLA (vanilla particles only).")
                 .defineEnum("vfxQuality", VfxQuality.FULL);
-        DOMINION_FLASHES = b.comment("Dominions' flashes: the white flash and white shards as one breaks, and the flickering as two clash. Off: no flash,",
+        DOMAIN_FLASHES = b.comment("Domains' flashes: the white flash and white shards as one breaks, and the flickering as two clash. Off: no flash,",
                 "shards in the barrier's own color, and a steady clash. Also off while the game's own Hide Lightning Flashes is on.")
-                .define("dominionFlashes", true);
+                .define("domainFlashes", true);
         b.pop();
         b.comment("How hits look and feel on your screen (the Impact System). Only you see these; the server decides which tier a hit is.",
                 "Edit while the game runs and try a tier with /kegare debug impact @s <tier> <attacker|victim|witness> <melee|technique>.").push("impact");

@@ -89,7 +89,7 @@ class TechniqueUnlocksTest {
             assertEquals(4, rime.unlockLevel(Rime.RIME_SHELL));
             assertEquals(5, rime.unlockLevel(Rime.ICE_PATH));
             assertEquals(7, rime.unlockLevel(Rime.SHATTER_SHELL));
-            assertTrue(rime.ultimateLocked(), "stays locked until Dominions exist");
+            assertTrue(rime.ultimateLocked(), "stays locked until Domains exist");
 
             InnateTechnique swap = Swap.SWAP.get();
             assertEquals(0, swap.unlockLevel(Swap.POSITIONS));

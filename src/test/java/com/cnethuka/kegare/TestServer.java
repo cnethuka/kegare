@@ -75,7 +75,7 @@ public final class TestServer {
     /** Takes every test player out of the overworld again, so one test's players never get in the way of the next. */
     public static void removePlayers(MinecraftServer server) {
         if (server.overworld() == null) return; // nothing in this test touched the world
-        for (net.minecraft.server.level.ServerLevel level : server.getAllLevels()) { // a Dominion's inner space is a level of its own
+        for (net.minecraft.server.level.ServerLevel level : server.getAllLevels()) { // a Domain's inner space is a level of its own
             for (ServerPlayer p : java.util.List.copyOf(level.players())) {
                 level.removePlayerImmediately(p, net.minecraft.world.entity.Entity.RemovalReason.DISCARDED);
             }
@@ -99,8 +99,8 @@ public final class TestServer {
         // Nor does the world break under them: a test's big hits would leave holes where the next test stands. BattleDamageTest sets
         // each mode itself.
         com.cnethuka.kegare.battledamage.BattleDamageConfig.MODE.set(com.cnethuka.kegare.battledamage.BattleDamageConfig.Mode.COSMETIC);
-        // A Dominion's inner space lets everyone out at once as it ends: the world never ticks in a test, so a delay would hold them in.
-        com.cnethuka.kegare.dominion.DominionConfig.RETURN_DELAY.set(0.0);
+        // A Domain's inner space lets everyone out at once as it ends: the world never ticks in a test, so a delay would hold them in.
+        com.cnethuka.kegare.domain.DomainConfig.RETURN_DELAY.set(0.0);
         if (server.overworld() == null) {
             try {
                 Method createLevels = MinecraftServer.class.getDeclaredMethod("createLevels", ChunkProgressListener.class);
@@ -120,12 +120,12 @@ public final class TestServer {
     }
 
     /**
-     * Dominions' inner space dimension (DESIGN §3.35). A real server makes it from Kegare's data like any other level; the test server
+     * Domains' inner space dimension (DESIGN §3.35). A real server makes it from Kegare's data like any other level; the test server
      * makes only the preset's levels, so it's made here, the same way: its own dimension type, a void.
      */
     private static void ensureInnerSpace(MinecraftServer server) {
-        com.cnethuka.kegare.dominion.InnerSpaces.layOutFrom(Long.parseLong(System.getenv().getOrDefault("KEGARE_INNER_SEED", "1")));
-        var key = com.cnethuka.kegare.dominion.InnerSpaces.LEVEL;
+        com.cnethuka.kegare.domain.InnerSpaces.layOutFrom(Long.parseLong(System.getenv().getOrDefault("KEGARE_INNER_SEED", "1")));
+        var key = com.cnethuka.kegare.domain.InnerSpaces.LEVEL;
         if (server.getLevel(key) != null) return;
         try {
             var access = server.registryAccess();
@@ -195,7 +195,7 @@ public final class TestServer {
     }
 
     /**
-     * Waits, pumping the chunk system, until the chunks round {@code centre} have their entities ticking (a Dominion's inner space holds
+     * Waits, pumping the chunk system, until the chunks round {@code centre} have their entities ticking (a Domain's inner space holds
      * its plot loaded with a ticket, which only takes hold as the chunk system runs: the world never ticks in a test).
      */
     public static void entitiesTicking(net.minecraft.server.level.ServerLevel level, net.minecraft.core.BlockPos centre, int chunks) {

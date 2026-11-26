@@ -15,7 +15,7 @@ public final class RmtConfig {
     // Repairing a burnt-out technique, and the brain's limit (DESIGN §3.17)
     public static ModConfigSpec.DoubleValue REPAIR_RATE;
     public static ModConfigSpec.DoubleValue REPAIR_DAMAGE;
-    public static ModConfigSpec.DoubleValue DOMINION_BURNOUT_ASSUMED;
+    public static ModConfigSpec.DoubleValue DOMAIN_BURNOUT_ASSUMED;
     public static ModConfigSpec.DoubleValue BRAIN_PER_SECOND;
     public static ModConfigSpec.DoubleValue BRAIN_ESCALATION;
     public static ModConfigSpec.DoubleValue BRAIN_HEAL_PER_SECOND;
@@ -110,11 +110,11 @@ public final class RmtConfig {
         REPAIR_RATE = b.comment("Seconds of Burnout repaired per second of channel at an output of 1 (times your current RMT output).")
                 .defineInRange("repairRate", 4.0, 0.0, 1000.0);
         REPAIR_DAMAGE = b.comment("Damage taken per second while repairing (armour doesn't stop it).").defineInRange("repairDamage", 1.0, 0.0, 1000.0);
-        DOMINION_BURNOUT_ASSUMED = b.comment("The Burnout a full Dominion leaves, in seconds: keep it equal to dominion.full.dominionBurnout. The brain's",
+        DOMAIN_BURNOUT_ASSUMED = b.comment("The Burnout a Domain Expansion leaves, in seconds: keep it equal to domain.full.domainBurnout. The brain's",
                 "costs are anchored to it: a full repair of any Burnout costs what a full repair of one this long does, as every full repair gives",
-                "the ultimate back. About four fit (a fifth Dominion, not a sixth), whatever the technique.").defineInRange("dominionBurnoutAssumed", 60.0, 1.0, 3600.0);
+                "the ultimate back. About four fit (a fifth Domain, not a sixth), whatever the technique.").defineInRange("domainBurnoutAssumed", 60.0, 1.0, 3600.0);
         BRAIN_PER_SECOND = b.comment("Brain meter added per second of Burnout taken away, at an empty meter, for a Burnout of",
-                "dominionBurnoutAssumed. A Burnout of length L costs dominionBurnoutAssumed / L times as much a second, so taking away a share",
+                "domainBurnoutAssumed. A Burnout of length L costs domainBurnoutAssumed / L times as much a second, so taking away a share",
                 "of any Burnout costs that share of a full repair. The meter adds more the fuller it already is (brainEscalation): each repair",
                 "adds more than the last.")
                 .defineInRange("brainPerSecond", 0.262, 0.0, 100.0);

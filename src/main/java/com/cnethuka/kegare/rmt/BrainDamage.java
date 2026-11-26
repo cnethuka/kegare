@@ -10,8 +10,8 @@ import net.minecraft.world.entity.player.Player;
 /**
  * The brain's limit (DESIGN §3.17): a saved meter per player, 0 to {@link #MAX} (attachment {@code kegare:brain}, kept on death). A full
  * repair gives the whole technique back, ultimate included, so every full repair costs the same whatever the Burnout's length: what a
- * full repair of {@code dominionBurnoutAssumed} costs. Removing a share of a Burnout, by repair or by Background RMT's shortening, costs
- * that share: {@code brainPerSecond} x dominionBurnoutAssumed / L per second for a Burnout of length L, times
+ * full repair of {@code domainBurnoutAssumed} costs. Removing a share of a Burnout, by repair or by Background RMT's shortening, costs
+ * that share: {@code brainPerSecond} x domainBurnoutAssumed / L per second for a Burnout of length L, times
  * (1 + brainEscalation x meter / 100), since the same tissue is destroyed again and each repair costs more than the last. Full, it
  * refuses: no more repair, and the Burnout runs its full length. Applies to every RMT user, Six Eyes included. It falls
  * {@code brainHealPerSecond} per second out of a fight; sleeping through a night clears it.
@@ -40,8 +40,8 @@ public final class BrainDamage {
         return get(player) >= MAX - 1.0e-6;
     }
 
-    /** Hook for Dominions (later): a full brain can't take what opening one would cost, so it refuses to open. */
-    public static boolean refusesDominion(Player player) {
+    /** Hook for Domains (later): a full brain can't take what opening one would cost, so it refuses to open. */
+    public static boolean refusesDomain(Player player) {
         return isFull(player);
     }
 
@@ -59,10 +59,10 @@ public final class BrainDamage {
 
     /**
      * The meter's growth a second at an empty meter, for a Burnout {@code lengthSeconds} long: a second is 1/L of it, and the whole of any
-     * Burnout costs what the whole of a {@code dominionBurnoutAssumed} one does.
+     * Burnout costs what the whole of a {@code domainBurnoutAssumed} one does.
      */
     static double rate(double lengthSeconds) {
-        return RmtConfig.BRAIN_PER_SECOND.get() * RmtConfig.DOMINION_BURNOUT_ASSUMED.get() / Math.max(1.0e-3, lengthSeconds);
+        return RmtConfig.BRAIN_PER_SECOND.get() * RmtConfig.DOMAIN_BURNOUT_ASSUMED.get() / Math.max(1.0e-3, lengthSeconds);
     }
 
     /**

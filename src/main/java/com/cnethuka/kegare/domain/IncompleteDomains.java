@@ -1,0 +1,155 @@
+package com.cnethuka.kegare.domain;
+
+import com.cnethuka.kegare.api.ability.Ability;
+import com.cnethuka.kegare.api.ability.AbilityCategory;
+import com.cnethuka.kegare.api.domain.DomainContext;
+import com.cnethuka.kegare.api.domain.DomainLook;
+import com.cnethuka.kegare.fists.SecondImpact;
+import com.cnethuka.kegare.innatetechnique.CastManager;
+import com.cnethuka.kegare.innatetechnique.CooldownRates;
+import com.cnethuka.kegare.innatetechnique.InnateTechniqueService;
+import com.cnethuka.kegare.loadout.LoadoutService;
+import com.cnethuka.kegare.loadout.SharedAbilities;
+import com.cnethuka.kegare.loadout.SharedAbilityService;
+import com.cnethuka.kegare.malice.MaliceService;
+import com.cnethuka.kegare.melee.MeleeHits;
+import com.cnethuka.kegare.progression.Attribution;
+import com.cnethuka.kegare.progression.GradeService;
+import com.cnethuka.kegare.progression.InsightCategory;
+import com.cnethuka.kegare.progression.RefinementService;
+import com.cnethuka.kegare.progression.UnlockRequirements;
+import com.cnethuka.kegare.progression.Unlocks;
+import java.util.Optional;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.entity.player.Player;
+import net.neoforged.neoforge.common.NeoForge;
+import net.neoforged.neoforge.event.entity.living.LivingIncomingDamageEvent;
+import net.neoforged.neoforge.event.entity.player.PlayerEvent;
+
+/**
+ * The Incomplete Domain's rules (DESIGN §3.35): its spec, the one wasteland every Incomplete Domain looks like, how it's learned (the
+ * unlock framework: a Grade and a Peak Refinement, the Refinement lowered by Domain Insight, kept once learned and through rerolls), and
+ * what it does for its caster while it stands: their innate technique cheaper, its cooldowns faster and its hits harder. Nobody else
+ * inside gets anything.
+ */
+public final class IncompleteDomains {
+    public static final IncompleteDomain ABILITY = SharedAbilities.register(new IncompleteDomain());
+    /**
+     * The inner space with nothing of a technique in it: grey ground and ruins of vanilla blocks ({@link Wasteland}), an ash sky and drifting dust, and
+     * from outside a pitch-black, smooth shell that cracks white only where it's hit. No Malice color anywhere, so every Incomplete Domain looks the
+     * same whoever opens it.
+     */
+    public static final DomainLook WASTELAND = new DomainLook(0x6F6B66, 0x8E8983, 40f, 0x000000, Optional.empty(),
+            true, 0xA7A29B, false);
+    /** Its cooldown rate's key ({@link CooldownRates}). */
+    private static final String RATE = "incomplete_domain";
+
+    private static final DomainSpec.Hooks HOOKS = new DomainSpec.Hooks() {
+        @Override
+        public void onOpen(DomainContext ctx) {
+            ServerPlayer caster = ctx.caster();
+            if (caster != null) {
+                CooldownRates.set(caster, new CooldownRates.Rate(RATE, DomainConfig.INCOMPLETE_COOLDOWN_RATE.get(),
+                        key -> boosted(caster) && techniques(caster, key), Long.MAX_VALUE));
+            }
+        }
+
+        @Override
+        public void tickInside(DomainContext ctx) {
+            ServerPlayer caster = ctx.caster();
+            if (caster != null) Domains.ownedBy(caster).filter(d -> !d.complete() && d.isClosed()).ifPresent(d -> DomainEffects.standing(caster, d));
+        }
+
+        @Override
+        public void onClose(DomainContext ctx, boolean broken) {
+            ServerPlayer caster = ctx.caster();
+            if (caster != null) {
+                CooldownRates.remove(caster, RATE);
+                DomainEffects.takeOff(caster);
+            }
+        }
+    };
+
+    private IncompleteDomains() {}
+
+    public static void init() {
+        Unlocks.register(DomainIds.INCOMPLETE, UnlockRequirements.builder().condition(IncompleteDomains::meetsUnlock).build());
+        Unlocks.addListener((player, id) -> {
+            if (DomainIds.INCOMPLETE.equals(id)) learn(player);
+        });
+        // Earned but somehow not had (an admin locked the ability alone): theirs again on login.
+        NeoForge.EVENT_BUS.addListener((PlayerEvent.PlayerLoggedInEvent e) -> {
+            if (e.getEntity() instanceof ServerPlayer p && Unlocks.has(p, DomainIds.INCOMPLETE)) learn(p);
+        });
+        DomainEffects.init();
+        DomainMeter.addShownWhen(p -> SharedAbilityService.isUnlocked(p, DomainIds.INCOMPLETE));
+        CastManager.addAbilityCostModifier((player, ability, amount) -> ability.category() == AbilityCategory.INNATE && boosted(player)
+                ? amount * (1.0 - DomainConfig.INCOMPLETE_TECHNIQUE_COST.get()) : amount);
+        NeoForge.EVENT_BUS.addListener(IncompleteDomains::onIncoming);
+    }
+
+    public static DomainSpec spec(ServerPlayer caster) {
+        return new DomainSpec(DomainIds.INCOMPLETE, false, DomainConfig.INCOMPLETE_RADIUS.get(), DomainConfig.INCOMPLETE_INNER_RADIUS.get(),
+                DomainMastery.durationTicks(caster, false, DomainConfig.ticks(DomainConfig.INCOMPLETE_DURATION)),
+                DomainConfig.INCOMPLETE_BARRIER.get(), DomainConfig.ticks(DomainConfig.INCOMPLETE_BURNOUT), DomainConfig.INCOMPLETE_METER_SHARE.get(),
+                WASTELAND, false, HOOKS);
+    }
+
+    // ---------------------------------------------------------------------------------------------- learning it
+
+    /** Whether they meet what it takes now: Malice, the Grade, and the Peak Refinement as their Domain Insight lowers it. */
+    static boolean meetsUnlock(Player player) {
+        if (MaliceService.isSevered(player) || !MaliceService.get(player).isBorn()) return false;
+        return GradeService.grade(player).atLeast(DomainConfig.INCOMPLETE_UNLOCK_GRADE.get()) && RefinementService.peak(player) >= refinementNeeded(player);
+    }
+
+    /** The Peak Refinement they need now, with what their Domain Insight takes off. */
+    public static int refinementNeeded(Player player) {
+        return Unlocks.refinementNeeded(player, DomainConfig.INCOMPLETE_UNLOCK_REFINEMENT.get(), InsightCategory.DOMAIN);
+    }
+
+    /** It's theirs: the shared ability, and a place on the bar if there's an empty one. Returns whether it's new. */
+    static boolean learn(ServerPlayer player) {
+        if (!SharedAbilityService.unlock(player, ABILITY)) return false;
+        LoadoutService.offer(player, ABILITY);
+        return true;
+    }
+
+    /** Admin: gives it to them whether or not they meet it (never to a Severed player). Returns whether it's new. */
+    public static boolean teach(ServerPlayer player) {
+        if (MaliceService.isSevered(player)) return false;
+        boolean entry = Unlocks.grant(player, DomainIds.INCOMPLETE); // its listener teaches it
+        return learn(player) || entry;
+    }
+
+    /** Admin: takes it away (off the bar, ended if it's open). They learn it again when they next meet it. Returns whether they had it. */
+    public static boolean forget(ServerPlayer player) {
+        boolean entry = Unlocks.revoke(player, DomainIds.INCOMPLETE);
+        Domains.ownedBy(player).filter(d -> !d.complete()).ifPresent(d -> Domains.end(d, Domains.EndReason.COMMAND));
+        return SharedAbilityService.lock(player, ABILITY) || entry;
+    }
+
+    // ---------------------------------------------------------------------------------------------- the boosts
+
+    /** Their own Incomplete Domain stands round them now (closed; not rising, not contested). */
+    public static boolean boosted(ServerPlayer player) {
+        return Domains.ownedBy(player).filter(d -> !d.complete() && d.isClosed()).isPresent();
+    }
+
+    private static boolean techniques(ServerPlayer player, ResourceLocation cooldownKey) {
+        return InnateTechniqueService.current(player).map(t -> t.findAbility(cooldownKey).isPresent()).orElse(false);
+    }
+
+    /** Their innate technique's hits do more, before the target's defences. */
+    private static void onIncoming(LivingIncomingDamageEvent event) {
+        if (!(event.getEntity().level() instanceof ServerLevel level)) return;
+        Attribution.Hit hit = Attribution.of(event.getSource(), level.getServer());
+        if (hit == null || hit.attacker() == event.getEntity() || !boosted(hit.attacker())) return;
+        if (MeleeHits.of(event.getSource(), level) != MeleeHits.Kind.TECHNIQUE || SecondImpact.isSecondImpact(event.getSource())) return;
+        Ability ability = hit.ability(); // known for most hits; a technique's own damage type with no cast behind it counts too
+        if (ability != null && ability.category() != AbilityCategory.INNATE) return;
+        event.setAmount(event.getAmount() * (float) (1.0 + DomainConfig.INCOMPLETE_OUTPUT.get()));
+    }
+}

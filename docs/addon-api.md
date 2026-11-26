@@ -283,26 +283,26 @@ Your lang, config, assets, networking and saved data. Kegare's network version n
 Kegare's **code** is MIT-licensed, but its **assets** (models, textures, sounds, player animations and effects) are All Rights Reserved:
 make your own instead of copying Kegare's into your addon. See the README's License section.
 
-## A full Dominion as an ultimate
+## A Domain Expansion as an ultimate
 
-A technique's ultimate can be a **full Dominion**: its inner space expanded round its caster inside a barrier, carrying the technique
-(DESIGN §3.35). Build the ultimate on `DominionUltimate` (package `com.cnethuka.kegare.api.dominion`, **experimental**) and give it to the
+A technique's ultimate can be a **Domain Expansion**: its inner space expanded round its caster inside a barrier, carrying the technique
+(DESIGN §3.35). Build the ultimate on `DomainExpansion` (package `com.cnethuka.kegare.api.domain`, **experimental**) and give it to the
 builder's `ultimate(...)`:
 
 ```java
-public static final DominionUltimate STORM_DOMINION = new DominionUltimate(ResourceLocation.fromNamespaceAndPath(MOD_ID, "storm_dominion")) {
+public static final DomainExpansion STORM_DOMAIN = new DomainExpansion(ResourceLocation.fromNamespaceAndPath(MOD_ID, "storm_domain")) {
     @Override public double cost(ServerPlayer player) { return 400; }
 
     @Override
-    public DominionLook look() {
+    public DomainLook look() {
         // its inner space's sky, fog, how far you see, the shell from outside, its floor's block, Kegare's ruins, dust color (-1: none),
         // already cracked as it closes
-        return new DominionLook(0x2B3550, 0x2B3550, 28f, 0x101420, Optional.of(ResourceLocation.withDefaultNamespace("blue_ice")), false,
+        return new DomainLook(0x2B3550, 0x2B3550, 28f, 0x101420, Optional.of(ResourceLocation.withDefaultNamespace("blue_ice")), false,
                 0xA0B0D0, false);
     }
 
     @Override
-    public void furnish(DominionInterior interior) {
+    public void furnish(DomainInterior interior) {
         // A few spires of your own, on the floor Kegare laid.
         for (int i = 0; i < 6; i++) {
             BlockPos at = interior.centre().offset(interior.random().nextInt(21) - 10, 0, interior.random().nextInt(21) - 10);
@@ -311,7 +311,7 @@ public static final DominionUltimate STORM_DOMINION = new DominionUltimate(Resou
     }
 
     @Override
-    public void tickInside(DominionContext ctx) {
+    public void tickInside(DomainContext ctx) {
         if (ctx.ticksOpen() % 20 != 0) return;
         for (LivingEntity target : ctx.sureHitTargets()) {
             target.hurt(ctx.caster().damageSources().indirectMagic(ctx.caster(), ctx.caster()), 2f);
@@ -320,24 +320,24 @@ public static final DominionUltimate STORM_DOMINION = new DominionUltimate(Resou
 };
 ```
 
-Kegare does everything else: opening takes a full **Dominion Meter** (filled by damage in fights) and the ultimate's Malice, and is refused
+Kegare does everything else: opening takes a full **Domain Meter** (filled by damage in fights) and the ultimate's Malice, and is refused
 with nothing paid to a Severed player, on a full brain meter, while burnt out, with one already open, and where it can't open. The
 barrier spreads from its caster and seals; everything alive inside (never a boss) is taken into its **inner space**, a plot of real
 blocks in a dimension of its own, and let out again where it came from as it ends. The barrier stops projectiles, takes hits from
 outside on its shell and from inside on its inner space's sky until it breaks, ends after its time, and burns its caster out. The
-world under the shell is never touched. Opening over another Dominion starts a clash, and the caster has to keep V held through it.
+world under the shell is never touched. Opening over another Domain starts a clash, and the caster has to keep V held through it.
 
 | Method | What it does |
 |---|---|
 | `look()` | **Required.** Its shell from outside, and its inner space: its sky (from its fog color at the horizon to its sky color overhead, drawn by the clients), its fog, the block its floor is made of (`ground`, a block ID: empty for Kegare's wasteland ground, a patchwork of vanilla stone), Kegare's ruins or not, and dust. |
-| `innerRadius` | How far its inner space reaches (`[dominion.full]`'s `innerRadius`, 32, unless you override it): bigger than its shell, as the inside is bigger than it looks. |
-| `furnish(interior)` | Places your own blocks in its inner space as it's built, after Kegare has cleared it and laid its floor (and ruins). `DominionInterior` gives its level, its `centre` (the middle of its floor), its `radius`, a `random` and `place(pos, state)`, which ignores anything outside its dome. It's rebuilt from scratch every time, so place freely. |
+| `innerRadius` | How far its inner space reaches (`[domain.full]`'s `innerRadius`, 32, unless you override it): bigger than its shell, as the inside is bigger than it looks. |
+| `furnish(interior)` | Places your own blocks in its inner space as it's built, after Kegare has cleared it and laid its floor (and ruins). `DomainInterior` gives its level, its `centre` (the middle of its floor), its `radius`, a `random` and `place(pos, state)`, which ignores anything outside its dome. It's rebuilt from scratch every time, so place freely. |
 | `sureHit()` | Whether its technique can't miss inside (default true). `ctx.sureHitTargets()` lists who it reaches: everything in its inner space but its caster and what they own, never a Severed player, and nothing while it's contested. |
-| `radius`, `durationTicks`, `barrierStrength` | Its barrier, per caster. Kegare's `[dominion.full]` numbers unless you override them. `durationTicks` is its base: Kegare scales it by the caster's mastery (their Grade and your technique's Refinement, from `[dominion.mastery]`'s `leastShare` to `mostShare` of it), and when it's up the barrier breaks. |
+| `radius`, `durationTicks`, `barrierStrength` | Its barrier, per caster. Kegare's `[domain.full]` numbers unless you override them. `durationTicks` is its base: Kegare scales it by the caster's mastery (their Grade and your technique's Refinement, from `[domain.mastery]`'s `leastShare` to `mostShare` of it), and when it's up the barrier breaks. |
 | `onOpen`, `tickInside`, `onClose(ctx, broken)` | When it closes, every tick it's open, and as it ends. |
 | `canOpen(ctx)` | Your own reasons to refuse it before anything is paid. |
 
-`KegareDominions` answers questions from anywhere on the server: a caster's open Dominion (`of`), whether something is in one's inner
+`KegareDomains` answers questions from anywhere on the server: a caster's open Domain (`of`), whether something is in one's inner
 space (`isTrapped`), and who a caster's sure-hit reaches (`sureHitTargets`).
 
 ## Uninstalling an addon

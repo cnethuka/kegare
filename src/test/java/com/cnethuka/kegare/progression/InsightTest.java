@@ -99,10 +99,10 @@ class InsightTest {
             assertTrue(InsightHooks.survivedStandstill(p));
             assertFalse(InsightHooks.survivedStandstill(p));
             assertEquals(5, Insight.get(p, InsightCategory.WARD));
-            assertTrue(InsightHooks.caughtInDominion(p, rime.id()));
-            assertTrue(InsightHooks.clashedWithDominion(p, rime.id()));
-            assertFalse(InsightHooks.caughtInDominion(p, rime.id()));
-            assertEquals(5 + 5, Insight.get(p, InsightCategory.DOMINION));
+            assertTrue(InsightHooks.caughtInDomain(p, rime.id()));
+            assertTrue(InsightHooks.clashedWithDomain(p, rime.id()));
+            assertFalse(InsightHooks.caughtInDomain(p, rime.id()));
+            assertEquals(5 + 5, Insight.get(p, InsightCategory.DOMAIN));
         });
     }
 
@@ -110,10 +110,10 @@ class InsightTest {
     void whichCategoryASourcePaysIsConfig(MinecraftServer server) throws Exception {
         TestServer.onServerThread(server, () -> {
             ServerPlayer p = sorcerer(server, "hooks_config", Rime.RIME.get());
-            ProgressionConfig.INSIGHT_CATEGORY.get(InsightSource.SURVIVED_STANDSTILL).set(InsightCategory.DOMINION);
+            ProgressionConfig.INSIGHT_CATEGORY.get(InsightSource.SURVIVED_STANDSTILL).set(InsightCategory.DOMAIN);
             try {
                 InsightHooks.survivedStandstill(p);
-                assertEquals(5, Insight.get(p, InsightCategory.DOMINION));
+                assertEquals(5, Insight.get(p, InsightCategory.DOMAIN));
                 assertEquals(0, Insight.get(p, InsightCategory.WARD));
             } finally {
                 ProgressionConfig.INSIGHT_CATEGORY.get(InsightSource.SURVIVED_STANDSTILL).set(InsightCategory.WARD);

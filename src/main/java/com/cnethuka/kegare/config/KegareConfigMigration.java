@@ -25,7 +25,7 @@ import net.neoforged.neoforge.common.ModConfigSpec;
  */
 public final class KegareConfigMigration {
     /** The version these numbers are for. A file with no {@code configVersion} reads as 1. */
-    public static final int CURRENT_VERSION = 8;
+    public static final int CURRENT_VERSION = 9;
 
     /** Version 2, the Malice rescale: each value it changed, with its old default. The new value is always the spec's default. */
     static final Map<String, Number> RESCALE_OLD_DEFAULTS = Map.ofEntries(
@@ -154,10 +154,75 @@ public final class KegareConfigMigration {
             new Step(5, BLUR_SPEED_OLD_DEFAULTS, "Blur's top speed, kept clearly faster than Accelerate"),
             new Step(6, EFFICIENCY_CURVE_OLD_DEFAULTS, "Six Eyes efficiency's new curve (its Attunement and RMT output weights)"),
             new Step(7, HEAL_BY_TOUCH_OLD_DEFAULTS, "healing others by touch (its range)"),
-            new Step(8, Map.of(), FLOW_RENAMES, "Flow's new names (Reinforcement, Background Reinforcement and Sustained Flow renamed)"));
+            new Step(8, Map.of(), FLOW_RENAMES, "Flow's new names (Reinforcement, Background Reinforcement and Sustained Flow renamed)"),
+            new Step(9, Map.of(), "Domains' new names (every option naming Dominions; moved by moveDomains)"));
 
     /** Renamed options set by hand in the file as it was before NeoForge loaded and corrected it (it drops keys it no longer knows). */
     private static volatile Map<String, Double> beforeCorrection = Map.of();
+
+    /**
+     * Version 9, Dominions renamed Domains (DESIGN §3.35): every option whose path names them (the whole of {@code [dominion]}, and a
+     * few elsewhere, like {@code dominionBurnoutAssumed} and the Insight sources) moves to the same path with the new name, its value as
+     * it was ({@code DOMINION} as an Insight category becomes {@code DOMAIN}). The defaults didn't change, so everything carries over.
+     */
+    static final int DOMAINS_VERSION = 9;
+
+    /** The old file's options that name Dominions, by their new path, with their values as they now read. */
+    private static volatile Map<String, Object> beforeDomains = Map.of();
+
+    static Map<String, Object> domainMoves(UnmodifiableConfig old) {
+        Map<String, Object> out = new HashMap<>();
+        collectDomainMoves(old, "", out);
+        return out;
+    }
+
+    private static void collectDomainMoves(UnmodifiableConfig node, String prefix, Map<String, Object> out) {
+        for (UnmodifiableConfig.Entry e : node.entrySet()) {
+            String path = prefix.isEmpty() ? e.getKey() : prefix + "." + e.getKey();
+            Object value = e.getValue();
+            if (value instanceof UnmodifiableConfig child) {
+                collectDomainMoves(child, path, out);
+            } else if (path.toLowerCase(java.util.Locale.ROOT).contains("dominion")) {
+                out.put(path.replace("dominion", "domain").replace("Dominion", "Domain"),
+                        value instanceof String s ? s.replace("DOMINION", "DOMAIN") : value);
+            }
+        }
+    }
+
+    private static void moveDomains() {
+        List<String> carried = new ArrayList<>();
+        for (Map.Entry<String, Object> e : beforeDomains.entrySet()) {
+            if (!(KegareServerConfig.SPEC.getValues().get(e.getKey()) instanceof ModConfigSpec.ConfigValue<?> to)) continue;
+            Object value = as(to.getDefault(), e.getValue());
+            if (value == null || value.equals(to.get())) continue;
+            set(to, value);
+            carried.add(e.getKey() + " = " + value);
+        }
+        if (!carried.isEmpty()) Kegare.LOGGER.info("kegare-server.toml: carried {} values over to Domains' new names: {}", carried.size(), carried);
+    }
+
+    /** {@code raw}, as read from the file, in the type of {@code like} (null if it can't be). */
+    @SuppressWarnings({"unchecked", "rawtypes"})
+    static Object as(Object like, Object raw) {
+        if (like instanceof Integer && raw instanceof Number n) return n.intValue();
+        if (like instanceof Long && raw instanceof Number n) return n.longValue();
+        if (like instanceof Double && raw instanceof Number n) return n.doubleValue();
+        if (like instanceof Boolean && raw instanceof Boolean b) return b;
+        if (like instanceof Enum<?> e && raw instanceof String s) {
+            try {
+                return Enum.valueOf((Class) e.getDeclaringClass(), s);
+            } catch (IllegalArgumentException unknown) {
+                return null;
+            }
+        }
+        if (like instanceof String && raw instanceof String s) return s;
+        return null;
+    }
+
+    @SuppressWarnings("unchecked")
+    private static <T> void set(ModConfigSpec.ConfigValue<T> value, Object to) {
+        value.set((T) to);
+    }
 
     enum Action { NONE, MOVE_TO_NEW_DEFAULT, KEEP_HAND_EDITED }
 
@@ -175,7 +240,9 @@ public final class KegareConfigMigration {
     public static void readBeforeLoading(Path file) {
         if (!Files.isRegularFile(file)) return;
         try {
-            beforeCorrection = handSetRenamed(new TomlParser().parse(file, FileNotFoundAction.THROW_ERROR));
+            UnmodifiableConfig old = new TomlParser().parse(file, FileNotFoundAction.THROW_ERROR);
+            beforeCorrection = handSetRenamed(old);
+            beforeDomains = domainMoves(old);
         } catch (Exception e) {
             Kegare.LOGGER.warn("kegare-server.toml: couldn't read it for renamed options; they'll start from their defaults", e);
         }
@@ -204,6 +271,7 @@ public final class KegareConfigMigration {
         for (Step step : STEPS) {
             if (version < step.version()) apply(step);
         }
+        if (version < DOMAINS_VERSION) moveDomains();
         KegareServerConfig.CONFIG_VERSION.set(CURRENT_VERSION);
         KegareServerConfig.SPEC.save();
     }

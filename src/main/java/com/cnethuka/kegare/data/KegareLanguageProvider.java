@@ -27,11 +27,11 @@ import net.neoforged.neoforge.common.data.LanguageProvider;
  * innate technique has no epithet ({@code .epithet}).
  */
 public final class KegareLanguageProvider extends LanguageProvider {
-    // ---- Display terms. Code IDs match them: malice / innate_technique / dominion / severed. ----
+    // ---- Display terms. Code IDs match them: malice / innate_technique / domain / severed. ----
     // "Kegare" is the mod name and is reserved for the future hostile spirit mobs; never use it for the energy.
     private static final String MALICE = "Malice";
     private static final String INNATE_TECHNIQUE = "Innate Technique";
-    private static final String DOMINION = "Dominion";
+    private static final String DOMAIN = "Domain";
     private static final String SEVERED = "Severed";
     private static final String REROLL_ITEM = "Purification Talisman";
     private static final String SIX_EYES = "Six Eyes";
@@ -53,7 +53,7 @@ public final class KegareLanguageProvider extends LanguageProvider {
         // Terms, for UI that wants the bare word.
         add("kegare.term.malice", MALICE);
         add("kegare.term.innate_technique", INNATE_TECHNIQUE);
-        add("kegare.term.dominion", DOMINION);
+        add("kegare.term.domain", DOMAIN);
         add("kegare.term.severed", SEVERED);
 
         // Item
@@ -174,9 +174,9 @@ public final class KegareLanguageProvider extends LanguageProvider {
         add("subtitles.kegare.puppet_manipulation.curio_thump", "Heavy thump");
         add("subtitles.kegare.impact.boom", "Deep boom");
         add("subtitles.kegare.black_spark.crack", "Black spark cracks");
-        add("subtitles.kegare.dominion.open", DOMINION + " rises");
-        add("subtitles.kegare.dominion.break", DOMINION + " breaks");
-        add("subtitles.kegare.dominion.clash", DOMINION + "s clash");
+        add("subtitles.kegare.domain.open", DOMAIN + " rises");
+        add("subtitles.kegare.domain.break", DOMAIN + " breaks");
+        add("subtitles.kegare.domain.clash", DOMAIN + "s clash");
         add("message.kegare.swap.switchback_refused", "Something stops the swap back.");
         // Puppet Manipulation
         add("innate_technique.kegare.puppet_manipulation", "Puppet Manipulation");
@@ -303,7 +303,7 @@ public final class KegareLanguageProvider extends LanguageProvider {
         add("gui.kegare.sorcerer.special.none", "No special");
         add("gui.kegare.special.requires", "Requires %s");
         add("gui.kegare.sorcerer.ability.ultimate_locked", "Ultimate: Locked");
-        add("gui.kegare.sorcerer.ability.ultimate_locked.desc", "Its " + DOMINION + " comes later.");
+        add("gui.kegare.sorcerer.ability.ultimate_locked.desc", "Its " + DOMAIN + " Expansion comes later.");
 
         // Cast feedback (action bar)
         add("message.kegare.cast.severed", "You are " + SEVERED + ". No " + MALICE + " flows through you.");
@@ -475,7 +475,7 @@ public final class KegareLanguageProvider extends LanguageProvider {
         add("message.kegare.loadout.bad_slot", "That slot doesn't exist.");
         add("message.kegare.loadout.locked", "You haven't unlocked that ability.");
         add("message.kegare.loadout.unavailable", "That ability isn't available to you."); 
-        add("message.kegare.cast.ultimate_locked", "Locked. Your " + DOMINION + " comes later.");
+        add("message.kegare.cast.ultimate_locked", "Locked. Your " + DOMAIN + " Expansion comes later.");
         add("message.kegare.cast.no_special", "%s has no special.");
         add("message.kegare.cast.hold_special", "Hold %s and %s to use %s.");
         add("message.kegare.cast.requirement", "%s requires %s.");
@@ -644,9 +644,9 @@ public final class KegareLanguageProvider extends LanguageProvider {
         advancement("a_green_light", "A Green Light", "Unlock Reverse Malice Technique");
         advancement("its_been_a_while", "It's been a while, huh?", "Use Reverse Malice Technique on the brink of death");
         advancement("bush_camper", "Bush Camper", "Steal another person's kill");
-        advancement("pushback", "Pushback", "Win a " + DOMINION + " clash before it comes to a fight");
-        advancement("fight_me", "Fight Me", "Win a " + DOMINION + " clash in the fight");
-        advancement("mutual_destruction", "Mutual Destruction", "Clash " + DOMINION + "s to a draw: both break");
+        advancement("pushback", "Pushback", "Win a " + DOMAIN + " clash before it comes to a fight");
+        advancement("fight_me", "Fight Me", "Win a " + DOMAIN + " clash in the fight");
+        advancement("mutual_destruction", "Mutual Destruction", "Clash " + DOMAIN + "s to a draw: both break");
         advancement("somethings_missing", "Something's Missing", "Read someone and find nothing there");
         advancement("are_they_high", "Are They High?", "Explain Reverse Malice Technique to the person you're fighting");
         advancement("always_on", "Always On", "Heal enough with Reverse Malice Technique that it keeps going on its own");
@@ -713,7 +713,7 @@ public final class KegareLanguageProvider extends LanguageProvider {
                 case SPECIAL_GRADE -> "Special Grade";
             });
         }
-        add("insight.kegare.dominion", DOMINION);
+        add("insight.kegare.domain", DOMAIN);
         add("insight.kegare.ward", "Ward");
         add("insight.kegare.output", "Output");
         add("toast.kegare.promotion", "Promoted");
@@ -728,7 +728,7 @@ public final class KegareLanguageProvider extends LanguageProvider {
         add("gui.kegare.settings.animation_fades", "Blend animations in and out");
         add("gui.kegare.settings.shake", "Screen shake when hits land: %s");
         add("gui.kegare.settings.impact_frames", "Impact frames (black-and-white flash on the biggest hits, Full only)");
-        add("gui.kegare.settings.dominion_flashes", DOMINION + " flashes (the white flash as one breaks, the flicker of a clash)");
+        add("gui.kegare.settings.domain_flashes", DOMAIN + " flashes (the white flash as one breaks, the flicker of a clash)");
         add("gui.kegare.settings.reveal", "Roll reveal animation");
         add("gui.kegare.settings.reveal_always_full", "Always play a technique's full reveal");
         add("gui.kegare.settings.reveal_reduced_motion", "Reveal: fewer flashes, no shake");
@@ -983,7 +983,7 @@ public final class KegareLanguageProvider extends LanguageProvider {
         add("commands.kegare.refinement.get", "%s: Refinement %s / %s, %s / %s XP to the next level, Peak Refinement %s.");
         add("commands.kegare.refinement.set", "%s is now at Refinement %s.");
         add("commands.kegare.insight.unknown", "Unknown Insight category: %s. Choose from %s.");
-        add("commands.kegare.insight.get", "%s: " + DOMINION + " %s, Ward %s, Output %s.");
+        add("commands.kegare.insight.get", "%s: " + DOMAIN + " %s, Ward %s, Output %s.");
         add("commands.kegare.insight.add", "Added %s %s Insight to %s, who now has %s.");
         add("commands.kegare.progression.reset", "%s's Grade, Assessment, Refinement, Insight and unlocks are all reset.");
 
@@ -999,49 +999,49 @@ public final class KegareLanguageProvider extends LanguageProvider {
         add("commands.kegare.debug.shared.severed", "%s is " + SEVERED + " and can't unlock %s.");
         add("commands.kegare.debug.task.unknown", "Unknown Background Task: %s. Choose from %s.");
         add("commands.kegare.debug.brain", "%s's brain meter is now %s.");
-        add("commands.kegare.debug.dominion.meter", "%s's Dominion Meter is now %s.");
-        add("commands.kegare.debug.dominion.none", "%s has no Dominion open.");
-        add("commands.kegare.debug.dominion.ended", "Ended %s's Dominion.");
-        add("commands.kegare.help.debug.dominion.meter", "Set a player's Dominion Meter (0 to 100).");
-        add("commands.kegare.help.debug.dominion.end", "End a player's Dominion now (they burn out as usual).");
+        add("commands.kegare.debug.domain.meter", "%s's Domain Meter is now %s.");
+        add("commands.kegare.debug.domain.none", "%s has no Domain open.");
+        add("commands.kegare.debug.domain.ended", "Ended %s's Domain.");
+        add("commands.kegare.help.debug.domain.meter", "Set a player's Domain Meter (0 to 100).");
+        add("commands.kegare.help.debug.domain.end", "End a player's Domain now (they burn out as usual).");
 
-        // Dominions (DESIGN §3.35)
-        add("hud.kegare.dominion.meter", "Dominion %s");
-        add("message.kegare.dominion.severed", "With no Malice, there's no inner space to expand.");
-        add("message.kegare.dominion.brain_full", "Your brain can't take another Dominion.");
-        add("message.kegare.dominion.already_open", "Your Dominion is already open.");
-        add("message.kegare.dominion.meter_full", "Your Dominion Meter isn't full.");
-        add("message.kegare.dominion.meter_part", "Your Dominion Meter needs %s.");
-        add("message.kegare.dominion.in_the_way", "Another Dominion is in the way.");
-        add("ability.kegare.incomplete_dominion", "Incomplete " + DOMINION);
-        add("ability.kegare.incomplete_dominion.desc", "Expand your inner space with " + MALICE + " alone, without your technique in it. It "
-                + "takes %1$s of your " + DOMINION + " Meter and its cost in " + MALICE + ": a barrier rises %2$s blocks round you and closes a "
+        // Domains (DESIGN §3.35)
+        add("hud.kegare.domain.meter", "Domain %s");
+        add("message.kegare.domain.severed", "With no Malice, there's no inner space to expand.");
+        add("message.kegare.domain.brain_full", "Your brain can't take another Domain.");
+        add("message.kegare.domain.already_open", "Your Domain is already open.");
+        add("message.kegare.domain.meter_full", "Your Domain Meter isn't full.");
+        add("message.kegare.domain.meter_part", "Your Domain Meter needs %s.");
+        add("message.kegare.domain.in_the_way", "Another Domain is in the way.");
+        add("ability.kegare.incomplete_domain", "Incomplete " + DOMAIN);
+        add("ability.kegare.incomplete_domain.desc", "Expand your inner space with " + MALICE + " alone, without your technique in it. It "
+                + "takes %1$s of your " + DOMAIN + " Meter and its cost in " + MALICE + ": a barrier rises %2$s blocks round you and closes a "
                 + "moment later on whoever is still inside, trapping them with you until it breaks: %3$s to %8$s seconds, longer the higher your "
-                + "Grade and Peak Refinement. It's weaker than a full " + DOMINION + " and "
+                + "Grade and Peak Refinement. It's weaker than a full " + DOMAIN + " and "
                 + "finds nobody, but while it stands your innate technique costs %4$s less, its cooldowns run %5$s faster and its hits do %6$s "
                 + "more, and you have Strength, Resistance and Speed. Afterwards you're burnt out for %7$s seconds.");
-        add("ability.kegare.incomplete_dominion.unlock", "Reach %1$s, and Refinement %2$s on any technique. " + DOMINION
+        add("ability.kegare.incomplete_domain.unlock", "Reach %1$s, and Refinement %2$s on any technique. " + DOMAIN
                 + " Insight lowers the Refinement needed.");
-        add("unlock.kegare.incomplete_dominion", "Incomplete " + DOMINION);
-        add("gui.kegare.six_eyes.read.dominion", "Holding open %s");
-        add("message.kegare.dominion.sealed", "That " + DOMINION + " is sealed: break in, or open yours inside it.");
-        add("message.kegare.dominion.inner_space", "Not here: this is someone's inner space.");
-        add("message.kegare.dominion.clash.crowded", "Too many " + DOMINION + "s are in the way.");
-        add("message.kegare.dominion.clash.full", "Two " + DOMINION + "s are already clashing here.");
-        add("message.kegare.dominion.clash.holding", "You're holding your " + DOMINION + ".");
-        add("hud.kegare.dominion.clash.grip", "Hold %s");
-        add("hud.kegare.dominion.clash.maintain", "Hold on %ss");
-        add("hud.kegare.dominion.clash.fight", "Fight %ss");
-        add("hud.kegare.dominion.clash.score", "You %s · Them %s");
-        add("hud.kegare.dominion.clash.won", "Clash won");
-        add("hud.kegare.dominion.clash.lost", "Clash lost");
-        add("hud.kegare.dominion.clash.tie", "Both broke");
-        add("hud.kegare.dominion.clash.hit", "Hit");
-        add("hud.kegare.dominion.clash.miss", "Miss");
-        add("hud.kegare.dominion.clash.let_go", "Let go!");
-        add("hud.kegare.dominion.clash.nowhere", "Its key isn't on your bar");
-        add("commands.kegare.help.debug.dominion.unlock", "Give a player the Incomplete " + DOMINION + ", whatever it takes.");
-        add("commands.kegare.help.debug.dominion.lock", "Take the Incomplete " + DOMINION + " away from a player (they learn it again once "
+        add("unlock.kegare.incomplete_domain", "Incomplete " + DOMAIN);
+        add("gui.kegare.six_eyes.read.domain", "Holding open %s");
+        add("message.kegare.domain.sealed", "That " + DOMAIN + " is sealed: break in, or open yours inside it.");
+        add("message.kegare.domain.inner_space", "Not here: this is someone's inner space.");
+        add("message.kegare.domain.clash.crowded", "Too many " + DOMAIN + "s are in the way.");
+        add("message.kegare.domain.clash.full", "Two " + DOMAIN + "s are already clashing here.");
+        add("message.kegare.domain.clash.holding", "You're holding your " + DOMAIN + ".");
+        add("hud.kegare.domain.clash.grip", "Hold %s");
+        add("hud.kegare.domain.clash.maintain", "Hold on %ss");
+        add("hud.kegare.domain.clash.fight", "Fight %ss");
+        add("hud.kegare.domain.clash.score", "You %s · Them %s");
+        add("hud.kegare.domain.clash.won", "Clash won");
+        add("hud.kegare.domain.clash.lost", "Clash lost");
+        add("hud.kegare.domain.clash.tie", "Both broke");
+        add("hud.kegare.domain.clash.hit", "Hit");
+        add("hud.kegare.domain.clash.miss", "Miss");
+        add("hud.kegare.domain.clash.let_go", "Let go!");
+        add("hud.kegare.domain.clash.nowhere", "Its key isn't on your bar");
+        add("commands.kegare.help.debug.domain.unlock", "Give a player the Incomplete " + DOMAIN + ", whatever it takes.");
+        add("commands.kegare.help.debug.domain.lock", "Take the Incomplete " + DOMAIN + " away from a player (they learn it again once "
                 + "they next meet what it takes).");
         add("commands.kegare.debug.sixeyes.strain", "%s's Strain is now %s.");
         add("commands.kegare.debug.sixeyes.attunement", "%s's Attunement is now %s.");

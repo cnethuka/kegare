@@ -216,8 +216,8 @@ public final class ProgressionConfig {
         b.pop();
         b.pop();
 
-        b.comment("Insight: each source pays once per player, ever, into one of DOMINION, WARD or OUTPUT. It's kept on reroll and death.",
-                "hit_by_technique pays once per technique; caught_in_dominion and clashed_with_dominion once per kind of Dominion; the rest once ever.").push("insight");
+        b.comment("Insight: each source pays once per player, ever, into one of DOMAIN, WARD or OUTPUT. It's kept on reroll and death.",
+                "hit_by_technique pays once per technique; caught_in_domain and clashed_with_domain once per kind of Domain; the rest once ever.").push("insight");
         for (InsightSource source : InsightSource.values()) {
             b.push(source.id());
             INSIGHT_CATEGORY.put(source, b.comment("Which kind of Insight this pays into.").defineEnum("category", source.defaultCategory));

@@ -15,7 +15,7 @@ import net.neoforged.neoforge.registries.DeferredRegister;
 
 /**
  * Rime (RARE): Frost Shard, Glacial Lance, Frost Field, Rime Shell, with the specials Splinter, Glacial Spire, Ice Path
- * and Shatter Shell on R. No ultimate: the slot shows as locked until its Dominion exists. Freeze stacks on targets;
+ * and Shatter Shell on R. No ultimate: the slot shows as locked until its Domain exists. Freeze stacks on targets;
  * cheaper in the cold, dearer in the heat. All numbers: [rime] in kegare-server.toml.
  */
 public final class Rime {

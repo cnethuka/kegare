@@ -43,9 +43,9 @@ import org.junit.jupiter.api.extension.ExtendWith;
 @ExtendWith(EphemeralTestServerProvider.class)
 class RepairTest {
     private static final double EPS = 1.0e-3;
-    /** A full Dominion's Burnout ({@code dominionBurnoutAssumed}), in ticks. */
-    static int dominion() {
-        return (int) Math.round(RmtConfig.DOMINION_BURNOUT_ASSUMED.get() * 20);
+    /** A Domain Expansion's Burnout ({@code domainBurnoutAssumed}), in ticks. */
+    static int domain() {
+        return (int) Math.round(RmtConfig.DOMAIN_BURNOUT_ASSUMED.get() * 20);
     }
 
     static ServerPlayer player(MinecraftServer server, String name) {
@@ -84,11 +84,11 @@ class RepairTest {
         TestServer.onServerThread(server, () -> {
             try {
                 ServerPlayer p = player(server, "repair_rate");
-                Burnout.apply(p, dominion());
+                Burnout.apply(p, domain());
                 p.setHealth(12f);
                 channel(p, 20);
                 double perSecond = RmtConfig.REPAIR_RATE.get() * RmtOutput.of(p);
-                assertEquals(dominion() - perSecond * 20, Burnout.remaining(p), 1.0, "repairRate x output seconds of Burnout a second");
+                assertEquals(domain() - perSecond * 20, Burnout.remaining(p), 1.0, "repairRate x output seconds of Burnout a second");
                 assertEquals(12f - RmtConfig.REPAIR_DAMAGE.get(), p.getHealth(), EPS, "no healing while repairing; repairDamage instead");
                 assertTrue(Repair.isRepairing(p), "the tell is on");
 
@@ -126,13 +126,13 @@ class RepairTest {
             try {
                 ServerPlayer p = player(server, "repair_brain");
                 BrainDamage.set(p, 0);
-                Burnout.apply(p, dominion());
+                Burnout.apply(p, domain());
                 channel(p, 400);
                 assertFalse(Burnout.isBurntOut(p), "setup: repaired");
                 double first = BrainDamage.get(p);
                 assertTrue(first > 0, "the meter grew");
                 CastManager.stopAll(p, EndReason.CANCELLED);
-                Burnout.apply(p, dominion());
+                Burnout.apply(p, domain());
                 channel(p, 400);
                 double second = BrainDamage.get(p) - first;
                 assertTrue(second > first, "the second repair added more than the first: " + first + " then " + second);
@@ -142,8 +142,8 @@ class RepairTest {
                 assertEquals(BrainDamage.grow(0, 15, 60)[0], BrainDamage.grow(0, 5, 20)[0], EPS, "a quarter of 60 s costs what a quarter of 20 s does");
                 assertTrue(BrainDamage.grow(0, 10, 20)[0] > BrainDamage.grow(0, 10, 60)[0], "10 s is half of a 20 s Burnout and a sixth of a 60 s one");
 
-                // The anchor: four full repairs fit, and the fifth stops partway (a fifth Dominion, not a sixth), whatever the technique.
-                for (double length : new double[] {20, RmtConfig.DOMINION_BURNOUT_ASSUMED.get(), 7, 180}) {
+                // The anchor: four full repairs fit, and the fifth stops partway (a fifth Domain, not a sixth), whatever the technique.
+                for (double length : new double[] {20, RmtConfig.DOMAIN_BURNOUT_ASSUMED.get(), 7, 180}) {
                     assertEquals(4, BrainDamage.repairsThatFit(length), "four full repairs of a " + length + " s Burnout");
                 }
                 double meter = 0;
@@ -204,7 +204,7 @@ class RepairTest {
                     costs[i] = BrainDamage.get(p);
                     CastManager.stopAll(p, EndReason.CANCELLED);
                 }
-                assertEquals(BrainDamage.grow(0, 60, 60)[0], costs[1], EPS, "a 60 s Burnout: one full repair of dominionBurnoutAssumed");
+                assertEquals(BrainDamage.grow(0, 60, 60)[0], costs[1], EPS, "a 60 s Burnout: one full repair of domainBurnoutAssumed");
                 assertEquals(costs[1], costs[0], EPS, "a 20 s Standstill Burnout costs what a 60 s one does");
 
                 // Its own countdown took most of it, and the repair finishes it off: getting the ultimate back still costs a full repair.
@@ -411,17 +411,17 @@ class RepairTest {
                 TraitSuccession.release(server, KegareTraits.SIX_EYES.get());
                 assertEquals(TraitService.AddResult.ADDED, TraitService.add(p, KegareTraits.SIX_EYES.get(), Trait.AddReason.ADMIN));
                 BrainDamage.set(p, BrainDamage.MAX);
-                assertTrue(BrainDamage.refusesDominion(p), "the Dominion hook says no");
-                Burnout.apply(p, dominion());
+                assertTrue(BrainDamage.refusesDomain(p), "the Domain hook says no");
+                Burnout.apply(p, domain());
                 p.setHealth(10f);
                 channel(p, 20);
-                assertEquals(dominion(), Burnout.remaining(p), "no repair: the Burnout runs its full length");
+                assertEquals(domain(), Burnout.remaining(p), "no repair: the Burnout runs its full length");
                 assertTrue(p.getHealth() > 10f, "RMT goes to the body instead");
                 assertFalse(Repair.isRepairing(p), "no nosebleed");
                 CastManager.stopAll(p, EndReason.CANCELLED);
 
                 // Nearly full: it repairs until the meter's full, then stops.
-                Burnout.apply(p, dominion());
+                Burnout.apply(p, domain());
                 BrainDamage.set(p, 99.0);
                 int before = Burnout.remaining(p);
                 channel(p, 100);

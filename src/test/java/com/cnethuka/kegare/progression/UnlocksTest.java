@@ -62,7 +62,7 @@ class UnlocksTest {
 
     @Test
     void matchingInsightLowersTheRefinementNeeded() {
-        UnlockRequirements lowered = UnlockRequirements.builder().refinement(8).loweredBy(InsightCategory.DOMINION).build();
+        UnlockRequirements lowered = UnlockRequirements.builder().refinement(8).loweredBy(InsightCategory.DOMAIN).build();
         assertEquals(8, effective(lowered, 0));
         assertEquals(8, effective(lowered, 9), "it rounds down");
         assertEquals(7, effective(lowered, 10));
@@ -90,11 +90,11 @@ class UnlocksTest {
     }
 
     @Test
-    void theRealEntriesAreHealingOthersTheBackgroundTasksAndTheIncompleteDominion() {
-        // Healing others (DESIGN §3.17), the Background Tasks (§3.31) and the Incomplete Dominion (§3.35); later unlocks plug in when they're built.
+    void theRealEntriesAreHealingOthersTheBackgroundTasksAndTheIncompleteDomain() {
+        // Healing others (DESIGN §3.17), the Background Tasks (§3.31) and the Incomplete Domain (§3.35); later unlocks plug in when they're built.
         assertEquals(java.util.Set.of(com.cnethuka.kegare.rmt.RmtIds.ON_ANOTHER_UNLOCK, com.cnethuka.kegare.backgroundtask.BackgroundRmt.ID,
                         com.cnethuka.kegare.backgroundtask.BackgroundFlow.ID, com.cnethuka.kegare.backgroundtask.SteadyOutput.ID,
-                        com.cnethuka.kegare.dominion.DominionIds.INCOMPLETE),
+                        com.cnethuka.kegare.domain.DomainIds.INCOMPLETE),
                 java.util.Set.copyOf(Unlocks.registered()));
     }
 
@@ -158,8 +158,8 @@ class UnlocksTest {
         TestServer.onServerThread(server, () -> {
             assertEquals(0.5, ProgressionConfig.INSIGHT_REFINEMENT_CAP.get());
             ServerPlayer p = sorcerer(server, "capped");
-            Insight.add(p, InsightCategory.DOMINION, 1000);
-            assertEquals(3, Unlocks.refinementNeeded(p, UnlockRequirements.builder().refinement(6).loweredBy(InsightCategory.DOMINION).build()));
+            Insight.add(p, InsightCategory.DOMAIN, 1000);
+            assertEquals(3, Unlocks.refinementNeeded(p, UnlockRequirements.builder().refinement(6).loweredBy(InsightCategory.DOMAIN).build()));
         });
     }
 
@@ -181,17 +181,17 @@ class UnlocksTest {
     @Test
     void insightCanBeWhatFinishesARefinementUnlock(MinecraftServer server) throws Exception {
         TestServer.onServerThread(server, () -> {
-            ResourceLocation id = entry("lowered", UnlockRequirements.builder().refinement(4).loweredBy(InsightCategory.DOMINION).build());
+            ResourceLocation id = entry("lowered", UnlockRequirements.builder().refinement(4).loweredBy(InsightCategory.DOMAIN).build());
             ServerPlayer p = sorcerer(server, "lowered");
             RefinementService.setLevel(p, 2);
             assertFalse(Unlocks.has(p, id));
-            Insight.add(p, InsightCategory.DOMINION, 19);
+            Insight.add(p, InsightCategory.DOMAIN, 19);
             assertFalse(Unlocks.has(p, id), "19 Insight is 1 level");
-            Insight.add(p, InsightCategory.DOMINION, 1);
+            Insight.add(p, InsightCategory.DOMAIN, 1);
             assertTrue(Unlocks.has(p, id), "20 Insight is 2 levels");
             RefinementService.setLevel(p, 1);
-            Insight.add(p, InsightCategory.DOMINION, 1000);
-            assertEquals(2, Unlocks.refinementNeeded(p, UnlockRequirements.builder().refinement(4).loweredBy(InsightCategory.DOMINION).build()), "the cap: half of 4");
+            Insight.add(p, InsightCategory.DOMAIN, 1000);
+            assertEquals(2, Unlocks.refinementNeeded(p, UnlockRequirements.builder().refinement(4).loweredBy(InsightCategory.DOMAIN).build()), "the cap: half of 4");
         });
     }
 

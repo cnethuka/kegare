@@ -35,7 +35,9 @@ class KegareConfigMigrationTest {
             if (action == com.electronwill.nightconfig.core.ConfigSpec.CorrectionAction.REMOVE) removed.add(String.join(".", path));
         });
         assertEquals(java.util.Set.of("roll.includeTestInnateTechniques", "test_abilities", "reinforcement",
-                "background_tasks.background_reinforcement", "background_tasks.sustained_flow"), java.util.Set.copyOf(removed),
+                "background_tasks.background_reinforcement", "background_tasks.sustained_flow",
+                "reverse_malice_technique.repair.dominionBurnoutAssumed", "progression.insight.caught_in_dominion",
+                "progression.insight.clashed_with_dominion"), java.util.Set.copyOf(removed),
                 "those keys go (the renamed ones come back under their new names), and nothing else");
         assertTrue(KegareServerConfig.SPEC.isCorrect(old), "and then it's a correct file");
         assertFalse(old.contains("test_abilities"));
@@ -143,5 +145,33 @@ class KegareConfigMigrationTest {
         var steps = KegareConfigMigration.STEPS;
         for (int i = 1; i < steps.size(); i++) assertTrue(steps.get(i - 1).version() < steps.get(i).version());
         assertEquals(KegareConfigMigration.CURRENT_VERSION, steps.get(steps.size() - 1).version());
+    }
+
+    @Test
+    void optionsNamingDominionsMoveToTheirDomainNamesWithTheirValues() throws Exception {
+        com.electronwill.nightconfig.core.CommentedConfig old = new com.electronwill.nightconfig.toml.TomlParser()
+                .parse(OLD_TOML, com.electronwill.nightconfig.core.file.FileNotFoundAction.THROW_ERROR);
+        old.set("dominion.incomplete.radius", 12.0);
+        old.set("dominion.incomplete.innerRadius", 30);
+        old.set("dominion.incomplete.unlock.grade", "GRADE_1");
+        old.set("dominion.full.dominionBurnout", 70.0);
+        old.set("reverse_malice_technique.repair.dominionBurnoutAssumed", 70.0);
+        old.set("progression.insight.caught_in_dominion.amount", 9);
+        Map<String, Object> moves = KegareConfigMigration.domainMoves(old);
+        assertEquals(12.0, moves.get("domain.incomplete.radius"));
+        assertEquals(30, moves.get("domain.incomplete.innerRadius"));
+        assertEquals(70.0, moves.get("domain.full.domainBurnout"));
+        assertEquals(70.0, moves.get("reverse_malice_technique.repair.domainBurnoutAssumed"));
+        assertEquals(9, moves.get("progression.insight.caught_in_domain.amount"));
+        assertEquals("DOMAIN", moves.get("progression.insight.clashed_with_domain.category"), "the category's own name too");
+        for (String path : moves.keySet()) {
+            ModConfigSpec.ConfigValue<?> to = KegareServerConfig.SPEC.getValues().get(path);
+            assertNotNull(to, path + " is a real option");
+            assertNotNull(KegareConfigMigration.as(to.getDefault(), moves.get(path)), path + " reads as its type");
+        }
+        assertEquals(com.cnethuka.kegare.progression.Grade.GRADE_1,
+                KegareConfigMigration.as(com.cnethuka.kegare.progression.Grade.SEMI_GRADE_2, "GRADE_1"), "an enum by its name");
+        assertEquals(30, KegareConfigMigration.as(24, 30L), "a whole number as an int");
+        assertTrue(KegareServerConfig.SPEC.getValues().get("dominion") == null, "the old section is gone");
     }
 }
