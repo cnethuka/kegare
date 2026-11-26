@@ -13,7 +13,7 @@ import net.neoforged.neoforge.event.entity.living.LivingIncomingDamageEvent;
 
 /**
  * A Severed player's body, always on (DESIGN §3.27). Strength: their melee hits ({@link MeleeHits}: fists and weapons) deal
- * {@code meleeDamage} times as much, before armour (as a heavier blow would) and before a Reinforced Strike's own bonus. Toughness:
+ * {@code meleeDamage} times as much, before armour (as a heavier blow would). Toughness:
  * after armour, what reaches them is cut to {@code takenFall} for falls, {@code takenTechnique} for techniques and {@code takenPhysical}
  * for everything else; the void, /kill and starving are never touched. Stamina: normal hunger drain is cut to {@code exhaustion}
  * (through {@code PlayerExhaustionMixin} and {@code FoodDataMixin}); Blur adds its own drain straight to the food bar, outside it.

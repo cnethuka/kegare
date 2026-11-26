@@ -55,7 +55,7 @@ public final class SeveredConfig {
         b.comment("Severed players: no Malice, and a superhuman body in exchange. None of it grows with Grade or Refinement.").push("severed");
 
         b.comment("Always on.").push("body");
-        MELEE_DAMAGE = b.comment("Strength: their melee hits (fists and weapons) deal this times as much, before a Reinforced Strike's own bonus.")
+        MELEE_DAMAGE = b.comment("Strength: their melee hits (fists and weapons) deal this times as much, before armour.")
                 .defineInRange("meleeDamage", 1.25, 1.0, 10.0);
         TAKEN_PHYSICAL = b.comment("Toughness: share of damage they take from everything that isn't a technique or a fall (hits, arrows, fire,",
                 "explosions). The void, /kill and starving are never reduced.").defineInRange("takenPhysical", 0.75, 0.0, 1.0);

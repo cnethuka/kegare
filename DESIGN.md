@@ -3,7 +3,8 @@
 A cursed-energy combat framework for **NeoForge 21.1.x / Minecraft 1.21.1 / Java 21**, built mainly for **PvP with friends**.
 It covers the base systems (§3.1–3.13) and the content built on them: specials (§3.15), the loadout (§3.16), Reverse
 Malice Technique (§3.17–3.18), the innate techniques Rime (§3.14), Swap (§3.19), Puppet Manipulation (§3.20) and Time Manipulation (§3.26), and
-progression (§3.21). Mobs (the Kegare), domains and lore come later (§5).
+progression (§3.21), melee and the Impact System (§3.22-3.24), the Severed body (§3.27), the Six Eyes (§3.32), the addon API (§3.34) and the
+Domain System (§3.35). Mobs (the Kegare), Domain Expansions and lore come later (§5).
 
 - Mod ID: `kegare` · Package: `com.cnethuka.kegare` · Build: ModDevGradle MDK
 - Everything is server-authoritative. Clients send key intents and render what the server syncs.
@@ -19,7 +20,7 @@ config keys, lang keys and command names.
 |---|---|---|
 | Cursed energy | `malice` (`MaliceData`, `kegare:malice`, `/kegare malice`) | Malice |
 | Per-player power | `innate_technique` (`InnateTechnique`, `kegare:innate_technique`, `/kegare innate`) | Innate Technique |
-| Ultimate space (future) | `domain` | Domain |
+| Ultimate space | `domain` | Domain |
 | Zero-Malice flag | `severed` | Severed |
 | Reroll item | `purification_talisman` | Purification Talisman |
 
@@ -182,7 +183,7 @@ All timestamps use **level game time**. They persist across restarts and are ide
   - a rarity (COMMON / RARE / EPIC / LEGENDARY)
   - an ordered **ability list**, cast with the number keys in Technique Mode (§3.5); each ability may
     have a **special**, with R (§3.15)
-  - an optional **ultimate** (the ultimate key, where domains will plug in)
+  - an optional **ultimate** (the ultimate key; a Domain Expansion is one, §3.35)
   - a **Malice color** (`Builder.maliceColor(0xRRGGBB)`, read with `maliceColor()`; default Malice purple
     `#9D4EDD`, `InnateTechnique.DEFAULT_MALICE_COLOR`). It colors the Malice bar's fill, glow and ghost fill on the
     HUD and the Sorcerer screen, and the Technique Mode glow. Display only: definitions are registry-synced, so the
@@ -1475,8 +1476,8 @@ negative is positive energy, which is why it heals, and why it heals with white 
     nothing back). `Burnout` saves what's been paid for with it.
   - **Full:** "Your brain can't take another repair." on the action bar, repair stops and the Burnout runs its full length (RMT heals the
     body again: there's nothing left it can do for the technique). A repair that fills it stops where
-    it filled. Background RMT shortens nothing while it's full. `BrainDamage.refusesDomain` is the hook for Domains (later) to
-    refuse to open. Six Eyes gets no exemption.
+    it filled. Background RMT shortens nothing while it's full. `BrainDamage.refusesDomain` is why a Domain refuses to
+    open then (§3.35). Six Eyes gets no exemption.
   - **Healing:** `brainHealPerSecond` (0.15) a second out of a fight (full to empty in about 11 minutes); a night slept through clears
     it for everyone who slept it (`SleepFinishedTimeEvent`).
   - **The anchor:** a Domain Expansion's Burnout is `domainBurnoutAssumed` (60 s), kept equal to `domain.full.domainBurnout` (§3.35). From an empty
@@ -1527,8 +1528,10 @@ negative is positive energy, which is why it heals, and why it heals with white 
     ticks (one more tick, at most 20) counts as on it. A look that hasn't changed counts as not yet heard from them for their ping plus
     250 ms of real time, and the orb neither moves on nor runs back meanwhile, so a server catching up after a lag spike (ticks back to
     back with no new look) can't run it off and send it back to the start. After that a still look is a still look: on it, it moves on;
-    off it, it runs back. The server sends the progress every tick it changes, and the client only draws
-  it, swelling it as it nears the end. A new route is rolled for every orb. On success:
+    off it, it runs back.
+
+  The server sends the progress every tick it changes, and the client only draws it, swelling it as it nears the end. A new route is
+  rolled for every orb. On success:
   - RMT is unlocked (kept for good, through rerolls);
   - **real healing** of **8 HP** (`unlockHeal`), never above max health;
   - a green burst (`rmt/rmt_unlock_burst`), a heal pulse and a chime, **played locally**: only the player sees and
@@ -1901,7 +1904,7 @@ puppeteer's body language:
 | `puppet_create_charge` | Loop: hands at the chest weaving strings in turns, head bowed over them. Leaves rest once, then loops from its loop point. |
 | `puppet_create_release` | Strings drawn in, then flung out to the right; the head turns to where the puppet appears. |
 | `possess_cast` | On the possessed puppet: limp, then jolts awake, arms flung wide. |
-| `possess_return` | Back in the body: keyed from the empty body's slack pose exactly, a gasp, head snapping up, arms flinching, settling. With fades on its first 3 ticks blend in from the vanilla pose, so the join with the shell isn't exact. |
+| `possess_return` | Back in the body: keyed from the empty body's slack pose exactly, a gasp, head snapping up, arms flinching, settling. With fades on, its first 3 ticks blend in from the vanilla pose, so the join with the shell isn't exact. |
 | `directive_cast` | A conductor's cue: hand up over the shoulder, a cut down and across, a sharp downward point. |
 | `focus_point` | Wind-up, a hard point at the target, held; the other hand yanks a string taut. |
 | `curio_burst_cast` | Reach toward the puppet, a tense beat, the fist yanked back as it goes off. |
@@ -2083,8 +2086,8 @@ reach Special Grade. Assessment is private and never lowers Grade.
   deal almost none), plus upkeep as spend and casts in the `openingCastSeconds` (5 s) before a fight. Nothing cast scores 0. Shared
   abilities (RMT) are left out.
 - **Severed players** have no technique or Malice: melee variety takes Technique use's weight (distinct moves, by weapon and by crit,
-  sprint or ranged, plus the melee layer's three against real players: `perfect_parry`, only off a swing with a full attack bar (`melee.parry.assessmentCharge`), `clean_dodge` and `reinforced_strike`; `severedFullMoves` 4 for full marks, plus combining, all with the same repeat decay), Efficiency drops out and the rest is rescaled to 100. They can
-  reach Special Grade. A parry or dodge often comes before any damage: like opening Malice it waits `openingCastSeconds` for the fight, and never opens one, so what a fight is and which ones qualify don't change. A Strike is recorded as itself and not also as the weapon's hit: one hit, one move.
+  sprint or ranged, plus the melee layer's two of theirs against real players: `perfect_parry`, only off a swing with a full attack bar (`melee.parry.assessmentCharge`), and `clean_dodge` (a Reinforced Strike is Malice, so never theirs, §3.22); `severedFullMoves` 4 for full marks, plus combining, all with the same repeat decay), Efficiency drops out and the rest is rescaled to 100. They can
+  reach Special Grade. A parry or dodge often comes before any damage: like opening Malice it waits `openingCastSeconds` for the fight, and never opens one, so what a fight is and which ones qualify don't change.
 
 **Your Assessment is the average of your recent qualifying fights,** which needs a minimum number of different opponents so one friend
 can't carry it:
@@ -2140,7 +2143,7 @@ shared and targets its caster, so it never lands: no Refinement, not in Techniqu
 
 The same ability landing on the same target counts once per `landing.repeat` (1 s), so one volley or channel isn't twenty landings.
 
-#### Extension technique unlocks
+#### Innate technique unlocks
 Abilities, specials and the ultimate of an innate technique unlock through Refinement. Each technique defines the level in its definition
 (`UnlockTable`, `Builder.defaultUnlockLevels()`, `Builder.unlockLevel`), and `refinement.unlockLevelOverrides` overrides any of them from the
 config (`["kegare:frost_field=1"]`). **A technique that sets none can't be built.**
@@ -2186,7 +2189,7 @@ player, ever, saved per player. Which category each source pays into, and how mu
 | `healed_by_other` | Output 3 | ever (healed by another player's RMT, §3.17) | wired |
 | `first_black_spark` | Output 5 | ever (your first Black Spark, on anything living, §3.28) | wired |
 
-The hook-only ones wait for systems that don't exist yet: those systems call the `InsightHooks` method. **Insight does not change extension
+Each system calls its `InsightHooks` method. **Insight does not change innate
 technique unlock levels.** It lowers only framework requirements (below).
 
 #### Unlock framework (`Unlocks`)
@@ -2681,7 +2684,7 @@ no glow, no Innate color. None of it grows with Grade or Refinement, because the
 
 **The body** (`SeveredBody`, always on):
 - **Strength:** their melee hits (`MeleeHits`: fists and weapons, outside a cast) deal `meleeDamage` (1.25) times as much, on the
-  incoming amount (before armour, as a heavier blow would), and a Reinforced Strike's own bonus comes on top.
+  incoming amount (before armour, as a heavier blow would).
 - **Toughness:** after armour, what reaches them is cut to `takenPhysical` (0.75) for hits and everything else physical (arrows,
   fire, explosions), `takenTechnique` (0.9) for techniques (any Kegare damage type, or anything `Attribution` puts on an ability)
   and `takenFall` (0.4) for falls. The void, /kill and starving are never touched.
@@ -2772,7 +2775,7 @@ Technique Mode, unchanged (`client/SeveredKeys`). Controls lists the key as "Tec
   **momentum hit**: the rush's speed carried into it. No Reinforced Strike: that's Malice, and a Severed player has none.
   - extra damage: `momentumDamage` (3.25) per block a tick of the rush's speed, added to the hit after their Strength and before the
     target's defences (a full rush, 4 blocks a tick: +13);
-  - knockback: `carriedKnockback` (0.2) per block a tick (0.8 at full speed), with the hit as the Strike's was, so the hit's own push
+  - knockback: `carriedKnockback` (0.2) per block a tick (0.8 at full speed), with the hit, so the hit's own push
     halves it (vanilla stacking); never on a boss;
   - charge for the Impact System: the rush's speed against Closing Line's full `speed` (a full rush is fully charged).
   `ClosingLine.onIncoming`; `ClosingLine.momentumReady` and `spendMomentum` for the rest of the game.
@@ -2970,7 +2973,7 @@ A shared system so timing can be judged finer than a 50 ms tick. Numbers in `[ti
   with its own monotonic clock in ms (`timing/client/ClientStamps`), the moment the key or button goes down, and sends the stamp there
   and then (`TimingNet.Stamp`), ahead of the packet that does the thing at the next client tick. Sent at the press, its trip to the
   server is only the network's. An attack is stamped when the button goes down with an entity under the crosshair; Fists' number key
-  in Technique Mode when Fists are in that slot; a Domain clash's prompt key while a prompt waits (`CLASH`, §3.35). A stamp nothing
+  in Technique Mode when Fists are in that slot; a caster's attack key in a Domain clash's Maintain (`CLASH`, §3.35). A stamp nothing
   claims within half a second is dropped. How fine a stamp is depends on
   the frame rate: the game reads keys once a frame.
 - **The clock:** the server pings each player (`TimingNet.Ping`, answered at once with their clock, `TimingNet.Pong`) every
@@ -3391,13 +3394,13 @@ numbers exact, a row that won't decode changing nothing, only Kegare's keys out 
 
 ### 3.34 Addon API (package `api`)
 `com.cnethuka.kegare.api` is what addons use: the only public part of Kegare. Everything else is internal and may change in any
-release. **Experimental until 1.0:** within one minor version (0.2.0, 0.2.1, ...) nothing in it changes in a way that breaks an addon;
-a new minor version (0.3.0) may. An addon declares its Kegare dependency as one minor range, counting its pre-releases:
-`versionRange = "[0.2.0-alpha,0.3.0-alpha)"` (NeoForge compares versions like Maven, where `0.2.0-alpha` comes before `0.2`, so
-`"[0.2,0.3)"` would refuse 0.2.0-alpha and let 0.3.0-alpha in). Every
+release. **Experimental until 1.0:** within one minor version (0.3.0, 0.3.1, ...) nothing in it changes in a way that breaks an addon;
+a new minor version (0.4.0) may. An addon declares its Kegare dependency as one minor range, counting its pre-releases:
+`versionRange = "[0.3.0-alpha,0.4.0-alpha)"` (NeoForge compares versions like Maven, where `0.3.0-alpha` comes before `0.3`, so
+`"[0.3,0.4)"` would refuse 0.3.0-alpha and let 0.4.0-alpha in). Every
 package in it carries `@ApiStatus.Experimental`. The guide for mod makers is `docs/addon-api.md`.
 
-**What's in it (0.2.0):**
+**What's in it:**
 
 | Package / class | What |
 |---|---|
@@ -3629,8 +3632,7 @@ Full, Reduced and Vanilla, where Reduced and Vanilla make half the ink, dust and
     or a chiseled one), their tops broken off in slabs and stairs, with rubble round each (slabs, stairs, loose cobblestone and andesite).
   - **over the rest:** dead bushes on the coarse dirt, loose rubble and stone-button pebbles. Nothing stands within 1.5 blocks of its
     sky.
-  - dust
-  `0xA7A29B`, not cracked (it cracks only where it's hit). No Malice color anywhere.
+  - **dust** `0xA7A29B`; its shell not cracked (it cracks only where it's hit). No Malice color anywhere.
 - **Moments:** opening plays `domain.open` (a low drone swelling as the barrier spreads, air rushing up through it, and a heavy soft
   seal a second in, as it closes) for everyone near; a hit on the barrier a glass knock, its cracks and a spray of white sparks where
   it landed; breaking plays `domain.break` (one huge crack, the shell falling apart in lower and lower pieces, a rumble) with the
@@ -3816,8 +3818,8 @@ one inside the other).
   Decelerate's cooldown slow, §3.26). **Seeing through disguises:** ask
   `Disguises` (`isDisguised`, `getRealIdentity`, `getDisguisedAs`), never what is drawn.
 - **New trait:** register a `Trait` subclass (unique or not) and override its hooks.
-- **Domains:** an innate technique's `ultimate` ability. It uses `CombatHelper` (stun, combat) and the shared
-  `CastManager.validate` checks. Domain-specific state gets its own attachment.
+- **A Domain Expansion:** an innate technique's `ultimate` built on `DomainExpansion` (§3.35), which brings the barrier, the inner
+  space, the meter and clashes with it.
 - **Cost or cooldown modifiers** (e.g. from traits): `Ability.cost(player)` and `cooldownTicks(player)` already
   receive the caster. A CHARGED ability whose cost grows with the charge overrides `releaseCost(player, charge)`.
 - **Taking over the keys** (a possession, a channelled state): `CastManager.addInterceptor` gets first say over every
@@ -3831,13 +3833,12 @@ one inside the other).
 ## 5. Future (TBD)
 
 - **Innate techniques:** more real ones, with their abilities, balance and visuals.
-- **Rime's Domain** (its ultimate; the slot is locked until then).
 - **The addon API, next steps (§3.34):** one shared target event for every technique, the Impact System hook, read-only events (casts,
   technique changes, unlocks, Refinement and Grade), client hooks (visuals, HUD, the effect setting), and publishing (Modrinth's Maven, a
   sources jar). Changing shared abilities.
-- **Domain Expansions:** Rime's and Puppet Manipulation's, on `DomainExpansion` with their own interiors and sure-hits (§3.35); counters to
-  Domains.
-- **What progression waits for (§3.21):** later unlocks, Domains among them, register through `Unlocks`, their first-time sources call
+- **Domain Expansions:** Rime's and Puppet Manipulation's (their ultimate slots are locked until then), on `DomainExpansion` with their
+  own interiors and sure-hits (§3.35); counters to Domains.
+- **What progression waits for (§3.21):** later unlocks register through `Unlocks`, their first-time sources call
   `InsightHooks`, and later systems that need a player's Grade read `Progression.getGrade`.
 - **PvE:** the **Kegare** (hostile spirit mobs), spawning, structures, progression.
 - **Open questions:**

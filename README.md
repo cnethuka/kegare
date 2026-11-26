@@ -213,8 +213,8 @@ and sounds as `.ogg` files. See DESIGN.md §3.10.
 
 Kegare has an addon API (`com.cnethuka.kegare.api`): add your own innate techniques, shared abilities and traits, built on the same
 types as Kegare's own, with Refinement, rolls and the loadout working for them as they do for Kegare's. Start with the
-[addon guide](docs/addon-api.md). The API is **experimental until 1.0**: nothing in it breaks within a minor version (0.2.x), but a
-new minor version (0.3.0) may change it. Addons can also add, replace and tweak abilities in Kegare's own techniques; Kegare's
+[addon guide](docs/addon-api.md). The API is **experimental until 1.0**: nothing in it breaks within a minor version (0.3.x), but a
+new minor version (0.4.0) may change it. Addons can also add, replace and tweak abilities in Kegare's own techniques; Kegare's
 advancements tied to a changed ability are turned off, and players need the same addons as the server to join.
 
 ## Security
