@@ -59,6 +59,7 @@ public final class InnerSpaces {
     private InnerSpaces() {}
 
     public static void init() {
+        NeoForge.EVENT_BUS.addListener((ServerTickEvent.Pre e) -> keepAwake());
         NeoForge.EVENT_BUS.addListener((ServerTickEvent.Post e) -> tick());
         NeoForge.EVENT_BUS.addListener((PlayerEvent.PlayerLoggedInEvent e) -> {
             if (e.getEntity() instanceof ServerPlayer p) onLogin(p);
@@ -260,6 +261,18 @@ public final class InnerSpaces {
     }
 
     private static int strayCheck;
+
+    /**
+     * Before the levels tick: a level with nobody in it stops ticking its entities after 15 seconds, and a Dominion's barrier is an
+     * entity in the world it stands in. With everyone taken into its inner space that world is empty, and the barrier would never run
+     * out, break or let anyone go. So while one is open, the world it stands in and its inner space are kept awake.
+     */
+    static void keepAwake() {
+        for (InnerSpace s : OPEN) {
+            s.outerLevel.resetEmptyTime();
+            s.level.resetEmptyTime();
+        }
+    }
 
     /**
      * Once a second: a player in the inner space dimension that no Dominion holds and no plot is letting out (put there by a command, say)

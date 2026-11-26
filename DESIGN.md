@@ -3538,6 +3538,8 @@ touched, and is simply there again afterwards.
   - A player who logs in inside an inner space that's no longer open (after a crash, a stop, or logging out inside) is sent back to
     where they came from, or to the world's spawn if that's lost.
   - A server stop lets everyone out first.
+  - The world it stands in is kept awake while it's open: a level with nobody in it stops ticking its entities after 15 seconds, and
+    with everyone taken in, nothing would count its time down or end it.
   - Once a second, anyone in the inner space dimension that no Dominion holds and no plot is letting out (put there by a command, say)
     is sent back the same way.
   - A plot left half-built is cleared the next time it's used.

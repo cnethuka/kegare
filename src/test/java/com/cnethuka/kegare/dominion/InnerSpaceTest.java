@@ -274,6 +274,47 @@ class InnerSpaceTest {
     }
 
     @Test
+    void theWorldItStandsInKeepsTickingWithEveryoneInside(MinecraftServer server) throws Exception {
+        run(server, s -> {
+            ServerLevel world = DominionTest.level(s);
+            ServerPlayer a = DominionTest.at(s, "inner_awake", 8, 8);
+            DominionEntity d = open(a);
+            DominionTest.closed(d);
+            assertTrue(InnerSpaces.isInnerSpace(a.level()), "setup: nobody left in the world");
+            setEmptyTime(world, 10_000); // long past the 300 ticks after which an empty level stops ticking its entities
+            InnerSpaces.keepAwake();
+            assertEquals(0, emptyTime(world), "kept awake while it's open");
+            endNow(d);
+            setEmptyTime(world, 10_000);
+            InnerSpaces.keepAwake();
+            assertEquals(10_000, emptyTime(world), "and left alone once it's over");
+            setEmptyTime(world, 0);
+        });
+    }
+
+    private static java.lang.reflect.Field emptyTimeField() throws ReflectiveOperationException {
+        java.lang.reflect.Field f = ServerLevel.class.getDeclaredField("emptyTime");
+        f.setAccessible(true);
+        return f;
+    }
+
+    private static int emptyTime(ServerLevel level) {
+        try {
+            return emptyTimeField().getInt(level);
+        } catch (ReflectiveOperationException e) {
+            throw new IllegalStateException(e);
+        }
+    }
+
+    private static void setEmptyTime(ServerLevel level, int ticks) {
+        try {
+            emptyTimeField().setInt(level, ticks);
+        } catch (ReflectiveOperationException e) {
+            throw new IllegalStateException(e);
+        }
+    }
+
+    @Test
     void takingItsCasterInDoesntEndIt(MinecraftServer server) throws Exception {
         run(server, s -> {
             ServerPlayer a = DominionTest.at(s, "inner_caster", 8, 8);
