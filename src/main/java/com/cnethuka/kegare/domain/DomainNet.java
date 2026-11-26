@@ -141,10 +141,10 @@ public final class DomainNet {
      * To a clash's caster, as the Maintain begins and after each press of theirs: their meter. The line began sweeping at
      * {@code startClientMs} on their own clock (NaN when the server has no estimate of it yet: then {@code elapsedMs} before this
      * arrived) and crosses the meter once every {@code sweepMs}, there and back; their mark is {@code halfWidth} either side of
-     * {@code mark} (shares of the meter). {@code result} is their last press, the {@code presses}th: none yet, a hit (with its
+     * {@code mark} (shares of the meter), and a press of {@code perfectFrom} precision or better is perfect. {@code result} is their last press, the {@code presses}th: none yet, a hit (with its
      * {@code precision}, 1 on the mark's middle and 0 at its edge) or a miss.
      */
-    public record ClashSweep(int presses, double startClientMs, int elapsedMs, int sweepMs, float mark, float halfWidth, int result,
+    public record ClashSweep(int presses, double startClientMs, int elapsedMs, int sweepMs, float mark, float halfWidth, float perfectFrom, int result,
                              float precision) implements CustomPacketPayload {
         public static final int NONE = 0, HIT = 1, MISS = 2;
         public static final Type<ClashSweep> TYPE = new Type<>(Kegare.id("domain_clash_sweep"));
@@ -156,10 +156,11 @@ public final class DomainNet {
                     buf.writeVarInt(p.sweepMs());
                     buf.writeFloat(p.mark());
                     buf.writeFloat(p.halfWidth());
+                    buf.writeFloat(p.perfectFrom());
                     buf.writeByte(p.result());
                     buf.writeFloat(p.precision());
                 },
-                buf -> new ClashSweep(buf.readVarInt(), buf.readDouble(), buf.readVarInt(), buf.readVarInt(), buf.readFloat(), buf.readFloat(),
+                buf -> new ClashSweep(buf.readVarInt(), buf.readDouble(), buf.readVarInt(), buf.readVarInt(), buf.readFloat(), buf.readFloat(), buf.readFloat(),
                         buf.readByte(), buf.readFloat()));
         public static Consumer<ClashSweep> clientHandler;
 

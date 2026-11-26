@@ -212,8 +212,17 @@ public final class Clashes {
         return 1.0 - Math.abs(lineAt(c, atMs) - s.mark) / markHalf();
     }
 
-    /** How far a hit of this precision (0 to 1) pushes the bar: {@code pushPerHit} on the middle, {@code edgeShare} of it at the edge. */
+    /** A press this precise or better (1: on the mark's middle) is perfect. */
+    static double perfectFrom() {
+        return 1.0 - DomainConfig.CLASH_PERFECT_ZONE.get();
+    }
+
+    /**
+     * How far a hit of this precision (0 to 1) pushes the bar: from {@code edgeShare} of {@code pushPerHit} at the mark's edge up toward all
+     * of it at the middle, and {@code perfectPush} times it for a perfect press (in the mark's middle {@code perfectZone}).
+     */
     static double push(double precision) {
+        if (precision >= perfectFrom()) return DomainConfig.CLASH_PUSH_PER_HIT.get() * DomainConfig.CLASH_PERFECT_PUSH.get();
         double edge = DomainConfig.CLASH_EDGE_SHARE.get();
         return DomainConfig.CLASH_PUSH_PER_HIT.get() * (edge + (1.0 - edge) * Math.max(0.0, Math.min(1.0, precision)));
     }
@@ -404,7 +413,7 @@ public final class Clashes {
         double startClient = SubTick.toClientMs(caster, c.sweepStartMs).orElse(Double.NaN);
         int elapsed = (int) Math.max(0, Math.round(clock.getAsDouble() - c.sweepStartMs));
         PacketDistributor.sendToPlayer(caster, new DomainNet.ClashSweep(s.presses, startClient, elapsed, (int) Math.round(sweepMs()),
-                (float) s.mark, (float) markHalf(), result, precision));
+                (float) s.mark, (float) markHalf(), (float) perfectFrom(), result, precision));
     }
 
     // ---------------------------------------------------------------------------------------------- queries

@@ -104,6 +104,7 @@ public final class ClashClient {
         // The line's own start never changes within a clash: kept from the first one, so it doesn't jump as later ones arrive.
         if (sweep == null) sweepStartMs = Double.isNaN(p.startClientMs()) ? ClientStamps.nowMs() - p.elapsedMs() : p.startClientMs();
         sweep = p;
+        perfect = p.perfectFrom();
     }
 
     /** Where the line is on the meter now, 0 to 1: across and back. */
@@ -216,9 +217,9 @@ public final class ClashClient {
         }
         if (judged != 0 && now - judgedAt < 500) {
             boolean hit = judged == DomainNet.ClashSweep.HIT;
-            String key = !hit ? "hud.kegare.domain.clash.miss" : judgedPrecision >= PERFECT ? "hud.kegare.domain.clash.perfect" : "hud.kegare.domain.clash.hit";
-            GuiDraw.centered(g, mc.font, Component.translatable(key), cx, top + 62, hit && judgedPrecision >= PERFECT ? 1.5f : 1f,
-                    !hit ? MISS : judgedPrecision >= PERFECT ? GuiDraw.GOLD : HIT);
+            String key = !hit ? "hud.kegare.domain.clash.miss" : judgedPrecision >= perfect ? "hud.kegare.domain.clash.perfect" : "hud.kegare.domain.clash.hit";
+            GuiDraw.centered(g, mc.font, Component.translatable(key), cx, top + 62, hit && judgedPrecision >= perfect ? 1.5f : 1f,
+                    !hit ? MISS : judgedPrecision >= perfect ? GuiDraw.GOLD : HIT);
         }
     }
 
@@ -244,8 +245,8 @@ public final class ClashClient {
         g.fill(cx - half, y + 11, cx - half + w, y + 13, 0xFFB8B2AA);
     }
 
-    /** A press this near the mark's middle (1: on it) reads "Perfect". */
-    private static final float PERFECT = 0.8f;
+    /** A press this near the mark's middle (1: on it) reads "Perfect": the server's number. */
+    private static float perfect = 0.75f;
     private static final int METER_HEIGHT = 12;
 
     /**
@@ -260,7 +261,7 @@ public final class ClashClient {
         g.fill(left, y, cx + half, y + METER_HEIGHT, 0xFF24212A);
         int m0 = left + Math.round((p.mark() - p.halfWidth()) * BAR_WIDTH), m1 = left + Math.round((p.mark() + p.halfWidth()) * BAR_WIDTH);
         g.fill(m0, y, m1, y + METER_HEIGHT, MARK);
-        int mid = Math.max(1, Math.round(p.halfWidth() * (1f - PERFECT) * BAR_WIDTH)), mx = left + Math.round(p.mark() * BAR_WIDTH);
+        int mid = Math.max(1, Math.round(p.halfWidth() * (1f - perfect) * BAR_WIDTH)), mx = left + Math.round(p.mark() * BAR_WIDTH);
         g.fill(mx - mid, y, mx + mid, y + METER_HEIGHT, MARK_MIDDLE);
         int lx = left + (int) Math.round(lineAt(now, sweepStartMs, p.sweepMs()) * BAR_WIDTH);
         g.fill(lx - 1, y - 3, lx + 1, y + METER_HEIGHT + 3, LINE);

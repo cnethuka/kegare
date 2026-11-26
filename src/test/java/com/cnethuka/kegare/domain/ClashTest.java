@@ -195,7 +195,10 @@ class ClashTest {
             // On the middle of the mark: the whole push. Then the mark moves.
             double mark = first.mark();
             answer(c, first);
-            assertEquals(DomainConfig.CLASH_PUSH_PER_HIT.get(), c.bar(first), EPS, "on the middle: all of pushPerHit");
+            double perfect = DomainConfig.CLASH_PUSH_PER_HIT.get() * DomainConfig.CLASH_PERFECT_PUSH.get();
+            assertEquals(perfect, c.bar(first), EPS, "on the middle: a perfect press, pushing more");
+            assertTrue(perfect > Clashes.push(Clashes.perfectFrom() - 0.01) * 1.5, "well over the best hit that isn't one");
+            assertEquals(perfect, Clashes.push(Clashes.perfectFrom()), EPS, "from the edge of the perfect zone");
             assertTrue(Math.abs(first.mark() - mark) >= 0.2 - EPS, "the mark moved: " + mark + " to " + first.mark());
             // Near its edge: still a hit, for less.
             double before = c.bar(first);
@@ -214,7 +217,7 @@ class ClashTest {
             assertEquals(before, c.bar(first), EPS, "no press: nothing");
             // The other side pushes it back the other way.
             answer(c, c.second());
-            assertEquals(before - DomainConfig.CLASH_PUSH_PER_HIT.get(), c.bar(first), EPS, "one bar, pushed both ways");
+            assertEquals(before - perfect, c.bar(first), EPS, "one bar, pushed both ways");
 
             // Hits until it's all the way.
             for (int i = 0; i < 20 && c.phase() != Clash.Phase.OVER; i++) answer(c, first);
@@ -240,7 +243,7 @@ class ClashTest {
             assertEquals(1.0, Clashes.handicap(c, c.first()), EPS, "the full one pushes in full");
             toMaintain(c);
             answer(c, c.second());
-            assertEquals(DomainConfig.CLASH_PUSH_PER_HIT.get() * (1 - DomainConfig.CLASH_INCOMPLETE_HANDICAP.get()), c.bar(c.second()), EPS);
+            assertEquals(DomainConfig.CLASH_PUSH_PER_HIT.get() * DomainConfig.CLASH_PERFECT_PUSH.get() * (1 - DomainConfig.CLASH_INCOMPLETE_HANDICAP.get()), c.bar(c.second()), EPS);
         });
     }
 

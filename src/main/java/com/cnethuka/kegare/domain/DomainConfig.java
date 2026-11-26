@@ -50,6 +50,8 @@ public final class DomainConfig {
     public static ModConfigSpec.DoubleValue CLASH_SWEEP;
     public static ModConfigSpec.DoubleValue CLASH_MARK;
     public static ModConfigSpec.DoubleValue CLASH_EDGE_SHARE;
+    public static ModConfigSpec.DoubleValue CLASH_PERFECT_ZONE;
+    public static ModConfigSpec.DoubleValue CLASH_PERFECT_PUSH;
     public static ModConfigSpec.DoubleValue CLASH_PUSH_PER_HIT;
     public static ModConfigSpec.DoubleValue CLASH_PUSH_PER_MISS;
     public static ModConfigSpec.DoubleValue CLASH_CRACK_PER_MISS;
@@ -159,9 +161,13 @@ public final class DomainConfig {
         CLASH_SWEEP = b.comment("How long the line takes to cross a caster's meter once (it sweeps across and back).")
                 .defineInRange("sweepSeconds", 1.1, 0.3, 10.0);
         CLASH_MARK = b.comment("How wide a caster's mark is, as a share of their meter. Pressing with the line in it is a hit, judged by",
-                "sub-tick timing.").defineInRange("markWidth", 0.22, 0.02, 1.0);
+                "sub-tick timing.").defineInRange("markWidth", 0.14, 0.02, 1.0);
         CLASH_EDGE_SHARE = b.comment("The share of pushPerHit a hit at the very edge of the mark pushes (on its middle: all of it).")
                 .defineInRange("edgeShare", 0.4, 0.0, 1.0);
+        CLASH_PERFECT_ZONE = b.comment("The middle of the mark that counts as a perfect press, as a share of the mark (0.25: its middle quarter).")
+                .defineInRange("perfectZone", 0.25, 0.0, 1.0);
+        CLASH_PERFECT_PUSH = b.comment("A perfect press pushes this many times pushPerHit (1.75: three quarters more than a hit on the middle would).")
+                .defineInRange("perfectPush", 1.75, 1.0, 5.0);
         CLASH_PUSH_PER_HIT = b.comment("A hit on the middle of the mark pushes the bar this far toward the other side (all the way is 1).").defineInRange("pushPerHit", 0.2, 0.0, 1.0);
         CLASH_PUSH_PER_MISS = b.comment("A miss (the wrong key, too early, too late or not at all) pushes the bar back this far.")
                 .defineInRange("pushPerMiss", 0.1, 0.0, 1.0);
