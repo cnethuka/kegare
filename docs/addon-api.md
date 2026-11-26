@@ -8,8 +8,8 @@ Refinement and Assessment, rolls, the loadout, the HUD and the Sorcerer screen.
 Everything public is in the package `com.cnethuka.kegare.api`. **Use nothing outside it.** The rest of Kegare is internal and may
 change in any release.
 
-> **Experimental until Kegare 1.0.** Within one minor version (0.3.0, 0.3.1, ...) nothing in `api` changes in a way that breaks
-> your addon. A new minor version (0.4.0) may. Depend on one minor range at a time.
+> **Experimental until Kegare 1.0.** Within one minor version (0.4.0, 0.4.1, ...) nothing in `api` changes in a way that breaks
+> your addon. A new minor version (0.5.0) may. Depend on one minor range at a time.
 
 Design reference: [DESIGN.md §3.34](../DESIGN.md#334-addon-api-package-api).
 
@@ -21,13 +21,13 @@ Design reference: [DESIGN.md §3.34](../DESIGN.md#334-addon-api-package-api).
 [[dependencies.yourmod]]
     modId = "kegare"
     type = "required"
-    versionRange = "[0.3.0-alpha,0.4.0-alpha)"
+    versionRange = "[0.4.0-alpha,0.5.0-alpha)"
     ordering = "AFTER"
     side = "BOTH"
 ```
 
-Write the range with the pre-release suffix, as above. NeoForge compares versions like Maven, where `0.3.0-alpha` comes *before*
-`0.3`: a range of `[0.3,0.4)` would refuse Kegare 0.3.0-alpha and accept 0.4.0-alpha, the opposite of what you want.
+Write the range with the pre-release suffix, as above. NeoForge compares versions like Maven, where `0.4.0-alpha` comes *before*
+`0.4`: a range of `[0.4,0.5)` would refuse Kegare 0.4.0-alpha and accept 0.5.0-alpha, the opposite of what you want.
 
 Kegare isn't on a Maven repository yet (that's planned). Until then, build Kegare's jar (see the README) and add it to your project
 as a local dependency. Kegare needs Player Animation Library, Photon, LDLib2 and Curios at runtime, so your dev environment needs

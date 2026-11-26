@@ -3394,10 +3394,10 @@ numbers exact, a row that won't decode changing nothing, only Kegare's keys out 
 
 ### 3.34 Addon API (package `api`)
 `com.cnethuka.kegare.api` is what addons use: the only public part of Kegare. Everything else is internal and may change in any
-release. **Experimental until 1.0:** within one minor version (0.3.0, 0.3.1, ...) nothing in it changes in a way that breaks an addon;
-a new minor version (0.4.0) may. An addon declares its Kegare dependency as one minor range, counting its pre-releases:
-`versionRange = "[0.3.0-alpha,0.4.0-alpha)"` (NeoForge compares versions like Maven, where `0.3.0-alpha` comes before `0.3`, so
-`"[0.3,0.4)"` would refuse 0.3.0-alpha and let 0.4.0-alpha in). Every
+release. **Experimental until 1.0:** within one minor version (0.4.0, 0.4.1, ...) nothing in it changes in a way that breaks an addon;
+a new minor version (0.5.0) may. An addon declares its Kegare dependency as one minor range, counting its pre-releases:
+`versionRange = "[0.4.0-alpha,0.5.0-alpha)"` (NeoForge compares versions like Maven, where `0.4.0-alpha` comes before `0.4`, so
+`"[0.4,0.5)"` would refuse 0.4.0-alpha and let 0.5.0-alpha in). Every
 package in it carries `@ApiStatus.Experimental`. The guide for mod makers is `docs/addon-api.md`.
 
 **What's in it:**
