@@ -31,19 +31,21 @@ import org.lwjgl.glfw.GLFW;
 
 /**
  * A Domain clash on its caster's client (DESIGN §3.35): it tells the server whether the key that opens their Domain is held, sends
- * the prompt keys as they go down (stamped for sub-tick timing first), keeps them within the leash in Maintain, and draws it: "Hold" and
- * the key at the start, then the tug of war, the prompts closing on their beat, and the fight's scores.
+ * their attack key as it goes down in Maintain (stamped for sub-tick timing first), keeps them within the leash there, and draws it:
+ * "Hold" and the key at the start, then the tug of war with their meter under it (a line sweeping over a mark), and the fight's scores.
  */
 public final class ClashClient {
     private static final ResourceLocation LAYER = Kegare.id("domain_clash");
     private static final int BAR_WIDTH = 160;
     private static final int MINE = 0xFFE6E1DA, THEIRS = 0xFF5E5953, HIT = 0xFF7FD27F, MISS = 0xFFE05A4E;
     @Nullable private static DomainNet.ClashState state;
-    @Nullable private static DomainNet.ClashPrompt prompt;
-    /** When the prompt came, and its beat, on this client's clock (ms). */
-    private static double promptBeatMs;
-    /** The last judged prompt, and when (client ms), for a moment's flash. */
+    private static final int MARK = 0xFF4FA3E8, MARK_MIDDLE = 0xFFB5DCFF, LINE = 0xFFE5403A;
+    @Nullable private static DomainNet.ClashSweep sweep;
+    /** When the line began sweeping, on this client's clock (ms). */
+    private static double sweepStartMs;
+    /** The last judged press and how good it was, and when (client ms), for a moment's flash. */
     private static int judged;
+    private static float judgedPrecision;
     private static long judgedAt;
     /** A decided clash's result, and when (client ms), shown a moment. */
     private static int result;
@@ -54,16 +56,18 @@ public final class ClashClient {
 
     public static void init(IEventBus modBus) {
         DomainNet.ClashState.clientHandler = ClashClient::onState;
-        DomainNet.ClashPrompt.clientHandler = ClashClient::onPrompt;
+        DomainNet.ClashSweep.clientHandler = ClashClient::onSweep;
         modBus.addListener((RegisterGuiLayersEvent e) -> e.registerAbove(VanillaGuiLayers.CROSSHAIR, LAYER, ClashClient::render));
         NeoForge.EVENT_BUS.addListener((ClientTickEvent.Post e) -> tick());
         NeoForge.EVENT_BUS.addListener(ClashClient::onKey);
+        NeoForge.EVENT_BUS.addListener(ClashClient::onMouse);
+        NeoForge.EVENT_BUS.addListener(ClashClient::onClick);
         NeoForge.EVENT_BUS.addListener((ClientPlayerNetworkEvent.LoggingOut e) -> clear());
     }
 
     private static void clear() {
         state = null;
-        prompt = null;
+        sweep = null;
         sentHeld = null;
         result = 0;
         DomainBounds.localHold = null;
@@ -74,7 +78,7 @@ public final class ClashClient {
             result = s.result();
             resultAt = ClientStamps.nowMs();
             state = null;
-            prompt = null;
+            sweep = null;
             sentHeld = null;
             DomainBounds.localHold = null;
             return;
@@ -88,18 +92,25 @@ public final class ClashClient {
         } else {
             DomainBounds.localHold = null;
         }
-        if (s.phase() != 1) prompt = null;
+        if (s.phase() != 1) sweep = null;
     }
 
-    private static void onPrompt(DomainNet.ClashPrompt p) {
-        if (p.result() != DomainNet.ClashPrompt.PENDING) {
-            if (prompt != null && prompt.id() == p.id()) prompt = null;
+    private static void onSweep(DomainNet.ClashSweep p) {
+        if (p.result() != DomainNet.ClashSweep.NONE) {
             judged = p.result();
+            judgedPrecision = p.precision();
             judgedAt = ClientStamps.nowMs();
-            return;
         }
-        prompt = p;
-        promptBeatMs = Double.isNaN(p.beatClientMs()) ? ClientStamps.nowMs() + p.leadMs() : p.beatClientMs();
+        // The line's own start never changes within a clash: kept from the first one, so it doesn't jump as later ones arrive.
+        if (sweep == null) sweepStartMs = Double.isNaN(p.startClientMs()) ? ClientStamps.nowMs() - p.elapsedMs() : p.startClientMs();
+        sweep = p;
+    }
+
+    /** Where the line is on the meter now, 0 to 1: across and back. */
+    static double lineAt(double nowMs, double startMs, int sweepMs) {
+        double u = ((nowMs - startMs) / Math.max(1, sweepMs)) % 2.0;
+        if (u < 0) u += 2.0;
+        return u <= 1.0 ? u : 2.0 - u;
     }
 
     /** Every client tick in a clash: whether the key that opens their Domain is down, told to the server when it changes. */
@@ -132,26 +143,33 @@ public final class ClashClient {
         return InputConstants.isKeyDown(window, key.getValue());
     }
 
-    /** A prompt key going down while a prompt waits: stamped, then sent. */
-    private static void onKey(InputEvent.Key event) {
-        if (event.getAction() != GLFW.GLFW_PRESS || prompt == null || state == null || state.phase() != 1) return;
+    private static boolean pressing() {
         Minecraft mc = Minecraft.getInstance();
-        if (mc.player == null || mc.screen != null) return;
-        InputConstants.Key key = InputConstants.getKey(event.getKey(), event.getScanCode());
-        int which = which(mc, key);
-        if (which < 0) return;
+        return sweep != null && state != null && state.phase() == 1 && mc.player != null && mc.screen == null;
+    }
+
+    /** The attack key going down in the Maintain, on the keyboard or the mouse: stamped, then sent. */
+    private static void pressed(InputConstants.Key key) {
+        if (!pressing()) return;
+        KeyMapping attack = Minecraft.getInstance().options.keyAttack;
+        if (attack.isUnbound() || !attack.getKey().equals(key)) return;
         PacketDistributor.sendToServer(new TimingNet.Stamp(TimedInput.CLASH, ClientStamps.nowMs()));
-        PacketDistributor.sendToServer(new DomainNet.ClashPress(which));
+        PacketDistributor.sendToServer(new DomainNet.ClashPress());
     }
 
-    private static int which(Minecraft mc, InputConstants.Key key) {
-        KeyMapping[] keys = promptKeys(mc);
-        for (int i = 0; i < keys.length; i++) if (!keys[i].isUnbound() && keys[i].getKey().equals(key)) return i;
-        return -1;
+    private static void onKey(InputEvent.Key event) {
+        if (event.getAction() == GLFW.GLFW_PRESS) pressed(InputConstants.getKey(event.getKey(), event.getScanCode()));
     }
 
-    private static KeyMapping[] promptKeys(Minecraft mc) {
-        return new KeyMapping[] {mc.options.keyJump, mc.options.keyShift, mc.options.keySprint};
+    private static void onMouse(InputEvent.MouseButton.Pre event) {
+        if (event.getAction() == GLFW.GLFW_PRESS) pressed(InputConstants.Type.MOUSE.getOrCreate(event.getButton()));
+    }
+
+    /** In the Maintain the attack key is the press: no swing, no block broken. */
+    private static void onClick(InputEvent.InteractionKeyMappingTriggered event) {
+        if (!event.isAttack() || !pressing()) return;
+        event.setCanceled(true);
+        event.setSwingHand(false);
     }
 
     // ---------------------------------------------------------------------------------------------- drawing
@@ -183,11 +201,11 @@ public final class ClashClient {
                         : Component.translatable("hud.kegare.domain.clash.grip", keyName), cx, top, 2f, color);
                 bar(g, cx, top + 24, s.bar(), s.barrier());
             }
-            case 1 -> { // Maintain: the tug of war and the prompts
+            case 1 -> { // Maintain: the tug of war and their meter
                 GuiDraw.centered(g, mc.font, Component.translatable("hud.kegare.domain.clash.maintain", left), cx, top - 12, 1f, 0xFFEDE8F2);
                 bar(g, cx, top, s.bar(), s.barrier());
                 if (!s.holding()) GuiDraw.centered(g, mc.font, Component.translatable("hud.kegare.domain.clash.let_go"), cx, top + 14, 1f, MISS);
-                drawPrompt(g, mc, cx, top + 38, now);
+                drawMeter(g, mc, cx, top + 30, now);
             }
             case 2 -> { // Fight: the scores
                 GuiDraw.centered(g, mc.font, Component.translatable("hud.kegare.domain.clash.fight", left), cx, top - 12, 1f, 0xFFEDE8F2);
@@ -197,9 +215,10 @@ public final class ClashClient {
             default -> {}
         }
         if (judged != 0 && now - judgedAt < 500) {
-            boolean hit = judged == DomainNet.ClashPrompt.HIT;
-            GuiDraw.centered(g, mc.font, Component.translatable(hit ? "hud.kegare.domain.clash.hit" : "hud.kegare.domain.clash.miss"),
-                    cx, top + 62, 1f, hit ? HIT : MISS);
+            boolean hit = judged == DomainNet.ClashSweep.HIT;
+            String key = !hit ? "hud.kegare.domain.clash.miss" : judgedPrecision >= PERFECT ? "hud.kegare.domain.clash.perfect" : "hud.kegare.domain.clash.hit";
+            GuiDraw.centered(g, mc.font, Component.translatable(key), cx, top + 62, hit && judgedPrecision >= PERFECT ? 1.5f : 1f,
+                    !hit ? MISS : judgedPrecision >= PERFECT ? GuiDraw.GOLD : HIT);
         }
     }
 
@@ -225,30 +244,28 @@ public final class ClashClient {
         g.fill(cx - half, y + 11, cx - half + w, y + 13, 0xFFB8B2AA);
     }
 
-    /** The prompt: its key in a box, and a frame closing on it that meets it on the beat; the window lit round it. */
-    private static void drawPrompt(GuiGraphics g, Minecraft mc, int cx, int y, long now) {
-        DomainNet.ClashPrompt p = prompt;
-        if (p == null) return;
-        KeyMapping key = promptKeys(mc)[Mth.clamp(p.key(), 0, 2)];
-        Component name = key.getTranslatedKeyMessage();
-        double toBeat = promptBeatMs - now;
-        float lead = Math.max(1, p.leadMs());
-        float t = (float) Mth.clamp(toBeat / lead, 0.0, 1.0); // 1 when it shows, 0 on the beat
-        boolean inWindow = Math.abs(toBeat) <= p.windowMs() / 2.0;
-        int w = Math.max(40, mc.font.width(name) + 16), h = 20;
-        int grow = Math.round(t * 30);
-        int frame = inWindow ? HIT : 0xFFEDE8F2;
-        outline(g, cx - w / 2 - grow, y - h / 2 - grow, w + grow * 2, h + grow * 2, frame);
-        g.fill(cx - w / 2, y - h / 2, cx + w / 2, y + h / 2, 0xD0101010);
-        outline(g, cx - w / 2, y - h / 2, w, h, inWindow ? HIT : 0xFF9A948C);
-        GuiDraw.centered(g, mc.font, name, cx, y - 4, 1f, inWindow ? HIT : 0xFFEDE8F2);
-    }
+    /** A press this near the mark's middle (1: on it) reads "Perfect". */
+    private static final float PERFECT = 0.8f;
+    private static final int METER_HEIGHT = 12;
 
-    private static void outline(GuiGraphics g, int x, int y, int w, int h, int color) {
-        g.fill(x, y, x + w, y + 1, color);
-        g.fill(x, y + h - 1, x + w, y + h, color);
-        g.fill(x, y, x + 1, y + h, color);
-        g.fill(x + w - 1, y, x + w, y + h, color);
+    /**
+     * Their meter: a dark strip as wide as the bar, their mark on it (blue, lighter in its middle, where a press pushes furthest), and the
+     * red line sweeping across and back; under it, the key to press.
+     */
+    private static void drawMeter(GuiGraphics g, Minecraft mc, int cx, int y, long now) {
+        DomainNet.ClashSweep p = sweep;
+        if (p == null) return;
+        int half = BAR_WIDTH / 2, left = cx - half;
+        g.fill(left - 2, y - 2, cx + half + 2, y + METER_HEIGHT + 2, 0xC0000000);
+        g.fill(left, y, cx + half, y + METER_HEIGHT, 0xFF24212A);
+        int m0 = left + Math.round((p.mark() - p.halfWidth()) * BAR_WIDTH), m1 = left + Math.round((p.mark() + p.halfWidth()) * BAR_WIDTH);
+        g.fill(m0, y, m1, y + METER_HEIGHT, MARK);
+        int mid = Math.max(1, Math.round(p.halfWidth() * (1f - PERFECT) * BAR_WIDTH)), mx = left + Math.round(p.mark() * BAR_WIDTH);
+        g.fill(mx - mid, y, mx + mid, y + METER_HEIGHT, MARK_MIDDLE);
+        int lx = left + (int) Math.round(lineAt(now, sweepStartMs, p.sweepMs()) * BAR_WIDTH);
+        g.fill(lx - 1, y - 3, lx + 1, y + METER_HEIGHT + 3, LINE);
+        GuiDraw.centered(g, mc.font, Component.translatable("hud.kegare.domain.clash.press", mc.options.keyAttack.getTranslatedKeyMessage()),
+                cx, y + METER_HEIGHT + 6, 1f, 0xFFEDE8F2);
     }
 
     /** Whether this client's player is in a clash right now. */

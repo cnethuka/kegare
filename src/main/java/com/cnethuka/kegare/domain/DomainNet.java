@@ -138,32 +138,37 @@ public final class DomainNet {
     }
 
     /**
-     * To a clash's caster: a timing prompt ({@code id}, which {@code key}: 0 jump, 1 sneak, 2 sprint), its beat on their own clock
-     * ({@code beatClientMs}, NaN when the server has no estimate of it yet: then {@code leadMs} from when it arrives), and the window
-     * round it. Sent again once judged, with {@code result} 1 hit or 2 miss (0 while it waits).
+     * To a clash's caster, as the Maintain begins and after each press of theirs: their meter. The line began sweeping at
+     * {@code startClientMs} on their own clock (NaN when the server has no estimate of it yet: then {@code elapsedMs} before this
+     * arrived) and crosses the meter once every {@code sweepMs}, there and back; their mark is {@code halfWidth} either side of
+     * {@code mark} (shares of the meter). {@code result} is their last press, the {@code presses}th: none yet, a hit (with its
+     * {@code precision}, 1 on the mark's middle and 0 at its edge) or a miss.
      */
-    public record ClashPrompt(int id, int key, double beatClientMs, int leadMs, int windowMs, int result) implements CustomPacketPayload {
-        public static final int JUMP = 0, SNEAK = 1, SPRINT = 2;
-        public static final int PENDING = 0, HIT = 1, MISS = 2;
-        public static final Type<ClashPrompt> TYPE = new Type<>(Kegare.id("domain_clash_prompt"));
-        public static final StreamCodec<FriendlyByteBuf, ClashPrompt> STREAM_CODEC = StreamCodec.of(
+    public record ClashSweep(int presses, double startClientMs, int elapsedMs, int sweepMs, float mark, float halfWidth, int result,
+                             float precision) implements CustomPacketPayload {
+        public static final int NONE = 0, HIT = 1, MISS = 2;
+        public static final Type<ClashSweep> TYPE = new Type<>(Kegare.id("domain_clash_sweep"));
+        public static final StreamCodec<FriendlyByteBuf, ClashSweep> STREAM_CODEC = StreamCodec.of(
                 (buf, p) -> {
-                    buf.writeVarInt(p.id());
-                    buf.writeByte(p.key());
-                    buf.writeDouble(p.beatClientMs());
-                    buf.writeVarInt(p.leadMs());
-                    buf.writeVarInt(p.windowMs());
+                    buf.writeVarInt(p.presses());
+                    buf.writeDouble(p.startClientMs());
+                    buf.writeVarInt(p.elapsedMs());
+                    buf.writeVarInt(p.sweepMs());
+                    buf.writeFloat(p.mark());
+                    buf.writeFloat(p.halfWidth());
                     buf.writeByte(p.result());
+                    buf.writeFloat(p.precision());
                 },
-                buf -> new ClashPrompt(buf.readVarInt(), buf.readByte(), buf.readDouble(), buf.readVarInt(), buf.readVarInt(), buf.readByte()));
-        public static Consumer<ClashPrompt> clientHandler;
+                buf -> new ClashSweep(buf.readVarInt(), buf.readDouble(), buf.readVarInt(), buf.readVarInt(), buf.readFloat(), buf.readFloat(),
+                        buf.readByte(), buf.readFloat()));
+        public static Consumer<ClashSweep> clientHandler;
 
         @Override
         public Type<? extends CustomPacketPayload> type() {
             return TYPE;
         }
 
-        public static void handle(ClashPrompt p, IPayloadContext context) {
+        public static void handle(ClashSweep p, IPayloadContext context) {
             if (clientHandler != null) context.enqueueWork(() -> clientHandler.accept(p));
         }
     }
@@ -186,11 +191,10 @@ public final class DomainNet {
         }
     }
 
-    /** From a clash's caster: a prompt key went down (stamped for sub-tick timing just before, as {@code TimedInput.CLASH}). */
-    public record ClashPress(int key) implements CustomPacketPayload {
+    /** From a clash's caster: their attack key went down in the Maintain (stamped for sub-tick timing just before, as {@code TimedInput.CLASH}). */
+    public record ClashPress() implements CustomPacketPayload {
         public static final Type<ClashPress> TYPE = new Type<>(Kegare.id("domain_clash_press"));
-        public static final StreamCodec<FriendlyByteBuf, ClashPress> STREAM_CODEC = StreamCodec.of(
-                (buf, p) -> buf.writeByte(p.key()), buf -> new ClashPress(buf.readByte()));
+        public static final StreamCodec<FriendlyByteBuf, ClashPress> STREAM_CODEC = StreamCodec.of((buf, p) -> {}, buf -> new ClashPress());
 
         @Override
         public Type<? extends CustomPacketPayload> type() {
@@ -200,7 +204,7 @@ public final class DomainNet {
         public static void handle(ClashPress p, IPayloadContext context) {
             context.enqueueWork(() -> {
                 if (context.player() instanceof net.minecraft.server.level.ServerPlayer player) {
-                    Clashes.onPress(player, p.key(), com.cnethuka.kegare.timing.SubTick.mark(player, com.cnethuka.kegare.timing.TimedInput.CLASH));
+                    Clashes.onPress(player, com.cnethuka.kegare.timing.SubTick.mark(player, com.cnethuka.kegare.timing.TimedInput.CLASH));
                 }
             });
         }

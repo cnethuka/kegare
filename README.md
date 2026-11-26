@@ -60,7 +60,7 @@ own), and the hostile spirits that will share the mod's name, are still to come.
   technique costs less, cools down faster and hits harder, and you get Strength, Resistance and Speed; it cracks white where it's hit, and shatters, on its own once it's held as long
   as you can hold it (longer the higher your Grade and Refinement). Learned from your Grade and your highest
   Refinement; it takes half of a Domain Meter that fills as you fight players. Open one over another and they clash: hold on
-  and win a tug of war on timing, or fight it out.
+  and win a tug of war on one shared bar, clicking as a sweeping line crosses your mark, or fight it out.
 
 **Also**
 - **Eyewear:** a Blindfold and Sunglasses, worn in their own Curios slot.

@@ -34,7 +34,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 @ExtendWith(EphemeralTestServerProvider.class)
 class ClashTest {
     private static final double EPS = 1.0e-6;
-    /** The clock prompts are timed on, held still unless a test moves it (so no prompt comes unless it does). */
+    /** The clock the line sweeps on, held still unless a test moves it. */
     private static final double[] NOW = {0};
 
     private static DomainEntity incomplete(ServerPlayer p) {
@@ -62,27 +62,24 @@ class ClashTest {
         assertEquals(Clash.Phase.MAINTAIN, c.phase(), "setup: holding on");
     }
 
-    /** Through the Maintain (the clock held still: no prompts) into the Fight. */
+    /** Through the Maintain (nobody pressing) into the Fight. */
     private static void toFight(Clash c) {
         toMaintain(c);
         ticks(c, DomainConfig.ticks(DomainConfig.CLASH_MAINTAIN));
         assertEquals(Clash.Phase.FIGHT, c.phase(), "setup: to the fight");
     }
 
-    /** Moves the clock until this side has a prompt waiting (the other side's go unanswered meanwhile: misses). */
-    private static void waitForPrompt(Clash c, Clash.Side s) {
-        for (int i = 0; i < 100 && s.promptKey() < 0 && c.phase() != Clash.Phase.OVER; i++) {
-            NOW[0] += 200; // a fifth of a second a tick: prompts come every 5 to 10 ticks, well inside the Maintain
-            Clashes.tick(c);
-        }
+    /** A moment (server ms) at which the line is {@code offset} of the meter from the middle of this side's mark. */
+    private static double when(Clash c, Clash.Side s, double offset) {
+        double at = s.mark() + offset;
+        if (at < 0 || at > 1) at = s.mark() - offset;
+        return c.sweepStartMs() + at * Clashes.sweepMs(); // on its first crossing the line is at t / sweepMs
     }
 
-    /** Waits for this side's next prompt, then answers it on its beat (with the right key, or {@code key} if not -1). */
-    private static void answer(Clash c, Clash.Side s, int key) {
-        waitForPrompt(c, s);
+    /** This side presses with the line on the middle of their mark. */
+    private static void answer(Clash c, Clash.Side s) {
         if (c.phase() == Clash.Phase.OVER) return;
-        assertTrue(s.promptKey() >= 0, "setup: a prompt came");
-        Clashes.onPress(Domains.caster(s.domain()), key < 0 ? s.promptKey() : key, s.promptBeatMs());
+        Clashes.onPress(Domains.caster(s.domain()), when(c, s, 0));
     }
 
     private static void run(MinecraftServer server, Consumer<MinecraftServer> test) throws Exception {
@@ -185,24 +182,42 @@ class ClashTest {
             ticks(c, 20);
             assertEquals(malice - DomainConfig.CLASH_DRAIN.get(), MaliceService.get(a).current(), 0.5, "a second of drain");
 
-            // A miss: the wrong key. It pushes back and cracks a's own barrier.
+            // The line sweeps across and back; each side has a mark on its own meter.
             Clash.Side first = c.first();
-            answer(c, first, -1);
-            assertTrue(c.bar(first) > 0, "setup: a hit first");
-            waitForPrompt(c, first);
+            double sweep = Clashes.sweepMs(), start = c.sweepStartMs(), half = Clashes.markHalf();
+            assertEquals(0.0, Clashes.lineAt(c, start), EPS, "from the left end");
+            assertEquals(0.25, Clashes.lineAt(c, start + sweep * 0.25), EPS);
+            assertEquals(1.0, Clashes.lineAt(c, start + sweep), EPS, "across");
+            assertEquals(0.75, Clashes.lineAt(c, start + sweep * 1.25), EPS, "and back");
+            assertEquals(0.0, Clashes.lineAt(c, start + sweep * 2), EPS);
+            assertTrue(first.mark() >= half && first.mark() <= 1 - half, "the whole mark on the meter: " + first.mark());
+
+            // On the middle of the mark: the whole push. Then the mark moves.
+            double mark = first.mark();
+            answer(c, first);
+            assertEquals(DomainConfig.CLASH_PUSH_PER_HIT.get(), c.bar(first), EPS, "on the middle: all of pushPerHit");
+            assertTrue(Math.abs(first.mark() - mark) >= 0.2 - EPS, "the mark moved: " + mark + " to " + first.mark());
+            // Near its edge: still a hit, for less.
             double before = c.bar(first);
+            Clashes.onPress(a, when(c, first, half * 0.9));
+            double edge = DomainConfig.CLASH_EDGE_SHARE.get();
+            assertEquals(before + DomainConfig.CLASH_PUSH_PER_HIT.get() * (edge + (1 - edge) * 0.1), c.bar(first), 1.0e-6, "near the edge: less");
+            // Outside it: a miss. It pushes back and cracks a's own barrier.
+            before = c.bar(first);
             float barrier = da.barrier();
-            Clashes.onPress(a, (first.promptKey() + 1) % 3, first.promptBeatMs());
+            Clashes.onPress(a, when(c, first, half * 1.5));
             assertEquals(before - DomainConfig.CLASH_PUSH_PER_MISS.get(), c.bar(first), EPS, "a miss pushes it back");
             assertEquals(barrier - DomainConfig.CLASH_CRACK_PER_MISS.get(), da.barrier(), 1.0e-4, "and cracks their barrier");
-            // Too late is a miss too.
-            waitForPrompt(c, first);
-            double beforeLate = c.bar(first);
-            Clashes.onPress(a, first.promptKey(), first.promptBeatMs() + DomainConfig.CLASH_PROMPT_WINDOW_MS.get());
-            assertEquals(beforeLate - DomainConfig.CLASH_PUSH_PER_MISS.get(), c.bar(first), EPS, "too late");
+            // Not pressing costs nothing.
+            before = c.bar(first);
+            ticks(c, 20);
+            assertEquals(before, c.bar(first), EPS, "no press: nothing");
+            // The other side pushes it back the other way.
+            answer(c, c.second());
+            assertEquals(before - DomainConfig.CLASH_PUSH_PER_HIT.get(), c.bar(first), EPS, "one bar, pushed both ways");
 
             // Hits until it's all the way.
-            for (int i = 0; i < 20 && c.phase() != Clash.Phase.OVER; i++) answer(c, first, -1);
+            for (int i = 0; i < 20 && c.phase() != Clash.Phase.OVER; i++) answer(c, first);
             assertEquals(Clash.Phase.OVER, c.phase(), "pushed all the way");
             assertTrue(db.isRemoved(), "b's barrier broke");
             assertEquals(DomainConfig.ticks(DomainConfig.INCOMPLETE_BURNOUT), Burnout.remaining(b), "b burns out");
@@ -224,7 +239,7 @@ class ClashTest {
             assertEquals(1 - DomainConfig.CLASH_INCOMPLETE_HANDICAP.get(), Clashes.handicap(c, c.second()), EPS, "the Incomplete one");
             assertEquals(1.0, Clashes.handicap(c, c.first()), EPS, "the full one pushes in full");
             toMaintain(c);
-            answer(c, c.second(), -1);
+            answer(c, c.second());
             assertEquals(DomainConfig.CLASH_PUSH_PER_HIT.get() * (1 - DomainConfig.CLASH_INCOMPLETE_HANDICAP.get()), c.bar(c.second()), EPS);
         });
     }

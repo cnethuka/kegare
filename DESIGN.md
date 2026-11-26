@@ -352,9 +352,9 @@ All timestamps use **level game time**. They persist across restarts and are ide
 - Domains (§3.35) add `DomainNet.Meter` (S→C, to its owner), `DomainNet.Trapped` (S→C: which side of a barrier you're on) and
   `DomainNet.Moment` (S→C: a barrier opening, closing, hit, breaking or ending, or a clash starting), and the Six Eyes' full detail
   (`ReadsPayload.Body`) carries the Domain a player holds open. A clash adds `DomainNet.ClashState` (S→C, to its two casters, every
-  tick), `DomainNet.ClashPrompt` (S→C, a timing prompt and then its result), `DomainNet.ClashHold` (C→S: the caster's Domain key held
-  or not) and `DomainNet.ClashPress` (C→S: a prompt key, stamped first as `TimedInput.CLASH`).
-- Network version `32` (`KegareNetwork.VERSION`). Bump it whenever a payload's format changes; mismatched clients are refused.
+  tick), `DomainNet.ClashSweep` (S→C: a caster's meter, the sweeping line and their mark, and their last press's result), `DomainNet.ClashHold` (C→S: the caster's Domain key held
+  or not) and `DomainNet.ClashPress` (C→S: their attack key in the Maintain, stamped first as `TimedInput.CLASH`).
+- Network version `33` (`KegareNetwork.VERSION`). Bump it whenever a payload's format changes; mismatched clients are refused.
 
 ### 3.6 HUD
 **Rule: the combat HUD does not exist until the player asks for it** (art in `textures/gui/combat/`).
@@ -3658,13 +3658,18 @@ refused, in either of two places:
   again. Their client says whether the key is down (`ClashHold`). Not holding it then loses (both not: a tie).
 - **Maintain** (`maintainSeconds` 10): held within `leash` (1.5) of where they stood (the server and their own client both cut the
   move), unable to attack (no hit of theirs lands, hand, weapon, projectile or technique) or cast (a cast key says "You're holding your
-  Domain."), each pays `drainPerSecond` (15) Malice. A tug of war: every `promptEveryMin` to `promptEveryMax` (1 to 2 s) each caster
-  gets a prompt, one of jump, sneak or sprint (their own bindings), shown `promptLeadMs` (900) ahead of its beat. Their press is judged
-  by sub-tick timing (§3.29, `TimedInput.CLASH`): the right key within `promptWindowMs` (500, half each side) of the beat is a hit and
-  pushes the bar `pushPerHit` (0.2) toward the other; the wrong key, too early, too late or no press is a miss, pushing it back
-  `pushPerMiss` (0.1) and cracking their own barrier by `crackPerMiss` (0.1 of its strength). A press with no prompt waiting is ignored.
-  An Incomplete Domain against a full one pushes `incompleteHandicap` (30%) less. Pushed all the way, letting go of the key, running
-  out of Malice or a barrier cracked apart loses at once.
+  Domain."), each pays `drainPerSecond` (15) Malice. A tug of war on one shared bar:
+  - **The meter:** each caster has their own, under the bar. A line sweeps across it and back, once every `sweepSeconds` (1.1), the same
+    for both from the moment the Maintain begins; on it is their **mark**, `markWidth` (0.22) of the meter wide, somewhere at random.
+  - **The press** is their attack key (left click by default; it swings at nothing meanwhile), judged by sub-tick timing (§3.29,
+    `TimedInput.CLASH`) against where the line was at that moment.
+  - **A hit** (the line in their mark) pushes the bar toward the other: `pushPerHit` (0.2) on the mark's middle, falling evenly to
+    `edgeShare` (0.4) of that at its edge. The nearer the middle, the further it goes.
+  - **A miss** (the line outside it) pushes the bar back `pushPerMiss` (0.1) and cracks their own barrier by `crackPerMiss` (0.1 of its
+    strength), so pressing blindly loses. Not pressing costs nothing.
+  - After every press their mark moves, at least a fifth of the meter from where it was.
+  - An Incomplete Domain against a full one pushes `incompleteHandicap` (30%) less. Pushed all the way, letting go of the key, running
+    out of Malice or a barrier cracked apart loses at once.
 - **Fight** (`fightSeconds` 15): free again. Each caster's score is the damage they deal the other (after defences, as the fight
   record has it, §3.21); nobody else's damage counts. The higher wins; within `tieMargin` (10% of the higher) it's a tie.
 - **The result:** the loser's barrier breaks and they burn out as their Domain would; the winner's closes again, with the time it had
@@ -3675,8 +3680,9 @@ refused, in either of two places:
   nothing earned. Advancements (Base tab, hidden, silent, §3.11): *Pushback* for a win before the fight, *Fight Me* for one in it,
   *Mutual Destruction* for a tie.
 - **What the casters see** (`ClashClient`): "Hold" and the key at the start; then the bar, theirs from the left and yours from the
-  right meeting where it stands, your barrier's strength under it, "Let go!" if the server stops seeing the key; each prompt's key in a
-  box with a frame closing on it to meet it on the beat, lit while the window is open, then "Hit" or "Miss"; in the Fight, both scores;
+  right meeting where it stands, your barrier's strength under it, "Let go!" if the server stops seeing the key; under it your meter, a
+  dark strip with your mark in blue (lighter in its middle) and the red line sweeping over it, and the key to press; then "Perfect" (the
+  middle fifth of the mark), "Hit" or "Miss"; in the Fight, both scores;
   at the end, "Clash won", "Clash lost" or "Both broke".
 
 **The Incomplete Domain** (`kegare:incomplete_domain`, shared, Malice, INSTANT; `IncompleteDomain`, `IncompleteDomains`; numbers
@@ -3743,7 +3749,8 @@ out; breaking at its own strength; the cheaper casts, faster cooldowns and harde
 when it ends; Strength, Resistance and Speed on its caster alone, as long as it has left, taken off as it ends, a potion of their own kept), `ClashTest` (opening in another's inner space starts a clash at its sky, both half-formed, nobody let out, Insight paid, a
 third side refused from outside and from inside with nothing paid; not holding on in the Grip loses, the loser breaking and burning out,
 the one opened inside taking the inner space over, its shell where the loser's was and everyone still inside, Pushback; the Maintain's
-drain, a miss pushing back and cracking, too late a miss, hits pushing all the way, the winner closing again with the time it had used
+drain, the line sweeping across and back, a hit on the mark's middle pushing in full and one near its edge less, the mark moving after a
+press, a miss pushing back and cracking, no press costing nothing, the other side pushing the same bar back, hits pushing all the way, the winner closing again with the time it had used
 and the loser still in its inner space; an Incomplete Domain's handicap against a full one; running dry and letting go losing; no
 attacking or casting while holding on, held in place, free in the Fight; the Fight's score from the two casters' damage alone, Fight Me;
 a close fight breaking both with the exhausted Burnout, Mutual Destruction; a side ended by command forfeiting with nothing won, top-tier

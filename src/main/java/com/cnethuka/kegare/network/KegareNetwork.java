@@ -12,7 +12,7 @@ import net.neoforged.neoforge.network.registration.PayloadRegistrar;
  * decided and saved; screens are cosmetic.
  */
 public final class KegareNetwork {
-    public static final String VERSION = "32";
+    public static final String VERSION = "33";
 
     private KegareNetwork() {}
 
@@ -53,8 +53,8 @@ public final class KegareNetwork {
                 com.cnethuka.kegare.domain.DomainNet.Moment::handle);
         registrar.playToClient(com.cnethuka.kegare.domain.DomainNet.ClashState.TYPE, com.cnethuka.kegare.domain.DomainNet.ClashState.STREAM_CODEC,
                 com.cnethuka.kegare.domain.DomainNet.ClashState::handle);
-        registrar.playToClient(com.cnethuka.kegare.domain.DomainNet.ClashPrompt.TYPE, com.cnethuka.kegare.domain.DomainNet.ClashPrompt.STREAM_CODEC,
-                com.cnethuka.kegare.domain.DomainNet.ClashPrompt::handle);
+        registrar.playToClient(com.cnethuka.kegare.domain.DomainNet.ClashSweep.TYPE, com.cnethuka.kegare.domain.DomainNet.ClashSweep.STREAM_CODEC,
+                com.cnethuka.kegare.domain.DomainNet.ClashSweep::handle);
         registrar.playToServer(com.cnethuka.kegare.domain.DomainNet.ClashHold.TYPE, com.cnethuka.kegare.domain.DomainNet.ClashHold.STREAM_CODEC,
                 com.cnethuka.kegare.domain.DomainNet.ClashHold::handle);
         registrar.playToServer(com.cnethuka.kegare.domain.DomainNet.ClashPress.TYPE, com.cnethuka.kegare.domain.DomainNet.ClashPress.STREAM_CODEC,

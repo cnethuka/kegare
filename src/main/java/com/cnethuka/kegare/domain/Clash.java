@@ -13,7 +13,7 @@ public final class Clash {
     public enum Phase {
         /** Both casters have a moment to be holding their key. */
         GRIP,
-        /** A tug of war won by timing; casters held in place, paying Malice. */
+        /** A tug of war won by timing on the sweeping line; casters held in place, paying Malice. */
         MAINTAIN,
         /** Both half-formed; the one who deals the other more damage wins. */
         FIGHT,
@@ -32,9 +32,6 @@ public final class Clash {
         FORFEIT
     }
 
-    /** A timing prompt: which key, and its beat on the server's clock in ms (SubTick.nowMs). */
-    record Prompt(int id, int key, double beatMs) {}
-
     public static final class Side {
         /** Its barrier where the clash is: in an inner space, that's the space's sky (the Domain itself is its shell, {@code primary()}). */
         final DomainEntity domain;
@@ -43,9 +40,10 @@ public final class Clash {
         final int usedTicks;
         /** Whether its caster is holding the key that opened it (their client says; the server's own guess to start with). */
         boolean held;
-        @Nullable Prompt prompt;
-        double nextPromptMs;
-        int prompts;
+        /** Their meter in the Maintain: where its mark's middle is (0 to 1 along it), moved after every press; -1 before the Maintain. */
+        double mark = -1;
+        /** How many presses of theirs have been judged (each one moves the mark). */
+        int presses;
         /** In the Fight: damage dealt to the other caster, after defences. */
         double score;
 
@@ -72,14 +70,9 @@ public final class Clash {
             return score;
         }
 
-        /** The prompt waiting on this side: its key (0 jump, 1 sneak, 2 sprint), or -1. */
-        public int promptKey() {
-            return prompt == null ? -1 : prompt.key();
-        }
-
-        /** Its beat on the server's clock, or NaN. */
-        public double promptBeatMs() {
-            return prompt == null ? Double.NaN : prompt.beatMs();
+        /** Where their mark's middle is on their meter, 0 to 1 (-1 before the Maintain). */
+        public double mark() {
+            return mark;
         }
     }
 
@@ -89,6 +82,8 @@ public final class Clash {
     int phaseTicks;
     /** The tug of war, -1 to 1: at 1 the first side has pushed the second out, at -1 the other way round. */
     double bar;
+    /** When the Maintain's line began sweeping, on the server's clock in ms (SubTick.nowMs). */
+    double sweepStartMs = Double.NaN;
 
     Clash(Side first, Side second, RandomSource random) {
         this.sides = List.of(first, second);
@@ -109,6 +104,11 @@ public final class Clash {
 
     public Phase phase() {
         return phase;
+    }
+
+    /** When the line began sweeping, on the server's clock in ms (NaN before the Maintain). */
+    public double sweepStartMs() {
+        return sweepStartMs;
     }
 
     public int phaseTicks() {

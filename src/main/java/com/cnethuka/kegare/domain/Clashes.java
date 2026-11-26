@@ -35,7 +35,7 @@ import net.neoforged.neoforge.network.PacketDistributor;
  *   <li><b>Grip</b> ({@code gripSeconds}): both casters have to be holding the key that opens their Domain (the one whose Domain was
  *   already open presses it again).</li>
  *   <li><b>Maintain</b> ({@code maintainSeconds}): held in place, unable to attack or cast, each pays {@code drainPerSecond} Malice and
- *   answers timing prompts judged by sub-tick timing. A hit pushes the bar toward the other (less for an Incomplete Domain against a
+ *   presses as a sweeping line crosses their mark, judged by sub-tick timing. A hit pushes the bar toward the other (less for an Incomplete Domain against a
  *   full one); a miss pushes it back and cracks their own barrier. Pushed all the way, letting go, running dry or cracking apart loses.</li>
  *   <li><b>Fight</b> ({@code fightSeconds}): free again. The damage each deals the other (after defences) is their score; the higher
  *   wins, and within {@code tieMargin} it's a tie.</li>
@@ -47,7 +47,7 @@ public final class Clashes {
     /** Sides a clash can have. More would need the bar rethought, and nothing else. */
     public static final int MAX_SIDES = 2;
     private static final List<Clash> ACTIVE = new CopyOnWriteArrayList<>();
-    /** The clock prompts are timed on: {@link SubTick#nowMs} (tests set their own). */
+    /** The clock the sweeping line runs on: {@link SubTick#nowMs} (tests set their own). */
     static DoubleSupplier clock = SubTick::nowMs;
     /** Told when a clash is decided: its winner (null for a tie) and how. */
     private static final List<Decided> DECIDED = new CopyOnWriteArrayList<>();
@@ -148,29 +148,25 @@ public final class Clashes {
                 else {
                     c.phase = Clash.Phase.MAINTAIN;
                     c.phaseTicks = 0;
-                    double now = clock.getAsDouble();
-                    for (Clash.Side s : c.sides) s.nextPromptMs = now + gap(c);
+                    c.sweepStartMs = clock.getAsDouble();
+                    for (Clash.Side s : c.sides) {
+                        s.mark = newMark(c, s);
+                        sendSweep(c, s, DomainNet.ClashSweep.NONE, 0f);
+                    }
                 }
             }
             case MAINTAIN -> {
-                double now = clock.getAsDouble();
                 for (Clash.Side s : c.sides) {
                     ServerPlayer caster = caster(s);
                     if (caster == null || !s.held || !MaliceService.trySpend(caster, DomainConfig.CLASH_DRAIN.get() / 20.0)) {
                         win(c, c.other(s), Clash.Result.MAINTAIN);
                         return;
                     }
-                    if (s.prompt == null && now >= s.nextPromptMs) prompt(c, s, now);
-                    else if (s.prompt != null && now > s.prompt.beatMs() + DomainConfig.CLASH_PROMPT_WINDOW_MS.get() / 2.0) judge(c, s, false, now);
-                    if (c.phase == Clash.Phase.OVER) return;
                 }
                 if (c.phaseTicks >= DomainConfig.ticks(DomainConfig.CLASH_MAINTAIN)) {
                     c.phase = Clash.Phase.FIGHT;
                     c.phaseTicks = 0;
-                    for (Clash.Side s : c.sides) {
-                        s.prompt = null;
-                        s.domain.holdAt = null;
-                    }
+                    for (Clash.Side s : c.sides) s.domain.holdAt = null;
                 }
             }
             case FIGHT -> {
@@ -184,43 +180,71 @@ public final class Clashes {
         if (c.phase != Clash.Phase.OVER) sync(c);
     }
 
-    private static double gap(Clash c) {
-        double min = DomainConfig.CLASH_PROMPT_MIN.get(), max = Math.max(min, DomainConfig.CLASH_PROMPT_MAX.get());
-        return (min + c.random.nextDouble() * (max - min)) * 1000.0;
+    /** How long the line takes to cross the meter once, in ms. */
+    static double sweepMs() {
+        return DomainConfig.CLASH_SWEEP.get() * 1000.0;
     }
 
-    private static void prompt(Clash c, Clash.Side s, double now) {
-        s.prompt = new Clash.Prompt(++s.prompts, c.random.nextInt(3), now + DomainConfig.CLASH_PROMPT_LEAD_MS.get());
-        sendPrompt(s, DomainNet.ClashPrompt.PENDING);
+    /** Where the line is on the meter at a moment (0 to 1): it sweeps across and back, from the left end as the Maintain begins. */
+    static double lineAt(Clash c, double atMs) {
+        double u = ((atMs - c.sweepStartMs) / sweepMs()) % 2.0;
+        if (u < 0) u += 2.0;
+        return u <= 1.0 ? u : 2.0 - u;
     }
 
-    /** A prompt key went down ({@code atMs}: when, by sub-tick timing). Judged at once if a prompt waits; ignored if none does. */
-    public static void onPress(ServerPlayer player, int key, double atMs) {
+    /** Half the mark's width, as a share of the meter. */
+    static double markHalf() {
+        return DomainConfig.CLASH_MARK.get() / 2.0;
+    }
+
+    /** A new place for a side's mark: anywhere it fits on the meter, but not where it just was. */
+    private static double newMark(Clash c, Clash.Side s) {
+        double half = markHalf(), mark = 0.5;
+        for (int i = 0; i < 8; i++) {
+            mark = half + c.random.nextDouble() * (1.0 - 2.0 * half);
+            if (s.mark < 0 || Math.abs(mark - s.mark) >= 0.2) break;
+        }
+        return mark;
+    }
+
+    /** How good a press at {@code atMs} is: 1 with the line on the middle of their mark, 0 at its edge, negative outside it. */
+    static double precision(Clash c, Clash.Side s, double atMs) {
+        return 1.0 - Math.abs(lineAt(c, atMs) - s.mark) / markHalf();
+    }
+
+    /** How far a hit of this precision (0 to 1) pushes the bar: {@code pushPerHit} on the middle, {@code edgeShare} of it at the edge. */
+    static double push(double precision) {
+        double edge = DomainConfig.CLASH_EDGE_SHARE.get();
+        return DomainConfig.CLASH_PUSH_PER_HIT.get() * (edge + (1.0 - edge) * Math.max(0.0, Math.min(1.0, precision)));
+    }
+
+    /**
+     * Their press ({@code atMs}: when, by sub-tick timing): with the line in their mark it's a hit, pushing the bar toward the other, further
+     * the nearer the mark's middle; outside it, a miss, pushing it back and cracking their own barrier. All the way wins. Then their mark
+     * moves.
+     */
+    public static void onPress(ServerPlayer player, double atMs) {
         Clash c = of(player);
         if (c == null || c.phase != Clash.Phase.MAINTAIN) return;
         Clash.Side s = c.sideOf(player.getUUID());
-        if (s == null || s.prompt == null) return;
-        boolean hit = key == s.prompt.key() && Math.abs(atMs - s.prompt.beatMs()) <= DomainConfig.CLASH_PROMPT_WINDOW_MS.get() / 2.0;
-        judge(c, s, hit, clock.getAsDouble());
-        if (c.phase != Clash.Phase.OVER) sync(c);
-    }
-
-    /** A hit pushes the bar toward the other side; a miss pushes it back and cracks their own barrier. All the way wins. */
-    private static void judge(Clash c, Clash.Side s, boolean hit, double now) {
-        sendPrompt(s, hit ? DomainNet.ClashPrompt.HIT : DomainNet.ClashPrompt.MISS);
-        s.prompt = null;
-        s.nextPromptMs = now + gap(c);
+        if (s == null || s.mark < 0) return;
+        double precision = precision(c, s, atMs);
+        boolean hit = precision >= 0;
         double toward = s == c.first() ? 1 : -1;
+        s.presses++;
+        s.mark = newMark(c, s);
         if (hit) {
-            c.bar += toward * DomainConfig.CLASH_PUSH_PER_HIT.get() * handicap(c, s);
+            c.bar += toward * push(precision) * handicap(c, s);
         } else {
             c.bar -= toward * DomainConfig.CLASH_PUSH_PER_MISS.get();
             Domains.crack(s.domain, DomainConfig.CLASH_CRACK_PER_MISS.get()); // cracked apart, it ends: the other wins (onEnded)
             if (c.phase == Clash.Phase.OVER) return;
         }
+        sendSweep(c, s, hit ? DomainNet.ClashSweep.HIT : DomainNet.ClashSweep.MISS, (float) Math.max(0, precision));
         c.bar = Math.max(-1, Math.min(1, c.bar));
         if (c.bar >= 1 - 1.0e-9) win(c, c.first(), Clash.Result.MAINTAIN);
         else if (c.bar <= -1 + 1.0e-9) win(c, c.second(), Clash.Result.MAINTAIN);
+        if (c.phase != Clash.Phase.OVER) sync(c);
     }
 
     /** An Incomplete Domain against a full one pushes less. */
@@ -269,7 +293,6 @@ public final class Clashes {
         c.phase = Clash.Phase.OVER;
         ACTIVE.remove(c);
         for (Clash.Side s : c.sides) {
-            s.prompt = null;
             s.domain.holdAt = null;
             s.domain.setClashWith(-1);
         }
@@ -374,14 +397,14 @@ public final class Clashes {
         return slot < 0 ? -2 : slot;
     }
 
-    private static void sendPrompt(Clash.Side s, int result) {
+    /** Their meter: when the line began sweeping (on their clock), how long a crossing takes, where their mark is, and their last press. */
+    private static void sendSweep(Clash c, Clash.Side s, int result, float precision) {
         ServerPlayer caster = caster(s);
-        Clash.Prompt prompt = s.prompt;
-        if (caster == null || prompt == null) return;
-        double beatClient = SubTick.toClientMs(caster, prompt.beatMs()).orElse(Double.NaN);
-        int lead = (int) Math.max(0, Math.round(prompt.beatMs() - clock.getAsDouble()));
-        PacketDistributor.sendToPlayer(caster, new DomainNet.ClashPrompt(prompt.id(), prompt.key(), beatClient, lead,
-                DomainConfig.CLASH_PROMPT_WINDOW_MS.get(), result));
+        if (caster == null) return;
+        double startClient = SubTick.toClientMs(caster, c.sweepStartMs).orElse(Double.NaN);
+        int elapsed = (int) Math.max(0, Math.round(clock.getAsDouble() - c.sweepStartMs));
+        PacketDistributor.sendToPlayer(caster, new DomainNet.ClashSweep(s.presses, startClient, elapsed, (int) Math.round(sweepMs()),
+                (float) s.mark, (float) markHalf(), result, precision));
     }
 
     // ---------------------------------------------------------------------------------------------- queries

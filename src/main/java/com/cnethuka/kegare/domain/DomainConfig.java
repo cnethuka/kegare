@@ -47,10 +47,9 @@ public final class DomainConfig {
     public static ModConfigSpec.DoubleValue CLASH_FIGHT;
     public static ModConfigSpec.DoubleValue CLASH_DRAIN;
     public static ModConfigSpec.DoubleValue CLASH_LEASH;
-    public static ModConfigSpec.DoubleValue CLASH_PROMPT_MIN;
-    public static ModConfigSpec.DoubleValue CLASH_PROMPT_MAX;
-    public static ModConfigSpec.IntValue CLASH_PROMPT_LEAD_MS;
-    public static ModConfigSpec.IntValue CLASH_PROMPT_WINDOW_MS;
+    public static ModConfigSpec.DoubleValue CLASH_SWEEP;
+    public static ModConfigSpec.DoubleValue CLASH_MARK;
+    public static ModConfigSpec.DoubleValue CLASH_EDGE_SHARE;
     public static ModConfigSpec.DoubleValue CLASH_PUSH_PER_HIT;
     public static ModConfigSpec.DoubleValue CLASH_PUSH_PER_MISS;
     public static ModConfigSpec.DoubleValue CLASH_CRACK_PER_MISS;
@@ -157,12 +156,13 @@ public final class DomainConfig {
         CLASH_DRAIN = b.comment("Malice each caster pays a second while they hold on in Maintain. Running out loses at once.")
                 .defineInRange("drainPerSecond", 15.0, 0.0, 10_000.0);
         CLASH_LEASH = b.comment("In Maintain, how far a caster can move from where they stood.").defineInRange("leash", 1.5, 0.0, 16.0);
-        CLASH_PROMPT_MIN = b.comment("The shortest time between two of a caster's timing prompts.").defineInRange("promptEveryMin", 1.0, 0.3, 10.0);
-        CLASH_PROMPT_MAX = b.comment("The longest time between two of a caster's timing prompts.").defineInRange("promptEveryMax", 2.0, 0.3, 10.0);
-        CLASH_PROMPT_LEAD_MS = b.comment("How long a prompt shows before its beat, in ms.").defineInRange("promptLeadMs", 900, 100, 5000);
-        CLASH_PROMPT_WINDOW_MS = b.comment("The window round a prompt's beat that counts as a hit, in ms (half before it, half after), judged",
-                "by sub-tick timing.").defineInRange("promptWindowMs", 500, 50, 2000);
-        CLASH_PUSH_PER_HIT = b.comment("A hit pushes the bar this far toward the other side (all the way is 1).").defineInRange("pushPerHit", 0.2, 0.0, 1.0);
+        CLASH_SWEEP = b.comment("How long the line takes to cross a caster's meter once (it sweeps across and back).")
+                .defineInRange("sweepSeconds", 1.1, 0.3, 10.0);
+        CLASH_MARK = b.comment("How wide a caster's mark is, as a share of their meter. Pressing with the line in it is a hit, judged by",
+                "sub-tick timing.").defineInRange("markWidth", 0.22, 0.02, 1.0);
+        CLASH_EDGE_SHARE = b.comment("The share of pushPerHit a hit at the very edge of the mark pushes (on its middle: all of it).")
+                .defineInRange("edgeShare", 0.4, 0.0, 1.0);
+        CLASH_PUSH_PER_HIT = b.comment("A hit on the middle of the mark pushes the bar this far toward the other side (all the way is 1).").defineInRange("pushPerHit", 0.2, 0.0, 1.0);
         CLASH_PUSH_PER_MISS = b.comment("A miss (the wrong key, too early, too late or not at all) pushes the bar back this far.")
                 .defineInRange("pushPerMiss", 0.1, 0.0, 1.0);
         CLASH_CRACK_PER_MISS = b.comment("A miss also cracks your own barrier: this share of its strength. A barrier that runs out breaks and",

@@ -1037,6 +1037,8 @@ public final class KegareLanguageProvider extends LanguageProvider {
         add("hud.kegare.domain.clash.lost", "Clash lost");
         add("hud.kegare.domain.clash.tie", "Both broke");
         add("hud.kegare.domain.clash.hit", "Hit");
+        add("hud.kegare.domain.clash.perfect", "Perfect");
+        add("hud.kegare.domain.clash.press", "%s as the line crosses your mark");
         add("hud.kegare.domain.clash.miss", "Miss");
         add("hud.kegare.domain.clash.let_go", "Let go!");
         add("hud.kegare.domain.clash.nowhere", "Its key isn't on your bar");
